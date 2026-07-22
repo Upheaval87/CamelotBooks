@@ -361,7 +361,6 @@ class DatabaseSeeder extends Seeder
                 'opening_balance' => 0,
                 'opening_balance_date' => null,
                 'currency' => $company->base_currency,
-                'current_balance' => 0,
                 'is_active' => true,
             ]);
 
@@ -493,16 +492,6 @@ class DatabaseSeeder extends Seeder
                     'debit' => $lineData['debit'],
                     'credit' => $lineData['credit'],
                 ]);
-
-                $account = Account::find($lineData['account_id']);
-                if ($account) {
-                    if ($account->isDebitNormal()) {
-                        $account->current_balance = (float) $account->current_balance + $lineData['debit'] - $lineData['credit'];
-                    } else {
-                        $account->current_balance = (float) $account->current_balance + $lineData['credit'] - $lineData['debit'];
-                    }
-                    $account->save();
-                }
             }
         }
     }

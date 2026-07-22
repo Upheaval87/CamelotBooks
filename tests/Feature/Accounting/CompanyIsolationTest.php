@@ -54,7 +54,6 @@ class CompanyIsolationTest extends TestCase
             'name' => 'Company A Cash',
             'type' => 'asset',
             'sub_type' => 'current_asset',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 
@@ -83,7 +82,6 @@ class CompanyIsolationTest extends TestCase
             'name' => 'Company B Cash',
             'type' => 'asset',
             'sub_type' => 'current_asset',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 
@@ -109,7 +107,6 @@ class CompanyIsolationTest extends TestCase
             'name' => 'Company A Revenue',
             'type' => 'income',
             'sub_type' => 'operating_income',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 
@@ -154,7 +151,6 @@ class CompanyIsolationTest extends TestCase
             'name' => 'Company B Revenue',
             'type' => 'income',
             'sub_type' => 'operating_income',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 
@@ -189,7 +185,6 @@ class CompanyIsolationTest extends TestCase
             'name' => 'Company B Cash',
             'type' => 'asset',
             'sub_type' => 'current_asset',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 
@@ -211,7 +206,6 @@ class CompanyIsolationTest extends TestCase
             'name' => 'Company A Revenue',
             'type' => 'income',
             'sub_type' => 'operating_income',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 

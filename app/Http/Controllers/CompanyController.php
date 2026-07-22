@@ -148,7 +148,6 @@ class CompanyController extends Controller
                 'opening_balance' => 0,
                 'opening_balance_date' => null,
                 'currency' => $company->base_currency,
-                'current_balance' => 0,
                 'is_active' => true,
             ]);
 

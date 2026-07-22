@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountingPeriod;
+use App\Services\Accounting\JournalPostingEngine;
 use Illuminate\Http\Request;
 
 class AccountingPeriodController extends Controller
@@ -53,18 +54,21 @@ class AccountingPeriodController extends Controller
 
     public function close(AccountingPeriod $period)
     {
-        if (!$period->isOpen()) {
-            return back()->with('error', 'Only open periods can be closed.');
+        $engine = app(JournalPostingEngine::class);
+
+        try {
+            $closingEntry = $engine->closePeriod($period, auth()->id());
+
+            $message = 'Accounting period closed successfully.';
+            if ($closingEntry) {
+                $message .= ' Closing entry ' . $closingEntry->journal_number . ' was posted.';
+            }
+
+            return redirect()->route('accounting.periods.index')
+                ->with('success', $message);
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $period->update([
-            'status' => 'closed',
-            'closed_by' => auth()->id(),
-            'closed_at' => now(),
-        ]);
-
-        return redirect()->route('accounting.periods.index')
-            ->with('success', 'Accounting period closed successfully.');
     }
 
     public function lock(AccountingPeriod $period)

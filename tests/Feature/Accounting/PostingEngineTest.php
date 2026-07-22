@@ -56,7 +56,6 @@ class PostingEngineTest extends TestCase
             'name' => 'Cash',
             'type' => 'asset',
             'sub_type' => 'current_asset',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 
@@ -66,7 +65,6 @@ class PostingEngineTest extends TestCase
             'name' => 'Revenue',
             'type' => 'income',
             'sub_type' => 'operating_income',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 
@@ -111,7 +109,6 @@ class PostingEngineTest extends TestCase
             'name' => 'Other Expense',
             'type' => 'expense',
             'sub_type' => 'operating_expense',
-            'current_balance' => 0,
             'is_active' => true,
         ]);
 

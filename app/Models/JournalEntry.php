@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class JournalEntry extends Model
@@ -45,6 +44,36 @@ class JournalEntry extends Model
     const STATUS_APPROVED = 'approved';
     const STATUS_POSTED = 'posted';
     const STATUS_REVERSED = 'reversed';
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::updating(function (JournalEntry $entry) {
+            $originalStatus = $entry->getOriginal('status');
+
+            if (! in_array($originalStatus, [self::STATUS_POSTED, self::STATUS_REVERSED])) {
+                return;
+            }
+
+            if ($originalStatus === self::STATUS_POSTED) {
+                $dirty = $entry->getDirty();
+                if (isset($dirty['status']) && $dirty['status'] === self::STATUS_REVERSED) {
+                    return;
+                }
+            }
+
+            throw new \BadMethodCallException(
+                ucfirst($originalStatus) . ' journal entries are immutable and cannot be modified.'
+            );
+        });
+
+        static::deleting(function (JournalEntry $entry) {
+            if (in_array($entry->status, [self::STATUS_POSTED, self::STATUS_REVERSED])) {
+                throw new \BadMethodCallException('Posted or reversed journal entries are immutable and cannot be deleted.');
+            }
+        });
+    }
 
     public function company(): BelongsTo
     {
@@ -121,6 +150,16 @@ class JournalEntry extends Model
         return $this->status === self::STATUS_POSTED;
     }
 
+    public function isReversed(): bool
+    {
+        return $this->status === self::STATUS_REVERSED;
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return $this->status === self::STATUS_PENDING_APPROVAL;
+    }
+
     public function scopeForCompany($query, int $companyId)
     {
         return $query->where('company_id', $companyId);
@@ -134,6 +173,16 @@ class JournalEntry extends Model
     public function scopeDraft($query)
     {
         return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    public function scopePendingApproval($query)
+    {
+        return $query->where('status', self::STATUS_PENDING_APPROVAL);
+    }
+
+    public function scopeReversed($query)
+    {
+        return $query->where('status', self::STATUS_REVERSED);
     }
 
     public function scopeForDateRange($query, $from, $to)

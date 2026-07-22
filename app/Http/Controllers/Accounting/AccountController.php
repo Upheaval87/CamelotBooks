@@ -72,7 +72,6 @@ class AccountController extends Controller
         }
 
         $validated['company_id'] = $companyId;
-        $validated['current_balance'] = $validated['opening_balance'] ?? 0;
         $validated['is_active'] = true;
 
         Account::create($validated);

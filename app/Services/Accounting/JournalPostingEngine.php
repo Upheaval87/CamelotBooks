@@ -53,10 +53,6 @@ class JournalPostingEngine
 
             $this->createLines($entry, $data['lines']);
 
-            if ($entry->status === JournalEntry::STATUS_POSTED) {
-                $this->updateAccountBalances($entry);
-            }
-
             $this->logAction($entry, 'created', null, $entry->toArray(), $data['created_by']);
 
             if ($entry->status === JournalEntry::STATUS_POSTED) {
@@ -116,7 +112,6 @@ class JournalPostingEngine
                 $entry->posted_at = now();
                 $entry->save();
 
-                $this->updateAccountBalances($entry);
                 $this->logAction($entry, 'posted', ['status' => JournalEntry::STATUS_DRAFT], ['status' => JournalEntry::STATUS_POSTED], $entry->created_by);
 
                 return $entry;
@@ -130,7 +125,6 @@ class JournalPostingEngine
                 $entry->posted_at = now();
                 $entry->save();
 
-                $this->updateAccountBalances($entry);
                 $this->logAction($entry, 'posted', ['status' => JournalEntry::STATUS_DRAFT], ['status' => JournalEntry::STATUS_POSTED], $entry->created_by);
 
                 return $entry;
@@ -162,8 +156,6 @@ class JournalPostingEngine
             $entry->posted_by = $userId;
             $entry->posted_at = now();
             $entry->save();
-
-            $this->updateAccountBalances($entry);
 
             $this->logAction($entry, 'approved', ['status' => $oldStatus], ['status' => JournalEntry::STATUS_POSTED], $userId);
 
@@ -228,6 +220,8 @@ class JournalPostingEngine
                 'source_module' => 'reversal',
                 'linked_entry_id' => $original->id,
                 'created_by' => $userId,
+                'posted_by' => $initialStatus === JournalEntry::STATUS_POSTED ? $userId : null,
+                'posted_at' => $initialStatus === JournalEntry::STATUS_POSTED ? now() : null,
             ]);
 
             $reversedLines = $original->lines->map(function ($line) {
@@ -244,14 +238,6 @@ class JournalPostingEngine
 
             $this->createLines($reversalEntry, $reversedLines);
 
-            if ($initialStatus === JournalEntry::STATUS_POSTED) {
-                $reversalEntry->posted_by = $userId;
-                $reversalEntry->posted_at = now();
-                $reversalEntry->save();
-
-                $this->updateAccountBalances($reversalEntry);
-            }
-
             $original->status = JournalEntry::STATUS_REVERSED;
             $original->save();
 
@@ -264,6 +250,177 @@ class JournalPostingEngine
 
             return $reversalEntry;
         });
+    }
+
+    public function closePeriod(AccountingPeriod $period, int $userId): ?JournalEntry
+    {
+        return DB::transaction(function () use ($period, $userId) {
+            if (!$period->isOpen()) {
+                throw new InvalidArgumentException('Only open periods can be closed.');
+            }
+
+            $companyId = $period->company_id;
+
+            $draftCount = JournalEntry::where('company_id', $companyId)
+                ->where('status', JournalEntry::STATUS_DRAFT)
+                ->whereBetween('date', [$period->start_date, $period->end_date])
+                ->count();
+
+            if ($draftCount > 0) {
+                throw new InvalidArgumentException(
+                    "Cannot close period: {$draftCount} draft journal entry(ies) must be resolved first."
+                );
+            }
+
+            $pendingCount = JournalEntry::where('company_id', $companyId)
+                ->where('status', JournalEntry::STATUS_PENDING_APPROVAL)
+                ->whereBetween('date', [$period->start_date, $period->end_date])
+                ->count();
+
+            if ($pendingCount > 0) {
+                throw new InvalidArgumentException(
+                    "Cannot close period: {$pendingCount} journal entry(ies) pending approval must be resolved first."
+                );
+            }
+
+            $revenueAccounts = Account::where('company_id', $companyId)
+                ->where('type', 'income')
+                ->where('is_active', true)
+                ->get();
+
+            $expenseAccounts = Account::where('company_id', $companyId)
+                ->where('type', 'expense')
+                ->where('is_active', true)
+                ->get();
+
+            $retainedEarnings = Account::where('company_id', $companyId)
+                ->where('code', '3100')
+                ->first();
+
+            if (!$retainedEarnings) {
+                throw new InvalidArgumentException('Retained Earnings account (3100) not found for this company.');
+            }
+
+            $lines = [];
+            $totalRevenue = 0;
+            $totalExpenses = 0;
+
+            foreach ($revenueAccounts as $account) {
+                $balance = $account->current_balance;
+                if (abs($balance) > 0.005) {
+                    $lines[] = [
+                        'account_id' => $account->id,
+                        'debit' => $balance > 0 ? abs($balance) : 0,
+                        'credit' => $balance < 0 ? abs($balance) : 0,
+                        'memo' => 'Closing entry - revenue',
+                    ];
+                    $totalRevenue += $balance;
+                }
+            }
+
+            foreach ($expenseAccounts as $account) {
+                $balance = $account->current_balance;
+                if (abs($balance) > 0.005) {
+                    $lines[] = [
+                        'account_id' => $account->id,
+                        'debit' => $balance < 0 ? abs($balance) : 0,
+                        'credit' => $balance > 0 ? abs($balance) : 0,
+                        'memo' => 'Closing entry - expense',
+                    ];
+                    $totalExpenses += $balance;
+                }
+            }
+
+            if (empty($lines)) {
+                $period->update([
+                    'status' => 'closed',
+                    'closed_by' => $userId,
+                    'closed_at' => now(),
+                ]);
+
+                $this->logAction(null, 'period_closed_no_entries', null, [
+                    'period_id' => $period->id,
+                    'period_label' => $period->label,
+                ], $userId);
+
+                return null;
+            }
+
+            $netIncome = $totalRevenue - $totalExpenses;
+
+            if (abs($netIncome) > 0.005) {
+                if ($netIncome > 0) {
+                    $lines[] = [
+                        'account_id' => $retainedEarnings->id,
+                        'debit' => 0,
+                        'credit' => abs($netIncome),
+                        'memo' => 'Closing entry - net income to retained earnings',
+                    ];
+                } else {
+                    $lines[] = [
+                        'account_id' => $retainedEarnings->id,
+                        'debit' => abs($netIncome),
+                        'credit' => 0,
+                        'memo' => 'Closing entry - net loss to retained earnings',
+                    ];
+                }
+            }
+
+            $totalDebit = array_sum(array_map(fn($l) => (float) $l['debit'], $lines));
+            $totalCredit = array_sum(array_map(fn($l) => (float) $l['credit'], $lines));
+
+            if (round($totalDebit, 2) !== round($totalCredit, 2)) {
+                throw new InvalidArgumentException(
+                    "Closing entry does not balance. Debit: " . number_format($totalDebit, 2) .
+                    ", Credit: " . number_format($totalCredit, 2)
+                );
+            }
+
+            $closingEntry = $this->post([
+                'company_id' => $companyId,
+                'created_by' => $userId,
+                'date' => $period->end_date->format('Y-m-d'),
+                'memo' => 'Closing entries for ' . $period->label,
+                'is_adjusting_entry' => true,
+                'source_module' => 'period_close',
+                'lines' => $lines,
+            ]);
+
+            $period->update([
+                'status' => 'closed',
+                'closed_by' => $userId,
+                'closed_at' => now(),
+            ]);
+
+            $this->logAction($closingEntry, 'period_closed', ['status' => 'open'], [
+                'status' => 'closed',
+                'period_id' => $period->id,
+                'period_label' => $period->label,
+                'closing_entry_id' => $closingEntry->id,
+            ], $userId);
+
+            return $closingEntry;
+        });
+    }
+
+    public static function verifyLedgerIntegrity(int $companyId): array
+    {
+        $result = JournalEntryLine::whereHas('journalEntry', function ($q) use ($companyId) {
+            $q->where('company_id', $companyId)
+                ->where('status', JournalEntry::STATUS_POSTED);
+        })->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->first();
+
+        $totalDebit = (float) ($result->total_debit ?? 0);
+        $totalCredit = (float) ($result->total_credit ?? 0);
+        $difference = round($totalDebit - $totalCredit, 2);
+
+        return [
+            'total_debit' => $totalDebit,
+            'total_credit' => $totalCredit,
+            'difference' => $difference,
+            'is_balanced' => $difference === 0.0,
+        ];
     }
 
     protected function validateEntry(array $data): void
@@ -315,10 +472,11 @@ class JournalPostingEngine
             throw new InvalidArgumentException('One or more accounts do not belong to company ' . $companyId . '.');
         }
 
-        $nonExistentAccounts = Account::whereNotIn('id', $accountIds)->pluck('id')->toArray();
+        $existingAccountIds = Account::whereIn('id', $accountIds)->pluck('id')->toArray();
+        $missingAccountIds = array_diff($accountIds, $existingAccountIds);
 
-        if (!empty($nonExistentAccounts)) {
-            throw new InvalidArgumentException('One or more accounts do not exist: ' . implode(', ', $nonExistentAccounts));
+        if (!empty($missingAccountIds)) {
+            throw new InvalidArgumentException('One or more accounts do not exist: ' . implode(', ', $missingAccountIds));
         }
 
         $entryDate = $data['date'];
@@ -389,30 +547,6 @@ class JournalPostingEngine
         }
     }
 
-    protected function updateAccountBalances(JournalEntry $entry): void
-    {
-        $entry->load('lines');
-
-        foreach ($entry->lines as $line) {
-            $account = Account::where('id', $line->account_id)->lockForUpdate()->first();
-
-            if (!$account) {
-                throw new InvalidArgumentException("Account {$line->account_id} not found.");
-            }
-
-            $debit = (float) $line->debit;
-            $credit = (float) $line->credit;
-
-            if ($account->isDebitNormal()) {
-                $account->current_balance = (float) $account->current_balance + $debit - $credit;
-            } else {
-                $account->current_balance = (float) $account->current_balance + $credit - $debit;
-            }
-
-            $account->save();
-        }
-    }
-
     protected function calculateTotalDebit(array $lines): float
     {
         $total = 0;
@@ -431,12 +565,12 @@ class JournalPostingEngine
         return $total;
     }
 
-    protected function logAction(JournalEntry $entry, string $action, ?array $oldValues, ?array $newValues, int $userId): void
+    protected function logAction(?JournalEntry $entry, string $action, ?array $oldValues, ?array $newValues, int $userId): void
     {
         AccountAuditLog::create([
-            'company_id' => $entry->company_id,
+            'company_id' => $entry?->company_id ?? ($newValues['period_id'] ?? 0),
             'journalable_type' => JournalEntry::class,
-            'journalable_id' => $entry->id,
+            'journalable_id' => $entry?->id ?? 0,
             'action' => $action,
             'old_values' => $oldValues,
             'new_values' => $newValues,

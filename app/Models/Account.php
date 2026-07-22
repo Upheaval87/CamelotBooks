@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Account extends Model
 {
@@ -20,16 +21,33 @@ class Account extends Model
         'opening_balance',
         'opening_balance_date',
         'currency',
-        'current_balance',
         'is_active',
     ];
 
     protected $casts = [
         'opening_balance' => 'decimal:2',
-        'current_balance' => 'decimal:2',
         'is_active' => 'boolean',
         'opening_balance_date' => 'date',
     ];
+
+    public function getCurrentBalanceAttribute(): float
+    {
+        $postedSum = $this->journalEntryLines()
+            ->whereHas('journalEntry', function ($q) {
+                $q->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED]);
+            })
+            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
+            ->first();
+
+        $totalDebit = (float) ($postedSum->total_debit ?? 0);
+        $totalCredit = (float) ($postedSum->total_credit ?? 0);
+
+        $balance = $this->isDebitNormal()
+            ? $totalDebit - $totalCredit
+            : $totalCredit - $totalDebit;
+
+        return (float) number_format($balance + (float) $this->opening_balance, 2, '.', '');
+    }
 
     public function company(): BelongsTo
     {
@@ -92,5 +110,28 @@ class Account extends Model
         return $balance <= 0
             ? number_format(abs($balance), 2)
             : '(' . number_format($balance, 2) . ')';
+    }
+
+    public static function verifyAllBalances(): array
+    {
+        $accounts = static::with('journalEntryLines.journalEntry')->get();
+        $discrepancies = [];
+
+        foreach ($accounts as $account) {
+            $dbBalance = (float) DB::table('accounts')->where('id', $account->id)->value('current_balance');
+            $computedBalance = $account->current_balance;
+
+            if (round($dbBalance, 2) !== round($computedBalance, 2)) {
+                $discrepancies[] = [
+                    'account_id' => $account->id,
+                    'account_code' => $account->code,
+                    'account_name' => $account->name,
+                    'db_balance' => $dbBalance,
+                    'computed_balance' => $computedBalance,
+                ];
+            }
+        }
+
+        return $discrepancies;
     }
 }
