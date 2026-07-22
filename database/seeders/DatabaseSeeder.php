@@ -191,6 +191,13 @@ class DatabaseSeeder extends Seeder
                 'description' => 'Expenses paid in advance',
             ],
             [
+                'code' => '1150',
+                'name' => 'Tax Receivable',
+                'type' => 'asset',
+                'sub_type' => 'current_asset',
+                'description' => 'Input tax / VAT receivable',
+            ],
+            [
                 'code' => '1500',
                 'name' => 'Property, Plant and Equipment',
                 'type' => 'asset',
@@ -225,6 +232,13 @@ class DatabaseSeeder extends Seeder
                 'type' => 'liability',
                 'sub_type' => 'current_liability',
                 'description' => 'Revenue received but not yet earned',
+            ],
+            [
+                'code' => '2300',
+                'name' => 'Sales Tax Payable',
+                'type' => 'liability',
+                'sub_type' => 'current_liability',
+                'description' => 'Sales tax / VAT collected',
             ],
             [
                 'code' => '2500',
@@ -361,6 +375,7 @@ class DatabaseSeeder extends Seeder
                 'opening_balance' => 0,
                 'opening_balance_date' => null,
                 'currency' => $company->base_currency,
+                'is_bank_account' => ($accountData['code'] === '1000'),
                 'is_active' => true,
             ]);
 

@@ -1,0 +1,105 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Manual Bank Transaction') }}
+            </h2>
+            <a href="{{ route('accounting.bank-accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                {{ __('Back to Accounts') }}
+            </a>
+        </div>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+            @if(session('success'))
+                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <form method="POST" action="{{ route('accounting.bank-accounts.manual-transaction.store') }}">
+                    @csrf
+
+                    <div class="space-y-6">
+                        <div>
+                            <x-input-label for="bank_account_id" value="{{ __('Bank Account') }}" />
+                            <select id="bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <option value="">Select Bank Account</option>
+                                @foreach($bankAccounts as $account)
+                                    <option value="{{ $account->id }}" {{ old('bank_account_id', request('bank_account_id')) == $account->id ? 'selected' : '' }}>
+                                        {{ $account->name }} ({{ number_format($account->current_balance, 2) }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="type" value="{{ __('Transaction Type') }}" />
+                            <select id="type" name="type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <option value="fee" {{ old('type') === 'fee' ? 'selected' : '' }}>Bank Fee</option>
+                                <option value="deposit" {{ old('type') === 'deposit' ? 'selected' : '' }}>Deposit / Other Income</option>
+                                <option value="interest" {{ old('type') === 'interest' ? 'selected' : '' }}>Interest Earned</option>
+                                <option value="other" {{ old('type') === 'other' ? 'selected' : '' }}>Other Expense</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('type')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="transaction_date" value="{{ __('Date') }}" />
+                            <x-text-input id="transaction_date" name="transaction_date" type="date" class="mt-1 block w-full" :value="old('transaction_date', now()->format('Y-m-d'))" required />
+                            <x-input-error :messages="$errors->get('transaction_date')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="amount" value="{{ __('Amount') }}" />
+                            <x-text-input id="amount" name="amount" type="number" step="0.01" min="0.01" class="mt-1 block w-full" :value="old('amount')" required />
+                            <x-input-error :messages="$errors->get('amount')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="debit_account_id" value="{{ __('Debit / Credit Account') }}" />
+                            <p class="text-xs text-gray-500 mb-1">For fees/other expenses, select the expense account to debit. For deposits, select the income account to credit.</p>
+                            <select id="debit_account_id" name="debit_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <option value="">Select Account</option>
+                                @foreach($accounts as $account)
+                                    <option value="{{ $account->id }}" {{ old('debit_account_id') == $account->id ? 'selected' : '' }}>
+                                        {{ $account->code }} - {{ $account->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('debit_account_id')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="description" value="{{ __('Description') }}" />
+                            <x-text-input id="description" name="description" type="text" class="mt-1 block w-full" :value="old('description')" placeholder="Transaction description" required />
+                            <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="reference" value="{{ __('Reference') }}" />
+                            <x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference')" placeholder="Optional reference" />
+                            <x-input-error :messages="$errors->get('reference')" class="mt-2" />
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6">
+                        <a href="{{ route('accounting.bank-accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            {{ __('Cancel') }}
+                        </a>
+                        <x-primary-button type="submit">{{ __('Save Transaction') }}</x-primary-button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

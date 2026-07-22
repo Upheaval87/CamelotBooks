@@ -1,4 +1,4 @@
-<nav x-data="{ open: false, companyOpen: false }" class="bg-white border-b border-gray-100">
+<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
@@ -8,34 +8,57 @@
                     </a>
                 </div>
 
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                <div class="hidden space-x-1 sm:-my-px sm:ms-6 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
                     @if(session('current_company_id'))
-                    <x-nav-link :href="route('accounting.accounts.index')" :active="request()->routeIs('accounting.accounts.*')">
-                        {{ __('Chart of Accounts') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('accounting.journal-entries.index')" :active="request()->routeIs('accounting.journal-entries.*')">
-                        {{ __('Journal Entries') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('accounting.general-ledger.index')" :active="request()->routeIs('accounting.general-ledger.*')">
-                        {{ __('General Ledger') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('accounting.trial-balance.index')" :active="request()->routeIs('accounting.trial-balance.*')">
-                        {{ __('Trial Balance') }}
-                    </x-nav-link>
-
-                    <div class="relative" x-data="{ reportsOpen: false }" @click.away="reportsOpen = false">
-                        <button @click="reportsOpen = !reportsOpen" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none transition">
-                            {{ __('More') }}
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.customers.*') || request()->routeIs('accounting.vendors.*') || request()->routeIs('accounting.invoices.*') || request()->routeIs('accounting.bills.*') || request()->routeIs('accounting.products.*') || request()->routeIs('accounting.credit-notes.*') || request()->routeIs('accounting.vendor-credits.*') || request()->routeIs('accounting.customer-payments.*') || request()->routeIs('accounting.vendor-payments.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('Sales & Purchases') }}
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div x-show="reportsOpen" x-transition x-cloak class="absolute z-50 mt-1 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
-                            <a href="{{ route('accounting.periods.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Accounting Periods') }}</a>
-                            <a href="{{ route('accounting.recurring-journals.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Recurring Journals') }}</a>
-                            <a href="{{ route('branches.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Branches') }}</a>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Sales</div>
+                            <a href="{{ route('accounting.customers.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Customers') }}</a>
+                            <a href="{{ route('accounting.invoices.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Invoices') }}</a>
+                            <a href="{{ route('accounting.credit-notes.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Credit Notes') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Purchases</div>
+                            <a href="{{ route('accounting.vendors.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Vendors') }}</a>
+                            <a href="{{ route('accounting.bills.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Bills') }}</a>
+                            <a href="{{ route('accounting.vendor-credits.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Vendor Credits') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <a href="{{ route('accounting.products.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Products & Services') }}</a>
+                        </div>
+                    </div>
+
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.bank-*') || request()->routeIs('accounting.bank-reconciliation.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('Banking') }}
+                            <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <a href="{{ route('accounting.bank-accounts.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Bank Accounts') }}</a>
+                            <a href="{{ route('accounting.bank-accounts.transfer-form') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Transfer Funds') }}</a>
+                        </div>
+                    </div>
+
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.accounts.*') || request()->routeIs('accounting.journal-entries.*') || request()->routeIs('accounting.general-ledger.*') || request()->routeIs('accounting.trial-balance.*') || request()->routeIs('accounting.periods.*') || request()->routeIs('accounting.recurring-journals.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('Accounting') }}
+                            <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <a href="{{ route('accounting.accounts.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Chart of Accounts') }}</a>
+                            <a href="{{ route('accounting.journal-entries.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Journal Entries') }}</a>
+                            <a href="{{ route('accounting.general-ledger.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('General Ledger') }}</a>
+                            <a href="{{ route('accounting.trial-balance.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Trial Balance') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <a href="{{ route('accounting.periods.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Accounting Periods') }}</a>
+                            <a href="{{ route('accounting.recurring-journals.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Recurring Journals') }}</a>
+                            <a href="{{ route('branches.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Branches') }}</a>
                         </div>
                     </div>
                     @endif
@@ -107,24 +130,22 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
             @if(session('current_company_id'))
-            <x-responsive-nav-link :href="route('accounting.accounts.index')" :active="request()->routeIs('accounting.accounts.*')">
-                {{ __('Chart of Accounts') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.journal-entries.index')" :active="request()->routeIs('accounting.journal-entries.*')">
-                {{ __('Journal Entries') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.general-ledger.index')" :active="request()->routeIs('accounting.general-ledger.*')">
-                {{ __('General Ledger') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.trial-balance.index')" :active="request()->routeIs('accounting.trial-balance.*')">
-                {{ __('Trial Balance') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.periods.index')" :active="request()->routeIs('accounting.periods.*')">
-                {{ __('Periods') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.recurring-journals.index')" :active="request()->routeIs('accounting.recurring-journals.*')">
-                {{ __('Recurring Journals') }}
-            </x-responsive-nav-link>
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Sales & Purchases</div>
+            <x-responsive-nav-link :href="route('accounting.customers.index')" :active="request()->routeIs('accounting.customers.*')">{{ __('Customers') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.invoices.index')" :active="request()->routeIs('accounting.invoices.*')">{{ __('Invoices') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.credit-notes.index')" :active="request()->routeIs('accounting.credit-notes.*')">{{ __('Credit Notes') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.vendors.index')" :active="request()->routeIs('accounting.vendors.*')">{{ __('Vendors') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.bills.index')" :active="request()->routeIs('accounting.bills.*')">{{ __('Bills') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.vendor-credits.index')" :active="request()->routeIs('accounting.vendor-credits.*')">{{ __('Vendor Credits') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.products.index')" :active="request()->routeIs('accounting.products.*')">{{ __('Products') }}</x-responsive-nav-link>
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Banking</div>
+            <x-responsive-nav-link :href="route('accounting.bank-accounts.index')" :active="request()->routeIs('accounting.bank-accounts.*')">{{ __('Bank Accounts') }}</x-responsive-nav-link>
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Accounting</div>
+            <x-responsive-nav-link :href="route('accounting.accounts.index')" :active="request()->routeIs('accounting.accounts.*')">{{ __('Chart of Accounts') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.journal-entries.index')" :active="request()->routeIs('accounting.journal-entries.*')">{{ __('Journal Entries') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.general-ledger.index')" :active="request()->routeIs('accounting.general-ledger.*')">{{ __('General Ledger') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.trial-balance.index')" :active="request()->routeIs('accounting.trial-balance.*')">{{ __('Trial Balance') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.periods.index')" :active="request()->routeIs('accounting.periods.*')">{{ __('Periods') }}</x-responsive-nav-link>
             @endif
         </div>
         <div class="pt-4 pb-1 border-t border-gray-200">

@@ -21,11 +21,13 @@ class Account extends Model
         'opening_balance',
         'opening_balance_date',
         'currency',
+        'is_bank_account',
         'is_active',
     ];
 
     protected $casts = [
         'opening_balance' => 'decimal:2',
+        'is_bank_account' => 'boolean',
         'is_active' => 'boolean',
         'opening_balance_date' => 'date',
     ];
@@ -67,6 +69,11 @@ class Account extends Model
     public function journalEntryLines(): HasMany
     {
         return $this->hasMany(JournalEntryLine::class);
+    }
+
+    public function bankTransactions(): HasMany
+    {
+        return $this->hasMany(BankTransaction::class, 'bank_account_id');
     }
 
     public function isDebitNormal(): bool
