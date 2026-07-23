@@ -202,6 +202,13 @@ class CompanyController extends Controller
                 'description' => 'Input tax / VAT receivable',
             ],
             [
+                'code' => '1200',
+                'name' => 'Inventory',
+                'type' => 'asset',
+                'sub_type' => 'current_asset',
+                'description' => 'Inventory on hand at cost',
+            ],
+            [
                 'code' => '1500',
                 'name' => 'Property, Plant and Equipment',
                 'type' => 'asset',
@@ -350,11 +357,32 @@ class CompanyController extends Controller
                 'description' => 'Legal, accounting, and consulting fees',
             ],
             [
+                'code' => '6700',
+                'name' => 'Inventory Adjustment',
+                'type' => 'expense',
+                'sub_type' => 'cost_of_goods_sold',
+                'description' => 'Stock adjustments, shrinkage, and write-offs',
+            ],
+            [
                 'code' => '7000',
                 'name' => 'Interest Expense',
                 'type' => 'expense',
                 'sub_type' => 'other_expense',
                 'description' => 'Interest on borrowings',
+            ],
+            [
+                'code' => '7200',
+                'name' => 'Realized FX Gain/Loss',
+                'type' => 'expense',
+                'sub_type' => 'other_expense',
+                'description' => 'Realized foreign exchange gains and losses',
+            ],
+            [
+                'code' => '7300',
+                'name' => 'Unrealized FX Gain/Loss',
+                'type' => 'expense',
+                'sub_type' => 'other_expense',
+                'description' => 'Unrealized foreign exchange gains and losses on revaluation',
             ],
         ];
     }

@@ -9,6 +9,7 @@ class AccountingPeriod extends Model
 {
     protected $fillable = [
         'company_id',
+        'fiscal_year_id',
         'label',
         'start_date',
         'end_date',
@@ -26,6 +27,11 @@ class AccountingPeriod extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function fiscalYear(): BelongsTo
+    {
+        return $this->belongsTo(FiscalYear::class);
     }
 
     public function closedByUser(): BelongsTo

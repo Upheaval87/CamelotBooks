@@ -4,6 +4,7 @@ namespace App\Services\Reporting;
 
 use App\Models\Account;
 use App\Models\Company;
+use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use Illuminate\Support\Facades\DB;
@@ -95,6 +96,16 @@ class BalanceSheetService
         $asOf = \Carbon\Carbon::parse($asOfDate);
         $fyYear = $asOf->month >= $fyStartMonth ? $asOf->year : $asOf->year - 1;
         $fyStart = \Carbon\Carbon::create($fyYear, $fyStartMonth, 1)->toDateString();
+
+        $closedFy = FiscalYear::where('company_id', $companyId)
+            ->where('status', 'closed')
+            ->where('start_date', '<=', $asOfDate)
+            ->where('end_date', '>=', $fyStart)
+            ->first();
+
+        if ($closedFy) {
+            return 0.0;
+        }
 
         return $this->incomeStatementService->computeNetIncome($companyId, $branchId, $fyStart, $asOfDate);
     }

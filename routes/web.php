@@ -9,15 +9,23 @@ use App\Http\Controllers\Accounting\BankController;
 use App\Http\Controllers\Accounting\BillController;
 use App\Http\Controllers\Accounting\CashFlowController;
 use App\Http\Controllers\Accounting\CreditNoteController;
+use App\Http\Controllers\Accounting\CostCenterController;
 use App\Http\Controllers\Accounting\CustomerController;
 use App\Http\Controllers\Accounting\CustomerPaymentController;
 use App\Http\Controllers\Accounting\GeneralLedgerController;
+use App\Http\Controllers\Accounting\FiscalYearController;
+use App\Http\Controllers\Accounting\ExchangeRateController;
 use App\Http\Controllers\Accounting\IncomeStatementController;
+use App\Http\Controllers\Accounting\InventoryItemsController;
+use App\Http\Controllers\Accounting\InventoryValuationController;
 use App\Http\Controllers\Accounting\InvoiceController;
 use App\Http\Controllers\Accounting\JournalEntryController;
+use App\Http\Controllers\Accounting\LowStockController;
 use App\Http\Controllers\Accounting\ProductController;
 use App\Http\Controllers\Accounting\RecurringJournalController;
 use App\Http\Controllers\Accounting\ReconciliationController;
+use App\Http\Controllers\Accounting\StockAdjustmentController;
+use App\Http\Controllers\Accounting\StockTransferController;
 use App\Http\Controllers\Accounting\TrialBalanceController;
 use App\Http\Controllers\Accounting\VendorController;
 use App\Http\Controllers\Accounting\VendorCreditController;
@@ -100,6 +108,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('periods/{period}/lock', [AccountingPeriodController::class, 'lock'])->name('periods.lock');
             Route::post('periods/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('periods.reopen');
 
+            // Fiscal Years
+            Route::get('fiscal-years', [FiscalYearController::class, 'index'])->name('fiscal-years.index');
+            Route::post('fiscal-years', [FiscalYearController::class, 'store'])->name('fiscal-years.store');
+            Route::get('fiscal-years/{fiscalYear}', [FiscalYearController::class, 'show'])->name('fiscal-years.show');
+            Route::post('fiscal-years/{fiscalYear}/close', [FiscalYearController::class, 'close'])->name('fiscal-years.close');
+            Route::patch('fiscal-years/{fiscalYear}/reopen', [FiscalYearController::class, 'reopen'])->name('fiscal-years.reopen');
+
+            // Cost Centers
+            Route::get('cost-centers', [CostCenterController::class, 'index'])->name('cost-centers.index');
+            Route::post('cost-centers', [CostCenterController::class, 'store'])->name('cost-centers.store');
+            Route::patch('cost-centers/{costCenter}', [CostCenterController::class, 'update'])->name('cost-centers.update');
+            Route::patch('cost-centers/{costCenter}/toggle', [CostCenterController::class, 'toggle'])->name('cost-centers.toggle');
+
+            // Exchange Rates
+            Route::get('exchange-rates', [ExchangeRateController::class, 'index'])->name('exchange-rates.index');
+            Route::post('exchange-rates', [ExchangeRateController::class, 'store'])->name('exchange-rates.store');
+            Route::delete('exchange-rates/{exchangeRate}', [ExchangeRateController::class, 'destroy'])->name('exchange-rates.destroy');
+            Route::post('exchange-rates/bulk', [ExchangeRateController::class, 'bulkStore'])->name('exchange-rates.bulk');
+
             // Recurring Journals
             Route::get('recurring-journals', [RecurringJournalController::class, 'index'])->name('recurring-journals.index');
             Route::get('recurring-journals/create', [RecurringJournalController::class, 'create'])->name('recurring-journals.create');
@@ -135,6 +162,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
             Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
             Route::patch('products/{product}/toggle', [ProductController::class, 'toggle'])->name('products.toggle');
+
+            // Inventory Items
+            Route::get('inventory-items', [InventoryItemsController::class, 'index'])->name('inventory-items.index');
+            Route::get('inventory-items/{product}', [InventoryItemsController::class, 'show'])->name('inventory-items.show');
+
+            // Stock Adjustments
+            Route::get('stock-adjustments', [StockAdjustmentController::class, 'index'])->name('stock-adjustments.index');
+            Route::get('stock-adjustments/create', [StockAdjustmentController::class, 'create'])->name('stock-adjustments.create');
+            Route::post('stock-adjustments', [StockAdjustmentController::class, 'store'])->name('stock-adjustments.store');
+            Route::get('stock-adjustments/{adjustment}', [StockAdjustmentController::class, 'show'])->name('stock-adjustments.show');
+
+            // Stock Transfers
+            Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
+            Route::get('stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
+            Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
+            Route::get('stock-transfers/{transfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
+
+            // Inventory Valuation
+            Route::get('inventory-valuation', [InventoryValuationController::class, 'index'])->name('inventory-valuation.index');
+            Route::get('inventory-valuation/export/csv', [InventoryValuationController::class, 'exportCsv'])->name('inventory-valuation.export-csv');
+            Route::get('inventory-valuation/export/pdf', [InventoryValuationController::class, 'exportPdf'])->name('inventory-valuation.export-pdf');
+
+            // Low Stock Report
+            Route::get('low-stock', [LowStockController::class, 'index'])->name('low-stock.index');
+            Route::get('low-stock/export/csv', [LowStockController::class, 'exportCsv'])->name('low-stock.export-csv');
 
             // Sales Invoices
             Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');

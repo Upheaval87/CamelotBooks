@@ -14,10 +14,14 @@ class Product extends Model
         'description',
         'sku',
         'type',
+        'tracked_as_inventory',
         'sales_price',
         'purchase_price',
+        'reorder_point',
+        'unit_of_measure',
         'income_account_id',
         'expense_account_id',
+        'inventory_asset_account_id',
         'tax_rate',
         'is_taxable',
         'is_active',
@@ -26,9 +30,11 @@ class Product extends Model
     protected $casts = [
         'sales_price' => 'decimal:2',
         'purchase_price' => 'decimal:2',
+        'reorder_point' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'is_taxable' => 'boolean',
         'is_active' => 'boolean',
+        'tracked_as_inventory' => 'boolean',
     ];
 
     public function company(): BelongsTo
@@ -44,6 +50,21 @@ class Product extends Model
     public function expenseAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'expense_account_id');
+    }
+
+    public function inventoryAssetAccount(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'inventory_asset_account_id');
+    }
+
+    public function costLayers(): HasMany
+    {
+        return $this->hasMany(InventoryCostLayer::class);
+    }
+
+    public function stock(): HasMany
+    {
+        return $this->hasMany(InventoryStock::class);
     }
 
     public function invoiceLines(): HasMany

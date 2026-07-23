@@ -41,6 +41,10 @@ class GeneralLedgerController extends Controller
             $query->where('branch_id', $request->branch_id);
         }
 
+        if ($request->filled('cost_center_id')) {
+            $query->where('cost_center_id', $request->cost_center_id);
+        }
+
         if ($request->filled('status')) {
             $query->whereHas('journalEntry', function ($q) use ($request) {
                 $q->where('status', $request->status);
@@ -94,7 +98,12 @@ class GeneralLedgerController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('accounting.general-ledger.index', compact('glPaginator', 'accounts', 'branches'));
+        $costCenters = \App\Models\CostCenter::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        return view('accounting.general-ledger.index', compact('glPaginator', 'accounts', 'branches', 'costCenters'));
     }
 
     public function account(Request $request, int $accountId)
@@ -118,6 +127,10 @@ class GeneralLedgerController extends Controller
 
         if ($request->filled('branch_id')) {
             $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->filled('cost_center_id')) {
+            $query->where('cost_center_id', $request->cost_center_id);
         }
 
         $lines = $query->orderBy('id')->get();
@@ -151,12 +164,18 @@ class GeneralLedgerController extends Controller
             ->orderBy('name')
             ->get();
 
+        $costCenters = \App\Models\CostCenter::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
         return view('accounting.general-ledger.account', compact(
             'account',
             'openingBalance',
             'transactionsPaginator',
             'closingBalance',
-            'branches'
+            'branches',
+            'costCenters'
         ));
     }
 
@@ -183,6 +202,10 @@ class GeneralLedgerController extends Controller
 
         if ($request->filled('branch_id')) {
             $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->filled('cost_center_id')) {
+            $query->where('cost_center_id', $request->cost_center_id);
         }
 
         $lines = $query->orderBy('account_id')->orderBy('id')->get();
@@ -252,6 +275,14 @@ class GeneralLedgerController extends Controller
             $query->whereHas('journalEntry', function ($q) use ($request) {
                 $q->whereBetween('date', [$request->date_from, $request->date_to]);
             });
+        }
+
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->filled('cost_center_id')) {
+            $query->where('cost_center_id', $request->cost_center_id);
         }
 
         $lines = $query->orderBy('id')->get();

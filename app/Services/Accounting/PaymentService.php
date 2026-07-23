@@ -12,16 +12,19 @@ use App\Models\Invoice;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
 use App\Models\VendorPaymentAllocation;
+use App\Services\Accounting\ForeignCurrencyService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class PaymentService
 {
     protected JournalPostingEngine $postingEngine;
+    protected ForeignCurrencyService $fxService;
 
-    public function __construct(JournalPostingEngine $postingEngine)
+    public function __construct(JournalPostingEngine $postingEngine, ForeignCurrencyService $fxService)
     {
         $this->postingEngine = $postingEngine;
+        $this->fxService = $fxService;
     }
 
     // ─── Customer Receipts ───────────────────────────────────────────
@@ -164,6 +167,8 @@ class PaymentService
             }
 
             $this->logPaymentAction($payment, CustomerPayment::class, 'posted', $oldValues, $payment->toArray(), $userId);
+
+            $this->settleForeignCurrencyGainLoss($payment->company_id, $payment->allocations()->get(), $userId);
 
             return $payment;
         });
@@ -310,6 +315,8 @@ class PaymentService
 
             $this->logPaymentAction($payment, VendorPayment::class, 'posted', $oldValues, $payment->toArray(), $userId);
 
+            $this->settleVendorForeignCurrencyGainLoss($payment->company_id, $payment->allocations()->get(), $userId);
+
             return $payment;
         });
     }
@@ -421,5 +428,73 @@ class PaymentService
             'user_id' => $userId,
             'created_at' => now(),
         ]);
+    }
+
+    protected function settleForeignCurrencyGainLoss(int $companyId, $allocations, int $userId): void
+    {
+        $company = \App\Models\Company::find($companyId);
+        $baseCurrency = $company->base_currency ?? 'USD';
+
+        $totalGainLoss = 0;
+        $payment = null;
+
+        foreach ($allocations as $allocation) {
+            $invoice = Invoice::find($allocation->invoice_id);
+            if (!$invoice || strtoupper($invoice->currency ?? 'USD') === strtoupper($baseCurrency)) {
+                continue;
+            }
+
+            if (!$payment) {
+                $payment = $allocation->payment;
+            }
+
+            $originalBase = (float) $invoice->base_amount;
+            $foreignAmount = (float) $invoice->amount;
+            if ($foreignAmount <= 0) {
+                continue;
+            }
+
+            $proportionateBase = round($originalBase * ((float) $allocation->amount / $foreignAmount), 2);
+            $gainLoss = round((float) $allocation->amount - $proportionateBase, 2);
+            $totalGainLoss += $gainLoss;
+        }
+
+        if ($payment && abs($totalGainLoss) >= 0.01) {
+            $this->fxService->postRealizedGainLossOnCustomerPayment($payment, $totalGainLoss, $userId);
+        }
+    }
+
+    protected function settleVendorForeignCurrencyGainLoss(int $companyId, $allocations, int $userId): void
+    {
+        $company = \App\Models\Company::find($companyId);
+        $baseCurrency = $company->base_currency ?? 'USD';
+
+        $totalGainLoss = 0;
+        $payment = null;
+
+        foreach ($allocations as $allocation) {
+            $bill = \App\Models\Bill::find($allocation->bill_id);
+            if (!$bill || strtoupper($bill->currency ?? 'USD') === strtoupper($baseCurrency)) {
+                continue;
+            }
+
+            if (!$payment) {
+                $payment = $allocation->payment;
+            }
+
+            $originalBase = (float) $bill->base_amount;
+            $foreignAmount = (float) $bill->amount;
+            if ($foreignAmount <= 0) {
+                continue;
+            }
+
+            $proportionateBase = round($originalBase * ((float) $allocation->amount / $foreignAmount), 2);
+            $gainLoss = round((float) $allocation->amount - $proportionateBase, 2);
+            $totalGainLoss += $gainLoss;
+        }
+
+        if ($payment && abs($totalGainLoss) >= 0.01) {
+            $this->fxService->postRealizedGainLossOnVendorPayment($payment, $totalGainLoss, $userId);
+        }
     }
 }

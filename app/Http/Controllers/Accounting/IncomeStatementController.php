@@ -19,28 +19,35 @@ class IncomeStatementController extends Controller
     {
         $companyId = session('current_company_id');
         $branchId = $request->filled('branch_id') ? (int) $request->branch_id : null;
+        $costCenterId = $request->filled('cost_center_id') ? (int) $request->cost_center_id : null;
         $dateFrom = $request->input('date_from', now()->startOfYear()->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->format('Y-m-d'));
         $compareMode = $request->input('compare_mode');
 
-        $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo, $compareMode);
+        $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo, $compareMode, $costCenterId);
 
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('accounting.income-statement.index', array_merge($statement, compact('branches', 'branchId', 'dateFrom', 'dateTo', 'compareMode')));
+        $costCenters = \App\Models\CostCenter::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        return view('accounting.income-statement.index', array_merge($statement, compact('branches', 'branchId', 'costCenters', 'costCenterId', 'dateFrom', 'dateTo', 'compareMode')));
     }
 
     public function exportCsv(Request $request)
     {
         $companyId = session('current_company_id');
         $branchId = $request->filled('branch_id') ? (int) $request->branch_id : null;
+        $costCenterId = $request->filled('cost_center_id') ? (int) $request->cost_center_id : null;
         $dateFrom = $request->input('date_from', now()->startOfYear()->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->format('Y-m-d'));
 
-        $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo);
+        $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo, null, $costCenterId);
 
         $filename = "income_statement_{$dateFrom}_to_{$dateTo}.csv";
 
@@ -81,10 +88,11 @@ class IncomeStatementController extends Controller
     {
         $companyId = session('current_company_id');
         $branchId = $request->filled('branch_id') ? (int) $request->branch_id : null;
+        $costCenterId = $request->filled('cost_center_id') ? (int) $request->cost_center_id : null;
         $dateFrom = $request->input('date_from', now()->startOfYear()->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->format('Y-m-d'));
 
-        $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo);
+        $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo, null, $costCenterId);
         $company = Company::findOrFail($companyId);
 
         $content = view('accounting.income-statement.print', array_merge($statement, compact('company', 'dateFrom', 'dateTo')))->render();

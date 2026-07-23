@@ -15,9 +15,10 @@ class IncomeStatementService
         ?int $branchId,
         string $dateFrom,
         string $dateTo,
-        ?string $compareMode = null
+        ?string $compareMode = null,
+        ?int $costCenterId = null
     ): array {
-        $lines = $this->queryPeriodLines($companyId, $branchId, $dateFrom, $dateTo);
+        $lines = $this->queryPeriodLines($companyId, $branchId, $dateFrom, $dateTo, $costCenterId);
         $accounts = $this->getIncomeExpenseAccounts($companyId);
 
         $result = $this->buildStatement($lines, $accounts);
@@ -27,7 +28,7 @@ class IncomeStatementService
         $result['net_income'] = $result['total_income'] - $result['total_expenses'];
 
         if ($compareMode) {
-            $result['comparison'] = $this->getComparison($companyId, $branchId, $dateFrom, $dateTo, $compareMode);
+            $result['comparison'] = $this->getComparison($companyId, $branchId, $dateFrom, $dateTo, $compareMode, $costCenterId);
         }
 
         return $result;
@@ -58,7 +59,7 @@ class IncomeStatementService
         return $income - $expenses;
     }
 
-    private function queryPeriodLines(int $companyId, ?int $branchId, string $dateFrom, string $dateTo): Collection
+    private function queryPeriodLines(int $companyId, ?int $branchId, string $dateFrom, string $dateTo, ?int $costCenterId = null): Collection
     {
         return JournalEntryLine::select('account_id', DB::raw('SUM(debit) as total_debit'), DB::raw('SUM(credit) as total_credit'))
             ->whereHas('journalEntry', function ($q) use ($companyId, $dateFrom, $dateTo) {
@@ -68,6 +69,7 @@ class IncomeStatementService
                     ->where('date', '<=', $dateTo);
             })
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($costCenterId, fn ($q) => $q->where('cost_center_id', $costCenterId))
             ->groupBy('account_id')
             ->get()
             ->keyBy('account_id');
@@ -128,7 +130,7 @@ class IncomeStatementService
         ];
     }
 
-    private function getComparison(int $companyId, ?int $branchId, string $dateFrom, string $dateTo, string $mode): array
+    private function getComparison(int $companyId, ?int $branchId, string $dateFrom, string $dateTo, string $mode, ?int $costCenterId = null): array
     {
         $start = \Carbon\Carbon::parse($dateFrom);
         $end = \Carbon\Carbon::parse($dateTo);
@@ -144,7 +146,7 @@ class IncomeStatementService
             return [];
         }
 
-        $lines = $this->queryPeriodLines($companyId, $branchId, $compFrom->toDateString(), $compTo->toDateString());
+        $lines = $this->queryPeriodLines($companyId, $branchId, $compFrom->toDateString(), $compTo->toDateString(), $costCenterId);
         $accounts = $this->getIncomeExpenseAccounts($companyId);
         $result = $this->buildStatement($lines, $accounts);
 

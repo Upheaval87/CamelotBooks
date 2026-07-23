@@ -25,10 +25,12 @@ class Company extends Model
         'fiscal_year_start_month',
         'logo',
         'is_active',
+        'allow_negative_stock',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'allow_negative_stock' => 'boolean',
         'fiscal_year_start_month' => 'integer',
     ];
 
@@ -57,6 +59,11 @@ class Company extends Model
     public function accountingPeriods(): HasMany
     {
         return $this->hasMany(AccountingPeriod::class);
+    }
+
+    public function fiscalYears(): HasMany
+    {
+        return $this->hasMany(FiscalYear::class);
     }
 
     public function approvalSetting(): \Illuminate\Database\Eloquent\Relations\HasOne
@@ -92,5 +99,25 @@ class Company extends Model
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
+    }
+
+    public function inventoryStock(): HasMany
+    {
+        return $this->hasMany(InventoryStock::class);
+    }
+
+    public function inventoryCostLayers(): HasMany
+    {
+        return $this->hasMany(InventoryCostLayer::class);
+    }
+
+    public function inventoryAdjustments(): HasMany
+    {
+        return $this->hasMany(InventoryAdjustment::class);
+    }
+
+    public function inventoryTransfers(): HasMany
+    {
+        return $this->hasMany(InventoryTransfer::class);
     }
 }

@@ -8,16 +8,21 @@ use App\Models\Bill;
 use App\Models\BillLine;
 use App\Models\Product;
 use App\Models\Vendor;
+use App\Services\Accounting\ForeignCurrencyService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class BillService
 {
     protected JournalPostingEngine $postingEngine;
+    protected ForeignCurrencyService $fxService;
+    protected InventoryService $inventoryService;
 
-    public function __construct(JournalPostingEngine $postingEngine)
+    public function __construct(JournalPostingEngine $postingEngine, ForeignCurrencyService $fxService, InventoryService $inventoryService)
     {
         $this->postingEngine = $postingEngine;
+        $this->fxService = $fxService;
+        $this->inventoryService = $inventoryService;
     }
 
     public function create(array $data, int $userId): Bill
@@ -117,7 +122,7 @@ class BillService
         return DB::transaction(function () use ($bill, $userId, $companyId, $apAccount, $taxReceivableAccount) {
             $oldValues = $bill->toArray();
 
-            $lines = $bill->lines()->get();
+            $lines = $bill->lines()->with('product')->get();
             $jeLines = [];
 
             $totalDebit = 0;
@@ -155,6 +160,23 @@ class BillService
                     'entity_id' => $bill->id,
                 ];
                 $totalCredit += $line->line_total;
+
+                if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
+                    $qty = (float) $line->quantity;
+                    if ($qty > 0) {
+                        $unitCost = round($line->amount / $qty, 4);
+                        $this->inventoryService->receiveStock(
+                            $companyId,
+                            $line->product_id,
+                            $bill->branch_id,
+                            $qty,
+                            $unitCost,
+                            'bill',
+                            $bill->id,
+                            $bill->bill_date->format('Y-m-d')
+                        );
+                    }
+                }
             }
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
@@ -163,6 +185,8 @@ class BillService
                     ", Credit: " . number_format($totalCredit, 2)
                 );
             }
+
+            $this->fxService->postBillInForeignCurrency($bill, $jeLines, $userId);
 
             $journalEntry = $this->postingEngine->post([
                 'company_id' => $companyId,
@@ -207,7 +231,7 @@ class BillService
                 $apAccount = $this->findAccountByCode($companyId, '2000');
                 $taxReceivableAccount = $this->findAccountByCode($companyId, '1150');
 
-                $lines = $bill->lines()->get();
+                $lines = $bill->lines()->with('product')->get();
                 $jeLines = [];
 
                 foreach ($lines as $line) {
@@ -239,6 +263,23 @@ class BillService
                         'entity_type' => Bill::class,
                         'entity_id' => $bill->id,
                     ];
+
+                    if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
+                        $qty = (float) $line->quantity;
+                        if ($qty > 0) {
+                            $unitCost = round($line->amount / $qty, 4);
+                            $this->inventoryService->receiveStock(
+                                $companyId,
+                                $line->product_id,
+                                $bill->branch_id,
+                                $qty,
+                                $unitCost,
+                                'bill',
+                                $bill->id,
+                                $bill->bill_date->format('Y-m-d')
+                            );
+                        }
+                    }
                 }
 
                 $journalEntry = $this->postingEngine->post([

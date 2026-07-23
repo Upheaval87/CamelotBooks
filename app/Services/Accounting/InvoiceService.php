@@ -8,16 +8,21 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\Product;
+use App\Services\Accounting\ForeignCurrencyService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class InvoiceService
 {
     protected JournalPostingEngine $postingEngine;
+    protected ForeignCurrencyService $fxService;
+    protected InventoryService $inventoryService;
 
-    public function __construct(JournalPostingEngine $postingEngine)
+    public function __construct(JournalPostingEngine $postingEngine, ForeignCurrencyService $fxService, InventoryService $inventoryService)
     {
         $this->postingEngine = $postingEngine;
+        $this->fxService = $fxService;
+        $this->inventoryService = $inventoryService;
     }
 
     public function create(array $data, int $userId): Invoice
@@ -117,7 +122,7 @@ class InvoiceService
         return DB::transaction(function () use ($invoice, $userId, $companyId, $arAccount, $taxPayableAccount) {
             $oldValues = $invoice->toArray();
 
-            $lines = $invoice->lines()->get();
+            $lines = $invoice->lines()->with('product')->get();
             $jeLines = [];
 
             $totalDebit = 0;
@@ -155,6 +160,45 @@ class InvoiceService
                     ];
                     $totalCredit += $line->tax_amount;
                 }
+
+                if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
+                    $cogsAccount = $line->product->expenseAccount;
+                    $invAssetAccount = $line->product->inventoryAssetAccount;
+
+                    if ($cogsAccount && $invAssetAccount) {
+                        $consumedLayers = $this->inventoryService->consumeStock(
+                            $companyId,
+                            $line->product_id,
+                            $invoice->branch_id,
+                            (float) $line->quantity,
+                            $invoice->invoice_date->format('Y-m-d')
+                        );
+
+                        $totalCogs = array_sum(array_column($consumedLayers, 'total_cost'));
+
+                        if ($totalCogs > 0) {
+                            $jeLines[] = [
+                                'account_id' => $cogsAccount->id,
+                                'debit' => $totalCogs,
+                                'credit' => 0,
+                                'memo' => "Invoice {$invoice->invoice_number} - COGS - {$line->description}",
+                                'entity_type' => Invoice::class,
+                                'entity_id' => $invoice->id,
+                            ];
+                            $totalDebit += $totalCogs;
+
+                            $jeLines[] = [
+                                'account_id' => $invAssetAccount->id,
+                                'debit' => 0,
+                                'credit' => $totalCogs,
+                                'memo' => "Invoice {$invoice->invoice_number} - Inventory - {$line->description}",
+                                'entity_type' => Invoice::class,
+                                'entity_id' => $invoice->id,
+                            ];
+                            $totalCredit += $totalCogs;
+                        }
+                    }
+                }
             }
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
@@ -163,6 +207,8 @@ class InvoiceService
                     ", Credit: " . number_format($totalCredit, 2)
                 );
             }
+
+            $this->fxService->postInvoiceInForeignCurrency($invoice, $jeLines, $userId);
 
             $journalEntry = $this->postingEngine->post([
                 'company_id' => $companyId,

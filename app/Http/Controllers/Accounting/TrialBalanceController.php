@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\View;
 
 class TrialBalanceController extends Controller
 {
-    private function computeTrialBalance(int $companyId, string $asOfDate, ?int $branchId = null): array
+    private function computeTrialBalance(int $companyId, string $asOfDate, ?int $branchId = null, ?int $costCenterId = null): array
     {
         $accounts = Account::where('company_id', $companyId)
             ->active()
@@ -34,6 +34,10 @@ class TrialBalanceController extends Controller
 
             if ($branchId) {
                 $lineQuery->where('branch_id', $branchId);
+            }
+
+            if ($costCenterId) {
+                $lineQuery->where('cost_center_id', $costCenterId);
             }
 
             $totalDebitSum = (float) $lineQuery->sum('debit');
@@ -85,8 +89,9 @@ class TrialBalanceController extends Controller
         $asOfDate = $request->input('as_of_date', now()->format('Y-m-d'));
 
         $branchId = $request->filled('branch_id') ? (int) $request->branch_id : null;
+        $costCenterId = $request->filled('cost_center_id') ? (int) $request->cost_center_id : null;
 
-        [$trialBalance, $totalDebit, $totalCredit] = $this->computeTrialBalance($companyId, $asOfDate, $branchId);
+        [$trialBalance, $totalDebit, $totalCredit] = $this->computeTrialBalance($companyId, $asOfDate, $branchId, $costCenterId);
 
         $difference = $totalDebit - $totalCredit;
 
@@ -95,13 +100,20 @@ class TrialBalanceController extends Controller
             ->orderBy('name')
             ->get();
 
+        $costCenters = \App\Models\CostCenter::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
         return view('accounting.trial-balance.index', compact(
             'trialBalance',
             'totalDebit',
             'totalCredit',
             'difference',
             'asOfDate',
-            'branches'
+            'branches',
+            'costCenters',
+            'costCenterId'
         ));
     }
 
@@ -110,8 +122,9 @@ class TrialBalanceController extends Controller
         $companyId = session('current_company_id');
         $asOfDate = $request->input('as_of_date', now()->format('Y-m-d'));
         $branchId = $request->filled('branch_id') ? (int) $request->branch_id : null;
+        $costCenterId = $request->filled('cost_center_id') ? (int) $request->cost_center_id : null;
 
-        [$trialBalance, $totalDebit, $totalCredit] = $this->computeTrialBalance($companyId, $asOfDate, $branchId);
+        [$trialBalance, $totalDebit, $totalCredit] = $this->computeTrialBalance($companyId, $asOfDate, $branchId, $costCenterId);
 
         $filename = 'trial_balance_' . $asOfDate . '.csv';
 
@@ -145,8 +158,9 @@ class TrialBalanceController extends Controller
         $companyId = session('current_company_id');
         $asOfDate = $request->input('as_of_date', now()->format('Y-m-d'));
         $branchId = $request->filled('branch_id') ? (int) $request->branch_id : null;
+        $costCenterId = $request->filled('cost_center_id') ? (int) $request->cost_center_id : null;
 
-        [$trialBalance, $totalDebit, $totalCredit] = $this->computeTrialBalance($companyId, $asOfDate, $branchId);
+        [$trialBalance, $totalDebit, $totalCredit] = $this->computeTrialBalance($companyId, $asOfDate, $branchId, $costCenterId);
 
         $company = Company::findOrFail($companyId);
         $difference = $totalDebit - $totalCredit;

@@ -489,12 +489,14 @@ class JournalPostingEngine
             throw new InvalidArgumentException('No accounting period found for date ' . $entryDate . '.');
         }
 
-        if ($period->isClosed()) {
-            throw new InvalidArgumentException('The accounting period for date ' . $entryDate . ' is closed. No entries can be made.');
-        }
+        if (!($data['skip_period_validation'] ?? false)) {
+            if ($period->isClosed()) {
+                throw new InvalidArgumentException('The accounting period for date ' . $entryDate . ' is closed. No entries can be made.');
+            }
 
-        if ($period->isLocked()) {
-            throw new InvalidArgumentException('The accounting period for date ' . $entryDate . ' is locked. No entries can be made.');
+            if ($period->isLocked()) {
+                throw new InvalidArgumentException('The accounting period for date ' . $entryDate . ' is locked. No entries can be made.');
+            }
         }
 
         $journalNumber = $data['journal_number'] ?? null;
@@ -538,8 +540,12 @@ class JournalPostingEngine
                 'journal_entry_id' => $entry->id,
                 'account_id' => $line['account_id'],
                 'branch_id' => $line['branch_id'] ?? $entry->branch_id,
+                'cost_center_id' => $line['cost_center_id'] ?? null,
                 'debit' => $line['debit'] ?? 0,
                 'credit' => $line['credit'] ?? 0,
+                'foreign_amount' => $line['foreign_amount'] ?? null,
+                'foreign_currency' => $line['foreign_currency'] ?? null,
+                'exchange_rate' => $line['exchange_rate'] ?? null,
                 'memo' => $line['memo'] ?? null,
                 'entity_type' => $line['entity_type'] ?? null,
                 'entity_id' => $line['entity_id'] ?? null,

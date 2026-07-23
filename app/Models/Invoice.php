@@ -22,6 +22,8 @@ class Invoice extends Model
         'amount',
         'amount_paid',
         'currency',
+        'exchange_rate',
+        'base_amount',
         'journal_entry_id',
         'recurring_template_id',
         'created_by',

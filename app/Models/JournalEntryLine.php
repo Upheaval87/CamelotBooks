@@ -11,8 +11,12 @@ class JournalEntryLine extends Model
         'journal_entry_id',
         'account_id',
         'branch_id',
+        'cost_center_id',
         'debit',
         'credit',
+        'foreign_amount',
+        'foreign_currency',
+        'exchange_rate',
         'memo',
         'entity_type',
         'entity_id',
@@ -38,6 +42,11 @@ class JournalEntryLine extends Model
         return $this->belongsTo(Branch::class);
     }
 
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
+    }
+
     public function isDebit(): bool
     {
         return $this->debit > 0;
@@ -57,6 +66,14 @@ class JournalEntryLine extends Model
     {
         if ($branchId) {
             return $query->where('branch_id', $branchId);
+        }
+        return $query;
+    }
+
+    public function scopeForCostCenter($query, ?int $costCenterId)
+    {
+        if ($costCenterId) {
+            return $query->where('cost_center_id', $costCenterId);
         }
         return $query;
     }
