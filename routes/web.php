@@ -1,13 +1,18 @@
 <?php
 
+use App\Http\Controllers\Accounting\AccountClassificationController;
 use App\Http\Controllers\Accounting\AccountController;
 use App\Http\Controllers\Accounting\AccountingPeriodController;
+use App\Http\Controllers\Accounting\AgingReportController;
+use App\Http\Controllers\Accounting\BalanceSheetController;
 use App\Http\Controllers\Accounting\BankController;
 use App\Http\Controllers\Accounting\BillController;
+use App\Http\Controllers\Accounting\CashFlowController;
 use App\Http\Controllers\Accounting\CreditNoteController;
 use App\Http\Controllers\Accounting\CustomerController;
 use App\Http\Controllers\Accounting\CustomerPaymentController;
 use App\Http\Controllers\Accounting\GeneralLedgerController;
+use App\Http\Controllers\Accounting\IncomeStatementController;
 use App\Http\Controllers\Accounting\InvoiceController;
 use App\Http\Controllers\Accounting\JournalEntryController;
 use App\Http\Controllers\Accounting\ProductController;
@@ -202,6 +207,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransactionForm'])->name('bank-reconciliation.create-tx-form');
             Route::post('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransaction'])->name('bank-reconciliation.create-tx');
             Route::post('bank-reconciliation/{reconciliationId}/complete', [ReconciliationController::class, 'complete'])->name('bank-reconciliation.complete');
+
+            // Financial Statements
+            Route::get('income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
+            Route::get('income-statement/export/csv', [IncomeStatementController::class, 'exportCsv'])->name('income-statement.export-csv');
+            Route::get('income-statement/export/pdf', [IncomeStatementController::class, 'exportPdf'])->name('income-statement.export-pdf');
+
+            Route::get('balance-sheet', [BalanceSheetController::class, 'index'])->name('balance-sheet.index');
+            Route::get('balance-sheet/export/csv', [BalanceSheetController::class, 'exportCsv'])->name('balance-sheet.export-csv');
+            Route::get('balance-sheet/export/pdf', [BalanceSheetController::class, 'exportPdf'])->name('balance-sheet.export-pdf');
+
+            Route::get('cash-flow', [CashFlowController::class, 'index'])->name('cash-flow.index');
+            Route::get('cash-flow/export/csv', [CashFlowController::class, 'exportCsv'])->name('cash-flow.export-csv');
+            Route::get('cash-flow/export/pdf', [CashFlowController::class, 'exportPdf'])->name('cash-flow.export-pdf');
+
+            // Aging Reports
+            Route::get('aging/ar-summary', [AgingReportController::class, 'arSummary'])->name('aging.ar-summary');
+            Route::get('aging/ar-detail', [AgingReportController::class, 'arDetail'])->name('aging.ar-detail');
+            Route::get('aging/ap-summary', [AgingReportController::class, 'apSummary'])->name('aging.ap-summary');
+            Route::get('aging/ap-detail', [AgingReportController::class, 'apDetail'])->name('aging.ap-detail');
+            Route::get('aging/export/csv', [AgingReportController::class, 'exportCsv'])->name('aging.export-csv');
+
+            // Account Classification
+            Route::get('account-classification', [AccountClassificationController::class, 'index'])->name('account-classification.index');
+            Route::patch('account-classification/{account}', [AccountClassificationController::class, 'update'])->name('account-classification.update');
         });
     });
 

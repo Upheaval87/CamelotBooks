@@ -61,6 +61,23 @@
                             <a href="{{ route('branches.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Branches') }}</a>
                         </div>
                     </div>
+
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.income-statement.*') || request()->routeIs('accounting.balance-sheet.*') || request()->routeIs('accounting.cash-flow.*') || request()->routeIs('accounting.aging.*') || request()->routeIs('accounting.account-classification.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('Reports') }}
+                            <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <a href="{{ route('accounting.income-statement.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Income Statement') }}</a>
+                            <a href="{{ route('accounting.balance-sheet.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Balance Sheet') }}</a>
+                            <a href="{{ route('accounting.cash-flow.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Cash Flow Statement') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <a href="{{ route('accounting.aging.ar-summary') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('A/R Aging') }}</a>
+                            <a href="{{ route('accounting.aging.ap-summary') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('A/P Aging') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <a href="{{ route('accounting.account-classification.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Account Classification') }}</a>
+                        </div>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -146,6 +163,12 @@
             <x-responsive-nav-link :href="route('accounting.general-ledger.index')" :active="request()->routeIs('accounting.general-ledger.*')">{{ __('General Ledger') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.trial-balance.index')" :active="request()->routeIs('accounting.trial-balance.*')">{{ __('Trial Balance') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.periods.index')" :active="request()->routeIs('accounting.periods.*')">{{ __('Periods') }}</x-responsive-nav-link>
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Reports</div>
+            <x-responsive-nav-link :href="route('accounting.income-statement.index')" :active="request()->routeIs('accounting.income-statement.*')">{{ __('Income Statement') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.balance-sheet.index')" :active="request()->routeIs('accounting.balance-sheet.*')">{{ __('Balance Sheet') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.cash-flow.index')" :active="request()->routeIs('accounting.cash-flow.*')">{{ __('Cash Flow') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.aging.ar-summary')" :active="request()->routeIs('accounting.aging.*')">{{ __('A/R Aging') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.aging.ap-summary')" :active="request()->routeIs('accounting.aging.*')">{{ __('A/P Aging') }}</x-responsive-nav-link>
             @endif
         </div>
         <div class="pt-4 pb-1 border-t border-gray-200">

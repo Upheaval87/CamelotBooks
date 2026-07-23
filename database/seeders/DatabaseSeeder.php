@@ -161,6 +161,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'asset',
                 'sub_type' => 'current_asset',
                 'description' => 'Cash on hand and in banks',
+                'cash_flow_section' => null,
             ],
             [
                 'code' => '1010',
@@ -168,6 +169,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'asset',
                 'sub_type' => 'current_asset',
                 'parent_code' => '1000',
+                'cash_flow_section' => null,
             ],
             [
                 'code' => '1100',
@@ -175,6 +177,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'asset',
                 'sub_type' => 'current_asset',
                 'description' => 'Amounts owed by customers',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '1200',
@@ -182,6 +185,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'asset',
                 'sub_type' => 'current_asset',
                 'description' => 'Goods held for sale',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '1300',
@@ -189,6 +193,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'asset',
                 'sub_type' => 'current_asset',
                 'description' => 'Expenses paid in advance',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '1150',
@@ -196,6 +201,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'asset',
                 'sub_type' => 'current_asset',
                 'description' => 'Input tax / VAT receivable',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '1500',
@@ -203,6 +209,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'asset',
                 'sub_type' => 'non_current_asset',
                 'description' => 'Fixed assets',
+                'cash_flow_section' => 'investing',
             ],
             [
                 'code' => '1600',
@@ -211,6 +218,8 @@ class DatabaseSeeder extends Seeder
                 'sub_type' => 'non_current_asset',
                 'parent_code' => '1500',
                 'description' => 'Total depreciation of fixed assets',
+                'cash_flow_section' => null,
+                'is_non_cash' => true,
             ],
             [
                 'code' => '2000',
@@ -218,6 +227,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'liability',
                 'sub_type' => 'current_liability',
                 'description' => 'Amounts owed to suppliers',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '2100',
@@ -225,6 +235,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'liability',
                 'sub_type' => 'current_liability',
                 'description' => 'Expenses incurred but not yet paid',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '2200',
@@ -232,6 +243,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'liability',
                 'sub_type' => 'current_liability',
                 'description' => 'Revenue received but not yet earned',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '2300',
@@ -239,6 +251,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'liability',
                 'sub_type' => 'current_liability',
                 'description' => 'Sales tax / VAT collected',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '2500',
@@ -246,6 +259,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'liability',
                 'sub_type' => 'non_current_liability',
                 'description' => 'Liabilities due beyond one year',
+                'cash_flow_section' => 'financing',
             ],
             [
                 'code' => '3000',
@@ -253,6 +267,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'equity',
                 'sub_type' => 'equity',
                 'description' => 'Owner investment in the business',
+                'cash_flow_section' => 'financing',
             ],
             [
                 'code' => '3100',
@@ -260,6 +275,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'equity',
                 'sub_type' => 'equity',
                 'description' => 'Accumulated profits retained in the business',
+                'cash_flow_section' => 'financing',
             ],
             [
                 'code' => '3200',
@@ -267,6 +283,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'equity',
                 'sub_type' => 'equity',
                 'description' => 'Net income for the current period',
+                'cash_flow_section' => 'financing',
             ],
             [
                 'code' => '4000',
@@ -330,6 +347,7 @@ class DatabaseSeeder extends Seeder
                 'type' => 'expense',
                 'sub_type' => 'operating_expense',
                 'description' => 'Depreciation of fixed assets',
+                'is_non_cash' => true,
             ],
             [
                 'code' => '6500',
@@ -377,6 +395,8 @@ class DatabaseSeeder extends Seeder
                 'currency' => $company->base_currency,
                 'is_bank_account' => ($accountData['code'] === '1000'),
                 'is_active' => true,
+                'cash_flow_section' => $accountData['cash_flow_section'] ?? null,
+                'is_non_cash' => $accountData['is_non_cash'] ?? false,
             ]);
 
             $createdAccounts[$accountData['code']] = $account->id;

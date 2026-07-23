@@ -149,7 +149,7 @@ class TrialBalanceController extends Controller
 
         $company = Company::findOrFail($companyId);
 
-        $pdf = new \TCPDF\TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
         $pdf->SetCreator('CamelotBooks');
         $pdf->SetTitle('Trial Balance - ' . $asOfDate);
         $pdf->setHeaderFont(['helvetica', '', 8]);

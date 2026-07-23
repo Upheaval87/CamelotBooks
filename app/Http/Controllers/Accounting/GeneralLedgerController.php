@@ -274,7 +274,7 @@ class GeneralLedgerController extends Controller
         $closingBalance = $runningBalance;
         $company = Company::findOrFail($companyId);
 
-        $pdf = new \TCPDF\TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf = new \TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
         $pdf->SetCreator('CamelotBooks');
         $pdf->SetTitle('Account Statement - ' . $account->code . ' ' . $account->name);
         $pdf->setHeaderFont(['helvetica', '', 8]);

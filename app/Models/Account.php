@@ -23,12 +23,15 @@ class Account extends Model
         'currency',
         'is_bank_account',
         'is_active',
+        'cash_flow_section',
+        'is_non_cash',
     ];
 
     protected $casts = [
         'opening_balance' => 'decimal:2',
         'is_bank_account' => 'boolean',
         'is_active' => 'boolean',
+        'is_non_cash' => 'boolean',
         'opening_balance_date' => 'date',
     ];
 
