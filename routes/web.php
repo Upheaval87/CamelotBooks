@@ -230,7 +230,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Account Classification
             Route::get('account-classification', [AccountClassificationController::class, 'index'])->name('account-classification.index');
-            Route::patch('account-classification/{account}', [AccountClassificationController::class, 'update'])->name('account-classification.update');
+            Route::post('account-classification', [AccountClassificationController::class, 'update'])->name('account-classification.update');
         });
     });
 

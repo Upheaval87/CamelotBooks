@@ -19,9 +19,8 @@
                     <p class="text-sm text-gray-500 mt-1">Assign cash flow section and non-cash flags to accounts used in the indirect method cash flow statement.</p>
                 </div>
                 <div class="overflow-x-auto">
-                    <form method="POST" action="{{ route('accounting.account-classification.index') }}">
+                    <form method="POST" action="{{ route('accounting.account-classification.update') }}">
                         @csrf
-                        @method('PATCH')
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
