@@ -252,6 +252,27 @@ class CompanyController extends Controller
                 'description' => 'Sales tax / VAT collected',
             ],
             [
+                'code' => '2400',
+                'name' => 'PAYE Payable',
+                'type' => 'liability',
+                'sub_type' => 'current_liability',
+                'description' => 'Income tax deducted from employees',
+            ],
+            [
+                'code' => '2410',
+                'name' => 'Pension Payable',
+                'type' => 'liability',
+                'sub_type' => 'current_liability',
+                'description' => 'Employee and employer pension contributions',
+            ],
+            [
+                'code' => '2420',
+                'name' => 'Net Pay Payable',
+                'type' => 'liability',
+                'sub_type' => 'current_liability',
+                'description' => 'Salaries owed to employees',
+            ],
+            [
                 'code' => '2500',
                 'name' => 'Long-term Liabilities',
                 'type' => 'liability',
@@ -313,6 +334,13 @@ class CompanyController extends Controller
                 'type' => 'expense',
                 'sub_type' => 'operating_expense',
                 'description' => 'Employee salaries and wages',
+            ],
+            [
+                'code' => '6010',
+                'name' => 'Employer Pension Expense',
+                'type' => 'expense',
+                'sub_type' => 'operating_expense',
+                'description' => 'Employer contribution to pension scheme',
             ],
             [
                 'code' => '6100',

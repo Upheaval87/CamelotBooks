@@ -12,6 +12,7 @@ use App\Http\Controllers\Accounting\CreditNoteController;
 use App\Http\Controllers\Accounting\CostCenterController;
 use App\Http\Controllers\Accounting\CustomerController;
 use App\Http\Controllers\Accounting\CustomerPaymentController;
+use App\Http\Controllers\Accounting\EmployeeController;
 use App\Http\Controllers\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Accounting\FiscalYearController;
 use App\Http\Controllers\Accounting\ExchangeRateController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Accounting\InventoryValuationController;
 use App\Http\Controllers\Accounting\InvoiceController;
 use App\Http\Controllers\Accounting\JournalEntryController;
 use App\Http\Controllers\Accounting\LowStockController;
+use App\Http\Controllers\Accounting\PayrollRunController;
 use App\Http\Controllers\Accounting\ProductController;
 use App\Http\Controllers\Accounting\RecurringJournalController;
 use App\Http\Controllers\Accounting\ReconciliationController;
@@ -187,6 +189,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Low Stock Report
             Route::get('low-stock', [LowStockController::class, 'index'])->name('low-stock.index');
             Route::get('low-stock/export/csv', [LowStockController::class, 'exportCsv'])->name('low-stock.export-csv');
+
+            // Employees
+            Route::get('employees', [EmployeeController::class, 'index'])->name('employees.index');
+            Route::get('employees/create', [EmployeeController::class, 'create'])->name('employees.create');
+            Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
+            Route::get('employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+            Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+            Route::put('employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+            Route::patch('employees/{employee}/toggle', [EmployeeController::class, 'toggle'])->name('employees.toggle');
+
+            // Payroll Runs
+            Route::get('payroll-runs', [PayrollRunController::class, 'index'])->name('payroll-runs.index');
+            Route::get('payroll-runs/create', [PayrollRunController::class, 'create'])->name('payroll-runs.create');
+            Route::post('payroll-runs', [PayrollRunController::class, 'store'])->name('payroll-runs.store');
+            Route::get('payroll-runs/{run}', [PayrollRunController::class, 'show'])->name('payroll-runs.show');
+            Route::post('payroll-runs/{run}/post', [PayrollRunController::class, 'post'])->name('payroll-runs.post');
+            Route::post('payroll-runs/{run}/pay-employee/{employeeId}', [PayrollRunController::class, 'payEmployee'])->name('payroll-runs.pay-employee');
+            Route::post('payroll-runs/{run}/remit-paye', [PayrollRunController::class, 'remitPaye'])->name('payroll-runs.remit-paye');
+            Route::post('payroll-runs/{run}/remit-pension', [PayrollRunController::class, 'remitPension'])->name('payroll-runs.remit-pension');
+            Route::get('payroll-runs/{run}/payslip/{itemId}', [PayrollRunController::class, 'payslip'])->name('payroll-runs.payslip');
+            Route::get('payroll-runs/{run}/payslips', [PayrollRunController::class, 'payslips'])->name('payroll-runs.payslips');
+            Route::get('payroll-runs/{run}/paye-schedule', [PayrollRunController::class, 'payeRemittanceSchedule'])->name('payroll-runs.paye-schedule');
+            Route::get('payroll-runs/{run}/pension-schedule', [PayrollRunController::class, 'pensionRemittanceSchedule'])->name('payroll-runs.pension-schedule');
+            Route::post('paye-tables', [PayrollRunController::class, 'storePayeTable'])->name('paye-tables.store');
+            Route::post('pension-schemes', [PayrollRunController::class, 'storePensionScheme'])->name('pension-schemes.store');
 
             // Sales Invoices
             Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
