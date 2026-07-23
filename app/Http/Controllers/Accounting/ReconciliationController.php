@@ -36,7 +36,7 @@ class ReconciliationController extends Controller
             ->orderByDesc('created_at')
             ->paginate(15);
 
-        return view('accounting.reconciliation.index', compact('bankAccount', 'reconciliations'));
+        return view('accounting.bank-reconciliation.index', compact('bankAccount', 'reconciliations'));
     }
 
     public function importForm(int $bankAccountId)
@@ -50,7 +50,7 @@ class ReconciliationController extends Controller
 
         abort_unless($bankAccount, 404);
 
-        return view('accounting.reconciliation.import', compact('bankAccount'));
+        return view('accounting.bank-reconciliation.import', compact('bankAccount'));
     }
 
     public function import(Request $request, int $bankAccountId)
@@ -88,7 +88,7 @@ class ReconciliationController extends Controller
                 $companyId
             );
 
-            return redirect()->route('accounting.reconciliation.show', $reconciliation->id)
+            return redirect()->route('accounting.bank-reconciliation.show', $reconciliation->id)
                 ->with('success', 'Statement imported. Reconciliation started.');
         } catch (\InvalidArgumentException $e) {
             return redirect()->back()->withInput()->withErrors(['error' => $e->getMessage()]);
@@ -123,7 +123,7 @@ class ReconciliationController extends Controller
 
         $summary = $this->reconciliationService->getReconciliationSummary($reconciliationId);
 
-        return view('accounting.reconciliation.show', compact(
+        return view('accounting.bank-reconciliation.show', compact(
             'reconciliation',
             'unmatchedStatementLines',
             'unreconciledTransactions',
@@ -217,7 +217,7 @@ class ReconciliationController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.reconciliation.create-transaction', compact('reconciliation', 'accounts'));
+        return view('accounting.bank-reconciliation.create-transaction', compact('reconciliation', 'accounts'));
     }
 
     public function createTransaction(Request $request, int $reconciliationId)
@@ -274,7 +274,7 @@ class ReconciliationController extends Controller
         try {
             $this->reconciliationService->completeReconciliation($reconciliationId, auth()->id());
 
-            return redirect()->route('accounting.reconciliation.index', $reconciliation->bank_account_id)
+            return redirect()->route('accounting.bank-reconciliation.index', $reconciliation->bank_account_id)
                 ->with('success', 'Reconciliation completed successfully.');
         } catch (\InvalidArgumentException $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

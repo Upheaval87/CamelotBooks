@@ -22,7 +22,7 @@ class BankController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.bank.index', compact('bankAccounts'));
+        return view('accounting.bank-accounts.index', compact('bankAccounts'));
     }
 
     public function register(int $bankAccountId, Request $request)
@@ -43,7 +43,7 @@ class BankController extends Controller
 
         $reconciledBalance = $this->bankService->getReconciledBalance($bankAccountId);
 
-        return view('accounting.bank.register', compact('bankAccount', 'transactions', 'reconciledBalance', 'fromDate', 'toDate'));
+        return view('accounting.bank-accounts.register', compact('bankAccount', 'transactions', 'reconciledBalance', 'fromDate', 'toDate'));
     }
 
     public function transferForm()
@@ -56,7 +56,7 @@ class BankController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('accounting.bank.transfer', compact('bankAccounts'));
+        return view('accounting.bank-accounts.transfer', compact('bankAccounts'));
     }
 
     public function transfer(Request $request)
@@ -82,7 +82,7 @@ class BankController extends Controller
                 auth()->id()
             );
 
-            return redirect()->route('accounting.bank.index')
+            return redirect()->route('accounting.bank-accounts.index')
                 ->with('success', 'Transfer completed successfully.');
         } catch (\InvalidArgumentException $e) {
             return redirect()->back()->withInput()->withErrors(['error' => $e->getMessage()]);
@@ -106,7 +106,7 @@ class BankController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.bank.manual-transaction', compact('bankAccount', 'accounts'));
+        return view('accounting.bank-accounts.manual-transaction', compact('bankAccount', 'accounts'));
     }
 
     public function storeManualTransaction(Request $request)
@@ -129,7 +129,7 @@ class BankController extends Controller
         try {
             $transaction = $this->bankService->createManualTransaction($validated, auth()->id());
 
-            return redirect()->route('accounting.bank.register', $validated['bank_account_id'])
+            return redirect()->route('accounting.bank-accounts.register', $validated['bank_account_id'])
                 ->with('success', 'Transaction created successfully.');
         } catch (\InvalidArgumentException $e) {
             return redirect()->back()->withInput()->withErrors(['error' => $e->getMessage()]);
