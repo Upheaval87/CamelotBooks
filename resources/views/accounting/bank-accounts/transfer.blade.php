@@ -25,7 +25,7 @@
             @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('accounting.bank-accounts.transfer.store') }}">
+                <form method="POST" action="{{ route('accounting.bank-accounts.transfer') }}">
                     @csrf
 
                     <div class="space-y-6">

@@ -5,7 +5,7 @@
                 {{ __('Bank Reconciliation') }} — {{ $bankAccount->name ?? '' }}
             </h2>
             <div class="flex items-center space-x-3">
-                <a href="{{ route('accounting.bank-reconciliation.import', ['bank_account_id' => $bankAccount->id ?? '']) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <a href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id ?? '') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     {{ __('Import Statement') }}
                 </a>
                 <a href="{{ route('accounting.bank-accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
@@ -55,7 +55,7 @@
                             <h3 class="text-lg font-semibold text-gray-800">{{ __('Start New Reconciliation') }}</h3>
                             <p class="text-sm text-gray-500 mt-1">Book balance: {{ number_format($bankAccount->current_balance, 2) }}</p>
                         </div>
-                        <a href="{{ route('accounting.bank-reconciliation.create', ['bank_account_id' => $bankAccount->id]) }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <a href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id) }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Start Reconciliation') }}
                         </a>
                     </div>

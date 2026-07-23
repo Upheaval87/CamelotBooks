@@ -5,7 +5,7 @@
                 {{ __('Reconciliation') }} — {{ $reconciliation->bankAccount->name ?? '' }}
             </h2>
             <div class="flex items-center space-x-3">
-                <a href="{{ route('accounting.bank-reconciliation.import', ['bank_account_id' => $reconciliation->bank_account_id]) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <a href="{{ route('accounting.bank-reconciliation.import-form', $reconciliation->bank_account_id) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     {{ __('Import Statement') }}
                 </a>
                 <a href="{{ route('accounting.bank-reconciliation.index', ['bank_account_id' => $reconciliation->bank_account_id]) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
@@ -183,7 +183,7 @@
                                         <td class="px-6 py-4 text-sm text-gray-500">{{ $line->bankTransaction->description ?? '—' }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format(abs(($line->bankTransaction->credit ?? 0) - ($line->bankTransaction->debit ?? 0)), 2) }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <form method="POST" action="{{ route('accounting.bank-reconciliation.unmatch', $line) }}" class="inline">
+                                            <form method="POST" action="{{ route('accounting.bank-reconciliation.unmatch', $reconciliation->id) }}" class="inline">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 hover:text-red-900 text-sm">Unmatch</button>
@@ -208,7 +208,7 @@
                 return;
             }
             if (confirm('Match this statement line with the first available book transaction?')) {
-                fetch('{{ route("accounting.bank-reconciliation.match") }}', {
+                fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -216,8 +216,10 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        reconciliation_id: {{ $reconciliation->id }},
-                        statement_line_id: lineId
+                        matches: [{
+                            bank_statement_line_id: lineId,
+                            amount: 0
+                        }]
                     })
                 }).then(response => response.json()).then(data => {
                     if (data.success) {
@@ -231,7 +233,7 @@
 
         function matchTransaction(transactionId) {
             if (confirm('Match this book transaction with the first available statement line?')) {
-                fetch('{{ route("accounting.bank-reconciliation.match-transaction") }}', {
+                fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -239,8 +241,10 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        reconciliation_id: {{ $reconciliation->id }},
-                        bank_transaction_id: transactionId
+                        matches: [{
+                            bank_transaction_id: transactionId,
+                            amount: 0
+                        }]
                     })
                 }).then(response => response.json()).then(data => {
                     if (data.success) {

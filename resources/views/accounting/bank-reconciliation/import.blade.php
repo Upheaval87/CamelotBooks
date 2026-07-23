@@ -26,7 +26,7 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Upload CSV Statement') }}</h3>
-                <form method="POST" action="{{ route('accounting.bank-reconciliation.import.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('accounting.bank-reconciliation.import', $bankAccount->id) }}" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="bank_account_id" value="{{ $bankAccount->id }}" />
 

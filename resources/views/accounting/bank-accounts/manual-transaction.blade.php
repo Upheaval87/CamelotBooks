@@ -25,21 +25,14 @@
             @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('accounting.bank-accounts.manual-transaction.store') }}">
+                <form method="POST" action="{{ route('accounting.bank-accounts.store-manual', $bankAccount->id) }}">
                     @csrf
 
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="bank_account_id" value="{{ __('Bank Account') }}" />
-                            <select id="bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="">Select Bank Account</option>
-                                @foreach($bankAccounts as $account)
-                                    <option value="{{ $account->id }}" {{ old('bank_account_id', request('bank_account_id')) == $account->id ? 'selected' : '' }}>
-                                        {{ $account->name }} ({{ number_format($account->current_balance, 2) }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
+                            <input type="text" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-gray-50" value="{{ $bankAccount->name }}" disabled />
+                            <input type="hidden" name="bank_account_id" value="{{ $bankAccount->id }}" />
                         </div>
 
                         <div>
