@@ -11,6 +11,7 @@ use App\Models\JournalEntryLine;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\View;
 
 class GeneralLedgerController extends Controller
 {
@@ -274,68 +275,13 @@ class GeneralLedgerController extends Controller
         $closingBalance = $runningBalance;
         $company = Company::findOrFail($companyId);
 
-        $pdf = new \TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
-        $pdf->SetCreator('CamelotBooks');
-        $pdf->SetTitle('Account Statement - ' . $account->code . ' ' . $account->name);
-        $pdf->setHeaderFont(['helvetica', '', 8]);
-        $pdf->setFooterFont(['helvetica', '', 8]);
-        $pdf->SetMargins(15, 27, 15);
-        $pdf->SetAutoPageBreak(true, 20);
-        $pdf->AddPage();
+        $content = view('accounting.general-ledger.print', compact(
+            'account', 'company', 'openingBalance', 'closingBalance', 'transactions'
+        ))->render();
 
-        $pdf->SetFont('helvetica', 'B', 16);
-        $pdf->Cell(0, 10, $company->name, 0, 1, 'L');
-
-        $pdf->SetFont('helvetica', 'B', 12);
-        $pdf->Cell(0, 8, 'Account Statement', 0, 1, 'L');
-
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(0, 6, 'Account: ' . $account->code . ' - ' . $account->name, 0, 1, 'L');
-        $pdf->Cell(0, 6, 'Type: ' . ucfirst($account->type), 0, 1, 'L');
-        $pdf->Ln(4);
-
-        $pdf->SetFont('helvetica', 'B', 10);
-        $pdf->Cell(0, 6, 'Opening Balance: ' . number_format($openingBalance, 2), 0, 1, 'L');
-        $pdf->Ln(4);
-
-        $pdf->SetFont('helvetica', 'B', 9);
-        $colWidths = [25, 30, 25, 50, 30, 30, 35];
-        $tableHeaders = ['Date', 'Journal #', 'Branch', 'Memo', 'Debit', 'Credit', 'Balance'];
-
-        $pdf->SetFillColor(68, 68, 68);
-        $pdf->SetTextColor(255);
-        for ($i = 0; $i < count($tableHeaders); $i++) {
-            $pdf->Cell($colWidths[$i], 7, $tableHeaders[$i], 1, 0, 'C', true);
-        }
-        $pdf->Ln();
-
-        $pdf->SetFont('helvetica', '', 8);
-        $pdf->SetTextColor(0);
-
-        foreach ($transactions as $txn) {
-            $line = $txn['line'];
-            $row = [
-                $line->journalEntry->date->format('Y-m-d'),
-                $line->journalEntry->journal_number,
-                $line->journalEntry->branch->name ?? '-',
-                mb_substr($line->memo ?? $line->journalEntry->memo ?? '', 0, 30),
-                (float) $line->debit > 0 ? number_format((float) $line->debit, 2) : '',
-                (float) $line->credit > 0 ? number_format((float) $line->credit, 2) : '',
-                number_format($txn['running_balance'], 2),
-            ];
-            for ($i = 0; $i < count($row); $i++) {
-                $align = ($i >= 4) ? 'R' : 'L';
-                $pdf->Cell($colWidths[$i], 6, $row[$i], 1, 0, $align);
-            }
-            $pdf->Ln();
-        }
-
-        $pdf->SetFont('helvetica', 'B', 10);
-        $pdf->Cell(0, 8, '', 0, 1);
-        $pdf->Cell(190, 8, 'Closing Balance:', 1, 0, 'R');
-        $pdf->Cell(35, 8, number_format($closingBalance, 2), 1, 1, 'R');
-
-        $filename = 'account_statement_' . $account->code . '_' . now()->format('Y-m-d') . '.pdf';
-        $pdf->Output($filename, 'D');
+        return response()->view('accounting.print-export', [
+            'title' => 'Account Statement - ' . $account->code . ' ' . $account->name,
+            'content' => $content,
+        ])->header('Content-Type', 'text/html');
     }
 }

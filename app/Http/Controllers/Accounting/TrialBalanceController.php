@@ -9,6 +9,7 @@ use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\View;
 
 class TrialBalanceController extends Controller
 {
@@ -148,59 +149,15 @@ class TrialBalanceController extends Controller
         [$trialBalance, $totalDebit, $totalCredit] = $this->computeTrialBalance($companyId, $asOfDate, $branchId);
 
         $company = Company::findOrFail($companyId);
-
-        $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-        $pdf->SetCreator('CamelotBooks');
-        $pdf->SetTitle('Trial Balance - ' . $asOfDate);
-        $pdf->setHeaderFont(['helvetica', '', 8]);
-        $pdf->setFooterFont(['helvetica', '', 8]);
-        $pdf->SetMargins(15, 27, 15);
-        $pdf->SetAutoPageBreak(true, 20);
-        $pdf->AddPage();
-
-        $pdf->SetFont('helvetica', 'B', 16);
-        $pdf->Cell(0, 10, $company->name, 0, 1, 'L');
-
-        $pdf->SetFont('helvetica', 'B', 12);
-        $pdf->Cell(0, 8, 'Trial Balance', 0, 1, 'L');
-
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(0, 6, 'As of: ' . $asOfDate, 0, 1, 'L');
-        $pdf->Ln(4);
-
-        $pdf->SetFont('helvetica', 'B', 9);
-        $colWidths = [40, 80, 35, 35];
-        $tableHeaders = ['Account Code', 'Account Name', 'Debit Balance', 'Credit Balance'];
-
-        $pdf->SetFillColor(68, 68, 68);
-        $pdf->SetTextColor(255);
-        for ($i = 0; $i < count($tableHeaders); $i++) {
-            $pdf->Cell($colWidths[$i], 7, $tableHeaders[$i], 1, 0, 'C', true);
-        }
-        $pdf->Ln();
-
-        $pdf->SetFont('helvetica', '', 8);
-        $pdf->SetTextColor(0);
-
-        foreach ($trialBalance as $row) {
-            $pdf->Cell($colWidths[0], 6, $row['account']->code, 1, 0, 'L');
-            $pdf->Cell($colWidths[1], 6, $row['account']->name, 1, 0, 'L');
-            $pdf->Cell($colWidths[2], 6, $row['debit_balance'] > 0 ? number_format($row['debit_balance'], 2) : '', 1, 0, 'R');
-            $pdf->Cell($colWidths[3], 6, $row['credit_balance'] > 0 ? number_format($row['credit_balance'], 2) : '', 1, 0, 'R');
-            $pdf->Ln();
-        }
-
-        $pdf->SetFont('helvetica', 'B', 9);
-        $pdf->Cell($colWidths[0] + $colWidths[1], 8, 'Totals', 1, 0, 'R');
-        $pdf->Cell($colWidths[2], 8, number_format($totalDebit, 2), 1, 0, 'R');
-        $pdf->Cell($colWidths[3], 8, number_format($totalCredit, 2), 1, 0, 'R');
-        $pdf->Ln();
-
         $difference = $totalDebit - $totalCredit;
-        $pdf->SetFont('helvetica', 'B', 10);
-        $pdf->Cell(0, 8, 'Difference: ' . number_format($difference, 2), 0, 1, 'R');
 
-        $filename = 'trial_balance_' . $asOfDate . '.pdf';
-        $pdf->Output($filename, 'D');
+        $content = view('accounting.trial-balance.print', compact(
+            'trialBalance', 'totalDebit', 'totalCredit', 'difference', 'company', 'asOfDate'
+        ))->render();
+
+        return response()->view('accounting.print-export', [
+            'title' => "Trial Balance as of {$asOfDate}",
+            'content' => $content,
+        ])->header('Content-Type', 'text/html');
     }
 }
