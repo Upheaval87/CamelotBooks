@@ -12,6 +12,7 @@ class Bill extends Model
     protected $fillable = [
         'company_id',
         'branch_id',
+        'cost_center_id',
         'vendor_id',
         'bill_number',
         'internal_number',

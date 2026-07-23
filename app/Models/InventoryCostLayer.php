@@ -11,6 +11,7 @@ class InventoryCostLayer extends Model
         'company_id',
         'product_id',
         'branch_id',
+        'cost_center_id',
         'quantity_remaining',
         'unit_cost',
         'source_type',

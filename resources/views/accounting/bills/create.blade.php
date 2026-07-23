@@ -82,6 +82,7 @@
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tax Rate %</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost Center</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Line Total</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                                 </tr>
@@ -125,6 +126,7 @@
 
     <script>
         const expenseAccounts = @json($expenseAccounts);
+        const costCenters = @json($costCenters);
         let lineIndex = 0;
 
         function updateTotals() {
@@ -151,6 +153,9 @@
             const accountOptions = expenseAccounts.map(a =>
                 `<option value="${a.id}">${a.code} - ${a.name}</option>`
             ).join('');
+            const costCenterOptions = costCenters.map(c =>
+                `<option value="${c.id}">${c.code} - ${c.name}</option>`
+            ).join('');
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="px-4 py-2">
@@ -170,6 +175,12 @@
                 </td>
                 <td class="px-4 py-2">
                     <input type="number" name="lines[${idx}][tax_rate]" value="0" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" />
+                </td>
+                <td class="px-4 py-2">
+                    <select name="lines[${idx}][cost_center_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        <option value="">None</option>
+                        ${costCenterOptions}
+                    </select>
                 </td>
                 <td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>
                 <td class="px-4 py-2 text-center">

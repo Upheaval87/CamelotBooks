@@ -13,6 +13,7 @@ class InventoryStock extends Model
         'company_id',
         'product_id',
         'branch_id',
+        'cost_center_id',
         'quantity_on_hand',
     ];
 

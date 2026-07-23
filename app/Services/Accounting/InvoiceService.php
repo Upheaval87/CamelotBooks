@@ -136,6 +136,7 @@ class InvoiceService
                     'memo' => "Invoice {$invoice->invoice_number} - {$line->description}",
                     'entity_type' => Invoice::class,
                     'entity_id' => $invoice->id,
+                    'cost_center_id' => $line->cost_center_id,
                 ];
                 $totalDebit += $line->line_total;
 
@@ -146,6 +147,7 @@ class InvoiceService
                     'memo' => "Invoice {$invoice->invoice_number} - {$line->description}",
                     'entity_type' => Invoice::class,
                     'entity_id' => $invoice->id,
+                    'cost_center_id' => $line->cost_center_id,
                 ];
                 $totalCredit += $line->amount;
 
@@ -157,6 +159,7 @@ class InvoiceService
                         'memo' => "Invoice {$invoice->invoice_number} - Tax - {$line->description}",
                         'entity_type' => Invoice::class,
                         'entity_id' => $invoice->id,
+                        'cost_center_id' => $line->cost_center_id,
                     ];
                     $totalCredit += $line->tax_amount;
                 }
@@ -184,6 +187,7 @@ class InvoiceService
                                 'memo' => "Invoice {$invoice->invoice_number} - COGS - {$line->description}",
                                 'entity_type' => Invoice::class,
                                 'entity_id' => $invoice->id,
+                                'cost_center_id' => $line->cost_center_id,
                             ];
                             $totalDebit += $totalCogs;
 
@@ -194,6 +198,7 @@ class InvoiceService
                                 'memo' => "Invoice {$invoice->invoice_number} - Inventory - {$line->description}",
                                 'entity_type' => Invoice::class,
                                 'entity_id' => $invoice->id,
+                                'cost_center_id' => $line->cost_center_id,
                             ];
                             $totalCredit += $totalCogs;
                         }
@@ -312,6 +317,7 @@ class InvoiceService
             'tax_amount' => $totals['tax_amount'],
             'line_total' => $totals['line_total'],
             'income_account_id' => $lineData['income_account_id'],
+            'cost_center_id' => $lineData['cost_center_id'] ?? null,
         ]);
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Product;
@@ -61,7 +62,12 @@ class InvoiceController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.invoices.create', compact('customers', 'products', 'incomeAccounts'));
+        $costCenters = CostCenter::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        return view('accounting.invoices.create', compact('customers', 'products', 'incomeAccounts', 'costCenters'));
     }
 
     public function store(Request $request)
@@ -83,6 +89,7 @@ class InvoiceController extends Controller
             'lines.*.discount' => ['nullable', 'numeric', 'min:0'],
             'lines.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.income_account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'lines.*.cost_center_id' => ['nullable', 'integer', 'exists:cost_centers,id'],
         ]);
 
         $validated['company_id'] = $companyId;
@@ -102,7 +109,7 @@ class InvoiceController extends Controller
         $companyId = session('current_company_id');
         abort_unless($invoice->company_id == $companyId, 403);
 
-        $invoice->load(['customer', 'lines.product', 'journalEntry', 'payments']);
+        $invoice->load(['customer', 'lines.product', 'lines.costCenter', 'journalEntry', 'payments']);
 
         $payments = $invoice->payments()->with('allocations')->get();
 
@@ -136,7 +143,12 @@ class InvoiceController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.invoices.edit', compact('invoice', 'customers', 'products', 'incomeAccounts'));
+        $costCenters = CostCenter::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        return view('accounting.invoices.edit', compact('invoice', 'customers', 'products', 'incomeAccounts', 'costCenters'));
     }
 
     public function update(Request $request, Invoice $invoice)
@@ -163,6 +175,7 @@ class InvoiceController extends Controller
             'lines.*.discount' => ['nullable', 'numeric', 'min:0'],
             'lines.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.income_account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'lines.*.cost_center_id' => ['nullable', 'integer', 'exists:cost_centers,id'],
         ]);
 
         try {

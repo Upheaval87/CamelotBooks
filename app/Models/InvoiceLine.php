@@ -19,6 +19,7 @@ class InvoiceLine extends Model
         'tax_amount',
         'line_total',
         'income_account_id',
+        'cost_center_id',
     ];
 
     protected $casts = [
@@ -44,5 +45,10 @@ class InvoiceLine extends Model
     public function incomeAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'income_account_id');
+    }
+
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 }

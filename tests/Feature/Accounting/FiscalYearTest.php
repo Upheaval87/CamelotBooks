@@ -193,6 +193,52 @@ class FiscalYearTest extends TestCase
         $service->close($fy->fresh(), $this->user->id);
     }
 
+    public function test_year_end_close_zeroes_both_income_and_expense_and_bs_balances(): void
+    {
+        $accounts = Account::where('company_id', $this->company->id)->get();
+        $cash = $accounts->firstWhere('code', '1000');
+        $salesRevenue = $accounts->firstWhere('code', '4000');
+        $rentExpense = $accounts->firstWhere('code', '6100');
+
+        $service = app(\App\Services\Accounting\YearEndCloseService::class);
+        $fy = $service->createFiscalYear($this->company->id, 'FY2026', '2026-01-01');
+
+        $engine = app(\App\Services\Accounting\JournalPostingEngine::class);
+
+        $engine->post([
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'date' => '2026-01-05',
+            'memo' => 'Revenue',
+            'lines' => [
+                ['account_id' => $cash->id, 'debit' => 50000, 'credit' => 0],
+                ['account_id' => $salesRevenue->id, 'debit' => 0, 'credit' => 50000],
+            ],
+        ]);
+
+        $engine->post([
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'date' => '2026-01-10',
+            'memo' => 'Rent',
+            'lines' => [
+                ['account_id' => $rentExpense->id, 'debit' => 12000, 'credit' => 0],
+                ['account_id' => $cash->id, 'debit' => 0, 'credit' => 12000],
+            ],
+        ]);
+
+        $fy->periods()->update(['status' => 'closed']);
+        $fy->refresh();
+        $service->close($fy, $this->user->id);
+
+        $this->assertEqualsWithDelta(0, $salesRevenue->fresh()->current_balance, 0.01);
+        $this->assertEqualsWithDelta(0, $rentExpense->fresh()->current_balance, 0.01);
+
+        $retainedEarnings = $accounts->firstWhere('code', '3100');
+        $this->assertNotNull($retainedEarnings);
+        $this->assertEqualsWithDelta(38000, $retainedEarnings->fresh()->current_balance, 0.01);
+    }
+
     private function seedChartOfAccounts(Company $company): void
     {
         $accounts = [
@@ -203,6 +249,7 @@ class FiscalYearTest extends TestCase
             ['code' => '4000', 'name' => 'Sales Revenue', 'type' => 'income', 'sub_type' => 'operating_revenue'],
             ['code' => '5000', 'name' => 'Cost of Goods Sold', 'type' => 'expense', 'sub_type' => 'cost_of_goods_sold'],
             ['code' => '6000', 'name' => 'Salary Expense', 'type' => 'expense', 'sub_type' => 'operating_expense'],
+            ['code' => '6100', 'name' => 'Rent Expense', 'type' => 'expense', 'sub_type' => 'operating_expense'],
         ];
 
         foreach ($accounts as $a) {

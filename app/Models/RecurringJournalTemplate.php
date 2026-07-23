@@ -12,6 +12,7 @@ class RecurringJournalTemplate extends Model
         'company_id',
         'name',
         'branch_id',
+        'cost_center_id',
         'memo',
         'frequency',
         'day_of_month',

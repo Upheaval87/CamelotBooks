@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('from_branch_id')->nullable()->constrained('branches')->nullOnDelete();
-            $table->foreignId('to_branch_id')->constrained('branches')->nullOnDelete();
+            $table->foreignId('to_branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->string('transfer_number', 50);
             $table->date('date');
             $table->decimal('quantity', 15, 4);

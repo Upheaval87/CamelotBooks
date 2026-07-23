@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Bill;
+use App\Models\CostCenter;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Services\Accounting\BillService;
@@ -60,7 +61,12 @@ class BillController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.bills.create', compact('vendors', 'products', 'expenseAccounts'));
+        $costCenters = CostCenter::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        return view('accounting.bills.create', compact('vendors', 'products', 'expenseAccounts', 'costCenters'));
     }
 
     public function store(Request $request)
@@ -83,6 +89,7 @@ class BillController extends Controller
             'lines.*.discount' => ['nullable', 'numeric', 'min:0'],
             'lines.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.expense_account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'lines.*.cost_center_id' => ['nullable', 'integer', 'exists:cost_centers,id'],
         ]);
 
         $validated['company_id'] = $companyId;
@@ -102,7 +109,7 @@ class BillController extends Controller
         $companyId = session('current_company_id');
         abort_unless($bill->company_id == $companyId, 403);
 
-        $bill->load(['vendor', 'lines.product', 'journalEntry', 'payments']);
+        $bill->load(['vendor', 'lines.product', 'lines.costCenter', 'journalEntry', 'payments']);
 
         $payments = $bill->payments()->with('allocations')->get();
 
@@ -136,7 +143,12 @@ class BillController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.bills.edit', compact('bill', 'vendors', 'products', 'expenseAccounts'));
+        $costCenters = CostCenter::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        return view('accounting.bills.edit', compact('bill', 'vendors', 'products', 'expenseAccounts', 'costCenters'));
     }
 
     public function update(Request $request, Bill $bill)
@@ -164,6 +176,7 @@ class BillController extends Controller
             'lines.*.discount' => ['nullable', 'numeric', 'min:0'],
             'lines.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'lines.*.expense_account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'lines.*.cost_center_id' => ['nullable', 'integer', 'exists:cost_centers,id'],
         ]);
 
         try {

@@ -420,4 +420,67 @@ class InventoryIntegrationTest extends TestCase
 
         $this->assertEquals(140.00, $cogsLine->debit);
     }
+
+    public function test_inventory_valuation_reconciles_to_gl_asset_balance(): void
+    {
+        $billService = app(BillService::class);
+        $invoiceService = app(InvoiceService::class);
+        $inventoryService = app(InventoryService::class);
+
+        $bill1 = $billService->create([
+            'company_id' => $this->company->id,
+            'vendor_id' => $this->vendor->id,
+            'bill_date' => '2026-01-10',
+            'due_date' => '2026-02-10',
+            'lines' => [
+                [
+                    'product_id' => $this->inventoryProduct->id,
+                    'description' => 'First batch',
+                    'quantity' => 100,
+                    'unit_price' => 8.00,
+                    'expense_account_id' => $this->cogsAccount->id,
+                ],
+            ],
+        ], $this->userId);
+        $billService->post($bill1, $this->userId);
+
+        $bill2 = $billService->create([
+            'company_id' => $this->company->id,
+            'vendor_id' => $this->vendor->id,
+            'bill_date' => '2026-01-15',
+            'due_date' => '2026-02-15',
+            'lines' => [
+                [
+                    'product_id' => $this->inventoryProduct->id,
+                    'description' => 'Second batch',
+                    'quantity' => 50,
+                    'unit_price' => 12.00,
+                    'expense_account_id' => $this->cogsAccount->id,
+                ],
+            ],
+        ], $this->userId);
+        $billService->post($bill2, $this->userId);
+
+        $invoice = $invoiceService->create([
+            'company_id' => $this->company->id,
+            'customer_id' => $this->customer->id,
+            'invoice_date' => '2026-01-20',
+            'due_date' => '2026-02-20',
+            'lines' => [
+                [
+                    'product_id' => $this->inventoryProduct->id,
+                    'description' => 'Sale',
+                    'quantity' => 30,
+                    'unit_price' => 25.00,
+                    'income_account_id' => $this->incomeAccount->id,
+                ],
+            ],
+        ], $this->userId);
+        $invoiceService->post($invoice, $this->userId);
+
+        $valuation = $inventoryService->getTotalInventoryAssetValue($this->company->id);
+        $glBalance = (float) $this->invAssetAccount->fresh()->current_balance;
+
+        $this->assertEqualsWithDelta($valuation, $glBalance, 0.01);
+    }
 }

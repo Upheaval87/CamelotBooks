@@ -19,6 +19,7 @@ class BillLine extends Model
         'tax_amount',
         'line_total',
         'expense_account_id',
+        'cost_center_id',
     ];
 
     protected $casts = [
@@ -44,5 +45,10 @@ class BillLine extends Model
     public function expenseAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'expense_account_id');
+    }
+
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 }

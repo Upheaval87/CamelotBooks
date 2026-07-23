@@ -11,6 +11,7 @@ class RecurringJournalTemplateLine extends Model
         'recurring_journal_template_id',
         'account_id',
         'branch_id',
+        'cost_center_id',
         'debit',
         'credit',
         'memo',

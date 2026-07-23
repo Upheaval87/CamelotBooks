@@ -11,6 +11,7 @@ class RecurringBillTemplate extends Model
     protected $fillable = [
         'company_id',
         'branch_id',
+        'cost_center_id',
         'vendor_id',
         'name',
         'memo',

@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\AccountingPeriod;
 use App\Models\Bill;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\JournalEntry;
 use App\Models\Vendor;
 use App\Services\Accounting\BillService;
@@ -300,5 +301,52 @@ class BillServiceTest extends TestCase
         $this->assertEquals(Bill::STATUS_PAID, $bill1->status);
         $this->assertEquals(500.00, (float) $bill2->amount_paid);
         $this->assertEquals(Bill::STATUS_PAID, $bill2->status);
+    }
+
+    public function test_cost_center_propagates_to_je_lines_on_bill_post(): void
+    {
+        $costCenter = CostCenter::create([
+            'company_id' => $this->company->id,
+            'code' => 'CC-OPS',
+            'name' => 'Operations',
+            'is_active' => true,
+        ]);
+
+        $bill = $this->service->create($this->makeBillData([
+            'lines' => [
+                [
+                    'description' => 'Monthly rent',
+                    'quantity' => 1,
+                    'unit_price' => 2000,
+                    'expense_account_id' => $this->expenseAccount->id,
+                    'cost_center_id' => $costCenter->id,
+                ],
+            ],
+        ]), $this->userId);
+
+        $line = $bill->lines()->first();
+        $this->assertEquals($costCenter->id, $line->cost_center_id);
+
+        $bill = $this->service->post($bill, $this->userId);
+
+        $je = JournalEntry::findOrFail($bill->journal_entry_id);
+        $lines = $je->lines()->get();
+
+        foreach ($lines as $jeLine) {
+            $this->assertEquals($costCenter->id, $jeLine->cost_center_id);
+        }
+    }
+
+    public function test_cost_center_null_on_je_lines_when_not_set(): void
+    {
+        $bill = $this->service->create($this->makeBillData(), $this->userId);
+        $bill = $this->service->post($bill, $this->userId);
+
+        $je = JournalEntry::findOrFail($bill->journal_entry_id);
+        $lines = $je->lines()->get();
+
+        foreach ($lines as $jeLine) {
+            $this->assertNull($jeLine->cost_center_id);
+        }
     }
 }

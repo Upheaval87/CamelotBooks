@@ -402,4 +402,36 @@ class PayrollServiceTest extends TestCase
         $this->assertMatchesRegularExpression('/^PR-\d{4}-\d{2}-\d{3}$/', $run2->run_number);
         $this->assertNotEquals($run1->run_number, $run2->run_number);
     }
+
+    public function test_payroll_balanced_je_and_net_pay_formula(): void
+    {
+        $employees = $this->createEmployees(1);
+        $employee = $employees[0];
+
+        $run = $this->service->runPayroll(
+            $this->company->id,
+            'June 2026',
+            '2026-06-30',
+            '2026-06-01',
+            '2026-06-30',
+            $this->user->id
+        );
+
+        $this->service->postPayroll($run, $this->user->id);
+
+        $run->refresh();
+        $this->assertEquals(PayrollRun::STATUS_POSTED, $run->status);
+        $this->assertNotNull($run->journal_entry_id);
+
+        $je = JournalEntry::find($run->journal_entry_id);
+        $this->assertEquals('posted', $je->status);
+
+        $totalDebit = $je->lines()->sum('debit');
+        $totalCredit = $je->lines()->sum('credit');
+        $this->assertEquals($totalDebit, $totalCredit, 'Journal entry must balance');
+
+        $item = $run->items()->first();
+        $expectedNet = (float) $item->gross_pay - (float) $item->paye - (float) $item->pension_ee;
+        $this->assertEqualsWithDelta($expectedNet, (float) $item->net_pay, 0.01);
+    }
 }

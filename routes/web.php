@@ -32,6 +32,9 @@ use App\Http\Controllers\Accounting\TrialBalanceController;
 use App\Http\Controllers\Accounting\VendorController;
 use App\Http\Controllers\Accounting\VendorCreditController;
 use App\Http\Controllers\Accounting\VendorPaymentController;
+use App\Http\Controllers\Accounting\PurchaseRequisitionController;
+use App\Http\Controllers\Accounting\PurchaseOrderController;
+use App\Http\Controllers\Accounting\GoodsReceivedNoteController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
@@ -212,7 +215,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('payroll-runs/{run}/payslips', [PayrollRunController::class, 'payslips'])->name('payroll-runs.payslips');
             Route::get('payroll-runs/{run}/paye-schedule', [PayrollRunController::class, 'payeRemittanceSchedule'])->name('payroll-runs.paye-schedule');
             Route::get('payroll-runs/{run}/pension-schedule', [PayrollRunController::class, 'pensionRemittanceSchedule'])->name('payroll-runs.pension-schedule');
-            Route::post('paye-tables', [PayrollRunController::class, 'storePayeTable'])->name('paye-tables.store');
+            Route::get('paye-tables', [\App\Http\Controllers\Accounting\PayeTableController::class, 'index'])->name('paye-tables.index');
+            Route::get('paye-tables/create', [\App\Http\Controllers\Accounting\PayeTableController::class, 'create'])->name('paye-tables.create');
+            Route::post('paye-tables', [\App\Http\Controllers\Accounting\PayeTableController::class, 'store'])->name('paye-tables.store');
+            Route::get('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'show'])->name('paye-tables.show');
+            Route::get('paye-tables/{payeTable}/edit', [\App\Http\Controllers\Accounting\PayeTableController::class, 'edit'])->name('paye-tables.edit');
+            Route::patch('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'update'])->name('paye-tables.update');
+            Route::post('paye-tables/{payeTable}/activate', [\App\Http\Controllers\Accounting\PayeTableController::class, 'activate'])->name('paye-tables.activate');
+            Route::delete('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'destroy'])->name('paye-tables.destroy');
             Route::post('pension-schemes', [PayrollRunController::class, 'storePensionScheme'])->name('pension-schemes.store');
 
             // Sales Invoices
@@ -267,6 +277,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('vendor-payments', [VendorPaymentController::class, 'store'])->name('vendor-payments.store');
             Route::get('vendor-payments/{payment}', [VendorPaymentController::class, 'show'])->name('vendor-payments.show');
 
+            // Purchase Requisitions
+            Route::get('purchase-requisitions', [PurchaseRequisitionController::class, 'index'])->name('purchase-requisitions.index');
+            Route::get('purchase-requisitions/create', [PurchaseRequisitionController::class, 'create'])->name('purchase-requisitions.create');
+            Route::post('purchase-requisitions', [PurchaseRequisitionController::class, 'store'])->name('purchase-requisitions.store');
+            Route::get('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'show'])->name('purchase-requisitions.show');
+            Route::get('purchase-requisitions/{purchaseRequisition}/edit', [PurchaseRequisitionController::class, 'edit'])->name('purchase-requisitions.edit');
+            Route::put('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'update'])->name('purchase-requisitions.update');
+            Route::post('purchase-requisitions/{purchaseRequisition}/submit', [PurchaseRequisitionController::class, 'submit'])->name('purchase-requisitions.submit');
+            Route::post('purchase-requisitions/{purchaseRequisition}/approve', [PurchaseRequisitionController::class, 'approve'])->name('purchase-requisitions.approve');
+            Route::post('purchase-requisitions/{purchaseRequisition}/reject', [PurchaseRequisitionController::class, 'reject'])->name('purchase-requisitions.reject');
+
+            // Purchase Orders
+            Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+            Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
+            Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+            Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+            Route::get('purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
+            Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+            Route::post('purchase-orders/{purchaseOrder}/confirm', [PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm');
+            Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+
+            // Goods Received Notes
+            Route::get('goods-received-notes', [GoodsReceivedNoteController::class, 'index'])->name('goods-received-notes.index');
+            Route::get('goods-received-notes/create', [GoodsReceivedNoteController::class, 'create'])->name('goods-received-notes.create');
+            Route::post('goods-received-notes', [GoodsReceivedNoteController::class, 'store'])->name('goods-received-notes.store');
+            Route::get('goods-received-notes/{goodsReceivedNote}', [GoodsReceivedNoteController::class, 'show'])->name('goods-received-notes.show');
+            Route::post('goods-received-notes/{goodsReceivedNote}/post', [GoodsReceivedNoteController::class, 'post'])->name('goods-received-notes.post');
+
             // Banking
             Route::get('bank-accounts', [BankController::class, 'index'])->name('bank-accounts.index');
             Route::get('bank-accounts/{bankAccountId}/register', [BankController::class, 'register'])->name('bank-accounts.register');
@@ -306,6 +344,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('aging/ap-summary', [AgingReportController::class, 'apSummary'])->name('aging.ap-summary');
             Route::get('aging/ap-detail', [AgingReportController::class, 'apDetail'])->name('aging.ap-detail');
             Route::get('aging/export/csv', [AgingReportController::class, 'exportCsv'])->name('aging.export-csv');
+
+            // Budgets
+            Route::resource('budgets', \App\Http\Controllers\Accounting\BudgetController::class);
+            Route::get('budgets/{budget}/variance', [\App\Http\Controllers\Accounting\BudgetController::class, 'variance'])->name('budgets.variance');
+            Route::post('budgets/{budget}/approve', [\App\Http\Controllers\Accounting\BudgetController::class, 'approve'])->name('budgets.approve');
 
             // Account Classification
             Route::get('account-classification', [AccountClassificationController::class, 'index'])->name('account-classification.index');

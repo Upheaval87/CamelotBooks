@@ -11,6 +11,7 @@ class VendorPayment extends Model
     protected $fillable = [
         'company_id',
         'branch_id',
+        'cost_center_id',
         'vendor_id',
         'payment_number',
         'payment_date',

@@ -129,13 +129,20 @@ class BillService
             $totalCredit = 0;
 
             foreach ($lines as $line) {
+                $debitAccountId = $line->expense_account_id;
+
+                if ($line->product && $line->product->tracked_as_inventory && $line->product->inventory_asset_account_id) {
+                    $debitAccountId = $line->product->inventory_asset_account_id;
+                }
+
                 $jeLines[] = [
-                    'account_id' => $line->expense_account_id,
+                    'account_id' => $debitAccountId,
                     'debit' => $line->amount,
                     'credit' => 0,
                     'memo' => "Bill {$bill->bill_number} - {$line->description}",
                     'entity_type' => Bill::class,
                     'entity_id' => $bill->id,
+                    'cost_center_id' => $line->cost_center_id,
                 ];
                 $totalDebit += $line->amount;
 
@@ -147,6 +154,7 @@ class BillService
                         'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
                         'entity_type' => Bill::class,
                         'entity_id' => $bill->id,
+                        'cost_center_id' => $line->cost_center_id,
                     ];
                     $totalDebit += $line->tax_amount;
                 }
@@ -158,6 +166,7 @@ class BillService
                     'memo' => "Bill {$bill->bill_number} - {$line->description}",
                     'entity_type' => Bill::class,
                     'entity_id' => $bill->id,
+                    'cost_center_id' => $line->cost_center_id,
                 ];
                 $totalCredit += $line->line_total;
 
@@ -235,8 +244,14 @@ class BillService
                 $jeLines = [];
 
                 foreach ($lines as $line) {
+                    $debitAccountId = $line->expense_account_id;
+
+                    if ($line->product && $line->product->tracked_as_inventory && $line->product->inventory_asset_account_id) {
+                        $debitAccountId = $line->product->inventory_asset_account_id;
+                    }
+
                     $jeLines[] = [
-                        'account_id' => $line->expense_account_id,
+                        'account_id' => $debitAccountId,
                         'debit' => $line->amount,
                         'credit' => 0,
                         'memo' => "Bill {$bill->bill_number} - {$line->description}",
@@ -384,6 +399,7 @@ class BillService
             'tax_amount' => $totals['tax_amount'],
             'line_total' => $totals['line_total'],
             'expense_account_id' => $lineData['expense_account_id'],
+            'cost_center_id' => $lineData['cost_center_id'] ?? null,
         ]);
     }
 

@@ -11,6 +11,7 @@ class InventoryAdjustment extends Model
         'company_id',
         'product_id',
         'branch_id',
+        'cost_center_id',
         'adjustment_number',
         'date',
         'type',

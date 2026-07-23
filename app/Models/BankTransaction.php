@@ -10,6 +10,7 @@ class BankTransaction extends Model
     protected $fillable = [
         'company_id',
         'branch_id',
+        'cost_center_id',
         'bank_account_id',
         'journal_entry_id',
         'type',

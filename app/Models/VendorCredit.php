@@ -11,6 +11,7 @@ class VendorCredit extends Model
     protected $fillable = [
         'company_id',
         'branch_id',
+        'cost_center_id',
         'vendor_id',
         'credit_note_number',
         'credit_note_date',
