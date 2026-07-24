@@ -167,6 +167,8 @@
                                         <span class="font-medium" x-text="pay.method_name"></span>
                                         <span class="text-gray-500 ml-1" x-show="pay.type === 'cash'" x-text="'(Tendered: $' + parseFloat(pay.cash_tendered).toFixed(2) + ')'"></span>
                                         <span class="text-gray-500 ml-1" x-show="pay.reference_number" x-text="'Ref: ' + pay.reference_number"></span>
+                                        <span class="text-gray-400 ml-1 text-xs" x-show="pay.account_name" x-text="pay.account_name"></span>
+                                        <span class="text-gray-400 ml-1 text-xs" x-show="pay.institution" x-text="pay.institution"></span>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <span class="font-semibold" x-text="'$' + parseFloat(pay.amount).toFixed(2)"></span>
@@ -220,15 +222,13 @@
         <div x-show="showModal && modalType === 'cash'" x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center"
             @keydown.escape.window="closeModal()">
-            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10" @click.stop>
+            <div class="fixed inset-0 bg-black/50 z-50"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-[60]" @click.stop>
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Cash Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter the cash amount received from the customer.</div>
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div class="flex justify-between text-sm text-gray-500 mb-1">
-                        <span>Total Due</span>
-                    </div>
+                    <div class="text-sm text-gray-500 mb-1">Total Due</div>
                     <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
                 </div>
 
@@ -240,7 +240,6 @@
                         placeholder="0.00" />
                 </div>
 
-                {{-- Quick-tender buttons --}}
                 <div class="flex flex-wrap gap-2 mb-4">
                     <button type="button" @click="modalCashTendered = modalDue"
                         class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm font-medium">Exact</button>
@@ -251,8 +250,7 @@
                     </template>
                 </div>
 
-                {{-- Change display --}}
-                <div class="rounded-lg p-3 mb-6 text-center"
+                <div class="rounded-lg p-3 mb-4 text-center"
                     :class="modalCashTendered >= modalDue ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'"
                     x-show="modalCashTendered > 0">
                     <template x-if="modalCashTendered >= modalDue">
@@ -269,12 +267,12 @@
                     </template>
                 </div>
 
-                <div class="flex gap-3">
+                <div class="flex gap-3 pt-2">
                     <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition">Cancel</button>
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalCashTendered || modalCashTendered <= 0"
-                        class="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-500 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -283,19 +281,17 @@
         <div x-show="showModal && modalType === 'card'" x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center"
             @keydown.escape.window="closeModal()">
-            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10" @click.stop>
+            <div class="fixed inset-0 bg-black/50 z-50"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-[60]" @click.stop>
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Card Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter card payment details.</div>
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div class="flex justify-between text-sm text-gray-500 mb-1">
-                        <span>Balance Due</span>
-                    </div>
+                    <div class="text-sm text-gray-500 mb-1">Balance Due</div>
                     <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                     <input type="number" x-model.number="modalAmount" x-ref="cardAmountInput" min="0.01" step="0.01"
                         @keydown.enter.prevent="confirmPaymentModal()"
@@ -303,7 +299,7 @@
                         placeholder="0.00" />
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
@@ -311,12 +307,30 @@
                         placeholder="e.g. TXN12345" />
                 </div>
 
-                <div class="flex gap-3">
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+                    <input type="text" x-model="modalAccountName"
+                        class="block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+                        placeholder="Cardholder name" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Financial Institution</label>
+                    <select x-model="modalInstitution"
+                        class="block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm">
+                        <option value="">Select bank...</option>
+                        @foreach($bankAccounts as $bank)
+                            <option value="{{ $bank->name }}">{{ $bank->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex gap-3 pt-2">
                     <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition">Cancel</button>
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalAmount || modalAmount <= 0"
-                        class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-500 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -325,19 +339,17 @@
         <div x-show="showModal && modalType === 'mobile_money'" x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center"
             @keydown.escape.window="closeModal()">
-            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10" @click.stop>
+            <div class="fixed inset-0 bg-black/50 z-50"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-[60]" @click.stop>
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Mobile Money Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter mobile money payment details.</div>
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div class="flex justify-between text-sm text-gray-500 mb-1">
-                        <span>Balance Due</span>
-                    </div>
+                    <div class="text-sm text-gray-500 mb-1">Balance Due</div>
                     <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                     <input type="number" x-model.number="modalAmount" x-ref="mobileAmountInput" min="0.01" step="0.01"
                         @keydown.enter.prevent="confirmPaymentModal()"
@@ -345,7 +357,7 @@
                         placeholder="0.00" />
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
@@ -353,12 +365,30 @@
                         placeholder="e.g. MP123456" />
                 </div>
 
-                <div class="flex gap-3">
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+                    <input type="text" x-model="modalAccountName"
+                        class="block w-full border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm"
+                        placeholder="Account holder name" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Provider / Institution</label>
+                    <select x-model="modalInstitution"
+                        class="block w-full border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm">
+                        <option value="">Select provider...</option>
+                        @foreach($mobileProviders as $provider)
+                            <option value="{{ $provider->name }}">{{ $provider->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex gap-3 pt-2">
                     <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition">Cancel</button>
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalAmount || modalAmount <= 0"
-                        class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-500 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -367,8 +397,8 @@
         <div x-show="showModal && modalType === 'split'" x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center"
             @keydown.escape.window="closeModal()">
-            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto" @click.stop>
+            <div class="fixed inset-0 bg-black/50 z-50"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 z-[60] max-h-[90vh] overflow-y-auto" @click.stop>
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Split Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Allocate the total due across multiple payment methods.</div>
 
@@ -497,12 +527,12 @@
                         x-text="'$' + Math.abs(getSplitRemaining()).toFixed(2)"></div>
                 </div>
 
-                <div class="flex gap-3">
+                <div class="flex gap-3 pt-2">
                     <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition">Cancel</button>
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmSplitPayment()"
                         :disabled="getSplitRemaining() !== 0 || !splitPaymentValid()"
-                        class="flex-1 py-3 px-4 bg-amber-600 text-white rounded-lg font-bold text-lg hover:bg-amber-500 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-amber-600 text-white rounded-lg font-bold text-lg hover:bg-amber-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -533,6 +563,8 @@
                 modalCashTendered: 0,
                 modalAmount: 0,
                 modalReference: '',
+                modalAccountName: '',
+                modalInstitution: '',
                 bankAccounts: @json($bankAccounts),
                 splitCashEnabled: false,
                 splitCashAlloc: 0,
@@ -667,6 +699,8 @@
                     this.modalCashTendered = this.modalDue;
                     this.modalAmount = this.modalDue;
                     this.modalReference = '';
+                    this.modalAccountName = '';
+                    this.modalInstitution = '';
                     this.showModal = true;
                     this.$nextTick(() => {
                         if (type === 'cash' && this.$refs.cashTenderedInput) {
@@ -686,6 +720,8 @@
                     this.showModal = false;
                     this.modalType = '';
                     this.modalReference = '';
+                    this.modalAccountName = '';
+                    this.modalInstitution = '';
                 },
 
                 confirmPaymentModal() {
@@ -715,6 +751,8 @@
                             cash_tendered: 0,
                             change: 0,
                             reference_number: ref,
+                            account_name: this.modalAccountName.trim(),
+                            institution: this.modalInstitution,
                         });
                     } else if (this.modalType === 'mobile_money') {
                         const amount = parseFloat(this.modalAmount) || 0;
@@ -729,6 +767,8 @@
                             cash_tendered: 0,
                             change: 0,
                             reference_number: ref,
+                            account_name: this.modalAccountName.trim(),
+                            institution: this.modalInstitution,
                         });
                     }
                     this.closeModal();
