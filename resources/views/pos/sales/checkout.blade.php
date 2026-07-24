@@ -271,10 +271,10 @@
 
                 <div class="flex gap-3">
                     <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalCashTendered || modalCashTendered <= 0"
-                        class="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-500 transition disabled:opacity-40 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-500 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -313,10 +313,10 @@
 
                 <div class="flex gap-3">
                     <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalAmount || modalAmount <= 0"
-                        class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-500 transition disabled:opacity-40 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-500 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -355,10 +355,10 @@
 
                 <div class="flex gap-3">
                     <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalAmount || modalAmount <= 0"
-                        class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-500 transition disabled:opacity-40 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-500 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -499,10 +499,10 @@
 
                 <div class="flex gap-3">
                     <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300 transition">Cancel</button>
                     <button type="button" @click="confirmSplitPayment()"
                         :disabled="getSplitRemaining() !== 0 || !splitPaymentValid()"
-                        class="flex-1 py-3 px-4 bg-amber-600 text-white rounded-lg font-bold text-lg hover:bg-amber-500 transition disabled:opacity-40 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-amber-600 text-white rounded-lg font-bold text-lg hover:bg-amber-500 transition disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
