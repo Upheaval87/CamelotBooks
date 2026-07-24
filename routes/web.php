@@ -442,6 +442,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('payment-methods', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'store'])->name('payment-methods.store');
             Route::patch('payment-methods/{paymentMethod}', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'update'])->name('payment-methods.update');
             Route::patch('payment-methods/{paymentMethod}/toggle', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
+
+            // Cashier PIN login (accessible to any company user)
+            Route::get('cashier/login', [\App\Http\Controllers\POS\PosCashierController::class, 'showLoginForm'])->name('cashier.login');
+            Route::post('cashier/login', [\App\Http\Controllers\POS\PosCashierController::class, 'login'])->name('cashier.login.post');
+            Route::post('cashier/logout', [\App\Http\Controllers\POS\PosCashierController::class, 'logout'])->name('cashier.logout');
+        });
+
+        // POS Dashboard (requires cashier PIN session)
+        Route::prefix('pos')->name('pos.')->middleware('pos.cashier')->group(function () {
+            Route::get('dashboard', function () {
+                return view('pos.dashboard');
+            })->name('dashboard');
         });
     });
 

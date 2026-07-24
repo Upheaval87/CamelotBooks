@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CashierPin;
 use App\Http\Middleware\CompanyContext;
 use App\Http\Middleware\EnsureCompanyIsActive;
 use Illuminate\Foundation\Application;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'company.active' => EnsureCompanyIsActive::class,
             'company.context' => CompanyContext::class,
+            'pos.cashier' => CashierPin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
