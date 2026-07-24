@@ -466,8 +466,13 @@
                         </div>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Provider / Institution</label>
-                            <input type="text" x-model="splitMobileInstitution"
-                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="e.g. M-Pesa, Airtel Money" />
+                            <select x-model="splitMobileInstitution"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm">
+                                <option value="">Select provider...</option>
+                                @foreach($mobileProviders as $provider)
+                                    <option value="{{ $provider->name }}">{{ $provider->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </div>

@@ -3,6 +3,7 @@
 namespace App\Services\POS;
 
 use App\Models\Account;
+use App\Models\MobileMoneyProvider;
 use App\Models\PosPaymentMethod;
 
 class PosSetupService
@@ -115,5 +116,13 @@ class PosSetupService
                 'is_active' => true,
             ]
         );
+
+        $providers = ['M-Pesa', 'Airtel Money', 'MTN Mobile Money', 'Tigo Pesa', 'EcoCash', 'Orange Money'];
+        foreach ($providers as $provider) {
+            MobileMoneyProvider::firstOrCreate(
+                ['company_id' => $companyId, 'name' => $provider],
+                ['is_active' => true]
+            );
+        }
     }
 }

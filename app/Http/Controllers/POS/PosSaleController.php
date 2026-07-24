@@ -5,6 +5,7 @@ namespace App\Http\Controllers\POS;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Customer;
+use App\Models\MobileMoneyProvider;
 use App\Models\PosPaymentMethod;
 use App\Models\Product;
 use App\Services\POS\PosSaleService;
@@ -45,7 +46,12 @@ class PosSaleController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'bank_name']);
 
-        return view('pos.sales.checkout', compact('products', 'paymentMethods', 'customers', 'bankAccounts'));
+        $mobileProviders = MobileMoneyProvider::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('pos.sales.checkout', compact('products', 'paymentMethods', 'customers', 'bankAccounts', 'mobileProviders'));
     }
 
     public function store(Request $request)
