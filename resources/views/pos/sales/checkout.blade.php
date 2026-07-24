@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-6" x-data="posCheckout()" @click.away="dropdownOpen = false">
+    <div class="py-6" x-data="posCheckout()" x-effect="reactiveFilter()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
@@ -26,8 +26,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
                         <div class="relative">
                             <input type="text" x-model="searchQuery"
-                                @input="filterProducts()"
-                                @focus="dropdownOpen = true; filterProducts()"
+                                @focus="dropdownOpen = true"
                                 placeholder="Type to search products..." autocomplete="off"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                             <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
@@ -217,9 +216,29 @@
                 payments: [{ payment_method_id: '', amount: 0 }],
                 submitting: false,
                 dropdownOpen: false,
+                _lastQuery: '',
 
                 init() {
                     this.filteredProducts = this.products.slice(0, 20);
+                    document.addEventListener('click', (e) => {
+                        if (!this.$el.contains(e.target)) {
+                            this.dropdownOpen = false;
+                        }
+                    });
+                },
+
+                reactiveFilter() {
+                    const q = this.searchQuery.toLowerCase().trim();
+                    if (q === this._lastQuery) return;
+                    this._lastQuery = q;
+                    if (q === '') {
+                        this.filteredProducts = this.products.slice(0, 20);
+                    } else {
+                        this.filteredProducts = this.products.filter(p =>
+                            p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
+                        );
+                    }
+                    if (q.length > 0) this.dropdownOpen = true;
                 },
 
                 filterProducts() {
