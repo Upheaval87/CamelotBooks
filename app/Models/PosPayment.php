@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class PosPayment extends Model
+{
+    protected $fillable = [
+        'pos_sale_id',
+        'payment_method_id',
+        'amount',
+        'reference_number',
+        'processor_name',
+    ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+    ];
+
+    public function sale(): BelongsTo
+    {
+        return $this->belongsTo(PosSale::class, 'pos_sale_id');
+    }
+
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PosPaymentMethod::class, 'payment_method_id');
+    }
+}

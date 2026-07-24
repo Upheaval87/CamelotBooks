@@ -428,6 +428,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('budget-vs-actual-trend', [\App\Http\Controllers\AnalyticsController::class, 'budgetVsActualTrend'])->name('budget-vs-actual-trend');
             Route::get('cash-flow-trend', [\App\Http\Controllers\AnalyticsController::class, 'cashFlowTrend'])->name('cash-flow-trend');
         });
+
+        // POS
+        Route::prefix('pos')->name('pos.')->group(function () {
+            // Terminals
+            Route::get('terminals', [\App\Http\Controllers\POS\PosTerminalController::class, 'index'])->name('terminals.index');
+            Route::post('terminals', [\App\Http\Controllers\POS\PosTerminalController::class, 'store'])->name('terminals.store');
+            Route::patch('terminals/{terminal}', [\App\Http\Controllers\POS\PosTerminalController::class, 'update'])->name('terminals.update');
+            Route::patch('terminals/{terminal}/toggle', [\App\Http\Controllers\POS\PosTerminalController::class, 'toggle'])->name('terminals.toggle');
+
+            // Payment Methods
+            Route::get('payment-methods', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'index'])->name('payment-methods.index');
+            Route::post('payment-methods', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'store'])->name('payment-methods.store');
+            Route::patch('payment-methods/{paymentMethod}', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'update'])->name('payment-methods.update');
+            Route::patch('payment-methods/{paymentMethod}/toggle', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
+        });
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

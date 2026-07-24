@@ -169,6 +169,20 @@
                     </div>
                     @endif
 
+                    @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'pos'))
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('pos.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('POS') }}
+                            <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Setup</div>
+                            <a href="{{ route('pos.terminals.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Terminals') }}</a>
+                            <a href="{{ route('pos.payment-methods.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Payment Methods') }}</a>
+                        </div>
+                    </div>
+                    @endif
+
                     @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
                         <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('admin.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
@@ -330,6 +344,11 @@
             <x-responsive-nav-link :href="route('analytics.budget-vs-actual-trend')" :active="request()->routeIs('analytics.budget-vs-actual-trend')">{{ __('Budget vs Actual') }}</x-responsive-nav-link>
             @endif
             <x-responsive-nav-link :href="route('analytics.cash-flow-trend')" :active="request()->routeIs('analytics.cash-flow-trend')">{{ __('Cash Flow Trend') }}</x-responsive-nav-link>
+            @endif
+            @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'pos'))
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">POS</div>
+            <x-responsive-nav-link :href="route('pos.terminals.index')" :active="request()->routeIs('pos.terminals.*')">{{ __('Terminals') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pos.payment-methods.index')" :active="request()->routeIs('pos.payment-methods.*')">{{ __('Payment Methods') }}</x-responsive-nav-link>
             @endif
             @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Admin</div>
