@@ -26,7 +26,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
                         <div class="relative">
                             <input type="text" x-model="searchQuery"
-                                @focus="dropdownOpen = searchQuery.length > 0"
+                                @focus="dropdownOpen = searchQuery.length > 0; $el._posData = $data"
                                 onkeydown="return handleProductKey(event)"
                                 placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
@@ -208,8 +208,7 @@
 
     <script>
         function handleProductKey(e) {
-            const el = e.target;
-            const component = Alpine.$data(el.closest('[x-data]'));
+            const component = e.target._posData;
             if (!component) return true;
 
             if (e.key === 'ArrowDown') {
