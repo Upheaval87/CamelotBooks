@@ -26,7 +26,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
                         <div class="relative">
                             <input type="text" x-model="searchQuery"
-                                @focus="dropdownOpen = true"
+                                @focus="dropdownOpen = searchQuery.length > 0"
                                 placeholder="Type to search products..." autocomplete="off"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                             <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
@@ -218,7 +218,7 @@
                 _lastQuery: '',
 
                 init() {
-                    this.filteredProducts = this.products.slice(0, 20);
+                    this.filteredProducts = [];
                     document.addEventListener('click', (e) => {
                         if (!this.$el.contains(e.target)) {
                             this.dropdownOpen = false;
@@ -231,13 +231,14 @@
                     if (q === this._lastQuery) return;
                     this._lastQuery = q;
                     if (q === '') {
-                        this.filteredProducts = this.products.slice(0, 20);
-                    } else {
-                        this.filteredProducts = this.products.filter(p =>
-                            p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
-                        );
+                        this.filteredProducts = [];
+                        this.dropdownOpen = false;
+                        return;
                     }
-                    if (q.length > 0) this.dropdownOpen = true;
+                    this.filteredProducts = this.products.filter(p =>
+                        p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
+                    );
+                    this.dropdownOpen = true;
                 },
 
                 filterProducts() {
@@ -291,7 +292,8 @@
                     this.selectedProductName = '';
                     this.searchQuery = '';
                     this.addQty = 1;
-                    this.filteredProducts = this.products.slice(0, 20);
+                    this.filteredProducts = [];
+                    this.dropdownOpen = false;
                 },
 
                 removeLine(index) {
