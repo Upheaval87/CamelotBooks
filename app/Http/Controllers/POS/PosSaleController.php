@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\Customer;
 use App\Models\PosPaymentMethod;
 use App\Models\Product;
@@ -38,7 +39,13 @@ class PosSaleController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        return view('pos.sales.checkout', compact('products', 'paymentMethods', 'customers'));
+        $bankAccounts = Account::where('company_id', $companyId)
+            ->where('is_bank_account', true)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'bank_name']);
+
+        return view('pos.sales.checkout', compact('products', 'paymentMethods', 'customers', 'bankAccounts'));
     }
 
     public function store(Request $request)

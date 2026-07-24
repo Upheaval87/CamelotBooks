@@ -179,7 +179,7 @@
 
                         {{-- Add Payment Button --}}
                         <div class="mb-4" x-show="getRemaining() > 0">
-                            <div class="grid grid-cols-3 gap-2">
+                            <div class="grid grid-cols-2 gap-2 mb-2">
                                 <button type="button" @click="openPaymentModal('cash')"
                                     class="py-3 px-4 bg-emerald-50 border-2 border-emerald-300 text-emerald-700 rounded-lg font-semibold text-sm hover:bg-emerald-100 transition">
                                     Cash
@@ -191,6 +191,10 @@
                                 <button type="button" @click="openPaymentModal('mobile_money')"
                                     class="py-3 px-4 bg-purple-50 border-2 border-purple-300 text-purple-700 rounded-lg font-semibold text-sm hover:bg-purple-100 transition">
                                     Mobile Money
+                                </button>
+                                <button type="button" @click="openSplitModal()"
+                                    class="py-3 px-4 bg-amber-50 border-2 border-amber-300 text-amber-700 rounded-lg font-semibold text-sm hover:bg-amber-100 transition">
+                                    Split Payment
                                 </button>
                             </div>
                         </div>
@@ -358,6 +362,136 @@
                 </div>
             </div>
         </div>
+
+        {{-- ===== SPLIT PAYMENT MODAL ===== --}}
+        <div x-show="showModal && modalType === 'split'" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center"
+            @keydown.escape.window="closeModal()">
+            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto" @click.stop>
+                <h3 class="text-xl font-bold text-gray-800 mb-1">Split Payment</h3>
+                <div class="text-sm text-gray-500 mb-4">Allocate the total due across multiple payment methods.</div>
+
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div class="text-sm text-gray-500">Total Due</div>
+                    <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
+                </div>
+
+                {{-- Cash Row --}}
+                <div class="border rounded-lg p-4 mb-3">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                        <span class="font-semibold text-gray-800">Cash</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Allocate to Cash</label>
+                            <input type="number" x-model.number="splitCashAlloc" min="0" step="0.01"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Cash Tendered</label>
+                            <input type="number" x-model.number="splitCashTendered" min="0" step="0.01"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
+                        </div>
+                    </div>
+                    <div class="mt-2 flex justify-between items-center text-sm" x-show="splitCashTendered > 0 && splitCashAlloc > 0">
+                        <span class="text-gray-500">Change</span>
+                        <span class="font-semibold"
+                            :class="splitCashTendered >= splitCashAlloc ? 'text-green-600' : 'text-red-600'"
+                            x-text="splitCashTendered >= splitCashAlloc ? '$' + (splitCashTendered - splitCashAlloc).toFixed(2) : 'Short by $' + (splitCashAlloc - splitCashTendered).toFixed(2)"></span>
+                    </div>
+                </div>
+
+                {{-- Card Row --}}
+                <div class="border rounded-lg p-4 mb-3">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                        <span class="font-semibold text-gray-800">Card</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Amount</label>
+                            <input type="number" x-model.number="splitCardAmount" min="0" step="0.01"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Reference / Transaction No.</label>
+                            <input type="text" x-model="splitCardRef"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="e.g. TXN12345" />
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Account Name</label>
+                            <input type="text" x-model="splitCardAccountName"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Cardholder name" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Financial Institution</label>
+                            <select x-model="splitCardInstitution"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm">
+                                <option value="">Select bank...</option>
+                                @foreach($bankAccounts as $bank)
+                                    <option value="{{ $bank->name }}">{{ $bank->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Mobile Money Row --}}
+                <div class="border rounded-lg p-4 mb-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+                        <span class="font-semibold text-gray-800">Mobile Money</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Amount</label>
+                            <input type="number" x-model.number="splitMmobileAmount" min="0" step="0.01"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Reference / Transaction No.</label>
+                            <input type="text" x-model="splitMobileRef"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="e.g. MP123456" />
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Account Name</label>
+                            <input type="text" x-model="splitMobileAccountName"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Account holder name" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Provider / Institution</label>
+                            <input type="text" x-model="splitMobileInstitution"
+                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="e.g. M-Pesa, Airtel Money" />
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Running Balance --}}
+                <div class="rounded-lg p-3 mb-4 text-center"
+                    :class="getSplitRemaining() === 0 ? 'bg-green-50 border border-green-200' : getSplitRemaining() > 0 ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'">
+                    <div class="text-xs font-medium uppercase"
+                        :class="getSplitRemaining() === 0 ? 'text-green-600' : getSplitRemaining() > 0 ? 'text-amber-600' : 'text-red-600'"
+                        x-text="getSplitRemaining() === 0 ? 'Balanced' : getSplitRemaining() > 0 ? 'Remaining Balance' : 'Over-allocated'"></div>
+                    <div class="text-2xl font-bold"
+                        :class="getSplitRemaining() === 0 ? 'text-green-600' : getSplitRemaining() > 0 ? 'text-amber-600' : 'text-red-600'"
+                        x-text="'$' + Math.abs(getSplitRemaining()).toFixed(2)"></div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" @click="closeModal()"
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                    <button type="button" @click="confirmSplitPayment()"
+                        :disabled="getSplitRemaining() !== 0 || !splitPaymentValid()"
+                        class="flex-1 py-3 px-4 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-500 transition disabled:opacity-40 disabled:cursor-not-allowed">OK</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -385,6 +519,17 @@
                 modalCashTendered: 0,
                 modalAmount: 0,
                 modalReference: '',
+                bankAccounts: @json($bankAccounts),
+                splitCashAlloc: 0,
+                splitCashTendered: 0,
+                splitCardAmount: 0,
+                splitCardRef: '',
+                splitCardAccountName: '',
+                splitCardInstitution: '',
+                splitMmobileAmount: 0,
+                splitMobileRef: '',
+                splitMobileAccountName: '',
+                splitMobileInstitution: '',
 
                 init() {
                     this.filteredProducts = [];
@@ -574,6 +719,97 @@
 
                 removePayment(pi) {
                     this.payments.splice(pi, 1);
+                },
+
+                openSplitModal() {
+                    this.modalType = 'split';
+                    this.modalDue = this.getRemaining();
+                    this.splitCashAlloc = 0;
+                    this.splitCashTendered = 0;
+                    this.splitCardAmount = 0;
+                    this.splitCardRef = '';
+                    this.splitCardAccountName = '';
+                    this.splitCardInstitution = '';
+                    this.splitMmobileAmount = 0;
+                    this.splitMobileRef = '';
+                    this.splitMobileAccountName = '';
+                    this.splitMobileInstitution = '';
+                    this.showModal = true;
+                },
+
+                getSplitRemaining() {
+                    const alloc = (parseFloat(this.splitCashAlloc) || 0)
+                                + (parseFloat(this.splitCardAmount) || 0)
+                                + (parseFloat(this.splitMmobileAmount) || 0);
+                    return parseFloat((this.modalDue - alloc).toFixed(2));
+                },
+
+                splitPaymentValid() {
+                    const cashAlloc = parseFloat(this.splitCashAlloc) || 0;
+                    const cardAmount = parseFloat(this.splitCardAmount) || 0;
+                    const mobileAmount = parseFloat(this.splitMmobileAmount) || 0;
+
+                    if (cashAlloc > 0 && (parseFloat(this.splitCashTendered) || 0) <= 0) return false;
+                    if (cashAlloc > 0 && (parseFloat(this.splitCashTendered) || 0) < cashAlloc) return false;
+
+                    if (cardAmount > 0) {
+                        if (!this.splitCardRef.trim()) return false;
+                    }
+                    if (mobileAmount > 0) {
+                        if (!this.splitMobileRef.trim()) return false;
+                    }
+
+                    return (cashAlloc + cardAmount + mobileAmount) > 0;
+                },
+
+                confirmSplitPayment() {
+                    if (this.getSplitRemaining() !== 0 || !this.splitPaymentValid()) return;
+
+                    const cashAlloc = parseFloat(this.splitCashAlloc) || 0;
+                    const cashTendered = parseFloat(this.splitCashTendered) || 0;
+                    const cardAmount = parseFloat(this.splitCardAmount) || 0;
+                    const mobileAmount = parseFloat(this.splitMmobileAmount) || 0;
+
+                    if (cashAlloc > 0) {
+                        const pmId = Object.keys(this.paymentTypes).find(id => this.paymentTypes[id] === 'cash') || '';
+                        this.payments.push({
+                            type: 'cash',
+                            method_name: 'Cash',
+                            payment_method_id: pmId,
+                            amount: cashAlloc,
+                            cash_tendered: cashTendered,
+                            change: parseFloat((cashTendered - cashAlloc).toFixed(2)),
+                            reference_number: '',
+                        });
+                    }
+
+                    if (cardAmount > 0) {
+                        const pmId = Object.keys(this.paymentTypes).find(id => this.paymentTypes[id] === 'card') || '';
+                        this.payments.push({
+                            type: 'card',
+                            method_name: 'Card',
+                            payment_method_id: pmId,
+                            amount: cardAmount,
+                            cash_tendered: 0,
+                            change: 0,
+                            reference_number: this.splitCardRef.trim(),
+                        });
+                    }
+
+                    if (mobileAmount > 0) {
+                        const pmId = Object.keys(this.paymentTypes).find(id => this.paymentTypes[id] === 'mobile_money') || '';
+                        this.payments.push({
+                            type: 'mobile_money',
+                            method_name: 'Mobile Money',
+                            payment_method_id: pmId,
+                            amount: mobileAmount,
+                            cash_tendered: 0,
+                            change: 0,
+                            reference_number: this.splitMobileRef.trim(),
+                        });
+                    }
+
+                    this.closeModal();
                 },
 
                 async submitSale() {
