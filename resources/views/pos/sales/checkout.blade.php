@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-6" x-data="posCheckout()" x-init="init()">
+    <div class="py-6" x-data="posCheckout()" @click.away="dropdownOpen = false">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
@@ -22,40 +22,46 @@
                 <div class="lg:col-span-2 bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Add Items') }}</h3>
 
-                    <div class="flex gap-3 mb-4 flex-wrap items-end">
-                        <div class="flex-1 min-w-[250px]">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                            <div class="relative" x-data="{ open: false }" @click.away="open = false">
-                                <input type="text" x-model="searchQuery" @input="filterProducts()" @focus="open = true"
-                                    placeholder="Type to search products..." autocomplete="off"
-                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
-                                <div x-show="open && filteredProducts.length > 0" x-transition x-cloak
-                                    class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                                    <template x-for="p in filteredProducts" :key="p.id">
-                                        <div class="px-3 py-2 cursor-pointer hover:bg-indigo-50 flex justify-between items-center"
-                                            :class="p.tracked_as_inventory && p.current_stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''"
-                                            @click="if(p.tracked_as_inventory && p.current_stock <= 0) return; selectedProductId = p.id; searchQuery = p.sku + ' – ' + p.name; open = false;">
-                                            <div>
-                                                <span class="text-sm text-gray-900" x-text="p.sku + ' – ' + p.name"></span>
-                                                <span x-show="p.tracked_as_inventory" class="ml-2 text-xs"
-                                                    :class="p.current_stock > 0 ? 'text-green-600' : 'text-red-600'"
-                                                    x-text="p.current_stock > 0 ? 'Stock: ' + p.current_stock : 'Out of stock'"></span>
-                                            </div>
-                                            <span class="text-sm font-semibold text-indigo-600" x-text="'$' + parseFloat(p.sales_price).toFixed(2)"></span>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                        <div class="relative">
+                            <input type="text" x-model="searchQuery"
+                                @input.debounce.150ms="filterProducts()"
+                                @focus="dropdownOpen = true"
+                                placeholder="Type to search products..." autocomplete="off"
+                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                            <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
+                                class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                <template x-for="(p, pi) in filteredProducts" :key="p.id">
+                                    <div class="px-3 py-2 cursor-pointer hover:bg-indigo-50 flex justify-between items-center"
+                                        :class="p.tracked_as_inventory && p.current_stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''"
+                                        @click="selectProduct(p)">
+                                        <div>
+                                            <span class="text-sm text-gray-900" x-text="p.sku + ' – ' + p.name"></span>
+                                            <span x-show="p.tracked_as_inventory" class="ml-2 text-xs"
+                                                :class="p.current_stock > 0 ? 'text-green-600' : 'text-red-600'"
+                                                x-text="p.current_stock > 0 ? 'Stock: ' + p.current_stock : 'Out of stock'"></span>
                                         </div>
-                                    </template>
-                                </div>
+                                        <span class="text-sm font-semibold text-indigo-600" x-text="'$' + parseFloat(p.sales_price).toFixed(2)"></span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="flex gap-3 mb-4 items-end">
                         <div class="w-[90px]">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
                             <input type="number" x-model="addQty" min="1" step="1" value="1"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-center" />
                         </div>
                         <button type="button" @click="addLine()"
-                            class="px-5 py-2 bg-indigo-600 text-white rounded-md font-semibold text-sm hover:bg-indigo-500 shadow-sm h-[38px]">
+                            class="px-5 py-2 bg-indigo-600 text-white rounded-md font-semibold text-sm hover:bg-indigo-500 shadow-sm">
                             {{ __('Add') }}
                         </button>
+                        <div class="text-sm text-gray-500" x-show="selectedProductName">
+                            Selected: <span class="font-semibold text-gray-800" x-text="selectedProductName"></span>
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -147,7 +153,7 @@
                         <div class="mb-4">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm font-semibold text-gray-700">Payments</span>
-                                <span class="text-sm font-medium" :class="remaining > 0 ? 'text-red-600' : 'text-green-600'"
+                                <span class="text-sm font-medium" :class="getRemaining() > 0 ? 'text-red-600' : 'text-green-600'"
                                     x-text="'Remaining: $' + getRemaining().toFixed(2)"></span>
                             </div>
                             <template x-for="(pay, pi) in payments" :key="pi">
@@ -203,22 +209,37 @@
                 filteredProducts: [],
                 searchQuery: '',
                 selectedProductId: '',
+                selectedProductName: '',
                 addQty: 1,
                 lines: [],
                 customerId: '',
                 reference: '',
                 payments: [{ payment_method_id: '', amount: 0 }],
                 submitting: false,
+                dropdownOpen: false,
 
                 init() {
-                    this.filteredProducts = this.products;
+                    this.filteredProducts = this.products.slice(0, 20);
                 },
 
                 filterProducts() {
-                    const q = this.searchQuery.toLowerCase();
-                    this.filteredProducts = this.products.filter(p =>
-                        p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
-                    );
+                    const q = this.searchQuery.toLowerCase().trim();
+                    if (q === '') {
+                        this.filteredProducts = this.products.slice(0, 20);
+                    } else {
+                        this.filteredProducts = this.products.filter(p =>
+                            p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
+                        );
+                    }
+                    this.dropdownOpen = true;
+                },
+
+                selectProduct(p) {
+                    if (p.tracked_as_inventory && p.current_stock <= 0) return;
+                    this.selectedProductId = p.id;
+                    this.selectedProductName = p.sku + ' – ' + p.name;
+                    this.searchQuery = p.sku + ' – ' + p.name;
+                    this.dropdownOpen = false;
                 },
 
                 addLine() {
@@ -249,7 +270,10 @@
                     }
 
                     this.selectedProductId = '';
+                    this.selectedProductName = '';
+                    this.searchQuery = '';
                     this.addQty = 1;
+                    this.filteredProducts = this.products.slice(0, 20);
                 },
 
                 removeLine(index) {
