@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\User;
 use App\Services\Admin\NumberingSequenceService;
+use App\Services\POS\PosSetupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -76,6 +77,8 @@ class SetupWizardController extends Controller
             if (!$hasSequences) {
                 app(NumberingSequenceService::class)->seedDefaults($companyId);
             }
+
+            PosSetupService::seedDefaultsForCompany($companyId);
         });
 
         return redirect()->route('admin.setup-wizard.index')

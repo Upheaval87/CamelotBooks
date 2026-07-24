@@ -443,6 +443,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('payment-methods/{paymentMethod}', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'update'])->name('payment-methods.update');
             Route::patch('payment-methods/{paymentMethod}/toggle', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
 
+            // Till Sessions
+            Route::get('till-sessions', [\App\Http\Controllers\POS\TillSessionController::class, 'index'])->name('till-sessions.index');
+            Route::post('till-sessions/open', [\App\Http\Controllers\POS\TillSessionController::class, 'open'])->name('till-sessions.open');
+            Route::post('till-sessions/{session}/close', [\App\Http\Controllers\POS\TillSessionController::class, 'close'])->name('till-sessions.close');
+            Route::get('till-sessions/{session}', [\App\Http\Controllers\POS\TillSessionController::class, 'show'])->name('till-sessions.show');
+
+            // POS Sales
+            Route::get('sales/checkout', [\App\Http\Controllers\POS\PosSaleController::class, 'checkout'])->name('sales.checkout');
+            Route::post('sales', [\App\Http\Controllers\POS\PosSaleController::class, 'store'])->name('sales.store');
+            Route::get('sales/{id}/receipt', [\App\Http\Controllers\POS\PosSaleController::class, 'receipt'])->name('sales.receipt');
+
+            // Settlements
+            Route::get('settlements', [\App\Http\Controllers\POS\PosSettlementController::class, 'index'])->name('settlements.index');
+            Route::get('settlements/create', [\App\Http\Controllers\POS\PosSettlementController::class, 'create'])->name('settlements.create');
+            Route::post('settlements', [\App\Http\Controllers\POS\PosSettlementController::class, 'store'])->name('settlements.store');
+            Route::get('settlements/{settlement}', [\App\Http\Controllers\POS\PosSettlementController::class, 'show'])->name('settlements.show');
+
             // Cashier PIN login (accessible to any company user)
             Route::get('cashier/login', [\App\Http\Controllers\POS\PosCashierController::class, 'showLoginForm'])->name('cashier.login');
             Route::post('cashier/login', [\App\Http\Controllers\POS\PosCashierController::class, 'login'])->name('cashier.login.post');

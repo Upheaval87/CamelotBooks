@@ -179,6 +179,12 @@
                             <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Setup</div>
                             <a href="{{ route('pos.terminals.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Terminals') }}</a>
                             <a href="{{ route('pos.payment-methods.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Payment Methods') }}</a>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase mt-1">Sessions</div>
+                            <a href="{{ route('pos.till-sessions.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Till Sessions') }}</a>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase mt-1">Sales</div>
+                            <a href="{{ route('pos.sales.checkout') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Checkout') }}</a>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase mt-1">Settlements</div>
+                            <a href="{{ route('pos.settlements.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Payment Settlements') }}</a>
                         </div>
                     </div>
                     @endif
@@ -349,6 +355,9 @@
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">POS</div>
             <x-responsive-nav-link :href="route('pos.terminals.index')" :active="request()->routeIs('pos.terminals.*')">{{ __('Terminals') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('pos.payment-methods.index')" :active="request()->routeIs('pos.payment-methods.*')">{{ __('Payment Methods') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pos.till-sessions.index')" :active="request()->routeIs('pos.till-sessions.*')">{{ __('Till Sessions') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pos.sales.checkout')" :active="request()->routeIs('pos.sales.*')">{{ __('Checkout') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pos.settlements.index')" :active="request()->routeIs('pos.settlements.*')">{{ __('Payment Settlements') }}</x-responsive-nav-link>
             @endif
             @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Admin</div>

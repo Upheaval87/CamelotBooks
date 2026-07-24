@@ -8,6 +8,7 @@ use App\Models\ApprovalSetting;
 use App\Models\Company;
 use App\Models\JournalEntry;
 use App\Models\User;
+use App\Services\POS\PosSetupService;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -111,6 +112,9 @@ class DatabaseSeeder extends Seeder
         $this->copyDefaultChartOfAccounts($companyA);
         $this->copyDefaultChartOfAccounts($companyB);
 
+        PosSetupService::seedDefaultsForCompany($companyA->id);
+        PosSetupService::seedDefaultsForCompany($companyB->id);
+
         ApprovalSetting::create([
             'company_id' => $companyA->id,
             'requires_approval' => false,
@@ -170,6 +174,38 @@ class DatabaseSeeder extends Seeder
                 'sub_type' => 'current_asset',
                 'parent_code' => '1000',
                 'cash_flow_section' => null,
+            ],
+            [
+                'code' => '1050',
+                'name' => 'Undeposited Funds',
+                'type' => 'asset',
+                'sub_type' => 'current_asset',
+                'description' => 'Cash and cheques received but not yet deposited',
+                'cash_flow_section' => 'operating',
+            ],
+            [
+                'code' => '1060',
+                'name' => 'Cash-in-Drawer',
+                'type' => 'asset',
+                'sub_type' => 'current_asset',
+                'description' => 'Cash held in POS terminals before bank deposit',
+                'cash_flow_section' => 'operating',
+            ],
+            [
+                'code' => '1070',
+                'name' => 'Card Clearing',
+                'type' => 'asset',
+                'sub_type' => 'current_asset',
+                'description' => 'Card payments owed by processor, pending settlement',
+                'cash_flow_section' => 'operating',
+            ],
+            [
+                'code' => '1080',
+                'name' => 'Mobile Money Clearing',
+                'type' => 'asset',
+                'sub_type' => 'current_asset',
+                'description' => 'Mobile money payments owed by network, pending settlement',
+                'cash_flow_section' => 'operating',
             ],
             [
                 'code' => '1100',
@@ -364,11 +400,32 @@ class DatabaseSeeder extends Seeder
                 'description' => 'Legal, accounting, and consulting fees',
             ],
             [
+                'code' => '6900',
+                'name' => 'Cash Shortage',
+                'type' => 'expense',
+                'sub_type' => 'operating_expense',
+                'description' => 'Cash received below expected amount at till close',
+            ],
+            [
+                'code' => '6950',
+                'name' => 'Merchant Processing Fees',
+                'type' => 'expense',
+                'sub_type' => 'operating_expense',
+                'description' => 'Fees charged by card/mobile money payment processors',
+            ],
+            [
                 'code' => '7000',
                 'name' => 'Interest Expense',
                 'type' => 'expense',
                 'sub_type' => 'non_operating_expense',
                 'description' => 'Interest on borrowings',
+            ],
+            [
+                'code' => '7400',
+                'name' => 'Cash Overage',
+                'type' => 'income',
+                'sub_type' => 'other_income',
+                'description' => 'Cash received above expected amount at till close',
             ],
         ];
 

@@ -47,6 +47,8 @@ class NumberingSequence extends Model
             'fixed_asset' => 'Fixed Asset',
             'stock_adjustment' => 'Stock Adjustment',
             'stock_transfer' => 'Stock Transfer',
+            'pos_sale' => 'POS Sale',
+            'pos_settlement' => 'POS Settlement',
         ];
     }
 
@@ -69,6 +71,8 @@ class NumberingSequence extends Model
             ['document_type' => 'fixed_asset', 'prefix' => 'ASSET-', 'padding_width' => 4, 'reset_policy' => 'never'],
             ['document_type' => 'stock_adjustment', 'prefix' => 'ADJ-', 'padding_width' => 4, 'reset_policy' => 'never'],
             ['document_type' => 'stock_transfer', 'prefix' => 'TRF-', 'padding_width' => 4, 'reset_policy' => 'never'],
+            ['document_type' => 'pos_sale', 'prefix' => 'POS-', 'padding_width' => 5, 'reset_policy' => 'never'],
+            ['document_type' => 'pos_settlement', 'prefix' => 'STL-', 'padding_width' => 5, 'reset_policy' => 'never'],
         ];
     }
 }
