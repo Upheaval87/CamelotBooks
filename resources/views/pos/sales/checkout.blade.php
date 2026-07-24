@@ -26,28 +26,27 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
                         <div class="relative">
                             <input type="text" x-model="searchQuery"
-                                @focus="dropdownOpen = searchQuery.length > 0; $el._posData = $data"
-                                onkeydown="return handleProductKey(event)"
+                                @focus="dropdownOpen = searchQuery.length > 0"
+                                @keydown.down.prevent="moveHighlight(1)"
+                                @keydown.up.prevent="moveHighlight(-1)"
+                                @keydown.enter.prevent="confirmHighlight()"
+                                @keydown.escape="dropdownOpen = false"
                                 placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                             <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
                                 class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                                 <template x-for="(p, pi) in filteredProducts" :key="p.id">
                                     <div class="px-3 py-2 cursor-pointer flex justify-between items-center"
-                                        :class="{
-                                            'bg-indigo-100': pi === highlightIndex,
-                                            'hover:bg-indigo-50': pi !== highlightIndex,
-                                            'opacity-50 cursor-not-allowed': p.tracked_as_inventory && p.current_stock <= 0
-                                        }"
+                                        :style="parseInt(pi) === highlightIndex ? 'background-color: #4f46e5; color: white !important;' : ''"
+                                        :class="p.tracked_as_inventory && p.current_stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''"
                                         @click="selectProduct(p)"
-                                        @mouseenter="highlightIndex = pi">
-                                        <div>
-                                            <span class="text-sm text-gray-900" x-text="p.sku + ' – ' + p.name"></span>
+                                        @mouseenter="highlightIndex = parseInt(pi)">
+                                        <div :style="parseInt(pi) === highlightIndex ? 'color: white !important;' : ''">
+                                            <span class="text-sm" x-text="p.sku + ' – ' + p.name"></span>
                                             <span x-show="p.tracked_as_inventory" class="ml-2 text-xs"
-                                                :class="p.current_stock > 0 ? 'text-green-600' : 'text-red-600'"
                                                 x-text="p.current_stock > 0 ? 'Stock: ' + p.current_stock : 'Out of stock'"></span>
                                         </div>
-                                        <span class="text-sm font-semibold text-indigo-600" x-text="'$' + parseFloat(p.sales_price).toFixed(2)"></span>
+                                        <span class="text-sm font-semibold" x-text="'$' + parseFloat(p.sales_price).toFixed(2)"></span>
                                     </div>
                                 </template>
                             </div>
@@ -58,10 +57,11 @@
                         <div class="w-[90px]">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
                             <input type="number" x-model="addQty" min="1" step="1" value="1"
+                                @keydown.enter.prevent="addLine()"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-center" />
                         </div>
                         <button type="button" @click="addLine()"
-                            class="px-5 py-2 bg-indigo-600 text-white rounded-md font-semibold text-sm hover:bg-indigo-500 shadow-sm">
+                            class="px-6 py-2 bg-indigo-600 text-white rounded-md font-semibold text-sm hover:bg-indigo-500 shadow-sm whitespace-nowrap">
                             {{ __('Add') }}
                         </button>
                         <div class="text-sm text-gray-500" x-show="selectedProductName">
@@ -300,6 +300,10 @@
                     this.searchQuery = p.sku + ' – ' + p.name;
                     this.dropdownOpen = false;
                     this.highlightIndex = -1;
+                    this.$nextTick(() => {
+                        const qtyInput = this.$el.querySelector('input[x-model="addQty"]');
+                        if (qtyInput) qtyInput.focus();
+                    });
                 },
 
                 addLine() {
