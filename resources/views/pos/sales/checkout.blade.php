@@ -179,27 +179,16 @@
                         </div>
 
                         {{-- COMPLETE SALE BUTTON --}}
-                        <button type="button" @click="submitSale()"
-                            :disabled="lines.length === 0 || submitting"
-                            class="w-full py-4 px-6 rounded-lg font-bold text-white text-lg uppercase tracking-wider transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-                            :class="(lines.length > 0 && !submitting) ? 'bg-green-600 hover:bg-green-500 active:bg-green-700 shadow-green-200' : 'bg-gray-400'">
-                            <span x-show="!submitting && lines.length > 0" class="flex items-center justify-center gap-2">
-                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                Complete Sale
-                            </span>
-                            <span x-show="submitting" class="flex items-center justify-center gap-2">
-                                <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                </svg>
-                                Processing...
-                            </span>
-                            <span x-show="!submitting && lines.length === 0" class="flex items-center justify-center">
-                                Add items to begin
-                            </span>
-                        </button>
+                        <div class="mt-4 pt-4 border-t">
+                            <button type="button" @click="submitSale()"
+                                :disabled="lines.length === 0 || submitting"
+                                class="w-full py-4 px-6 rounded-lg font-bold text-lg uppercase tracking-wider transition duration-200"
+                                :class="(lines.length > 0 && !submitting) ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
+                                <span x-show="!submitting && lines.length > 0">Complete Sale</span>
+                                <span x-show="submitting">Processing...</span>
+                                <span x-show="!submitting && lines.length === 0">Add items first</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
