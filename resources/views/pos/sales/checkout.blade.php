@@ -162,17 +162,36 @@
                                     x-text="'Remaining: $' + getRemaining().toFixed(2)"></span>
                             </div>
                             <template x-for="(pay, pi) in payments" :key="pi">
-                                <div class="flex gap-2 mb-2 items-end">
-                                    <select x-model="pay.payment_method_id" class="flex-1 border-gray-300 rounded-md shadow-sm text-sm">
-                                        <option value="">Method</option>
-                                        @foreach($paymentMethods as $pm)
-                                            <option value="{{ $pm->id }}">{{ $pm->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="number" x-model.number="pay.amount" min="0.01" step="0.01"
-                                        class="w-24 border-gray-300 rounded-md shadow-sm text-sm text-right" />
-                                    <button type="button" @click="removePayment(pi)"
-                                        class="text-red-600 hover:text-red-900 text-sm font-bold px-2" x-show="payments.length > 1">&times;</button>
+                                <div class="mb-2">
+                                    <div class="flex gap-2 items-end">
+                                        <select x-model="pay.payment_method_id" @change="onPaymentMethodChange(pi)"
+                                            class="flex-1 border-gray-300 rounded-md shadow-sm text-sm">
+                                            <option value="">Method</option>
+                                            @foreach($paymentMethods as $pm)
+                                                <option value="{{ $pm->id }}" data-type="{{ $pm->type }}">{{ $pm->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input type="number" x-model.number="pay.amount" min="0.01" step="0.01"
+                                            class="w-24 border-gray-300 rounded-md shadow-sm text-sm text-right" />
+                                        <button type="button" @click="removePayment(pi)"
+                                            class="text-red-600 hover:text-red-900 text-sm font-bold px-2" x-show="payments.length > 1">&times;</button>
+                                    </div>
+                                    <template x-if="isCashPayment(pi)">
+                                        <div class="mt-2 ml-0 flex gap-2 items-end">
+                                            <div class="flex-1">
+                                                <label class="block text-xs text-gray-500 mb-0.5">Cash Tendered</label>
+                                                <input type="number" x-model.number="pay.cash_tendered" min="0" step="0.01"
+                                                    @keydown.enter.prevent="submitSale()"
+                                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" />
+                                            </div>
+                                            <div class="text-right min-w-[90px]">
+                                                <label class="block text-xs text-gray-500 mb-0.5">Change</label>
+                                                <div class="text-lg font-bold"
+                                                    :class="getCashChange(pi) >= 0 ? 'text-green-600' : 'text-red-600'"
+                                                    x-text="'$' + Math.abs(getCashChange(pi)).toFixed(2)"></div>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
                             <button type="button" @click="addPayment()" class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">+ Add Payment</button>
@@ -226,11 +245,12 @@
                 lines: [],
                 customerId: '',
                 reference: '',
-                payments: [{ payment_method_id: '', amount: 0 }],
+                payments: [{ payment_method_id: '', amount: 0, cash_tendered: 0 }],
                 submitting: false,
                 dropdownOpen: false,
                 highlightIndex: -1,
                 _lastQuery: '',
+                paymentTypes: @json($paymentMethods->pluck('type', 'id')),
 
                 init() {
                     this.filteredProducts = [];
@@ -358,11 +378,33 @@
                 },
 
                 addPayment() {
-                    this.payments.push({ payment_method_id: '', amount: this.getRemaining() > 0 ? this.getRemaining().toFixed(2) : '0.00' });
+                    this.payments.push({ payment_method_id: '', amount: this.getRemaining() > 0 ? this.getRemaining().toFixed(2) : '0.00', cash_tendered: 0 });
                 },
 
                 removePayment(pi) {
                     this.payments.splice(pi, 1);
+                },
+
+                isCashPayment(pi) {
+                    const pmId = this.payments[pi].payment_method_id;
+                    return pmId && this.paymentTypes[pmId] === 'cash';
+                },
+
+                getCashChange(pi) {
+                    const pay = this.payments[pi];
+                    const tendered = parseFloat(pay.cash_tendered) || 0;
+                    const amount = parseFloat(pay.amount) || 0;
+                    return parseFloat((tendered - amount).toFixed(2));
+                },
+
+                onPaymentMethodChange(pi) {
+                    const pay = this.payments[pi];
+                    if (this.isCashPayment(pi)) {
+                        const amt = parseFloat(pay.amount) || 0;
+                        if (amt > 0) {
+                            pay.cash_tendered = amt;
+                        }
+                    }
                 },
 
                 async submitSale() {
@@ -395,6 +437,7 @@
                                 payments: this.payments.filter(p => p.payment_method_id && p.amount > 0).map(p => ({
                                     payment_method_id: p.payment_method_id,
                                     amount: parseFloat(p.amount),
+                                    cash_tendered: parseFloat(p.cash_tendered) || null,
                                 })),
                             }),
                         });

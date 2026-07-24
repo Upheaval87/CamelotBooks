@@ -32,7 +32,7 @@ class PosSaleController extends Controller
         $paymentMethods = PosPaymentMethod::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
-            ->get();
+            ->get(['id', 'name', 'type', 'clearing_account_id', 'requires_reference']);
         $customers = Customer::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
