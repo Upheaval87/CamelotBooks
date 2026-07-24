@@ -18,6 +18,17 @@ class PosSaleController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'sales_price', 'tax_rate', 'is_taxable', 'tracked_as_inventory']);
+
+        // Attach current stock for tracked items
+        $products->each(function ($product) use ($companyId) {
+            if ($product->tracked_as_inventory) {
+                $product->current_stock = app(\App\Services\Accounting\InventoryService::class)
+                    ->getProductTotalQuantityOnHand($companyId, $product->id);
+            } else {
+                $product->current_stock = null; // unlimited
+            }
+        });
+
         $paymentMethods = PosPaymentMethod::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')

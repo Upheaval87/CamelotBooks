@@ -33,8 +33,14 @@
                                     class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                                     <template x-for="p in filteredProducts" :key="p.id">
                                         <div class="px-3 py-2 cursor-pointer hover:bg-indigo-50 flex justify-between items-center"
-                                            @click="selectedProductId = p.id; searchQuery = p.sku + ' – ' + p.name; open = false;">
-                                            <span class="text-sm text-gray-900" x-text="p.sku + ' – ' + p.name"></span>
+                                            :class="p.tracked_as_inventory && p.current_stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''"
+                                            @click="if(p.tracked_as_inventory && p.current_stock <= 0) return; selectedProductId = p.id; searchQuery = p.sku + ' – ' + p.name; open = false;">
+                                            <div>
+                                                <span class="text-sm text-gray-900" x-text="p.sku + ' – ' + p.name"></span>
+                                                <span x-show="p.tracked_as_inventory" class="ml-2 text-xs"
+                                                    :class="p.current_stock > 0 ? 'text-green-600' : 'text-red-600'"
+                                                    x-text="p.current_stock > 0 ? 'Stock: ' + p.current_stock : 'Out of stock'"></span>
+                                            </div>
                                             <span class="text-sm font-semibold text-indigo-600" x-text="'$' + parseFloat(p.sales_price).toFixed(2)"></span>
                                         </div>
                                     </template>
