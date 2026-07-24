@@ -22,25 +22,32 @@
                 <div class="lg:col-span-2 bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Add Items') }}</h3>
 
-                    <div class="flex gap-3 mb-4 flex-wrap">
-                        <div class="flex-1 min-w-[200px]">
-                            <input type="text" x-model="searchQuery" @input="filterProducts()" placeholder="Search by name or SKU..."
-                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                    <div class="flex gap-3 mb-4 flex-wrap items-end">
+                        <div class="flex-1 min-w-[250px]">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                            <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                                <input type="text" x-model="searchQuery" @input="filterProducts()" @focus="open = true"
+                                    placeholder="Type to search products..." autocomplete="off"
+                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                <div x-show="open && filteredProducts.length > 0" x-transition x-cloak
+                                    class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                    <template x-for="p in filteredProducts" :key="p.id">
+                                        <div class="px-3 py-2 cursor-pointer hover:bg-indigo-50 flex justify-between items-center"
+                                            @click="selectedProductId = p.id; searchQuery = p.sku + ' – ' + p.name; open = false;">
+                                            <span class="text-sm text-gray-900" x-text="p.sku + ' – ' + p.name"></span>
+                                            <span class="text-sm font-semibold text-indigo-600" x-text="'$' + parseFloat(p.sales_price).toFixed(2)"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
-                        <div class="w-[240px]">
-                            <select x-model="selectedProductId" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">-- Select Product --</option>
-                                <template x-for="p in filteredProducts" :key="p.id">
-                                    <option :value="p.id" x-text="p.sku + ' – ' + p.name + ' ($' + parseFloat(p.sales_price).toFixed(2) + ')'"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div class="w-[80px]">
+                        <div class="w-[90px]">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
                             <input type="number" x-model="addQty" min="1" step="1" value="1"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-center" />
                         </div>
                         <button type="button" @click="addLine()"
-                            class="px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-sm hover:bg-indigo-500 shadow-sm">
+                            class="px-5 py-2 bg-indigo-600 text-white rounded-md font-semibold text-sm hover:bg-indigo-500 shadow-sm h-[38px]">
                             {{ __('Add') }}
                         </button>
                     </div>
