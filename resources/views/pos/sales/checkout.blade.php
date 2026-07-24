@@ -27,14 +27,23 @@
                         <div class="relative">
                             <input type="text" x-model="searchQuery"
                                 @focus="dropdownOpen = searchQuery.length > 0"
-                                placeholder="Type to search products..." autocomplete="off"
+                                @keydown.arrow-down.prevent="moveHighlight(1)"
+                                @keydown.arrow-up.prevent="moveHighlight(-1)"
+                                @keydown.enter.prevent="confirmHighlight()"
+                                @keydown.escape="dropdownOpen = false"
+                                placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                             <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
                                 class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                                 <template x-for="(p, pi) in filteredProducts" :key="p.id">
-                                    <div class="px-3 py-2 cursor-pointer hover:bg-indigo-50 flex justify-between items-center"
-                                        :class="p.tracked_as_inventory && p.current_stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''"
-                                        @click="selectProduct(p)">
+                                    <div class="px-3 py-2 cursor-pointer flex justify-between items-center"
+                                        :class="{
+                                            'bg-indigo-100': pi === highlightIndex,
+                                            'hover:bg-indigo-50': pi !== highlightIndex,
+                                            'opacity-50 cursor-not-allowed': p.tracked_as_inventory && p.current_stock <= 0
+                                        }"
+                                        @click="selectProduct(p)"
+                                        @mouseenter="highlightIndex = pi">
                                         <div>
                                             <span class="text-sm text-gray-900" x-text="p.sku + ' – ' + p.name"></span>
                                             <span x-show="p.tracked_as_inventory" class="ml-2 text-xs"
@@ -215,6 +224,7 @@
                 payments: [{ payment_method_id: '', amount: 0 }],
                 submitting: false,
                 dropdownOpen: false,
+                highlightIndex: -1,
                 _lastQuery: '',
 
                 init() {
@@ -230,6 +240,7 @@
                     const q = this.searchQuery.toLowerCase().trim();
                     if (q === this._lastQuery) return;
                     this._lastQuery = q;
+                    this.highlightIndex = -1;
                     if (q === '') {
                         this.filteredProducts = [];
                         this.dropdownOpen = false;
@@ -239,6 +250,19 @@
                         p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
                     );
                     this.dropdownOpen = true;
+                },
+
+                moveHighlight(dir) {
+                    if (!this.dropdownOpen || this.filteredProducts.length === 0) return;
+                    this.highlightIndex += dir;
+                    if (this.highlightIndex < 0) this.highlightIndex = this.filteredProducts.length - 1;
+                    if (this.highlightIndex >= this.filteredProducts.length) this.highlightIndex = 0;
+                },
+
+                confirmHighlight() {
+                    if (this.highlightIndex >= 0 && this.highlightIndex < this.filteredProducts.length) {
+                        this.selectProduct(this.filteredProducts[this.highlightIndex]);
+                    }
                 },
 
                 filterProducts() {
@@ -259,6 +283,7 @@
                     this.selectedProductName = p.sku + ' – ' + p.name;
                     this.searchQuery = p.sku + ' – ' + p.name;
                     this.dropdownOpen = false;
+                    this.highlightIndex = -1;
                 },
 
                 addLine() {
