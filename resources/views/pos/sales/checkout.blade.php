@@ -220,10 +220,9 @@
 
         {{-- ===== PAYMENT MODAL (Cash) ===== --}}
         <div x-show="showModal && modalType === 'cash'" x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center"
-            @keydown.escape.window="closeModal()">
-            <div class="fixed inset-0 bg-black/50 z-50"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-[60]" @click.stop>
+            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
+            @keydown.escape.window="closeModal()" style="z-index:9999;">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Cash Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter the cash amount received from the customer.</div>
 
@@ -279,10 +278,9 @@
 
         {{-- ===== PAYMENT MODAL (Card) ===== --}}
         <div x-show="showModal && modalType === 'card'" x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center"
-            @keydown.escape.window="closeModal()">
-            <div class="fixed inset-0 bg-black/50 z-50"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-[60]" @click.stop>
+            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
+            @keydown.escape.window="closeModal()" style="z-index:9999;">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Card Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter card payment details.</div>
 
@@ -337,10 +335,9 @@
 
         {{-- ===== PAYMENT MODAL (Mobile Money) ===== --}}
         <div x-show="showModal && modalType === 'mobile_money'" x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center"
-            @keydown.escape.window="closeModal()">
-            <div class="fixed inset-0 bg-black/50 z-50"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-[60]" @click.stop>
+            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
+            @keydown.escape.window="closeModal()" style="z-index:9999;">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Mobile Money Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter mobile money payment details.</div>
 
@@ -395,10 +392,9 @@
 
         {{-- ===== SPLIT PAYMENT MODAL ===== --}}
         <div x-show="showModal && modalType === 'split'" x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center"
-            @keydown.escape.window="closeModal()">
-            <div class="fixed inset-0 bg-black/50 z-50"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 z-[60] max-h-[90vh] overflow-y-auto" @click.stop>
+            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
+            @keydown.escape.window="closeModal()" style="z-index:9999;">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Split Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Allocate the total due across multiple payment methods.</div>
 
