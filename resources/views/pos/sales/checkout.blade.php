@@ -27,10 +27,7 @@
                         <div class="relative">
                             <input type="text" x-model="searchQuery"
                                 @focus="dropdownOpen = searchQuery.length > 0"
-                                @keydown.arrow-down.prevent="moveHighlight(1)"
-                                @keydown.arrow-up.prevent="moveHighlight(-1)"
-                                @keydown.enter.prevent="confirmHighlight()"
-                                @keydown.escape="dropdownOpen = false"
+                                onkeydown="return handleProductKey(event)"
                                 placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                             <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
@@ -210,6 +207,26 @@
     </div>
 
     <script>
+        function handleProductKey(e) {
+            const el = e.target;
+            const component = Alpine.$data(el.closest('[x-data]'));
+            if (!component) return true;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                component.moveHighlight(1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                component.moveHighlight(-1);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                component.confirmHighlight();
+            } else if (e.key === 'Escape') {
+                component.dropdownOpen = false;
+            }
+            return true;
+        }
+
         function posCheckout() {
             return {
                 products: @json($products),
