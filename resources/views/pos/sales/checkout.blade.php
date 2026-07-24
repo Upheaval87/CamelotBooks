@@ -18,31 +18,33 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {{-- Product Selection --}}
+                {{-- Product Selection & Lines --}}
                 <div class="lg:col-span-2 bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Add Items') }}</h3>
 
-                    <div class="flex gap-4 mb-4">
-                        <div class="flex-1">
+                    <div class="flex gap-3 mb-4 flex-wrap">
+                        <div class="flex-1 min-w-[200px]">
                             <input type="text" x-model="searchQuery" @input="filterProducts()" placeholder="Search by name or SKU..."
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                         </div>
-                        <div class="w-[200px]">
-                            <select x-model="selectedProductId" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <div class="w-[240px]">
+                            <select x-model="selectedProductId" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">-- Select Product --</option>
                                 <template x-for="p in filteredProducts" :key="p.id">
-                                    <option :value="p.id" x-text="p.sku + ' – ' + p.name"></option>
+                                    <option :value="p.id" x-text="p.sku + ' – ' + p.name + ' ($' + parseFloat(p.sales_price).toFixed(2) + ')'"></option>
                                 </template>
                             </select>
                         </div>
-                        <div class="w-[100px]">
+                        <div class="w-[80px]">
                             <input type="number" x-model="addQty" min="1" step="1" value="1"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-center" />
                         </div>
-                        <x-primary-button type="button" @click="addLine()">{{ __('Add') }}</x-primary-button>
+                        <button type="button" @click="addLine()"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-sm hover:bg-indigo-500 shadow-sm">
+                            {{ __('Add') }}
+                        </button>
                     </div>
 
-                    {{-- Sale Lines Table --}}
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -75,85 +77,106 @@
                                         <td class="px-4 py-2 text-sm text-right text-gray-500" x-text="'$' + line.tax_amount.toFixed(2)"></td>
                                         <td class="px-4 py-2 text-sm text-right font-semibold" x-text="'$' + line.line_total.toFixed(2)"></td>
                                         <td class="px-4 py-2 text-center">
-                                            <button type="button" @click="removeLine(index)" class="text-red-600 hover:text-red-900 text-sm">Remove</button>
+                                            <button type="button" @click="removeLine(index)" class="text-red-600 hover:text-red-900 text-sm font-medium">Remove</button>
                                         </td>
                                     </tr>
                                 </template>
                                 <tr x-show="lines.length === 0">
-                                    <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-400">No items added yet.</td>
+                                    <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-400">No items added yet. Search and add products above.</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                {{-- Payment Panel --}}
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payment') }}</h3>
+                {{-- Payment Panel (sticky) --}}
+                <div class="lg:sticky lg:top-6 lg:self-start">
+                    <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payment') }}</h3>
 
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Customer</label>
-                        <select x-model="customerId" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">Walk-in Customer</option>
-                            @foreach($customers as $customer)
-                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                        <div class="mb-3">
+                            <label class="block text-sm font-medium text-gray-700">Customer</label>
+                            <select x-model="customerId" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="">Walk-in Customer</option>
+                                @foreach($customers as $customer)
+                                    <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">Reference</label>
-                        <input type="text" x-model="reference"
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" placeholder="Optional" />
-                    </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700">Reference</label>
+                            <input type="text" x-model="reference"
+                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" placeholder="Optional" />
+                        </div>
 
-                    {{-- Totals --}}
-                    <div class="border-t pt-4 mb-4 space-y-2">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Subtotal</span>
-                            <span x-text="'$' + totals.subtotal.toFixed(2)"></span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Discount</span>
-                            <span x-text="'-$' + totals.discount.toFixed(2)"></span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Tax</span>
-                            <span x-text="'$' + totals.tax.toFixed(2)"></span>
-                        </div>
-                        <div class="flex justify-between text-lg font-bold border-t pt-2">
-                            <span>Total</span>
-                            <span x-text="'$' + totals.total.toFixed(2)"></span>
-                        </div>
-                    </div>
-
-                    {{-- Payments --}}
-                    <div class="mb-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-sm font-semibold text-gray-700">Payments</span>
-                            <span class="text-sm text-gray-500" x-text="'Remaining: $' + remaining.toFixed(2)"></span>
-                        </div>
-                        <template x-for="(pay, pi) in payments" :key="pi">
-                            <div class="flex gap-2 mb-2 items-end">
-                                <select x-model="pay.payment_method_id" class="flex-1 border-gray-300 rounded-md shadow-sm text-sm">
-                                    <option value="">Method</option>
-                                    @foreach($paymentMethods as $pm)
-                                        <option value="{{ $pm->id }}">{{ $pm->name }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="number" x-model.number="pay.amount" min="0.01" step="0.01"
-                                    class="w-24 border-gray-300 rounded-md shadow-sm text-sm text-right" />
-                                <button type="button" @click="payments.splice(pi, 1)" class="text-red-600 hover:text-red-900 text-sm">X</button>
+                        {{-- Totals --}}
+                        <div class="border-t pt-3 mb-3 space-y-1">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Subtotal</span>
+                                <span x-text="'$' + getTotals().subtotal.toFixed(2)"></span>
                             </div>
-                        </template>
-                        <button type="button" @click="addPayment()" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Payment</button>
-                    </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Discount</span>
+                                <span x-text="'-$' + getTotals().discount.toFixed(2)"></span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Tax (16%)</span>
+                                <span x-text="'$' + getTotals().tax.toFixed(2)"></span>
+                            </div>
+                            <div class="flex justify-between text-xl font-bold border-t pt-2">
+                                <span>Total</span>
+                                <span class="text-indigo-600" x-text="'$' + getTotals().total.toFixed(2)"></span>
+                            </div>
+                        </div>
 
-                    <button type="button" @click="submitSale()" :disabled="lines.length === 0 || submitting"
-                        class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 w-full justify-center text-lg py-3 disabled:opacity-50">
-                        <span x-show="!submitting">Complete Sale</span>
-                        <span x-show="submitting">Processing...</span>
-                    </button>
+                        {{-- Payments --}}
+                        <div class="mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-semibold text-gray-700">Payments</span>
+                                <span class="text-sm font-medium" :class="remaining > 0 ? 'text-red-600' : 'text-green-600'"
+                                    x-text="'Remaining: $' + getRemaining().toFixed(2)"></span>
+                            </div>
+                            <template x-for="(pay, pi) in payments" :key="pi">
+                                <div class="flex gap-2 mb-2 items-end">
+                                    <select x-model="pay.payment_method_id" class="flex-1 border-gray-300 rounded-md shadow-sm text-sm">
+                                        <option value="">Method</option>
+                                        @foreach($paymentMethods as $pm)
+                                            <option value="{{ $pm->id }}">{{ $pm->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="number" x-model.number="pay.amount" min="0.01" step="0.01"
+                                        class="w-24 border-gray-300 rounded-md shadow-sm text-sm text-right" />
+                                    <button type="button" @click="removePayment(pi)"
+                                        class="text-red-600 hover:text-red-900 text-sm font-bold px-2" x-show="payments.length > 1">&times;</button>
+                                </div>
+                            </template>
+                            <button type="button" @click="addPayment()" class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">+ Add Payment</button>
+                        </div>
+
+                        {{-- COMPLETE SALE BUTTON --}}
+                        <button type="button" @click="submitSale()"
+                            :disabled="lines.length === 0 || submitting"
+                            class="w-full py-4 px-6 rounded-lg font-bold text-white text-lg uppercase tracking-wider transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                            :class="(lines.length > 0 && !submitting) ? 'bg-green-600 hover:bg-green-500 active:bg-green-700 shadow-green-200' : 'bg-gray-400'">
+                            <span x-show="!submitting && lines.length > 0" class="flex items-center justify-center gap-2">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Complete Sale
+                            </span>
+                            <span x-show="submitting" class="flex items-center justify-center gap-2">
+                                <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                Processing...
+                            </span>
+                            <span x-show="!submitting && lines.length === 0" class="flex items-center justify-center">
+                                Add items to begin
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -196,7 +219,7 @@
                         existing.quantity += qty;
                         this.recalcLine(this.lines.indexOf(existing));
                     } else {
-                        this.lines.push({
+                        const line = {
                             product_id: product.id,
                             product_name: product.sku + ' – ' + product.name,
                             quantity: qty,
@@ -207,18 +230,17 @@
                             is_taxable: product.is_taxable,
                             tax_amount: 0,
                             line_total: 0,
-                        });
+                        };
+                        this.lines.push(line);
                         this.recalcLine(this.lines.length - 1);
                     }
 
                     this.selectedProductId = '';
                     this.addQty = 1;
-                    this.recalcTotals();
                 },
 
                 removeLine(index) {
                     this.lines.splice(index, 1);
-                    this.recalcTotals();
                 },
 
                 recalcLine(index) {
@@ -227,42 +249,34 @@
                     const afterDiscount = subtotal - (line.discount_amount || 0);
                     line.tax_amount = line.is_taxable ? parseFloat((afterDiscount * (line.tax_rate / 100)).toFixed(2)) : 0;
                     line.line_total = parseFloat((afterDiscount + line.tax_amount).toFixed(2));
-                    this.recalcTotals();
                 },
 
-                recalcTotals() {
-                    this.totals = {
-                        subtotal: this.lines.reduce((s, l) => s + (l.quantity * l.unit_price), 0),
-                        discount: this.lines.reduce((s, l) => s + (l.discount_amount || 0), 0),
-                        tax: this.lines.reduce((s, l) => s + l.tax_amount, 0),
-                        total: this.lines.reduce((s, l) => s + l.line_total, 0),
-                    };
-                    this.totals = {
-                        subtotal: parseFloat(this.totals.subtotal.toFixed(2)),
-                        discount: parseFloat(this.totals.discount.toFixed(2)),
-                        tax: parseFloat(this.totals.tax.toFixed(2)),
-                        total: parseFloat(this.totals.total.toFixed(2)),
+                getTotals() {
+                    return {
+                        subtotal: parseFloat(this.lines.reduce((s, l) => s + (l.quantity * l.unit_price), 0).toFixed(2)),
+                        discount: parseFloat(this.lines.reduce((s, l) => s + (l.discount_amount || 0), 0).toFixed(2)),
+                        tax: parseFloat(this.lines.reduce((s, l) => s + l.tax_amount, 0).toFixed(2)),
+                        total: parseFloat(this.lines.reduce((s, l) => s + l.line_total, 0).toFixed(2)),
                     };
                 },
 
-                get totals() {
-                    const subtotal = this.lines.reduce((s, l) => s + (l.quantity * l.unit_price), 0);
-                    const discount = this.lines.reduce((s, l) => s + (l.discount_amount || 0), 0);
-                    const tax = this.lines.reduce((s, l) => s + l.tax_amount, 0);
-                    const total = this.lines.reduce((s, l) => s + l.line_total, 0);
-                    return { subtotal, discount, tax, total };
-                },
-
-                get remaining() {
+                getRemaining() {
+                    const total = this.getTotals().total;
                     const paid = this.payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-                    return Math.max(0, this.totals.total - paid);
+                    return Math.max(0, parseFloat((total - paid).toFixed(2)));
                 },
 
                 addPayment() {
-                    this.payments.push({ payment_method_id: '', amount: this.remaining > 0 ? this.remaining.toFixed(2) : 0 });
+                    this.payments.push({ payment_method_id: '', amount: this.getRemaining() > 0 ? this.getRemaining().toFixed(2) : '0.00' });
+                },
+
+                removePayment(pi) {
+                    this.payments.splice(pi, 1);
                 },
 
                 async submitSale() {
+                    if (this.lines.length === 0) return;
+
                     this.submitting = true;
                     document.getElementById('pos-error').classList.add('hidden');
 
