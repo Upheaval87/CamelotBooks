@@ -19,11 +19,17 @@ class User extends Authenticatable
         'email',
         'password',
         'current_company_id',
+        'two_factor_secret',
+        'two_factor_enabled',
+        'password_changed_at',
+        'failed_login_attempts',
+        'locked_until',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
     ];
 
     protected function casts(): array
@@ -31,6 +37,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_enabled' => 'boolean',
+            'password_changed_at' => 'datetime',
+            'locked_until' => 'datetime',
         ];
     }
 

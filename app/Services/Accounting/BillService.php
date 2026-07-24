@@ -42,6 +42,8 @@ class BillService
                 'company_id' => $companyId,
                 'branch_id' => $data['branch_id'] ?? null,
                 'vendor_id' => $data['vendor_id'],
+                'purchase_order_id' => $data['purchase_order_id'] ?? null,
+                'grn_id' => $data['grn_id'] ?? null,
                 'bill_number' => $billNumber,
                 'internal_number' => $data['internal_number'] ?? null,
                 'bill_date' => $data['bill_date'],
@@ -118,72 +120,172 @@ class BillService
         $companyId = $bill->company_id;
         $apAccount = $this->findAccountByCode($companyId, '2000');
         $taxReceivableAccount = $this->findAccountByCode($companyId, '1150');
+        $isPoBacked = !is_null($bill->purchase_order_id);
 
-        return DB::transaction(function () use ($bill, $userId, $companyId, $apAccount, $taxReceivableAccount) {
+        return DB::transaction(function () use ($bill, $userId, $companyId, $apAccount, $taxReceivableAccount, $isPoBacked) {
             $oldValues = $bill->toArray();
 
             $lines = $bill->lines()->with('product')->get();
             $jeLines = [];
-
             $totalDebit = 0;
             $totalCredit = 0;
 
-            foreach ($lines as $line) {
-                $debitAccountId = $line->expense_account_id;
+            if ($isPoBacked) {
+                // PO-backed bill: clear the accrual created by the GRN
+                // DR Accrued Purchases (2150) for GRN total / CR AP (2000) for bill total
+                // PPV (6800) absorbs any price variance
+                $accruedAccount = $this->findAccountByCode($companyId, '2150');
+                $ppvAccount = $this->findAccountByCode($companyId, '6800');
 
-                if ($line->product && $line->product->tracked_as_inventory && $line->product->inventory_asset_account_id) {
-                    $debitAccountId = $line->product->inventory_asset_account_id;
-                }
+                $totalBillAmount = 0;
+                $totalTaxAmount = 0;
+                $totalLineTotal = 0;
 
-                $jeLines[] = [
-                    'account_id' => $debitAccountId,
-                    'debit' => $line->amount,
-                    'credit' => 0,
-                    'memo' => "Bill {$bill->bill_number} - {$line->description}",
-                    'entity_type' => Bill::class,
-                    'entity_id' => $bill->id,
-                    'cost_center_id' => $line->cost_center_id,
-                ];
-                $totalDebit += $line->amount;
+                // CR AP for each bill line
+                foreach ($lines as $line) {
+                    if ($line->tax_amount > 0) {
+                        $jeLines[] = [
+                            'account_id' => $taxReceivableAccount->id,
+                            'debit' => $line->tax_amount,
+                            'credit' => 0,
+                            'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
+                            'entity_type' => Bill::class,
+                            'entity_id' => $bill->id,
+                            'cost_center_id' => $line->cost_center_id,
+                        ];
+                        $totalDebit += $line->tax_amount;
+                        $totalTaxAmount += $line->tax_amount;
+                    }
 
-                if ($line->tax_amount > 0) {
                     $jeLines[] = [
-                        'account_id' => $taxReceivableAccount->id,
-                        'debit' => $line->tax_amount,
-                        'credit' => 0,
-                        'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
+                        'account_id' => $apAccount->id,
+                        'debit' => 0,
+                        'credit' => $line->line_total,
+                        'memo' => "Bill {$bill->bill_number} - {$line->description}",
                         'entity_type' => Bill::class,
                         'entity_id' => $bill->id,
                         'cost_center_id' => $line->cost_center_id,
                     ];
-                    $totalDebit += $line->tax_amount;
+                    $totalCredit += $line->line_total;
+
+                    $totalBillAmount += $line->amount;
+                    $totalLineTotal += $line->line_total;
                 }
 
+                // Compute accrual total from the linked GRN
+                $totalAccrued = $this->computeAccrualTotal($bill, $lines);
+
+                // DR Accrued Purchases for the full accrued amount
                 $jeLines[] = [
-                    'account_id' => $apAccount->id,
-                    'debit' => 0,
-                    'credit' => $line->line_total,
-                    'memo' => "Bill {$bill->bill_number} - {$line->description}",
+                    'account_id' => $accruedAccount->id,
+                    'debit' => $totalAccrued,
+                    'credit' => 0,
+                    'memo' => "Bill {$bill->bill_number} - Clear accrual",
                     'entity_type' => Bill::class,
                     'entity_id' => $bill->id,
-                    'cost_center_id' => $line->cost_center_id,
                 ];
-                $totalCredit += $line->line_total;
+                $totalDebit += $totalAccrued;
 
-                if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
-                    $qty = (float) $line->quantity;
-                    if ($qty > 0) {
-                        $unitCost = round($line->amount / $qty, 4);
-                        $this->inventoryService->receiveStock(
-                            $companyId,
-                            $line->product_id,
-                            $bill->branch_id,
-                            $qty,
-                            $unitCost,
-                            'bill',
-                            $bill->id,
-                            $bill->bill_date->format('Y-m-d')
-                        );
+                // PPV = billAmount - accrued (positive = unfavorable, negative = favorable)
+                $ppvVariance = round($totalBillAmount - $totalAccrued, 2);
+
+                if (abs($ppvVariance) > 0.001) {
+                    if ($ppvVariance > 0) {
+                        // Bill > accrued -> debit PPV (unfavorable)
+                        $jeLines[] = [
+                            'account_id' => $ppvAccount->id,
+                            'debit' => abs($ppvVariance),
+                            'credit' => 0,
+                            'memo' => "Bill {$bill->bill_number} - Purchase Price Variance",
+                            'entity_type' => Bill::class,
+                            'entity_id' => $bill->id,
+                        ];
+                        $totalDebit += abs($ppvVariance);
+                    } else {
+                        // Bill < accrued -> credit PPV (favorable)
+                        $jeLines[] = [
+                            'account_id' => $ppvAccount->id,
+                            'debit' => 0,
+                            'credit' => abs($ppvVariance),
+                            'memo' => "Bill {$bill->bill_number} - Purchase Price Variance",
+                            'entity_type' => Bill::class,
+                            'entity_id' => $bill->id,
+                        ];
+                        $totalCredit += abs($ppvVariance);
+                    }
+                }
+
+                // Update PO line quantity_billed
+                foreach ($lines as $line) {
+                    if ($line->purchase_order_line_id) {
+                        $poLine = \App\Models\PurchaseOrderLine::find($line->purchase_order_line_id);
+                        if ($poLine) {
+                            $poLine->increment('quantity_billed', $line->quantity);
+                        }
+                    }
+                }
+
+            } else {
+                // Standalone bill (no PO): DR Inventory Asset or Expense / CR AP
+                // and create FIFO cost layers
+                foreach ($lines as $line) {
+                    $debitAccountId = $line->expense_account_id;
+
+                    if ($line->product && $line->product->tracked_as_inventory && $line->product->inventory_asset_account_id) {
+                        $debitAccountId = $line->product->inventory_asset_account_id;
+                    }
+
+                    $jeLines[] = [
+                        'account_id' => $debitAccountId,
+                        'debit' => $line->amount,
+                        'credit' => 0,
+                        'memo' => "Bill {$bill->bill_number} - {$line->description}",
+                        'entity_type' => Bill::class,
+                        'entity_id' => $bill->id,
+                        'cost_center_id' => $line->cost_center_id,
+                    ];
+                    $totalDebit += $line->amount;
+
+                    if ($line->tax_amount > 0) {
+                        $jeLines[] = [
+                            'account_id' => $taxReceivableAccount->id,
+                            'debit' => $line->tax_amount,
+                            'credit' => 0,
+                            'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
+                            'entity_type' => Bill::class,
+                            'entity_id' => $bill->id,
+                            'cost_center_id' => $line->cost_center_id,
+                        ];
+                        $totalDebit += $line->tax_amount;
+                    }
+
+                    $jeLines[] = [
+                        'account_id' => $apAccount->id,
+                        'debit' => 0,
+                        'credit' => $line->line_total,
+                        'memo' => "Bill {$bill->bill_number} - {$line->description}",
+                        'entity_type' => Bill::class,
+                        'entity_id' => $bill->id,
+                        'cost_center_id' => $line->cost_center_id,
+                    ];
+                    $totalCredit += $line->line_total;
+
+                    // Receive stock for non-PO bills only
+                    if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
+                        $qty = (float) $line->quantity;
+                        if ($qty > 0) {
+                            $unitCost = round($line->amount / $qty, 4);
+                            $this->inventoryService->receiveStock(
+                                $companyId,
+                                $line->product_id,
+                                $bill->branch_id,
+                                $qty,
+                                $unitCost,
+                                'bill',
+                                $bill->id,
+                                $bill->bill_date->format('Y-m-d')
+                            );
+                        }
                     }
                 }
             }
@@ -239,60 +341,148 @@ class BillService
                 $companyId = $bill->company_id;
                 $apAccount = $this->findAccountByCode($companyId, '2000');
                 $taxReceivableAccount = $this->findAccountByCode($companyId, '1150');
+                $isPoBacked = !is_null($bill->purchase_order_id);
 
                 $lines = $bill->lines()->with('product')->get();
                 $jeLines = [];
+                $totalDebit = 0;
+                $totalCredit = 0;
 
-                foreach ($lines as $line) {
-                    $debitAccountId = $line->expense_account_id;
+                if ($isPoBacked) {
+                    $accruedAccount = $this->findAccountByCode($companyId, '2150');
+                    $ppvAccount = $this->findAccountByCode($companyId, '6800');
+                    $totalBillAmount = 0;
+                    $totalLineTotal = 0;
 
-                    if ($line->product && $line->product->tracked_as_inventory && $line->product->inventory_asset_account_id) {
-                        $debitAccountId = $line->product->inventory_asset_account_id;
-                    }
+                    // CR AP for each bill line
+                    foreach ($lines as $line) {
+                        if ($line->tax_amount > 0) {
+                            $jeLines[] = [
+                                'account_id' => $taxReceivableAccount->id,
+                                'debit' => $line->tax_amount,
+                                'credit' => 0,
+                                'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
+                                'entity_type' => Bill::class,
+                                'entity_id' => $bill->id,
+                            ];
+                            $totalDebit += $line->tax_amount;
+                        }
 
-                    $jeLines[] = [
-                        'account_id' => $debitAccountId,
-                        'debit' => $line->amount,
-                        'credit' => 0,
-                        'memo' => "Bill {$bill->bill_number} - {$line->description}",
-                        'entity_type' => Bill::class,
-                        'entity_id' => $bill->id,
-                    ];
-
-                    if ($line->tax_amount > 0) {
                         $jeLines[] = [
-                            'account_id' => $taxReceivableAccount->id,
-                            'debit' => $line->tax_amount,
-                            'credit' => 0,
-                            'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
+                            'account_id' => $apAccount->id,
+                            'debit' => 0,
+                            'credit' => $line->line_total,
+                            'memo' => "Bill {$bill->bill_number} - {$line->description}",
                             'entity_type' => Bill::class,
                             'entity_id' => $bill->id,
                         ];
+                        $totalCredit += $line->line_total;
+
+                        $totalBillAmount += $line->amount;
+                        $totalLineTotal += $line->line_total;
                     }
 
+                    $totalAccrued = $this->computeAccrualTotal($bill, $lines);
+
+                    // DR Accrued Purchases for the full accrued amount
                     $jeLines[] = [
-                        'account_id' => $apAccount->id,
-                        'debit' => 0,
-                        'credit' => $line->line_total,
-                        'memo' => "Bill {$bill->bill_number} - {$line->description}",
+                        'account_id' => $accruedAccount->id,
+                        'debit' => $totalAccrued,
+                        'credit' => 0,
+                        'memo' => "Bill {$bill->bill_number} - Clear accrual",
                         'entity_type' => Bill::class,
                         'entity_id' => $bill->id,
                     ];
+                    $totalDebit += $totalAccrued;
 
-                    if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
-                        $qty = (float) $line->quantity;
-                        if ($qty > 0) {
-                            $unitCost = round($line->amount / $qty, 4);
-                            $this->inventoryService->receiveStock(
-                                $companyId,
-                                $line->product_id,
-                                $bill->branch_id,
-                                $qty,
-                                $unitCost,
-                                'bill',
-                                $bill->id,
-                                $bill->bill_date->format('Y-m-d')
-                            );
+                    // PPV = billAmount - accrued
+                    $ppvVariance = round($totalBillAmount - $totalAccrued, 2);
+
+                    if (abs($ppvVariance) > 0.001) {
+                        if ($ppvVariance > 0) {
+                            $jeLines[] = [
+                                'account_id' => $ppvAccount->id,
+                                'debit' => abs($ppvVariance),
+                                'credit' => 0,
+                                'memo' => "Bill {$bill->bill_number} - Purchase Price Variance",
+                                'entity_type' => Bill::class,
+                                'entity_id' => $bill->id,
+                            ];
+                            $totalDebit += abs($ppvVariance);
+                        } else {
+                            $jeLines[] = [
+                                'account_id' => $ppvAccount->id,
+                                'debit' => 0,
+                                'credit' => abs($ppvVariance),
+                                'memo' => "Bill {$bill->bill_number} - Purchase Price Variance",
+                                'entity_type' => Bill::class,
+                                'entity_id' => $bill->id,
+                            ];
+                            $totalCredit += abs($ppvVariance);
+                        }
+                    }
+
+                    foreach ($lines as $line) {
+                        if ($line->purchase_order_line_id) {
+                            $poLine = \App\Models\PurchaseOrderLine::find($line->purchase_order_line_id);
+                            if ($poLine) {
+                                $poLine->increment('quantity_billed', $line->quantity);
+                            }
+                        }
+                    }
+
+                } else {
+                    foreach ($lines as $line) {
+                        $debitAccountId = $line->expense_account_id;
+
+                        if ($line->product && $line->product->tracked_as_inventory && $line->product->inventory_asset_account_id) {
+                            $debitAccountId = $line->product->inventory_asset_account_id;
+                        }
+
+                        $jeLines[] = [
+                            'account_id' => $debitAccountId,
+                            'debit' => $line->amount,
+                            'credit' => 0,
+                            'memo' => "Bill {$bill->bill_number} - {$line->description}",
+                            'entity_type' => Bill::class,
+                            'entity_id' => $bill->id,
+                        ];
+
+                        if ($line->tax_amount > 0) {
+                            $jeLines[] = [
+                                'account_id' => $taxReceivableAccount->id,
+                                'debit' => $line->tax_amount,
+                                'credit' => 0,
+                                'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
+                                'entity_type' => Bill::class,
+                                'entity_id' => $bill->id,
+                            ];
+                        }
+
+                        $jeLines[] = [
+                            'account_id' => $apAccount->id,
+                            'debit' => 0,
+                            'credit' => $line->line_total,
+                            'memo' => "Bill {$bill->bill_number} - {$line->description}",
+                            'entity_type' => Bill::class,
+                            'entity_id' => $bill->id,
+                        ];
+
+                        if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
+                            $qty = (float) $line->quantity;
+                            if ($qty > 0) {
+                                $unitCost = round($line->amount / $qty, 4);
+                                $this->inventoryService->receiveStock(
+                                    $companyId,
+                                    $line->product_id,
+                                    $bill->branch_id,
+                                    $qty,
+                                    $unitCost,
+                                    'bill',
+                                    $bill->id,
+                                    $bill->bill_date->format('Y-m-d')
+                                );
+                            }
                         }
                     }
                 }
@@ -377,6 +567,23 @@ class BillService
         ];
     }
 
+    /**
+     * Compute total accrued amount from the linked GRN for PO-backed bills.
+     * Looks up GRN lines matching the bill's GRN id, or falls back to PO line costs.
+     */
+    protected function computeAccrualTotal(Bill $bill, $billLines): float
+    {
+        if ($bill->grn_id) {
+            $grnLines = \App\Models\GrnLine::where('goods_received_note_id', $bill->grn_id)->get();
+            if ($grnLines->isNotEmpty()) {
+                return (float) $grnLines->sum('total_cost');
+            }
+        }
+
+        // Fallback: sum of bill line amounts (no variance)
+        return (float) $billLines->sum('amount');
+    }
+
     protected function createLine(Bill $bill, array $lineData, int $companyId): BillLine
     {
         if (isset($lineData['product_id'])) {
@@ -400,6 +607,7 @@ class BillService
             'line_total' => $totals['line_total'],
             'expense_account_id' => $lineData['expense_account_id'],
             'cost_center_id' => $lineData['cost_center_id'] ?? null,
+            'purchase_order_line_id' => $lineData['purchase_order_line_id'] ?? null,
         ]);
     }
 

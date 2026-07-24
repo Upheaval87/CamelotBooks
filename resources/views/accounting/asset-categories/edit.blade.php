@@ -1,0 +1,217 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Edit Asset Category') }}: {{ $category->code }} - {{ $category->name }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <form method="POST" action="{{ route('accounting.asset-categories.update', $category) }}">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <x-input-label for="code" value="{{ __('Code') }}" />
+                                <x-text-input id="code" name="code" type="text" class="mt-1 block w-full" :value="old('code', $category->code)" required autofocus />
+                                <x-input-error :messages="$errors->get('code')" class="mt-2" />
+                            </div>
+                            <div>
+                                <x-input-label for="name" value="{{ __('Name') }}" />
+                                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $category->name)" required />
+                                <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <x-input-label for="description" value="{{ __('Description') }}" />
+                            <textarea id="description" name="description" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('description', $category->description) }}</textarea>
+                            <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                        </div>
+
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Financial Depreciation') }}</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <x-input-label for="depreciation_method_financial" value="{{ __('Depreciation Method') }}" />
+                                    <select id="depreciation_method_financial" name="depreciation_method_financial" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                        <option value="">Select Method</option>
+                                        <option value="straight_line" {{ old('depreciation_method_financial', $category->depreciation_method_financial) === 'straight_line' ? 'selected' : '' }}>Straight Line</option>
+                                        <option value="declining_balance" {{ old('depreciation_method_financial', $category->depreciation_method_financial) === 'declining_balance' ? 'selected' : '' }}>Declining Balance</option>
+                                        <option value="units_of_production" {{ old('depreciation_method_financial', $category->depreciation_method_financial) === 'units_of_production' ? 'selected' : '' }}>Units of Production</option>
+                                        <option value="sum_of_years" {{ old('depreciation_method_financial', $category->depreciation_method_financial) === 'sum_of_years' ? 'selected' : '' }}>Sum of Years' Digits</option>
+                                    </select>
+                                    <x-input-error :messages="$errors->get('depreciation_method_financial')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="useful_life_financial" value="{{ __('Useful Life (Years)') }}" />
+                                    <x-text-input id="useful_life_financial" name="useful_life_financial" type="number" min="1" class="mt-1 block w-full" :value="old('useful_life_financial', $category->useful_life_financial)" required />
+                                    <x-input-error :messages="$errors->get('useful_life_financial')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="residual_value_type_financial" value="{{ __('Residual Value Type') }}" />
+                                    <select id="residual_value_type_financial" name="residual_value_type_financial" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="percentage" {{ old('residual_value_type_financial', $category->residual_value_type_financial) === 'percentage' ? 'selected' : '' }}>Percentage</option>
+                                        <option value="fixed" {{ old('residual_value_type_financial', $category->residual_value_type_financial) === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
+                                    </select>
+                                    <x-input-error :messages="$errors->get('residual_value_type_financial')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="residual_value_financial" value="{{ __('Residual Value') }}" />
+                                    <x-text-input id="residual_value_financial" name="residual_value_financial" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('residual_value_financial', $category->residual_value_financial)" />
+                                    <x-input-error :messages="$errors->get('residual_value_financial')" class="mt-2" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Tax Depreciation') }}</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <x-input-label for="depreciation_method_tax" value="{{ __('Depreciation Method') }}" />
+                                    <select id="depreciation_method_tax" name="depreciation_method_tax" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                        <option value="">Select Method</option>
+                                        <option value="straight_line" {{ old('depreciation_method_tax', $category->depreciation_method_tax) === 'straight_line' ? 'selected' : '' }}>Straight Line</option>
+                                        <option value="declining_balance" {{ old('depreciation_method_tax', $category->depreciation_method_tax) === 'declining_balance' ? 'selected' : '' }}>Declining Balance</option>
+                                        <option value="capital_allowance" {{ old('depreciation_method_tax', $category->depreciation_method_tax) === 'capital_allowance' ? 'selected' : '' }}>Capital Allowance</option>
+                                    </select>
+                                    <x-input-error :messages="$errors->get('depreciation_method_tax')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="useful_life_tax" value="{{ __('Useful Life (Years)') }}" />
+                                    <x-text-input id="useful_life_tax" name="useful_life_tax" type="number" min="1" class="mt-1 block w-full" :value="old('useful_life_tax', $category->useful_life_tax)" required />
+                                    <x-input-error :messages="$errors->get('useful_life_tax')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="residual_value_type_tax" value="{{ __('Residual Value Type') }}" />
+                                    <select id="residual_value_type_tax" name="residual_value_type_tax" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="percentage" {{ old('residual_value_type_tax', $category->residual_value_type_tax) === 'percentage' ? 'selected' : '' }}>Percentage</option>
+                                        <option value="fixed" {{ old('residual_value_type_tax', $category->residual_value_type_tax) === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
+                                    </select>
+                                    <x-input-error :messages="$errors->get('residual_value_type_tax')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="residual_value_tax" value="{{ __('Residual Value') }}" />
+                                    <x-text-input id="residual_value_tax" name="residual_value_tax" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('residual_value_tax', $category->residual_value_tax)" />
+                                    <x-input-error :messages="$errors->get('residual_value_tax')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="depreciation_rate_tax" value="{{ __('Depreciation Rate (%)') }}" />
+                                    <x-text-input id="depreciation_rate_tax" name="depreciation_rate_tax" type="number" step="0.01" min="0" max="100" class="mt-1 block w-full" :value="old('depreciation_rate_tax', $category->depreciation_rate_tax)" />
+                                    <x-input-error :messages="$errors->get('depreciation_rate_tax')" class="mt-2" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-6">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="is_revaluation_enabled" name="is_revaluation_enabled" value="1" {{ old('is_revaluation_enabled', $category->is_revaluation_enabled) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                <x-input-label for="is_revaluation_enabled" value="{{ __('Enable Revaluation') }}" class="ml-2" />
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('GL Accounts') }}</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <x-input-label for="asset_account_id" value="{{ __('Asset Account') }}" />
+                                    <select id="asset_account_id" name="asset_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="">Select Account</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('asset_account_id', $category->asset_account_id) == $account->id ? 'selected' : '' }}>
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('asset_account_id')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="accumulated_depreciation_account_id" value="{{ __('Accumulated Depreciation Account') }}" />
+                                    <select id="accumulated_depreciation_account_id" name="accumulated_depreciation_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="">Select Account</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('accumulated_depreciation_account_id', $category->accumulated_depreciation_account_id) == $account->id ? 'selected' : '' }}>
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('accumulated_depreciation_account_id')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="depreciation_expense_account_id" value="{{ __('Depreciation Expense Account') }}" />
+                                    <select id="depreciation_expense_account_id" name="depreciation_expense_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="">Select Account</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('depreciation_expense_account_id', $category->depreciation_expense_account_id) == $account->id ? 'selected' : '' }}>
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('depreciation_expense_account_id')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="accumulated_impairment_account_id" value="{{ __('Accumulated Impairment Account') }}" />
+                                    <select id="accumulated_impairment_account_id" name="accumulated_impairment_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="">Select Account</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('accumulated_impairment_account_id', $category->accumulated_impairment_account_id) == $account->id ? 'selected' : '' }}>
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('accumulated_impairment_account_id')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="impairment_loss_account_id" value="{{ __('Impairment Loss Account') }}" />
+                                    <select id="impairment_loss_account_id" name="impairment_loss_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="">Select Account</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('impairment_loss_account_id', $category->impairment_loss_account_id) == $account->id ? 'selected' : '' }}>
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('impairment_loss_account_id')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="disposal_gain_loss_account_id" value="{{ __('Disposal Gain/Loss Account') }}" />
+                                    <select id="disposal_gain_loss_account_id" name="disposal_gain_loss_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="">Select Account</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('disposal_gain_loss_account_id', $category->disposal_gain_loss_account_id) == $account->id ? 'selected' : '' }}>
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('disposal_gain_loss_account_id')" class="mt-2" />
+                                </div>
+                                <div>
+                                    <x-input-label for="revaluation_surplus_account_id" value="{{ __('Revaluation Surplus Account') }}" />
+                                    <select id="revaluation_surplus_account_id" name="revaluation_surplus_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <option value="">Select Account</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('revaluation_surplus_account_id', $category->revaluation_surplus_account_id) == $account->id ? 'selected' : '' }}>
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('revaluation_surplus_account_id')" class="mt-2" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end mt-6 space-x-3">
+                        <a href="{{ route('accounting.asset-categories.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            {{ __('Cancel') }}
+                        </a>
+                        <x-primary-button>{{ __('Update Category') }}</x-primary-button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\AccountingPeriod;
 use App\Models\ApprovalSetting;
 use App\Models\Company;
+use App\Services\Admin\NumberingSequenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
@@ -62,6 +63,8 @@ class CompanyController extends Controller
                 'requires_approval' => false,
                 'threshold_amount' => 0,
             ]);
+
+            app(NumberingSequenceService::class)->seedDefaults($company->id);
         });
 
         Session::put('current_company_id', $company->id);

@@ -350,9 +350,71 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('budgets/{budget}/variance', [\App\Http\Controllers\Accounting\BudgetController::class, 'variance'])->name('budgets.variance');
             Route::post('budgets/{budget}/approve', [\App\Http\Controllers\Accounting\BudgetController::class, 'approve'])->name('budgets.approve');
 
+            // Fixed Assets
+            Route::resource('asset-categories', \App\Http\Controllers\Accounting\AssetCategoryController::class);
+            Route::resource('fixed-assets', \App\Http\Controllers\Accounting\FixedAssetController::class);
+            Route::post('fixed-assets/{asset}/activate', [\App\Http\Controllers\Accounting\FixedAssetController::class, 'activate'])->name('fixed-assets.activate');
+            Route::get('fixed-assets/{asset}/schedule', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'schedule'])->name('fixed-assets.schedule');
+            Route::get('asset-depreciation/runs', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'runHistory'])->name('depreciation.runs');
+            Route::post('asset-depreciation/run', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'run'])->name('depreciation.run');
+            Route::resource('asset-disposals', \App\Http\Controllers\Accounting\AssetDisposalController::class);
+            Route::resource('asset-transfers', \App\Http\Controllers\Accounting\AssetTransferController::class);
+            Route::resource('asset-impairments', \App\Http\Controllers\Accounting\AssetImpairmentController::class);
+            Route::post('asset-impairments/reverse', [\App\Http\Controllers\Accounting\AssetImpairmentController::class, 'reverse'])->name('asset-impairments.reverse');
+            Route::resource('asset-revaluations', \App\Http\Controllers\Accounting\AssetRevaluationController::class);
+            Route::get('asset-usage', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'usageLog'])->name('asset-usage.index');
+            Route::post('asset-usage', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'storeUsage'])->name('asset-usage.store');
+
             // Account Classification
             Route::get('account-classification', [AccountClassificationController::class, 'index'])->name('account-classification.index');
             Route::post('account-classification', [AccountClassificationController::class, 'update'])->name('account-classification.update');
+        });
+
+        // Administration
+        Route::prefix('admin')->name('admin.')->group(function () {
+            // Numbering Sequences
+            Route::get('numbering-sequences', [\App\Http\Controllers\Admin\NumberingSequenceController::class, 'index'])->name('numbering-sequences.index');
+            Route::get('numbering-sequences/create', [\App\Http\Controllers\Admin\NumberingSequenceController::class, 'create'])->name('numbering-sequences.create');
+            Route::post('numbering-sequences', [\App\Http\Controllers\Admin\NumberingSequenceController::class, 'store'])->name('numbering-sequences.store');
+            Route::get('numbering-sequences/{numberingSequence}', [\App\Http\Controllers\Admin\NumberingSequenceController::class, 'show'])->name('numbering-sequences.show');
+            Route::get('numbering-sequences/{numberingSequence}/edit', [\App\Http\Controllers\Admin\NumberingSequenceController::class, 'edit'])->name('numbering-sequences.edit');
+            Route::put('numbering-sequences/{numberingSequence}', [\App\Http\Controllers\Admin\NumberingSequenceController::class, 'update'])->name('numbering-sequences.update');
+            Route::post('numbering-sequences/{numberingSequence}/reset', [\App\Http\Controllers\Admin\NumberingSequenceController::class, 'reset'])->name('numbering-sequences.reset');
+
+            // Unified Audit Log
+            Route::get('audit-log', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit-log.index');
+            Route::get('audit-log/export/csv', [\App\Http\Controllers\Admin\AuditLogController::class, 'exportCsv'])->name('audit-log.export-csv');
+
+            // Security Settings
+            Route::get('security', [\App\Http\Controllers\Admin\SecuritySettingsController::class, 'index'])->name('security.index');
+            Route::put('security', [\App\Http\Controllers\Admin\SecuritySettingsController::class, 'update'])->name('security.update');
+
+            // Notification Settings
+            Route::get('notifications', [\App\Http\Controllers\Admin\NotificationSettingsController::class, 'index'])->name('notifications.index');
+            Route::put('notifications', [\App\Http\Controllers\Admin\NotificationSettingsController::class, 'update'])->name('notifications.update');
+            Route::get('notifications/templates/{template}/edit', [\App\Http\Controllers\Admin\NotificationSettingsController::class, 'editTemplate'])->name('notifications.template-edit');
+            Route::put('notifications/templates/{template}', [\App\Http\Controllers\Admin\NotificationSettingsController::class, 'updateTemplate'])->name('notifications.template-update');
+
+            // Backup Management
+            Route::get('backups', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backups.index');
+            Route::post('backups/trigger', [\App\Http\Controllers\Admin\BackupController::class, 'trigger'])->name('backups.trigger');
+
+            // System Health
+            Route::get('system-health', [\App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system-health.index');
+
+            // Localization
+            Route::get('localization', [\App\Http\Controllers\Admin\LocalizationController::class, 'index'])->name('localization.index');
+            Route::put('localization', [\App\Http\Controllers\Admin\LocalizationController::class, 'update'])->name('localization.update');
+
+            // User Management
+            Route::get('users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+            Route::get('users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])->name('users.edit');
+            Route::put('users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
+            Route::post('users/{user}/toggle-2fa', [\App\Http\Controllers\Admin\UserController::class, 'toggle2fa'])->name('users.toggle-2fa');
+
+            // Setup Wizard
+            Route::get('setup-wizard', [\App\Http\Controllers\Admin\SetupWizardController::class, 'index'])->name('setup-wizard.index');
+            Route::post('setup-wizard', [\App\Http\Controllers\Admin\SetupWizardController::class, 'store'])->name('setup-wizard.store');
         });
     });
 

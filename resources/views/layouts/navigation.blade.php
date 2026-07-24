@@ -87,6 +87,25 @@
                     </div>
 
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('accounting.fixed-assets.*') || request()->routeIs('accounting.asset-categories.*') || request()->routeIs('accounting.asset-disposals.*') || request()->routeIs('accounting.asset-transfers.*') || request()->routeIs('accounting.asset-impairments.*') || request()->routeIs('accounting.asset-revaluations.*') || request()->routeIs('accounting.depreciation.*') || request()->routeIs('accounting.asset-usage.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('Fixed Assets') }}
+                            <svg class="ml-1 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <a href="{{ route('accounting.asset-categories.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Asset Categories') }}</a>
+                            <a href="{{ route('accounting.fixed-assets.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Fixed Asset Register') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <a href="{{ route('accounting.depreciation.runs') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Depreciation Runs') }}</a>
+                            <a href="{{ route('accounting.asset-usage.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Usage Log (UOP)') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <a href="{{ route('accounting.asset-disposals.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Disposals') }}</a>
+                            <a href="{{ route('accounting.asset-transfers.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Transfers') }}</a>
+                            <a href="{{ route('accounting.asset-impairments.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Impairments') }}</a>
+                            <a href="{{ route('accounting.asset-revaluations.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Revaluations') }}</a>
+                        </div>
+                    </div>
+
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
                         <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.employees.*') || request()->routeIs('accounting.payroll-runs.*') || request()->routeIs('accounting.paye-tables.*') || request()->routeIs('accounting.pension-schemes.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                             {{ __('Payroll') }}
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -124,6 +143,36 @@
                             <a href="{{ route('accounting.aging.ap-summary') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('A/P Aging') }}</a>
                         </div>
                     </div>
+
+                    @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('admin.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('Admin') }}
+                            <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute right-0 z-50 mt-1 w-56 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Setup</div>
+                            <a href="{{ route('admin.setup-wizard.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Setup Wizard') }}</a>
+                            <a href="{{ route('companies.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Companies') }}</a>
+                            <a href="{{ route('branches.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Branches') }}</a>
+                            <a href="{{ route('accounting.cost-centers.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Cost Centers') }}</a>
+                            <a href="{{ route('accounting.fiscal-years.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Fiscal Years') }}</a>
+                            <a href="{{ route('accounting.exchange-rates.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Exchange Rates') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Access</div>
+                            <a href="{{ route('admin.users.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Users & Roles') }}</a>
+                            <a href="{{ route('admin.security.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Security') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">System</div>
+                            <a href="{{ route('admin.numbering-sequences.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Numbering Sequences') }}</a>
+                            <a href="{{ route('admin.audit-log.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Audit Log') }}</a>
+                            <a href="{{ route('admin.notifications.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Notifications') }}</a>
+                            <a href="{{ route('admin.backups.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Backups') }}</a>
+                            <a href="{{ route('admin.system-health.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('System Health') }}</a>
+                            <a href="{{ route('admin.localization.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Localization') }}</a>
+                        </div>
+                    </div>
+                    @endif
                     @endif
                 </div>
             </div>
@@ -227,12 +276,31 @@
             <x-responsive-nav-link :href="route('accounting.fiscal-years.index')" :active="request()->routeIs('accounting.fiscal-years.*')">{{ __('Fiscal Years') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.cost-centers.index')" :active="request()->routeIs('accounting.cost-centers.*')">{{ __('Cost Centers') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.budgets.index')" :active="request()->routeIs('accounting.budgets.*')">{{ __('Budgets') }}</x-responsive-nav-link>
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Fixed Assets</div>
+            <x-responsive-nav-link :href="route('accounting.asset-categories.index')" :active="request()->routeIs('accounting.asset-categories.*')">{{ __('Asset Categories') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.fixed-assets.index')" :active="request()->routeIs('accounting.fixed-assets.*')">{{ __('Fixed Asset Register') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.depreciation.runs')" :active="request()->routeIs('accounting.depreciation.*')">{{ __('Depreciation Runs') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.asset-disposals.index')" :active="request()->routeIs('accounting.asset-disposals.*')">{{ __('Disposals') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.asset-impairments.index')" :active="request()->routeIs('accounting.asset-impairments.*')">{{ __('Impairments') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.asset-revaluations.index')" :active="request()->routeIs('accounting.asset-revaluations.*')">{{ __('Revaluations') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Reports</div>
             <x-responsive-nav-link :href="route('accounting.income-statement.index')" :active="request()->routeIs('accounting.income-statement.*')">{{ __('Income Statement') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.balance-sheet.index')" :active="request()->routeIs('accounting.balance-sheet.*')">{{ __('Balance Sheet') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.cash-flow.index')" :active="request()->routeIs('accounting.cash-flow.*')">{{ __('Cash Flow') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.aging.ar-summary')" :active="request()->routeIs('accounting.aging.*')">{{ __('A/R Aging') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.aging.ap-summary')" :active="request()->routeIs('accounting.aging.*')">{{ __('A/P Aging') }}</x-responsive-nav-link>
+            @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Admin</div>
+            <x-responsive-nav-link :href="route('admin.setup-wizard.index')" :active="request()->routeIs('admin.setup-wizard.*')">{{ __('Setup Wizard') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">{{ __('Users & Roles') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.security.index')" :active="request()->routeIs('admin.security.*')">{{ __('Security') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.numbering-sequences.index')" :active="request()->routeIs('admin.numbering-sequences.*')">{{ __('Numbering Sequences') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.audit-log.index')" :active="request()->routeIs('admin.audit-log.*')">{{ __('Audit Log') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.notifications.index')" :active="request()->routeIs('admin.notifications.*')">{{ __('Notifications') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.backups.index')" :active="request()->routeIs('admin.backups.*')">{{ __('Backups') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.system-health.index')" :active="request()->routeIs('admin.system-health.*')">{{ __('System Health') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.localization.index')" :active="request()->routeIs('admin.localization.*')">{{ __('Localization') }}</x-responsive-nav-link>
+            @endif
             @endif
         </div>
         <div class="pt-4 pb-1 border-t border-gray-200">

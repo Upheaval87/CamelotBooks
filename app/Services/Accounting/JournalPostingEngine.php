@@ -339,6 +339,7 @@ class JournalPostingEngine
                 ]);
 
                 $this->logAction(null, 'period_closed_no_entries', null, [
+                    'company_id' => $period->company_id,
                     'period_id' => $period->id,
                     'period_label' => $period->label,
                 ], $userId);
@@ -574,7 +575,7 @@ class JournalPostingEngine
     protected function logAction(?JournalEntry $entry, string $action, ?array $oldValues, ?array $newValues, int $userId): void
     {
         AccountAuditLog::create([
-            'company_id' => $entry?->company_id ?? ($newValues['period_id'] ?? 0),
+            'company_id' => $entry?->company_id ?? ($newValues['company_id'] ?? 0),
             'journalable_type' => JournalEntry::class,
             'journalable_id' => $entry?->id ?? 0,
             'action' => $action,

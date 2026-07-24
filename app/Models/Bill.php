@@ -14,6 +14,8 @@ class Bill extends Model
         'branch_id',
         'cost_center_id',
         'vendor_id',
+        'purchase_order_id',
+        'grn_id',
         'bill_number',
         'internal_number',
         'bill_date',
@@ -69,6 +71,16 @@ class Bill extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    public function grn(): BelongsTo
+    {
+        return $this->belongsTo(GoodsReceivedNote::class, 'grn_id');
     }
 
     public function lines(): HasMany
