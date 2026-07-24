@@ -26,8 +26,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
                         <div class="relative">
                             <input type="text" x-model="searchQuery"
-                                @input.debounce.150ms="filterProducts()"
-                                @focus="dropdownOpen = true"
+                                @input="filterProducts()"
+                                @focus="dropdownOpen = true; filterProducts()"
                                 placeholder="Type to search products..." autocomplete="off"
                                 class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                             <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
