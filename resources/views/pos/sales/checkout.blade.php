@@ -200,7 +200,6 @@
         </div>
     </div>
 
-    @push('scripts')
     <script>
         function posCheckout() {
             return {
@@ -383,5 +382,4 @@
             };
         }
     </script>
-    @endpush
 </x-app-layout>
