@@ -61,6 +61,8 @@ class PosSaleController extends Controller
             'payments' => 'required|array|min:1',
             'payments.*.payment_method_id' => 'required|exists:pos_payment_methods,id',
             'payments.*.amount' => 'required|numeric|min:0.01',
+            'payments.*.cash_tendered' => 'nullable|numeric|min:0',
+            'payments.*.change_given' => 'nullable|numeric|min:0',
             'payments.*.reference_number' => 'nullable|string|max:255',
             'payments.*.processor_name' => 'nullable|string|max:255',
         ]);

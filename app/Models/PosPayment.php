@@ -11,12 +11,16 @@ class PosPayment extends Model
         'pos_sale_id',
         'payment_method_id',
         'amount',
+        'cash_tendered',
+        'change_given',
         'reference_number',
         'processor_name',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'cash_tendered' => 'decimal:2',
+        'change_given' => 'decimal:2',
     ];
 
     public function sale(): BelongsTo

@@ -145,65 +145,64 @@
                                 <span x-text="'-$' + getTotals().discount.toFixed(2)"></span>
                             </div>
                             <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Tax (16%)</span>
+                                <span class="text-gray-500">Tax</span>
                                 <span x-text="'$' + getTotals().tax.toFixed(2)"></span>
                             </div>
                             <div class="flex justify-between text-xl font-bold border-t pt-2">
-                                <span>Total</span>
+                                <span>Total Due</span>
                                 <span class="text-indigo-600" x-text="'$' + getTotals().total.toFixed(2)"></span>
                             </div>
                         </div>
 
-                        {{-- Payments --}}
-                        <div class="mb-4">
+                        {{-- Confirmed Payments --}}
+                        <div class="mb-4" x-show="payments.length > 0">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm font-semibold text-gray-700">Payments</span>
                                 <span class="text-sm font-medium" :class="getRemaining() > 0 ? 'text-red-600' : 'text-green-600'"
                                     x-text="'Remaining: $' + getRemaining().toFixed(2)"></span>
                             </div>
                             <template x-for="(pay, pi) in payments" :key="pi">
-                                <div class="mb-2">
-                                    <div class="flex gap-2 items-end">
-                                        <select x-model="pay.payment_method_id" @change="onPaymentMethodChange(pi)"
-                                            class="flex-1 border-gray-300 rounded-md shadow-sm text-sm">
-                                            <option value="">Method</option>
-                                            @foreach($paymentMethods as $pm)
-                                                <option value="{{ $pm->id }}" data-type="{{ $pm->type }}">{{ $pm->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <input type="number" x-model.number="pay.amount" min="0.01" step="0.01"
-                                            class="w-24 border-gray-300 rounded-md shadow-sm text-sm text-right" />
-                                        <button type="button" @click="removePayment(pi)"
-                                            class="text-red-600 hover:text-red-900 text-sm font-bold px-2" x-show="payments.length > 1">&times;</button>
+                                <div class="flex justify-between items-center bg-gray-50 rounded-md px-3 py-2 mb-1 text-sm">
+                                    <div>
+                                        <span class="font-medium" x-text="pay.method_name"></span>
+                                        <span class="text-gray-500 ml-1" x-show="pay.type === 'cash'" x-text="'(Tendered: $' + parseFloat(pay.cash_tendered).toFixed(2) + ')'"></span>
+                                        <span class="text-gray-500 ml-1" x-show="pay.reference_number" x-text="'Ref: ' + pay.reference_number"></span>
                                     </div>
-                                    <template x-if="isCashPayment(pi)">
-                                        <div class="mt-2 ml-0 flex gap-2 items-end">
-                                            <div class="flex-1">
-                                                <label class="block text-xs text-gray-500 mb-0.5">Cash Tendered</label>
-                                                <input type="number" x-model.number="pay.cash_tendered" min="0" step="0.01"
-                                                    @keydown.enter.prevent="submitSale()"
-                                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" />
-                                            </div>
-                                            <div class="text-right min-w-[90px]">
-                                                <label class="block text-xs text-gray-500 mb-0.5">Change</label>
-                                                <div class="text-lg font-bold"
-                                                    :class="getCashChange(pi) >= 0 ? 'text-green-600' : 'text-red-600'"
-                                                    x-text="'$' + Math.abs(getCashChange(pi)).toFixed(2)"></div>
-                                            </div>
-                                        </div>
-                                    </template>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold" x-text="'$' + parseFloat(pay.amount).toFixed(2)"></span>
+                                        <span x-show="pay.type === 'cash' && parseFloat(pay.change) > 0" class="text-green-600 text-xs" x-text="'Change: $' + parseFloat(pay.change).toFixed(2)"></span>
+                                        <button type="button" @click="removePayment(pi)" class="text-red-500 hover:text-red-700 font-bold text-xs">&times;</button>
+                                    </div>
                                 </div>
                             </template>
-                            <button type="button" @click="addPayment()" class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">+ Add Payment</button>
+                        </div>
+
+                        {{-- Add Payment Button --}}
+                        <div class="mb-4" x-show="getRemaining() > 0">
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" @click="openPaymentModal('cash')"
+                                    class="py-3 px-4 bg-emerald-50 border-2 border-emerald-300 text-emerald-700 rounded-lg font-semibold text-sm hover:bg-emerald-100 transition">
+                                    Cash
+                                </button>
+                                <button type="button" @click="openPaymentModal('card')"
+                                    class="py-3 px-4 bg-blue-50 border-2 border-blue-300 text-blue-700 rounded-lg font-semibold text-sm hover:bg-blue-100 transition">
+                                    Card
+                                </button>
+                                <button type="button" @click="openPaymentModal('mobile_money')"
+                                    class="py-3 px-4 bg-purple-50 border-2 border-purple-300 text-purple-700 rounded-lg font-semibold text-sm hover:bg-purple-100 transition">
+                                    Mobile Money
+                                </button>
+                            </div>
                         </div>
 
                         {{-- COMPLETE SALE BUTTON --}}
                         <div class="mt-4 pt-4 border-t">
                             <button type="button" @click="submitSale()"
-                                :disabled="lines.length === 0 || submitting"
+                                :disabled="lines.length === 0 || submitting || getRemaining() > 0"
                                 class="w-full py-4 px-6 rounded-lg font-bold text-lg uppercase tracking-wider transition duration-200"
-                                :class="(lines.length > 0 && !submitting) ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
-                                <span x-show="!submitting && lines.length > 0">Complete Sale</span>
+                                :class="(lines.length > 0 && getRemaining() <= 0 && !submitting) ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
+                                <span x-show="!submitting && lines.length > 0 && getRemaining() > 0" x-text="'Balance Due: $' + getRemaining().toFixed(2)"></span>
+                                <span x-show="!submitting && lines.length > 0 && getRemaining() <= 0">Complete Sale</span>
                                 <span x-show="submitting">Processing...</span>
                                 <span x-show="!submitting && lines.length === 0">Add items first</span>
                             </button>
@@ -212,28 +211,156 @@
                 </div>
             </div>
         </div>
+
+        {{-- ===== PAYMENT MODAL (Cash) ===== --}}
+        <div x-show="showModal && modalType === 'cash'" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center"
+            @keydown.escape.window="closeModal()">
+            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10" @click.stop>
+                <h3 class="text-xl font-bold text-gray-800 mb-1">Cash Payment</h3>
+                <div class="text-sm text-gray-500 mb-4">Enter the cash amount received from the customer.</div>
+
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between text-sm text-gray-500 mb-1">
+                        <span>Total Due</span>
+                    </div>
+                    <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cash Tendered</label>
+                    <input type="number" x-model.number="modalCashTendered" x-ref="cashTenderedInput" min="0" step="0.01"
+                        @keydown.enter.prevent="confirmPaymentModal()"
+                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-md shadow-sm text-right"
+                        placeholder="0.00" />
+                </div>
+
+                {{-- Quick-tender buttons --}}
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button type="button" @click="modalCashTendered = modalDue"
+                        class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm font-medium">Exact</button>
+                    <template x-for="denom in [10, 20, 50, 100]" :key="denom">
+                        <button type="button" @click="modalCashTendered = denom"
+                            class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm font-medium"
+                            x-text="'$' + denom"></button>
+                    </template>
+                </div>
+
+                {{-- Change display --}}
+                <div class="rounded-lg p-3 mb-6 text-center"
+                    :class="modalCashTendered >= modalDue ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'"
+                    x-show="modalCashTendered > 0">
+                    <template x-if="modalCashTendered >= modalDue">
+                        <div>
+                            <div class="text-xs text-green-600 font-medium uppercase">Change to Give</div>
+                            <div class="text-3xl font-bold text-green-600" x-text="'$' + (modalCashTendered - modalDue).toFixed(2)"></div>
+                        </div>
+                    </template>
+                    <template x-if="modalCashTendered > 0 && modalCashTendered < modalDue">
+                        <div>
+                            <div class="text-xs text-red-600 font-medium uppercase">Insufficient — Remaining</div>
+                            <div class="text-2xl font-bold text-red-600" x-text="'$' + (modalDue - modalCashTendered).toFixed(2)"></div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" @click="closeModal()"
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                    <button type="button" @click="confirmPaymentModal()"
+                        :disabled="!modalCashTendered || modalCashTendered <= 0"
+                        class="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-500 transition disabled:opacity-40 disabled:cursor-not-allowed">OK</button>
+                </div>
+            </div>
+        </div>
+
+        {{-- ===== PAYMENT MODAL (Card) ===== --}}
+        <div x-show="showModal && modalType === 'card'" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center"
+            @keydown.escape.window="closeModal()">
+            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10" @click.stop>
+                <h3 class="text-xl font-bold text-gray-800 mb-1">Card Payment</h3>
+                <div class="text-sm text-gray-500 mb-4">Enter card payment details.</div>
+
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between text-sm text-gray-500 mb-1">
+                        <span>Balance Due</span>
+                    </div>
+                    <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <input type="number" x-model.number="modalAmount" x-ref="cardAmountInput" min="0.01" step="0.01"
+                        @keydown.enter.prevent="confirmPaymentModal()"
+                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm text-right"
+                        placeholder="0.00" />
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Transaction No.</label>
+                    <input type="text" x-model="modalReference"
+                        @keydown.enter.prevent="confirmPaymentModal()"
+                        class="block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+                        placeholder="e.g. TXN12345" />
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" @click="closeModal()"
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                    <button type="button" @click="confirmPaymentModal()"
+                        :disabled="!modalAmount || modalAmount <= 0"
+                        class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-500 transition disabled:opacity-40 disabled:cursor-not-allowed">OK</button>
+                </div>
+            </div>
+        </div>
+
+        {{-- ===== PAYMENT MODAL (Mobile Money) ===== --}}
+        <div x-show="showModal && modalType === 'mobile_money'" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center"
+            @keydown.escape.window="closeModal()">
+            <div class="fixed inset-0 bg-black/50" @click="closeModal()"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 z-10" @click.stop>
+                <h3 class="text-xl font-bold text-gray-800 mb-1">Mobile Money Payment</h3>
+                <div class="text-sm text-gray-500 mb-4">Enter mobile money payment details.</div>
+
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between text-sm text-gray-500 mb-1">
+                        <span>Balance Due</span>
+                    </div>
+                    <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <input type="number" x-model.number="modalAmount" x-ref="mobileAmountInput" min="0.01" step="0.01"
+                        @keydown.enter.prevent="confirmPaymentModal()"
+                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-right"
+                        placeholder="0.00" />
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Transaction No.</label>
+                    <input type="text" x-model="modalReference"
+                        @keydown.enter.prevent="confirmPaymentModal()"
+                        class="block w-full border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm"
+                        placeholder="e.g. MP123456" />
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" @click="closeModal()"
+                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">Cancel</button>
+                    <button type="button" @click="confirmPaymentModal()"
+                        :disabled="!modalAmount || modalAmount <= 0"
+                        class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-500 transition disabled:opacity-40 disabled:cursor-not-allowed">OK</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        function handleProductKey(e) {
-            const component = e.target._posData;
-            if (!component) return true;
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                component.moveHighlight(1);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                component.moveHighlight(-1);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                component.confirmHighlight();
-            } else if (e.key === 'Escape') {
-                component.dropdownOpen = false;
-            }
-            return true;
-        }
-
         function posCheckout() {
             return {
                 products: @json($products),
@@ -245,12 +372,19 @@
                 lines: [],
                 customerId: '',
                 reference: '',
-                payments: [{ payment_method_id: '', amount: 0, cash_tendered: 0 }],
+                payments: [],
                 submitting: false,
                 dropdownOpen: false,
                 highlightIndex: -1,
                 _lastQuery: '',
                 paymentTypes: @json($paymentMethods->pluck('type', 'id')),
+                paymentNames: @json($paymentMethods->pluck('name', 'id')),
+                showModal: false,
+                modalType: '',
+                modalDue: 0,
+                modalCashTendered: 0,
+                modalAmount: 0,
+                modalReference: '',
 
                 init() {
                     this.filteredProducts = [];
@@ -288,18 +422,6 @@
                     if (this.highlightIndex >= 0 && this.highlightIndex < this.filteredProducts.length) {
                         this.selectProduct(this.filteredProducts[this.highlightIndex]);
                     }
-                },
-
-                filterProducts() {
-                    const q = this.searchQuery.toLowerCase().trim();
-                    if (q === '') {
-                        this.filteredProducts = this.products.slice(0, 20);
-                    } else {
-                        this.filteredProducts = this.products.filter(p =>
-                            p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
-                        );
-                    }
-                    this.dropdownOpen = true;
                 },
 
                 selectProduct(p) {
@@ -377,38 +499,85 @@
                     return Math.max(0, parseFloat((total - paid).toFixed(2)));
                 },
 
-                addPayment() {
-                    this.payments.push({ payment_method_id: '', amount: this.getRemaining() > 0 ? this.getRemaining().toFixed(2) : '0.00', cash_tendered: 0 });
+                openPaymentModal(type) {
+                    this.modalType = type;
+                    this.modalDue = this.getRemaining();
+                    this.modalCashTendered = this.modalDue;
+                    this.modalAmount = this.modalDue;
+                    this.modalReference = '';
+                    this.showModal = true;
+                    this.$nextTick(() => {
+                        if (type === 'cash' && this.$refs.cashTenderedInput) {
+                            this.$refs.cashTenderedInput.focus();
+                            this.$refs.cashTenderedInput.select();
+                        } else if (type === 'card' && this.$refs.cardAmountInput) {
+                            this.$refs.cardAmountInput.focus();
+                            this.$refs.cardAmountInput.select();
+                        } else if (type === 'mobile_money' && this.$refs.mobileAmountInput) {
+                            this.$refs.mobileAmountInput.focus();
+                            this.$refs.mobileAmountInput.select();
+                        }
+                    });
+                },
+
+                closeModal() {
+                    this.showModal = false;
+                    this.modalType = '';
+                    this.modalReference = '';
+                },
+
+                confirmPaymentModal() {
+                    if (this.modalType === 'cash') {
+                        const tendered = parseFloat(this.modalCashTendered) || 0;
+                        if (tendered <= 0) return;
+                        const pmId = Object.keys(this.paymentTypes).find(id => this.paymentTypes[id] === 'cash') || '';
+                        this.payments.push({
+                            type: 'cash',
+                            method_name: 'Cash',
+                            payment_method_id: pmId,
+                            amount: this.modalDue,
+                            cash_tendered: tendered,
+                            change: parseFloat((tendered - this.modalDue).toFixed(2)),
+                            reference_number: '',
+                        });
+                    } else if (this.modalType === 'card') {
+                        const amount = parseFloat(this.modalAmount) || 0;
+                        if (amount <= 0) return;
+                        const ref = this.modalReference.trim();
+                        const pmId = Object.keys(this.paymentTypes).find(id => this.paymentTypes[id] === 'card') || '';
+                        this.payments.push({
+                            type: 'card',
+                            method_name: 'Card',
+                            payment_method_id: pmId,
+                            amount: amount,
+                            cash_tendered: 0,
+                            change: 0,
+                            reference_number: ref,
+                        });
+                    } else if (this.modalType === 'mobile_money') {
+                        const amount = parseFloat(this.modalAmount) || 0;
+                        if (amount <= 0) return;
+                        const ref = this.modalReference.trim();
+                        const pmId = Object.keys(this.paymentTypes).find(id => this.paymentTypes[id] === 'mobile_money') || '';
+                        this.payments.push({
+                            type: 'mobile_money',
+                            method_name: 'Mobile Money',
+                            payment_method_id: pmId,
+                            amount: amount,
+                            cash_tendered: 0,
+                            change: 0,
+                            reference_number: ref,
+                        });
+                    }
+                    this.closeModal();
                 },
 
                 removePayment(pi) {
                     this.payments.splice(pi, 1);
                 },
 
-                isCashPayment(pi) {
-                    const pmId = this.payments[pi].payment_method_id;
-                    return pmId && this.paymentTypes[pmId] === 'cash';
-                },
-
-                getCashChange(pi) {
-                    const pay = this.payments[pi];
-                    const tendered = parseFloat(pay.cash_tendered) || 0;
-                    const amount = parseFloat(pay.amount) || 0;
-                    return parseFloat((tendered - amount).toFixed(2));
-                },
-
-                onPaymentMethodChange(pi) {
-                    const pay = this.payments[pi];
-                    if (this.isCashPayment(pi)) {
-                        const amt = parseFloat(pay.amount) || 0;
-                        if (amt > 0) {
-                            pay.cash_tendered = amt;
-                        }
-                    }
-                },
-
                 async submitSale() {
-                    if (this.lines.length === 0) return;
+                    if (this.lines.length === 0 || this.getRemaining() > 0) return;
 
                     this.submitting = true;
                     document.getElementById('pos-error').classList.add('hidden');
@@ -434,10 +603,12 @@
                                     discount_type: l.discount_type,
                                     tax_rate: l.tax_rate,
                                 })),
-                                payments: this.payments.filter(p => p.payment_method_id && p.amount > 0).map(p => ({
+                                payments: this.payments.map(p => ({
                                     payment_method_id: p.payment_method_id,
                                     amount: parseFloat(p.amount),
                                     cash_tendered: parseFloat(p.cash_tendered) || null,
+                                    change_given: parseFloat(p.change) || null,
+                                    reference_number: p.reference_number || null,
                                 })),
                             }),
                         });

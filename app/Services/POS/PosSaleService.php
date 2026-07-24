@@ -126,6 +126,8 @@ class PosSaleService
                     'pos_sale_id' => $sale->id,
                     'payment_method_id' => $paymentMethod->id,
                     'amount' => $paymentAmount,
+                    'cash_tendered' => $paymentData['cash_tendered'] ?? null,
+                    'change_given' => $paymentData['change_given'] ?? null,
                     'reference_number' => $paymentData['reference_number'] ?? null,
                     'processor_name' => $paymentData['processor_name'] ?? null,
                 ]);
