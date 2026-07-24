@@ -141,7 +141,7 @@ class InventoryService
 
     public function getValuation(int $companyId, ?string $asOfDate = null): array
     {
-        $query = InventoryCostLayer::where('company_id', $companyId)
+        $query = InventoryCostLayer::where('inventory_cost_layers.company_id', $companyId)
             ->available()
             ->join('products', 'products.id', '=', 'inventory_cost_layers.product_id')
             ->select(

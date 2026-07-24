@@ -144,6 +144,31 @@
                         </div>
                     </div>
 
+                    @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'analytics'))
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('analytics.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('Analytics') }}
+                            <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <a href="{{ route('analytics.financial-ratios') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Financial Ratios') }}</a>
+                            <a href="{{ route('analytics.revenue-expense-trends') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Revenue & Expense Trends') }}</a>
+                            <a href="{{ route('analytics.sales') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Sales Analytics') }}</a>
+                            @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'purchasing'))
+                            <a href="{{ route('analytics.purchasing') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Purchasing Analytics') }}</a>
+                            @endif
+                            @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'inventory'))
+                            <a href="{{ route('analytics.inventory') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Inventory Analytics') }}</a>
+                            @endif
+                            <a href="{{ route('analytics.profitability') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Profitability Analytics') }}</a>
+                            @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'budgets'))
+                            <a href="{{ route('analytics.budget-vs-actual-trend') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Budget vs Actual Trend') }}</a>
+                            @endif
+                            <a href="{{ route('analytics.cash-flow-trend') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Cash Flow Trend') }}</a>
+                        </div>
+                    </div>
+                    @endif
+
                     @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
                         <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('admin.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
@@ -289,6 +314,23 @@
             <x-responsive-nav-link :href="route('accounting.cash-flow.index')" :active="request()->routeIs('accounting.cash-flow.*')">{{ __('Cash Flow') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.aging.ar-summary')" :active="request()->routeIs('accounting.aging.*')">{{ __('A/R Aging') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.aging.ap-summary')" :active="request()->routeIs('accounting.aging.*')">{{ __('A/P Aging') }}</x-responsive-nav-link>
+            @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'analytics'))
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Analytics</div>
+            <x-responsive-nav-link :href="route('analytics.financial-ratios')" :active="request()->routeIs('analytics.financial-ratios')">{{ __('Financial Ratios') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics.revenue-expense-trends')" :active="request()->routeIs('analytics.revenue-expense-trends')">{{ __('Revenue & Expense Trends') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics.sales')" :active="request()->routeIs('analytics.sales')">{{ __('Sales Analytics') }}</x-responsive-nav-link>
+            @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'purchasing'))
+            <x-responsive-nav-link :href="route('analytics.purchasing')" :active="request()->routeIs('analytics.purchasing')">{{ __('Purchasing Analytics') }}</x-responsive-nav-link>
+            @endif
+            @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'inventory'))
+            <x-responsive-nav-link :href="route('analytics.inventory')" :active="request()->routeIs('analytics.inventory')">{{ __('Inventory Analytics') }}</x-responsive-nav-link>
+            @endif
+            <x-responsive-nav-link :href="route('analytics.profitability')" :active="request()->routeIs('analytics.profitability')">{{ __('Profitability Analytics') }}</x-responsive-nav-link>
+            @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'budgets'))
+            <x-responsive-nav-link :href="route('analytics.budget-vs-actual-trend')" :active="request()->routeIs('analytics.budget-vs-actual-trend')">{{ __('Budget vs Actual') }}</x-responsive-nav-link>
+            @endif
+            <x-responsive-nav-link :href="route('analytics.cash-flow-trend')" :active="request()->routeIs('analytics.cash-flow-trend')">{{ __('Cash Flow Trend') }}</x-responsive-nav-link>
+            @endif
             @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Admin</div>
             <x-responsive-nav-link :href="route('admin.setup-wizard.index')" :active="request()->routeIs('admin.setup-wizard.*')">{{ __('Setup Wizard') }}</x-responsive-nav-link>

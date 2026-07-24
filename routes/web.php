@@ -416,6 +416,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('setup-wizard', [\App\Http\Controllers\Admin\SetupWizardController::class, 'index'])->name('setup-wizard.index');
             Route::post('setup-wizard', [\App\Http\Controllers\Admin\SetupWizardController::class, 'store'])->name('setup-wizard.store');
         });
+
+        // Analytics
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('financial-ratios', [\App\Http\Controllers\AnalyticsController::class, 'financialRatios'])->name('financial-ratios');
+            Route::get('revenue-expense-trends', [\App\Http\Controllers\AnalyticsController::class, 'revenueExpenseTrends'])->name('revenue-expense-trends');
+            Route::get('sales', [\App\Http\Controllers\AnalyticsController::class, 'sales'])->name('sales');
+            Route::get('purchasing', [\App\Http\Controllers\AnalyticsController::class, 'purchasing'])->name('purchasing');
+            Route::get('inventory', [\App\Http\Controllers\AnalyticsController::class, 'inventory'])->name('inventory');
+            Route::get('profitability', [\App\Http\Controllers\AnalyticsController::class, 'profitability'])->name('profitability');
+            Route::get('budget-vs-actual-trend', [\App\Http\Controllers\AnalyticsController::class, 'budgetVsActualTrend'])->name('budget-vs-actual-trend');
+            Route::get('cash-flow-trend', [\App\Http\Controllers\AnalyticsController::class, 'cashFlowTrend'])->name('cash-flow-trend');
+        });
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
