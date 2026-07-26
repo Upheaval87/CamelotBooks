@@ -72,6 +72,9 @@ class CompanyIsolationTest extends TestCase
             'end_date' => '2026-03-31',
             'status' => 'open',
         ]);
+
+        app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->companyA->id);
+        app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->companyB->id);
     }
 
     public function test_user_cannot_see_other_company_accounts_via_controller(): void

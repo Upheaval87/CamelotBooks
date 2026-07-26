@@ -3,6 +3,7 @@
 namespace App\Services\POS;
 
 use App\Models\Account;
+use App\Models\AuditLog;
 use App\Models\JournalEntry;
 use App\Models\NumberingSequence;
 use App\Models\PosCashierSession;
@@ -70,11 +71,16 @@ class PosSaleService
                     ->firstOrFail();
 
                 $quantity = (float) $lineData['quantity'];
+                $transactionQty = $quantity;
+                if (!empty($lineData['conversion_factor']) && !empty($lineData['transaction_qty'])) {
+                    $transactionQty = (float) $lineData['transaction_qty'];
+                    $quantity = round($transactionQty * (float) $lineData['conversion_factor'], 4);
+                }
                 $unitPrice = (float) $lineData['unit_price'];
                 $discountAmount = (float) ($lineData['discount_amount'] ?? 0);
                 $taxRate = (float) ($lineData['tax_rate'] ?? ($product->is_taxable ? $product->tax_rate : 0));
 
-                $lineSubtotal = round($quantity * $unitPrice, 2);
+                $lineSubtotal = round($transactionQty * $unitPrice, 2);
                 $lineAfterDiscount = round($lineSubtotal - $discountAmount, 2);
                 $lineTaxAmount = round($lineAfterDiscount * ($taxRate / 100), 2);
                 $lineTotal = round($lineAfterDiscount + $lineTaxAmount, 2);
@@ -95,6 +101,9 @@ class PosSaleService
                 PosSaleLine::create([
                     'pos_sale_id' => $sale->id,
                     'product_id' => $product->id,
+                    'transaction_uom' => $lineData['transaction_uom'] ?? null,
+                    'transaction_qty' => $lineData['transaction_qty'] ?? null,
+                    'conversion_factor' => $lineData['conversion_factor'] ?? null,
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
                     'discount_amount' => $discountAmount,
@@ -152,6 +161,22 @@ class PosSaleService
                 'status' => PosSale::STATUS_POSTED,
                 'journal_entry_id' => $journalEntry->id,
             ]);
+
+            AuditLog::log(
+                $companyId,
+                $userId,
+                PosSale::class,
+                $sale->id,
+                'pos.sale.created',
+                null,
+                [
+                    'sale_number' => $sale->sale_number,
+                    'total' => $sale->total,
+                    'payment_count' => count($data['payments']),
+                    'line_count' => count($data['lines']),
+                ],
+                "POS Sale {$sale->sale_number} – $" . number_format($sale->total, 2)
+            );
 
             return $sale->fresh(['lines.product', 'payments.paymentMethod', 'journalEntry']);
         });

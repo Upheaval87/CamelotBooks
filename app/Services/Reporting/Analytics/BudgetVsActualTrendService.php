@@ -45,7 +45,8 @@ class BudgetVsActualTrendService
             $labels[] = $monthLabel;
             
             // Budget for this month (total budget / number of months)
-            $monthBudget = (float) $budget->amount / max(1, $startDate->diffInMonths($endDate) + 1);
+            $totalBudgetAmount = (float) $budget->lines->sum('amount');
+            $monthBudget = $totalBudgetAmount / max(1, $startDate->diffInMonths($endDate) + 1);
             $totalBudget += $monthBudget;
             $budgetCumulative[] = $totalBudget;
             

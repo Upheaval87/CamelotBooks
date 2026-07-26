@@ -61,7 +61,7 @@
                                     </tr>
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
                                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['balance'], 2) }}</td>
                                         </tr>
                                     @endforeach
@@ -79,7 +79,7 @@
                                     </tr>
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
                                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['balance'], 2) }}</td>
                                         </tr>
                                     @endforeach
@@ -96,7 +96,7 @@
                             @foreach($groups['equity'] as $subType => $items)
                                 @foreach($items as $item)
                                     <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
+                                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
                                         <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['balance'], 2) }}</td>
                                     </tr>
                                 @endforeach

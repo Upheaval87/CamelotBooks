@@ -4,6 +4,7 @@ use App\Http\Controllers\Accounting\AccountClassificationController;
 use App\Http\Controllers\Accounting\AccountController;
 use App\Http\Controllers\Accounting\AccountingPeriodController;
 use App\Http\Controllers\Accounting\AgingReportController;
+use App\Http\Controllers\Accounting\AssemblyController;
 use App\Http\Controllers\Accounting\BalanceSheetController;
 use App\Http\Controllers\Accounting\BankController;
 use App\Http\Controllers\Accounting\BillController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Accounting\IncomeStatementController;
 use App\Http\Controllers\Accounting\InventoryItemsController;
 use App\Http\Controllers\Accounting\InventoryValuationController;
 use App\Http\Controllers\Accounting\InvoiceController;
+use App\Http\Controllers\Accounting\ItemCategoryController;
 use App\Http\Controllers\Accounting\JournalEntryController;
 use App\Http\Controllers\Accounting\LowStockController;
 use App\Http\Controllers\Accounting\PayrollRunController;
@@ -27,14 +29,21 @@ use App\Http\Controllers\Accounting\ProductController;
 use App\Http\Controllers\Accounting\RecurringJournalController;
 use App\Http\Controllers\Accounting\ReconciliationController;
 use App\Http\Controllers\Accounting\StockAdjustmentController;
+use App\Http\Controllers\Accounting\StockCountController;
 use App\Http\Controllers\Accounting\StockTransferController;
 use App\Http\Controllers\Accounting\TrialBalanceController;
+use App\Http\Controllers\Accounting\ExpenseController;
+use App\Http\Controllers\Accounting\VendorCentreController;
 use App\Http\Controllers\Accounting\VendorController;
 use App\Http\Controllers\Accounting\VendorCreditController;
 use App\Http\Controllers\Accounting\VendorPaymentController;
 use App\Http\Controllers\Accounting\PurchaseRequisitionController;
 use App\Http\Controllers\Accounting\PurchaseOrderController;
 use App\Http\Controllers\Accounting\GoodsReceivedNoteController;
+use App\Http\Controllers\Accounting\MakeDepositController;
+use App\Http\Controllers\Accounting\ChequeController;
+use App\Http\Controllers\Accounting\PettyCashController;
+use App\Http\Controllers\Accounting\CashPositionController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
@@ -159,6 +168,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('vendors/{vendor}', [VendorController::class, 'update'])->name('vendors.update');
             Route::patch('vendors/{vendor}/toggle', [VendorController::class, 'toggle'])->name('vendors.toggle');
 
+            // Item Categories
+            Route::get('item-categories', [ItemCategoryController::class, 'index'])->name('item-categories.index');
+            Route::get('item-categories/create', [ItemCategoryController::class, 'create'])->name('item-categories.create');
+            Route::post('item-categories', [ItemCategoryController::class, 'store'])->name('item-categories.store');
+            Route::get('item-categories/{category}', [ItemCategoryController::class, 'show'])->name('item-categories.show');
+            Route::get('item-categories/{category}/edit', [ItemCategoryController::class, 'edit'])->name('item-categories.edit');
+            Route::put('item-categories/{category}', [ItemCategoryController::class, 'update'])->name('item-categories.update');
+            Route::patch('item-categories/{category}/toggle', [ItemCategoryController::class, 'toggle'])->name('item-categories.toggle');
+
             // Products
             Route::get('products', [ProductController::class, 'index'])->name('products.index');
             Route::get('products/create', [ProductController::class, 'create'])->name('products.create');
@@ -184,8 +202,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
             Route::get('stock-transfers/{transfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
 
+            // Assemblies
+            Route::get('assemblies', [AssemblyController::class, 'index'])->name('assemblies.index');
+            Route::get('assemblies/create', [AssemblyController::class, 'create'])->name('assemblies.create');
+            Route::post('assemblies', [AssemblyController::class, 'store'])->name('assemblies.store');
+            Route::get('assemblies/unbuild', [AssemblyController::class, 'createUnbuild'])->name('assemblies.unbuild-form');
+            Route::post('assemblies/unbuild', [AssemblyController::class, 'storeUnbuild'])->name('assemblies.store-unbuild');
+            Route::get('assemblies/history', [AssemblyController::class, 'history'])->name('assemblies.history');
+            Route::get('assemblies/{build}', [AssemblyController::class, 'show'])->name('assemblies.show');
+            Route::get('assemblies-boms', [AssemblyController::class, 'boms'])->name('assemblies.boms');
+            Route::get('assemblies-boms/create', [AssemblyController::class, 'createBom'])->name('assemblies.create-bom');
+            Route::post('assemblies-boms', [AssemblyController::class, 'storeBom'])->name('assemblies.store-bom');
+
+            // Stock Counts
+            Route::get('stock-counts', [StockCountController::class, 'index'])->name('stock-counts.index');
+            Route::get('stock-counts/create', [StockCountController::class, 'create'])->name('stock-counts.create');
+            Route::post('stock-counts', [StockCountController::class, 'store'])->name('stock-counts.store');
+            Route::get('stock-counts/{count}', [StockCountController::class, 'show'])->name('stock-counts.show');
+            Route::get('stock-counts/{count}/edit', [StockCountController::class, 'edit'])->name('stock-counts.edit');
+            Route::put('stock-counts/{count}', [StockCountController::class, 'update'])->name('stock-counts.update');
+
             // Inventory Valuation
             Route::get('inventory-valuation', [InventoryValuationController::class, 'index'])->name('inventory-valuation.index');
+            Route::get('inventory-valuation/by-category', [InventoryValuationController::class, 'byCategory'])->name('inventory-valuation.by-category');
             Route::get('inventory-valuation/export/csv', [InventoryValuationController::class, 'exportCsv'])->name('inventory-valuation.export-csv');
             Route::get('inventory-valuation/export/pdf', [InventoryValuationController::class, 'exportPdf'])->name('inventory-valuation.export-pdf');
 
@@ -207,7 +246,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('payroll-runs/create', [PayrollRunController::class, 'create'])->name('payroll-runs.create');
             Route::post('payroll-runs', [PayrollRunController::class, 'store'])->name('payroll-runs.store');
             Route::get('payroll-runs/{run}', [PayrollRunController::class, 'show'])->name('payroll-runs.show');
+            Route::post('payroll-runs/{run}/approve', [PayrollRunController::class, 'approve'])->name('payroll-runs.approve');
             Route::post('payroll-runs/{run}/post', [PayrollRunController::class, 'post'])->name('payroll-runs.post');
+            Route::post('payroll-runs/{run}/send-payslips', [PayrollRunController::class, 'sendPayslips'])->name('payroll-runs.send-payslips');
             Route::post('payroll-runs/{run}/pay-employee/{employeeId}', [PayrollRunController::class, 'payEmployee'])->name('payroll-runs.pay-employee');
             Route::post('payroll-runs/{run}/remit-paye', [PayrollRunController::class, 'remitPaye'])->name('payroll-runs.remit-paye');
             Route::post('payroll-runs/{run}/remit-pension', [PayrollRunController::class, 'remitPension'])->name('payroll-runs.remit-pension');
@@ -223,7 +264,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'update'])->name('paye-tables.update');
             Route::post('paye-tables/{payeTable}/activate', [\App\Http\Controllers\Accounting\PayeTableController::class, 'activate'])->name('paye-tables.activate');
             Route::delete('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'destroy'])->name('paye-tables.destroy');
-            Route::post('pension-schemes', [PayrollRunController::class, 'storePensionScheme'])->name('pension-schemes.store');
+
+            // Pension Schemes
+            Route::get('pension-schemes', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'index'])->name('pension-schemes.index');
+            Route::get('pension-schemes/create', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'create'])->name('pension-schemes.create');
+            Route::post('pension-schemes', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'store'])->name('pension-schemes.store');
+            Route::get('pension-schemes/{scheme}', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'show'])->name('pension-schemes.show');
+            Route::get('pension-schemes/{scheme}/edit', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'edit'])->name('pension-schemes.edit');
+            Route::put('pension-schemes/{scheme}', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'update'])->name('pension-schemes.update');
+            Route::patch('pension-schemes/{scheme}/toggle', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'toggle'])->name('pension-schemes.toggle');
 
             // Sales Invoices
             Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
@@ -277,6 +326,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('vendor-payments', [VendorPaymentController::class, 'store'])->name('vendor-payments.store');
             Route::get('vendor-payments/{payment}', [VendorPaymentController::class, 'show'])->name('vendor-payments.show');
 
+            // Expenses (immediate payment, no AP)
+            Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+            Route::get('expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
+            Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+            Route::get('expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
+            Route::get('expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
+            Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+            Route::post('expenses/{expense}/post', [ExpenseController::class, 'post'])->name('expenses.post');
+            Route::post('expenses/{expense}/void', [ExpenseController::class, 'void'])->name('expenses.void');
+
+            // Vendor Centre
+            Route::get('vendor-centre', [VendorCentreController::class, 'index'])->name('vendor-centre.index');
+            Route::get('vendor-centre/{vendor}', [VendorCentreController::class, 'show'])->name('vendor-centre.show');
+
             // Purchase Requisitions
             Route::get('purchase-requisitions', [PurchaseRequisitionController::class, 'index'])->name('purchase-requisitions.index');
             Route::get('purchase-requisitions/create', [PurchaseRequisitionController::class, 'create'])->name('purchase-requisitions.create');
@@ -325,6 +388,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransaction'])->name('bank-reconciliation.create-tx');
             Route::post('bank-reconciliation/{reconciliationId}/complete', [ReconciliationController::class, 'complete'])->name('bank-reconciliation.complete');
 
+            // Make Deposits
+            Route::get('deposits', [MakeDepositController::class, 'index'])->name('deposits.index');
+            Route::get('deposits/create', [MakeDepositController::class, 'create'])->name('deposits.create');
+            Route::post('deposits', [MakeDepositController::class, 'store'])->name('deposits.store');
+
+            // Cheques
+            Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
+            Route::get('cheques/create', [ChequeController::class, 'create'])->name('cheques.create');
+            Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
+            Route::get('cheques/{chequeId}', [ChequeController::class, 'show'])->name('cheques.show');
+            Route::post('cheques/{chequeId}/void', [ChequeController::class, 'voidCheque'])->name('cheques.void');
+            Route::get('cheques-register', [ChequeController::class, 'register'])->name('cheques.register');
+
+            // Petty Cash
+            Route::get('petty-cash', [PettyCashController::class, 'index'])->name('petty-cash.index');
+            Route::get('petty-cash/create', [PettyCashController::class, 'createFund'])->name('petty-cash.create-fund');
+            Route::post('petty-cash', [PettyCashController::class, 'storeFund'])->name('petty-cash.store-fund');
+            Route::get('petty-cash/{fundId}', [PettyCashController::class, 'show'])->name('petty-cash.show');
+            Route::post('petty-cash/establish', [PettyCashController::class, 'establish'])->name('petty-cash.establish');
+            Route::post('petty-cash/expense', [PettyCashController::class, 'recordExpense'])->name('petty-cash.expense');
+            Route::post('petty-cash/replenish', [PettyCashController::class, 'replenish'])->name('petty-cash.replenish');
+
+            // Cash Position
+            Route::get('cash-position', [CashPositionController::class, 'index'])->name('cash-position.index');
+
             // Financial Statements
             Route::get('income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
             Route::get('income-statement/export/csv', [IncomeStatementController::class, 'exportCsv'])->name('income-statement.export-csv');
@@ -368,6 +456,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Account Classification
             Route::get('account-classification', [AccountClassificationController::class, 'index'])->name('account-classification.index');
             Route::post('account-classification', [AccountClassificationController::class, 'update'])->name('account-classification.update');
+
+            // UOM Conversions
+            Route::get('uom-conversions', [\App\Http\Controllers\Accounting\UomConversionController::class, 'index'])->name('uom-conversions.index');
+            Route::get('uom-conversions/{product}/edit', [\App\Http\Controllers\Accounting\UomConversionController::class, 'edit'])->name('uom-conversions.edit');
+            Route::put('uom-conversions/{product}', [\App\Http\Controllers\Accounting\UomConversionController::class, 'update'])->name('uom-conversions.update');
+
+            // Landed Cost
+            Route::get('landed-costs', [\App\Http\Controllers\Accounting\LandedCostController::class, 'index'])->name('landed-costs.index');
+            Route::get('landed-costs/create', [\App\Http\Controllers\Accounting\LandedCostController::class, 'create'])->name('landed-costs.create');
+            Route::post('landed-costs', [\App\Http\Controllers\Accounting\LandedCostController::class, 'store'])->name('landed-costs.store');
+            Route::get('landed-costs/{voucher}', [\App\Http\Controllers\Accounting\LandedCostController::class, 'show'])->name('landed-costs.show');
+            Route::post('landed-costs/{voucher}/post', [\App\Http\Controllers\Accounting\LandedCostController::class, 'post'])->name('landed-costs.post');
         });
 
         // Administration
@@ -429,6 +529,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('cash-flow-trend', [\App\Http\Controllers\AnalyticsController::class, 'cashFlowTrend'])->name('cash-flow-trend');
         });
 
+        // Business Intelligence (BI)
+        Route::prefix('bi')->name('bi.')->group(function () {
+            Route::get('true-total-cost', [\App\Http\Controllers\BiController::class, 'trueTotalCost'])->name('true-total-cost');
+            Route::get('customer-lifetime-value', [\App\Http\Controllers\BiController::class, 'customerLifetimeValue'])->name('customer-lifetime-value');
+            Route::get('employee-productivity', [\App\Http\Controllers\BiController::class, 'employeeProductivity'])->name('employee-productivity');
+            Route::get('branch-profitability', [\App\Http\Controllers\BiController::class, 'branchProfitability'])->name('branch-profitability');
+        });
+
         // POS
         Route::prefix('pos')->name('pos.')->group(function () {
             // Terminals
@@ -453,6 +561,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('sales/checkout', [\App\Http\Controllers\POS\PosSaleController::class, 'checkout'])->name('sales.checkout');
             Route::post('sales', [\App\Http\Controllers\POS\PosSaleController::class, 'store'])->name('sales.store');
             Route::get('sales/{id}/receipt', [\App\Http\Controllers\POS\PosSaleController::class, 'receipt'])->name('sales.receipt');
+            Route::get('sales/{id}/lines-json', [\App\Http\Controllers\POS\PosSaleController::class, 'linesJson'])->name('sales.lines-json');
+            Route::post('sales/sync-offline', [\App\Http\Controllers\POS\PosSaleController::class, 'syncOffline'])->name('sales.sync-offline');
 
             // Settlements
             Route::get('settlements', [\App\Http\Controllers\POS\PosSettlementController::class, 'index'])->name('settlements.index');
@@ -460,10 +570,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('settlements', [\App\Http\Controllers\POS\PosSettlementController::class, 'store'])->name('settlements.store');
             Route::get('settlements/{settlement}', [\App\Http\Controllers\POS\PosSettlementController::class, 'show'])->name('settlements.show');
 
+            // Returns / Refunds
+            Route::get('returns', [\App\Http\Controllers\POS\PosReturnController::class, 'index'])->name('returns.index');
+            Route::get('returns/create', [\App\Http\Controllers\POS\PosReturnController::class, 'create'])->name('returns.create');
+            Route::post('returns', [\App\Http\Controllers\POS\PosReturnController::class, 'store'])->name('returns.store');
+            Route::get('returns/{return}', [\App\Http\Controllers\POS\PosReturnController::class, 'show'])->name('returns.show');
+
+            // POS Reports
+            Route::get('reports/x-report', [\App\Http\Controllers\POS\PosReportController::class, 'xReport'])->name('reports.x-report');
+            Route::get('reports/z-report', [\App\Http\Controllers\POS\PosReportController::class, 'zReport'])->name('reports.z-report');
+            Route::get('reports/sales-by-terminal', [\App\Http\Controllers\POS\PosReportController::class, 'salesByTerminal'])->name('reports.sales-by-terminal');
+            Route::get('reports/sales-by-cashier', [\App\Http\Controllers\POS\PosReportController::class, 'salesByCashier'])->name('reports.sales-by-cashier');
+
             // Cashier PIN login (accessible to any company user)
             Route::get('cashier/login', [\App\Http\Controllers\POS\PosCashierController::class, 'showLoginForm'])->name('cashier.login');
             Route::post('cashier/login', [\App\Http\Controllers\POS\PosCashierController::class, 'login'])->name('cashier.login.post');
             Route::post('cashier/logout', [\App\Http\Controllers\POS\PosCashierController::class, 'logout'])->name('cashier.logout');
+
+            // EIS E-Invoicing
+            Route::get('eis/terminals', [\App\Http\Controllers\POS\EisController::class, 'terminals'])->name('eis.terminals');
+            Route::post('eis/terminals', [\App\Http\Controllers\POS\EisController::class, 'storeTerminal'])->name('eis.terminals.store');
+            Route::post('eis/terminals/{terminal}/activate', [\App\Http\Controllers\POS\EisController::class, 'activateTerminal'])->name('eis.terminals.activate');
+            Route::get('eis/submissions', [\App\Http\Controllers\POS\EisController::class, 'submissions'])->name('eis.submissions');
+            Route::post('eis/submissions/{submission}/retry', [\App\Http\Controllers\POS\EisController::class, 'retrySubmission'])->name('eis.submissions.retry');
         });
 
         // POS Dashboard (requires cashier PIN session)

@@ -111,6 +111,7 @@ class PaymentService
                 'source_module' => 'customer_payment',
                 'reference' => $payment->payment_number,
                 'memo' => "Payment from {$customer->name}",
+                'branch_id' => $payment->branch_id,
                 'lines' => [
                     [
                         'account_id' => $bankAccount->id,
@@ -258,6 +259,7 @@ class PaymentService
                 'source_module' => 'vendor_payment',
                 'reference' => $payment->payment_number,
                 'memo' => "Payment to {$vendor->name}",
+                'branch_id' => $payment->branch_id,
                 'lines' => [
                     [
                         'account_id' => $apAccount->id,

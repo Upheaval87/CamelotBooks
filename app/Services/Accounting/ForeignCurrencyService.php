@@ -154,9 +154,16 @@ class ForeignCurrencyService
 
         $companyId = $payment->company_id;
         $fxGainLossAccount = $this->findFxAccount($companyId, '7200');
+        $arAccount = Account::where('company_id', $companyId)->where('code', '1100')->first();
 
         $lines = [];
         if ($gainLoss > 0) {
+            $lines[] = [
+                'account_id' => $arAccount?->id ?? $fxGainLossAccount->id,
+                'debit' => abs($gainLoss),
+                'credit' => 0,
+                'memo' => 'Realized FX gain on payment ' . $payment->payment_number,
+            ];
             $lines[] = [
                 'account_id' => $fxGainLossAccount->id,
                 'debit' => 0,
@@ -170,6 +177,12 @@ class ForeignCurrencyService
                 'credit' => 0,
                 'memo' => 'Realized FX loss on payment ' . $payment->payment_number,
             ];
+            $lines[] = [
+                'account_id' => $arAccount?->id ?? $fxGainLossAccount->id,
+                'debit' => 0,
+                'credit' => abs($gainLoss),
+                'memo' => 'Realized FX loss on payment ' . $payment->payment_number,
+            ];
         }
 
         $this->postingEngine->post([
@@ -180,6 +193,7 @@ class ForeignCurrencyService
             'reference' => $payment->payment_number,
             'memo' => 'Realized FX gain/loss on ' . $payment->payment_number,
             'skip_period_validation' => true,
+            'branch_id' => $payment->branch_id,
             'lines' => $lines,
         ]);
     }
@@ -195,18 +209,31 @@ class ForeignCurrencyService
 
         $companyId = $payment->company_id;
         $fxGainLossAccount = $this->findFxAccount($companyId, '7200');
+        $apAccount = Account::where('company_id', $companyId)->where('code', '2000')->first();
 
         $lines = [];
         if ($gainLoss > 0) {
             $lines[] = [
-                'account_id' => $fxGainLossAccount->id,
+                'account_id' => $apAccount?->id ?? $fxGainLossAccount->id,
                 'debit' => 0,
                 'credit' => abs($gainLoss),
+                'memo' => 'Realized FX gain on payment ' . $payment->payment_number,
+            ];
+            $lines[] = [
+                'account_id' => $fxGainLossAccount->id,
+                'debit' => abs($gainLoss),
+                'credit' => 0,
                 'memo' => 'Realized FX gain on payment ' . $payment->payment_number,
             ];
         } else {
             $lines[] = [
                 'account_id' => $fxGainLossAccount->id,
+                'debit' => 0,
+                'credit' => abs($gainLoss),
+                'memo' => 'Realized FX loss on payment ' . $payment->payment_number,
+            ];
+            $lines[] = [
+                'account_id' => $apAccount?->id ?? $fxGainLossAccount->id,
                 'debit' => abs($gainLoss),
                 'credit' => 0,
                 'memo' => 'Realized FX loss on payment ' . $payment->payment_number,
@@ -221,6 +248,7 @@ class ForeignCurrencyService
             'reference' => $payment->payment_number,
             'memo' => 'Realized FX gain/loss on ' . $payment->payment_number,
             'skip_period_validation' => true,
+            'branch_id' => $payment->branch_id,
             'lines' => $lines,
         ]);
     }
@@ -284,13 +312,23 @@ class ForeignCurrencyService
         $arAccount = Account::where('company_id', $companyId)->where('code', '1100')->first();
         $apAccount = Account::where('company_id', $companyId)->where('code', '2000')->first();
 
+        $hasInvoices = $openInvoices->isNotEmpty();
+        $hasBills = $openBills->isNotEmpty();
+
         if ($totalGainLoss > 0) {
+            if ($hasInvoices && !$hasBills) {
+                $offsetAccount = $arAccount;
+            } elseif ($hasBills && !$hasInvoices) {
+                $offsetAccount = $apAccount;
+            } else {
+                $offsetAccount = $arAccount;
+            }
             $jeLines = [
                 [
-                    'account_id' => $arAccount?->id ?? $unrealizedAccount->id,
+                    'account_id' => $offsetAccount?->id ?? $unrealizedAccount->id,
                     'debit' => abs($totalGainLoss),
                     'credit' => 0,
-                    'memo' => 'Unrealized FX gain - receivable increase',
+                    'memo' => 'Unrealized FX gain - receivable/payable increase',
                 ],
                 [
                     'account_id' => $unrealizedAccount->id,
@@ -300,6 +338,13 @@ class ForeignCurrencyService
                 ],
             ];
         } else {
+            if ($hasInvoices && !$hasBills) {
+                $offsetAccount = $arAccount;
+            } elseif ($hasBills && !$hasInvoices) {
+                $offsetAccount = $apAccount;
+            } else {
+                $offsetAccount = $arAccount;
+            }
             $jeLines = [
                 [
                     'account_id' => $unrealizedAccount->id,
@@ -308,10 +353,10 @@ class ForeignCurrencyService
                     'memo' => 'Unrealized FX loss on revaluation',
                 ],
                 [
-                    'account_id' => $arAccount?->id ?? $unrealizedAccount->id,
+                    'account_id' => $offsetAccount?->id ?? $unrealizedAccount->id,
                     'debit' => 0,
                     'credit' => abs($totalGainLoss),
-                    'memo' => 'Unrealized FX loss - receivable decrease',
+                    'memo' => 'Unrealized FX loss - receivable/payable decrease',
                 ],
             ];
         }

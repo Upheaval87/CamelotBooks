@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryCostLayer;
+use App\Models\Product;
 use App\Services\Accounting\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -74,5 +75,88 @@ class InventoryValuationController extends Controller
             }, $valuation),
             'totals' => ['Total Inventory Value', '', '', '', '$' . number_format($totalValue, 2)],
         ], 200)->header('Content-Type', 'text/html');
+    }
+
+    public function byCategory(Request $request)
+    {
+        $companyId = session('current_company_id');
+
+        $categories = \App\Models\ItemCategory::where('company_id', $companyId)
+            ->with(['products' => function ($q) use ($companyId) {
+                $q->where('tracked_as_inventory', true);
+            }])
+            ->orderBy('name')
+            ->get();
+
+        $categoryData = [];
+        $grandTotal = 0;
+
+        foreach ($categories as $category) {
+            $totalQty = 0;
+            $totalValue = 0;
+            $products = [];
+
+            foreach ($category->products as $product) {
+                $layers = InventoryCostLayer::where('company_id', $companyId)
+                    ->where('product_id', $product->id)
+                    ->available()
+                    ->get();
+
+                $qty = (float) $layers->sum('quantity_remaining');
+                $value = (float) $layers->sum(fn($l) => $l->quantity_remaining * $l->unit_cost);
+
+                if ($qty > 0) {
+                    $products[] = [
+                        'product_id' => $product->id,
+                        'sku' => $product->sku,
+                        'name' => $product->name,
+                        'quantity' => $qty,
+                        'value' => $value,
+                    ];
+                    $totalQty += $qty;
+                    $totalValue += $value;
+                }
+            }
+
+            $categoryData[] = [
+                'category_id' => $category->id,
+                'code' => $category->code,
+                'name' => $category->name,
+                'products' => $products,
+                'total_quantity' => $totalQty,
+                'total_value' => $totalValue,
+            ];
+
+            $grandTotal += $totalValue;
+        }
+
+        $uncategorizedProducts = Product::where('company_id', $companyId)
+            ->where('tracked_as_inventory', true)
+            ->whereNull('category_id')
+            ->get();
+
+        $uncategorizedData = [];
+        foreach ($uncategorizedProducts as $product) {
+            $layers = InventoryCostLayer::where('company_id', $companyId)
+                ->where('product_id', $product->id)
+                ->available()
+                ->get();
+
+            $qty = (float) $layers->sum('quantity_remaining');
+            $value = (float) $layers->sum(fn($l) => $l->quantity_remaining * $l->unit_cost);
+
+            if ($qty > 0) {
+                $uncategorizedData[] = [
+                    'product_id' => $product->id,
+                    'sku' => $product->sku,
+                    'name' => $product->name,
+                    'quantity' => $qty,
+                    'value' => $value,
+                ];
+                $grandTotal += $value;
+            }
+        }
+
+        return view('accounting.inventory-valuation.by-category', compact('categoryData', 'uncategorizedData', 'grandTotal'));
     }
 }

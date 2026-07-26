@@ -1,0 +1,16 @@
+{
+    "name": "CamelotBooks POS",
+    "short_name": "CB POS",
+    "description": "CamelotBooks Point of Sale",
+    "start_url": "/accounting/pos/sales/checkout",
+    "display": "standalone",
+    "background_color": "#f9fafb",
+    "theme_color": "#4f46e5",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "64x64",
+            "type": "image/x-icon"
+        }
+    ]
+}

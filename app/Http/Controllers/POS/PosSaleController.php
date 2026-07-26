@@ -7,9 +7,12 @@ use App\Models\Account;
 use App\Models\Customer;
 use App\Models\MobileMoneyProvider;
 use App\Models\PosPaymentMethod;
+use App\Models\PosSale;
 use App\Models\Product;
+use App\Services\Accounting\InventoryService;
 use App\Services\POS\PosSaleService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PosSaleController extends Controller
 {
@@ -21,14 +24,35 @@ class PosSaleController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'sales_price', 'tax_rate', 'is_taxable', 'tracked_as_inventory']);
 
-        // Attach current stock for tracked items
-        $products->each(function ($product) use ($companyId) {
-            if ($product->tracked_as_inventory) {
-                $product->current_stock = app(\App\Services\Accounting\InventoryService::class)
-                    ->getProductTotalQuantityOnHand($companyId, $product->id);
-            } else {
-                $product->current_stock = null; // unlimited
+        // Bulk stock query — single query scoped to terminal's branch
+        $branchId = session('pos_terminal_branch_id');
+        $stockByProduct = [];
+        if ($branchId) {
+            $stockRows = \App\Models\InventoryStock::where('company_id', $companyId)
+                ->where('branch_id', $branchId)
+                ->whereIn('product_id', $products->pluck('id')->filter(fn ($id) => $id !== null))
+                ->select('product_id', DB::raw('SUM(quantity_on_hand) as qty'))
+                ->groupBy('product_id')
+                ->get();
+            foreach ($stockRows as $row) {
+                $stockByProduct[$row->product_id] = (float) $row->qty;
             }
+        } else {
+            // Fallback: no branch on terminal, show total across all branches
+            $stockRows = \App\Models\InventoryStock::where('company_id', $companyId)
+                ->whereIn('product_id', $products->pluck('id')->filter(fn ($id) => $id !== null))
+                ->select('product_id', DB::raw('SUM(quantity_on_hand) as qty'))
+                ->groupBy('product_id')
+                ->get();
+            foreach ($stockRows as $row) {
+                $stockByProduct[$row->product_id] = (float) $row->qty;
+            }
+        }
+
+        $products->each(function ($product) use ($stockByProduct) {
+            $product->current_stock = $product->tracked_as_inventory
+                ? ($stockByProduct[$product->id] ?? 0)
+                : null;
         });
 
         $paymentMethods = PosPaymentMethod::where('company_id', $companyId)
@@ -81,6 +105,7 @@ class PosSaleController extends Controller
         ]);
 
         $validated['company_id'] = $companyId;
+        $validated['branch_id'] = $validated['branch_id'] ?? session('pos_terminal_branch_id');
 
         try {
             $sale = app(PosSaleService::class)->checkout($validated, $userId);
@@ -109,5 +134,100 @@ class PosSaleController extends Controller
             ->findOrFail($id);
 
         return view('pos.sales.receipt', compact('sale'));
+    }
+
+    public function linesJson(int $id)
+    {
+        $companyId = session('current_company_id');
+
+        $sale = \App\Models\PosSale::where('company_id', $companyId)
+            ->with(['lines.product'])
+            ->findOrFail($id);
+
+        return response()->json([
+            'lines' => $sale->lines->map(fn ($line) => [
+                'id' => $line->id,
+                'product_id' => $line->product_id,
+                'product_name' => $line->product?->name,
+                'quantity' => $line->quantity,
+                'unit_price' => $line->unit_price,
+                'tax_rate' => $line->tax_rate,
+                'line_total' => $line->line_total,
+                'cost_of_goods' => $line->cost_of_goods,
+            ]),
+        ]);
+    }
+
+    public function syncOffline(Request $request)
+    {
+        $companyId = session('current_company_id');
+        $userId = $request->user()->id;
+
+        $validated = $request->validate([
+            'terminal_id' => 'required|exists:pos_terminals,id',
+            'cashier_session_id' => 'nullable|exists:pos_cashier_sessions,id',
+            'customer_id' => 'nullable|exists:customers,id',
+            'reference' => 'nullable|string|max:255',
+            'lines' => 'required|array|min:1',
+            'lines.*.product_id' => 'required|exists:products,id',
+            'lines.*.quantity' => 'required|numeric|min:0.01',
+            'lines.*.unit_price' => 'required|numeric|min:0',
+            'lines.*.discount_amount' => 'nullable|numeric|min:0',
+            'lines.*.discount_type' => 'nullable|string',
+            'lines.*.tax_rate' => 'nullable|numeric|min:0|max:100',
+            'payments' => 'required|array|min:1',
+            'payments.*.payment_method_id' => 'required|exists:pos_payment_methods,id',
+            'payments.*.amount' => 'required|numeric|min:0.01',
+            'payments.*.cash_tendered' => 'nullable|numeric|min:0',
+            'payments.*.change_given' => 'nullable|numeric|min:0',
+            'payments.*.reference_number' => 'nullable|string|max:255',
+            'payments.*.processor_name' => 'nullable|string|max:255',
+            '_offlineId' => 'nullable|string|max:255',
+        ]);
+
+        $offlineId = $validated['_offlineId'] ?? null;
+        unset($validated['_offlineId']);
+
+        if ($offlineId) {
+            $existing = PosSale::where('company_id', $companyId)
+                ->where('offline_transaction_id', $offlineId)
+                ->first();
+            if ($existing) {
+                return response()->json([
+                    'success' => true,
+                    'sale_id' => $existing->id,
+                    'sale_number' => $existing->sale_number,
+                    'total' => $existing->total,
+                    'message' => "Sale {$existing->sale_number} already synced.",
+                ]);
+            }
+        }
+
+        $validated['company_id'] = $companyId;
+        $validated['branch_id'] = $validated['branch_id'] ?? session('pos_terminal_branch_id');
+
+        try {
+            $sale = app(PosSaleService::class)->checkout($validated, $userId);
+
+            if ($offlineId) {
+                $sale->update([
+                    'synced_from_offline' => true,
+                    'offline_transaction_id' => $offlineId,
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'sale_id' => $sale->id,
+                'sale_number' => $sale->sale_number,
+                'total' => $sale->total,
+                'message' => "Sale {$sale->sale_number} synced from offline.",
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

@@ -11,6 +11,9 @@ class GrnLine extends Model
         'goods_received_note_id',
         'purchase_order_line_id',
         'product_id',
+        'transaction_uom',
+        'transaction_qty',
+        'conversion_factor',
         'description',
         'quantity_ordered',
         'quantity_received',
@@ -21,6 +24,8 @@ class GrnLine extends Model
     ];
 
     protected $casts = [
+        'transaction_qty' => 'decimal:4',
+        'conversion_factor' => 'decimal:4',
         'quantity_ordered' => 'decimal:2',
         'quantity_received' => 'decimal:2',
         'unit_cost' => 'decimal:4',

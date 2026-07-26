@@ -34,7 +34,7 @@ class IncomeStatementService
         return $result;
     }
 
-    public function computeNetIncome(int $companyId, ?int $branchId, string $dateFrom, string $dateTo): float
+    public function computeNetIncome(int $companyId, ?int $branchId, string $dateFrom, string $dateTo, ?int $costCenterId = null): float
     {
         $income = (float) JournalEntryLine::whereHas('journalEntry', function ($q) use ($companyId, $dateFrom, $dateTo) {
             $q->where('company_id', $companyId)
@@ -44,6 +44,7 @@ class IncomeStatementService
         })
             ->whereHas('account', fn ($q) => $q->where('type', 'income'))
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($costCenterId, fn ($q) => $q->where('cost_center_id', $costCenterId))
             ->sum(DB::raw('credit - debit'));
 
         $expenses = (float) JournalEntryLine::whereHas('journalEntry', function ($q) use ($companyId, $dateFrom, $dateTo) {
@@ -54,6 +55,7 @@ class IncomeStatementService
         })
             ->whereHas('account', fn ($q) => $q->where('type', 'expense'))
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($costCenterId, fn ($q) => $q->where('cost_center_id', $costCenterId))
             ->sum(DB::raw('debit - credit'));
 
         return $income - $expenses;
@@ -113,13 +115,13 @@ class IncomeStatementService
 
         foreach ($grouped['income'] as $subType => $items) {
             foreach ($items as &$item) {
-                $totalIncome += max(0, $item['net']);
+                $totalIncome += $item['net'];
             }
         }
 
         foreach ($grouped['expense'] as $subType => $items) {
             foreach ($items as &$item) {
-                $totalExpenses += max(0, $item['net']);
+                $totalExpenses += $item['net'];
             }
         }
 

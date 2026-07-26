@@ -10,6 +10,7 @@ class Product extends Model
 {
     protected $fillable = [
         'company_id',
+        'category_id',
         'name',
         'description',
         'sku',
@@ -25,6 +26,7 @@ class Product extends Model
         'tax_rate',
         'is_taxable',
         'is_active',
+        'is_assembly',
     ];
 
     protected $casts = [
@@ -35,11 +37,17 @@ class Product extends Model
         'is_taxable' => 'boolean',
         'is_active' => 'boolean',
         'tracked_as_inventory' => 'boolean',
+        'is_assembly' => 'boolean',
     ];
 
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
     public function incomeAccount(): BelongsTo
@@ -75,6 +83,74 @@ class Product extends Model
     public function billLines(): HasMany
     {
         return $this->hasMany(BillLine::class);
+    }
+
+    public function uomConversions(): HasMany
+    {
+        return $this->hasMany(ItemUomConversion::class);
+    }
+
+    public function billOfMaterials(): HasMany
+    {
+        return $this->hasMany(BillOfMaterial::class, 'assembly_product_id');
+    }
+
+    public function bomLines(): HasMany
+    {
+        return $this->hasMany(BillOfMaterialLine::class, 'component_product_id');
+    }
+
+    public function assemblyBuilds(): HasMany
+    {
+        return $this->hasMany(AssemblyBuild::class, 'assembly_product_id');
+    }
+
+    /**
+     * Resolve effective account values: product-specific > category default.
+     */
+    public function getEffectiveIncomeAccountIdAttribute(): ?int
+    {
+        return $this->income_account_id ?? $this->category?->default_income_account_id;
+    }
+
+    public function getEffectiveCogsAccountIdAttribute(): ?int
+    {
+        return $this->expense_account_id ?? $this->category?->default_cogs_account_id;
+    }
+
+    public function getEffectiveInventoryAssetAccountIdAttribute(): ?int
+    {
+        return $this->inventory_asset_account_id ?? $this->category?->default_inventory_asset_account_id;
+    }
+
+    public function getEffectiveReorderPointAttribute(): ?float
+    {
+        return $this->reorder_point ?? $this->category?->default_reorder_point;
+    }
+
+    public function getEffectiveBaseUomAttribute(): ?string
+    {
+        return $this->unit_of_measure ?? $this->category?->default_base_uom;
+    }
+
+    public function getUomFactor(string $uomName): float
+    {
+        $conversion = $this->uomConversions()
+            ->where('uom_name', $uomName)
+            ->where('is_active', true)
+            ->first();
+
+        return $conversion ? (float) $conversion->conversion_factor : 1.0;
+    }
+
+    public function getBaseUomName(): string
+    {
+        $base = $this->uomConversions()
+            ->where('is_base', true)
+            ->where('is_active', true)
+            ->first();
+
+        return $base?->uom_name ?? $this->unit_of_measure ?? 'Each';
     }
 
     public function scopeForCompany($query, int $companyId)

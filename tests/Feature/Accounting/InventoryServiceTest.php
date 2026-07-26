@@ -336,7 +336,7 @@ class InventoryServiceTest extends TestCase
 
         $service->receiveStock($this->company->id, $this->product->id, $this->branch->id, 50, 10.00, 'bill', 1, '2026-01-15');
 
-        $transfer = $service->transferStock(
+        $result = $service->transferStock(
             $this->company->id,
             $this->product->id,
             $this->branch->id,
@@ -347,6 +347,8 @@ class InventoryServiceTest extends TestCase
             '2026-02-01'
         );
 
+        $transfer = $result['transfer'];
+        $this->assertGreaterThan(0, $result['total_cost']);
         $this->assertEquals('completed', $transfer->status);
         $this->assertEquals(20, $transfer->quantity);
 

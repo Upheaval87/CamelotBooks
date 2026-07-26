@@ -13,6 +13,7 @@ class Customer extends Model
         'branch_id',
         'cost_center_id',
         'name',
+        'tin',
         'display_name',
         'email',
         'phone',

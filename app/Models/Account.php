@@ -22,16 +22,22 @@ class Account extends Model
         'opening_balance_date',
         'currency',
         'is_bank_account',
+        'is_petty_cash',
         'is_active',
         'cash_flow_section',
         'is_non_cash',
+        'next_cheque_number',
+        'petty_cash_float',
     ];
 
     protected $casts = [
         'opening_balance' => 'decimal:2',
         'is_bank_account' => 'boolean',
+        'is_petty_cash' => 'boolean',
         'is_active' => 'boolean',
         'is_non_cash' => 'boolean',
+        'next_cheque_number' => 'integer',
+        'petty_cash_float' => 'decimal:2',
         'opening_balance_date' => 'date',
     ];
 
@@ -124,22 +130,35 @@ class Account extends Model
 
     public static function verifyAllBalances(): array
     {
-        $accounts = static::with('journalEntryLines.journalEntry')->get();
+        $accounts = static::with('journalEntryLines.journalEntry')
+            ->where('is_active', true)
+            ->get();
+
+        $totalDebit = 0;
+        $totalCredit = 0;
         $discrepancies = [];
 
         foreach ($accounts as $account) {
-            $dbBalance = (float) DB::table('accounts')->where('id', $account->id)->value('current_balance');
-            $computedBalance = $account->current_balance;
+            $balance = $account->current_balance;
 
-            if (round($dbBalance, 2) !== round($computedBalance, 2)) {
-                $discrepancies[] = [
-                    'account_id' => $account->id,
-                    'account_code' => $account->code,
-                    'account_name' => $account->name,
-                    'db_balance' => $dbBalance,
-                    'computed_balance' => $computedBalance,
-                ];
+            if (abs($balance) > 0.001) {
+                if ($account->isDebitNormal()) {
+                    $totalDebit += $balance;
+                } else {
+                    $totalCredit += abs($balance);
+                }
             }
+        }
+
+        if (round($totalDebit, 2) !== round($totalCredit, 2)) {
+            $discrepancies[] = [
+                'type' => 'trial_balance_mismatch',
+                'message' => "Trial balance does not net to zero. Debit total: " .
+                    number_format($totalDebit, 2) . ", Credit total: " .
+                    number_format($totalCredit, 2),
+                'debit_total' => $totalDebit,
+                'credit_total' => $totalCredit,
+            ];
         }
 
         return $discrepancies;

@@ -26,12 +26,15 @@ class PayrollRun extends Model
         'paye_table_id',
         'pension_scheme_id',
         'created_by',
+        'approved_at',
+        'approved_by',
     ];
 
     protected $casts = [
         'pay_date' => 'date',
         'period_start' => 'date',
         'period_end' => 'date',
+        'approved_at' => 'datetime',
         'total_gross' => 'decimal:2',
         'total_paye' => 'decimal:2',
         'total_pension_ee' => 'decimal:2',
@@ -42,6 +45,7 @@ class PayrollRun extends Model
 
     const STATUS_DRAFT = 'draft';
     const STATUS_CALCULATED = 'calculated';
+    const STATUS_APPROVED = 'approved';
     const STATUS_POSTED = 'posted';
     const STATUS_PARTIALLY_PAID = 'partially_paid';
     const STATUS_FULLY_PAID = 'fully_paid';
@@ -76,9 +80,19 @@ class PayrollRun extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(EmployeePayment::class);
+    }
+
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(PayslipDelivery::class);
     }
 
     public function scopeForCompany($query, int $companyId)

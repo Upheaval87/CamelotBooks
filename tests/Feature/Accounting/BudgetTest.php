@@ -37,6 +37,8 @@ class BudgetTest extends TestCase
         session(['current_company_id' => $this->company->id]);
 
         $this->seedChartOfAccounts($this->company);
+
+        app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->company->id);
     }
 
     public function test_create_budget_with_lines(): void

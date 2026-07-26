@@ -143,6 +143,7 @@ class GoodsReceivedNoteService
                 'source_module' => 'grn',
                 'reference' => $grn->grn_number,
                 'memo' => "Goods received note {$grn->grn_number}",
+                'branch_id' => $grn->branch_id,
                 'lines' => $jeLines,
             ]);
 

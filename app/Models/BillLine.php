@@ -10,6 +10,9 @@ class BillLine extends Model
     protected $fillable = [
         'bill_id',
         'product_id',
+        'transaction_uom',
+        'transaction_qty',
+        'conversion_factor',
         'description',
         'quantity',
         'unit_price',
@@ -24,6 +27,8 @@ class BillLine extends Model
     ];
 
     protected $casts = [
+        'transaction_qty' => 'decimal:4',
+        'conversion_factor' => 'decimal:4',
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'discount' => 'decimal:2',

@@ -33,6 +33,7 @@ class EmailTemplate extends Model
             'low_stock_alert' => 'Low Stock Alert',
             'overdue_reminder' => 'Overdue Invoice/Bill Reminder',
             'recurring_generated' => 'Recurring Invoice/Bill Generated',
+            'payslip_sent' => 'Payslip Sent',
         ];
     }
 
@@ -62,6 +63,10 @@ class EmailTemplate extends Model
             'recurring_generated' => [
                 'subject' => 'Recurring {{document_type}} Generated: {{document_number}}',
                 'body' => "A recurring {{document_type}} has been automatically generated:\n\nNumber: {{document_number}}\nAmount: {{amount}}\n\nThis was generated from template: {{template_name}}\n\n{{company_name}}",
+            ],
+            'payslip_sent' => [
+                'subject' => 'Your Payslip - {{period}}',
+                'body' => "Dear {{employee_name}},\n\nPlease find attached your payslip for {{period}}.\n\nThe PDF is password-protected. Your password was provided to you separately.\n\nIf you have any questions, please contact the payroll department.\n\nRegards,\n{{company_name}}",
             ],
         ];
     }

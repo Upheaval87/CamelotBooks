@@ -120,8 +120,8 @@ class BankController extends Controller
             'description' => ['required', 'string', 'max:500'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'reference' => ['nullable', 'string', 'max:255'],
-            'debit_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
-            'credit_account_id' => ['nullable', 'integer', 'exists:accounts,id'],
+            'debit_account_id' => ['required_if:type,fee,withdrawal', 'nullable', 'integer', 'exists:accounts,id'],
+            'credit_account_id' => ['required_if:type,deposit,interest', 'nullable', 'integer', 'exists:accounts,id'],
         ]);
 
         $validated['company_id'] = $companyId;

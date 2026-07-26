@@ -57,6 +57,7 @@ class PosCashierController extends Controller
             'pos_cashier_name' => $user->name,
             'pos_terminal_id' => $terminal->id,
             'pos_terminal_identifier' => $terminal->identifier,
+            'pos_terminal_branch_id' => $terminal->branch_id,
             'pos_session_started_at' => now()->toIso8601String(),
         ]);
 
@@ -70,6 +71,7 @@ class PosCashierController extends Controller
             'pos_cashier_name',
             'pos_terminal_id',
             'pos_terminal_identifier',
+            'pos_terminal_branch_id',
             'pos_session_started_at',
         ]);
 

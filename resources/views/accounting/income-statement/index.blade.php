@@ -78,8 +78,8 @@
                                     </tr>
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format(max(0, $item['net']), 2) }}</td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_from={{ $dateFrom }}&date_to={{ $dateTo }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['net'], 2) }}</td>
                                             @if(!empty($comparison))
                                                 <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                                                     @php
@@ -113,8 +113,8 @@
                                     </tr>
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format(max(0, $item['net']), 2) }}</td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_from={{ $dateFrom }}&date_to={{ $dateTo }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['net'], 2) }}</td>
                                             @if(!empty($comparison))
                                                 <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                                                     @php

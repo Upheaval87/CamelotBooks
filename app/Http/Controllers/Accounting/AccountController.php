@@ -122,13 +122,14 @@ class AccountController extends Controller
 
     public function toggle(Account $account)
     {
-        if (!$account->is_active) {
+        if ($account->is_active) {
             $hasBalance = $account->current_balance != 0;
             $hasActiveChildren = $account->children()->active()->exists();
+            $hasJournalLines = \App\Models\JournalEntryLine::where('account_id', $account->id)->exists();
 
-            if ($hasBalance || $hasActiveChildren) {
+            if ($hasBalance || $hasActiveChildren || $hasJournalLines) {
                 return redirect()->route('accounting.accounts.index')
-                    ->with('error', 'Cannot activate account with balance or active children.');
+                    ->with('error', 'Cannot deactivate account with balance, active children, or existing transactions.');
             }
         }
 

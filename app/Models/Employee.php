@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Crypt;
 
 class Employee extends Model
 {
@@ -36,6 +37,7 @@ class Employee extends Model
         'bank_account_name',
         'bank_branch_code',
         'is_active',
+        'payslip_password',
     ];
 
     protected $casts = [
@@ -44,6 +46,24 @@ class Employee extends Model
         'termination_date' => 'date',
         'is_active' => 'boolean',
     ];
+
+    public function getPayslipPasswordDecryptedAttribute(): ?string
+    {
+        if (is_null($this->attributes['payslip_password'])) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($this->attributes['payslip_password']);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    public function setPayslipPasswordValueAttribute(?string $value): void
+    {
+        $this->attributes['payslip_password'] = $value ? Crypt::encryptString($value) : null;
+    }
 
     public function company(): BelongsTo
     {
@@ -79,6 +99,11 @@ class Employee extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(EmployeePayment::class);
+    }
+
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(PayslipDelivery::class);
     }
 
     public function scopeForCompany($query, int $companyId)

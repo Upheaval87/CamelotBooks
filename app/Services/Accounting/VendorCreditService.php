@@ -134,6 +134,7 @@ class VendorCreditService
                 'source_module' => 'vendor_credit',
                 'reference' => $vendorCredit->credit_note_number,
                 'memo' => "Vendor credit {$vendorCredit->credit_note_number}",
+                'branch_id' => $vendorCredit->branch_id,
                 'lines' => $jeLines,
             ]);
 

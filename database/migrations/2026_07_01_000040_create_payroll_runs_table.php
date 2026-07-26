@@ -16,7 +16,7 @@ return new class extends Migration
             $table->date('pay_date');
             $table->date('period_start');
             $table->date('period_end');
-            $table->enum('status', ['draft', 'calculated', 'posted', 'partially_paid', 'fully_paid'])->default('draft');
+            $table->enum('status', ['draft', 'calculated', 'approved', 'posted', 'partially_paid', 'fully_paid'])->default('draft');
             $table->decimal('total_gross', 15, 2)->default(0);
             $table->decimal('total_paye', 15, 2)->default(0);
             $table->decimal('total_pension_ee', 15, 2)->default(0);

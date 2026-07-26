@@ -3,6 +3,7 @@
 namespace App\Services\POS;
 
 use App\Models\Account;
+use App\Models\AuditLog;
 use App\Models\JournalEntry;
 use App\Models\PosCashierSession;
 use App\Services\Accounting\JournalPostingEngine;
@@ -26,7 +27,7 @@ class TillSessionService
             throw new \LogicException('This terminal already has an open till session.');
         }
 
-        return PosCashierSession::create([
+        $session = PosCashierSession::create([
             'company_id' => $companyId,
             'terminal_id' => $terminalId,
             'user_id' => $userId,
@@ -34,6 +35,19 @@ class TillSessionService
             'status' => PosCashierSession::STATUS_OPEN,
             'opened_at' => $openedAt ?? now(),
         ]);
+
+        AuditLog::log(
+            $companyId,
+            $userId,
+            PosCashierSession::class,
+            $session->id,
+            'pos.till.opened',
+            null,
+            ['opening_float' => $openingFloat, 'terminal_id' => $terminalId],
+            "Till opened with float $" . number_format($openingFloat, 2)
+        );
+
+        return $session;
     }
 
     public function closeTill(PosCashierSession $session, float $actualCashCount, ?string $closedAt = null): PosCashierSession
@@ -43,14 +57,17 @@ class TillSessionService
         }
 
         $cashSales = 0;
-        if (Schema::hasTable('pos_sales')) {
-            $cashSales = DB::table('pos_sales')
-                ->where('cashier_session_id', $session->id)
-                ->where('status', 'posted')
-                ->sum('total');
+        if (Schema::hasTable('pos_sales') && Schema::hasTable('pos_payments') && Schema::hasTable('pos_payment_methods')) {
+            $cashSales = (float) DB::table('pos_payments AS pp')
+                ->join('pos_sales AS ps', 'ps.id', '=', 'pp.pos_sale_id')
+                ->join('pos_payment_methods AS pm', 'pm.id', '=', 'pp.payment_method_id')
+                ->where('ps.cashier_session_id', $session->id)
+                ->where('ps.status', 'posted')
+                ->where('pm.type', 'cash')
+                ->sum('pp.amount');
         }
 
-        $expectedCash = (float) $session->opening_float + (float) $cashSales;
+        $expectedCash = (float) $session->opening_float + $cashSales;
         $variance = round($actualCashCount - $expectedCash, 2);
 
         $journalEntry = null;
@@ -67,6 +84,22 @@ class TillSessionService
             'variance' => $variance,
             'journal_entry_id' => $journalEntry?->id,
         ]);
+
+        AuditLog::log(
+            $session->company_id,
+            $session->user_id,
+            PosCashierSession::class,
+            $session->id,
+            'pos.till.closed',
+            ['status' => PosCashierSession::STATUS_OPEN],
+            [
+                'status' => PosCashierSession::STATUS_CLOSED,
+                'actual_cash_count' => $actualCashCount,
+                'expected_cash' => $expectedCash,
+                'variance' => $variance,
+            ],
+            "Till closed. Variance: $" . number_format($variance, 2)
+        );
 
         return $session->fresh();
     }

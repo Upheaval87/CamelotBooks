@@ -7,6 +7,25 @@
 
     <div class="py-6" x-data="posCheckout()" x-effect="reactiveFilter()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+
+            {{-- Offline Indicator --}}
+            <div x-show="!isOnline" x-cloak
+                class="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded relative flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                    <span class="font-semibold">Offline Mode</span> – Sales will be queued and synced when connection is restored.
+                </div>
+                <span x-show="offlineQueueCount > 0" class="text-sm font-medium"
+                    x-text="offlineQueueCount + ' sale(s) queued'"></span>
+            </div>
+
+            {{-- Sync Notification --}}
+            <div x-show="syncResult" x-cloak x-transition
+                class="mb-4 px-4 py-3 rounded relative flex items-center justify-between"
+                :class="syncResult?.failed > 0 ? 'bg-yellow-100 border border-yellow-400 text-yellow-800' : 'bg-green-100 border border-green-400 text-green-700'">
+                <span x-text="syncResult?.message"></span>
+                <button @click="syncResult = null" class="ml-2 font-bold">&times;</button>
+            </div>
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -220,9 +239,9 @@
 
         {{-- ===== PAYMENT MODAL (Cash) ===== --}}
         <div x-show="showModal && modalType === 'cash'" x-cloak
-            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
-            @keydown.escape.window="closeModal()" style="z-index:9999;">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            class="modal-overlay"
+            @keydown.escape.window="closeModal()">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" @click.stop>
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Cash Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter the cash amount received from the customer.</div>
 
@@ -234,6 +253,7 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cash Tendered</label>
                     <input type="number" x-model.number="modalCashTendered" x-ref="cashTenderedInput" min="0" step="0.01"
+                        @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="block w-full text-2xl font-semibold border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-md shadow-sm text-right"
                         placeholder="0.00" />
@@ -270,7 +290,7 @@
                     <button type="button" @click="closeModal()"
                         class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
-                        :disabled="!modalCashTendered || modalCashTendered <= 0"
+                        :disabled="!modalCashTendered || modalCashTendered < modalDue"
                         class="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
@@ -278,9 +298,9 @@
 
         {{-- ===== PAYMENT MODAL (Card) ===== --}}
         <div x-show="showModal && modalType === 'card'" x-cloak
-            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
-            @keydown.escape.window="closeModal()" style="z-index:9999;">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            class="modal-overlay"
+            @keydown.escape.window="closeModal()">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" @click.stop>
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Card Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter card payment details.</div>
 
@@ -292,6 +312,7 @@
                 <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                     <input type="number" x-model.number="modalAmount" x-ref="cardAmountInput" min="0.01" step="0.01"
+                        @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="block w-full text-2xl font-semibold border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm text-right"
                         placeholder="0.00" />
@@ -327,7 +348,7 @@
                     <button type="button" @click="closeModal()"
                         class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
-                        :disabled="!modalAmount || modalAmount <= 0"
+                        :disabled="!modalAmount || modalAmount <= 0 || Math.abs(parseFloat(modalAmount) - modalDue) > 0.01"
                         class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
@@ -335,9 +356,9 @@
 
         {{-- ===== PAYMENT MODAL (Mobile Money) ===== --}}
         <div x-show="showModal && modalType === 'mobile_money'" x-cloak
-            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
-            @keydown.escape.window="closeModal()" style="z-index:9999;">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            class="modal-overlay"
+            @keydown.escape.window="closeModal()">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" @click.stop>
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Mobile Money Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Enter mobile money payment details.</div>
 
@@ -349,6 +370,7 @@
                 <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                     <input type="number" x-model.number="modalAmount" x-ref="mobileAmountInput" min="0.01" step="0.01"
+                        @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="block w-full text-2xl font-semibold border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-right"
                         placeholder="0.00" />
@@ -384,7 +406,7 @@
                     <button type="button" @click="closeModal()"
                         class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
-                        :disabled="!modalAmount || modalAmount <= 0"
+                        :disabled="!modalAmount || modalAmount <= 0 || Math.abs(parseFloat(modalAmount) - modalDue) > 0.01"
                         class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
@@ -392,9 +414,9 @@
 
         {{-- ===== SPLIT PAYMENT MODAL ===== --}}
         <div x-show="showModal && modalType === 'split'" x-cloak
-            class="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
-            @keydown.escape.window="closeModal()" style="z-index:9999;">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            class="modal-overlay"
+            @keydown.escape.window="closeModal()">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" @click.stop>
                 <h3 class="text-xl font-bold text-gray-800 mb-1">Split Payment</h3>
                 <div class="text-sm text-gray-500 mb-4">Allocate the total due across multiple payment methods.</div>
 
@@ -415,11 +437,13 @@
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Allocate to Cash</label>
                                 <input type="number" x-model.number="splitCashAlloc" min="0" step="0.01"
+                                    @focus="$el.select()"
                                     class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
                             </div>
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Cash Tendered</label>
                                 <input type="number" x-model.number="splitCashTendered" min="0" step="0.01"
+                                    @focus="$el.select()"
                                     class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
                             </div>
                         </div>
@@ -444,6 +468,7 @@
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Amount</label>
                                 <input type="number" x-model.number="splitCardAmount" min="0" step="0.01"
+                                    @focus="$el.select()"
                                     class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
                             </div>
                             <div>
@@ -484,6 +509,7 @@
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Amount</label>
                                 <input type="number" x-model.number="splitMmobileAmount" min="0" step="0.01"
+                                    @focus="$el.select()"
                                     class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
                             </div>
                             <div>
@@ -575,6 +601,9 @@
                 splitMobileRef: '',
                 splitMobileAccountName: '',
                 splitMobileInstitution: '',
+                isOnline: navigator.onLine,
+                offlineQueueCount: PosOfflineQueue.getCount(),
+                syncResult: null,
 
                 init() {
                     this.filteredProducts = [];
@@ -583,6 +612,29 @@
                             this.dropdownOpen = false;
                         }
                     });
+                    window.addEventListener('online', () => {
+                        this.isOnline = true;
+                        this.attemptSync();
+                    });
+                    window.addEventListener('offline', () => {
+                        this.isOnline = false;
+                    });
+                    this.offlineQueueCount = PosOfflineQueue.getCount();
+                },
+
+                async attemptSync() {
+                    const count = PosOfflineQueue.getCount();
+                    if (count === 0) return;
+                    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const result = await PosOfflineQueue.syncAll(csrf);
+                    this.offlineQueueCount = PosOfflineQueue.getCount();
+                    if (result.synced > 0 && result.failed === 0) {
+                        this.syncResult = { message: 'Synced ' + result.synced + ' queued sale(s) successfully.', failed: 0 };
+                    } else if (result.synced > 0 && result.failed > 0) {
+                        this.syncResult = { message: 'Synced ' + result.synced + ', failed ' + result.failed + ' sale(s). Retrying...', failed: result.failed };
+                    } else if (result.failed > 0) {
+                        this.syncResult = { message: 'Failed to sync ' + result.failed + ' sale(s). Will retry.', failed: result.failed };
+                    }
                 },
 
                 reactiveFilter() {
@@ -882,6 +934,43 @@
                     this.submitting = true;
                     document.getElementById('pos-error').classList.add('hidden');
 
+                    const payload = {
+                        terminal_id: {{ session('pos_terminal_id') ?? 0 }},
+                        cashier_session_id: null,
+                        customer_id: this.customerId || null,
+                        reference: this.reference || null,
+                        lines: this.lines.map(l => ({
+                            product_id: l.product_id,
+                            quantity: l.quantity,
+                            unit_price: l.unit_price,
+                            discount_amount: l.discount_amount,
+                            discount_type: l.discount_type,
+                            tax_rate: l.tax_rate,
+                        })),
+                        payments: this.payments.map(p => ({
+                            payment_method_id: p.payment_method_id,
+                            amount: parseFloat(p.amount),
+                            cash_tendered: parseFloat(p.cash_tendered) || null,
+                            change_given: parseFloat(p.change) || null,
+                            reference_number: p.reference_number || null,
+                        })),
+                    };
+
+                    if (!navigator.onLine) {
+                        const offlineId = PosOfflineQueue.enqueue(payload);
+                        this.offlineQueueCount = PosOfflineQueue.getCount();
+                        this.submitting = false;
+                        this.lines = [];
+                        this.payments = [];
+                        this.customerId = '';
+                        this.reference = '';
+                        const errDiv = document.getElementById('pos-error');
+                        document.getElementById('pos-error-text').textContent = 'Sale queued for offline sync. ID: ' + offlineId;
+                        errDiv.classList.remove('hidden');
+                        errDiv.className = 'mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative';
+                        return;
+                    }
+
                     try {
                         const resp = await fetch('{{ route("pos.sales.store") }}', {
                             method: 'POST',
@@ -890,27 +979,7 @@
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                                 'Accept': 'application/json',
                             },
-                            body: JSON.stringify({
-                                terminal_id: {{ session('pos_terminal_id') ?? 0 }},
-                                cashier_session_id: null,
-                                customer_id: this.customerId || null,
-                                reference: this.reference || null,
-                                lines: this.lines.map(l => ({
-                                    product_id: l.product_id,
-                                    quantity: l.quantity,
-                                    unit_price: l.unit_price,
-                                    discount_amount: l.discount_amount,
-                                    discount_type: l.discount_type,
-                                    tax_rate: l.tax_rate,
-                                })),
-                                payments: this.payments.map(p => ({
-                                    payment_method_id: p.payment_method_id,
-                                    amount: parseFloat(p.amount),
-                                    cash_tendered: parseFloat(p.cash_tendered) || null,
-                                    change_given: parseFloat(p.change) || null,
-                                    reference_number: p.reference_number || null,
-                                })),
-                            }),
+                            body: JSON.stringify(payload),
                         });
 
                         const data = await resp.json();
@@ -920,16 +989,35 @@
                             const errDiv = document.getElementById('pos-error');
                             document.getElementById('pos-error-text').textContent = data.message;
                             errDiv.classList.remove('hidden');
+                            errDiv.className = 'mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative';
                         }
                     } catch (e) {
                         const errDiv = document.getElementById('pos-error');
                         document.getElementById('pos-error-text').textContent = 'An unexpected error occurred.';
                         errDiv.classList.remove('hidden');
+                        errDiv.className = 'mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative';
                     } finally {
                         this.submitting = false;
                     }
                 },
             };
         }
+    </script>
+
+    <script src="/js/pos-offline-queue.js"></script>
+    <script>
+        // Background sync when back online
+        window.addEventListener('online', async () => {
+            const count = PosOfflineQueue.getCount();
+            if (count > 0 && typeof Alpine !== 'undefined') {
+                document.querySelectorAll('[x-data]').forEach((el) => {
+                    if (el.__x && el.__x.$data.isOnline !== undefined) {
+                        el.__x.$data.isOnline = true;
+                        el.__x.$data.offlineQueueCount = PosOfflineQueue.getCount();
+                        el.__x.$data.syncResult = { message: 'Syncing ' + count + ' queued sale(s)...', failed: 0 };
+                    }
+                });
+            }
+        });
     </script>
 </x-app-layout>

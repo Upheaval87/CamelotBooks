@@ -10,6 +10,9 @@ class PosSaleLine extends Model
     protected $fillable = [
         'pos_sale_id',
         'product_id',
+        'transaction_uom',
+        'transaction_qty',
+        'conversion_factor',
         'quantity',
         'unit_price',
         'discount_amount',
@@ -21,6 +24,8 @@ class PosSaleLine extends Model
     ];
 
     protected $casts = [
+        'transaction_qty' => 'decimal:4',
+        'conversion_factor' => 'decimal:4',
         'quantity' => 'decimal:4',
         'unit_price' => 'decimal:2',
         'discount_amount' => 'decimal:2',

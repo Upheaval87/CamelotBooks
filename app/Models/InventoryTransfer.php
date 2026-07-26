@@ -17,6 +17,7 @@ class InventoryTransfer extends Model
         'quantity',
         'memo',
         'status',
+        'journal_entry_id',
         'created_by',
     ];
 
@@ -48,6 +49,11 @@ class InventoryTransfer extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 
     public function scopeForCompany($query, int $companyId)

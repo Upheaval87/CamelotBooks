@@ -92,6 +92,8 @@ class LedgerIntegrityTest extends TestCase
             'end_date' => '2026-03-31',
             'status' => 'open',
         ]);
+
+        app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->company->id);
     }
 
     public function test_unbalanced_entry_is_rejected_at_service_layer(): void

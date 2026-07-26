@@ -10,8 +10,11 @@ use App\Models\PayeTable;
 use App\Models\PayeTableBand;
 use App\Models\PayrollRun;
 use App\Models\PensionScheme;
+use App\Models\PayslipDelivery;
 use App\Services\Accounting\PayrollService;
+use App\Services\Payroll\EncryptedPayslipService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 class PayrollRunController extends Controller
@@ -76,7 +79,7 @@ class PayrollRunController extends Controller
             abort(404);
         }
 
-        $run->load(['items.employee', 'journalEntry', 'payeTable', 'pensionScheme', 'payments']);
+        $run->load(['items.employee', 'journalEntry', 'payeTable', 'pensionScheme', 'payments', 'deliveries']);
 
         $bankAccounts = Account::where('company_id', $companyId)
             ->where('is_bank', true)
@@ -84,6 +87,24 @@ class PayrollRunController extends Controller
             ->get();
 
         return view('accounting.payroll-runs.show', compact('run', 'bankAccounts'));
+    }
+
+    public function approve(PayrollRun $run, PayrollService $payrollService)
+    {
+        $companyId = session('current_company_id');
+        $userId = auth()->id();
+
+        if ($run->company_id !== $companyId) {
+            abort(404);
+        }
+
+        try {
+            $payrollService->approvePayroll($run, $userId);
+            return redirect()->route('accounting.payroll-runs.show', $run)
+                ->with('success', 'Payroll run approved and ready for posting.');
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
     public function post(PayrollRun $run, PayrollService $payrollService)
@@ -198,6 +219,25 @@ class PayrollRunController extends Controller
         }
     }
 
+    public function sendPayslips(Request $request, PayrollRun $run)
+    {
+        $companyId = session('current_company_id');
+
+        if ($run->company_id !== $companyId) {
+            abort(404);
+        }
+
+        if (!in_array($run->status, [PayrollRun::STATUS_POSTED, PayrollRun::STATUS_PARTIALLY_PAID, PayrollRun::STATUS_FULLY_PAID])) {
+            return back()->withErrors(['error' => 'Payroll run must be posted before sending payslips.']);
+        }
+
+        Artisan::call('payroll:send-payslips', ['runId' => $run->id]);
+        $output = Artisan::output();
+
+        return redirect()->route('accounting.payroll-runs.show', $run)
+            ->with('success', 'Payslip sending complete. Check delivery status below.');
+    }
+
     public function payslip(PayrollRun $run, int $itemId)
     {
         $companyId = session('current_company_id');
@@ -208,10 +248,13 @@ class PayrollRunController extends Controller
 
         $item = $run->items()->with('employee')->findOrFail($itemId);
 
-        return response()->view('accounting.payroll-runs.payslip', [
-            'run' => $run,
-            'item' => $item,
-        ], 200)->header('Content-Type', 'text/html');
+        $payslipService = app(EncryptedPayslipService::class);
+        $pdfContent = $payslipService->generatePayslipPdf($run, $item);
+
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"payslip_{$item->employee->employee_number}.pdf\"",
+        ]);
     }
 
     public function payslips(PayrollRun $run)
@@ -224,10 +267,10 @@ class PayrollRunController extends Controller
 
         $items = $run->items()->with('employee')->get();
 
-        return response()->view('accounting.payroll-runs.print-payslips', [
+        return view('accounting.payroll-runs.print-payslips', [
             'run' => $run,
             'items' => $items,
-        ], 200)->header('Content-Type', 'text/html');
+        ]);
     }
 
     public function payeRemittanceSchedule(Request $request, PayrollRun $run)

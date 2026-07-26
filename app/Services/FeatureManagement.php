@@ -18,6 +18,7 @@ class FeatureManagement
         'analytics' => 'Analytics',
         'budgets' => 'Budgets',
         'pos' => 'Point of Sale',
+        'bi' => 'Business Intelligence',
     ];
 
     public static function isEnabled(int $companyId, string $feature): bool

@@ -8,11 +8,17 @@ use App\Models\AccountingPeriod;
 use App\Models\ApprovalSetting;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Services\Admin\NumberingSequenceService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class JournalPostingEngine
 {
+    public function __construct(
+        private NumberingSequenceService $numberingService,
+    ) {
+    }
+
     public function post(array $data): JournalEntry
     {
         $data['status'] = JournalEntry::STATUS_POSTED;
@@ -283,16 +289,6 @@ class JournalPostingEngine
                 );
             }
 
-            $revenueAccounts = Account::where('company_id', $companyId)
-                ->where('type', 'income')
-                ->where('is_active', true)
-                ->get();
-
-            $expenseAccounts = Account::where('company_id', $companyId)
-                ->where('type', 'expense')
-                ->where('is_active', true)
-                ->get();
-
             $retainedEarnings = Account::where('company_id', $companyId)
                 ->where('code', '3100')
                 ->first();
@@ -301,33 +297,69 @@ class JournalPostingEngine
                 throw new InvalidArgumentException('Retained Earnings account (3100) not found for this company.');
             }
 
-            $lines = [];
-            $totalRevenue = 0;
-            $totalExpenses = 0;
+            $plBalances = JournalEntryLine::whereHas('journalEntry', function ($q) use ($companyId, $period) {
+                $q->where('company_id', $companyId)
+                    ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
+                    ->whereBetween('date', [$period->start_date, $period->end_date]);
+            })
+                ->whereHas('account', fn ($q) => $q->whereIn('type', ['income', 'expense']))
+                ->join('accounts', 'journal_entry_lines.account_id', '=', 'accounts.id')
+                ->select(
+                    'journal_entry_lines.account_id',
+                    'journal_entry_lines.branch_id',
+                    'accounts.type as account_type',
+                    DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
+                    DB::raw('SUM(journal_entry_lines.credit) as total_credit')
+                )
+                ->groupBy('journal_entry_lines.account_id', 'journal_entry_lines.branch_id', 'accounts.type')
+                ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.005 OR ABS(SUM(credit) - SUM(debit)) > 0.005')
+                ->get();
 
-            foreach ($revenueAccounts as $account) {
-                $balance = $account->current_balance;
-                if (abs($balance) > 0.005) {
-                    $lines[] = [
-                        'account_id' => $account->id,
-                        'debit' => $balance > 0 ? abs($balance) : 0,
-                        'credit' => $balance < 0 ? abs($balance) : 0,
-                        'memo' => 'Closing entry - revenue',
+            $lines = [];
+            $netIncomeByBranch = [];
+
+            foreach ($plBalances as $row) {
+                $accountType = $row->account_type;
+                $branchId = $row->branch_id;
+                $net = $accountType === 'income'
+                    ? (float) $row->total_credit - (float) $row->total_debit
+                    : (float) $row->total_debit - (float) $row->total_credit;
+
+                if (abs($net) > 0.005) {
+                    $line = [
+                        'account_id' => $row->account_id,
+                        'debit' => $accountType === 'income'
+                            ? ($net > 0 ? abs($net) : 0)
+                            : ($net < 0 ? abs($net) : 0),
+                        'credit' => $accountType === 'income'
+                            ? ($net < 0 ? abs($net) : 0)
+                            : ($net > 0 ? abs($net) : 0),
+                        'memo' => 'Closing entry - ' . $accountType,
                     ];
-                    $totalRevenue += $balance;
+                    if ($branchId !== null) {
+                        $line['branch_id'] = $branchId;
+                    }
+                    $lines[] = $line;
+
+                    $creditMinusDebit = (float) $row->total_credit - (float) $row->total_debit;
+                    $netIncomeByBranch[$branchId] = ($netIncomeByBranch[$branchId] ?? 0) + $creditMinusDebit;
                 }
             }
 
-            foreach ($expenseAccounts as $account) {
-                $balance = $account->current_balance;
-                if (abs($balance) > 0.005) {
-                    $lines[] = [
-                        'account_id' => $account->id,
-                        'debit' => $balance < 0 ? abs($balance) : 0,
-                        'credit' => $balance > 0 ? abs($balance) : 0,
-                        'memo' => 'Closing entry - expense',
+            foreach ($netIncomeByBranch as $branchId => $branchNetIncome) {
+                if (abs($branchNetIncome) > 0.005) {
+                    $line = [
+                        'account_id' => $retainedEarnings->id,
+                        'debit' => $branchNetIncome < 0 ? abs($branchNetIncome) : 0,
+                        'credit' => $branchNetIncome > 0 ? abs($branchNetIncome) : 0,
+                        'memo' => 'Closing entry - net ' .
+                            ($branchNetIncome > 0 ? 'income' : 'loss') .
+                            ' to retained earnings',
                     ];
-                    $totalExpenses += $balance;
+                    if ($branchId !== null) {
+                        $line['branch_id'] = $branchId;
+                    }
+                    $lines[] = $line;
                 }
             }
 
@@ -347,26 +379,6 @@ class JournalPostingEngine
                 return null;
             }
 
-            $netIncome = $totalRevenue - $totalExpenses;
-
-            if (abs($netIncome) > 0.005) {
-                if ($netIncome > 0) {
-                    $lines[] = [
-                        'account_id' => $retainedEarnings->id,
-                        'debit' => 0,
-                        'credit' => abs($netIncome),
-                        'memo' => 'Closing entry - net income to retained earnings',
-                    ];
-                } else {
-                    $lines[] = [
-                        'account_id' => $retainedEarnings->id,
-                        'debit' => abs($netIncome),
-                        'credit' => 0,
-                        'memo' => 'Closing entry - net loss to retained earnings',
-                    ];
-                }
-            }
-
             $totalDebit = array_sum(array_map(fn($l) => (float) $l['debit'], $lines));
             $totalCredit = array_sum(array_map(fn($l) => (float) $l['credit'], $lines));
 
@@ -384,6 +396,7 @@ class JournalPostingEngine
                 'memo' => 'Closing entries for ' . $period->label,
                 'is_adjusting_entry' => true,
                 'source_module' => 'period_close',
+                'skip_inactive_account_check' => true,
                 'lines' => $lines,
             ]);
 
@@ -480,6 +493,18 @@ class JournalPostingEngine
             throw new InvalidArgumentException('One or more accounts do not exist: ' . implode(', ', $missingAccountIds));
         }
 
+        $inactiveAccounts = Account::where('company_id', $companyId)
+            ->whereIn('id', $accountIds)
+            ->where('is_active', false)
+            ->pluck('code')
+            ->toArray();
+
+        if (!empty($inactiveAccounts) && !($data['skip_inactive_account_check'] ?? false)) {
+            throw new InvalidArgumentException(
+                'One or more accounts are inactive: ' . implode(', ', $inactiveAccounts) . '. Activate them first or use a different account.'
+            );
+        }
+
         $entryDate = $data['date'];
         $period = AccountingPeriod::where('company_id', $companyId)
             ->where('start_date', '<=', $entryDate)
@@ -514,33 +539,38 @@ class JournalPostingEngine
 
     protected function generateJournalNumber(int $companyId): string
     {
-        $year = (int) date('Y');
-        $prefix = 'JE-' . $year . '-';
+        try {
+            return $this->numberingService->getNextNumber($companyId, 'journal_entry');
+        } catch (\RuntimeException $e) {
+            $year = (int) date('Y');
+            $prefix = 'JE-' . $year . '-';
 
-        DB::table('companies')->where('id', $companyId)->lockForUpdate();
+            DB::table('companies')->where('id', $companyId)->lockForUpdate();
 
-        $lastEntry = JournalEntry::where('company_id', $companyId)
-            ->where('journal_number', 'like', $prefix . '%')
-            ->orderByDesc('journal_number')
-            ->first();
+            $lastEntry = JournalEntry::where('company_id', $companyId)
+                ->where('journal_number', 'like', $prefix . '%')
+                ->orderByDesc('journal_number')
+                ->first();
 
-        if ($lastEntry) {
-            $lastSequence = (int) substr($lastEntry->journal_number, strlen($prefix));
-            $newSequence = $lastSequence + 1;
-        } else {
-            $newSequence = 1;
+            if ($lastEntry) {
+                $lastSequence = (int) substr($lastEntry->journal_number, strlen($prefix));
+                $newSequence = $lastSequence + 1;
+            } else {
+                $newSequence = 1;
+            }
+
+            return $prefix . str_pad($newSequence, 4, '0', STR_PAD_LEFT);
         }
-
-        return $prefix . str_pad($newSequence, 4, '0', STR_PAD_LEFT);
     }
 
     protected function createLines(JournalEntry $entry, array $lines): void
     {
         foreach ($lines as $line) {
+            $branchId = $line['branch_id'] ?? $entry->branch_id ?? null;
             JournalEntryLine::create([
                 'journal_entry_id' => $entry->id,
                 'account_id' => $line['account_id'],
-                'branch_id' => $line['branch_id'] ?? $entry->branch_id,
+                'branch_id' => $branchId ?: null,
                 'cost_center_id' => $line['cost_center_id'] ?? null,
                 'debit' => $line['debit'] ?? 0,
                 'credit' => $line['credit'] ?? 0,

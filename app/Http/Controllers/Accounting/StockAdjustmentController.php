@@ -122,6 +122,7 @@ class StockAdjustmentController extends Controller
 
             if ($invAdjAccount && $invAssetAccount) {
                 $totalCost = $result['total_cost'];
+                $branchId = $validated['branch_id'] ?? null;
 
                 if ($validated['type'] === 'increase') {
                     $jeLines = [
@@ -130,12 +131,14 @@ class StockAdjustmentController extends Controller
                             'debit' => $totalCost,
                             'credit' => 0,
                             'memo' => "Stock adjustment {$result['adjustment_number']} - {$product->name}",
+                            'branch_id' => $branchId,
                         ],
                         [
                             'account_id' => $invAdjAccount->id,
                             'debit' => 0,
                             'credit' => $totalCost,
                             'memo' => "Stock adjustment {$result['adjustment_number']} - {$product->name}",
+                            'branch_id' => $branchId,
                         ],
                     ];
                 } else {
@@ -145,12 +148,14 @@ class StockAdjustmentController extends Controller
                             'debit' => $totalCost,
                             'credit' => 0,
                             'memo' => "Stock adjustment {$result['adjustment_number']} - {$product->name}",
+                            'branch_id' => $branchId,
                         ],
                         [
                             'account_id' => $invAssetAccount->id,
                             'debit' => 0,
                             'credit' => $totalCost,
                             'memo' => "Stock adjustment {$result['adjustment_number']} - {$product->name}",
+                            'branch_id' => $branchId,
                         ],
                     ];
                 }
@@ -162,6 +167,7 @@ class StockAdjustmentController extends Controller
                     'source_module' => 'inventory_adjustment',
                     'reference' => $result['adjustment_number'],
                     'memo' => "Stock adjustment {$result['adjustment_number']}",
+                    'branch_id' => $branchId,
                     'lines' => $jeLines,
                 ]);
 

@@ -42,6 +42,8 @@ class CostCenterTest extends TestCase
             'end_date' => $end->toDateString(),
             'status' => 'open',
         ]);
+
+        app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->company->id);
     }
 
     public function test_create_cost_center(): void

@@ -106,8 +106,10 @@ class AnalyticsController extends Controller
         $data = $service->calculate($companyId, $fiscalYearId, $branchId);
 
         $fiscalYears = \App\Models\FiscalYear::where('company_id', $companyId)->orderByDesc('start_date')->get();
+        $company = \App\Models\Company::findOrFail($companyId);
+        $currentBranches = $company->branches()->where('is_active', true)->orderBy('name')->get();
 
-        return view('analytics.budget-vs-actual-trend', compact('data', 'fiscalYearId', 'fiscalYears'));
+        return view('analytics.budget-vs-actual-trend', compact('data', 'fiscalYearId', 'fiscalYears', 'currentBranches'));
     }
 
     public function cashFlowTrend()

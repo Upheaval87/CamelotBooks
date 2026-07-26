@@ -134,6 +134,7 @@ class CreditNoteService
                 'source_module' => 'credit_note',
                 'reference' => $creditNote->credit_note_number,
                 'memo' => "Credit note {$creditNote->credit_note_number}",
+                'branch_id' => $creditNote->branch_id,
                 'lines' => $jeLines,
             ]);
 

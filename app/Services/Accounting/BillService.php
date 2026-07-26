@@ -273,6 +273,9 @@ class BillService
                     // Receive stock for non-PO bills only
                     if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
                         $qty = (float) $line->quantity;
+                        if ($line->conversion_factor && $line->transaction_qty) {
+                            $qty = round((float) $line->transaction_qty * (float) $line->conversion_factor, 4);
+                        }
                         if ($qty > 0) {
                             $unitCost = round($line->amount / $qty, 4);
                             $this->inventoryService->receiveStock(
@@ -306,6 +309,7 @@ class BillService
                 'source_module' => 'bill',
                 'reference' => $bill->bill_number,
                 'memo' => "Vendor bill {$bill->bill_number}",
+                'branch_id' => $bill->branch_id,
                 'lines' => $jeLines,
             ]);
 
@@ -364,6 +368,7 @@ class BillService
                                 'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
                                 'entity_type' => Bill::class,
                                 'entity_id' => $bill->id,
+                                'cost_center_id' => $line->cost_center_id,
                             ];
                             $totalDebit += $line->tax_amount;
                         }
@@ -375,6 +380,7 @@ class BillService
                             'memo' => "Bill {$bill->bill_number} - {$line->description}",
                             'entity_type' => Bill::class,
                             'entity_id' => $bill->id,
+                            'cost_center_id' => $line->cost_center_id,
                         ];
                         $totalCredit += $line->line_total;
 
@@ -446,6 +452,7 @@ class BillService
                             'memo' => "Bill {$bill->bill_number} - {$line->description}",
                             'entity_type' => Bill::class,
                             'entity_id' => $bill->id,
+                            'cost_center_id' => $line->cost_center_id,
                         ];
 
                         if ($line->tax_amount > 0) {
@@ -456,6 +463,7 @@ class BillService
                                 'memo' => "Bill {$bill->bill_number} - Tax - {$line->description}",
                                 'entity_type' => Bill::class,
                                 'entity_id' => $bill->id,
+                                'cost_center_id' => $line->cost_center_id,
                             ];
                         }
 
@@ -466,10 +474,14 @@ class BillService
                             'memo' => "Bill {$bill->bill_number} - {$line->description}",
                             'entity_type' => Bill::class,
                             'entity_id' => $bill->id,
+                            'cost_center_id' => $line->cost_center_id,
                         ];
 
                         if ($line->product && $line->product->tracked_as_inventory && $line->product_id) {
                             $qty = (float) $line->quantity;
+                            if ($line->conversion_factor && $line->transaction_qty) {
+                                $qty = round((float) $line->transaction_qty * (float) $line->conversion_factor, 4);
+                            }
                             if ($qty > 0) {
                                 $unitCost = round($line->amount / $qty, 4);
                                 $this->inventoryService->receiveStock(
@@ -494,6 +506,7 @@ class BillService
                     'source_module' => 'bill',
                     'reference' => $bill->bill_number,
                     'memo' => "Vendor bill {$bill->bill_number}",
+                    'branch_id' => $bill->branch_id,
                     'lines' => $jeLines,
                 ]);
 
@@ -592,13 +605,28 @@ class BillService
 
         $this->validateAccount($companyId, $lineData['expense_account_id']);
 
-        $totals = $this->computeLineTotals($lineData);
+        // Compute base qty from UOM conversion if present
+        $quantity = (float) ($lineData['quantity'] ?? 1);
+        if (!empty($lineData['conversion_factor']) && !empty($lineData['transaction_qty'])) {
+            $quantity = round((float) $lineData['transaction_qty'] * (float) $lineData['conversion_factor'], 4);
+        }
+
+        // Financial totals use transaction_qty (what was actually purchased), not base qty
+        $financialQty = $quantity;
+        if (!empty($lineData['conversion_factor']) && !empty($lineData['transaction_qty'])) {
+            $financialQty = (float) $lineData['transaction_qty'];
+        }
+
+        $totals = $this->computeLineTotals(array_merge($lineData, ['quantity' => $financialQty]));
 
         return BillLine::create([
             'bill_id' => $bill->id,
             'product_id' => $lineData['product_id'] ?? null,
+            'transaction_uom' => $lineData['transaction_uom'] ?? null,
+            'transaction_qty' => $lineData['transaction_qty'] ?? null,
+            'conversion_factor' => $lineData['conversion_factor'] ?? null,
             'description' => $lineData['description'],
-            'quantity' => $lineData['quantity'] ?? 1,
+            'quantity' => $quantity,
             'unit_price' => $lineData['unit_price'],
             'discount' => $lineData['discount'] ?? 0,
             'tax_rate' => $lineData['tax_rate'] ?? 0,

@@ -222,6 +222,7 @@ class InvoiceService
                 'source_module' => 'invoice',
                 'reference' => $invoice->invoice_number,
                 'memo' => "Sales invoice {$invoice->invoice_number}",
+                'branch_id' => $invoice->branch_id,
                 'lines' => $jeLines,
             ]);
 

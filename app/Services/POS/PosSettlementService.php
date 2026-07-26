@@ -3,6 +3,7 @@
 namespace App\Services\POS;
 
 use App\Models\Account;
+use App\Models\AuditLog;
 use App\Models\JournalEntry;
 use App\Models\NumberingSequence;
 use App\Models\PosPayment;
@@ -52,6 +53,22 @@ class PosSettlementService
                 'settled_by' => $userId,
                 'settled_at' => now(),
             ]);
+
+            AuditLog::log(
+                $companyId,
+                $userId,
+                PosSettlement::class,
+                $settlement->id,
+                'pos.settlement.created',
+                null,
+                [
+                    'settlement_number' => $settlement->settlement_number,
+                    'total_amount' => $settlement->total_amount,
+                    'fee_amount' => $settlement->fee_amount,
+                    'net_amount' => $settlement->net_amount,
+                ],
+                "POS Settlement {$settlement->settlement_number} – $" . number_format($settlement->net_amount, 2) . " net"
+            );
 
             return $settlement->fresh(['paymentMethod', 'bankAccount', 'journalEntry', 'settledBy']);
         });

@@ -56,6 +56,8 @@ class PeriodLockingTest extends TestCase
             'sub_type' => 'operating_income',
             'is_active' => true,
         ]);
+
+        app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->company->id);
     }
 
     public function test_journal_entry_cannot_be_posted_with_date_inside_locked_period(): void

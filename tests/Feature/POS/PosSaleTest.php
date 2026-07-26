@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\AccountingPeriod;
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\InventoryStock;
 use App\Models\NumberingSequence;
 use App\Models\Product;
 use App\Models\PosCashierSession;
@@ -374,6 +375,69 @@ class PosSaleTest extends TestCase
 
         $line = $sale->lines->first();
         $this->assertEquals(36.00, $line->cost_of_goods);
+    }
+
+    public function test_non_tracked_item_skips_inventory_logic(): void
+    {
+        $serviceProduct = Product::create([
+            'company_id' => $this->company->id,
+            'name' => 'Delivery Service',
+            'sku' => 'SVC-001',
+            'type' => 'service',
+            'tracked_as_inventory' => false,
+            'sales_price' => 30.00,
+            'purchase_price' => 0,
+            'tax_rate' => 10.00,
+            'is_taxable' => true,
+            'is_active' => true,
+            'income_account_id' => $this->revenueAccount->id,
+        ]);
+
+        // Ensure there is zero inventory stock for this product
+        $this->assertDatabaseCount('inventory_stock', 0);
+
+        $sale = app(\App\Services\POS\PosSaleService::class)->checkout(
+            $this->baseSaleData([
+                'lines' => [
+                    ['product_id' => $serviceProduct->id, 'quantity' => 5, 'unit_price' => 30.00, 'tax_rate' => 10.00],
+                ],
+                'payments' => [
+                    ['payment_method_id' => $this->cashMethod->id, 'amount' => 165.00],
+                ],
+            ]),
+            $this->user->id
+        );
+
+        // 1. cost_of_goods must be null — no FIFO consumption
+        $line = $sale->lines->first();
+        $this->assertNull($line->cost_of_goods);
+
+        // 2. No inventory stock was created or modified
+        $this->assertDatabaseCount('inventory_stock', 0);
+
+        // 3. Journal entry must NOT contain DR COGS (5000) or CR Inventory Asset (1200)
+        $cogsAccount = Account::where('company_id', $this->company->id)->where('code', '5000')->first();
+        $invAsset = Account::where('company_id', $this->company->id)->where('code', '1200')->first();
+
+        $jeLines = $sale->journalEntry->lines;
+        $this->assertNull($jeLines->where('account_id', $cogsAccount->id)->first(),
+            'Non-tracked item must not produce a DR COGS journal line');
+        $this->assertNull($jeLines->where('account_id', $invAsset->id)->first(),
+            'Non-tracked item must not produce a CR Inventory Asset journal line');
+
+        // 4. Sale must still post revenue and tax correctly
+        $revenueLine = $jeLines->where('account_id', $this->revenueAccount->id)->first();
+        $this->assertNotNull($revenueLine);
+        $this->assertEquals(150.00, $revenueLine->credit); // 5 * 30
+
+        $taxLine = $jeLines->where('account_id', $this->taxPayable->id)->first();
+        $this->assertNotNull($taxLine);
+        $this->assertEquals(15.00, $taxLine->credit); // 10% of 150
+
+        // 5. Sale totals correct
+        $this->assertEquals(150.00, $sale->subtotal);
+        $this->assertEquals(15.00, $sale->tax_total);
+        $this->assertEquals(165.00, $sale->total);
     }
 
     // =============================================

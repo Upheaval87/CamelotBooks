@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\InventoryTransfer;
 use App\Models\Product;
 use App\Models\Branch;
 use App\Services\Accounting\InventoryService;
+use App\Services\Accounting\JournalPostingEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -43,7 +45,7 @@ class StockTransferController extends Controller
         return view('accounting.stock-transfers.create', compact('products', 'branches'));
     }
 
-    public function store(Request $request, InventoryService $inventoryService)
+    public function store(Request $request, InventoryService $inventoryService, JournalPostingEngine $postingEngine)
     {
         $companyId = session('current_company_id');
         $userId = auth()->id();
@@ -65,8 +67,10 @@ class StockTransferController extends Controller
             return back()->withErrors(['product_id' => 'Product is not tracked as inventory.']);
         }
 
+        DB::beginTransaction();
+
         try {
-            $transfer = $inventoryService->transferStock(
+            $result = $inventoryService->transferStock(
                 $companyId,
                 $validated['product_id'],
                 $validated['from_branch_id'],
@@ -77,9 +81,48 @@ class StockTransferController extends Controller
                 $validated['date']
             );
 
+            $transfer = $result['transfer'];
+            $totalCost = $result['total_cost'];
+
+            $invAssetAccount = Account::where('company_id', $companyId)
+                ->where('code', '1200')
+                ->first();
+
+            if ($invAssetAccount && $totalCost > 0) {
+                $journalEntry = $postingEngine->post([
+                    'company_id' => $companyId,
+                    'created_by' => $userId,
+                    'date' => $validated['date'],
+                    'source_module' => 'inventory_transfer',
+                    'reference' => $transfer->transfer_number,
+                    'memo' => "Inventory transfer {$transfer->transfer_number}",
+                    'lines' => [
+                        [
+                            'account_id' => $invAssetAccount->id,
+                            'branch_id' => $validated['to_branch_id'],
+                            'debit' => $totalCost,
+                            'credit' => 0,
+                            'memo' => "Transfer in - {$product->name}",
+                        ],
+                        [
+                            'account_id' => $invAssetAccount->id,
+                            'branch_id' => $validated['from_branch_id'],
+                            'debit' => 0,
+                            'credit' => $totalCost,
+                            'memo' => "Transfer out - {$product->name}",
+                        ],
+                    ],
+                ]);
+
+                $transfer->update(['journal_entry_id' => $journalEntry->id]);
+            }
+
+            DB::commit();
+
             return redirect()->route('accounting.stock-transfers.show', $transfer)
                 ->with('success', "Transfer {$transfer->transfer_number} completed successfully.");
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
     }
@@ -92,7 +135,7 @@ class StockTransferController extends Controller
             abort(404);
         }
 
-        $transfer->load(['product', 'fromBranch', 'toBranch', 'creator']);
+        $transfer->load(['product', 'fromBranch', 'toBranch', 'creator', 'journalEntry']);
 
         return view('accounting.stock-transfers.show', compact('transfer'));
     }

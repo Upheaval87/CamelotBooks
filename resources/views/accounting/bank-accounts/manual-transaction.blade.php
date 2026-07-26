@@ -35,41 +35,55 @@
                             <input type="hidden" name="bank_account_id" value="{{ $bankAccount->id }}" />
                         </div>
 
-                        <div>
+                        <div x-data="{ type: '{{ old('type', 'fee') }}' }">
                             <x-input-label for="type" value="{{ __('Transaction Type') }}" />
-                            <select id="type" name="type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="fee" {{ old('type') === 'fee' ? 'selected' : '' }}>Bank Fee</option>
-                                <option value="deposit" {{ old('type') === 'deposit' ? 'selected' : '' }}>Deposit / Other Income</option>
-                                <option value="interest" {{ old('type') === 'interest' ? 'selected' : '' }}>Interest Earned</option>
-                                <option value="other" {{ old('type') === 'other' ? 'selected' : '' }}>Other Expense</option>
+                            <select id="type" name="type" x-model="type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <option value="fee">Bank Fee</option>
+                                <option value="withdrawal">Withdrawal / Other Expense</option>
+                                <option value="deposit">Deposit / Other Income</option>
+                                <option value="interest">Interest Earned</option>
                             </select>
                             <x-input-error :messages="$errors->get('type')" class="mt-2" />
-                        </div>
 
-                        <div>
-                            <x-input-label for="transaction_date" value="{{ __('Date') }}" />
-                            <x-text-input id="transaction_date" name="transaction_date" type="date" class="mt-1 block w-full" :value="old('transaction_date', now()->format('Y-m-d'))" required />
-                            <x-input-error :messages="$errors->get('transaction_date')" class="mt-2" />
-                        </div>
+                            <div class="mt-4">
+                                <x-input-label for="date" value="{{ __('Date') }}" />
+                                <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', now()->format('Y-m-d'))" required />
+                                <x-input-error :messages="$errors->get('date')" class="mt-2" />
+                            </div>
 
-                        <div>
-                            <x-input-label for="amount" value="{{ __('Amount') }}" />
-                            <x-text-input id="amount" name="amount" type="number" step="0.01" min="0.01" class="mt-1 block w-full" :value="old('amount')" required />
-                            <x-input-error :messages="$errors->get('amount')" class="mt-2" />
-                        </div>
+                            <div class="mt-4">
+                                <x-input-label for="amount" value="{{ __('Amount') }}" />
+                                <x-text-input id="amount" name="amount" type="number" step="0.01" min="0.01" class="mt-1 block w-full" :value="old('amount')" required />
+                                <x-input-error :messages="$errors->get('amount')" class="mt-2" />
+                            </div>
 
-                        <div>
-                            <x-input-label for="debit_account_id" value="{{ __('Debit / Credit Account') }}" />
-                            <p class="text-xs text-gray-500 mb-1">For fees/other expenses, select the expense account to debit. For deposits, select the income account to credit.</p>
-                            <select id="debit_account_id" name="debit_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="">Select Account</option>
-                                @foreach($accounts as $account)
-                                    <option value="{{ $account->id }}" {{ old('debit_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->code }} - {{ $account->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <x-input-error :messages="$errors->get('debit_account_id')" class="mt-2" />
+                            <div class="mt-4" x-show="type === 'fee' || type === 'withdrawal'">
+                                <x-input-label for="debit_account_id" value="{{ __('Expense Account (Debit)') }}" />
+                                <p class="text-xs text-gray-500 mb-1">The expense/asset account to charge this transaction to.</p>
+                                <select id="debit_account_id" name="debit_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                    <option value="">Select Account</option>
+                                    @foreach($accounts as $account)
+                                        <option value="{{ $account->id }}" {{ old('debit_account_id') == $account->id ? 'selected' : '' }}>
+                                            {{ $account->code }} - {{ $account->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <x-input-error :messages="$errors->get('debit_account_id')" class="mt-2" />
+                            </div>
+
+                            <div class="mt-4" x-show="type === 'deposit' || type === 'interest'">
+                                <x-input-label for="credit_account_id" value="{{ __('Income/Credit Account') }}" />
+                                <p class="text-xs text-gray-500 mb-1">The income/equity account to credit for this deposit.</p>
+                                <select id="credit_account_id" name="credit_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                    <option value="">Select Account</option>
+                                    @foreach($accounts as $account)
+                                        <option value="{{ $account->id }}" {{ old('credit_account_id') == $account->id ? 'selected' : '' }}>
+                                            {{ $account->code }} - {{ $account->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <x-input-error :messages="$errors->get('credit_account_id')" class="mt-2" />
+                            </div>
                         </div>
 
                         <div>

@@ -246,7 +246,7 @@ class InventoryService
         });
     }
 
-    public function transferStock(int $companyId, int $productId, int $fromBranchId, int $toBranchId, float $quantity, ?string $memo, int $userId, string $date): InventoryTransfer
+    public function transferStock(int $companyId, int $productId, int $fromBranchId, int $toBranchId, float $quantity, ?string $memo, int $userId, string $date): array
     {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('Transfer quantity must be positive.');
@@ -258,6 +258,8 @@ class InventoryService
 
         return DB::transaction(function () use ($companyId, $productId, $fromBranchId, $toBranchId, $quantity, $memo, $userId, $date) {
             $consumedLayers = $this->consumeStock($companyId, $productId, $fromBranchId, $quantity, $date);
+
+            $totalCost = array_sum(array_column($consumedLayers, 'total_cost'));
 
             foreach ($consumedLayers as $consumed) {
                 $this->receiveStock(
@@ -287,7 +289,10 @@ class InventoryService
                 'created_by' => $userId,
             ]);
 
-            return $transfer;
+            return [
+                'transfer' => $transfer,
+                'total_cost' => $totalCost,
+            ];
         });
     }
 

@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\EmployeeSalaryStructure;
 use App\Models\EmployeeSalaryItem;
 use App\Models\CompanyAllowance;
+use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\CostCenter;
 use Illuminate\Http\Request;
@@ -65,15 +66,24 @@ class EmployeeController extends Controller
             'bank_account_name' => 'nullable|string|max:200',
             'bank_branch_code' => 'nullable|string|max:50',
             'basic_pay' => 'nullable|numeric|min:0',
+            'payslip_password' => 'nullable|string|max:255',
         ]);
 
         $basicPay = $validated['basic_pay'] ?? 0;
         unset($validated['basic_pay']);
 
+        $payslipPassword = $validated['payslip_password'] ?? null;
+        unset($validated['payslip_password']);
+
         $validated['company_id'] = $companyId;
 
-        DB::transaction(function () use ($validated, $basicPay, $companyId) {
+        DB::transaction(function () use ($validated, $basicPay, $companyId, $payslipPassword) {
             $employee = Employee::create($validated);
+
+            if ($payslipPassword !== null) {
+                $employee->setPayslipPasswordValueAttribute($payslipPassword);
+                $employee->save();
+            }
 
             if ($basicPay > 0) {
                 EmployeeSalaryStructure::create([
@@ -148,18 +158,38 @@ class EmployeeController extends Controller
             'termination_date' => 'nullable|date',
             'is_active' => 'boolean',
             'basic_pay' => 'nullable|numeric|min:0',
+            'payslip_password' => 'nullable|string|max:255',
         ]);
 
         $basicPay = $validated['basic_pay'] ?? null;
         unset($validated['basic_pay']);
 
-        DB::transaction(function () use ($employee, $validated, $basicPay, $companyId) {
+        $payslipPassword = $validated['payslip_password'] ?? null;
+        unset($validated['payslip_password']);
+
+        DB::transaction(function () use ($employee, $validated, $basicPay, $companyId, $payslipPassword) {
             if (isset($validated['employment_status']) && $validated['employment_status'] === 'terminated') {
                 $validated['is_active'] = false;
                 $validated['termination_date'] = $validated['termination_date'] ?? now()->format('Y-m-d');
             }
 
             $employee->update($validated);
+
+            if ($payslipPassword !== null) {
+                $employee->setPayslipPasswordValueAttribute($payslipPassword);
+                $employee->save();
+
+                AuditLog::log(
+                    $companyId,
+                    auth()->id(),
+                    Employee::class,
+                    $employee->id,
+                    'payslip_password_changed',
+                    null,
+                    ['payslip_password' => '[REDACTED]'],
+                    'Payslip password was updated'
+                );
+            }
 
             if ($basicPay !== null) {
                 $currentStructure = EmployeeSalaryStructure::where('employee_id', $employee->id)->current()->first();

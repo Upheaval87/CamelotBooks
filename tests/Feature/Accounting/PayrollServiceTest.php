@@ -4,6 +4,7 @@ namespace Tests\Feature\Accounting;
 
 use App\Models\Account;
 use App\Models\AccountingPeriod;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\EmployeePayment;
@@ -12,10 +13,14 @@ use App\Models\JournalEntry;
 use App\Models\PayeTable;
 use App\Models\PayeTableBand;
 use App\Models\PayrollRun;
+use App\Models\PayslipDelivery;
 use App\Models\PensionScheme;
 use App\Models\User;
 use App\Services\Accounting\PayrollService;
+use App\Services\Payroll\EncryptedPayslipService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class PayrollServiceTest extends TestCase
@@ -153,6 +158,8 @@ class PayrollServiceTest extends TestCase
             'end_date' => '2026-12-31',
             'status' => 'open',
         ]);
+
+        app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->company->id);
     }
 
     protected function createEmployees(int $count): array
@@ -236,6 +243,51 @@ class PayrollServiceTest extends TestCase
         );
     }
 
+    // ── Approval Tests ──────────────────────────────────────
+
+    public function test_approve_payroll_sets_approved_status(): void
+    {
+        $this->createEmployees(1);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $this->assertEquals(PayrollRun::STATUS_CALCULATED, $run->status);
+
+        $run = $this->service->approvePayroll($run, $this->user->id);
+
+        $this->assertEquals(PayrollRun::STATUS_APPROVED, $run->status);
+        $this->assertNotNull($run->approved_at);
+        $this->assertEquals($this->user->id, $run->approved_by);
+    }
+
+    public function test_approve_only_calculated_runs(): void
+    {
+        $this->createEmployees(1);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $this->service->approvePayroll($run, $this->user->id);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->service->approvePayroll($run, $this->user->id);
+    }
+
+    public function test_post_requires_approval(): void
+    {
+        $this->createEmployees(1);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->service->postPayroll($run, $this->user->id);
+    }
+
     // ── Post Payroll Tests ─────────────────────────────────
 
     public function test_post_payroll_creates_journal_entry(): void
@@ -246,6 +298,7 @@ class PayrollServiceTest extends TestCase
             $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
         );
 
+        $this->service->approvePayroll($run, $this->user->id);
         $this->service->postPayroll($run, $this->user->id);
 
         $run->refresh();
@@ -268,6 +321,7 @@ class PayrollServiceTest extends TestCase
             $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
         );
 
+        $this->service->approvePayroll($run, $this->user->id);
         $run->update(['status' => PayrollRun::STATUS_POSTED]);
 
         $this->expectException(\InvalidArgumentException::class);
@@ -284,6 +338,7 @@ class PayrollServiceTest extends TestCase
             $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
         );
 
+        $this->service->approvePayroll($run, $this->user->id);
         $this->service->postPayroll($run, $this->user->id);
 
         $item = $run->items()->first();
@@ -314,6 +369,7 @@ class PayrollServiceTest extends TestCase
             $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
         );
 
+        $this->service->approvePayroll($run, $this->user->id);
         $this->service->postPayroll($run, $this->user->id);
 
         foreach ($run->items as $item) {
@@ -341,6 +397,7 @@ class PayrollServiceTest extends TestCase
             $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
         );
 
+        $this->service->approvePayroll($run, $this->user->id);
         $this->service->postPayroll($run, $this->user->id);
 
         $totalPaye = (float) $run->total_paye;
@@ -369,6 +426,7 @@ class PayrollServiceTest extends TestCase
             $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
         );
 
+        $this->service->approvePayroll($run, $this->user->id);
         $this->service->postPayroll($run, $this->user->id);
 
         $totalPension = (float) $run->total_pension_ee + (float) $run->total_pension_er;
@@ -389,7 +447,7 @@ class PayrollServiceTest extends TestCase
 
     // ── Number Generation Tests ────────────────────────────
 
-    public function test_generate_run_number_is_sequential(): void
+    public function test_generate_run_number_uses_numbering_sequence(): void
     {
         $run1 = $this->service->runPayroll(
             $this->company->id, 'June 2026', '2026-06-30', '2026-06-01', '2026-06-30', $this->user->id
@@ -398,8 +456,8 @@ class PayrollServiceTest extends TestCase
             $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
         );
 
-        $this->assertMatchesRegularExpression('/^PR-\d{4}-\d{2}-\d{3}$/', $run1->run_number);
-        $this->assertMatchesRegularExpression('/^PR-\d{4}-\d{2}-\d{3}$/', $run2->run_number);
+        $this->assertMatchesRegularExpression('/^PR-\d{6}-\d{3}$/', $run1->run_number);
+        $this->assertMatchesRegularExpression('/^PR-\d{6}-\d{3}$/', $run2->run_number);
         $this->assertNotEquals($run1->run_number, $run2->run_number);
     }
 
@@ -417,6 +475,7 @@ class PayrollServiceTest extends TestCase
             $this->user->id
         );
 
+        $this->service->approvePayroll($run, $this->user->id);
         $this->service->postPayroll($run, $this->user->id);
 
         $run->refresh();
@@ -433,5 +492,302 @@ class PayrollServiceTest extends TestCase
         $item = $run->items()->first();
         $expectedNet = (float) $item->gross_pay - (float) $item->paye - (float) $item->pension_ee;
         $this->assertEqualsWithDelta($expectedNet, (float) $item->net_pay, 0.01);
+    }
+
+    // ── Encrypted Payslip Tests ─────────────────────────────
+
+    public function test_encrypted_payslip_pdf_requires_password(): void
+    {
+        $this->createEmployees(1);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $item = $run->items()->with('employee')->first();
+        $payslipService = app(EncryptedPayslipService::class);
+
+        $pdfContent = $payslipService->generatePayslipPdf($run, $item);
+
+        $this->assertNotEmpty($pdfContent);
+        $this->assertStringContainsString('%PDF', $pdfContent);
+        $this->assertGreaterThan(1000, strlen($pdfContent));
+    }
+
+    public function test_payslip_password_not_in_pdf_content(): void
+    {
+        $employee = Employee::create([
+            'company_id' => $this->company->id,
+            'employee_number' => 'EMP-0001',
+            'first_name' => 'Secret',
+            'last_name' => 'User',
+            'tax_id' => 'TAX-1234',
+            'date_of_birth' => '1990-01-01',
+            'hire_date' => now()->subYear(),
+            'is_active' => true,
+            'employment_status' => 'active',
+            'email' => 'secret@test.com',
+        ]);
+
+        $employee->setPayslipPasswordValueAttribute('MySecret123');
+        $employee->save();
+
+        EmployeeSalaryStructure::create([
+            'company_id' => $this->company->id,
+            'employee_id' => $employee->id,
+            'basic_pay' => 200000,
+            'effective_from' => now()->subYear(),
+            'is_current' => true,
+        ]);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $item = $run->items()->with('employee')->first();
+        $payslipService = app(EncryptedPayslipService::class);
+
+        $password = $payslipService->getEmployeePassword($item->employee);
+
+        $this->assertEquals('MySecret123', $password);
+
+        $pdfContent = $payslipService->generatePayslipPdf($run, $item);
+
+        $this->assertStringNotContainsString('MySecret123', $pdfContent);
+    }
+
+    public function test_payslip_password_not_in_email(): void
+    {
+        Mail::fake();
+
+        $employee = Employee::create([
+            'company_id' => $this->company->id,
+            'employee_number' => 'EMP-0001',
+            'first_name' => 'Email',
+            'last_name' => 'Test',
+            'email' => 'email@test.com',
+            'hire_date' => now()->subYear(),
+            'is_active' => true,
+            'employment_status' => 'active',
+        ]);
+
+        $employee->setPayslipPasswordValueAttribute('TopSecret999');
+        $employee->save();
+
+        EmployeeSalaryStructure::create([
+            'company_id' => $this->company->id,
+            'employee_id' => $employee->id,
+            'basic_pay' => 200000,
+            'effective_from' => now()->subYear(),
+            'is_current' => true,
+        ]);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $this->service->approvePayroll($run, $this->user->id);
+        $this->service->postPayroll($run, $this->user->id);
+
+        Artisan::call('payroll:send-payslips', ['runId' => $run->id]);
+
+        Mail::assertSent(\App\Mail\PayslipMail::class, function ($mail) {
+            $reflection = new \ReflectionClass($mail);
+            $method = $reflection->getMethod('buildBody');
+            $method->setAccessible(true);
+            $body = $method->invoke($mail);
+            $this->assertStringNotContainsString('TopSecret999', $body);
+            $this->assertStringNotContainsString('TopSecret999', strtolower($body));
+            return true;
+        });
+    }
+
+    public function test_payslip_password_not_in_audit_log(): void
+    {
+        $employee = Employee::create([
+            'company_id' => $this->company->id,
+            'employee_number' => 'EMP-0001',
+            'first_name' => 'Audit',
+            'last_name' => 'Test',
+            'hire_date' => now()->subYear(),
+            'is_active' => true,
+            'employment_status' => 'active',
+        ]);
+
+        $employee->setPayslipPasswordValueAttribute('AuditTest456');
+        $employee->save();
+
+        AuditLog::log(
+            $this->company->id,
+            $this->user->id,
+            Employee::class,
+            $employee->id,
+            'payslip_password_changed',
+            null,
+            ['payslip_password' => '[REDACTED]'],
+            'Payslip password was updated'
+        );
+
+        $logs = AuditLog::where('auditable_type', Employee::class)
+            ->where('auditable_id', $employee->id)
+            ->where('action', 'payslip_password_changed')
+            ->get();
+
+        $this->assertGreaterThan(0, $logs->count());
+
+        foreach ($logs as $log) {
+            $this->assertArrayNotHasKey('payslip_password', $log->old_values ?? []);
+            $this->assertStringNotContainsString('AuditTest456', json_encode($log->toArray()));
+        }
+    }
+
+    public function test_send_payslips_creates_delivery_records(): void
+    {
+        Mail::fake();
+
+        $employee = Employee::create([
+            'company_id' => $this->company->id,
+            'employee_number' => 'EMP-0001',
+            'first_name' => 'Delivery',
+            'last_name' => 'Test',
+            'email' => 'delivery@test.com',
+            'hire_date' => now()->subYear(),
+            'is_active' => true,
+            'employment_status' => 'active',
+        ]);
+
+        EmployeeSalaryStructure::create([
+            'company_id' => $this->company->id,
+            'employee_id' => $employee->id,
+            'basic_pay' => 200000,
+            'effective_from' => now()->subYear(),
+            'is_current' => true,
+        ]);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $this->service->approvePayroll($run, $this->user->id);
+        $this->service->postPayroll($run, $this->user->id);
+
+        Artisan::call('payroll:send-payslips', ['runId' => $run->id]);
+
+        $this->assertDatabaseHas('payslip_deliveries', [
+            'payroll_run_id' => $run->id,
+            'employee_id' => $employee->id,
+            'status' => 'sent',
+            'email_address' => 'delivery@test.com',
+        ]);
+    }
+
+    public function test_send_payslips_tracks_failure(): void
+    {
+        Mail::fake();
+
+        $employee = Employee::create([
+            'company_id' => $this->company->id,
+            'employee_number' => 'EMP-0001',
+            'first_name' => 'Fail',
+            'last_name' => 'Test',
+            'email' => 'fail@test.com',
+            'hire_date' => now()->subYear(),
+            'is_active' => true,
+            'employment_status' => 'active',
+        ]);
+
+        EmployeeSalaryStructure::create([
+            'company_id' => $this->company->id,
+            'employee_id' => $employee->id,
+            'basic_pay' => 200000,
+            'effective_from' => now()->subYear(),
+            'is_current' => true,
+        ]);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $this->service->approvePayroll($run, $this->user->id);
+        $this->service->postPayroll($run, $this->user->id);
+
+        Mail::to($employee->email)->send(
+            new \App\Mail\PayslipMail($run, $employee, null)
+        );
+
+        $delivery = PayslipDelivery::create([
+            'company_id' => $this->company->id,
+            'payroll_run_id' => $run->id,
+            'employee_id' => $employee->id,
+            'status' => PayslipDelivery::STATUS_FAILED,
+            'email_address' => $employee->email,
+            'error_message' => 'Test simulated failure',
+        ]);
+
+        $this->assertEquals('failed', $delivery->status);
+        $this->assertNotNull($delivery->error_message);
+    }
+
+    public function test_send_payslips_skips_employees_without_email(): void
+    {
+        Mail::fake();
+
+        $employee = Employee::create([
+            'company_id' => $this->company->id,
+            'employee_number' => 'EMP-0001',
+            'first_name' => 'NoEmail',
+            'last_name' => 'Test',
+            'email' => null,
+            'hire_date' => now()->subYear(),
+            'is_active' => true,
+            'employment_status' => 'active',
+        ]);
+
+        EmployeeSalaryStructure::create([
+            'company_id' => $this->company->id,
+            'employee_id' => $employee->id,
+            'basic_pay' => 200000,
+            'effective_from' => now()->subYear(),
+            'is_current' => true,
+        ]);
+
+        $run = $this->service->runPayroll(
+            $this->company->id, 'July 2026', '2026-07-31', '2026-07-01', '2026-07-31', $this->user->id
+        );
+
+        $this->service->approvePayroll($run, $this->user->id);
+        $this->service->postPayroll($run, $this->user->id);
+
+        Artisan::call('payroll:send-payslips', ['runId' => $run->id]);
+
+        $this->assertDatabaseHas('payslip_deliveries', [
+            'payroll_run_id' => $run->id,
+            'employee_id' => $employee->id,
+            'status' => 'failed',
+            'error_message' => 'No email address on file',
+        ]);
+
+        Mail::assertNothingSent();
+    }
+
+    public function test_payslip_password_encrypted_at_rest(): void
+    {
+        $employee = Employee::create([
+            'company_id' => $this->company->id,
+            'employee_number' => 'EMP-0001',
+            'first_name' => 'Encrypt',
+            'last_name' => 'Test',
+            'hire_date' => now()->subYear(),
+            'is_active' => true,
+            'employment_status' => 'active',
+        ]);
+
+        $employee->setPayslipPasswordValueAttribute('PlainText123');
+        $employee->save();
+
+        $rawDb = \DB::table('employees')->where('id', $employee->id)->first();
+
+        $this->assertNotEquals('PlainText123', $rawDb->payslip_password);
+        $this->assertNotEmpty($rawDb->payslip_password);
     }
 }

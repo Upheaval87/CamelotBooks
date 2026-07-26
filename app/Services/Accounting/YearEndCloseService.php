@@ -105,57 +105,53 @@ class YearEndCloseService
                 throw new InvalidArgumentException('Retained Earnings account (3100) not found.');
             }
 
-            $revenueAccounts = Account::where('company_id', $companyId)
-                ->where('type', 'income')
-                ->where('is_active', true)
-                ->get();
-
-            $expenseAccounts = Account::where('company_id', $companyId)
-                ->where('type', 'expense')
-                ->where('is_active', true)
-                ->get();
+            $plBalances = $this->getPAndLBalancesByBranch($companyId, $fy);
 
             $lines = [];
+            $netIncomeByBranch = [];
 
-            foreach ($revenueAccounts as $account) {
-                $balance = $this->computeAccountBalance($account, $companyId, $fy);
-                if (abs($balance) > 0.005) {
-                    $lines[] = [
-                        'account_id' => $account->id,
-                        'debit' => $balance > 0 ? abs($balance) : 0,
-                        'credit' => $balance < 0 ? abs($balance) : 0,
-                        'memo' => 'Year-end closing - revenue',
+            foreach ($plBalances as $row) {
+                $accountType = $row->account_type;
+                $branchId = $row->branch_id;
+                $net = $accountType === 'income'
+                    ? (float) $row->total_credit - (float) $row->total_debit
+                    : (float) $row->total_debit - (float) $row->total_credit;
+
+                if (abs($net) > 0.005) {
+                    $line = [
+                        'account_id' => $row->account_id,
+                        'debit' => $accountType === 'income'
+                            ? ($net > 0 ? abs($net) : 0)
+                            : ($net < 0 ? abs($net) : 0),
+                        'credit' => $accountType === 'income'
+                            ? ($net < 0 ? abs($net) : 0)
+                            : ($net > 0 ? abs($net) : 0),
+                        'memo' => 'Year-end closing - ' . $accountType,
                     ];
+                    if ($branchId !== null) {
+                        $line['branch_id'] = $branchId;
+                    }
+                    $lines[] = $line;
+
+                    $creditMinusDebit = (float) $row->total_credit - (float) $row->total_debit;
+                    $netIncomeByBranch[$branchId] = ($netIncomeByBranch[$branchId] ?? 0) + $creditMinusDebit;
                 }
             }
 
-            foreach ($expenseAccounts as $account) {
-                $balance = $this->computeAccountBalance($account, $companyId, $fy);
-                if (abs($balance) > 0.005) {
-                    $lines[] = [
-                        'account_id' => $account->id,
-                        'debit' => $balance < 0 ? abs($balance) : 0,
-                        'credit' => $balance > 0 ? abs($balance) : 0,
-                        'memo' => 'Year-end closing - expense',
-                    ];
-                }
-            }
-
-            if (abs($netIncome) > 0.005) {
-                if ($netIncome > 0) {
-                    $lines[] = [
+            foreach ($netIncomeByBranch as $branchId => $branchNetIncome) {
+                if (abs($branchNetIncome) > 0.005) {
+                    $line = [
                         'account_id' => $retainedEarnings->id,
-                        'debit' => 0,
-                        'credit' => abs($netIncome),
-                        'memo' => 'Year-end closing - net income to retained earnings',
+                        'debit' => $branchNetIncome < 0 ? abs($branchNetIncome) : 0,
+                        'credit' => $branchNetIncome > 0 ? abs($branchNetIncome) : 0,
+                        'memo' => 'Year-end closing - net ' .
+                            ($branchNetIncome > 0 ? 'income' : 'loss') .
+                            ' to retained earnings',
                     ];
-                } else {
-                    $lines[] = [
-                        'account_id' => $retainedEarnings->id,
-                        'debit' => abs($netIncome),
-                        'credit' => 0,
-                        'memo' => 'Year-end closing - net loss to retained earnings',
-                    ];
+                    if ($branchId !== null) {
+                        $line['branch_id'] = $branchId;
+                    }
+                    $lines[] = $line;
                 }
             }
 
@@ -186,6 +182,7 @@ class YearEndCloseService
                 'is_adjusting_entry' => true,
                 'source_module' => 'year_end_close',
                 'skip_period_validation' => true,
+                'skip_inactive_account_check' => true,
                 'lines' => $lines,
             ]);
 
@@ -225,25 +222,28 @@ class YearEndCloseService
         });
     }
 
-    private function computeAccountBalance(Account $account, int $companyId, FiscalYear $fy): float
+    private function getPAndLBalancesByBranch(int $companyId, FiscalYear $fy): \Illuminate\Support\Collection
     {
-        $result = \App\Models\JournalEntryLine::where('account_id', $account->id)
-            ->whereHas('journalEntry', function ($q) use ($companyId, $fy) {
-                $q->where('company_id', $companyId)
-                    ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
-                    ->where('date', '>=', $fy->start_date)
-                    ->where('date', '<=', $fy->end_date);
+        return \App\Models\JournalEntryLine::whereHas('journalEntry', function ($q) use ($companyId, $fy) {
+            $q->where('company_id', $companyId)
+                ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
+                ->where('date', '>=', $fy->start_date)
+                ->where('date', '<=', $fy->end_date);
+        })
+            ->whereHas('account', function ($q) {
+                $q->whereIn('type', ['income', 'expense']);
             })
-            ->selectRaw('SUM(debit) as total_debit, SUM(credit) as total_credit')
-            ->first();
-
-        $debit = (float) ($result->total_debit ?? 0);
-        $credit = (float) ($result->total_credit ?? 0);
-
-        if ($account->isCreditNormal()) {
-            return $credit - $debit;
-        }
-        return $debit - $credit;
+            ->join('accounts', 'journal_entry_lines.account_id', '=', 'accounts.id')
+            ->select(
+                'journal_entry_lines.account_id',
+                'journal_entry_lines.branch_id',
+                'accounts.type as account_type',
+                DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
+                DB::raw('SUM(journal_entry_lines.credit) as total_credit')
+            )
+            ->groupBy('journal_entry_lines.account_id', 'journal_entry_lines.branch_id', 'accounts.type')
+            ->havingRaw('ABS(SUM(debit) - SUM(credit)) > 0.005 OR ABS(SUM(credit) - SUM(debit)) > 0.005')
+            ->get();
     }
 
     private function generatePeriods(int $companyId, FiscalYear $fy, ?int $startMonth): array

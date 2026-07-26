@@ -11,6 +11,7 @@ use App\Models\PayeTable;
 use App\Models\PayrollRun;
 use App\Models\PayrollRunItem;
 use App\Models\PensionScheme;
+use App\Services\Admin\NumberingSequenceService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -18,11 +19,16 @@ class PayrollService
 {
     protected JournalPostingEngine $postingEngine;
     protected PayrollCalculator $calculator;
+    protected NumberingSequenceService $numberingService;
 
-    public function __construct(JournalPostingEngine $postingEngine, PayrollCalculator $calculator)
-    {
+    public function __construct(
+        JournalPostingEngine $postingEngine,
+        PayrollCalculator $calculator,
+        NumberingSequenceService $numberingService
+    ) {
         $this->postingEngine = $postingEngine;
         $this->calculator = $calculator;
+        $this->numberingService = $numberingService;
     }
 
     public function runPayroll(int $companyId, string $periodLabel, string $payDate, string $periodStart, string $periodEnd, int $userId): PayrollRun
@@ -42,7 +48,7 @@ class PayrollService
             ->first();
 
         return DB::transaction(function () use ($companyId, $periodLabel, $payDate, $periodStart, $periodEnd, $userId, $payeTable, $pensionScheme) {
-            $runNumber = $this->generateRunNumber($companyId);
+            $runNumber = $this->numberingService->getNextNumber($companyId, 'payroll_run');
 
             $run = PayrollRun::create([
                 'company_id' => $companyId,
@@ -122,10 +128,25 @@ class PayrollService
         });
     }
 
-    public function postPayroll(PayrollRun $run, int $userId): PayrollRun
+    public function approvePayroll(PayrollRun $run, int $userId): PayrollRun
     {
         if ($run->status !== PayrollRun::STATUS_CALCULATED) {
-            throw new InvalidArgumentException('Only calculated payroll runs can be posted.');
+            throw new InvalidArgumentException('Only calculated payroll runs can be approved.');
+        }
+
+        $run->update([
+            'status' => PayrollRun::STATUS_APPROVED,
+            'approved_at' => now(),
+            'approved_by' => $userId,
+        ]);
+
+        return $run->fresh();
+    }
+
+    public function postPayroll(PayrollRun $run, int $userId): PayrollRun
+    {
+        if ($run->status !== PayrollRun::STATUS_APPROVED) {
+            throw new InvalidArgumentException('Only approved payroll runs can be posted.');
         }
 
         $companyId = $run->company_id;
@@ -219,7 +240,7 @@ class PayrollService
         }
 
         return DB::transaction(function () use ($run, $employeeId, $amount, $paymentDate, $bankAccountId, $userId, $companyId, $netPayPayableAccount, $bankAccount) {
-            $paymentNumber = $this->generatePaymentNumber($companyId);
+            $paymentNumber = $this->numberingService->getNextNumber($companyId, 'employee_payment');
 
             $jeLines = [
                 [
@@ -281,7 +302,7 @@ class PayrollService
         }
 
         return DB::transaction(function () use ($run, $amount, $paymentDate, $bankAccountId, $userId, $companyId, $payePayableAccount, $bankAccount) {
-            $paymentNumber = $this->generatePaymentNumber($companyId);
+            $paymentNumber = $this->numberingService->getNextNumber($companyId, 'employee_payment');
 
             $jeLines = [
                 [
@@ -339,7 +360,7 @@ class PayrollService
         }
 
         return DB::transaction(function () use ($run, $amount, $paymentDate, $bankAccountId, $userId, $companyId, $pensionPayableAccount, $bankAccount) {
-            $paymentNumber = $this->generatePaymentNumber($companyId);
+            $paymentNumber = $this->numberingService->getNextNumber($companyId, 'employee_payment');
 
             $jeLines = [
                 [
@@ -413,52 +434,5 @@ class PayrollService
             'total_deductions' => $result['total_deductions'],
             'net_pay' => $result['net_pay'],
         ];
-    }
-
-    public function generateRunNumber(int $companyId): string
-    {
-        $year = (int) date('Y');
-        $month = (int) date('m');
-        $prefix = 'PR-' . $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-';
-
-        DB::table('companies')->where('id', $companyId)->lockForUpdate();
-
-        $last = DB::table('payroll_runs')
-            ->where('company_id', $companyId)
-            ->where('run_number', 'like', $prefix . '%')
-            ->orderByDesc('run_number')
-            ->first();
-
-        if ($last) {
-            $lastSequence = (int) substr($last->run_number, strlen($prefix));
-            $newSequence = $lastSequence + 1;
-        } else {
-            $newSequence = 1;
-        }
-
-        return $prefix . str_pad($newSequence, 3, '0', STR_PAD_LEFT);
-    }
-
-    public function generatePaymentNumber(int $companyId): string
-    {
-        $year = (int) date('Y');
-        $prefix = 'EP-' . $year . '-';
-
-        DB::table('companies')->where('id', $companyId)->lockForUpdate();
-
-        $last = DB::table('employee_payments')
-            ->where('company_id', $companyId)
-            ->where('payment_number', 'like', $prefix . '%')
-            ->orderByDesc('payment_number')
-            ->first();
-
-        if ($last) {
-            $lastSequence = (int) substr($last->payment_number, strlen($prefix));
-            $newSequence = $lastSequence + 1;
-        } else {
-            $newSequence = 1;
-        }
-
-        return $prefix . str_pad($newSequence, 4, '0', STR_PAD_LEFT);
     }
 }

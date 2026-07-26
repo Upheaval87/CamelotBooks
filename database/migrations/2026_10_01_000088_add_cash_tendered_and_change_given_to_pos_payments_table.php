@@ -9,8 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('pos_payments', function (Blueprint $table) {
-            $table->decimal('cash_tendered', 14, 2)->nullable()->after('amount');
-            $table->decimal('change_given', 14, 2)->nullable()->after('cash_tendered');
+            if (!Schema::hasColumn('pos_payments', 'cash_tendered')) {
+                $table->decimal('cash_tendered', 14, 2)->nullable()->after('amount');
+            }
+            if (!Schema::hasColumn('pos_payments', 'change_given')) {
+                $table->decimal('change_given', 14, 2)->nullable()->after('cash_tendered');
+            }
         });
     }
 

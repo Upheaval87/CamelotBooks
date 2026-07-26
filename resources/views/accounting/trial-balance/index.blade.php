@@ -59,10 +59,10 @@
                             @forelse($trialBalance as $row)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {{ $row['account']->code }}
+                                        <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $row['account']->code }}</a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $row['account']->name }}
+                                        <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $row['account']->name }}</a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                                         {{ $row['debit_balance'] > 0 ? number_format($row['debit_balance'], 2) : '' }}

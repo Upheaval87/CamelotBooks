@@ -18,7 +18,7 @@ class BalanceSheetService
         $this->incomeStatementService = $incomeStatementService;
     }
 
-    public function generate(int $companyId, ?int $branchId, string $asOfDate): array
+    public function generate(int $companyId, ?int $branchId, string $asOfDate, ?int $costCenterId = null): array
     {
         $accounts = Account::where('company_id', $companyId)
             ->active()
@@ -30,7 +30,7 @@ class BalanceSheetService
         $totals = ['asset' => 0, 'liability' => 0, 'equity' => 0];
 
         foreach ($accounts as $account) {
-            $balance = $this->computeBalanceAsOf($account, $companyId, $branchId, $asOfDate);
+            $balance = $this->computeBalanceAsOf($account, $companyId, $branchId, $asOfDate, $costCenterId);
 
             if (abs($balance) < 0.001) {
                 continue;
@@ -44,7 +44,7 @@ class BalanceSheetService
             $totals[$account->type] += $balance;
         }
 
-        $currentYearEarnings = $this->computeCurrentYearEarnings($companyId, $branchId, $asOfDate);
+        $currentYearEarnings = $this->computeCurrentYearEarnings($companyId, $branchId, $asOfDate, $costCenterId);
 
         $grouped = $this->groupBySubType($balances);
 
@@ -61,7 +61,7 @@ class BalanceSheetService
         ];
     }
 
-    private function computeBalanceAsOf(Account $account, int $companyId, ?int $branchId, string $asOfDate): float
+    private function computeBalanceAsOf(Account $account, int $companyId, ?int $branchId, string $asOfDate, ?int $costCenterId = null): float
     {
         $lineQuery = JournalEntryLine::where('account_id', $account->id)
             ->whereHas('journalEntry', function ($q) use ($companyId, $asOfDate) {
@@ -72,6 +72,10 @@ class BalanceSheetService
 
         if ($branchId) {
             $lineQuery->where('branch_id', $branchId);
+        }
+
+        if ($costCenterId) {
+            $lineQuery->where('cost_center_id', $costCenterId);
         }
 
         $totalDebit = (float) $lineQuery->sum('debit');
@@ -88,7 +92,7 @@ class BalanceSheetService
         return $balance;
     }
 
-    private function computeCurrentYearEarnings(int $companyId, ?int $branchId, string $asOfDate): float
+    private function computeCurrentYearEarnings(int $companyId, ?int $branchId, string $asOfDate, ?int $costCenterId = null): float
     {
         $company = Company::findOrFail($companyId);
         $fyStartMonth = $company->fiscal_year_start_month ?? 1;
@@ -107,7 +111,7 @@ class BalanceSheetService
             return 0.0;
         }
 
-        return $this->incomeStatementService->computeNetIncome($companyId, $branchId, $fyStart, $asOfDate);
+        return $this->incomeStatementService->computeNetIncome($companyId, $branchId, $fyStart, $asOfDate, $costCenterId);
     }
 
     private function groupBySubType(array $balances): array

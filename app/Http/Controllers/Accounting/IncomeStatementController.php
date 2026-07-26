@@ -61,7 +61,7 @@ class IncomeStatementController extends Controller
             foreach ($statement['groups']['income'] as $subType => $items) {
                 fputcsv($handle, ['  ' . ucwords(str_replace('_', ' ', $subType)), '', '']);
                 foreach ($items as $item) {
-                    fputcsv($handle, ['    ' . $item['account']->code . ' - ' . $item['account']->name, '', number_format(max(0, $item['net']), 2, '.', '')]);
+                    fputcsv($handle, ['    ' . $item['account']->code . ' - ' . $item['account']->name, '', number_format($item['net'], 2, '.', '')]);
                 }
             }
             fputcsv($handle, ['Total Income', '', number_format($statement['total_income'], 2, '.', '')]);
@@ -71,7 +71,7 @@ class IncomeStatementController extends Controller
             foreach ($statement['groups']['expense'] as $subType => $items) {
                 fputcsv($handle, ['  ' . ucwords(str_replace('_', ' ', $subType)), '', '']);
                 foreach ($items as $item) {
-                    fputcsv($handle, ['    ' . $item['account']->code . ' - ' . $item['account']->name, '', number_format(max(0, $item['net']), 2, '.', '')]);
+                    fputcsv($handle, ['    ' . $item['account']->code . ' - ' . $item['account']->name, '', number_format($item['net'], 2, '.', '')]);
                 }
             }
             fputcsv($handle, ['Total Expenses', '', number_format($statement['total_expenses'], 2, '.', '')]);

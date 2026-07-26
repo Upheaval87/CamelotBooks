@@ -28,7 +28,7 @@ class TrialBalanceController extends Controller
             $lineQuery = JournalEntryLine::where('account_id', $account->id)
                 ->whereHas('journalEntry', function ($q) use ($companyId, $asOfDate) {
                     $q->where('company_id', $companyId)
-                        ->where('status', JournalEntry::STATUS_POSTED)
+                        ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
                         ->where('date', '<=', $asOfDate);
                 });
 
