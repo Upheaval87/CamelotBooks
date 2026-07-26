@@ -31,7 +31,7 @@
                     </p></div>
                     <div><span class="text-gray-500">Vendor</span><p class="font-medium text-gray-900">{{ $voucher->vendor->name ?? 'N/A' }}</p></div>
                     <div><span class="text-gray-500">Allocation Method</span><p class="font-medium text-gray-900">{{ str_replace('_', ' ', ucfirst($voucher->allocation_method)) }}</p></div>
-                    <div><span class="text-gray-500">Total Amount</span><p class="font-medium text-gray-900">{{ number_format($voucher->total_amount, 2) }}</p></div>
+                    <div><span class="text-gray-500">Total Amount</span><p class="font-medium text-gray-900">{{ format_money($voucher->total_amount) }}</p></div>
                 </div>
             </div>
 
@@ -51,13 +51,13 @@
                             <tr>
                                 <td class="px-4 py-2">{{ ucfirst($component->component_type) }}</td>
                                 <td class="px-4 py-2">{{ $component->description }}</td>
-                                <td class="px-4 py-2 text-right font-medium">{{ number_format($component->amount, 2) }}</td>
+                                <td class="px-4 py-2 text-right font-medium">{{ format_money($component->amount) }}</td>
                                 <td class="px-4 py-2 text-gray-500">{{ $component->payeeAccount->code ?? '' }} - {{ $component->payeeAccount->name ?? '' }}</td>
                             </tr>
                         @endforeach
                         <tr class="bg-gray-50 font-semibold">
                             <td colspan="2" class="px-4 py-2 text-right">Total:</td>
-                            <td class="px-4 py-2 text-right">{{ number_format($voucher->total_amount, 2) }}</td>
+                            <td class="px-4 py-2 text-right">{{ format_money($voucher->total_amount) }}</td>
                             <td></td>
                         </tr>
                     </tbody>
@@ -70,7 +70,7 @@
                     @foreach($voucher->grns as $grn)
                         <div class="flex items-center justify-between p-3 border rounded bg-gray-50 text-sm">
                             <div><span class="font-medium">{{ $grn->grn_number }}</span> &mdash; {{ $grn->date->format('M d, Y') }}</div>
-                            <div class="text-right">{{ $grn->lines->count() }} line(s) &mdash; {{ number_format($grn->lines->sum('total_cost'), 2) }}</div>
+                            <div class="text-right">{{ $grn->lines->count() }} line(s) &mdash; {{ format_money($grn->lines->sum('total_cost')) }}</div>
                         </div>
                     @endforeach
                 </div>
@@ -91,8 +91,8 @@
                             @foreach($voucher->journalEntry->lines as $line)
                                 <tr>
                                     <td class="px-4 py-2">{{ $line->account->code ?? '' }} - {{ $line->account->name ?? '' }}</td>
-                                    <td class="px-4 py-2 text-right">{{ $line->debit > 0 ? number_format($line->debit, 2) : '' }}</td>
-                                    <td class="px-4 py-2 text-right">{{ $line->credit > 0 ? number_format($line->credit, 2) : '' }}</td>
+                                    <td class="px-4 py-2 text-right">{{ $line->debit > 0 ? format_money($line->debit) : '' }}</td>
+                                    <td class="px-4 py-2 text-right">{{ $line->credit > 0 ? format_money($line->credit) : '' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

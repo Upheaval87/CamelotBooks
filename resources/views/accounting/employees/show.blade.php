@@ -154,7 +154,7 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <dt class="text-sm font-medium text-gray-500">{{ __('Basic Pay') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ number_format($employee->currentSalaryStructure->basic_pay, 2) }}</dd>
+                            <dd class="mt-1 text-sm text-gray-900">{{ format_money($employee->currentSalaryStructure->basic_pay) }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500">{{ __('Effective From') }}</dt>
@@ -207,7 +207,7 @@
                                         {{ $payment->payment_type ? ucfirst(str_replace('_', ' ', $payment->payment_type)) : '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($payment->amount, 2) }}
+                                        {{ format_money($payment->amount) }}
                                     </td>
                                 </tr>
                             @empty

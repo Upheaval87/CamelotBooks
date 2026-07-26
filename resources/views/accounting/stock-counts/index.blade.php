@@ -42,7 +42,7 @@
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">In Progress</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">${{ number_format($count->variance_total, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">@money($count->variance_total)</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                                         <a href="{{ route('accounting.stock-counts.show', $count) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
                                         @if($count->status === 'in_progress')

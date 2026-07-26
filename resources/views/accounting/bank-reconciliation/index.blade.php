@@ -53,7 +53,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-800">{{ __('Start New Reconciliation') }}</h3>
-                            <p class="text-sm text-gray-500 mt-1">Book balance: {{ number_format($bankAccount->current_balance, 2) }}</p>
+                            <p class="text-sm text-gray-500 mt-1">Book balance: {{ format_money($bankAccount->current_balance) }}</p>
                         </div>
                         <a href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id) }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Start Reconciliation') }}
@@ -87,10 +87,10 @@
                                             {{ $reconciliation->statement_date?->format('M d, Y') ?? '—' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ number_format($reconciliation->statement_balance, 2) }}
+                                            {{ format_money($reconciliation->statement_balance) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ number_format($reconciliation->cleared_balance, 2) }}
+                                            {{ format_money($reconciliation->cleared_balance) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             @if($reconciliation->status === 'completed')

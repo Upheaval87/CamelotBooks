@@ -97,13 +97,13 @@
                                         {{ $row['line']->memo ?? $row['line']->journalEntry->memo ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ (float) $row['line']->debit > 0 ? number_format((float) $row['line']->debit, 2) : '' }}
+                                        {{ (float) $row['line']->debit > 0 ? format_money((float) $row['line']->debit) : '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ (float) $row['line']->credit > 0 ? number_format((float) $row['line']->credit, 2) : '' }}
+                                        {{ (float) $row['line']->credit > 0 ? format_money((float) $row['line']->credit) : '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                                        {{ number_format($row['running_balance'], 2) }}
+                                        {{ format_money($row['running_balance']) }}
                                     </td>
                                 </tr>
                             @empty

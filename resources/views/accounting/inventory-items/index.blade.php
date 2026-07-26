@@ -39,14 +39,14 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
                                         @php $onHand = $product->stock->sum('quantity_on_hand'); @endphp
                                         <span class="{{ $onHand <= ($product->reorder_point ?? 0) && $product->reorder_point ? 'text-red-600' : '' }}">
-                                            {{ number_format($onHand, 2) }}
+                                            {{ format_money($onHand) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                                        {{ $product->reorder_point ? number_format($product->reorder_point, 2) : '—' }}
+                                        {{ $product->reorder_point ? format_money($product->reorder_point) : '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($product->sales_price, 2) }}
+                                        {{ format_money($product->sales_price) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                                         <a href="{{ route('accounting.inventory-items.show', $product) }}" class="text-indigo-600 hover:text-indigo-900">View</a>

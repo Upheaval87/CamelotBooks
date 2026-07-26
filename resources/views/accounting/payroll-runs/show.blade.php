@@ -119,23 +119,23 @@
             <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <dt class="text-sm font-medium text-gray-500">{{ __('Gross Pay') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($run->total_gross, 2) }}</dd>
+                    <dd class="mt-1 text-2xl font-bold text-gray-900">{{ format_money($run->total_gross) }}</dd>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <dt class="text-sm font-medium text-gray-500">{{ __('Total PAYE') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-red-600">{{ number_format($run->total_paye, 2) }}</dd>
+                    <dd class="mt-1 text-2xl font-bold text-red-600">{{ format_money($run->total_paye) }}</dd>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <dt class="text-sm font-medium text-gray-500">{{ __('Total Pension') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-orange-600">{{ number_format($run->total_pension, 2) }}</dd>
+                    <dd class="mt-1 text-2xl font-bold text-orange-600">{{ format_money($run->total_pension) }}</dd>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <dt class="text-sm font-medium text-gray-500">{{ __('Total Deductions') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-yellow-600">{{ number_format($run->total_deductions, 2) }}</dd>
+                    <dd class="mt-1 text-2xl font-bold text-yellow-600">{{ format_money($run->total_deductions) }}</dd>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <dt class="text-sm font-medium text-gray-500">{{ __('Net Pay') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-green-600">{{ number_format($run->total_net_pay, 2) }}</dd>
+                    <dd class="mt-1 text-2xl font-bold text-green-600">{{ format_money($run->total_net_pay) }}</dd>
                 </div>
             </div>
 
@@ -163,25 +163,25 @@
                                         {{ $item->employee->name ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($item->basic_pay, 2) }}
+                                        {{ format_money($item->basic_pay) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($item->allowances, 2) }}
+                                        {{ format_money($item->allowances) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                                        {{ number_format($item->gross_pay, 2) }}
+                                        {{ format_money($item->gross_pay) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 text-right">
-                                        {{ number_format($item->paye, 2) }}
+                                        {{ format_money($item->paye) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-600 text-right">
-                                        {{ number_format($item->pension_ee, 2) }}
+                                        {{ format_money($item->pension_ee) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-600 text-right">
-                                        {{ number_format($item->other_deductions, 2) }}
+                                        {{ format_money($item->other_deductions) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right font-bold">
-                                        {{ number_format($item->net_pay, 2) }}
+                                        {{ format_money($item->net_pay) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                         @if(in_array($run->status, ['posted', 'partially_paid', 'fully_paid']) && !$item->is_paid)
@@ -328,7 +328,7 @@
                                             {{ $payment->payrollRunItem->employee->name ?? '—' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ number_format($payment->amount, 2) }}
+                                            {{ format_money($payment->amount) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $payment->payment_date?->format('M d, Y') ?? '—' }}

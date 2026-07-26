@@ -66,10 +66,10 @@
                                         {{ $log->usage_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($log->units_used, 2) }}
+                                        {{ format_money($log->units_used) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($log->total_units_used ?? 0, 2) }}
+                                        {{ format_money($log->total_units_used ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $log->user->name ?? '—' }}

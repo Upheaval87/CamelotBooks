@@ -62,9 +62,9 @@ class SendExecutiveDigest extends Command
 
                 if ($dryRun) {
                     $this->info("  [DRY RUN] Would send to: " . implode(', ', $recipients));
-                    $this->line("    Revenue: \$" . number_format($digest['revenue'], 2));
-                    $this->line("    Expenses: \$" . number_format($digest['expenses'], 2));
-                    $this->line("    Net Income: \$" . number_format($digest['net_income'], 2));
+                    $this->line("    Revenue: " . format_money($digest['revenue']));
+                    $this->line("    Expenses: " . format_money($digest['expenses']));
+                    $this->line("    Net Income: " . format_money($digest['net_income']));
                     $sent++;
                     continue;
                 }

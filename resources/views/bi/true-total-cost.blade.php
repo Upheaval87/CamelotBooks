@@ -26,10 +26,10 @@
                             @forelse($branches as $branch)
                                 <tr>
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $branch['branch_name'] }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['payroll'] ?? 0, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['opex'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['depreciation'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900">${{ number_format($branch['total'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['payroll'] ?? 0)</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['opex'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['depreciation'])</td>
+                                    <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900">@money($branch['total'])</td>
                                 </tr>
                             @empty
                                 <tr><td colspan="5" class="px-4 py-3 text-sm text-gray-500 text-center">No cost data for this period</td></tr>
@@ -39,10 +39,10 @@
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td class="px-4 py-3 text-sm font-bold text-gray-900">Grand Total</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">${{ number_format(array_sum(array_column($branches, 'payroll')), 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">${{ number_format(array_sum(array_column($branches, 'opex')), 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">${{ number_format(array_sum(array_column($branches, 'depreciation')), 2) }}</td>
-                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">${{ number_format($grand_total, 2) }}</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">@money(array_sum(array_column($branches, 'payroll')))</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">@money(array_sum(array_column($branches, 'opex')))</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">@money(array_sum(array_column($branches, 'depreciation')))</td>
+                                <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">@money($grand_total)</td>
                             </tr>
                         </tfoot>
                         @endif

@@ -79,7 +79,7 @@
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_from={{ $dateFrom }}&date_to={{ $dateTo }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['net'], 2) }}</td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['net']) }}</td>
                                             @if(!empty($comparison))
                                                 <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                                                     @php
@@ -88,7 +88,7 @@
                                                             if ($ci['account']->id === $item['account']->id) { $compNet = $ci['net']; break; }
                                                         }
                                                     @endphp
-                                                    {{ number_format(max(0, $compNet), 2) }}
+                                                    {{ format_money(max(0, $compNet)) }}
                                                 </td>
                                             @endif
                                         </tr>
@@ -98,9 +98,9 @@
 
                             <tr class="bg-indigo-50">
                                 <td class="px-6 py-3 text-sm font-bold text-gray-900">Total Income</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ number_format($total_income, 2) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($total_income) }}</td>
                                 @if(!empty($comparison))
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-500 text-right">{{ number_format($comparison['total_income'] ?? 0, 2) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-500 text-right">{{ format_money($comparison['total_income'] ?? 0) }}</td>
                                 @endif
                             </tr>
 
@@ -114,7 +114,7 @@
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_from={{ $dateFrom }}&date_to={{ $dateTo }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['net'], 2) }}</td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['net']) }}</td>
                                             @if(!empty($comparison))
                                                 <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
                                                     @php
@@ -123,7 +123,7 @@
                                                             if ($ci['account']->id === $item['account']->id) { $compNet = $ci['net']; break; }
                                                         }
                                                     @endphp
-                                                    {{ number_format(max(0, $compNet), 2) }}
+                                                    {{ format_money(max(0, $compNet)) }}
                                                 </td>
                                             @endif
                                         </tr>
@@ -133,18 +133,18 @@
 
                             <tr class="bg-indigo-50">
                                 <td class="px-6 py-3 text-sm font-bold text-gray-900">Total Expenses</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ number_format($total_expenses, 2) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($total_expenses) }}</td>
                                 @if(!empty($comparison))
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-500 text-right">{{ number_format($comparison['total_expenses'] ?? 0, 2) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-500 text-right">{{ format_money($comparison['total_expenses'] ?? 0) }}</td>
                                 @endif
                             </tr>
 
                             <tr class="bg-gray-900">
                                 <td class="px-6 py-3 text-sm font-bold text-white">{{ $net_income >= 0 ? 'Net Income' : 'Net Loss' }}</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-white text-right">{{ number_format(abs($net_income), 2) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-white text-right">{{ format_money(abs($net_income)) }}</td>
                                 @if(!empty($comparison))
                                     @php $compNI = ($comparison['net_income'] ?? 0); @endphp
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-300 text-right">{{ number_format(abs($compNI), 2) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-300 text-right">{{ format_money(abs($compNI)) }}</td>
                                 @endif
                             </tr>
                         </tbody>

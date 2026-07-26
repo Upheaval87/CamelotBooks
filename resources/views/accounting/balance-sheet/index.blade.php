@@ -62,14 +62,14 @@
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['balance'], 2) }}</td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['balance']) }}</td>
                                         </tr>
                                     @endforeach
                                 @endif
                             @endforeach
                             <tr class="bg-indigo-50">
                                 <td class="px-6 py-3 text-sm font-bold text-gray-900">Total Assets</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ number_format($total_assets, 2) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($total_assets) }}</td>
                             </tr>
 
                             @foreach($groups['liability'] as $subType => $items)
@@ -80,14 +80,14 @@
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['balance'], 2) }}</td>
+                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['balance']) }}</td>
                                         </tr>
                                     @endforeach
                                 @endif
                             @endforeach
                             <tr class="bg-indigo-50">
                                 <td class="px-6 py-3 text-sm font-bold text-gray-900">Total Liabilities</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ number_format($total_liabilities, 2) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($total_liabilities) }}</td>
                             </tr>
 
                             <tr class="bg-gray-50">
@@ -97,29 +97,29 @@
                                 @foreach($items as $item)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['balance'], 2) }}</td>
+                                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['balance']) }}</td>
                                     </tr>
                                 @endforeach
                             @endforeach
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">Current Year Earnings</td>
-                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($current_year_earnings, 2) }}</td>
+                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($current_year_earnings) }}</td>
                             </tr>
                             <tr class="bg-indigo-50">
                                 <td class="px-6 py-3 text-sm font-bold text-gray-900">Total Equity</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ number_format($total_equity, 2) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($total_equity) }}</td>
                             </tr>
 
                             <tr class="bg-gray-900">
                                 <td class="px-6 py-3 text-sm font-bold text-white">Total Liabilities & Equity</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-white text-right">{{ number_format($total_liabilities + $total_equity, 2) }}</td>
+                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-white text-right">{{ format_money($total_liabilities + $total_equity) }}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 @if(!$balanced)
                     <div class="px-6 py-3 bg-red-50 border-t border-red-200">
-                        <p class="text-sm font-semibold text-red-600">Warning: Balance sheet is out of balance by {{ number_format(abs($total_assets - ($total_liabilities + $total_equity)), 2) }}</p>
+                        <p class="text-sm font-semibold text-red-600">Warning: Balance sheet is out of balance by {{ format_money(abs($total_assets - ($total_liabilities + $total_equity))) }}</p>
                     </div>
                 @endif
             </div>

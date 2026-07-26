@@ -124,11 +124,11 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $line->product->name ?? '—' }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ $line->description }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->quantity }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($line->unit_price, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($line->unit_price) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->discount }}%</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->tax_rate }}%</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $line->costCenter->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($line->total, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($line->total) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -138,23 +138,23 @@
                     <div class="w-64 space-y-2">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Subtotal:</span>
-                            <span class="text-gray-900">{{ number_format($invoice->subtotal, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($invoice->subtotal) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Tax:</span>
-                            <span class="text-gray-900">{{ number_format($invoice->tax_total, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($invoice->tax_total) }}</span>
                         </div>
                         <div class="flex justify-between text-sm font-semibold border-t pt-2">
                             <span class="text-gray-800">Total:</span>
-                            <span class="text-gray-900">{{ number_format($invoice->total, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($invoice->total) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Paid:</span>
-                            <span class="text-gray-900">{{ number_format($invoice->amount_paid, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($invoice->amount_paid) }}</span>
                         </div>
                         <div class="flex justify-between text-sm font-bold border-t pt-2">
                             <span class="text-gray-800">Balance Due:</span>
-                            <span class="text-gray-900">{{ number_format($invoice->balance_due, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($invoice->balance_due) }}</span>
                         </div>
                     </div>
                 </div>
@@ -187,7 +187,7 @@
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $payment->reference ?? '—' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($payment->pivot->amount, 2) }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($payment->pivot->amount) }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</td>
                                     </tr>
                                 @endforeach

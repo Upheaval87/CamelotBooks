@@ -85,13 +85,13 @@
                                         {{ $vendorCredit->bill->bill_number ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($vendorCredit->total, 2) }}
+                                        {{ format_money($vendorCredit->total) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($vendorCredit->amount_applied, 2) }}
+                                        {{ format_money($vendorCredit->amount_applied) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                                        {{ number_format($vendorCredit->available, 2) }}
+                                        {{ format_money($vendorCredit->available) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @switch($vendorCredit->status)

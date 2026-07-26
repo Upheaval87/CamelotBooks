@@ -20,15 +20,15 @@
             <div class="grid grid-cols-3 gap-6 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <p class="text-xs font-medium text-gray-500 uppercase">Float Amount</p>
-                    <p class="mt-1 text-2xl font-bold text-indigo-600">{{ number_format($fund->petty_cash_float ?? 0, 2) }}</p>
+                    <p class="mt-1 text-2xl font-bold text-indigo-600">{{ format_money($fund->petty_cash_float ?? 0) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <p class="text-xs font-medium text-gray-500 uppercase">Current Balance</p>
-                    <p class="mt-1 text-2xl font-bold text-green-600">{{ number_format($fund->current_balance, 2) }}</p>
+                    <p class="mt-1 text-2xl font-bold text-green-600">{{ format_money($fund->current_balance) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <p class="text-xs font-medium text-gray-500 uppercase">Spent</p>
-                    <p class="mt-1 text-2xl font-bold text-red-600">{{ number_format(($fund->petty_cash_float ?? 0) - $fund->current_balance, 2) }}</p>
+                    <p class="mt-1 text-2xl font-bold text-red-600">{{ format_money(($fund->petty_cash_float ?? 0) - $fund->current_balance) }}</p>
                 </div>
             </div>
 
@@ -153,7 +153,7 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $expense->journalEntry?->date?->format('M d, Y') ?? '—' }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ $expense->memo ?? $expense->journalEntry?->memo ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($expense->credit, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($expense->credit) }}</td>
                                 </tr>
                             @empty
                                 <tr>

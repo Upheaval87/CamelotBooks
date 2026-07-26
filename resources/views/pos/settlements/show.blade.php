@@ -69,15 +69,15 @@
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Total Settled</span>
-                            <span class="font-medium">${{ number_format($settlement->total_amount, 2) }}</span>
+                            <span class="font-medium">@money($settlement->total_amount)</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Processing Fee</span>
-                            <span class="text-red-600">-${{ number_format($settlement->fee_amount, 2) }}</span>
+                            <span class="text-red-600">-@money($settlement->fee_amount)</span>
                         </div>
                         <div class="flex justify-between text-lg font-bold border-t pt-2">
                             <span>Net Deposit</span>
-                            <span>${{ number_format($settlement->net_amount, 2) }}</span>
+                            <span>@money($settlement->net_amount)</span>
                         </div>
                     </div>
                 </div>
@@ -104,10 +104,10 @@
                                         {{ $line->account->code }} – {{ $line->account->name }}
                                     </td>
                                     <td class="px-4 py-2 text-sm text-right">
-                                        {{ $line->debit > 0 ? '$' . number_format($line->debit, 2) : '—' }}
+                                        {{ $line->debit > 0 ? format_money($line->debit) : '—' }}
                                     </td>
                                     <td class="px-4 py-2 text-sm text-right">
-                                        {{ $line->credit > 0 ? '$' . number_format($line->credit, 2) : '—' }}
+                                        {{ $line->credit > 0 ? format_money($line->credit) : '—' }}
                                     </td>
                                     <td class="px-4 py-2 text-sm text-gray-500">{{ $line->description }}</td>
                                 </tr>

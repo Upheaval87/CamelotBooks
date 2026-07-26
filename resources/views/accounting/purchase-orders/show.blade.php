@@ -116,8 +116,8 @@
                                     <td class="px-6 py-4 text-sm text-gray-900">{{ $line->product->name ?? '—' }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ $line->description }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ $line->quantity }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ number_format($line->unit_price, 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">{{ number_format($line->amount, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ format_money($line->unit_price) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">{{ format_money($line->amount) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ $line->quantity_received }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ $line->quantity_billed }}</td>
                                 </tr>
@@ -129,7 +129,7 @@
                     <div class="w-48 space-y-2">
                         <div class="flex justify-between text-sm font-semibold border-t pt-2">
                             <span class="text-gray-800">Total:</span>
-                            <span class="text-gray-900">{{ number_format($totalAmount, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($totalAmount) }}</span>
                         </div>
                     </div>
                 </div>

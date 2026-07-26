@@ -32,7 +32,7 @@
                     </div>
                     <div>
                         <p class="text-xs font-medium text-gray-500 uppercase">Amount</p>
-                        <p class="mt-1 text-sm text-gray-900 font-semibold text-lg">{{ number_format($cheque->amount, 2) }}</p>
+                        <p class="mt-1 text-sm text-gray-900 font-semibold text-lg">{{ format_money($cheque->amount) }}</p>
                     </div>
                     <div>
                         <p class="text-xs font-medium text-gray-500 uppercase">Bank Account</p>

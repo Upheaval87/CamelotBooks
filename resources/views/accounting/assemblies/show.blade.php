@@ -35,15 +35,15 @@
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Quantity</dt>
-                        <dd class="text-sm text-gray-900 font-bold mt-1">{{ number_format($build->quantity, 2) }}</dd>
+                        <dd class="text-sm text-gray-900 font-bold mt-1">{{ format_money($build->quantity) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Unit Cost</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">${{ number_format($build->unit_cost, 4) }}</dd>
+                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ format_money($build->unit_cost, null, 4) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Total Component Cost</dt>
-                        <dd class="text-sm text-gray-900 font-bold mt-1">${{ number_format($build->total_component_cost, 2) }}</dd>
+                        <dd class="text-sm text-gray-900 font-bold mt-1">@money($build->total_component_cost)</dd>
                     </div>
                     @if($build->billOfMaterial)
                         <div>

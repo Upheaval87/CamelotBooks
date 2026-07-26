@@ -55,7 +55,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Refund Total</p>
-                        <p class="text-lg font-semibold text-red-600">-${{ number_format($return->total, 2) }}</p>
+                        <p class="text-lg font-semibold text-red-600">-@money($return->total)</p>
                     </div>
                 </div>
             </div>
@@ -79,27 +79,27 @@
                                 <tr>
                                     <td class="px-4 py-2 text-sm text-gray-900">{{ $line->product?->name ?? '—' }}</td>
                                     <td class="px-4 py-2 text-sm text-right text-gray-900">{{ number_format($line->quantity_returned, 4) }}</td>
-                                    <td class="px-4 py-2 text-sm text-right text-gray-900">${{ number_format($line->unit_price, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-right text-gray-900">${{ number_format($line->tax_amount, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-right text-red-600 font-semibold">-${{ number_format($line->line_total, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-right text-gray-900">{{ $line->cost_of_goods !== null ? '$' . number_format($line->cost_of_goods, 2) : '—' }}</td>
+                                    <td class="px-4 py-2 text-sm text-right text-gray-900">@money($line->unit_price)</td>
+                                    <td class="px-4 py-2 text-sm text-right text-gray-900">@money($line->tax_amount)</td>
+                                    <td class="px-4 py-2 text-sm text-right text-red-600 font-semibold">-@money($line->line_total)</td>
+                                    <td class="px-4 py-2 text-sm text-right text-gray-900">{{ $line->cost_of_goods !== null ? format_money($line->cost_of_goods) : '—' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td colspan="4" class="px-4 py-2 text-sm font-semibold text-gray-900 text-right">Subtotal:</td>
-                                <td class="px-4 py-2 text-sm text-right text-gray-900">${{ number_format($return->subtotal, 2) }}</td>
+                                <td class="px-4 py-2 text-sm text-right text-gray-900">@money($return->subtotal)</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="4" class="px-4 py-2 text-sm font-semibold text-gray-900 text-right">Tax:</td>
-                                <td class="px-4 py-2 text-sm text-right text-gray-900">${{ number_format($return->tax_total, 2) }}</td>
+                                <td class="px-4 py-2 text-sm text-right text-gray-900">@money($return->tax_total)</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="4" class="px-4 py-2 text-sm font-bold text-gray-900 text-right">Total Refund:</td>
-                                <td class="px-4 py-2 text-sm font-bold text-red-600 text-right">-${{ number_format($return->total, 2) }}</td>
+                                <td class="px-4 py-2 text-sm font-bold text-red-600 text-right">-@money($return->total)</td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -132,10 +132,10 @@
                                             {{ $line->account?->code }} – {{ $line->account?->name }}
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-900">
-                                            {{ $line->debit > 0 ? '$' . number_format($line->debit, 2) : '' }}
+                                            {{ $line->debit > 0 ? format_money($line->debit) : '' }}
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-900">
-                                            {{ $line->credit > 0 ? '$' . number_format($line->credit, 2) : '' }}
+                                            {{ $line->credit > 0 ? format_money($line->credit) : '' }}
                                         </td>
                                         <td class="px-4 py-2 text-sm text-gray-500">{{ $line->description }}</td>
                                     </tr>

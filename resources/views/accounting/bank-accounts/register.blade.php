@@ -81,20 +81,20 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                                         @if($transaction->debit > 0)
-                                            {{ number_format($transaction->debit, 2) }}
+                                            {{ format_money($transaction->debit) }}
                                         @else
                                             —
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                                         @if($transaction->credit > 0)
-                                            {{ number_format($transaction->credit, 2) }}
+                                            {{ format_money($transaction->credit) }}
                                         @else
                                             —
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                                        {{ number_format($transaction->running_balance, 2) }}
+                                        {{ format_money($transaction->running_balance) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($transaction->is_cleared)

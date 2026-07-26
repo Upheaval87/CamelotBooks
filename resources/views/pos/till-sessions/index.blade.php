@@ -64,16 +64,16 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $session->id }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->terminal?->identifier ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $session->user?->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">${{ number_format($session->opening_float, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">@money($session->opening_float)</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                        {{ $session->expected_cash !== null ? '$' . number_format($session->expected_cash, 2) : '—' }}
+                                        {{ $session->expected_cash !== null ? format_money($session->expected_cash) : '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                                        {{ $session->actual_cash_count !== null ? '$' . number_format($session->actual_cash_count, 2) : '—' }}
+                                        {{ $session->actual_cash_count !== null ? format_money($session->actual_cash_count) : '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold
                                         {{ $session->variance > 0 ? 'text-green-600' : ($session->variance < 0 ? 'text-red-600' : 'text-gray-900') }}">
-                                        {{ $session->variance !== null ? ($session->variance >= 0 ? '+' : '') . '$' . number_format($session->variance, 2) : '—' }}
+                                        {{ $session->variance !== null ? ($session->variance >= 0 ? '+' : '') . format_money($session->variance) : '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($session->isOpen())
@@ -100,7 +100,7 @@
                                     <div id="close-modal-{{ $session->id }}" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
                                         <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
                                             <h3 class="text-lg font-semibold text-gray-800 mb-2">Close Till – Session #{{ $session->id }}</h3>
-                                            <p class="text-sm text-gray-600 mb-4">Terminal: {{ $session->terminal?->identifier }} | Float: ${{ number_format($session->opening_float, 2) }}</p>
+                                            <p class="text-sm text-gray-600 mb-4">Terminal: {{ $session->terminal?->identifier }} | Float: @money($session->opening_float)</p>
                                             <form method="POST" action="{{ route('pos.till-sessions.close', $session) }}">
                                                 @csrf
                                                 <div class="mb-4">

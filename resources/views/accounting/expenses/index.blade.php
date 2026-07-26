@@ -93,7 +93,7 @@
                                         {{ $expense->expense_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($expense->amount, 2) }}
+                                        {{ format_money($expense->amount) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @switch($expense->status)

@@ -10,7 +10,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Revenue</div>
-                    <div class="text-2xl font-bold text-indigo-600">${{ number_format($data['revenue']['total_income'], 2) }}</div>
+                    <div class="text-2xl font-bold text-indigo-600">@money($data['revenue']['total_income'])</div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Invoices</div>
@@ -18,7 +18,7 @@
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Avg Invoice Value</div>
-                    <div class="text-2xl font-bold text-gray-800">${{ number_format(array_sum(array_column($data['monthly_summary'], 'total')) / max(1, array_sum(array_column($data['monthly_summary'], 'count'))), 2) }}</div>
+                    <div class="text-2xl font-bold text-gray-800">@money(array_sum(array_column($data['monthly_summary'], 'total')) / max(1, array_sum(array_column($data['monthly_summary'], 'count'))))</div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Conversion Rate</div>
@@ -73,7 +73,7 @@
                                     <tr>
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $customer['customer_name'] }}</td>
                                         <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $customer['invoice_count'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">${{ number_format($customer['total_revenue'], 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($customer['total_revenue'])</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>
@@ -99,7 +99,7 @@
                                     <tr>
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $product['product_name'] }} <span class="text-xs text-gray-400">({{ $product['sku'] }})</span></td>
                                         <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($product['total_quantity'], 0) }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">${{ number_format($product['total_revenue'], 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($product['total_revenue'])</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>

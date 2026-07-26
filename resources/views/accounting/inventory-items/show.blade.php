@@ -19,19 +19,19 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <div class="text-xs font-medium text-gray-500 uppercase">Total On Hand</div>
-                    <div class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($totalOnHand, 2) }}</div>
+                    <div class="text-2xl font-bold text-gray-900 mt-1">{{ format_money($totalOnHand) }}</div>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <div class="text-xs font-medium text-gray-500 uppercase">Total Value (FIFO)</div>
-                    <div class="text-2xl font-bold text-gray-900 mt-1">${{ number_format($totalValue, 2) }}</div>
+                    <div class="text-2xl font-bold text-gray-900 mt-1">@money($totalValue)</div>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <div class="text-xs font-medium text-gray-500 uppercase">Reorder Point</div>
-                    <div class="text-2xl font-bold text-gray-900 mt-1">{{ $product->reorder_point ? number_format($product->reorder_point, 2) : '—' }}</div>
+                    <div class="text-2xl font-bold text-gray-900 mt-1">{{ $product->reorder_point ? format_money($product->reorder_point) : '—' }}</div>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <div class="text-xs font-medium text-gray-500 uppercase">Avg Unit Cost</div>
-                    <div class="text-2xl font-bold text-gray-900 mt-1">${{ $totalOnHand > 0 ? number_format($totalValue / $totalOnHand, 4) : '0.00' }}</div>
+                    <div class="text-2xl font-bold text-gray-900 mt-1">{{ $totalOnHand > 0 ? format_money($totalValue / $totalOnHand, null, 4) : format_money(0) }}</div>
                 </div>
             </div>
 
@@ -54,11 +54,11 @@
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-sm text-gray-500">Sales Price</dt>
-                            <dd class="text-sm text-gray-900 font-medium">${{ number_format($product->sales_price, 2) }}</dd>
+                            <dd class="text-sm text-gray-900 font-medium">@money($product->sales_price)</dd>
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-sm text-gray-500">Purchase Price</dt>
-                            <dd class="text-sm text-gray-900 font-medium">{{ $product->purchase_price ? '$' . number_format($product->purchase_price, 2) : '—' }}</dd>
+                            <dd class="text-sm text-gray-900 font-medium">{{ $product->purchase_price ? format_money($product->purchase_price) : '—' }}</dd>
                         </div>
                         <div class="flex justify-between">
                             <dt class="text-sm text-gray-500">Income Account</dt>
@@ -90,7 +90,7 @@
                                 @foreach($product->stock as $stock)
                                     <tr>
                                         <td class="px-3 py-2 text-sm text-gray-900">{{ $stock->branch->name ?? 'Main' }}</td>
-                                        <td class="px-3 py-2 text-sm text-gray-900 text-right font-medium">{{ number_format($stock->quantity_on_hand, 2) }}</td>
+                                        <td class="px-3 py-2 text-sm text-gray-900 text-right font-medium">{{ format_money($stock->quantity_on_hand) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -121,9 +121,9 @@
                                     <tr class="{{ $layer->quantity_remaining <= 0 ? 'text-gray-400' : '' }}">
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $layer->date->format('M d, Y') }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $layer->source_type ?? '—' }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">{{ number_format($layer->quantity_remaining, 2) }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">${{ number_format($layer->unit_cost, 4) }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">${{ number_format($layer->quantity_remaining * $layer->unit_cost, 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">{{ format_money($layer->quantity_remaining) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ format_money($layer->unit_cost, null, 4) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">@money($layer->quantity_remaining * $layer->unit_cost)</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -154,8 +154,8 @@
                                     <tr>
                                         <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ $uom->uom_name }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($uom->conversion_factor, 4) }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ $uom->purchase_price > 0 ? '$' . number_format($uom->purchase_price, 2) : '—' }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ $uom->sales_price > 0 ? '$' . number_format($uom->sales_price, 2) : '—' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ $uom->purchase_price > 0 ? format_money($uom->purchase_price) : '—' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ $uom->sales_price > 0 ? format_money($uom->sales_price) : '—' }}</td>
                                         <td class="px-4 py-3 text-center text-sm text-gray-900">
                                             @if($uom->is_base)
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Base</span>

@@ -87,13 +87,13 @@
                                         {{ $bill->due_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($bill->total, 2) }}
+                                        {{ format_money($bill->total) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($bill->amount_paid, 2) }}
+                                        {{ format_money($bill->amount_paid) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                                        {{ number_format($bill->balance_due, 2) }}
+                                        {{ format_money($bill->balance_due) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @switch($bill->status)

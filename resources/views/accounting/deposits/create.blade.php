@@ -67,7 +67,7 @@
                                                     </td>
                                                     <td class="px-4 py-2 text-sm text-gray-500">{{ $line->journalEntry->date->format('M d, Y') }}</td>
                                                     <td class="px-4 py-2 text-sm text-gray-500">{{ $line->memo ?? $line->journalEntry->memo ?? '—' }}</td>
-                                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($line->debit, 2) }}</td>
+                                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->debit) }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>

@@ -26,8 +26,12 @@ export function createChart(canvas, config) {
 }
 
 export function formatCurrency(value) {
-    if (value === null || value === undefined || isNaN(value)) return '$0.00';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    if (value === null || value === undefined || isNaN(value)) return '0.00';
+    if (typeof window !== 'undefined' && typeof window.formatMoney === 'function') {
+        return window.formatMoney(value);
+    }
+    var symbol = (typeof window !== 'undefined' && window.currencySymbol) || '$';
+    return symbol + Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function formatPercent(value) {

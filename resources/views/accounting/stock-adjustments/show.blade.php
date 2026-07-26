@@ -46,11 +46,11 @@
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Unit Cost</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">${{ number_format($adjustment->unit_cost, 4) }}</dd>
+                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ format_money($adjustment->unit_cost, null, 4) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Total Cost</dt>
-                        <dd class="text-sm text-gray-900 font-bold mt-1">${{ number_format($adjustment->total_cost, 2) }}</dd>
+                        <dd class="text-sm text-gray-900 font-bold mt-1">@money($adjustment->total_cost)</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Reason</dt>

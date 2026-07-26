@@ -32,7 +32,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Stock Value</div>
-                    <div class="text-2xl font-bold text-indigo-600">${{ number_format($data['current_value']['total_value'], 2) }}</div>
+                    <div class="text-2xl font-bold text-indigo-600">@money($data['current_value']['total_value'])</div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Quantity</div>
@@ -68,7 +68,7 @@
                                     <tr>
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $item['product_name'] }} <span class="text-xs text-gray-400">({{ $item['sku'] }})</span></td>
                                         <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($item['old_quantity'], 0) }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">${{ number_format($item['old_value'], 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($item['old_value'])</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No slow-moving items</td></tr>
@@ -124,8 +124,8 @@
                             @forelse($data['turnover'] as $item)
                                 <tr>
                                     <td class="px-4 py-3 text-sm text-gray-900">{{ $item['product_name'] }} <span class="text-xs text-gray-400">({{ $item['sku'] }})</span></td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">${{ number_format($item['total_value'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($item['avg_cost'], 4) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-900">@money($item['total_value'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">{{ format_money($item['avg_cost'], null, 4) }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $item['turnover'] !== null ? number_format($item['turnover'], 1) : 'N/A' }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $item['days_on_hand'] !== null ? number_format($item['days_on_hand'], 0) : 'N/A' }}</td>
                                 </tr>

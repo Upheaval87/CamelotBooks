@@ -83,9 +83,9 @@
                             @forelse($table->bands->sortBy('sort_order') as $band)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $band->sort_order + 1 }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ number_format((float) $band->threshold, 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $band->upper_limit ? number_format((float) $band->upper_limit, 2) : 'No limit' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ number_format((float) $band->rate, 2) }}%</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ format_money((float) $band->threshold) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $band->upper_limit ? format_money((float) $band->upper_limit) : 'No limit' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ format_money((float) $band->rate) }}%</td>
                                 </tr>
                             @empty
                                 <tr>

@@ -34,11 +34,11 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item['sku'] ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $item['product_name'] }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                        <span class="text-red-600 font-semibold">{{ number_format($item['quantity_on_hand'], 2) }}</span>
+                                        <span class="text-red-600 font-semibold">{{ format_money($item['quantity_on_hand']) }}</span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($item['reorder_point'], 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['reorder_point']) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                        <span class="text-red-600 font-bold">{{ number_format($item['shortage'], 2) }}</span>
+                                        <span class="text-red-600 font-bold">{{ format_money($item['shortage']) }}</span>
                                     </td>
                                 </tr>
                             @empty

@@ -33,7 +33,7 @@
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Total Variance</dt>
-                        <dd class="text-sm font-bold text-gray-900 mt-1">${{ number_format($count->variance_total, 2) }}</dd>
+                        <dd class="text-sm font-bold text-gray-900 mt-1">@money($count->variance_total)</dd>
                     </div>
                     @if($count->journalEntry)
                         <div>
@@ -70,13 +70,13 @@
                                 @if($line->counted_quantity !== null)
                                     <tr class="{{ $line->variance_quantity != 0 ? 'bg-yellow-50' : '' }}">
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $line->product->sku ?? '' }} {{ $line->product->name ?? '—' }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($line->expected_quantity, 2) }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($line->counted_quantity, 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ format_money($line->expected_quantity) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ format_money($line->counted_quantity) }}</td>
                                         <td class="px-4 py-3 text-sm text-right {{ $line->variance_quantity > 0 ? 'text-green-600 font-semibold' : ($line->variance_quantity < 0 ? 'text-red-600 font-semibold' : 'text-gray-500') }}">
-                                            {{ $line->variance_quantity >= 0 ? '+' : '' }}{{ number_format($line->variance_quantity, 2) }}
+                                            {{ $line->variance_quantity >= 0 ? '+' : '' }}{{ format_money($line->variance_quantity) }}
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">${{ number_format($line->unit_cost, 4) }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right font-semibold">${{ number_format($line->variance_cost, 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ format_money($line->unit_cost, null, 4) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right font-semibold">@money($line->variance_cost)</td>
                                     </tr>
                                 @endif
                             @endforeach
@@ -84,7 +84,7 @@
                         <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                             <tr>
                                 <td colspan="5" class="px-4 py-3 text-sm font-bold text-gray-900 text-right">Total Variance</td>
-                                <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">${{ number_format($count->variance_total, 2) }}</td>
+                                <td class="px-4 py-3 text-sm font-bold text-gray-900 text-right">@money($count->variance_total)</td>
                             </tr>
                         </tfoot>
                     </table>

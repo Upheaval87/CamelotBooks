@@ -51,25 +51,25 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div>
                         <p class="text-sm text-gray-500">Opening Float</p>
-                        <p class="text-lg font-semibold text-gray-900">${{ number_format($session->opening_float, 2) }}</p>
+                        <p class="text-lg font-semibold text-gray-900">@money($session->opening_float)</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Expected Cash</p>
                         <p class="text-lg font-semibold text-gray-900">
-                            {{ $session->expected_cash !== null ? '$' . number_format($session->expected_cash, 2) : '—' }}
+                            {{ $session->expected_cash !== null ? format_money($session->expected_cash) : '—' }}
                         </p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Actual Cash Count</p>
                         <p class="text-lg font-semibold text-gray-900">
-                            {{ $session->actual_cash_count !== null ? '$' . number_format($session->actual_cash_count, 2) : '—' }}
+                            {{ $session->actual_cash_count !== null ? format_money($session->actual_cash_count) : '—' }}
                         </p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Variance</p>
                         <p class="text-lg font-semibold
                             {{ ($session->variance ?? 0) > 0 ? 'text-green-600' : (($session->variance ?? 0) < 0 ? 'text-red-600' : 'text-gray-900') }}">
-                            {{ $session->variance !== null ? (($session->variance >= 0 ? '+' : '') . '$' . number_format($session->variance, 2)) : '—' }}
+                            {{ $session->variance !== null ? ($session->variance >= 0 ? '+' : '') . format_money($session->variance) : '—' }}
                         </p>
                     </div>
                 </div>
@@ -100,10 +100,10 @@
                                             {{ $line->account?->code }} – {{ $line->account?->name }}
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-900">
-                                            {{ $line->debit > 0 ? '$' . number_format($line->debit, 2) : '' }}
+                                            {{ $line->debit > 0 ? format_money($line->debit) : '' }}
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-gray-900">
-                                            {{ $line->credit > 0 ? '$' . number_format($line->credit, 2) : '' }}
+                                            {{ $line->credit > 0 ? format_money($line->credit) : '' }}
                                         </td>
                                         <td class="px-4 py-2 text-sm text-gray-500">{{ $line->description }}</td>
                                     </tr>

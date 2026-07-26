@@ -62,7 +62,7 @@ class LocalizationController extends Controller
             'date_format' => 'required|string',
             'number_format' => 'required|string',
             'timezone' => 'required|string',
-            'currency_display' => 'nullable|in:symbol,code,none',
+            'currency_symbol' => 'nullable|string|max:10',
         ]);
 
         foreach ($validated as $key => $value) {

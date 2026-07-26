@@ -57,7 +57,7 @@
                                         {{ $run->assets_skipped }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($run->total_amount, 2) }}
+                                        {{ format_money($run->total_amount) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $run->status === 'completed' ? 'green' : ($run->status === 'posted' ? 'blue' : 'yellow') }}-100 text-{{ $run->status === 'completed' ? 'green' : ($run->status === 'posted' ? 'blue' : 'yellow') }}-800">

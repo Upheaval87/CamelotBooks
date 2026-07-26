@@ -246,6 +246,7 @@
                             <a href="{{ route('admin.security.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Security') }}</a>
                             <div class="border-t border-gray-100 my-1"></div>
                             <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">System</div>
+                            <a href="{{ route('admin.features.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Features') }}</a>
                             <a href="{{ route('admin.numbering-sequences.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Numbering Sequences') }}</a>
                             <a href="{{ route('admin.audit-log.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Audit Log') }}</a>
                             <a href="{{ route('admin.notifications.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Notifications') }}</a>
@@ -424,6 +425,7 @@
             <x-responsive-nav-link :href="route('admin.setup-wizard.index')" :active="request()->routeIs('admin.setup-wizard.*')">{{ __('Setup Wizard') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">{{ __('Users & Roles') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.security.index')" :active="request()->routeIs('admin.security.*')">{{ __('Security') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.features.index')" :active="request()->routeIs('admin.features.*')">{{ __('Features') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.numbering-sequences.index')" :active="request()->routeIs('admin.numbering-sequences.*')">{{ __('Numbering Sequences') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.audit-log.index')" :active="request()->routeIs('admin.audit-log.*')">{{ __('Audit Log') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.notifications.index')" :active="request()->routeIs('admin.notifications.*')">{{ __('Notifications') }}</x-responsive-nav-link>

@@ -36,9 +36,9 @@
                                         </a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $fund['code'] }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($fund['float'], 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($fund['current_balance'], 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($fund['spent'], 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($fund['float']) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($fund['current_balance']) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($fund['spent']) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                                         <a href="{{ route('accounting.petty-cash.show', $fund['id']) }}" class="text-indigo-600 hover:text-indigo-900">Manage</a>
                                     </td>

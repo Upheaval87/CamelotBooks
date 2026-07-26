@@ -105,11 +105,11 @@
                                     @foreach($periods as $period)
                                         @php $line = $accountLines->where('period_label', $period)->first(); @endphp
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ $line ? number_format($line->amount, 2) : '—' }}
+                                            {{ $line ? format_money($line->amount) : '—' }}
                                         </td>
                                     @endforeach
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                                        {{ number_format($accountLines->sum('amount'), 2) }}
+                                        {{ format_money($accountLines->sum('amount')) }}
                                     </td>
                                 </tr>
                             @empty

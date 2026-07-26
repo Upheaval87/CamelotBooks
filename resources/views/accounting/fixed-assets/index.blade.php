@@ -51,7 +51,7 @@
                                         {{ $asset->category->name ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($asset->acquisition_cost, 2) }}
+                                        {{ format_money($asset->acquisition_cost) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $asset->acquisition_date?->format('M d, Y') ?? '—' }}
@@ -60,7 +60,7 @@
                                         {{ $asset->in_service_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($asset->net_book_value ?? $asset->acquisition_cost, 2) }}
+                                        {{ format_money($asset->net_book_value ?? $asset->acquisition_cost) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $asset->status === 'active' ? 'green' : ($asset->status === 'disposed' ? 'red' : 'gray') }}-100 text-{{ $asset->status === 'active' ? 'green' : ($asset->status === 'disposed' ? 'red' : 'gray') }}-800">

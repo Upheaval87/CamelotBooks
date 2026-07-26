@@ -51,13 +51,13 @@
                                         {{ $line['account']->code }} - {{ $line['account']->name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($line['budget'], 2) }}
+                                        {{ format_money($line['budget']) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($line['actual'], 2) }}
+                                        {{ format_money($line['actual']) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold {{ $line['variance'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $line['variance'] >= 0 ? '+' : '' }}{{ number_format($line['variance'], 2) }}
+                                        {{ $line['variance'] >= 0 ? '+' : '' }}{{ format_money($line['variance']) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $line['variance'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                         {{ $line['variance_pct'] !== null ? number_format($line['variance_pct'], 1) . '%' : '—' }}
@@ -74,10 +74,10 @@
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td class="px-6 py-4 text-sm font-semibold text-gray-900">Total</td>
-                                <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ number_format($total_budget, 2) }}</td>
-                                <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ number_format($total_actual, 2) }}</td>
+                                <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ format_money($total_budget) }}</td>
+                                <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ format_money($total_actual) }}</td>
                                 <td class="px-6 py-4 text-sm font-bold text-right {{ $total_variance >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $total_variance >= 0 ? '+' : '' }}{{ number_format($total_variance, 2) }}
+                                    {{ $total_variance >= 0 ? '+' : '' }}{{ format_money($total_variance) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-right {{ $total_variance >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $total_budget != 0 ? number_format(($total_variance / $total_budget) * 100, 1) . '%' : '—' }}

@@ -10,7 +10,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Purchases</div>
-                    <div class="text-2xl font-bold text-indigo-600">${{ number_format(array_sum(array_column($data['monthly_summary'], 'total')), 2) }}</div>
+                    <div class="text-2xl font-bold text-indigo-600">@money(array_sum(array_column($data['monthly_summary'], 'total')))</div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Bills</div>
@@ -18,7 +18,7 @@
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Purchase Price Variance</div>
-                    <div class="text-2xl font-bold {{ $data['ppv_total'] >= 0 ? 'text-red-600' : 'text-green-600' }}">${{ number_format(abs($data['ppv_total']), 2) }}</div>
+                    <div class="text-2xl font-bold {{ $data['ppv_total'] >= 0 ? 'text-red-600' : 'text-green-600' }}">@money(abs($data['ppv_total']))</div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Avg Lead Time</div>
@@ -50,7 +50,7 @@
                                     <tr>
                                         <td class="px-4 py-3 text-sm text-gray-900">{{ $vendor['vendor_name'] }}</td>
                                         <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $vendor['bill_count'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">${{ number_format($vendor['total_spend'], 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($vendor['total_spend'])</td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>

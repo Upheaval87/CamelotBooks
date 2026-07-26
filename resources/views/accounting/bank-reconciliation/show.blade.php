@@ -32,20 +32,20 @@
             <div class="grid grid-cols-4 gap-6 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <dt class="text-xs font-medium text-gray-500 uppercase">Statement Balance</dt>
-                    <dd class="mt-1 text-lg font-bold text-gray-900">{{ number_format($reconciliation->statement_balance, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-bold text-gray-900">{{ format_money($reconciliation->statement_balance) }}</dd>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <dt class="text-xs font-medium text-gray-500 uppercase">Book Balance</dt>
-                    <dd class="mt-1 text-lg font-bold text-gray-900">{{ number_format($reconciliation->book_balance, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-bold text-gray-900">{{ format_money($reconciliation->book_balance) }}</dd>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <dt class="text-xs font-medium text-gray-500 uppercase">Cleared Balance</dt>
-                    <dd class="mt-1 text-lg font-bold text-gray-900">{{ number_format($reconciliation->cleared_balance, 2) }}</dd>
+                    <dd class="mt-1 text-lg font-bold text-gray-900">{{ format_money($reconciliation->cleared_balance) }}</dd>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <dt class="text-xs font-medium text-gray-500 uppercase">Difference</dt>
                     <dd class="mt-1 text-lg font-bold {{ $reconciliation->difference == 0 ? 'text-green-600' : 'text-red-600' }}">
-                        {{ number_format($reconciliation->difference, 2) }}
+                        {{ format_money($reconciliation->difference) }}
                     </dd>
                 </div>
             </div>
@@ -90,7 +90,7 @@
                                             {{ $line->description }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-right {{ $line->amount < 0 ? 'text-red-600' : 'text-green-600' }}">
-                                            {{ number_format(abs($line->amount), 2) }}
+                                            {{ format_money(abs($line->amount)) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-center">
                                             <button type="button" onclick="matchLine({{ $line->id }})" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
@@ -134,7 +134,7 @@
                                             {{ $transaction->description }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-right {{ ($transaction->credit - $transaction->debit) < 0 ? 'text-red-600' : 'text-green-600' }}">
-                                            {{ number_format(abs($transaction->credit - $transaction->debit), 2) }}
+                                            {{ format_money(abs($transaction->credit - $transaction->debit)) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-center">
                                             <button type="button" onclick="matchTransaction({{ $transaction->id }})" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
@@ -178,10 +178,10 @@
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $line->transaction_date?->format('M d, Y') ?? '—' }}</td>
                                         <td class="px-6 py-4 text-sm text-gray-500">{{ $line->description }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format(abs($line->amount), 2) }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money(abs($line->amount)) }}</td>
                                         <td class="px-6 py-4 text-center text-sm text-gray-400">↔</td>
                                         <td class="px-6 py-4 text-sm text-gray-500">{{ $line->bankTransaction->description ?? '—' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format(abs(($line->bankTransaction->credit ?? 0) - ($line->bankTransaction->debit ?? 0)), 2) }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money(abs(($line->bankTransaction->credit ?? 0) - ($line->bankTransaction->debit ?? 0))) }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <form method="POST" action="{{ route('accounting.bank-reconciliation.unmatch', $reconciliation->id) }}" class="inline">
                                                 @csrf

@@ -32,7 +32,7 @@
                                     <option value="">Select Product</option>
                                     @foreach($products as $product)
                                         <option value="{{ $product->id }}" {{ old('product_id') == $product->id ? 'selected' : '' }}>
-                                            {{ $product->sku ? $product->sku . ' - ' : '' }}{{ $product->name }} (On Hand: {{ number_format($product->stock->sum('quantity_on_hand'), 2) }})
+                                            {{ $product->sku ? $product->sku . ' - ' : '' }}{{ $product->name }} (On Hand: {{ format_money($product->stock->sum('quantity_on_hand')) }})
                                         </option>
                                     @endforeach
                                 </select>

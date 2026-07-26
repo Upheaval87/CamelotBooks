@@ -33,7 +33,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $return->return_number }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $return->sale?->sale_number ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $return->date?->format('M d, Y') ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 font-semibold">-${{ number_format($return->total, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 font-semibold">-@money($return->total)</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($return->isPosted())
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Posted</span>

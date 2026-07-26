@@ -65,10 +65,10 @@
                                         <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $row['account']->name }}</a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ $row['debit_balance'] > 0 ? number_format($row['debit_balance'], 2) : '' }}
+                                        {{ $row['debit_balance'] > 0 ? format_money($row['debit_balance']) : '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ $row['credit_balance'] > 0 ? number_format($row['credit_balance'], 2) : '' }}
+                                        {{ $row['credit_balance'] > 0 ? format_money($row['credit_balance']) : '' }}
                                     </td>
                                 </tr>
                             @empty
@@ -83,16 +83,16 @@
                             <tr>
                                 <td colspan="2" class="px-6 py-4 text-right text-sm font-bold text-gray-900">Totals</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                    {{ number_format($totalDebit, 2) }}
+                                    {{ format_money($totalDebit) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                    {{ number_format($totalCredit, 2) }}
+                                    {{ format_money($totalCredit) }}
                                 </td>
                             </tr>
                             <tr>
                                 <td colspan="2" class="px-6 py-4 text-right text-sm font-bold text-gray-900">Difference</td>
                                 <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm font-bold {{ $difference == 0 ? 'text-green-600' : 'text-red-600' }} text-right">
-                                    {{ number_format($difference, 2) }}
+                                    {{ format_money($difference) }}
                                     @if($difference == 0)
                                         <span class="ml-2 text-green-600">&#10003; Balanced</span>
                                     @endif

@@ -183,25 +183,25 @@
                 <tbody>
                     <tr>
                         <td>{{ __('Basic Pay') }}</td>
-                        <td class="text-right">{{ number_format($item->basic_pay, 2) }}</td>
+                        <td class="text-right">{{ format_money($item->basic_pay) }}</td>
                     </tr>
                     @if($item->allowances > 0)
                         <tr>
                             <td>{{ __('Allowances') }}</td>
-                            <td class="text-right">{{ number_format($item->allowances, 2) }}</td>
+                            <td class="text-right">{{ format_money($item->allowances) }}</td>
                         </tr>
                     @endif
                     @if(isset($payslipData['earnings']) && is_array($payslipData['earnings']))
                         @foreach($payslipData['earnings'] as $earning)
                             <tr>
                                 <td>{{ $earning['label'] ?? '—' }}</td>
-                                <td class="text-right">{{ number_format($earning['amount'] ?? 0, 2) }}</td>
+                                <td class="text-right">{{ format_money($earning['amount'] ?? 0) }}</td>
                             </tr>
                         @endforeach
                     @endif
                     <tr class="totals-row">
                         <td>{{ __('Gross Pay') }}</td>
-                        <td class="text-right">{{ number_format($item->gross_pay, 2) }}</td>
+                        <td class="text-right">{{ format_money($item->gross_pay) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -218,32 +218,32 @@
                     @if($item->paye > 0)
                         <tr>
                             <td>{{ __('PAYE') }}</td>
-                            <td class="text-right">{{ number_format($item->paye, 2) }}</td>
+                            <td class="text-right">{{ format_money($item->paye) }}</td>
                         </tr>
                     @endif
                     @if($item->pension_ee > 0)
                         <tr>
                             <td>{{ __('Pension (Employee)') }}</td>
-                            <td class="text-right">{{ number_format($item->pension_ee, 2) }}</td>
+                            <td class="text-right">{{ format_money($item->pension_ee) }}</td>
                         </tr>
                     @endif
                     @if($item->other_deductions > 0)
                         <tr>
                             <td>{{ __('Other Deductions') }}</td>
-                            <td class="text-right">{{ number_format($item->other_deductions, 2) }}</td>
+                            <td class="text-right">{{ format_money($item->other_deductions) }}</td>
                         </tr>
                     @endif
                     @if(isset($payslipData['deductions']) && is_array($payslipData['deductions']))
                         @foreach($payslipData['deductions'] as $deduction)
                             <tr>
                                 <td>{{ $deduction['label'] ?? '—' }}</td>
-                                <td class="text-right">{{ number_format($deduction['amount'] ?? 0, 2) }}</td>
+                                <td class="text-right">{{ format_money($deduction['amount'] ?? 0) }}</td>
                             </tr>
                         @endforeach
                     @endif
                     <tr class="totals-row">
                         <td>{{ __('Total Deductions') }}</td>
-                        <td class="text-right">{{ number_format($item->paye + $item->pension_ee + $item->other_deductions, 2) }}</td>
+                        <td class="text-right">{{ format_money($item->paye + $item->pension_ee + $item->other_deductions) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -252,7 +252,7 @@
                 <tbody>
                     <tr class="net-pay-row">
                         <td>{{ __('Net Pay') }}</td>
-                        <td class="text-right">{{ number_format($item->net_pay, 2) }}</td>
+                        <td class="text-right">{{ format_money($item->net_pay) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -270,7 +270,7 @@
                         @foreach($payslipData['employer_contributions'] as $contribution)
                             <tr>
                                 <td>{{ $contribution['label'] ?? '—' }}</td>
-                                <td class="text-right">{{ number_format($contribution['amount'] ?? 0, 2) }}</td>
+                                <td class="text-right">{{ format_money($contribution['amount'] ?? 0) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

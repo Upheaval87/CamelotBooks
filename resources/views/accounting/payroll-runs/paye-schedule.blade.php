@@ -175,7 +175,7 @@
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->employee->name ?? '—' }}</td>
-                            <td class="text-right">{{ number_format($item->paye, 2) }}</td>
+                            <td class="text-right">{{ format_money($item->paye) }}</td>
                         </tr>
                     @endif
                 @empty
@@ -188,7 +188,7 @@
                 @if($totalPaye > 0)
                     <tr class="totals-row">
                         <td colspan="2">{{ __('Total PAYE Remittance') }}</td>
-                        <td class="text-right">{{ number_format($totalPaye, 2) }}</td>
+                        <td class="text-right">{{ format_money($totalPaye) }}</td>
                     </tr>
                 @endif
             </tbody>

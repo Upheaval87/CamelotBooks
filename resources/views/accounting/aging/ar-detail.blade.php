@@ -65,7 +65,7 @@
                                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row['invoice_number'] ?? '-' }}</td>
                                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row['due_date'] ?? '-' }}</td>
                                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row['days_overdue'] ?? 0 }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ number_format($row['total'], 2) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($row['total']) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -76,7 +76,7 @@
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td colspan="4" class="px-6 py-3 text-sm font-bold text-gray-900 text-right">Total</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totals['total'], 2) }}</td>
+                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['total']) }}</td>
                             </tr>
                         </tfoot>
                     </table>

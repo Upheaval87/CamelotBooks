@@ -7,10 +7,10 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('Total Cash Position') }}</h3>
-                <p class="text-3xl font-bold text-indigo-600">{{ number_format($totalCashPosition, 2) }}</p>
+                <p class="text-3xl font-bold text-indigo-600">{{ format_money($totalCashPosition) }}</p>
                 <div class="mt-2 flex gap-6 text-sm text-gray-500">
-                    <span>Bank: <strong class="text-gray-900">{{ number_format($totalBankBalance, 2) }}</strong></span>
-                    <span>Petty Cash: <strong class="text-gray-900">{{ number_format($totalPettyCash, 2) }}</strong></span>
+                    <span>Bank: <strong class="text-gray-900">{{ format_money($totalBankBalance) }}</strong></span>
+                    <span>Petty Cash: <strong class="text-gray-900">{{ format_money($totalPettyCash) }}</strong></span>
                 </div>
             </div>
 
@@ -37,8 +37,8 @@
                                             {{ $account->code }} - {{ $account->name }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($account->current_balance, 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ number_format($account->reconciled_balance, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($account->current_balance) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ format_money($account->reconciled_balance) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ $account->last_reconciled_date?->format('M d, Y') ?? 'Never' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                         <a href="{{ route('accounting.bank-accounts.register', $account->id) }}" class="text-indigo-600 hover:text-indigo-900">Register</a>
@@ -78,9 +78,9 @@
                                             {{ $fund['code'] }} - {{ $fund['name'] }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ number_format($fund['float'], 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($fund['current_balance'], 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ number_format($fund['spent'], 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ format_money($fund['float']) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($fund['current_balance']) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ format_money($fund['spent']) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                         <a href="{{ route('accounting.petty-cash.show', $fund['id']) }}" class="text-indigo-600 hover:text-indigo-900">Manage</a>
                                     </td>

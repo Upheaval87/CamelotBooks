@@ -44,22 +44,22 @@
                                         </a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($vendor->total_bills, 2) }}
+                                        {{ format_money($vendor->total_bills) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($vendor->total_paid, 2) }}
+                                        {{ format_money($vendor->total_paid) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $vendor->open_balance > 0 ? 'text-red-600 font-semibold' : 'text-gray-900' }}">
-                                        {{ number_format($vendor->open_balance, 2) }}
+                                        {{ format_money($vendor->open_balance) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                                         {{ $vendor->open_pos }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $vendor->credit_balance > 0 ? 'text-green-600 font-semibold' : 'text-gray-900' }}">
-                                        {{ number_format($vendor->credit_balance, 2) }}
+                                        {{ format_money($vendor->credit_balance) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($vendor->expense_total, 2) }}
+                                        {{ format_money($vendor->expense_total) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                         <a href="{{ route('accounting.vendor-centre.show', $vendor) }}" class="text-indigo-600 hover:text-indigo-900">View Details</a>

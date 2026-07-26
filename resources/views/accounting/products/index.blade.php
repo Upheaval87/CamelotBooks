@@ -88,10 +88,10 @@
                                         {{ str_replace('_', ' ', ucfirst($product->type)) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($product->sales_price ?? 0, 2) }}
+                                        {{ format_money($product->sales_price ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($product->purchase_price ?? 0, 2) }}
+                                        {{ format_money($product->purchase_price ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $product->incomeAccount?->name ?? '—' }}

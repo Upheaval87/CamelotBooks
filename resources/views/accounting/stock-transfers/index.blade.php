@@ -40,7 +40,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $transfer->product->name ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transfer->fromBranch->name ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transfer->toBranch->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($transfer->quantity, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($transfer->quantity) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($transfer->status === 'completed')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>

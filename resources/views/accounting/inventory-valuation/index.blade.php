@@ -23,7 +23,7 @@
                     <h3 class="text-lg font-medium text-gray-900">All Products (FIFO Valuation)</h3>
                     <div class="text-right">
                         <div class="text-xs text-gray-500 uppercase">Total Inventory Value</div>
-                        <div class="text-xl font-bold text-gray-900">${{ number_format($totalValue, 2) }}</div>
+                        <div class="text-xl font-bold text-gray-900">@money($totalValue)</div>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -43,9 +43,9 @@
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $row['sku'] ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['product_name'] }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($row['total_quantity'], 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">${{ number_format((float)$row['avg_cost'], 4) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">${{ number_format((float)$row['total_value'], 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($row['total_quantity']) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money((float)$row['avg_cost'], null, 4) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">@money((float)$row['total_value'])</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                                         {{ $totalValue > 0 ? number_format(((float)$row['total_value'] / $totalValue) * 100, 1) . '%' : '0.0%' }}
                                     </td>
@@ -62,7 +62,7 @@
                             <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                                 <tr>
                                     <td colspan="4" class="px-6 py-3 text-sm font-bold text-gray-900 text-right">Total</td>
-                                    <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">${{ number_format($totalValue, 2) }}</td>
+                                    <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">@money($totalValue)</td>
                                     <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">100.0%</td>
                                 </tr>
                             </tfoot>

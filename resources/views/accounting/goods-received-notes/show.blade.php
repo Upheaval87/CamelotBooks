@@ -96,8 +96,8 @@
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ $line->description }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ $line->quantity_ordered ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">{{ $line->quantity_received }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ number_format($line->unit_cost, 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">{{ number_format($line->total_cost, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ format_money($line->unit_cost) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">{{ format_money($line->total_cost) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -107,7 +107,7 @@
                     <div class="w-48 space-y-2">
                         <div class="flex justify-between text-sm font-semibold border-t pt-2">
                             <span class="text-gray-800">Total Received:</span>
-                            <span class="text-gray-900">{{ number_format($grn->lines->sum('total_cost'), 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($grn->lines->sum('total_cost')) }}</span>
                         </div>
                     </div>
                 </div>

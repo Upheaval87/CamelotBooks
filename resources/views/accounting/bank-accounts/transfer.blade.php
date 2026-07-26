@@ -35,7 +35,7 @@
                                 <option value="">Select Source Account</option>
                                 @foreach($bankAccounts as $account)
                                     <option value="{{ $account->id }}" {{ old('from_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->name }} ({{ number_format($account->current_balance, 2) }})
+                                        {{ $account->name }} ({{ format_money($account->current_balance) }})
                                     </option>
                                 @endforeach
                             </select>
@@ -48,7 +48,7 @@
                                 <option value="">Select Destination Account</option>
                                 @foreach($bankAccounts as $account)
                                     <option value="{{ $account->id }}" {{ old('to_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->name }} ({{ number_format($account->current_balance, 2) }})
+                                        {{ $account->name }} ({{ format_money($account->current_balance) }})
                                     </option>
                                 @endforeach
                             </select>

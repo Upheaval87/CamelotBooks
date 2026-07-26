@@ -64,7 +64,7 @@
 
             <div class="mb-4 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="text-sm font-semibold text-gray-700">
-                    Opening Balance: <span class="text-gray-900">{{ number_format($openingBalance, 2) }}</span>
+                    Opening Balance: <span class="text-gray-900">{{ format_money($openingBalance) }}</span>
                 </div>
             </div>
 
@@ -100,13 +100,13 @@
                                         {{ $txn['line']->memo ?? $txn['line']->journalEntry->memo ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ (float) $txn['line']->debit > 0 ? number_format((float) $txn['line']->debit, 2) : '' }}
+                                        {{ (float) $txn['line']->debit > 0 ? format_money((float) $txn['line']->debit) : '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ (float) $txn['line']->credit > 0 ? number_format((float) $txn['line']->credit, 2) : '' }}
+                                        {{ (float) $txn['line']->credit > 0 ? format_money((float) $txn['line']->credit) : '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                                        {{ number_format($txn['running_balance'], 2) }}
+                                        {{ format_money($txn['running_balance']) }}
                                     </td>
                                 </tr>
                             @empty
@@ -126,7 +126,7 @@
 
             <div class="mt-4 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="text-sm font-semibold text-gray-700">
-                    Closing Balance: <span class="text-gray-900">{{ number_format($closingBalance, 2) }}</span>
+                    Closing Balance: <span class="text-gray-900">{{ format_money($closingBalance) }}</span>
                 </div>
             </div>
         </div>

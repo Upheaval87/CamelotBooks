@@ -47,13 +47,13 @@
                                         {{ $impairment->impairment_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($impairment->carrying_amount ?? 0, 2) }}
+                                        {{ format_money($impairment->carrying_amount ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($impairment->recoverable_amount ?? 0, 2) }}
+                                        {{ format_money($impairment->recoverable_amount ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 text-right font-semibold">
-                                        {{ number_format($impairment->impairment_loss ?? 0, 2) }}
+                                        {{ format_money($impairment->impairment_loss ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($impairment->is_reversed)

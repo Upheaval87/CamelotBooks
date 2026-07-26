@@ -37,7 +37,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $voucher->date->format('M d, Y') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $voucher->vendor->name ?? 'N/A' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ str_replace('_', ' ', ucfirst($voucher->allocation_method)) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($voucher->total_amount, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($voucher->total_amount) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($voucher->status === 'posted')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Posted</span>

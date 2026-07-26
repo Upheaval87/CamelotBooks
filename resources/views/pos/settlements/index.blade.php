@@ -38,9 +38,9 @@
                                 <td class="px-6 py-4 text-sm text-gray-500">{{ $settlement->paymentMethod->name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-500">{{ $settlement->bankAccount->name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-500">{{ $settlement->period_start }} – {{ $settlement->period_end }}</td>
-                                <td class="px-6 py-4 text-sm text-right">${{ number_format($settlement->total_amount, 2) }}</td>
-                                <td class="px-6 py-4 text-sm text-right text-red-600">${{ number_format($settlement->fee_amount, 2) }}</td>
-                                <td class="px-6 py-4 text-sm text-right font-semibold">${{ number_format($settlement->net_amount, 2) }}</td>
+                                <td class="px-6 py-4 text-sm text-right">@money($settlement->total_amount)</td>
+                                <td class="px-6 py-4 text-sm text-right text-red-600">@money($settlement->fee_amount)</td>
+                                <td class="px-6 py-4 text-sm text-right font-semibold">@money($settlement->net_amount)</td>
                                 <td class="px-6 py-4 text-center">
                                     @if($settlement->status === 'posted')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Posted</span>

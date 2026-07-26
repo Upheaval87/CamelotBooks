@@ -55,11 +55,11 @@
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Sales Price') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($product->sales_price ?? 0, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($product->sales_price ?? 0) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Purchase Price') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($product->purchase_price ?? 0, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($product->purchase_price ?? 0) }}</dd>
                     </div>
                 </div>
             </div>
@@ -77,7 +77,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Tax Rate') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($product->tax_rate ?? 0, 2) }}%</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($product->tax_rate ?? 0) }}%</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Taxable') }}</dt>

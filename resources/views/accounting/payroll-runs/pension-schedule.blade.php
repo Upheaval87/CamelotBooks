@@ -185,9 +185,9 @@
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->employee->name ?? '—' }}</td>
-                            <td class="text-right">{{ number_format($item->pension_ee, 2) }}</td>
-                            <td class="text-right">{{ number_format($item->pension_er, 2) }}</td>
-                            <td class="text-right">{{ number_format($item->pension_ee + $item->pension_er, 2) }}</td>
+                            <td class="text-right">{{ format_money($item->pension_ee) }}</td>
+                            <td class="text-right">{{ format_money($item->pension_er) }}</td>
+                            <td class="text-right">{{ format_money($item->pension_ee + $item->pension_er) }}</td>
                         </tr>
                     @endif
                 @empty
@@ -200,9 +200,9 @@
                 @if($totalGrand > 0)
                     <tr class="totals-row">
                         <td colspan="2">{{ __('Total Pension Remittance') }}</td>
-                        <td class="text-right">{{ number_format($totalEE, 2) }}</td>
-                        <td class="text-right">{{ number_format($totalER, 2) }}</td>
-                        <td class="text-right">{{ number_format($totalGrand, 2) }}</td>
+                        <td class="text-right">{{ format_money($totalEE) }}</td>
+                        <td class="text-right">{{ format_money($totalER) }}</td>
+                        <td class="text-right">{{ format_money($totalGrand) }}</td>
                     </tr>
                 @endif
             </tbody>

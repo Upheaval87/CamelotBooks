@@ -52,7 +52,7 @@
                             <h3 class="text-lg font-semibold text-green-700">Till Open</h3>
                             <p class="text-sm text-gray-500 mt-1">
                                 Opened at {{ $openSession->opened_at?->format('g:i A') }} ·
-                                Float: ${{ number_format($openSession->opening_float, 2) }}
+                                Float: @money($openSession->opening_float)
                             </p>
                         </div>
                         <div class="flex gap-3">
@@ -87,14 +87,14 @@
                     </div>
                     <div class="bg-white shadow-sm sm:rounded-lg p-6">
                         <p class="text-sm font-medium text-gray-500">Revenue Today</p>
-                        <p class="mt-1 text-3xl font-bold text-gray-900">${{ number_format($todaySalesTotal, 2) }}</p>
+                        <p class="mt-1 text-3xl font-bold text-gray-900">@money($todaySalesTotal)</p>
                     </div>
                     <div class="bg-white shadow-sm sm:rounded-lg p-6">
                         <p class="text-sm font-medium text-gray-500">Expected in Drawer</p>
                         @php
                             $expectedCash = (float) $openSession->opening_float + (float) $todaySalesTotal;
                         @endphp
-                        <p class="mt-1 text-3xl font-bold text-gray-900">${{ number_format($expectedCash, 2) }}</p>
+                        <p class="mt-1 text-3xl font-bold text-gray-900">@money($expectedCash)</p>
                     </div>
                 </div>
             @endif

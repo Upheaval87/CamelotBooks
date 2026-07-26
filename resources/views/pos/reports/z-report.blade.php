@@ -45,26 +45,26 @@
                         <p class="text-xs text-gray-500 uppercase">Returns</p>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <p class="text-2xl font-bold text-gray-900">${{ number_format($data['sales_total'], 2) }}</p>
+                        <p class="text-2xl font-bold text-gray-900">@money($data['sales_total'])</p>
                         <p class="text-xs text-gray-500 uppercase">Gross Amount</p>
                     </div>
                     <div class="text-center p-4 bg-indigo-50 rounded-lg">
-                        <p class="text-2xl font-bold text-indigo-700">${{ number_format($data['net_sales'], 2) }}</p>
+                        <p class="text-2xl font-bold text-indigo-700">@money($data['net_sales'])</p>
                         <p class="text-xs text-gray-500 uppercase">Net Sales</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 mt-4">
                     <div class="text-center p-3 bg-gray-50 rounded-lg">
                         <p class="text-sm text-gray-600">Subtotal</p>
-                        <p class="font-semibold text-gray-900">${{ number_format($data['sales_subtotal'], 2) }}</p>
+                        <p class="font-semibold text-gray-900">@money($data['sales_subtotal'])</p>
                     </div>
                     <div class="text-center p-3 bg-gray-50 rounded-lg">
                         <p class="text-sm text-gray-600">Tax</p>
-                        <p class="font-semibold text-gray-900">${{ number_format($data['sales_tax'], 2) }}</p>
+                        <p class="font-semibold text-gray-900">@money($data['sales_tax'])</p>
                     </div>
                     <div class="text-center p-3 bg-red-50 rounded-lg">
                         <p class="text-sm text-gray-600">Returns</p>
-                        <p class="font-semibold text-red-600">-${{ number_format($data['returns_total'], 2) }}</p>
+                        <p class="font-semibold text-red-600">-@money($data['returns_total'])</p>
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@
                             <tr>
                                 <td class="px-4 py-2 text-sm text-gray-900">{{ $pm->method_name }}</td>
                                 <td class="px-4 py-2 text-sm text-right text-gray-900">{{ $pm->sale_count }}</td>
-                                <td class="px-4 py-2 text-sm text-right font-semibold text-gray-900">${{ number_format($pm->total_amount, 2) }}</td>
+                                <td class="px-4 py-2 text-sm text-right font-semibold text-gray-900">@money($pm->total_amount)</td>
                             </tr>
                         @empty
                             <tr>
@@ -100,28 +100,28 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <p class="text-sm text-indigo-600">Opening Float</p>
-                        <p class="font-semibold text-gray-900">${{ number_format($data['opening_float'], 2) }}</p>
+                        <p class="font-semibold text-gray-900">@money($data['opening_float'])</p>
                     </div>
                     <div>
                         <p class="text-sm text-indigo-600">+ Cash Payments</p>
-                        <p class="font-semibold text-gray-900">${{ number_format($data['cash_payments'], 2) }}</p>
+                        <p class="font-semibold text-gray-900">@money($data['cash_payments'])</p>
                     </div>
                     <div>
                         <p class="text-sm text-indigo-600">− Returns (Cash)</p>
-                        <p class="font-semibold text-gray-900">${{ number_format($data['returns_total'], 2) }}</p>
+                        <p class="font-semibold text-gray-900">@money($data['returns_total'])</p>
                     </div>
                     <div>
                         <p class="text-sm text-indigo-600">= Expected Cash</p>
-                        <p class="text-xl font-bold text-indigo-700">${{ number_format($data['expected_cash'], 2) }}</p>
+                        <p class="text-xl font-bold text-indigo-700">@money($data['expected_cash'])</p>
                     </div>
                     <div>
                         <p class="text-sm text-indigo-600">Actual Cash Count</p>
-                        <p class="text-xl font-bold text-gray-900">{{ $data['actual_cash_count'] !== null ? '$' . number_format($data['actual_cash_count'], 2) : '—' }}</p>
+                        <p class="text-xl font-bold text-gray-900">{{ $data['actual_cash_count'] !== null ? format_money($data['actual_cash_count']) : '—' }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-indigo-600">Variance</p>
                         <p class="text-xl font-bold {{ ($data['variance'] ?? 0) > 0 ? 'text-green-600' : (($data['variance'] ?? 0) < 0 ? 'text-red-600' : 'text-gray-900') }}">
-                            {{ $data['variance'] !== null ? (($data['variance'] >= 0 ? '+' : '') . '$' . number_format($data['variance'], 2)) : '—' }}
+                            {{ $data['variance'] !== null ? ($data['variance'] >= 0 ? '+' : '') . format_money($data['variance']) : '—' }}
                         </p>
                     </div>
                 </div>

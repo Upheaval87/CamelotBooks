@@ -14,13 +14,13 @@
             @foreach($items as $item)
                 <tr>
                     <td class="indent">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
-                    <td class="text-right">{{ number_format(max(0, $item['net']), 2) }}</td>
+                    <td class="text-right">{{ format_money(max(0, $item['net'])) }}</td>
                 </tr>
             @endforeach
         @endforeach
         <tr class="row-subtotal">
             <td class="text-right">Total Income</td>
-            <td class="text-right">{{ number_format($total_income, 2) }}</td>
+            <td class="text-right">{{ format_money($total_income) }}</td>
         </tr>
         <tr><td colspan="2"></td></tr>
         <tr class="section-header"><td colspan="2">Expenses</td></tr>
@@ -28,18 +28,18 @@
             @foreach($items as $item)
                 <tr>
                     <td class="indent">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
-                    <td class="text-right">{{ number_format(max(0, $item['net']), 2) }}</td>
+                    <td class="text-right">{{ format_money(max(0, $item['net'])) }}</td>
                 </tr>
             @endforeach
         @endforeach
         <tr class="row-subtotal">
             <td class="text-right">Total Expenses</td>
-            <td class="text-right">{{ number_format($total_expenses, 2) }}</td>
+            <td class="text-right">{{ format_money($total_expenses) }}</td>
         </tr>
         <tr><td colspan="2"></td></tr>
         <tr class="row-grand">
             <td class="text-right">{{ $net_income >= 0 ? 'Net Income' : 'Net Loss' }}</td>
-            <td class="text-right {{ $net_income < 0 ? 'negative' : '' }}">{{ number_format(abs($net_income), 2) }}</td>
+            <td class="text-right {{ $net_income < 0 ? 'negative' : '' }}">{{ format_money(abs($net_income)) }}</td>
         </tr>
     </tbody>
 </table>

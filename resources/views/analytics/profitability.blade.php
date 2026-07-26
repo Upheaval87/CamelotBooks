@@ -44,8 +44,8 @@
                                 <tr>
                                     <td class="px-4 py-3 text-sm text-gray-900">{{ $product['product_name'] }} <span class="text-xs text-gray-400">({{ $product['sku'] }})</span></td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($product['quantity_sold'], 0) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($product['avg_price'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">${{ number_format($product['revenue'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($product['avg_price'])</td>
+                                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($product['revenue'])</td>
                                 </tr>
                             @empty
                                 <tr><td colspan="4" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>
@@ -60,15 +60,15 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                         <div class="text-xs text-gray-500 uppercase">Total Revenue</div>
-                        <div class="text-lg font-semibold text-gray-800">${{ number_format($data['income_statement']['total_income'], 2) }}</div>
+                        <div class="text-lg font-semibold text-gray-800">@money($data['income_statement']['total_income'])</div>
                     </div>
                     <div>
                         <div class="text-xs text-gray-500 uppercase">Total Expenses</div>
-                        <div class="text-lg font-semibold text-gray-800">${{ number_format($data['income_statement']['total_expenses'], 2) }}</div>
+                        <div class="text-lg font-semibold text-gray-800">@money($data['income_statement']['total_expenses'])</div>
                     </div>
                     <div>
                         <div class="text-xs text-gray-500 uppercase">Net Income</div>
-                        <div class="text-lg font-semibold {{ $data['income_statement']['net_income'] >= 0 ? 'text-green-600' : 'text-red-600' }}">${{ number_format($data['income_statement']['net_income'], 2) }}</div>
+                        <div class="text-lg font-semibold {{ $data['income_statement']['net_income'] >= 0 ? 'text-green-600' : 'text-red-600' }}">@money($data['income_statement']['net_income'])</div>
                     </div>
                 </div>
             </div>

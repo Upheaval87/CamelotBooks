@@ -13,7 +13,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold text-gray-800">Customer Summary</h3>
                     <div class="text-sm text-gray-500">
-                        {{ $total_customers }} customers &middot; Total net revenue: <span class="font-semibold text-gray-800">${{ number_format($total_revenue, 2) }}</span>
+                        {{ $total_customers }} customers &middot; Total net revenue: <span class="font-semibold text-gray-800">@money($total_revenue)</span>
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -38,11 +38,11 @@
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $customer->customer_name ?? 'Walk-in' }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-500">{{ $customer->email ?? '—' }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $customer->invoice_count }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($customer->total_revenue, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($customer->total_credits, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-medium {{ $customer->net_revenue >= 0 ? 'text-gray-900' : 'text-red-600' }}">${{ number_format($customer->net_revenue, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($customer->total_revenue)</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($customer->total_credits)</td>
+                                    <td class="px-4 py-3 text-sm text-right font-medium {{ $customer->net_revenue >= 0 ? 'text-gray-900' : 'text-red-600' }}">@money($customer->net_revenue)</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $customer->months_active }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($customer->avg_monthly_revenue, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($customer->avg_monthly_revenue)</td>
                                     <td class="px-4 py-3 text-sm text-gray-600">{{ $customer->first_invoice_date ? \Carbon\Carbon::parse($customer->first_invoice_date)->format('M d, Y') : '—' }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-600">{{ $customer->last_invoice_date ? \Carbon\Carbon::parse($customer->last_invoice_date)->format('M d, Y') : '—' }}</td>
                                 </tr>

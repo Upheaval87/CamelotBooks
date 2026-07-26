@@ -51,7 +51,7 @@
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Default Reorder Point</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->default_reorder_point ? number_format($category->default_reorder_point, 2) : '—' }}</dd>
+                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->default_reorder_point ? format_money($category->default_reorder_point) : '—' }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Default Base UOM</dt>
@@ -87,7 +87,7 @@
                                                 <span class="text-gray-400">&mdash;</span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">${{ number_format($product->sales_price, 2) }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 text-right">@money($product->sales_price)</td>
                                     </tr>
                                 @endforeach
                             </tbody>

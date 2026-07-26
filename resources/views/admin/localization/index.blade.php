@@ -45,12 +45,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Currency Display</label>
-                        <select name="currency_display" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="symbol" {{ ($settings['currency_display'] ?? 'symbol') === 'symbol' ? 'selected' : '' }}>Symbol ($1,234.56)</option>
-                            <option value="code" {{ ($settings['currency_display'] ?? '') === 'code' ? 'selected' : '' }}>Code (USD 1,234.56)</option>
-                            <option value="none" {{ ($settings['currency_display'] ?? '') === 'none' ? 'selected' : '' }}>None (1,234.56)</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700">Currency Symbol</label>
+                        <input type="text" name="currency_symbol"
+                            value="{{ $settings['currency_symbol'] ?? '$' }}"
+                            placeholder="e.g. K, $, MWK, EUR"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                        <p class="mt-1 text-xs text-gray-500">The symbol or code shown before amounts (e.g. <code>K</code>, <code>$</code>, <code>MWK</code>).</p>
                     </div>
                 </div>
 

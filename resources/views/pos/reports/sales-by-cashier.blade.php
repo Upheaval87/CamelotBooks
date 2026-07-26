@@ -41,10 +41,10 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['user']?->name ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ $row['sessions_count'] }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{{ $row['sales_count'] }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">${{ number_format($row['sales_total'], 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600">${{ number_format($row['returns_total'], 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900">${{ number_format($row['net_sales'], 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">${{ number_format($row['average_sale'], 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">@money($row['sales_total'])</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600">@money($row['returns_total'])</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900">@money($row['net_sales'])</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">@money($row['average_sale'])</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -58,11 +58,11 @@
                                 <td class="px-6 py-3 text-sm text-gray-900">Grand Total</td>
                                 <td class="px-6 py-3 text-sm text-right text-gray-900">—</td>
                                 <td class="px-6 py-3 text-sm text-right text-gray-900">{{ $data['grand_count'] }}</td>
-                                <td class="px-6 py-3 text-sm text-right text-gray-900">${{ number_format($data['grand_total_sales'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm text-right text-red-600">${{ number_format($data['grand_total_returns'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm text-right text-indigo-700">${{ number_format($data['grand_net_sales'], 2) }}</td>
+                                <td class="px-6 py-3 text-sm text-right text-gray-900">@money($data['grand_total_sales'])</td>
+                                <td class="px-6 py-3 text-sm text-right text-red-600">@money($data['grand_total_returns'])</td>
+                                <td class="px-6 py-3 text-sm text-right text-indigo-700">@money($data['grand_net_sales'])</td>
                                 <td class="px-6 py-3 text-sm text-right text-gray-500">
-                                    ${{ $data['grand_count'] > 0 ? number_format($data['grand_total_sales'] / $data['grand_count'], 2) : '0.00' }}
+                                    @money($data['grand_count'] > 0 ? $data['grand_total_sales'] / $data['grand_count'] : 0)
                                 </td>
                             </tr>
                         </tfoot>

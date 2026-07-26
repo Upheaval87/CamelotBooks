@@ -15,7 +15,7 @@
                     <h3 class="text-lg font-medium text-gray-900">Valuation by Category (FIFO)</h3>
                     <div class="text-right">
                         <div class="text-xs text-gray-500 uppercase">Grand Total</div>
-                        <div class="text-xl font-bold text-gray-900">${{ number_format($grandTotal, 2) }}</div>
+                        <div class="text-xl font-bold text-gray-900">@money($grandTotal)</div>
                     </div>
                 </div>
                 <div class="p-6 space-y-6">
@@ -29,7 +29,7 @@
                                 </div>
                                 <div class="text-right">
                                     <span class="text-sm text-gray-500">{{ count($category['products']) }} products</span>
-                                    <span class="ml-4 font-bold text-gray-900">${{ number_format($category['total_value'], 2) }}</span>
+                                    <span class="ml-4 font-bold text-gray-900">@money($category['total_value'])</span>
                                 </div>
                             </div>
                             @if(count($category['products']) > 0)
@@ -48,8 +48,8 @@
                                             <tr class="hover:bg-gray-50">
                                                 <td class="px-4 py-2 text-sm text-gray-500 pl-8">{{ $product['sku'] ?? '—' }}</td>
                                                 <td class="px-4 py-2 text-sm text-gray-900">{{ $product['name'] }}</td>
-                                                <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($product['quantity'], 2) }}</td>
-                                                <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">${{ number_format($product['value'], 2) }}</td>
+                                                <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($product['quantity']) }}</td>
+                                                <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">@money($product['value'])</td>
                                                 <td class="px-4 py-2 text-sm text-gray-500 text-right">
                                                     {{ $category['total_value'] > 0 ? number_format(($product['value'] / $category['total_value']) * 100, 1) . '%' : '0.0%' }}
                                                 </td>
@@ -73,7 +73,7 @@
                                 </div>
                                 <div class="text-right">
                                     <span class="text-sm text-orange-600">{{ count($uncategorizedData) }} products</span>
-                                    <span class="ml-4 font-bold text-orange-800">${{ number_format(array_sum(array_column($uncategorizedData, 'value')), 2) }}</span>
+                                    <span class="ml-4 font-bold text-orange-800">@money(array_sum(array_column($uncategorizedData, 'value')))</span>
                                 </div>
                             </div>
                             <table class="min-w-full divide-y divide-gray-200">
@@ -90,8 +90,8 @@
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-4 py-2 text-sm text-gray-500 pl-8">{{ $product['sku'] ?? '—' }}</td>
                                             <td class="px-4 py-2 text-sm text-gray-900">{{ $product['name'] }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($product['quantity'], 2) }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">${{ number_format($product['value'], 2) }}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($product['quantity']) }}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">@money($product['value'])</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

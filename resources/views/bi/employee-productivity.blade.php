@@ -29,10 +29,10 @@
                                 <tr>
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $branch['branch_name'] }}</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $branch['headcount'] }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['total_payroll'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['revenue'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['cost_per_employee'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['revenue_per_employee'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['total_payroll'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['revenue'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['cost_per_employee'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['revenue_per_employee'])</td>
                                     <td class="px-4 py-3 text-sm text-right {{ $branch['ratio'] > 80 ? 'text-red-600' : 'text-gray-600' }}">{{ number_format($branch['ratio'], 1) }}%</td>
                                 </tr>
                             @empty

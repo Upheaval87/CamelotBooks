@@ -65,7 +65,7 @@
                                             <span x-show="p.tracked_as_inventory" class="ml-2 text-xs"
                                                 x-text="p.current_stock > 0 ? 'Stock: ' + p.current_stock : 'Out of stock'"></span>
                                         </div>
-                                        <span class="text-sm font-semibold" x-text="'$' + parseFloat(p.sales_price).toFixed(2)"></span>
+                                        <span class="text-sm font-semibold" x-text="formatMoney(parseFloat(p.sales_price))"></span>
                                     </div>
                                 </template>
                             </div>
@@ -73,6 +73,16 @@
                     </div>
 
                     <div class="flex gap-3 mb-4 items-end">
+                        <div class="w-[160px]" x-show="selectedProductName">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                            <select x-model="addUom" @change="onUomChange()"
+                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                <option value="">Each (base)</option>
+                                <template x-for="u in (productUoms.uoms || []).filter(u => !u.is_base)" :key="u.uom_name">
+                                    <option :value="u.uom_name" x-text="u.uom_name + ' (' + u.conversion_factor + 'x)'"></option>
+                                </template>
+                            </select>
+                        </div>
                         <div class="w-[90px]">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
                             <input type="number" x-model="addQty" min="1" step="1" value="1"
@@ -93,6 +103,7 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">UOM</th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Discount</th>
@@ -105,9 +116,24 @@
                                 <template x-for="(line, index) in lines" :key="index">
                                     <tr>
                                         <td class="px-4 py-2 text-sm text-gray-900" x-text="line.product_name"></td>
+                                        <td class="px-4 py-2 text-sm text-center">
+                                            <template x-if="line.transaction_uom">
+                                                <select x-model="line.transaction_uom" @change="onLineUomChange(index)"
+                                                    class="w-28 border-gray-300 rounded-md shadow-sm text-xs">
+                                                    <option value="">Each</option>
+                                                    <template x-for="u in (uomConversions[line.product_id] || [])" :key="u.uom_name">
+                                                        <option :value="u.uom_name" x-text="u.uom_name"></option>
+                                                    </template>
+                                                </select>
+                                            </template>
+                                            <template x-if="!line.transaction_uom">
+                                                <span class="text-gray-400 text-xs">Each</span>
+                                            </template>
+                                        </td>
                                         <td class="px-4 py-2 text-sm text-right">
-                                            <input type="number" x-model.number="line.quantity" min="0.01" step="1"
-                                                class="w-20 text-right border-gray-300 rounded-md shadow-sm text-sm" @input="recalcLine(index)" />
+                                            <input type="number" x-model.number="line.transaction_qty" min="0.01" step="1"
+                                                class="w-20 text-right border-gray-300 rounded-md shadow-sm text-sm"
+                                                @input="onLineQtyChange(index)" />
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
                                             <input type="number" x-model.number="line.unit_price" min="0" step="0.01"
@@ -117,15 +143,15 @@
                                             <input type="number" x-model.number="line.discount_amount" min="0" step="0.01"
                                                 class="w-20 text-right border-gray-300 rounded-md shadow-sm text-sm" @input="recalcLine(index)" />
                                         </td>
-                                        <td class="px-4 py-2 text-sm text-right text-gray-500" x-text="'$' + line.tax_amount.toFixed(2)"></td>
-                                        <td class="px-4 py-2 text-sm text-right font-semibold" x-text="'$' + line.line_total.toFixed(2)"></td>
+                                        <td class="px-4 py-2 text-sm text-right text-gray-500" x-text="formatMoney(line.tax_amount)"></td>
+                                        <td class="px-4 py-2 text-sm text-right font-semibold" x-text="formatMoney(line.line_total)"></td>
                                         <td class="px-4 py-2 text-center">
                                             <button type="button" @click="removeLine(index)" class="text-red-600 hover:text-red-900 text-sm font-medium">Remove</button>
                                         </td>
                                     </tr>
                                 </template>
                                 <tr x-show="lines.length === 0">
-                                    <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-400">No items added yet. Search and add products above.</td>
+                                    <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-400">No items added yet. Search and add products above.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -157,19 +183,19 @@
                         <div class="border-t pt-3 mb-3 space-y-1">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-500">Subtotal</span>
-                                <span x-text="'$' + getTotals().subtotal.toFixed(2)"></span>
+                                <span x-text="formatMoney(getTotals().subtotal)"></span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-500">Discount</span>
-                                <span x-text="'-$' + getTotals().discount.toFixed(2)"></span>
+                                <span x-text="'-' + formatMoney(getTotals().discount)"></span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-500">Tax</span>
-                                <span x-text="'$' + getTotals().tax.toFixed(2)"></span>
+                                <span x-text="formatMoney(getTotals().tax)"></span>
                             </div>
                             <div class="flex justify-between text-xl font-bold border-t pt-2">
                                 <span>Total Due</span>
-                                <span class="text-indigo-600" x-text="'$' + getTotals().total.toFixed(2)"></span>
+                                <span class="text-indigo-600" x-text="formatMoney(getTotals().total)"></span>
                             </div>
                         </div>
 
@@ -178,20 +204,20 @@
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm font-semibold text-gray-700">Payments</span>
                                 <span class="text-sm font-medium" :class="getRemaining() > 0 ? 'text-red-600' : 'text-green-600'"
-                                    x-text="'Remaining: $' + getRemaining().toFixed(2)"></span>
+                                    x-text="'Remaining: ' + formatMoney(getRemaining())"></span>
                             </div>
                             <template x-for="(pay, pi) in payments" :key="pi">
                                 <div class="flex justify-between items-center bg-gray-50 rounded-md px-3 py-2 mb-1 text-sm">
                                     <div>
                                         <span class="font-medium" x-text="pay.method_name"></span>
-                                        <span class="text-gray-500 ml-1" x-show="pay.type === 'cash'" x-text="'(Tendered: $' + parseFloat(pay.cash_tendered).toFixed(2) + ')'"></span>
+                                        <span class="text-gray-500 ml-1" x-show="pay.type === 'cash'" x-text="'(Tendered: ' + formatMoney(parseFloat(pay.cash_tendered)) + ')'"></span>
                                         <span class="text-gray-500 ml-1" x-show="pay.reference_number" x-text="'Ref: ' + pay.reference_number"></span>
                                         <span class="text-gray-400 ml-1 text-xs" x-show="pay.account_name" x-text="pay.account_name"></span>
                                         <span class="text-gray-400 ml-1 text-xs" x-show="pay.institution" x-text="pay.institution"></span>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-semibold" x-text="'$' + parseFloat(pay.amount).toFixed(2)"></span>
-                                        <span x-show="pay.type === 'cash' && parseFloat(pay.change) > 0" class="text-green-600 text-xs" x-text="'Change: $' + parseFloat(pay.change).toFixed(2)"></span>
+                                        <span class="font-semibold" x-text="formatMoney(parseFloat(pay.amount))"></span>
+                                        <span x-show="pay.type === 'cash' && parseFloat(pay.change) > 0" class="text-green-600 text-xs" x-text="'Change: ' + formatMoney(parseFloat(pay.change))"></span>
                                         <button type="button" @click="removePayment(pi)" class="text-red-500 hover:text-red-700 font-bold text-xs">&times;</button>
                                     </div>
                                 </div>
@@ -226,7 +252,7 @@
                                 :disabled="lines.length === 0 || submitting || getRemaining() > 0"
                                 class="w-full py-4 px-6 rounded-lg font-bold text-lg uppercase tracking-wider transition duration-200"
                                 :class="(lines.length > 0 && getRemaining() <= 0 && !submitting) ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
-                                <span x-show="!submitting && lines.length > 0 && getRemaining() > 0" x-text="'Balance Due: $' + getRemaining().toFixed(2)"></span>
+                                <span x-show="!submitting && lines.length > 0 && getRemaining() > 0" x-text="'Balance Due: ' + formatMoney(getRemaining())"></span>
                                 <span x-show="!submitting && lines.length > 0 && getRemaining() <= 0">Complete Sale</span>
                                 <span x-show="submitting">Processing...</span>
                                 <span x-show="!submitting && lines.length === 0">Add items first</span>
@@ -247,7 +273,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <div class="text-sm text-gray-500 mb-1">Total Due</div>
-                    <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
+                    <div class="text-3xl font-bold text-indigo-600" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 <div class="mb-4">
@@ -265,7 +291,7 @@
                     <template x-for="denom in [10, 20, 50, 100]" :key="denom">
                         <button type="button" @click="modalCashTendered = denom"
                             class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm font-medium"
-                            x-text="'$' + denom"></button>
+                            x-text="formatMoney(denom)"></button>
                     </template>
                 </div>
 
@@ -275,13 +301,13 @@
                     <template x-if="modalCashTendered >= modalDue">
                         <div>
                             <div class="text-xs text-green-600 font-medium uppercase">Change to Give</div>
-                            <div class="text-3xl font-bold text-green-600" x-text="'$' + (modalCashTendered - modalDue).toFixed(2)"></div>
+                            <div class="text-3xl font-bold text-green-600" x-text="formatMoney(modalCashTendered - modalDue)"></div>
                         </div>
                     </template>
                     <template x-if="modalCashTendered > 0 && modalCashTendered < modalDue">
                         <div>
                             <div class="text-xs text-red-600 font-medium uppercase">Insufficient — Remaining</div>
-                            <div class="text-2xl font-bold text-red-600" x-text="'$' + (modalDue - modalCashTendered).toFixed(2)"></div>
+                            <div class="text-2xl font-bold text-red-600" x-text="formatMoney(modalDue - modalCashTendered)"></div>
                         </div>
                     </template>
                 </div>
@@ -306,7 +332,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <div class="text-sm text-gray-500 mb-1">Balance Due</div>
-                    <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
+                    <div class="text-3xl font-bold text-indigo-600" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 <div class="mb-3">
@@ -364,7 +390,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <div class="text-sm text-gray-500 mb-1">Balance Due</div>
-                    <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
+                    <div class="text-3xl font-bold text-indigo-600" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 <div class="mb-3">
@@ -422,7 +448,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <div class="text-sm text-gray-500">Total Due</div>
-                    <div class="text-3xl font-bold text-indigo-600" x-text="'$' + modalDue.toFixed(2)"></div>
+                    <div class="text-3xl font-bold text-indigo-600" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 {{-- Cash Row --}}
@@ -451,7 +477,7 @@
                             <span class="text-gray-500">Change</span>
                             <span class="font-semibold"
                                 :class="splitCashTendered >= splitCashAlloc ? 'text-green-600' : 'text-red-600'"
-                                x-text="splitCashTendered >= splitCashAlloc ? '$' + (splitCashTendered - splitCashAlloc).toFixed(2) : 'Short by $' + (splitCashAlloc - splitCashTendered).toFixed(2)"></span>
+                                x-text="splitCashTendered >= splitCashAlloc ? formatMoney(splitCashTendered - splitCashAlloc) : 'Short by ' + formatMoney(splitCashAlloc - splitCashTendered)"></span>
                         </div>
                     </div>
                 </div>
@@ -546,7 +572,7 @@
                         x-text="getSplitRemaining() === 0 ? 'Balanced' : getSplitRemaining() > 0 ? 'Remaining Balance' : 'Over-allocated'"></div>
                     <div class="text-2xl font-bold"
                         :class="getSplitRemaining() === 0 ? 'text-green-600' : getSplitRemaining() > 0 ? 'text-amber-600' : 'text-red-600'"
-                        x-text="'$' + Math.abs(getSplitRemaining()).toFixed(2)"></div>
+                        x-text="formatMoney(Math.abs(getSplitRemaining()))"></div>
                 </div>
 
                 <div class="flex gap-3 pt-2">
@@ -569,6 +595,10 @@
                 selectedProductId: '',
                 selectedProductName: '',
                 addQty: 1,
+                addUom: '',
+                addConversionFactor: 1,
+                uomConversions: @json($uomConversions),
+                productUoms: {},
                 lines: [],
                 customerId: '',
                 reference: '',
@@ -673,10 +703,33 @@
                     this.searchQuery = p.sku + ' – ' + p.name;
                     this.dropdownOpen = false;
                     this.highlightIndex = -1;
+
+                    // Load UOMs for this product
+                    const uoms = this.uomConversions[p.id] || [];
+                    this.productUoms = { uoms: uoms, basePrice: parseFloat(p.sales_price) || 0 };
+                    if (uoms.length > 0) {
+                        const base = uoms.find(u => u.is_base);
+                        this.addUom = base ? base.uom_name : uoms[0].uom_name;
+                        this.addConversionFactor = base ? base.conversion_factor : uoms[0].conversion_factor;
+                    } else {
+                        this.addUom = '';
+                        this.addConversionFactor = 1;
+                    }
+
                     this.$nextTick(() => {
                         const qtyInput = this.$el.querySelector('input[x-model="addQty"]');
                         if (qtyInput) qtyInput.focus();
                     });
+                },
+
+                onUomChange() {
+                    const uoms = this.productUoms.uoms || [];
+                    const selected = uoms.find(u => u.uom_name === this.addUom);
+                    if (selected) {
+                        this.addConversionFactor = selected.conversion_factor;
+                    } else {
+                        this.addConversionFactor = 1;
+                    }
                 },
 
                 addLine() {
@@ -685,7 +738,14 @@
                     if (!product) return;
 
                     const qty = parseInt(this.addQty) || 1;
-                    const existing = this.lines.find(l => l.product_id == product.id);
+                    const uom = this.addUom || '';
+                    const convFactor = parseFloat(this.addConversionFactor) || 1;
+                    const basePrice = parseFloat(product.sales_price) || 0;
+                    const uoms = this.productUoms.uoms || [];
+                    const uomDef = uoms.find(u => u.uom_name === uom);
+                    const uomPrice = (uomDef && uomDef.sales_price > 0) ? uomDef.sales_price : basePrice;
+
+                    const existing = this.lines.find(l => l.product_id == product.id && l.transaction_uom === uom);
                     if (existing) {
                         existing.quantity += qty;
                         this.recalcLine(this.lines.indexOf(existing));
@@ -694,13 +754,16 @@
                             product_id: product.id,
                             product_name: product.sku + ' – ' + product.name,
                             quantity: qty,
-                            unit_price: parseFloat(product.sales_price) || 0,
+                            unit_price: uomPrice,
                             discount_amount: 0,
                             discount_type: null,
                             tax_rate: parseFloat(product.tax_rate) || 0,
                             is_taxable: product.is_taxable,
                             tax_amount: 0,
                             line_total: 0,
+                            transaction_uom: uom,
+                            transaction_qty: qty,
+                            conversion_factor: convFactor,
                         };
                         this.lines.push(line);
                         this.recalcLine(this.lines.length - 1);
@@ -710,12 +773,44 @@
                     this.selectedProductName = '';
                     this.searchQuery = '';
                     this.addQty = 1;
+                    this.addUom = '';
+                    this.addConversionFactor = 1;
+                    this.productUoms = {};
                     this.filteredProducts = [];
                     this.dropdownOpen = false;
                 },
 
                 removeLine(index) {
                     this.lines.splice(index, 1);
+                },
+
+                onLineQtyChange(index) {
+                    const line = this.lines[index];
+                    if (line.transaction_uom && line.conversion_factor > 0) {
+                        line.quantity = parseFloat((line.transaction_qty * line.conversion_factor).toFixed(4));
+                    } else {
+                        line.quantity = line.transaction_qty || 1;
+                    }
+                    this.recalcLine(index);
+                },
+
+                onLineUomChange(index) {
+                    const line = this.lines[index];
+                    const product = this.products.find(p => p.id == line.product_id);
+                    if (!product) return;
+                    const uoms = this.uomConversions[line.product_id] || [];
+                    const uomDef = uoms.find(u => u.uom_name === line.transaction_uom);
+                    if (uomDef) {
+                        line.conversion_factor = uomDef.conversion_factor;
+                        if (uomDef.sales_price > 0) {
+                            line.unit_price = uomDef.sales_price;
+                        }
+                    } else {
+                        line.conversion_factor = 1;
+                        line.unit_price = parseFloat(product.sales_price) || 0;
+                    }
+                    line.transaction_qty = line.transaction_qty || 1;
+                    this.onLineQtyChange(index);
                 },
 
                 recalcLine(index) {
@@ -946,6 +1041,9 @@
                             discount_amount: l.discount_amount,
                             discount_type: l.discount_type,
                             tax_rate: l.tax_rate,
+                            transaction_uom: l.transaction_uom || null,
+                            transaction_qty: l.transaction_qty || null,
+                            conversion_factor: l.conversion_factor || null,
                         })),
                         payments: this.payments.map(p => ({
                             payment_method_id: p.payment_method_id,
@@ -953,6 +1051,8 @@
                             cash_tendered: parseFloat(p.cash_tendered) || null,
                             change_given: parseFloat(p.change) || null,
                             reference_number: p.reference_number || null,
+                            account_name: p.account_name || null,
+                            institution: p.institution || null,
                         })),
                     };
 

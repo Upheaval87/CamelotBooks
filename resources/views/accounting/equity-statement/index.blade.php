@@ -71,13 +71,13 @@
                                         {{ $item['account']->code }} — {{ $item['account']->name }}
                                     </td>
                                     <td class="px-6 py-3 text-sm text-gray-900 text-right">
-                                        {{ number_format($item['opening'], 2) }}
+                                        {{ format_money($item['opening']) }}
                                     </td>
                                     <td class="px-6 py-3 text-sm text-right {{ $item['movement'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $item['movement'] >= 0 ? '+' : '' }}{{ number_format($item['movement'], 2) }}
+                                        {{ $item['movement'] >= 0 ? '+' : '' }}{{ format_money($item['movement']) }}
                                     </td>
                                     <td class="px-6 py-3 text-sm text-gray-900 text-right font-medium">
-                                        {{ number_format($item['closing'], 2) }}
+                                        {{ format_money($item['closing']) }}
                                     </td>
                                 </tr>
                             @empty
@@ -90,18 +90,18 @@
                                 <td class="px-6 py-3 text-sm font-semibold text-gray-900">Net Income for Period</td>
                                 <td class="px-6 py-3 text-sm text-gray-900 text-right"></td>
                                 <td class="px-6 py-3 text-sm text-right font-semibold {{ $net_income >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $net_income >= 0 ? '+' : '' }}{{ number_format($net_income, 2) }}
+                                    {{ $net_income >= 0 ? '+' : '' }}{{ format_money($net_income) }}
                                 </td>
                                 <td class="px-6 py-3 text-sm text-gray-900 text-right"></td>
                             </tr>
 
                             <tr class="bg-gray-100 font-bold">
                                 <td class="px-6 py-3 text-sm text-gray-900">Total Equity</td>
-                                <td class="px-6 py-3 text-sm text-gray-900 text-right">{{ number_format($total_opening, 2) }}</td>
+                                <td class="px-6 py-3 text-sm text-gray-900 text-right">{{ format_money($total_opening) }}</td>
                                 <td class="px-6 py-3 text-sm text-gray-900 text-right">
-                                    {{ ($total_closing - $total_opening) >= 0 ? '+' : '' }}{{ number_format($total_closing - $total_opening, 2) }}
+                                    {{ ($total_closing - $total_opening) >= 0 ? '+' : '' }}{{ format_money($total_closing - $total_opening) }}
                                 </td>
-                                <td class="px-6 py-3 text-sm text-gray-900 text-right">{{ number_format($total_closing, 2) }}</td>
+                                <td class="px-6 py-3 text-sm text-gray-900 text-right">{{ format_money($total_closing) }}</td>
                             </tr>
                         </tbody>
                     </table>

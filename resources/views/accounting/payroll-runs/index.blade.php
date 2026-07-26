@@ -71,10 +71,10 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($run->total_gross, 2) }}
+                                        {{ format_money($run->total_gross) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($run->total_net_pay, 2) }}
+                                        {{ format_money($run->total_net_pay) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                         <a href="{{ route('accounting.payroll-runs.show', $run) }}" class="text-indigo-600 hover:text-indigo-900">

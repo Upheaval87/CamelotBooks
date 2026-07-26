@@ -16,7 +16,7 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('Undeposited Funds Balance') }}</h3>
-                <p class="text-3xl font-bold text-indigo-600">{{ number_format($undepositedBalance, 2) }}</p>
+                <p class="text-3xl font-bold text-indigo-600">{{ format_money($undepositedBalance) }}</p>
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -39,7 +39,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $line->journalEntry->date->format('M d, Y') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $line->journalEntry->journal_number }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ $line->memo ?? $line->journalEntry->memo ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($line->debit, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($line->debit) }}</td>
                                 </tr>
                             @empty
                                 <tr>

@@ -84,10 +84,10 @@
                                             <span class="text-xs text-amber-600 ml-1">(Projected)</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">${{ number_format($operating, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">${{ number_format($investing, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">${{ number_format($financing, 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-medium {{ $net >= 0 ? 'text-green-600' : 'text-red-600' }}">${{ number_format($net, 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-900">@money($operating)</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-900">@money($investing)</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-900">@money($financing)</td>
+                                    <td class="px-4 py-3 text-sm text-right font-medium {{ $net >= 0 ? 'text-green-600' : 'text-red-600' }}">@money($net)</td>
                                 </tr>
                             @endfor
                         </tbody>

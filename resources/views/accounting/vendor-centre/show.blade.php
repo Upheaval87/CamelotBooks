@@ -24,26 +24,26 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <p class="text-xs text-gray-500 uppercase">Open Balance</p>
-                    <p class="text-xl font-bold text-red-600">{{ number_format($stats['open_balance'], 2) }}</p>
+                    <p class="text-xl font-bold text-red-600">{{ format_money($stats['open_balance']) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <p class="text-xs text-gray-500 uppercase">Total Bills</p>
-                    <p class="text-xl font-bold text-gray-900">{{ number_format($stats['total_bills'], 2) }}</p>
+                    <p class="text-xl font-bold text-gray-900">{{ format_money($stats['total_bills']) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <p class="text-xs text-gray-500 uppercase">Total Paid</p>
-                    <p class="text-xl font-bold text-green-600">{{ number_format($stats['total_paid'], 2) }}</p>
+                    <p class="text-xl font-bold text-green-600">{{ format_money($stats['total_paid']) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <p class="text-xs text-gray-500 uppercase">Credit Balance</p>
-                    <p class="text-xl font-bold {{ $stats['credit_balance'] > 0 ? 'text-green-600' : 'text-gray-900' }}">{{ number_format($stats['credit_balance'], 2) }}</p>
+                    <p class="text-xl font-bold {{ $stats['credit_balance'] > 0 ? 'text-green-600' : 'text-gray-900' }}">{{ format_money($stats['credit_balance']) }}</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <p class="text-xs text-gray-500 uppercase">Total Expenses</p>
-                    <p class="text-xl font-bold text-gray-900">{{ number_format($stats['total_expenses'], 2) }}</p>
+                    <p class="text-xl font-bold text-gray-900">{{ format_money($stats['total_expenses']) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
                     <p class="text-xs text-gray-500 uppercase">Bill Count</p>
@@ -150,7 +150,7 @@
                                             {{ $item['date'] instanceof \Carbon\Carbon ? $item['date']->format('M d, Y') : $item['date'] }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                                            {{ number_format($item['amount'], 2) }}
+                                            {{ format_money($item['amount']) }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-center text-sm">
                                             <span class="text-xs text-gray-600">{{ ucfirst(str_replace('_', ' ', $item['status'])) }}</span>

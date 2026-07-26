@@ -78,7 +78,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Residual Value') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($category->residual_value_financial, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($category->residual_value_financial) }}</dd>
                     </div>
                 </div>
             </div>
@@ -100,7 +100,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Residual Value') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($category->residual_value_tax, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($category->residual_value_tax) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Depreciation Rate') }}</dt>
@@ -136,7 +136,7 @@
                                             </a>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ number_format($asset->acquisition_cost, 2) }}
+                                            {{ format_money($asset->acquisition_cost) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $asset->status === 'active' ? 'green' : ($asset->status === 'disposed' ? 'red' : 'gray') }}-100 text-{{ $asset->status === 'active' ? 'green' : ($asset->status === 'disposed' ? 'red' : 'gray') }}-800">

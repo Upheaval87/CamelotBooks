@@ -105,17 +105,17 @@
                                 <tr>
                                     <td class="px-4 py-2 text-sm text-gray-900">{{ $line->expenseAccount?->code ?? '' }} - {{ $line->expenseAccount?->name ?? '' }}</td>
                                     <td class="px-4 py-2 text-sm text-gray-900">{{ $line->description }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($line->quantity, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($line->unit_price, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($line->tax_amount, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{{ number_format($line->line_total, 2) }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->quantity) }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->unit_price) }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->tax_amount) }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{{ format_money($line->line_total) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td colspan="5" class="px-4 py-2 text-sm font-semibold text-gray-800 text-right">Total:</td>
-                                <td class="px-4 py-2 text-sm font-bold text-gray-900 text-right">{{ number_format($expense->amount, 2) }}</td>
+                                <td class="px-4 py-2 text-sm font-bold text-gray-900 text-right">{{ format_money($expense->amount) }}</td>
                             </tr>
                         </tfoot>
                     </table>

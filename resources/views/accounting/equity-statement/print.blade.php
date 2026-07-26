@@ -18,22 +18,22 @@
             @foreach($movements as $item)
                 <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 6px 8px;">{{ $item['account']->code }} — {{ $item['account']->name }}</td>
-                    <td style="text-align: right; padding: 6px 8px;">{{ number_format($item['opening'], 2) }}</td>
-                    <td style="text-align: right; padding: 6px 8px;">{{ $item['movement'] >= 0 ? '+' : '' }}{{ number_format($item['movement'], 2) }}</td>
-                    <td style="text-align: right; padding: 6px 8px; font-weight: bold;">{{ number_format($item['closing'], 2) }}</td>
+                    <td style="text-align: right; padding: 6px 8px;">{{ format_money($item['opening']) }}</td>
+                    <td style="text-align: right; padding: 6px 8px;">{{ $item['movement'] >= 0 ? '+' : '' }}{{ format_money($item['movement']) }}</td>
+                    <td style="text-align: right; padding: 6px 8px; font-weight: bold;">{{ format_money($item['closing']) }}</td>
                 </tr>
             @endforeach
             <tr style="background: #eff6ff; border-bottom: 1px solid #d1d5db;">
                 <td style="padding: 6px 8px; font-weight: bold;">Net Income for Period</td>
                 <td style="padding: 6px 8px;"></td>
-                <td style="text-align: right; padding: 6px 8px; font-weight: bold;">{{ $net_income >= 0 ? '+' : '' }}{{ number_format($net_income, 2) }}</td>
+                <td style="text-align: right; padding: 6px 8px; font-weight: bold;">{{ $net_income >= 0 ? '+' : '' }}{{ format_money($net_income) }}</td>
                 <td style="padding: 6px 8px;"></td>
             </tr>
             <tr style="background: #f3f4f6; font-weight: bold; border-top: 2px solid #d1d5db;">
                 <td style="padding: 8px;">Total Equity</td>
-                <td style="text-align: right; padding: 8px;">{{ number_format($total_opening, 2) }}</td>
-                <td style="text-align: right; padding: 8px;">{{ ($total_closing - $total_opening) >= 0 ? '+' : '' }}{{ number_format($total_closing - $total_opening, 2) }}</td>
-                <td style="text-align: right; padding: 8px;">{{ number_format($total_closing, 2) }}</td>
+                <td style="text-align: right; padding: 8px;">{{ format_money($total_opening) }}</td>
+                <td style="text-align: right; padding: 8px;">{{ ($total_closing - $total_opening) >= 0 ? '+' : '' }}{{ format_money($total_closing - $total_opening) }}</td>
+                <td style="text-align: right; padding: 8px;">{{ format_money($total_closing) }}</td>
             </tr>
         </tbody>
     </table>

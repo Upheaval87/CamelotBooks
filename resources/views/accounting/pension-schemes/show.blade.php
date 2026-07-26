@@ -52,7 +52,7 @@
 
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Max Contributory Salary</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $scheme->max_contributory_salary ? number_format($scheme->max_contributory_salary, 2) : '—' }}</dd>
+                            <dd class="mt-1 text-sm text-gray-900">{{ $scheme->max_contributory_salary ? format_money($scheme->max_contributory_salary) : '—' }}</dd>
                         </div>
 
                         <div>

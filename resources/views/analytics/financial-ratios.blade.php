@@ -28,9 +28,9 @@
                                                     @elseif(isset($ratio['unit']) && $ratio['unit'] === 'days')
                                                         {{ number_format($ratio['value'], 0) }} days
                                                     @elseif($key === 'working_capital')
-                                                        ${{ number_format($ratio['value'], 2) }}
+                                                        @money($ratio['value'])
                                                     @else
-                                                        {{ number_format($ratio['value'], 2) }}
+                                                        {{ format_money($ratio['value']) }}
                                                     @endif
                                                 </span>
                                                 @if(isset($ratio['target']) && $ratio['target'] !== null)
@@ -51,7 +51,7 @@
                         @foreach($data['summary'] as $key => $value)
                             <div>
                                 <div class="text-xs text-gray-500 uppercase">{{ str_replace('_', ' ', $key) }}</div>
-                                <div class="text-lg font-semibold text-gray-800">${{ number_format($value, 2) }}</div>
+                                <div class="text-lg font-semibold text-gray-800">@money($value)</div>
                             </div>
                         @endforeach
                     </div>

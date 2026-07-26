@@ -32,14 +32,15 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="customer_id" value="{{ __('Customer') }}" />
-                            <select id="customer_id" name="customer_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="">Select Customer</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                                        {{ $customer->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div x-data="customerSearch('{{ old('customer_id') }}', '{{ old('customer_name', '') }}')" class="relative">
+                                <input type="hidden" name="customer_id" :value="selectedId" />
+                                <input type="text" x-model="query" @input.debounce.300ms="search()" @focus="if(query) open=true" @click.away="open=false" placeholder="Search customers..." autocomplete="off" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                <div x-show="open && results.length > 0" x-cloak class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                    <template x-for="c in results" :key="c.id">
+                                        <div @click="select(c)" class="px-3 py-2 cursor-pointer hover:bg-indigo-50 text-sm" x-text="c.name + (c.email ? ' (' + c.email + ')' : '')"></div>
+                                    </template>
+                                </div>
+                            </div>
                             <x-input-error :messages="$errors->get('customer_id')" class="mt-2" />
                         </div>
                         <div>
@@ -122,6 +123,18 @@
     </div>
 
     <script>
+        function customerSearch(selectedId, selectedName) {
+            return {
+                query: selectedName || '', selectedId: selectedId || '', results: [], open: false,
+                async search() {
+                    if (this.query.length < 1) { this.results = []; this.open = false; return; }
+                    const r = await fetch('{{ route("accounting.customers.search") }}?q=' + encodeURIComponent(this.query));
+                    this.results = await r.json(); this.open = true;
+                },
+                select(c) { this.selectedId = c.id; this.query = c.name; this.open = false; }
+            }
+        }
+
         const products = @json($products);
         const incomeAccounts = @json($incomeAccounts);
         const costCenters = @json($costCenters);

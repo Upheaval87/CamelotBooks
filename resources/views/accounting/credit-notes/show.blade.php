@@ -120,9 +120,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $line->product->name ?? '—' }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ $line->description }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->quantity }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($line->unit_price, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($line->unit_price) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->tax_rate }}%</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($line->total, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($line->total) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -132,23 +132,23 @@
                     <div class="w-64 space-y-2">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Subtotal:</span>
-                            <span class="text-gray-900">{{ number_format($creditNote->subtotal, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($creditNote->subtotal) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Tax:</span>
-                            <span class="text-gray-900">{{ number_format($creditNote->tax_total, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($creditNote->tax_total) }}</span>
                         </div>
                         <div class="flex justify-between text-sm font-semibold border-t pt-2">
                             <span class="text-gray-800">Total:</span>
-                            <span class="text-gray-900">{{ number_format($creditNote->total, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($creditNote->total) }}</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Applied:</span>
-                            <span class="text-gray-900">{{ number_format($creditNote->amount_applied, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($creditNote->amount_applied) }}</span>
                         </div>
                         <div class="flex justify-between text-sm font-bold border-t pt-2">
                             <span class="text-gray-800">Available:</span>
-                            <span class="text-gray-900">{{ number_format($creditNote->available, 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($creditNote->available) }}</span>
                         </div>
                     </div>
                 </div>

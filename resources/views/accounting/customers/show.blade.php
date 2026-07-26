@@ -45,7 +45,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Credit Limit') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($customer->credit_limit ?? 0, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($customer->credit_limit ?? 0) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Status') }}</dt>
@@ -77,7 +77,7 @@
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Opening Balance') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($customer->opening_balance ?? 0, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($customer->opening_balance ?? 0) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Opening Balance Date') }}</dt>
@@ -85,7 +85,7 @@
                     </div>
                     <div class="col-span-2 border-t pt-4">
                         <dt class="text-sm font-medium text-gray-500">{{ __('Open Balance') }}</dt>
-                        <dd class="mt-1 text-2xl font-bold {{ $balanceDue > 0 ? 'text-red-600' : 'text-gray-900' }}">{{ number_format($balanceDue, 2) }}</dd>
+                        <dd class="mt-1 text-2xl font-bold {{ $balanceDue > 0 ? 'text-red-600' : 'text-gray-900' }}">{{ format_money($balanceDue) }}</dd>
                     </div>
                 </div>
             </div>
@@ -126,13 +126,13 @@
                                         {{ $txn['description'] }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format(abs($txn['amount']), 2) }}
+                                        {{ format_money(abs($txn['amount'])) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                                        {{ number_format($txn['paid'], 2) }}
+                                        {{ format_money($txn['paid']) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $txn['balance'] > 0 ? 'text-red-600' : 'text-gray-900' }}">
-                                        {{ number_format(abs($txn['balance']), 2) }}
+                                        {{ format_money(abs($txn['balance'])) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @php

@@ -68,11 +68,11 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Acquisition Cost') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($asset->acquisition_cost, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($asset->acquisition_cost) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Residual Value') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($asset->residual_value, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($asset->residual_value) }}</dd>
                     </div>
                     @if($asset->description)
                         <div class="col-span-2">
@@ -96,7 +96,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Net Book Value') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ number_format($asset->net_book_value ?? $asset->acquisition_cost, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ format_money($asset->net_book_value ?? $asset->acquisition_cost) }}</dd>
                     </div>
                 </div>
             </div>
@@ -114,7 +114,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Residual Value (Tax)') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($asset->residual_value_tax ?? 0, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($asset->residual_value_tax ?? 0) }}</dd>
                     </div>
                 </div>
             </div>

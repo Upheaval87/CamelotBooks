@@ -58,8 +58,8 @@
                         <tr>
                             <td>{{ $line->product->name ?? 'N/A' }}</td>
                             <td class="text-right">{{ $line->quantity }}</td>
-                            <td class="text-right">${{ number_format($line->unit_price, 2) }}</td>
-                            <td class="line-total">${{ number_format($line->line_total, 2) }}</td>
+                            <td class="text-right">@money($line->unit_price)</td>
+                            <td class="line-total">@money($line->line_total)</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -67,15 +67,15 @@
         </div>
 
         <div class="border-t">
-            <div class="flex-between"><span>Subtotal:</span><span>${{ number_format($sale->subtotal, 2) }}</span></div>
+            <div class="flex-between"><span>Subtotal:</span><span>@money($sale->subtotal)</span></div>
             @if($sale->discount_total > 0)
-                <div class="flex-between"><span>Discount:</span><span>-${{ number_format($sale->discount_total, 2) }}</span></div>
+                <div class="flex-between"><span>Discount:</span><span>-@money($sale->discount_total)</span></div>
             @endif
             @if($sale->tax_total > 0)
-                <div class="flex-between"><span>Tax:</span><span>${{ number_format($sale->tax_total, 2) }}</span></div>
+                <div class="flex-between"><span>Tax:</span><span>@money($sale->tax_total)</span></div>
             @endif
             <div class="flex-between font-bold" style="font-size: 15px; margin-top: 4px;">
-                <span>TOTAL:</span><span>${{ number_format($sale->total, 2) }}</span>
+                <span>TOTAL:</span><span>@money($sale->total)</span>
             </div>
         </div>
 
@@ -84,7 +84,7 @@
             @foreach($sale->payments as $payment)
                 <div class="flex-between">
                     <span>{{ $payment->paymentMethod->name ?? 'N/A' }}</span>
-                    <span>${{ number_format($payment->amount, 2) }}</span>
+                    <span>@money($payment->amount)</span>
                 </div>
             @endforeach
         </div>

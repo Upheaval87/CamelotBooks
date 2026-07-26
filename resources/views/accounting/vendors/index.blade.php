@@ -81,7 +81,7 @@
                                         {{ str_replace('_', ' ', ucfirst($vendor->payment_terms ?? 'due_on_receipt')) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($vendor->balance_due, 2) }}
+                                        {{ format_money($vendor->balance_due) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($vendor->is_active)

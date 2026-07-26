@@ -85,7 +85,7 @@
                                                 {{ str_replace('_', ' ', ucfirst($account->sub_type)) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                                {{ number_format($account->current_balance, 2) }}
+                                                {{ format_money($account->current_balance) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                                 @if($account->is_active)
@@ -122,7 +122,7 @@
                                                     {{ str_replace('_', ' ', ucfirst($child->sub_type)) }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                                    {{ number_format($child->current_balance, 2) }}
+                                                    {{ format_money($child->current_balance) }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                                     @if($child->is_active)

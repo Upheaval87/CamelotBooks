@@ -86,13 +86,13 @@
                                         {{ $invoice->due_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($invoice->total, 2) }}
+                                        {{ format_money($invoice->total) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($invoice->amount_paid, 2) }}
+                                        {{ format_money($invoice->amount_paid) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                                        {{ number_format($invoice->balance_due, 2) }}
+                                        {{ format_money($invoice->balance_due) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @switch($invoice->status)

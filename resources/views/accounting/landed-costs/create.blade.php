@@ -58,7 +58,7 @@
                             <label class="flex items-center p-2 border rounded hover:bg-gray-50">
                                 <input type="checkbox" name="grn_ids[]" value="{{ $grn->id }}" {{ in_array($grn->id, old('grn_ids', [])) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                 <span class="ml-3 text-sm">
-                                    <span class="font-medium">{{ $grn->grn_number }}</span> &mdash; {{ $grn->date->format('M d, Y') }} &mdash; {{ number_format($grn->lines->sum('total_cost'), 2) }} &mdash; {{ $grn->lines->count() }} line(s)
+                                    <span class="font-medium">{{ $grn->grn_number }}</span> &mdash; {{ $grn->date->format('M d, Y') }} &mdash; {{ format_money($grn->lines->sum('total_cost')) }} &mdash; {{ $grn->lines->count() }} line(s)
                                 </span>
                             </label>
                         @empty

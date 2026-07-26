@@ -64,12 +64,12 @@
                             @forelse($vendors as $row)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['vendor_name'] }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($row['current'], 2) }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($row['days_1_30'], 2) }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($row['days_31_60'], 2) }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($row['days_61_90'], 2) }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($row['days_90_plus'], 2) }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ number_format($row['total'], 2) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($row['current']) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($row['days_1_30']) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($row['days_31_60']) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($row['days_61_90']) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($row['days_90_plus']) }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($row['total']) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -80,12 +80,12 @@
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td class="px-6 py-3 text-sm font-bold text-gray-900">Total</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totals['current'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totals['days_1_30'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totals['days_31_60'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totals['days_61_90'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totals['days_90_plus'], 2) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ number_format($totals['total'], 2) }}</td>
+                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['current']) }}</td>
+                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['days_1_30']) }}</td>
+                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['days_31_60']) }}</td>
+                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['days_61_90']) }}</td>
+                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['days_90_plus']) }}</td>
+                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['total']) }}</td>
                             </tr>
                         </tfoot>
                     </table>

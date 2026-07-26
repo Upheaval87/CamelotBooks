@@ -50,10 +50,10 @@
                                         {{ str_replace('_', ' ', ucfirst($disposal->disposal_method ?? '—')) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($disposal->proceeds ?? 0, 2) }}
+                                        {{ format_money($disposal->proceeds ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ ($disposal->gain_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ number_format($disposal->gain_loss ?? 0, 2) }}
+                                        {{ format_money($disposal->gain_loss ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $disposal->status === 'completed' ? 'green' : 'yellow' }}-100 text-{{ $disposal->status === 'completed' ? 'green' : 'yellow' }}-800">

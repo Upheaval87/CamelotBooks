@@ -47,13 +47,13 @@
                                         {{ $revaluation->revaluation_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($revaluation->previous_value ?? 0, 2) }}
+                                        {{ format_money($revaluation->previous_value ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($revaluation->revalued_amount ?? 0, 2) }}
+                                        {{ format_money($revaluation->revalued_amount ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ ($revaluation->revaluation_surplus ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ number_format($revaluation->revaluation_surplus ?? 0, 2) }}
+                                        {{ format_money($revaluation->revaluation_surplus ?? 0) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $revaluation->status === 'posted' ? 'green' : 'yellow' }}-100 text-{{ $revaluation->status === 'posted' ? 'green' : 'yellow' }}-800">

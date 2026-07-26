@@ -73,7 +73,7 @@
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Opening Balance') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ number_format($account->opening_balance, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ format_money($account->opening_balance) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Opening Balance Date') }}</dt>
@@ -81,7 +81,7 @@
                     </div>
                     <div class="col-span-2 border-t pt-4">
                         <dt class="text-sm font-medium text-gray-500">{{ __('Current Balance') }}</dt>
-                        <dd class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($account->current_balance, 2) }}</dd>
+                        <dd class="mt-1 text-2xl font-bold text-gray-900">{{ format_money($account->current_balance) }}</dd>
                     </div>
                 </div>
             </div>
@@ -113,7 +113,7 @@
                                             </a>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ number_format($child->current_balance, 2) }}
+                                            {{ format_money($child->current_balance) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             @if($child->is_active)

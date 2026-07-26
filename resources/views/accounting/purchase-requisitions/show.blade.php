@@ -130,9 +130,9 @@
                                     <td class="px-6 py-4 text-sm text-gray-900">{{ $line->description }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $line->product->name ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->quantity }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->estimated_unit_cost ? number_format($line->estimated_unit_cost, 2) : '—' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->estimated_unit_cost ? format_money($line->estimated_unit_cost) : '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $line->costCenter->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ $line->estimated_total ? number_format($line->estimated_total, 2) : '—' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ $line->estimated_total ? format_money($line->estimated_total) : '—' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -142,7 +142,7 @@
                     <div class="w-48 space-y-2">
                         <div class="flex justify-between text-sm font-semibold border-t pt-2">
                             <span class="text-gray-800">Total Estimated:</span>
-                            <span class="text-gray-900">{{ number_format($requisition->lines->sum('estimated_total'), 2) }}</span>
+                            <span class="text-gray-900">{{ format_money($requisition->lines->sum('estimated_total')) }}</span>
                         </div>
                     </div>
                 </div>

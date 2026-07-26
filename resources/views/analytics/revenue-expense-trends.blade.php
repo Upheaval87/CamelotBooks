@@ -32,10 +32,10 @@
                             @foreach($data['results'] as $result)
                                 <tr>
                                     <td class="px-6 py-4 text-sm text-gray-900">{{ $result['period'] }}</td>
-                                    <td class="px-6 py-4 text-sm text-right text-gray-900">${{ number_format($result['revenue'] ?? array_sum(array_column($result['dimensions'] ?? [], 'revenue')), 2) }}</td>
-                                    <td class="px-6 py-4 text-sm text-right text-gray-900">${{ number_format($result['expense'] ?? array_sum(array_column($result['dimensions'] ?? [], 'expense')), 2) }}</td>
+                                    <td class="px-6 py-4 text-sm text-right text-gray-900">@money($result['revenue'] ?? array_sum(array_column($result['dimensions'] ?? [], 'revenue')))</td>
+                                    <td class="px-6 py-4 text-sm text-right text-gray-900">@money($result['expense'] ?? array_sum(array_column($result['dimensions'] ?? [], 'expense')))</td>
                                     <td class="px-6 py-4 text-sm text-right font-medium {{ ($result['net_income'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        ${{ number_format($result['net_income'] ?? (array_sum(array_column($result['dimensions'] ?? [], 'revenue')) - array_sum(array_column($result['dimensions'] ?? [], 'expense'))), 2) }}
+                                        @money($result['net_income'] ?? (array_sum(array_column($result['dimensions'] ?? [], 'revenue')) - array_sum(array_column($result['dimensions'] ?? [], 'expense'))))
                                     </td>
                                 </tr>
                             @endforeach
@@ -43,9 +43,9 @@
                         <tfoot class="bg-gray-50">
                             <tr class="font-semibold">
                                 <td class="px-6 py-4 text-sm">Total</td>
-                                <td class="px-6 py-4 text-sm text-right">${{ number_format($data['total_revenue'], 2) }}</td>
-                                <td class="px-6 py-4 text-sm text-right">${{ number_format($data['total_expense'], 2) }}</td>
-                                <td class="px-6 py-4 text-sm text-right">${{ number_format($data['total_revenue'] - $data['total_expense'], 2) }}</td>
+                                <td class="px-6 py-4 text-sm text-right">@money($data['total_revenue'])</td>
+                                <td class="px-6 py-4 text-sm text-right">@money($data['total_expense'])</td>
+                                <td class="px-6 py-4 text-sm text-right">@money($data['total_revenue'] - $data['total_expense'])</td>
                             </tr>
                         </tfoot>
                     </table>

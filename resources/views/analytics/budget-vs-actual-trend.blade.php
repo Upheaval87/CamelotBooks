@@ -38,16 +38,16 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div class="bg-white shadow-sm sm:rounded-lg p-6">
                         <div class="text-xs text-gray-500 uppercase">Total Budget</div>
-                        <div class="text-2xl font-bold text-indigo-600">${{ number_format($data['total_budget'], 2) }}</div>
+                        <div class="text-2xl font-bold text-indigo-600">@money($data['total_budget'])</div>
                     </div>
                     <div class="bg-white shadow-sm sm:rounded-lg p-6">
                         <div class="text-xs text-gray-500 uppercase">Total Actual</div>
-                        <div class="text-2xl font-bold text-gray-800">${{ number_format($data['total_actual'], 2) }}</div>
+                        <div class="text-2xl font-bold text-gray-800">@money($data['total_actual'])</div>
                     </div>
                     <div class="bg-white shadow-sm sm:rounded-lg p-6">
                         <div class="text-xs text-gray-500 uppercase">Total Variance</div>
                         <div class="text-2xl font-bold {{ ($data['total_budget'] - $data['total_actual']) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            ${{ number_format(abs($data['total_budget'] - $data['total_actual']), 2) }}
+                            @money(abs($data['total_budget'] - $data['total_actual']))
                         </div>
                     </div>
                 </div>

@@ -63,7 +63,7 @@
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ $cheque->bankAccount->name ?? '—' }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-500">{{ $cheque->payee }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-500">{{ $cheque->memo ?? '—' }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ number_format($cheque->amount, 2) }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($cheque->amount) }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap text-center">
                                         @if($cheque->status === 'outstanding')
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Outstanding</span>

@@ -2,7 +2,7 @@
     <div class="company">{{ $company->name }}</div>
     <div class="report-title">Account Statement</div>
     <div class="period">Account: {{ $account->code }} - {{ $account->name }} | Type: {{ ucfirst($account->type) }}</div>
-    <div class="period">Opening Balance: {{ number_format($openingBalance, 2) }}</div>
+    <div class="period">Opening Balance: {{ format_money($openingBalance) }}</div>
 </div>
 
 <table>
@@ -25,14 +25,14 @@
                 <td>{{ $line->journalEntry->journal_number }}</td>
                 <td>{{ $line->journalEntry->branch->name ?? '-' }}</td>
                 <td>{{ mb_substr($line->memo ?? $line->journalEntry->memo ?? '', 0, 30) }}</td>
-                <td class="text-right">{{ (float) $line->debit > 0 ? number_format((float) $line->debit, 2) : '' }}</td>
-                <td class="text-right">{{ (float) $line->credit > 0 ? number_format((float) $line->credit, 2) : '' }}</td>
-                <td class="text-right">{{ number_format($txn['running_balance'], 2) }}</td>
+                <td class="text-right">{{ (float) $line->debit > 0 ? format_money((float) $line->debit) : '' }}</td>
+                <td class="text-right">{{ (float) $line->credit > 0 ? format_money((float) $line->credit) : '' }}</td>
+                <td class="text-right">{{ format_money($txn['running_balance']) }}</td>
             </tr>
         @endforeach
         <tr class="row-grand">
             <td colspan="6" class="text-right">Closing Balance</td>
-            <td class="text-right">{{ number_format($closingBalance, 2) }}</td>
+            <td class="text-right">{{ format_money($closingBalance) }}</td>
         </tr>
     </tbody>
 </table>

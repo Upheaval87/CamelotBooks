@@ -67,7 +67,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $order->date?->format('M d, Y') ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->vendor->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format($total, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($total) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @switch($order->status)
                                             @case('draft')

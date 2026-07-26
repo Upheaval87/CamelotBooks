@@ -32,7 +32,7 @@
                                 <option value="">-- Select Sale --</option>
                                 @foreach($sales as $s)
                                     <option value="{{ $s->id }}" {{ old('pos_sale_id', request('sale_id')) == $s->id ? 'selected' : '' }}>
-                                        {{ $s->sale_number }} – ${{ number_format($s->total, 2) }} – {{ optional($s->created_at)->format('M d, Y') ?? '—' }}
+                                        {{ $s->sale_number }} – @money($s->total) – {{ optional($s->created_at)->format('M d, Y') ?? '—' }}
                                     </option>
                                 @endforeach
                             </select>

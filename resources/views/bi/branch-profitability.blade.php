@@ -32,15 +32,15 @@
                             @forelse($branches as $branch)
                                 <tr>
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $branch['branch_name'] }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['revenue'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['cogs'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['gross_profit'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['revenue'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['cogs'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['gross_profit'])</td>
                                     <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($branch['gross_margin'], 1) }}%</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['payroll'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['opex'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['depreciation'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">${{ number_format($branch['total_expenses'], 2) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right font-semibold {{ $branch['net_income'] >= 0 ? 'text-green-600' : 'text-red-600' }}">${{ number_format($branch['net_income'], 2) }}</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['payroll'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['opex'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['depreciation'])</td>
+                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($branch['total_expenses'])</td>
+                                    <td class="px-4 py-3 text-sm text-right font-semibold {{ $branch['net_income'] >= 0 ? 'text-green-600' : 'text-red-600' }}">@money($branch['net_income'])</td>
                                     <td class="px-4 py-3 text-sm text-right {{ $branch['net_margin'] >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ number_format($branch['net_margin'], 1) }}%</td>
                                 </tr>
                             @empty

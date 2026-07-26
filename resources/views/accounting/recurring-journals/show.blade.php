@@ -121,10 +121,10 @@
                                         {{ $line->account->code }} - {{ $line->account->name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ $line->debit > 0 ? number_format($line->debit, 2) : '' }}
+                                        {{ $line->debit > 0 ? format_money($line->debit) : '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ $line->credit > 0 ? number_format($line->credit, 2) : '' }}
+                                        {{ $line->credit > 0 ? format_money($line->credit) : '' }}
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500">
                                         {{ $line->memo ?? '' }}
@@ -139,10 +139,10 @@
                             <tr>
                                 <td colspan="2" class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Totals</td>
                                 <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">
-                                    {{ number_format($template->templateLines->sum('debit'), 2) }}
+                                    {{ format_money($template->templateLines->sum('debit')) }}
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">
-                                    {{ number_format($template->templateLines->sum('credit'), 2) }}
+                                    {{ format_money($template->templateLines->sum('credit')) }}
                                 </td>
                                 <td colspan="2"></td>
                             </tr>
@@ -186,10 +186,10 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ number_format($entry->total_debit, 2) }}
+                                            {{ format_money($entry->total_debit) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                            {{ number_format($entry->total_credit, 2) }}
+                                            {{ format_money($entry->total_credit) }}
                                         </td>
                                     </tr>
                                 @endforeach

@@ -4,6 +4,11 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        @php
+            $companyId = session('current_company_id');
+            $currencySymbol = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', $companyId, '$');
+        @endphp
+        <meta name="currency-symbol" content="{{ $currencySymbol }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
@@ -36,6 +41,15 @@
             </main>
         </div>
 
+        <script>
+            window.currencySymbol = document.querySelector('meta[name="currency-symbol"]')?.getAttribute('content') || '$';
+            window.formatMoney = function(amount) {
+                var val = parseFloat(amount) || 0;
+                var negative = val < 0 ? '-' : '';
+                var formatted = Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return negative + window.currencySymbol + formatted;
+            };
+        </script>
         <script>
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js').catch(() => {});

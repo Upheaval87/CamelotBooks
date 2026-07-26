@@ -99,10 +99,10 @@
                                         {{ $je->memo ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($je->total_debit, 2) }}
+                                        {{ format_money($je->total_debit) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($je->total_credit, 2) }}
+                                        {{ format_money($je->total_credit) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($je->status === 'draft')

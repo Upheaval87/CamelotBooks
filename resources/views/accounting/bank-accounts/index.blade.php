@@ -57,7 +57,7 @@
                                         {{ $bankAccount->bank_name ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                                        {{ number_format($bankAccount->current_balance, 2) }}
+                                        {{ format_money($bankAccount->current_balance) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                                         {{ $bankAccount->last_reconciled_date?->format('M d, Y') ?? 'Never' }}

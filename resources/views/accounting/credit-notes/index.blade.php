@@ -85,13 +85,13 @@
                                         {{ $creditNote->invoice->invoice_number ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($creditNote->total, 2) }}
+                                        {{ format_money($creditNote->total) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($creditNote->amount_applied, 2) }}
+                                        {{ format_money($creditNote->amount_applied) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                                        {{ number_format($creditNote->available, 2) }}
+                                        {{ format_money($creditNote->available) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @switch($creditNote->status)

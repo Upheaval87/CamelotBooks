@@ -42,7 +42,7 @@
                                             {{ $scheme->employer_rate }}%
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $scheme->max_contributory_salary ? number_format($scheme->max_contributory_salary, 2) : '—' }}
+                                            {{ $scheme->max_contributory_salary ? format_money($scheme->max_contributory_salary) : '—' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ \Carbon\Carbon::parse($scheme->effective_from)->format('d M Y') }}

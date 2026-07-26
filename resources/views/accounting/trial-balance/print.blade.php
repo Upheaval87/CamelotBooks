@@ -18,18 +18,18 @@
             <tr>
                 <td>{{ $row['account']->code }}</td>
                 <td>{{ $row['account']->name }}</td>
-                <td class="text-right">{{ $row['debit_balance'] > 0 ? number_format($row['debit_balance'], 2) : '' }}</td>
-                <td class="text-right">{{ $row['credit_balance'] > 0 ? number_format($row['credit_balance'], 2) : '' }}</td>
+                <td class="text-right">{{ $row['debit_balance'] > 0 ? format_money($row['debit_balance']) : '' }}</td>
+                <td class="text-right">{{ $row['credit_balance'] > 0 ? format_money($row['credit_balance']) : '' }}</td>
             </tr>
         @endforeach
         <tr class="row-subtotal">
             <td colspan="2" class="text-right">Totals</td>
-            <td class="text-right">{{ number_format($totalDebit, 2) }}</td>
-            <td class="text-right">{{ number_format($totalCredit, 2) }}</td>
+            <td class="text-right">{{ format_money($totalDebit) }}</td>
+            <td class="text-right">{{ format_money($totalCredit) }}</td>
         </tr>
         <tr class="row-grand">
             <td colspan="3" class="text-right">Difference</td>
-            <td class="text-right">{{ number_format($difference, 2) }}</td>
+            <td class="text-right">{{ format_money($difference) }}</td>
         </tr>
     </tbody>
 </table>

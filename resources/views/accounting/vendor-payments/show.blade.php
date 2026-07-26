@@ -57,7 +57,7 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Amount') }}</dt>
-                        <dd class="mt-1 text-2xl font-bold text-gray-900">{{ number_format($payment->amount, 2) }}</dd>
+                        <dd class="mt-1 text-2xl font-bold text-gray-900">{{ format_money($payment->amount) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">{{ __('Payment Method') }}</dt>
@@ -106,10 +106,10 @@
                                         {{ $bill->bill_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ number_format($bill->total, 2) }}
+                                        {{ format_money($bill->total) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
-                                        {{ number_format($bill->pivot->amount, 2) }}
+                                        {{ format_money($bill->pivot->amount) }}
                                     </td>
                                 </tr>
                             @empty
