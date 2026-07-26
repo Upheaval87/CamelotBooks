@@ -14,6 +14,7 @@ class Product extends Model
         'name',
         'description',
         'sku',
+        'barcode',
         'type',
         'tracked_as_inventory',
         'sales_price',

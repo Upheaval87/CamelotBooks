@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Product;
+use App\Models\InventoryStock;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -66,6 +67,7 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'sku' => ['nullable', 'string', 'max:100', "unique:products,sku,NULL,id,company_id,{$companyId}"],
+            'barcode' => ['nullable', 'string', 'max:100', "unique:products,barcode,NULL,id,company_id,{$companyId}"],
             'type' => ['required', 'string', 'in:service,inventory,non_inventory'],
             'sales_price' => ['nullable', 'numeric', 'min:0'],
             'purchase_price' => ['nullable', 'numeric', 'min:0'],
@@ -125,6 +127,7 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'sku' => ['nullable', 'string', 'max:100', "unique:products,sku,{$product->id},id,company_id,{$companyId}"],
+            'barcode' => ['nullable', 'string', 'max:100', "unique:products,barcode,{$product->id},id,company_id,{$companyId}"],
             'type' => ['required', 'string', 'in:service,inventory,non_inventory'],
             'sales_price' => ['nullable', 'numeric', 'min:0'],
             'purchase_price' => ['nullable', 'numeric', 'min:0'],
@@ -154,5 +157,46 @@ class ProductController extends Controller
 
         return redirect()->route('accounting.products.index')
             ->with('success', "Product {$status} successfully.");
+    }
+
+    public function search(Request $request)
+    {
+        $companyId = session('current_company_id');
+        $search = $request->input('q', '');
+
+        $products = Product::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->when(strlen($search) > 0, function ($q) use ($search) {
+                $q->where(function ($q2) use ($search) {
+                    $q2->where('name', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%")
+                        ->orWhere('barcode', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
+            ->limit(50)
+            ->get(['id', 'name', 'sku', 'barcode', 'sales_price', 'purchase_price', 'type', 'tracked_as_inventory', 'description']);
+
+        $productIds = $products->pluck('id')->toArray();
+        $stockByProduct = [];
+        if (!empty($productIds)) {
+            $stockRows = InventoryStock::where('company_id', $companyId)
+                ->whereIn('product_id', $productIds)
+                ->select('product_id', \Illuminate\Support\Facades\DB::raw('SUM(quantity_on_hand) as qty'))
+                ->groupBy('product_id')
+                ->get();
+            foreach ($stockRows as $row) {
+                $stockByProduct[$row->product_id] = (float) $row->qty;
+            }
+        }
+
+        $products->each(function ($product) use ($stockByProduct) {
+            $product->stock_qty = $product->tracked_as_inventory
+                ? ($stockByProduct[$product->id] ?? 0)
+                : null;
+        });
+
+        return response()->json($products);
     }
 }
