@@ -32,7 +32,7 @@ class StockTransferController extends Controller
         $companyId = session('current_company_id');
 
         $products = Product::where('company_id', $companyId)
-            ->where('tracked_as_inventory', true)
+            ->inventoryTracked()
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -63,7 +63,7 @@ class StockTransferController extends Controller
             ->where('company_id', $companyId)
             ->firstOrFail();
 
-        if (!$product->tracked_as_inventory) {
+        if (!$product->tracked_as_inventory && $product->type !== 'inventory') {
             return back()->withErrors(['product_id' => 'Product is not tracked as inventory.']);
         }
 

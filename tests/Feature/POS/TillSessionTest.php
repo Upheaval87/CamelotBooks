@@ -376,6 +376,8 @@ class TillSessionTest extends TestCase
             'is_active' => true,
         ]);
 
+        FeatureManagement::enable($otherCompany->id, 'pos');
+
         $this->actingAs(User::factory()->create());
         session(['current_company_id' => $otherCompany->id]);
 

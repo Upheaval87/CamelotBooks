@@ -14,7 +14,7 @@ class InventoryItemsController extends Controller
         $companyId = session('current_company_id');
 
         $products = Product::where('company_id', $companyId)
-            ->where('tracked_as_inventory', true)
+            ->inventoryTracked()
             ->with(['stock' => function ($q) {
                 $q->with('branch');
             }])

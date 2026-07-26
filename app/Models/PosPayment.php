@@ -15,6 +15,8 @@ class PosPayment extends Model
         'change_given',
         'reference_number',
         'processor_name',
+        'account_name',
+        'institution',
     ];
 
     protected $casts = [

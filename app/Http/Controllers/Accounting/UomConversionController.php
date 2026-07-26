@@ -23,7 +23,7 @@ class UomConversionController extends Controller
         $companyId = session('current_company_id');
 
         $products = Product::where('company_id', $companyId)
-            ->where('tracked_as_inventory', true)
+            ->inventoryTracked()
             ->with(['uomConversions' => function ($q) {
                 $q->where('is_active', true);
             }])

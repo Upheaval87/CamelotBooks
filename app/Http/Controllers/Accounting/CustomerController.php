@@ -173,4 +173,23 @@ class CustomerController extends Controller
         return redirect()->route('accounting.customers.index')
             ->with('success', "Customer {$status} successfully.");
     }
+
+    public function search(Request $request)
+    {
+        $companyId = session('current_company_id');
+        $search = $request->input('q', '');
+
+        $customers = Customer::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            })
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name', 'email', 'phone']);
+
+        return response()->json($customers);
+    }
 }

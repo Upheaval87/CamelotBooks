@@ -162,4 +162,12 @@ class Product extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function scopeInventoryTracked($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('tracked_as_inventory', true)
+                ->orWhere('type', 'inventory');
+        });
+    }
 }

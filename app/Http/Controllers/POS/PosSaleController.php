@@ -5,11 +5,13 @@ namespace App\Http\Controllers\POS;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Customer;
+use App\Models\ItemUomConversion;
 use App\Models\MobileMoneyProvider;
 use App\Models\PosPaymentMethod;
 use App\Models\PosSale;
 use App\Models\Product;
 use App\Services\Accounting\InventoryService;
+use App\Services\Inventory\UnitOfMeasureConversionService;
 use App\Services\POS\PosSaleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -75,7 +77,28 @@ class PosSaleController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('pos.sales.checkout', compact('products', 'paymentMethods', 'customers', 'bankAccounts', 'mobileProviders'));
+        // Preload UOM conversions keyed by product_id
+        $productIds = $products->pluck('id')->filter()->values();
+        $uomConversions = [];
+        if ($productIds->isNotEmpty()) {
+            $uomRows = ItemUomConversion::where('company_id', $companyId)
+                ->whereIn('product_id', $productIds)
+                ->where('is_active', true)
+                ->orderBy('product_id')
+                ->orderBy('is_base', 'desc')
+                ->orderBy('conversion_factor', 'asc')
+                ->get(['product_id', 'uom_name', 'conversion_factor', 'sales_price', 'is_base']);
+            foreach ($uomRows as $row) {
+                $uomConversions[$row->product_id][] = [
+                    'uom_name' => $row->uom_name,
+                    'conversion_factor' => (float) $row->conversion_factor,
+                    'sales_price' => (float) $row->sales_price,
+                    'is_base' => (bool) $row->is_base,
+                ];
+            }
+        }
+
+        return view('pos.sales.checkout', compact('products', 'paymentMethods', 'customers', 'bankAccounts', 'mobileProviders', 'uomConversions'));
     }
 
     public function store(Request $request)
@@ -95,6 +118,9 @@ class PosSaleController extends Controller
             'lines.*.discount_amount' => 'nullable|numeric|min:0',
             'lines.*.discount_type' => 'nullable|string',
             'lines.*.tax_rate' => 'nullable|numeric|min:0|max:100',
+            'lines.*.transaction_uom' => 'nullable|string|max:50',
+            'lines.*.transaction_qty' => 'nullable|numeric|min:0.01',
+            'lines.*.conversion_factor' => 'nullable|numeric|min:0.01',
             'payments' => 'required|array|min:1',
             'payments.*.payment_method_id' => 'required|exists:pos_payment_methods,id',
             'payments.*.amount' => 'required|numeric|min:0.01',
@@ -102,6 +128,8 @@ class PosSaleController extends Controller
             'payments.*.change_given' => 'nullable|numeric|min:0',
             'payments.*.reference_number' => 'nullable|string|max:255',
             'payments.*.processor_name' => 'nullable|string|max:255',
+            'payments.*.account_name' => 'nullable|string|max:255',
+            'payments.*.institution' => 'nullable|string|max:255',
         ]);
 
         $validated['company_id'] = $companyId;
@@ -175,6 +203,9 @@ class PosSaleController extends Controller
             'lines.*.discount_amount' => 'nullable|numeric|min:0',
             'lines.*.discount_type' => 'nullable|string',
             'lines.*.tax_rate' => 'nullable|numeric|min:0|max:100',
+            'lines.*.transaction_uom' => 'nullable|string|max:50',
+            'lines.*.transaction_qty' => 'nullable|numeric|min:0.01',
+            'lines.*.conversion_factor' => 'nullable|numeric|min:0.01',
             'payments' => 'required|array|min:1',
             'payments.*.payment_method_id' => 'required|exists:pos_payment_methods,id',
             'payments.*.amount' => 'required|numeric|min:0.01',
@@ -182,6 +213,8 @@ class PosSaleController extends Controller
             'payments.*.change_given' => 'nullable|numeric|min:0',
             'payments.*.reference_number' => 'nullable|string|max:255',
             'payments.*.processor_name' => 'nullable|string|max:255',
+            'payments.*.account_name' => 'nullable|string|max:255',
+            'payments.*.institution' => 'nullable|string|max:255',
             '_offlineId' => 'nullable|string|max:255',
         ]);
 

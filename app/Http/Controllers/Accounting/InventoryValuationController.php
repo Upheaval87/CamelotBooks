@@ -83,7 +83,8 @@ class InventoryValuationController extends Controller
 
         $categories = \App\Models\ItemCategory::where('company_id', $companyId)
             ->with(['products' => function ($q) use ($companyId) {
-                $q->where('tracked_as_inventory', true);
+                $q->where('tracked_as_inventory', true)
+                    ->orWhere('type', 'inventory');
             }])
             ->orderBy('name')
             ->get();
@@ -131,7 +132,7 @@ class InventoryValuationController extends Controller
         }
 
         $uncategorizedProducts = Product::where('company_id', $companyId)
-            ->where('tracked_as_inventory', true)
+            ->inventoryTracked()
             ->whereNull('category_id')
             ->get();
 

@@ -78,6 +78,7 @@ class ProductController extends Controller
         $validated['company_id'] = $companyId;
         $validated['is_active'] = true;
         $validated['is_taxable'] = $request->boolean('is_taxable');
+        $validated['tracked_as_inventory'] = ($validated['type'] === 'inventory');
 
         Product::create($validated);
 
@@ -134,6 +135,7 @@ class ProductController extends Controller
         ]);
 
         $validated['is_taxable'] = $request->boolean('is_taxable');
+        $validated['tracked_as_inventory'] = ($validated['type'] === 'inventory');
 
         $product->update($validated);
 

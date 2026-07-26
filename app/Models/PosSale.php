@@ -27,6 +27,7 @@ class PosSale extends Model
         'synced_from_offline',
         'offline_transaction_id',
         'journal_entry_id',
+        'eis_submission_id',
     ];
 
     protected $casts = [
@@ -80,6 +81,11 @@ class PosSale extends Model
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function eisSubmission(): BelongsTo
+    {
+        return $this->belongsTo(EisSubmission::class);
     }
 
     public function scopeForCompany(Builder $query, int $companyId): Builder

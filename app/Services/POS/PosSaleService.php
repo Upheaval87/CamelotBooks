@@ -4,6 +4,7 @@ namespace App\Services\POS;
 
 use App\Models\Account;
 use App\Models\AuditLog;
+use App\Models\EisTerminal;
 use App\Models\JournalEntry;
 use App\Models\NumberingSequence;
 use App\Models\PosCashierSession;
@@ -15,7 +16,9 @@ use App\Models\Product;
 use App\Services\Accounting\InventoryService;
 use App\Services\Accounting\JournalPostingEngine;
 use App\Services\Admin\NumberingSequenceService;
+use App\Services\EIS\EisSubmissionService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class PosSaleService
@@ -23,14 +26,15 @@ class PosSaleService
     public function __construct(
         private JournalPostingEngine $postingEngine,
         private InventoryService $inventoryService,
-        private NumberingSequenceService $numberingService
+        private NumberingSequenceService $numberingService,
+        private EisSubmissionService $eisService
     ) {}
 
     public function checkout(array $data, int $userId): PosSale
     {
         $this->validateCheckoutData($data);
 
-        return DB::transaction(function () use ($data, $userId) {
+        $sale = DB::transaction(function () use ($data, $userId) {
             $companyId = $data['company_id'];
             $sessionId = $data['cashier_session_id'] ?? null;
 
@@ -139,6 +143,8 @@ class PosSaleService
                     'change_given' => $paymentData['change_given'] ?? null,
                     'reference_number' => $paymentData['reference_number'] ?? null,
                     'processor_name' => $paymentData['processor_name'] ?? null,
+                    'account_name' => $paymentData['account_name'] ?? null,
+                    'institution' => $paymentData['institution'] ?? null,
                 ]);
             }
 
@@ -180,6 +186,34 @@ class PosSaleService
 
             return $sale->fresh(['lines.product', 'payments.paymentMethod', 'journalEntry']);
         });
+
+        $this->submitToEis($sale);
+
+        return $sale;
+    }
+
+    private function submitToEis(PosSale $sale): void
+    {
+        try {
+            $terminal = EisTerminal::where('company_id', $sale->company_id)
+                ->where('status', EisTerminal::STATUS_ACTIVE)
+                ->where('should_block_terminal', false)
+                ->first();
+
+            if (!$terminal) {
+                return;
+            }
+
+            $submission = $this->eisService->submitInvoice($terminal, $sale);
+
+            $sale->update(['eis_submission_id' => $submission->id]);
+        } catch (\Exception $e) {
+            Log::warning('EIS submission failed for POS sale', [
+                'sale_id' => $sale->id,
+                'sale_number' => $sale->sale_number,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function postSaleEntry(PosSale $sale, int $companyId, int $userId): JournalEntry

@@ -155,6 +155,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
             Route::get('customers/create', [CustomerController::class, 'create'])->name('customers.create');
             Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+            Route::get('customers/search', [CustomerController::class, 'search'])->name('customers.search');
             Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
             Route::get('customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
             Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
@@ -507,6 +508,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // System Health
             Route::get('system-health', [\App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system-health.index');
 
+            // Feature Management
+            Route::get('features', [\App\Http\Controllers\Admin\FeatureManagementController::class, 'index'])->name('features.index');
+            Route::post('features/{feature}/toggle', [\App\Http\Controllers\Admin\FeatureManagementController::class, 'toggle'])->name('features.toggle');
+
             // Localization
             Route::get('localization', [\App\Http\Controllers\Admin\LocalizationController::class, 'index'])->name('localization.index');
             Route::put('localization', [\App\Http\Controllers\Admin\LocalizationController::class, 'update'])->name('localization.update');
@@ -543,7 +548,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         // POS
-        Route::prefix('pos')->name('pos.')->group(function () {
+        Route::prefix('pos')->name('pos.')->middleware('feature:pos')->group(function () {
             // Terminals
             Route::get('terminals', [\App\Http\Controllers\POS\PosTerminalController::class, 'index'])->name('terminals.index');
             Route::post('terminals', [\App\Http\Controllers\POS\PosTerminalController::class, 'store'])->name('terminals.store');
@@ -601,7 +606,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         // POS Dashboard (requires cashier PIN session)
-        Route::prefix('pos')->name('pos.')->middleware('pos.cashier')->group(function () {
+        Route::prefix('pos')->name('pos.')->middleware(['feature:pos', 'pos.cashier'])->group(function () {
             Route::get('dashboard', function () {
                 return view('pos.dashboard');
             })->name('dashboard');

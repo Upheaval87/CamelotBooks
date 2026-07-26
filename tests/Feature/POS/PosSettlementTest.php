@@ -317,6 +317,8 @@ class PosSettlementTest extends TestCase
             'is_active' => true,
         ]);
 
+        FeatureManagement::enable($otherCompany->id, 'pos');
+
         $settlement = app(\App\Services\POS\PosSettlementService::class)->settle(
             $this->baseSettlementData(),
             $this->user->id
