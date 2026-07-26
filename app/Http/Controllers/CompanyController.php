@@ -415,6 +415,13 @@ class CompanyController extends Controller
                 'sub_type' => 'other_expense',
                 'description' => 'Unrealized foreign exchange gains and losses on revaluation',
             ],
+            [
+                'code' => '9999',
+                'name' => 'Rounding Differences',
+                'type' => 'expense',
+                'sub_type' => 'other_expense',
+                'description' => 'Rounding differences on multi-line transactions',
+            ],
         ];
     }
 }

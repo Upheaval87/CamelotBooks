@@ -54,6 +54,7 @@ class BillService
                 'amount' => 0,
                 'amount_paid' => 0,
                 'currency' => $data['currency'] ?? 'USD',
+                'exchange_rate' => $data['exchange_rate'] ?? 1,
                 'created_by' => $userId,
             ]);
 
@@ -93,6 +94,7 @@ class BillService
                 'memo' => $data['memo'] ?? $bill->memo,
                 'branch_id' => $data['branch_id'] ?? $bill->branch_id,
                 'currency' => $data['currency'] ?? $bill->currency,
+                'exchange_rate' => $data['exchange_rate'] ?? $bill->exchange_rate,
             ]);
 
             if (isset($data['lines'])) {
@@ -294,10 +296,35 @@ class BillService
             }
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
-                throw new InvalidArgumentException(
-                    "Journal entry does not balance. Debit: " . number_format($totalDebit, 2) .
-                    ", Credit: " . number_format($totalCredit, 2)
-                );
+                $diff = round($totalDebit - $totalCredit, 2);
+                $roundingAccountId = Account::where('company_id', $companyId)
+                    ->where('code', '9999')
+                    ->value('id');
+
+                if ($roundingAccountId && abs($diff) <= 0.05 && abs($diff) > 0) {
+                    if ($diff > 0) {
+                        $jeLines[] = [
+                            'account_id' => $roundingAccountId,
+                            'debit' => 0,
+                            'credit' => abs($diff),
+                            'memo' => 'Rounding adjustment',
+                        ];
+                        $totalCredit += abs($diff);
+                    } else {
+                        $jeLines[] = [
+                            'account_id' => $roundingAccountId,
+                            'debit' => abs($diff),
+                            'credit' => 0,
+                            'memo' => 'Rounding adjustment',
+                        ];
+                        $totalDebit += abs($diff);
+                    }
+                } else {
+                    throw new InvalidArgumentException(
+                        "Journal entry does not balance. Debit: " . number_format($totalDebit, 2) .
+                        ", Credit: " . number_format($totalCredit, 2)
+                    );
+                }
             }
 
             $this->fxService->postBillInForeignCurrency($bill, $jeLines, $userId);
@@ -498,6 +525,8 @@ class BillService
                         }
                     }
                 }
+
+                $this->fxService->postBillInForeignCurrency($bill, $jeLines, $userId);
 
                 $journalEntry = $this->postingEngine->post([
                     'company_id' => $companyId,

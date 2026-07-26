@@ -138,6 +138,23 @@ class CustomerController extends Controller
             'opening_balance_date' => ['nullable', 'date'],
         ]);
 
+        if (array_key_exists('opening_balance', $validated) && $customer->opening_balance_date) {
+            $hasPostings = \App\Models\Invoice::where('customer_id', $customer->id)
+                ->where('invoice_date', '>=', $customer->opening_balance_date)
+                ->exists();
+
+            if (!$hasPostings) {
+                $hasPostings = \App\Models\CustomerPayment::where('customer_id', $customer->id)
+                    ->where('payment_date', '>=', $customer->opening_balance_date)
+                    ->exists();
+            }
+
+            if ($hasPostings) {
+                unset($validated['opening_balance']);
+                $validated['opening_balance_date'] = null;
+            }
+        }
+
         $customer->update($validated);
 
         return redirect()->route('accounting.customers.index')

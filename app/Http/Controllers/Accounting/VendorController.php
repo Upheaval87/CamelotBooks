@@ -136,6 +136,32 @@ class VendorController extends Controller
             'opening_balance_date' => ['nullable', 'date'],
         ]);
 
+        if (array_key_exists('opening_balance', $validated) && $vendor->opening_balance_date) {
+            $hasPostings = \App\Models\JournalEntryLine::where('vendor_id', $vendor->id)
+                ->whereHas('journalEntry', fn ($q) => $q
+                    ->where('status', 'posted')
+                    ->where('date', '>=', $vendor->opening_balance_date)
+                )
+                ->exists();
+
+            if (!$hasPostings) {
+                $hasPostings = \App\Models\Bill::where('vendor_id', $vendor->id)
+                    ->where('bill_date', '>=', $vendor->opening_balance_date)
+                    ->exists();
+            }
+
+            if (!$hasPostings) {
+                $hasPostings = \App\Models\VendorPayment::where('vendor_id', $vendor->id)
+                    ->where('payment_date', '>=', $vendor->opening_balance_date)
+                    ->exists();
+            }
+
+            if ($hasPostings) {
+                unset($validated['opening_balance']);
+                $validated['opening_balance_date'] = null;
+            }
+        }
+
         $vendor->update($validated);
 
         return redirect()->route('accounting.vendors.index')

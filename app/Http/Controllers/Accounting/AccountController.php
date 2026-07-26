@@ -114,6 +114,20 @@ class AccountController extends Controller
             );
         }
 
+        if (array_key_exists('opening_balance', $validated) && $account->opening_balance_date) {
+            $hasPostings = \App\Models\JournalEntryLine::where('account_id', $account->id)
+                ->whereHas('journalEntry', fn ($q) => $q
+                    ->where('status', 'posted')
+                    ->where('date', '>=', $account->opening_balance_date)
+                )
+                ->exists();
+
+            if ($hasPostings) {
+                unset($validated['opening_balance']);
+                $validated['opening_balance_date'] = null;
+            }
+        }
+
         $account->update($validated);
 
         return redirect()->route('accounting.accounts.index')

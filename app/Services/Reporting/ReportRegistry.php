@@ -29,6 +29,14 @@ class ReportRegistry
                 'permission' => 'view_reports',
                 'feature_flag' => null,
             ],
+            'equity_statement' => [
+                'key' => 'equity_statement',
+                'name' => 'Statement of Changes in Equity',
+                'category' => 'reports',
+                'route' => 'accounting.equity-statement.index',
+                'permission' => 'view_reports',
+                'feature_flag' => null,
+            ],
             'cash_flow' => [
                 'key' => 'cash_flow',
                 'name' => 'Cash Flow Statement',

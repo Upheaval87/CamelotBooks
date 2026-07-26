@@ -7,16 +7,19 @@ use App\Models\AccountAuditLog;
 use App\Models\Expense;
 use App\Models\ExpenseLine;
 use App\Models\Vendor;
+use App\Services\Accounting\ForeignCurrencyService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class ExpenseService
 {
     protected JournalPostingEngine $postingEngine;
+    protected ForeignCurrencyService $fxService;
 
-    public function __construct(JournalPostingEngine $postingEngine)
+    public function __construct(JournalPostingEngine $postingEngine, ForeignCurrencyService $fxService)
     {
         $this->postingEngine = $postingEngine;
+        $this->fxService = $fxService;
     }
 
     public function create(array $data, int $userId): Expense
@@ -164,11 +167,38 @@ class ExpenseService
             }
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
-                throw new InvalidArgumentException(
-                    "Journal entry does not balance. Debit: " . number_format($totalDebit, 2) .
-                    ", Credit: " . number_format($totalCredit, 2)
-                );
+                $diff = round($totalDebit - $totalCredit, 2);
+                $roundingAccountId = Account::where('company_id', $companyId)
+                    ->where('code', '9999')
+                    ->value('id');
+
+                if ($roundingAccountId && abs($diff) <= 0.05 && abs($diff) > 0) {
+                    if ($diff > 0) {
+                        $jeLines[] = [
+                            'account_id' => $roundingAccountId,
+                            'debit' => 0,
+                            'credit' => abs($diff),
+                            'memo' => 'Rounding adjustment',
+                        ];
+                        $totalCredit += abs($diff);
+                    } else {
+                        $jeLines[] = [
+                            'account_id' => $roundingAccountId,
+                            'debit' => abs($diff),
+                            'credit' => 0,
+                            'memo' => 'Rounding adjustment',
+                        ];
+                        $totalDebit += abs($diff);
+                    }
+                } else {
+                    throw new InvalidArgumentException(
+                        "Journal entry does not balance. Debit: " . number_format($totalDebit, 2) .
+                        ", Credit: " . number_format($totalCredit, 2)
+                    );
+                }
             }
+
+            $this->fxService->postExpenseInForeignCurrency($expense, $jeLines, $userId);
 
             $journalEntry = $this->postingEngine->post([
                 'company_id' => $companyId,

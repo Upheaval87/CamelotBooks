@@ -207,10 +207,35 @@ class InvoiceService
             }
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
-                throw new InvalidArgumentException(
-                    "Journal entry does not balance. Debit: " . number_format($totalDebit, 2) .
-                    ", Credit: " . number_format($totalCredit, 2)
-                );
+                $diff = round($totalDebit - $totalCredit, 2);
+                $roundingAccountId = Account::where('company_id', $companyId)
+                    ->where('code', '9999')
+                    ->value('id');
+
+                if ($roundingAccountId && abs($diff) <= 0.05 && abs($diff) > 0) {
+                    if ($diff > 0) {
+                        $jeLines[] = [
+                            'account_id' => $roundingAccountId,
+                            'debit' => 0,
+                            'credit' => abs($diff),
+                            'memo' => 'Rounding adjustment',
+                        ];
+                        $totalCredit += abs($diff);
+                    } else {
+                        $jeLines[] = [
+                            'account_id' => $roundingAccountId,
+                            'debit' => abs($diff),
+                            'credit' => 0,
+                            'memo' => 'Rounding adjustment',
+                        ];
+                        $totalDebit += abs($diff);
+                    }
+                } else {
+                    throw new InvalidArgumentException(
+                        "Journal entry does not balance. Debit: " . number_format($totalDebit, 2) .
+                        ", Credit: " . number_format($totalCredit, 2)
+                    );
+                }
             }
 
             $this->fxService->postInvoiceInForeignCurrency($invoice, $jeLines, $userId);

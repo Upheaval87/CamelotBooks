@@ -135,6 +135,55 @@ class ForeignCurrencyService
         ]);
     }
 
+    public function postExpenseInForeignCurrency(
+        \App\Models\Expense $expense,
+        array &$jeLines,
+        int $userId
+    ): void {
+        $companyId = $expense->company_id;
+        $company = Company::find($companyId);
+        $expenseCurrency = $expense->currency ?? 'USD';
+        $baseCurrency = $company->base_currency;
+
+        if (strtoupper($expenseCurrency) === strtoupper($baseCurrency)) {
+            $expense->update([
+                'exchange_rate' => 1,
+                'base_amount' => $expense->amount,
+            ]);
+
+            return;
+        }
+
+        $rate = ExchangeRate::getRate($companyId, $expenseCurrency, $baseCurrency, $expense->expense_date->format('Y-m-d'));
+
+        if ($rate === null) {
+            throw new \InvalidArgumentException(
+                "No exchange rate found for {$expenseCurrency} to {$baseCurrency} on {$expense->expense_date->format('Y-m-d')}."
+            );
+        }
+
+        $baseAmount = round((float) $expense->amount * $rate, 2);
+
+        foreach ($jeLines as &$line) {
+            $line['foreign_amount'] = $line['debit'] > 0 ? $line['debit'] : ($line['credit'] > 0 ? $line['credit'] : 0);
+            $line['foreign_currency'] = $expenseCurrency;
+            $line['exchange_rate'] = $rate;
+
+            if ($line['debit'] > 0) {
+                $line['debit'] = round($line['debit'] * $rate, 2);
+            }
+            if ($line['credit'] > 0) {
+                $line['credit'] = round($line['credit'] * $rate, 2);
+            }
+        }
+        unset($line);
+
+        $expense->update([
+            'exchange_rate' => $rate,
+            'base_amount' => $baseAmount,
+        ]);
+    }
+
     public function calculateRealizedGainLoss(
         int $companyId,
         float $originalBaseAmount,

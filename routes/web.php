@@ -6,6 +6,7 @@ use App\Http\Controllers\Accounting\AccountingPeriodController;
 use App\Http\Controllers\Accounting\AgingReportController;
 use App\Http\Controllers\Accounting\AssemblyController;
 use App\Http\Controllers\Accounting\BalanceSheetController;
+use App\Http\Controllers\Accounting\EquityStatementController;
 use App\Http\Controllers\Accounting\BankController;
 use App\Http\Controllers\Accounting\BillController;
 use App\Http\Controllers\Accounting\CashFlowController;
@@ -421,6 +422,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('balance-sheet', [BalanceSheetController::class, 'index'])->name('balance-sheet.index');
             Route::get('balance-sheet/export/csv', [BalanceSheetController::class, 'exportCsv'])->name('balance-sheet.export-csv');
             Route::get('balance-sheet/export/pdf', [BalanceSheetController::class, 'exportPdf'])->name('balance-sheet.export-pdf');
+
+            Route::get('equity-statement', [EquityStatementController::class, 'index'])->name('equity-statement.index');
+            Route::get('equity-statement/export/csv', [EquityStatementController::class, 'exportCsv'])->name('equity-statement.export-csv');
+            Route::get('equity-statement/export/pdf', [EquityStatementController::class, 'exportPdf'])->name('equity-statement.export-pdf');
 
             Route::get('cash-flow', [CashFlowController::class, 'index'])->name('cash-flow.index');
             Route::get('cash-flow/export/csv', [CashFlowController::class, 'exportCsv'])->name('cash-flow.export-csv');
