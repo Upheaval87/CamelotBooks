@@ -85,6 +85,11 @@ class Expense extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function createdByUser(): BelongsTo
+    {
+        return $this->createdBy();
+    }
+
     public function postedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'posted_by');

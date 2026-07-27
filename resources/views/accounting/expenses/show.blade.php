@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -95,9 +96,9 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tax</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price ({{ $cs }})</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tax ({{ $cs }})</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total ({{ $cs }})</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -105,17 +106,17 @@
                                 <tr>
                                     <td class="px-4 py-2 text-sm text-gray-900">{{ $line->expenseAccount?->code ?? '' }} - {{ $line->expenseAccount?->name ?? '' }}</td>
                                     <td class="px-4 py-2 text-sm text-gray-900">{{ $line->description }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->quantity) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->unit_price) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->tax_amount) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{{ format_money($line->line_total) }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ $line->quantity }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_number($line->unit_price) }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_number($line->tax_amount) }}</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{{ format_number($line->line_total) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td colspan="5" class="px-4 py-2 text-sm font-semibold text-gray-800 text-right">Total:</td>
-                                <td class="px-4 py-2 text-sm font-bold text-gray-900 text-right">{{ format_money($expense->amount) }}</td>
+                                <td class="px-4 py-2 text-sm font-bold text-gray-900 text-right">{{ format_number($expense->amount) }}</td>
                             </tr>
                         </tfoot>
                     </table>
