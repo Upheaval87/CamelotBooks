@@ -7,6 +7,7 @@ use App\Models\Account;
 use App\Models\Branch;
 use App\Models\CostCenter;
 use App\Models\Customer;
+use App\Models\MobileMoneyProvider;
 use App\Models\PosPaymentMethod;
 use App\Models\Product;
 use App\Models\SalesReceipt;
@@ -41,11 +42,12 @@ class SalesReceiptController extends Controller
         $costCenters = CostCenter::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $incomeAccounts = Account::where('company_id', $companyId)->where('type', 'revenue')->where('is_active', true)->orderBy('code')->get();
         $paymentMethods = PosPaymentMethod::where('is_active', true)->orderBy('name')->get();
+        $mobileProviders = MobileMoneyProvider::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get(['id', 'name']);
         $bankAccounts = Account::where('company_id', $companyId)->whereIn('type', ['asset', 'bank'])->where('is_active', true)->orderBy('code')->get();
         $itemCategories = \App\Models\ItemCategory::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $products = Product::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
 
-        return view('accounting.sales-receipts.create', compact('customers', 'branches', 'costCenters', 'incomeAccounts', 'paymentMethods', 'bankAccounts', 'itemCategories', 'products'));
+        return view('accounting.sales-receipts.create', compact('customers', 'branches', 'costCenters', 'incomeAccounts', 'paymentMethods', 'mobileProviders', 'bankAccounts', 'itemCategories', 'products'));
     }
 
     public function store(Request $request)

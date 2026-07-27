@@ -175,8 +175,7 @@
                 <td class="px-4 py-2">
                     <input type="number" name="lines[${idx}][unit_price]" value="0" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" />
                 </td>
-                <input type="hidden" name="lines[${idx}][tax_rate]" value="0" />
-                <td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>
+                <td class="px-4 py-2 text-right text-sm font-medium line-total"><input type="hidden" name="lines[${idx}][tax_rate]" value="0" />0.00</td>
                 <td class="px-4 py-2 text-center">
                     <button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                 </td>

@@ -82,31 +82,41 @@
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payments') }}</h3>
-                    <div id="payments-section" x-data="paymentSection()">
+                    <div x-data="paymentSection()" id="payments-section">
                         <template x-for="(payment, pIdx) in payments" :key="pIdx">
                             <div class="flex items-end gap-3 mb-3">
-                                <div class="flex-1">
+                                <input type="hidden" :name="'payments[' + pIdx + '][institution]'" x-model="payment.provider_id" />
+                                <div class="w-1/4">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Payment Method</label>
-                                    <select x-model="payment.payment_method_id" name="payments[]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" @change="onMethodChange(pIdx)">
+                                    <select :name="'payments[' + pIdx + '][payment_method_id]'" x-model="payment.payment_method_id" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" @change="onMethodChange(pIdx)">
                                         <option value="">Select method...</option>
                                         @foreach($paymentMethods as $pm)
                                             <option value="{{ $pm->id }}" data-type="{{ $pm->type }}" data-clearing="{{ $pm->clearing_account_id }}">{{ $pm->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="flex-1">
-                                    <label class="block text-xs font-medium text-gray-500 mb-1">Amount</label>
-                                    <input type="number" x-model.number="payment.amount" name="payments[]" step="0.01" min="0" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" @input="updateRemaining()" />
+                                <div class="w-1/4" x-show="payment.type === 'mobile_money'">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Provider</label>
+                                    <select x-model="payment.provider_id" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                        <option value="">Select provider...</option>
+                                        @foreach($mobileProviders as $mp)
+                                            <option value="{{ $mp->name }}">{{ $mp->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-                                <div x-show="payment.type === 'cash'" class="flex-1">
+                                <div :class="payment.type === 'mobile_money' ? 'w-1/4' : 'flex-1'">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">Amount ({{ $cs }})</label>
+                                    <input type="number" :name="'payments[' + pIdx + '][amount]'" x-model.number="payment.amount" step="0.01" min="0" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" @input="updateRemaining()" />
+                                </div>
+                                <div x-show="payment.type === 'cash'" class="w-1/4">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Cash Tendered</label>
-                                    <input type="number" x-model.number="payment.cash_tendered" step="0.01" min="0" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" />
+                                    <input type="number" :name="'payments[' + pIdx + '][cash_tendered]'" x-model.number="payment.cash_tendered" step="0.01" min="0" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" />
                                 </div>
-                                <div x-show="payment.type === 'bank_transfer' || payment.type === 'card'" class="flex-1">
+                                <div x-show="payment.type === 'bank_transfer' || payment.type === 'card'" class="w-1/4">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Reference</label>
-                                    <input type="text" x-model="payment.reference_number" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />
+                                    <input type="text" :name="'payments[' + pIdx + '][reference_number]'" x-model="payment.reference_number" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />
                                 </div>
-                                <button type="button" @click="removePayment(pIdx)" class="text-red-600 hover:text-red-900 px-2" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                                <button type="button" @click="removePayment(pIdx)" class="text-red-600 hover:text-red-900 px-2 pb-1" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                             </div>
                         </template>
                         <button type="button" @click="addPayment()" class="inline-flex items-center px-3 py-1 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
@@ -145,18 +155,16 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku', 'sales_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
+    <x-advanced-search-modal name="product_receipt" :items="$products" labelKey="name" :showFields="['sku', 'sales_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
 
     @php
-        $productsJson = $products->map(function($p) {
-            return [
-                'id' => $p->id, 'name' => $p->name, 'sku' => $p->sku, 'barcode' => $p->barcode,
-                'sales_price' => $p->sales_price, 'purchase_price' => $p->purchase_price,
-                'type' => $p->type, 'description' => $p->description,
-                'tracked_as_inventory' => $p->tracked_as_inventory,
-                'income_account_id' => $p->income_account_id, 'tax_rate' => $p->tax_rate,
-            ];
-        })->values();
+        $productsJson = $products->map(fn($p) => [
+            'id' => $p->id, 'name' => $p->name, 'sku' => $p->sku, 'barcode' => $p->barcode,
+            'sales_price' => $p->sales_price, 'purchase_price' => $p->purchase_price,
+            'type' => $p->type, 'description' => $p->description,
+            'tracked_as_inventory' => $p->tracked_as_inventory,
+            'income_account_id' => $p->income_account_id, 'tax_rate' => $p->tax_rate,
+        ])->values();
     @endphp
 
     <script>
@@ -172,47 +180,13 @@
             }
         }
 
+        const products = @json($productsJson);
         const incomeAccounts = @json($incomeAccounts);
         let lineIndex = 0;
 
-        function onProductSelected(idx, id, item) {
-            var row = document.querySelector('[data-line-idx="' + idx + '"]');
-            if (!row) return;
-            var descInput = row.querySelector('[name*="[description]"]');
-            if (descInput) descInput.value = item.description || item.name || '';
-            var priceInput = row.querySelector('[name*="[unit_price]"]');
-            if (priceInput) priceInput.value = item.sales_price ? parseFloat(item.sales_price).toFixed(2) : '0.00';
-            var taxInput = row.querySelector('[name*="[tax_rate]"]');
-            if (taxInput) taxInput.value = item.tax_rate ? parseFloat(item.tax_rate).toFixed(2) : '0.00';
-            var accSelect = row.querySelector('[name*="[income_account_id]"]');
-            if (accSelect && item.income_account_id) accSelect.value = item.income_account_id;
-            updateTotals();
-        }
-
-        function buildProductSearchable(idx, selectedId, selectedName) {
-            var config = {
-                name: 'lines[' + idx + '][product_id]',
-                valueKey: 'id',
-                labelKey: 'name',
-                searchKeys: ['name', 'sku', 'barcode'],
-                showFields: ['sku', 'sales_price'],
-                preload: selectedId || '',
-                preloadLabel: selectedName || '',
-                onSelectCallback: 'onProductSelect_' + idx,
-                enableAdvancedSearch: true,
-                advancedSearchName: 'product',
-            };
-            window['onProductSelect_' + idx] = function(id, item) { onProductSelected(idx, id, item); };
-            return 'searchableSelect(' + JSON.stringify(config) + ')';
-        }
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
-
         function updateTotals() {
-            var subtotal = 0;
-            var totalTax = 0;
+            let subtotal = 0;
+            let totalTax = 0;
             document.querySelectorAll('#lines-body tr').forEach(function(row) {
                 var qty = parseFloat(row.querySelector('[name*="[quantity]"]').value) || 0;
                 var price = parseFloat(row.querySelector('[name*="[unit_price]"]').value) || 0;
@@ -229,20 +203,28 @@
             document.getElementById('grand-total').textContent = (subtotal + totalTax).toFixed(2);
         }
 
-        function addLine(data) {
+        function addLine() {
             var tbody = document.getElementById('lines-body');
             var idx = lineIndex++;
-            var selectedId = data ? String(data.product_id || '') : '';
-            var selectedName = data && data.product_id ? (data.description || '') : '';
-            var xDataAttr = buildProductSearchable(idx, selectedId, selectedName);
             var accountOptions = incomeAccounts.map(function(a) {
-                return '<option value="' + a.id + '" ' + (data && data.income_account_id == a.id ? 'selected' : '') + '>' + a.code + ' - ' + a.name + '</option>';
+                return '<option value="' + a.id + '">' + a.code + ' - ' + a.name + '</option>';
             }).join('');
             var tr = document.createElement('tr');
-            tr.setAttribute('data-line-idx', idx);
             tr.innerHTML =
                 '<td class="px-4 py-2" style="min-width: 220px;">' +
-                    '<div x-data="' + escapeHtml(xDataAttr) + '" class="relative">' +
+                    '<div x-data="searchableSelect({' +
+                        'name: \'lines[' + idx + '][product_id]\',' +
+                        'items: products,' +
+                        'valueKey: \'id\',' +
+                        'labelKey: \'name\',' +
+                        'searchKeys: [\'name\', \'sku\', \'barcode\'],' +
+                        'showFields: [\'sku\', \'sales_price\'],' +
+                        'preload: \'\',' +
+                        'preloadLabel: \'\',' +
+                        'onSelectCallback: null,' +
+                        'enableAdvancedSearch: true,' +
+                        'advancedSearchName: \'product_receipt\',' +
+                    '})" class="relative">' +
                         '<input type="hidden" name="lines[' + idx + '][product_id]" :value="selectedId" />' +
                         '<div class="flex">' +
                             '<input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if(query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="Search products..." autocomplete="off" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />' +
@@ -250,20 +232,54 @@
                                 '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>' +
                             '</button>' +
                         '</div>' +
+                        '<div x-show="open && results.length > 0" x-cloak class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">' +
+                            '<template x-for="(item, idx2) in results" :key="item[valueKey]">' +
+                                '<div @click="select(item)" @mouseenter="highlightIndex = parseInt(idx2)" class="px-3 py-2 cursor-pointer flex justify-between items-center text-sm border-b border-gray-100 last:border-0" :style="parseInt(idx2) === highlightIndex ? \'background-color: #4f46e5; color: white;\' : \'\'">' +
+                                    '<div class="flex flex-col min-w-0">' +
+                                        '<span class="font-medium truncate" x-text="item[labelKey]"></span>' +
+                                        '<div class="flex gap-2 text-xs" :style="parseInt(idx2) === highlightIndex ? \'color: #c7d2fe;\' : \'color: #6b7280;\'">' +
+                                            '<span x-show="item.sku" x-text="item.sku"></span>' +
+                                            '<span x-show="item.sales_price" x-text="formatNumber(parseFloat(item.sales_price))"></span>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</template>' +
+                        '</div>' +
                     '</div>' +
                 '</td>' +
-                '<td class="px-4 py-2"><input type="text" name="lines[' + idx + '][description]" value="' + (data ? (data.description || '') : '') + '" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" /></td>' +
-                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="' + (data ? data.quantity : 1) + '" min="0" step="any" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" /></td>' +
-                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][unit_price]" value="' + (data ? (data.unit_price || 0) : 0) + '" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" onchange="updateTotals()" oninput="updateTotals()" /></td>' +
-                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][discount]" value="' + (data ? (data.discount || 0) : 0) + '" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" /></td>' +
-                '<input type="hidden" name="lines[' + idx + '][tax_rate]" value="0" />' +
-                '<td></td>' +
-                '<td class="px-4 py-2"><select name="lines[' + idx + '][income_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"><option value="">Select Account</option>' + accountOptions + '</select></td>' +
+                '<td class="px-4 py-2"><input type="text" name="lines[' + idx + '][description]" value="" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" /></td>' +
+                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="1" min="0" step="any" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" oninput="updateTotals()" /></td>' +
+                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][unit_price]" value="0" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" oninput="updateTotals()" /></td>' +
+                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][discount]" value="0" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" oninput="updateTotals()" /></td>' +
+                '<td class="px-4 py-2"><input type="hidden" name="lines[' + idx + '][tax_rate]" value="0" /><select name="lines[' + idx + '][income_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"><option value="">Select Account</option>' + accountOptions + '</select></td>' +
                 '<td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>' +
-                '<td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></td>';
+                '<td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td>';
             tbody.appendChild(tr);
             updateTotals();
         }
+
+        document.getElementById('lines-body').addEventListener('item-selected', function(e) {
+            var row = e.target.closest('tr');
+            if (!row) return;
+            var item = e.detail.item;
+            if (item.description) {
+                var descInput = row.querySelector('[name*="[description]"]');
+                if (descInput) descInput.value = item.description;
+            }
+            if (item.sales_price) {
+                var priceInput = row.querySelector('[name*="[unit_price]"]');
+                if (priceInput) priceInput.value = parseFloat(item.sales_price).toFixed(2);
+            }
+            if (item.tax_rate !== undefined && item.tax_rate !== null) {
+                var taxInput = row.querySelector('[name*="[tax_rate]"]');
+                if (taxInput) taxInput.value = parseFloat(item.tax_rate).toFixed(2);
+            }
+            if (item.income_account_id) {
+                var acctInput = row.querySelector('[name*="[income_account_id]"]');
+                if (acctInput) acctInput.value = item.income_account_id;
+            }
+            updateTotals();
+        });
 
         function removeLine(btn) { btn.closest('tr').remove(); updateTotals(); }
 
@@ -272,22 +288,23 @@
 
         function paymentSection() {
             return {
-                payments: [{ payment_method_id: '', amount: 0, type: '', cash_tendered: 0, reference_number: '' }],
+                payments: [{ payment_method_id: '', amount: 0, type: '', cash_tendered: 0, reference_number: '', provider_id: '' }],
                 addPayment() {
-                    this.payments.push({ payment_method_id: '', amount: 0, type: '', cash_tendered: 0, reference_number: '' });
+                    this.payments.push({ payment_method_id: '', amount: 0, type: '', cash_tendered: 0, reference_number: '', provider_id: '' });
                 },
                 removePayment(idx) {
                     this.payments.splice(idx, 1);
                 },
                 onMethodChange(idx) {
-                    var sel = document.querySelectorAll('select[name="payments[]"]')[idx];
+                    var sel = document.querySelectorAll('#payments-section select[x-model="payment.payment_method_id"]')[idx];
                     if (!sel) return;
                     var opt = sel.options[sel.selectedIndex];
                     this.payments[idx].type = opt.dataset.type || '';
+                    if (this.payments[idx].type !== 'mobile_money') {
+                        this.payments[idx].provider_id = '';
+                    }
                 },
-                updateRemaining() {
-                    // optional: could display remaining balance
-                }
+                updateRemaining() {}
             }
         }
     </script>

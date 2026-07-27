@@ -111,7 +111,7 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku', 'purchase_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
+    <x-advanced-search-modal name="product_purchase" :items="$products" labelKey="name" :showFields="['sku', 'purchase_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
 
     @php
         $productsJson = $products->map(function($p) {
@@ -142,35 +142,7 @@
             return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        function onProductSelected(idx, id, item) {
-            var row = document.querySelector('[data-line-idx="' + idx + '"]');
-            if (!row) return;
-            var descInput = row.querySelector('[name*="[description]"]');
-            if (descInput) descInput.value = item.description || '';
-            var costInput = row.querySelector('[name*="[unit_cost]"]');
-            if (costInput) costInput.value = item.purchase_price ? parseFloat(item.purchase_price).toFixed(2) : '0.00';
-            var accSelect = row.querySelector('[name*="[expense_account_id]"]');
-            if (accSelect && item.expense_account_id) accSelect.value = item.expense_account_id;
-            updateTotals();
-        }
 
-        function buildProductSearchable(idx, selectedId, selectedName) {
-            var config = {
-                name: 'lines[' + idx + '][product_id]',
-                items: products,
-                valueKey: 'id',
-                labelKey: 'name',
-                searchKeys: ['name', 'sku', 'barcode'],
-                showFields: ['sku', 'purchase_price'],
-                preload: selectedId || '',
-                preloadLabel: selectedName || '',
-                onSelectCallback: 'onProductSelect_' + idx,
-                enableAdvancedSearch: true,
-                advancedSearchName: 'product',
-            };
-            window['onProductSelect_' + idx] = function(id, item) { onProductSelected(idx, id, item); };
-            return 'searchableSelect(' + JSON.stringify(config) + ')';
-        }
 
         function updateTotals() {
             let total = 0;
@@ -191,7 +163,19 @@
             var selectedName = data && data.product_id
                 ? (products.find(function(p) { return p.id == data.product_id; }) || {}).name || ''
                 : '';
-            var xDataAttr = buildProductSearchable(idx, selectedId, selectedName);
+            var xDataAttr = 'searchableSelect({' +
+                'name: \'lines[' + idx + '][product_id]\',' +
+                'items: products,' +
+                'valueKey: \'id\',' +
+                'labelKey: \'name\',' +
+                'searchKeys: [\'name\', \'sku\', \'barcode\'],' +
+                'showFields: [\'sku\', \'purchase_price\'],' +
+                'preload: \'' + selectedId + '\',' +
+                'preloadLabel: \'' + selectedName + '\',' +
+                'onSelectCallback: null,' +
+                'enableAdvancedSearch: true,' +
+                'advancedSearchName: \'product_purchase\',' +
+            '})';
             var accountOptions = expenseAccounts.map(function(a) {
                 return '<option value="' + a.id + '" ' + (data && data.expense_account_id == a.id ? 'selected' : '') + '>' + a.code + ' - ' + a.name + '</option>';
             }).join('');
@@ -253,5 +237,23 @@
         }
 
         document.getElementById('add-line').addEventListener('click', () => addLine());
+        document.getElementById('lines-body').addEventListener('item-selected', function(e) {
+            var row = e.target.closest('tr');
+            if (!row) return;
+            var item = e.detail.item;
+            if (item.description) {
+                var descInput = row.querySelector('[name*="[description]"]');
+                if (descInput) descInput.value = item.description;
+            }
+            if (item.purchase_price) {
+                var costInput = row.querySelector('[name*="[unit_cost]"]');
+                if (costInput) costInput.value = parseFloat(item.purchase_price).toFixed(2);
+            }
+            if (item.expense_account_id) {
+                var acctInput = row.querySelector('[name*="[expense_account_id]"]');
+                if (acctInput) acctInput.value = item.expense_account_id;
+            }
+            updateTotals();
+        });
     </script>
 </x-app-layout>

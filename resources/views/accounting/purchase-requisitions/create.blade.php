@@ -97,7 +97,7 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku', 'sales_price', 'stock_qty']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
+    <x-advanced-search-modal name="product_purchase" :items="$products" labelKey="name" :showFields="['sku', 'sales_price', 'stock_qty']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
 
     <script>
         @php
@@ -116,39 +116,7 @@
         const products = @json($productsJson);
         let lineIndex = 0;
 
-        function onProductSelected(idx, id, item) {
-            const row = document.querySelector(`[data-line-idx="${idx}"]`);
-            if (!row) return;
-            const descInput = row.querySelector('[name*="[description]"]');
-            if (descInput && item.description) {
-                descInput.value = item.description;
-            }
-            if (item.purchase_price) {
-                const costInput = row.querySelector('[name*="[estimated_unit_cost]"]');
-                if (costInput && (!costInput.value || parseFloat(costInput.value) === 0)) {
-                    costInput.value = parseFloat(item.purchase_price).toFixed(2);
-                }
-            }
-            updateTotals();
-        }
 
-        function buildProductSearchable(idx, selectedId, selectedName) {
-            const config = {
-                name: 'lines[' + idx + '][product_id]',
-                items: products,
-                valueKey: 'id',
-                labelKey: 'name',
-                searchKeys: ['name', 'sku', 'barcode'],
-                showFields: ['sku', 'sales_price'],
-                preload: selectedId || '',
-                preloadLabel: selectedName || '',
-                onSelectCallback: 'onProductSelect_' + idx,
-                enableAdvancedSearch: true,
-                advancedSearchName: 'product',
-            };
-            window['onProductSelect_' + idx] = function(id, item) { onProductSelected(idx, id, item); };
-            return 'searchableSelect(' + JSON.stringify(config) + ')';
-        }
 
         function updateTotals() {
             document.querySelectorAll('#lines-body tr').forEach(row => {
@@ -165,7 +133,19 @@
             const selectedName = data && data.product_id
                 ? (products.find(p => p.id == data.product_id)?.name || '')
                 : '';
-            const xDataAttr = buildProductSearchable(idx, selectedId, selectedName);
+            const xDataAttr = 'searchableSelect({' +
+                'name: \'lines[' + idx + '][product_id]\',' +
+                'items: products,' +
+                'valueKey: \'id\',' +
+                'labelKey: \'name\',' +
+                'searchKeys: [\'name\', \'sku\', \'barcode\'],' +
+                'showFields: [\'sku\', \'purchase_price\'],' +
+                'preload: \'' + selectedId + '\',' +
+                'preloadLabel: \'' + selectedName + '\',' +
+                'onSelectCallback: null,' +
+                'enableAdvancedSearch: true,' +
+                'advancedSearchName: \'product_purchase\',' +
+            '})';
             const tr = document.createElement('tr');
             tr.setAttribute('data-line-idx', idx);
             tr.innerHTML = `
@@ -232,6 +212,22 @@
         }
 
         document.getElementById('add-line').addEventListener('click', () => addLine());
+        document.getElementById('lines-body').addEventListener('item-selected', function(e) {
+            var row = e.target.closest('tr');
+            if (!row) return;
+            var item = e.detail.item;
+            if (item.description) {
+                var descInput = row.querySelector('[name*="[description]"]');
+                if (descInput) descInput.value = item.description;
+            }
+            if (item.purchase_price) {
+                var costInput = row.querySelector('[name*="[estimated_unit_cost]"]');
+                if (costInput && (!costInput.value || parseFloat(costInput.value) === 0)) {
+                    costInput.value = parseFloat(item.purchase_price).toFixed(2);
+                }
+            }
+            updateTotals();
+        });
         addLine();
     </script>
 </x-app-layout>
