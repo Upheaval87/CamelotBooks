@@ -26,8 +26,6 @@ class VendorCentreController extends Controller
         $companyId = session('current_company_id');
         abort_unless($vendor->company_id == $companyId, 403);
 
-        $vendor->load('openingBalanceAccount');
-
         $timeline = $this->vendorCentreService->getVendorTimeline($vendor, $companyId);
         $stats = $this->vendorCentreService->getVendorStats($vendor, $companyId);
 
