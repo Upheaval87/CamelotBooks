@@ -93,6 +93,14 @@ class ReportRegistry
                 'permission' => 'view_reports',
                 'feature_flag' => 'analytics',
             ],
+            'sales_register' => [
+                'key' => 'sales_register',
+                'name' => 'Sales Register',
+                'category' => 'reports',
+                'route' => 'accounting.sales-register.index',
+                'permission' => 'view_reports',
+                'feature_flag' => null,
+            ],
             'purchasing_analytics' => [
                 'key' => 'purchasing_analytics',
                 'name' => 'Purchasing Analytics',

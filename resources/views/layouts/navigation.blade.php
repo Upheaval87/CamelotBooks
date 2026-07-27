@@ -15,28 +15,28 @@
 
                     @if(session('current_company_id'))
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
-                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.customers.*') || request()->routeIs('accounting.vendors.*') || request()->routeIs('accounting.invoices.*') || request()->routeIs('accounting.bills.*') || request()->routeIs('accounting.products.*') || request()->routeIs('accounting.credit-notes.*') || request()->routeIs('accounting.vendor-credits.*') || request()->routeIs('accounting.customer-payments.*') || request()->routeIs('accounting.vendor-payments.*') || request()->routeIs('accounting.purchase-requisitions.*') || request()->routeIs('accounting.purchase-orders.*') || request()->routeIs('accounting.goods-received-notes.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.customers.*') || request()->routeIs('accounting.vendors.*') || request()->routeIs('accounting.invoices.*') || request()->routeIs('accounting.bills.*') || request()->routeIs('accounting.products.*') || request()->routeIs('accounting.credit-notes.*') || request()->routeIs('accounting.vendor-credits.*') || request()->routeIs('accounting.customer-payments.*') || request()->routeIs('accounting.vendor-payments.*') || request()->routeIs('accounting.purchase-requisitions.*') || request()->routeIs('accounting.purchase-orders.*') || request()->routeIs('accounting.goods-received-notes.*') || request()->routeIs('accounting.quotations.*') || request()->routeIs('accounting.sales-receipts.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                             {{ __('Sales & Purchases') }}
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-56 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
                             <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Sales</div>
-                            <a href="{{ route('accounting.customers.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Customers') }}</a>
-                            <a href="{{ route('accounting.invoices.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Invoices') }}</a>
-                            <a href="{{ route('accounting.credit-notes.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Credit Notes') }}</a>
+                            <a href="{{ route('accounting.quotations.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Quotations') }}</a>
+                            <a href="{{ route('accounting.invoices.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Invoices') }}</a>
+                            <a href="{{ route('accounting.sales-receipts.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Sales Receipts') }}</a>
+                            <a href="{{ route('accounting.credit-notes.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Credit Notes') }}</a>
                             <div class="border-t border-gray-100 my-1"></div>
-                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Purchases</div>
-                            <a href="{{ route('accounting.vendors.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Vendors') }}</a>
-                            <a href="{{ route('accounting.purchase-requisitions.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Purchase Requisitions') }}</a>
-                            <a href="{{ route('accounting.purchase-orders.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Purchase Orders') }}</a>
-                            <a href="{{ route('accounting.goods-received-notes.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Goods Received Notes') }}</a>
-                            <a href="{{ route('accounting.bills.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Bills') }}</a>
-                            <a href="{{ route('accounting.vendor-credits.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Vendor Credits') }}</a>
-                            <a href="{{ route('accounting.expenses.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Expenses') }}</a>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">Purchasing</div>
+                            @if(Route::has('accounting.quotation-requests.index'))
+                            <a href="{{ route('accounting.quotation-requests.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Quotation Requests') }}</a>
+                            @endif
+                            <a href="{{ route('accounting.purchase-requisitions.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Purchase Requisitions') }}</a>
+                            <a href="{{ route('accounting.purchase-orders.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Purchase Orders') }}</a>
+                            <a href="{{ route('accounting.goods-received-notes.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Goods Received Notes') }}</a>
                             <div class="border-t border-gray-100 my-1"></div>
-                            <a href="{{ route('accounting.vendor-centre.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 font-medium">{{ __('Vendor Centre') }}</a>
-                            <div class="border-t border-gray-100 my-1"></div>
-                            <a href="{{ route('accounting.products.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Products & Services') }}</a>
+                            @if(Route::has('accounting.payment-requests.index'))
+                            <a href="{{ route('accounting.payment-requests.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ __('Payment Requests') }}</a>
+                            @endif
                         </div>
                     </div>
 

@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\PosSale;
 use App\Models\PosSaleLine;
+use App\Models\SalesReceipt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
@@ -90,7 +91,19 @@ class SalesAnalyticsService
                 'amount' => $sale->total,
             ]);
 
-        $allRows = $invoiceRows->concat($posRows);
+        $receiptRows = SalesReceipt::where('company_id', $companyId)
+            ->where('status', 'posted')
+            ->where('receipt_date', '>=', $dateFrom)
+            ->where('receipt_date', '<=', $dateTo)
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->select(['receipt_date', 'total'])
+            ->get()
+            ->map(fn ($r) => [
+                'month' => \Carbon\Carbon::parse($r->receipt_date)->format('Y-m'),
+                'amount' => $r->total,
+            ]);
+
+        $allRows = $invoiceRows->concat($posRows)->concat($receiptRows);
 
         return $allRows->groupBy('month')
             ->map(fn ($group) => [
@@ -129,6 +142,18 @@ class SalesAnalyticsService
             ->groupBy('customers.id', 'customers.name')
             ->get();
 
+        $receiptCustomers = DB::table('sales_receipts')
+            ->where('sales_receipts.company_id', $companyId)
+            ->where('sales_receipts.status', 'posted')
+            ->where('sales_receipts.receipt_date', '>=', $dateFrom)
+            ->where('sales_receipts.receipt_date', '<=', $dateTo)
+            ->whereNotNull('sales_receipts.customer_id')
+            ->when($branchId, fn ($q) => $q->where('sales_receipts.branch_id', $branchId))
+            ->join('customers', 'sales_receipts.customer_id', '=', 'customers.id')
+            ->selectRaw('customers.id as customer_id, customers.name as customer_name, SUM(sales_receipts.total) as total_revenue, COUNT(sales_receipts.id) as sale_count')
+            ->groupBy('customers.id', 'customers.name')
+            ->get();
+
         $merged = collect();
         foreach ($invoiceCustomers as $row) {
             $key = $row->customer_id;
@@ -145,6 +170,20 @@ class SalesAnalyticsService
             }
         }
         foreach ($posCustomers as $row) {
+            $key = $row->customer_id;
+            if ($merged->has($key)) {
+                $merged[$key]->total_revenue += $row->total_revenue;
+                $merged[$key]->invoice_count += $row->sale_count;
+            } else {
+                $merged[$key] = (object) [
+                    'customer_id'   => $row->customer_id,
+                    'customer_name' => $row->customer_name,
+                    'total_revenue' => $row->total_revenue,
+                    'invoice_count' => $row->sale_count,
+                ];
+            }
+        }
+        foreach ($receiptCustomers as $row) {
             $key = $row->customer_id;
             if ($merged->has($key)) {
                 $merged[$key]->total_revenue += $row->total_revenue;
@@ -188,6 +227,18 @@ class SalesAnalyticsService
             ->groupBy('products.id', 'products.name', 'products.sku')
             ->get();
 
+        $receiptProducts = DB::table('sales_receipt_lines')
+            ->join('sales_receipts', 'sales_receipt_lines.sales_receipt_id', '=', 'sales_receipts.id')
+            ->join('products', 'sales_receipt_lines.product_id', '=', 'products.id')
+            ->where('sales_receipts.company_id', $companyId)
+            ->where('sales_receipts.status', 'posted')
+            ->where('sales_receipts.receipt_date', '>=', $dateFrom)
+            ->where('sales_receipts.receipt_date', '<=', $dateTo)
+            ->when($branchId, fn ($q) => $q->where('sales_receipts.branch_id', $branchId))
+            ->selectRaw('products.id as product_id, products.name as product_name, products.sku, SUM(sales_receipt_lines.line_total) as total_revenue, SUM(sales_receipt_lines.quantity) as total_quantity')
+            ->groupBy('products.id', 'products.name', 'products.sku')
+            ->get();
+
         $merged = collect();
         foreach ($invoiceProducts as $row) {
             $key = $row->product_id;
@@ -205,6 +256,21 @@ class SalesAnalyticsService
             }
         }
         foreach ($posProducts as $row) {
+            $key = $row->product_id;
+            if ($merged->has($key)) {
+                $merged[$key]->total_revenue += $row->total_revenue;
+                $merged[$key]->total_quantity += $row->total_quantity;
+            } else {
+                $merged[$key] = (object) [
+                    'product_id'    => $row->product_id,
+                    'product_name'  => $row->product_name,
+                    'sku'           => $row->sku,
+                    'total_revenue' => $row->total_revenue,
+                    'total_quantity'=> $row->total_quantity,
+                ];
+            }
+        }
+        foreach ($receiptProducts as $row) {
             $key = $row->product_id;
             if ($merged->has($key)) {
                 $merged[$key]->total_revenue += $row->total_revenue;
@@ -238,6 +304,13 @@ class SalesAnalyticsService
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->count();
 
-        return $invoiceCount + $posCount;
+        $receiptCount = SalesReceipt::where('company_id', $companyId)
+            ->where('status', 'posted')
+            ->where('receipt_date', '>=', $dateFrom)
+            ->where('receipt_date', '<=', $dateTo)
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->count();
+
+        return $invoiceCount + $posCount + $receiptCount;
     }
 }

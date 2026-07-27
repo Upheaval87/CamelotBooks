@@ -41,6 +41,9 @@ use App\Http\Controllers\Accounting\VendorPaymentController;
 use App\Http\Controllers\Accounting\PurchaseRequisitionController;
 use App\Http\Controllers\Accounting\PurchaseOrderController;
 use App\Http\Controllers\Accounting\GoodsReceivedNoteController;
+use App\Http\Controllers\Accounting\QuotationController;
+use App\Http\Controllers\Accounting\SalesReceiptController;
+use App\Http\Controllers\Accounting\SalesRegisterController;
 use App\Http\Controllers\Accounting\MakeDepositController;
 use App\Http\Controllers\Accounting\ChequeController;
 use App\Http\Controllers\Accounting\PettyCashController;
@@ -297,6 +300,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'applyForm'])->name('credit-notes.apply-form');
             Route::post('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'apply'])->name('credit-notes.apply');
             Route::post('credit-notes/{creditNote}/void', [CreditNoteController::class, 'void'])->name('credit-notes.void');
+
+            // ── Quotations ──
+            Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
+            Route::get('quotations/create', [QuotationController::class, 'create'])->name('quotations.create');
+            Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
+            Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+            Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
+            Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
+            Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
+            Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept');
+            Route::post('quotations/{quotation}/decline', [QuotationController::class, 'decline'])->name('quotations.decline');
+            Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice'])->name('quotations.convert-to-invoice');
+            Route::post('quotations/{quotation}/convert-to-receipt', [QuotationController::class, 'convertToSalesReceipt'])->name('quotations.convert-to-receipt');
+            Route::post('quotations/{quotation}/void', [QuotationController::class, 'void'])->name('quotations.void');
+            Route::get('quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print');
+            Route::post('quotations/{quotation}/email', [QuotationController::class, 'email'])->name('quotations.email');
+
+            // ── Sales Receipts ──
+            Route::get('sales-receipts', [SalesReceiptController::class, 'index'])->name('sales-receipts.index');
+            Route::get('sales-receipts/create', [SalesReceiptController::class, 'create'])->name('sales-receipts.create');
+            Route::post('sales-receipts', [SalesReceiptController::class, 'store'])->name('sales-receipts.store');
+            Route::get('sales-receipts/{salesReceipt}', [SalesReceiptController::class, 'show'])->name('sales-receipts.show');
+            Route::post('sales-receipts/{salesReceipt}/post', [SalesReceiptController::class, 'post'])->name('sales-receipts.post');
+            Route::post('sales-receipts/{salesReceipt}/void', [SalesReceiptController::class, 'void'])->name('sales-receipts.void');
+            Route::get('sales-receipts/{salesReceipt}/print', [SalesReceiptController::class, 'print'])->name('sales-receipts.print');
+            Route::post('sales-receipts/{salesReceipt}/email', [SalesReceiptController::class, 'email'])->name('sales-receipts.email');
+
+            // ── Sales Register ──
+            Route::get('sales-register', [SalesRegisterController::class, 'index'])->name('sales-register.index');
 
             // Customer Payments
             Route::get('customer-payments/create', [CustomerPaymentController::class, 'create'])->name('customer-payments.create');

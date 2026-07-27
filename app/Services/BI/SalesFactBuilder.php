@@ -12,6 +12,7 @@ class SalesFactBuilder
 
         $this->buildInvoiceLines($now);
         $this->buildPosSaleLines($now);
+        $this->buildSalesReceiptLines($now);
 
         return DB::table('fact_sales')->count();
     }
@@ -109,6 +110,71 @@ class SalesFactBuilder
                 DB::raw('NULL AS income_account_id')
             )
             ->orderBy('psl.id')
+            ->chunk(2000, function ($rows) use (&$inserts, $now) {
+                foreach ($rows as $row) {
+                    $inserts[] = [
+                        'company_key'       => $row->company_id,
+                        'date_key'          => $row->date,
+                        'branch_key'        => $row->branch_id,
+                        'cost_center_key'   => $row->cost_center_id,
+                        'customer_key'      => $row->customer_id,
+                        'item_key'          => $row->product_id,
+                        'source_type'       => $row->source_type,
+                        'source_id'         => $row->source_id,
+                        'source_number'     => $row->source_number,
+                        'source_status'     => $row->source_status,
+                        'quantity'          => $row->quantity,
+                        'unit_price'        => $row->unit_price,
+                        'discount'          => $row->discount,
+                        'tax_rate'          => $row->tax_rate,
+                        'amount'            => $row->amount,
+                        'tax_amount'        => $row->tax_amount,
+                        'line_total'        => $row->line_total,
+                        'income_account_key' => $row->income_account_id,
+                        'base_amount'       => null,
+                        'is_credit_note'    => false,
+                        'credit_note_id'    => null,
+                        'refreshed_at'      => $now,
+                    ];
+                }
+
+                DB::table('fact_sales')->insert($inserts);
+                $inserts = [];
+            });
+
+        if ($inserts) {
+            DB::table('fact_sales')->insert($inserts);
+        }
+    }
+
+    protected function buildSalesReceiptLines(string $now): void
+    {
+        $inserts = [];
+
+        DB::table('sales_receipt_lines AS srl')
+            ->join('sales_receipts AS sr', 'sr.id', '=', 'srl.sales_receipt_id')
+            ->where('sr.status', '!=', 'voided')
+            ->select(
+                'sr.company_id',
+                DB::raw("CAST(strftime('%Y%m%d', sr.receipt_date) AS INTEGER) AS date"),
+                'sr.branch_id',
+                'srl.cost_center_id',
+                'sr.customer_id',
+                'srl.product_id',
+                DB::raw("'sales_receipt' AS source_type"),
+                'sr.id AS source_id',
+                'sr.receipt_number AS source_number',
+                'sr.status AS source_status',
+                'srl.quantity',
+                'srl.unit_price',
+                'srl.discount',
+                'srl.tax_rate',
+                'srl.amount',
+                'srl.tax_amount',
+                'srl.line_total',
+                'srl.income_account_id'
+            )
+            ->orderBy('srl.id')
             ->chunk(2000, function ($rows) use (&$inserts, $now) {
                 foreach ($rows as $row) {
                     $inserts[] = [
