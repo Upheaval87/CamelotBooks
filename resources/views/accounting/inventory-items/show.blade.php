@@ -41,7 +41,7 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Product Details</h3>
                     <dl class="space-y-3">
                         <div class="flex justify-between">
-                            <dt class="text-sm text-gray-500">SKU</dt>
+                            <dt class="text-sm text-gray-500">Stock Keeping Unit (SKU)</dt>
                             <dd class="text-sm text-gray-900 font-medium">{{ $product->sku ?? '—' }}</dd>
                         </div>
                         <div class="flex justify-between">

@@ -17,7 +17,7 @@
                 <form method="GET" action="{{ route('accounting.products.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
                         <x-input-label for="search" value="{{ __('Search') }}" />
-                        <x-text-input id="search" name="search" type="text" class="mt-1 block w-full" :value="request('search')" placeholder="Name or SKU..." />
+                        <x-text-input id="search" name="search" type="text" class="mt-1 block w-full" :value="request('search')" placeholder="Name or Stock Keeping Unit (SKU)..." />
                     </div>
                     <div class="flex-1">
                         <x-input-label for="type" value="{{ __('Type') }}" />
@@ -65,7 +65,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Keeping Unit (SKU)</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Sales Price ({{ $cs }})</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase Price ({{ $cs }})</th>

@@ -30,7 +30,7 @@
                         <dd class="text-sm text-gray-900 font-medium mt-1">{{ $build->assemblyProduct->name ?? '—' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-sm text-gray-500">SKU</dt>
+                        <dt class="text-sm text-gray-500">Stock Keeping Unit (SKU)</dt>
                         <dd class="text-sm text-gray-900 font-medium mt-1">{{ $build->assemblyProduct->sku ?? '—' }}</dd>
                     </div>
                     <div>

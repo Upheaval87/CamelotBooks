@@ -91,7 +91,7 @@
                 <thead class="bg-gray-50 sticky top-0">
                     <tr>
                         <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Stock Keeping Unit (SKU)</th>
                         <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
                         <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
                         <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Action</th>

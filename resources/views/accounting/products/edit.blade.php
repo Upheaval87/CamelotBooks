@@ -27,7 +27,7 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <x-input-label for="sku" value="{{ __('SKU') }}" />
+                                <x-input-label for="sku" value="{{ __('Stock Keeping Unit (SKU)') }}" />
                                 <x-text-input id="sku" name="sku" type="text" class="mt-1 block w-full" :value="old('sku', $product->sku)" />
                                 <x-input-error :messages="$errors->get('sku')" class="mt-2" />
                             </div>
