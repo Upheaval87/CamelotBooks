@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Settlement') }} – {{ $settlement->settlement_number }}
@@ -92,8 +93,8 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit ({{ $cs }})</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit ({{ $cs }})</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                             </tr>
                         </thead>
@@ -103,11 +104,11 @@
                                     <td class="px-4 py-2 text-sm text-gray-900">
                                         {{ $line->account->code }} – {{ $line->account->name }}
                                     </td>
-                                    <td class="px-4 py-2 text-sm text-right">
-                                        {{ $line->debit > 0 ? format_money($line->debit) : '—' }}
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">
+                                        {{ $line->debit > 0 ? format_number($line->debit) : '' }}
                                     </td>
-                                    <td class="px-4 py-2 text-sm text-right">
-                                        {{ $line->credit > 0 ? format_money($line->credit) : '—' }}
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">
+                                        {{ $line->credit > 0 ? format_number($line->credit) : '' }}
                                     </td>
                                     <td class="px-4 py-2 text-sm text-gray-500">{{ $line->description }}</td>
                                 </tr>

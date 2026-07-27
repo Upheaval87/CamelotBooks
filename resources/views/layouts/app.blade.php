@@ -49,6 +49,14 @@
                 var formatted = Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 return negative + window.currencySymbol + formatted;
             };
+            window.formatNumber = function(amount) {
+                var val = parseFloat(amount) || 0;
+                var negative = val < 0 ? '-' : '';
+                return negative + Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            };
+            window.currencySuffix = function(label) {
+                return label + ' (' + window.currencySymbol + ')';
+            };
         </script>
         <script>
             if ('serviceWorker' in navigator) {

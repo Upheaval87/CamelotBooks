@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -51,8 +52,8 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Code</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Name</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit Balance</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit Balance</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dr ({{ $cs }})</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cr ({{ $cs }})</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -65,10 +66,10 @@
                                         <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $row['account']->name }}</a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ $row['debit_balance'] > 0 ? format_money($row['debit_balance']) : '' }}
+                                        {{ $row['debit_balance'] > 0 ? format_number($row['debit_balance']) : '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ $row['credit_balance'] > 0 ? format_money($row['credit_balance']) : '' }}
+                                        {{ $row['credit_balance'] > 0 ? format_number($row['credit_balance']) : '' }}
                                     </td>
                                 </tr>
                             @empty
@@ -83,16 +84,16 @@
                             <tr>
                                 <td colspan="2" class="px-6 py-4 text-right text-sm font-bold text-gray-900">Totals</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                    {{ format_money($totalDebit) }}
+                                    {{ format_number($totalDebit) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                    {{ format_money($totalCredit) }}
+                                    {{ format_number($totalCredit) }}
                                 </td>
                             </tr>
                             <tr>
                                 <td colspan="2" class="px-6 py-4 text-right text-sm font-bold text-gray-900">Difference</td>
                                 <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm font-bold {{ $difference == 0 ? 'text-green-600' : 'text-red-600' }} text-right">
-                                    {{ format_money($difference) }}
+                                    {{ format_number($difference) }}
                                     @if($difference == 0)
                                         <span class="ml-2 text-green-600">&#10003; Balanced</span>
                                     @endif

@@ -24,3 +24,21 @@ if (!function_exists('format_money')) {
         return $negative . $symbol . $formatted;
     }
 }
+
+if (!function_exists('format_number')) {
+    /**
+     * Format a numeric value without currency symbol.
+     *
+     * @param  float|int|string  $amount
+     * @param  int  $decimals  Number of decimal places (default 2)
+     * @return string
+     */
+    function format_number($amount, int $decimals = 2): string
+    {
+        $amount = (float) $amount;
+        $formatted = number_format(abs($amount), $decimals, '.', ',');
+        $negative = $amount < 0 ? '-' : '';
+
+        return $negative . $formatted;
+    }
+}

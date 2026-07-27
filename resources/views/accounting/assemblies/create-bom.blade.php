@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('New Bill of Materials') }}</h2>
@@ -178,7 +179,7 @@
                 '</td>' +
                 '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="' + (data ? data.quantity : 1) + '" step="0.0001" min="0.0001" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" required /></td>' +
                 '<td class="px-4 py-2"><input type="text" name="lines[' + idx + '][unit_of_measure]" value="' + (data ? (data.unit_of_measure || data.uom || 'Each') : 'Each') + '" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Each" /></td>' +
-                '<td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">Remove</button></td>';
+                '<td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></td>';
             tbody.appendChild(tr);
             updateNoLinesMsg();
         }

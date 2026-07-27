@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -76,12 +77,11 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price ({{ $cs }})</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Discount %</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tax Rate %</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income Account</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost Center</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Line Total</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Line Total ({{ $cs }})</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                                 </tr>
                             </thead>
@@ -135,20 +135,23 @@
             }
         }
 
-        const products = @json($products->map(fn($p) => [
-            'id' => $p->id,
-            'name' => $p->name,
-            'sku' => $p->sku,
-            'barcode' => $p->barcode,
-            'sales_price' => $p->sales_price,
-            'purchase_price' => $p->purchase_price,
-            'type' => $p->type,
-            'description' => $p->description,
-            'tracked_as_inventory' => $p->tracked_as_inventory,
-            'unit_price' => $p->sales_price,
-            'tax_rate' => $p->tax_rate,
-            'income_account_id' => $p->income_account_id,
-        ]));
+        @php
+            $productsJson = $products->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'sku' => $p->sku,
+                'barcode' => $p->barcode,
+                'sales_price' => $p->sales_price,
+                'purchase_price' => $p->purchase_price,
+                'type' => $p->type,
+                'description' => $p->description,
+                'tracked_as_inventory' => $p->tracked_as_inventory,
+                'unit_price' => $p->sales_price,
+                'tax_rate' => $p->tax_rate,
+                'income_account_id' => $p->income_account_id,
+            ]);
+        @endphp
+        const products = @json($productsJson);
         const incomeAccounts = @json($incomeAccounts);
         const costCenters = @json($costCenters);
         let lineIndex = 0;
@@ -203,7 +206,7 @@
                         showFields: ['sku', 'sales_price'],
                         preload: '',
                         preloadLabel: '',
-                        onSelectCallback: 'onProductSelect_' + idx,
+                        onSelectCallback: null,
                         enableAdvancedSearch: true,
                         advancedSearchName: 'product_invoice',
                     })" class="relative">
@@ -234,7 +237,7 @@
                                         <span class="font-medium truncate" x-text="item[labelKey]"></span>
                                         <div class="flex gap-2 text-xs" :style="parseInt(idx2) === highlightIndex ? 'color: #c7d2fe;' : 'color: #6b7280;'">
                                             <span x-show="item.sku" x-text="item.sku"></span>
-                                            <span x-show="item.sales_price" x-text="formatMoney(parseFloat(item.sales_price))"></span>
+                                            <span x-show="item.sales_price" x-text="formatNumber(parseFloat(item.sales_price))"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -243,20 +246,18 @@
                     </div>
                 </td>
                 <td class="px-4 py-2">
-                    <input type="text" name="lines[${idx}][description]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />
+                    <input type="text" name="lines[${idx}][description]" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" />
                 </td>
                 <td class="px-4 py-2">
                     <input type="number" name="lines[${idx}][quantity]" value="1" min="0" step="any" class="line-qty block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" />
                 </td>
                 <td class="px-4 py-2">
-                    <input type="number" name="lines[${idx}][unit_price]" value="0" min="0" step="0.01" class="line-price block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" />
+                    <input type="number" name="lines[${idx}][unit_price]" value="0" min="0" step="0.01" readonly class="line-price block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" />
                 </td>
                 <td class="px-4 py-2">
                     <input type="number" name="lines[${idx}][discount]" value="0" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" />
                 </td>
-                <td class="px-4 py-2">
-                    <input type="number" name="lines[${idx}][tax_rate]" value="0" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" />
-                </td>
+                <input type="hidden" name="lines[${idx}][tax_rate]" value="0" />
                 <td class="px-4 py-2">
                     <select name="lines[${idx}][income_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                         <option value="">Select Account</option>
@@ -271,28 +272,42 @@
                 </td>
                 <td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>
                 <td class="px-4 py-2 text-center">
-                    <button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">Remove</button>
+                    <button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                 </td>
             `;
             tbody.appendChild(tr);
         }
 
-        function onProductSelect_${idx}(id, item) {
-            const row = document.querySelector('[name="lines[${idx}][product_id]"]').closest('tr');
+        document.getElementById('add-line').addEventListener('click', addLine);
+
+        document.getElementById('lines-body').addEventListener('item-selected', function(e) {
+            const row = e.target.closest('tr');
             if (!row) return;
-            if (item.description) row.querySelector('[name*="[description"]').value = item.description;
-            if (item.unit_price) row.querySelector('[name*="[unit_price"]').value = item.unit_price;
-            if (item.tax_rate) row.querySelector('[name*="[tax_rate"]').value = item.tax_rate;
-            if (item.income_account_id) row.querySelector('[name*="[income_account_id"]').value = item.income_account_id;
+            const item = e.detail.item;
+            if (item.description) {
+                const descInput = row.querySelector('[name*="[description]"]');
+                if (descInput) descInput.value = item.description;
+            }
+            if (item.unit_price || item.sales_price) {
+                const priceInput = row.querySelector('[name*="[unit_price]"]');
+                if (priceInput) priceInput.value = item.unit_price || item.sales_price;
+            }
+            if (item.tax_rate) {
+                const taxInput = row.querySelector('[name*="[tax_rate]"]');
+                if (taxInput) taxInput.value = item.tax_rate;
+            }
+            if (item.income_account_id) {
+                const acctInput = row.querySelector('[name*="[income_account_id]"]');
+                if (acctInput) acctInput.value = item.income_account_id;
+            }
             updateTotals();
-        }
+        });
 
         function removeLine(btn) {
             btn.closest('tr').remove();
             updateTotals();
         }
 
-        document.getElementById('add-line').addEventListener('click', addLine);
         addLine();
     </script>
 

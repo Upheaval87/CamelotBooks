@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Landed Cost:') }} {{ $voucher->voucher_number }}</h2>
@@ -83,16 +84,20 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit ({{ $cs }})</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit ({{ $cs }})</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             @foreach($voucher->journalEntry->lines as $line)
                                 <tr>
                                     <td class="px-4 py-2">{{ $line->account->code ?? '' }} - {{ $line->account->name ?? '' }}</td>
-                                    <td class="px-4 py-2 text-right">{{ $line->debit > 0 ? format_money($line->debit) : '' }}</td>
-                                    <td class="px-4 py-2 text-right">{{ $line->credit > 0 ? format_money($line->credit) : '' }}</td>
+                                    <td class="px-4 py-2 text-right text-sm text-gray-900">
+                                        {{ $line->debit > 0 ? format_number($line->debit) : '' }}
+                                    </td>
+                                    <td class="px-4 py-2 text-right text-sm text-gray-900">
+                                        {{ $line->credit > 0 ? format_number($line->credit) : '' }}
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

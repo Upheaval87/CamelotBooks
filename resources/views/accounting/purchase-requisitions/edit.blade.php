@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -67,7 +68,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Est. Unit Cost</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Est. Total</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"                        >Est. Total ({{ $cs }})</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                                 </tr>
                             </thead>
@@ -90,17 +91,20 @@
     <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku', 'sales_price', 'stock_qty']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
 
     <script>
-        const products = @json($products->map(fn($p) => [
-            'id' => $p->id,
-            'name' => $p->name,
-            'sku' => $p->sku,
-            'barcode' => $p->barcode,
-            'sales_price' => $p->sales_price,
-            'purchase_price' => $p->purchase_price,
-            'type' => $p->type,
-            'description' => $p->description,
-            'tracked_as_inventory' => $p->tracked_as_inventory,
-        ]));
+        @php
+            $productsJson = $products->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'sku' => $p->sku,
+                'barcode' => $p->barcode,
+                'sales_price' => $p->sales_price,
+                'purchase_price' => $p->purchase_price,
+                'type' => $p->type,
+                'description' => $p->description,
+                'tracked_as_inventory' => $p->tracked_as_inventory,
+            ]);
+        @endphp
+        const products = @json($productsJson);
         const existingLines = @json($requisition->lines);
         let lineIndex = 0;
 
@@ -186,7 +190,7 @@
                                         <span class="font-medium truncate" x-text="item[labelKey]"></span>
                                         <div class="flex gap-2 text-xs" :style="parseInt(idx2) === highlightIndex ? 'color: #c7d2fe;' : 'color: #6b7280;'">
                                             <span x-show="item.sku" x-text="item.sku"></span>
-                                            <span x-show="item.sales_price" x-text="formatMoney(parseFloat(item.sales_price))"></span>
+                                            <span x-show="item.sales_price" x-text="formatNumber(parseFloat(item.sales_price))"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -205,7 +209,7 @@
                 </td>
                 <td class="px-4 py-2 text-right text-sm font-medium line-total">${data ? (data.estimated_total || 0) : 0}</td>
                 <td class="px-4 py-2 text-center">
-                    <button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">Remove</button>
+                    <button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                 </td>
             `;
             tbody.appendChild(tr);

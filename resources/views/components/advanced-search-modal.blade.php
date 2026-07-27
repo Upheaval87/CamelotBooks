@@ -37,7 +37,7 @@
                 window.dispatchEvent(new CustomEvent('advanced-search-selected', {
                     detail: { targetName: '{{ $name }}', item: item }
                 }));
-                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'advanced-search-{{ $name }}' });
+                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'advanced-search-{{ $name }}' }));
             }
         }"
         class="p-6"
@@ -102,7 +102,7 @@
                         <tr class="hover:bg-indigo-50 cursor-pointer" @click="selectItem(item)">
                             <td class="px-3 py-2 text-sm font-medium text-gray-900" x-text="item.{{ $labelKey }}"></td>
                             <td class="px-3 py-2 text-sm text-gray-500" x-text="item.sku || '—'"></td>
-                            <td class="px-3 py-2 text-sm text-gray-900 text-right" x-text="item.sales_price ? formatMoney(parseFloat(item.sales_price)) : '—'"></td>
+                            <td class="px-3 py-2 text-sm text-gray-900 text-right" x-text="item.sales_price ? formatNumber(parseFloat(item.sales_price)) : '—'"></td>
                             <td class="px-3 py-2 text-sm text-gray-900 text-right" x-text="item.stock_qty !== null && item.stock_qty !== undefined ? item.stock_qty : '—'"></td>
                             <td class="px-3 py-2 text-center">
                                 <button type="button" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium" @click.stop="selectItem(item)">Select</button>
@@ -116,9 +116,13 @@
             </table>
         </div>
 
-        <div class="mt-4 flex justify-end">
-            <button type="button" @click="window.dispatchEvent(new CustomEvent('close-modal', { detail: 'advanced-search-{{ $name }}' }))"
+        <div class="mt-4 flex justify-between">
+            <button type="button" @click="query = ''; categoryFilter = ''; typeFilter = ''; priceMin = ''; priceMax = '';"
                 class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Reset Filters
+            </button>
+            <button type="button" @click="window.dispatchEvent(new CustomEvent('close-modal', { detail: 'advanced-search-{{ $name }}' }))"
+                class="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700">
                 Close
             </button>
         </div>

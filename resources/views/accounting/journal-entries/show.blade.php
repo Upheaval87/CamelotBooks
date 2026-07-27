@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -130,9 +131,9 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Memo</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit ({{ $cs }})</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit ({{ $cs }})</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
                             </tr>
                         </thead>
@@ -144,10 +145,10 @@
                                         {{ $line->account->code }} - {{ $line->account->name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ $line->debit > 0 ? format_money($line->debit) : '' }}
+                                        {{ $line->debit > 0 ? format_number($line->debit) : '' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                                        {{ $line->credit > 0 ? format_money($line->credit) : '' }}
+                                        {{ $line->credit > 0 ? format_number($line->credit) : '' }}
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500">
                                         {{ $line->memo ?? '' }}
@@ -161,8 +162,8 @@
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td colspan="2" class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Totals</td>
-                                <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_money($journalEntry->total_debit) }}</td>
-                                <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_money($journalEntry->total_credit) }}</td>
+                                <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($journalEntry->total_debit) }}</td>
+                                <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($journalEntry->total_credit) }}</td>
                                 <td colspan="2"></td>
                             </tr>
                         </tfoot>

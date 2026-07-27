@@ -1,3 +1,5 @@
+@php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
+
 <div class="header">
     <div class="company">{{ $company->name }}</div>
     <div class="report-title">Account Statement</div>
@@ -11,9 +13,9 @@
             <th>Date</th>
             <th>Journal #</th>
             <th>Branch</th>
-            <th>Memo</th>
-            <th class="text-right">Debit</th>
-            <th class="text-right">Credit</th>
+            <th>Description</th>
+            <th class="text-right">Debit ({{ $cs }})</th>
+            <th class="text-right">Credit ({{ $cs }})</th>
             <th class="text-right">Balance</th>
         </tr>
     </thead>
@@ -25,8 +27,8 @@
                 <td>{{ $line->journalEntry->journal_number }}</td>
                 <td>{{ $line->journalEntry->branch->name ?? '-' }}</td>
                 <td>{{ mb_substr($line->memo ?? $line->journalEntry->memo ?? '', 0, 30) }}</td>
-                <td class="text-right">{{ (float) $line->debit > 0 ? format_money((float) $line->debit) : '' }}</td>
-                <td class="text-right">{{ (float) $line->credit > 0 ? format_money((float) $line->credit) : '' }}</td>
+                <td class="text-right">{{ (float) $line->debit > 0 ? format_number((float) $line->debit) : '' }}</td>
+                <td class="text-right">{{ (float) $line->credit > 0 ? format_number((float) $line->credit) : '' }}</td>
                 <td class="text-right">{{ format_money($txn['running_balance']) }}</td>
             </tr>
         @endforeach
