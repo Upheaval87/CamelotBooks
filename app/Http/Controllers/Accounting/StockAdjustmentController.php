@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\Branch;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryStock;
 use App\Models\ItemCategory;
@@ -38,8 +39,7 @@ class StockAdjustmentController extends Controller
             ->orderBy('name')
             ->get();
 
-        $branches = auth()->user()->branches()
-            ->where('company_id', $companyId)
+        $branches = Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
