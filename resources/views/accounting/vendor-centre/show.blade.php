@@ -24,26 +24,26 @@
             {{-- Stats Cards --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase">Open Balance</p>
+                    <p class="text-xs text-gray-500 uppercase">Open Balance ({{ $cs }})</p>
                     <p class="text-xl font-bold text-red-600">{{ format_number($stats['open_balance']) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase">Total Bills</p>
+                    <p class="text-xs text-gray-500 uppercase">Total Bills ({{ $cs }})</p>
                     <p class="text-xl font-bold text-gray-900">{{ format_number($stats['total_bills']) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase">Total Paid</p>
+                    <p class="text-xs text-gray-500 uppercase">Total Paid ({{ $cs }})</p>
                     <p class="text-xl font-bold text-green-600">{{ format_number($stats['total_paid']) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase">Credit Balance</p>
+                    <p class="text-xs text-gray-500 uppercase">Credit Balance ({{ $cs }})</p>
                     <p class="text-xl font-bold {{ $stats['credit_balance'] > 0 ? 'text-green-600' : 'text-gray-900' }}">{{ format_number($stats['credit_balance']) }}</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
-                    <p class="text-xs text-gray-500 uppercase">Total Expenses</p>
+                    <p class="text-xs text-gray-500 uppercase">Total Expenses ({{ $cs }})</p>
                     <p class="text-xl font-bold text-gray-900">{{ format_number($stats['total_expenses']) }}</p>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
