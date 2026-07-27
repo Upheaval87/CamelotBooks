@@ -1,8 +1,14 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Create Vendor') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Create Vendor') }}
+            </h2>
+            <a href="{{ route('accounting.vendors.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                {{ __('Back') }}
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-12">
@@ -79,7 +85,7 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <x-input-label for="opening_balance" value="{{ __('Opening Balance') }}" />
+                                <x-input-label for="opening_balance" value="{{ __('Opening Balance') }} ({{ $cs }})" />
                                 <x-text-input id="opening_balance" name="opening_balance" type="number" step="0.01" class="mt-1 block w-full" :value="old('opening_balance', '0.00')" />
                                 <x-input-error :messages="$errors->get('opening_balance')" class="mt-2" />
                             </div>
