@@ -78,6 +78,25 @@
                     </div>
                 </div>
 
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                    <div class="flex justify-end">
+                        <div class="w-64 space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Subtotal:</span>
+                                <span id="subtotal" class="text-gray-900">0.00</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Tax:</span>
+                                <span id="total-tax" class="text-gray-900">0.00</span>
+                            </div>
+                            <div class="flex justify-between text-sm font-semibold border-t pt-2">
+                                <span class="text-gray-800">Total:</span>
+                                <span id="grand-total" class="text-gray-900">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('accounting.purchase-requisitions.show', $requisition) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
                         {{ __('Cancel') }}
@@ -111,11 +130,17 @@
 
 
         function updateTotals() {
+            let subtotal = 0;
             document.querySelectorAll('#lines-body tr').forEach(row => {
                 const qty = parseFloat(row.querySelector('[name*="[quantity]"]').value) || 0;
                 const price = parseFloat(row.querySelector('[name*="[estimated_unit_cost]"]').value) || 0;
-                row.querySelector('.line-total').textContent = (qty * price).toFixed(2);
+                const lineTotal = qty * price;
+                row.querySelector('.line-total').textContent = lineTotal.toFixed(2);
+                subtotal += lineTotal;
             });
+            document.getElementById('subtotal').textContent = formatNumber(subtotal);
+            document.getElementById('total-tax').textContent = formatNumber(0);
+            document.getElementById('grand-total').textContent = formatNumber(subtotal);
         }
 
         function addLine(data = null) {
