@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\CostCenter;
+use App\Models\ItemCategory;
 use App\Models\Product;
 use App\Models\PurchaseRequisition;
 use App\Models\PurchaseRequisitionLine;
@@ -54,7 +55,11 @@ class PurchaseRequisitionController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('accounting.purchase-requisitions.create', compact('products', 'accounts', 'costCenters', 'branches'));
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+
+        return view('accounting.purchase-requisitions.create', compact('products', 'accounts', 'costCenters', 'branches', 'itemCategories'));
     }
 
     public function store(Request $request)
@@ -162,12 +167,17 @@ class PurchaseRequisitionController extends Controller
             ->orderBy('name')
             ->get();
 
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+
         return view('accounting.purchase-requisitions.edit', [
             'requisition' => $purchaseRequisition,
             'products' => $products,
             'accounts' => $accounts,
             'costCenters' => $costCenters,
             'branches' => $branches,
+            'itemCategories' => $itemCategories,
         ]);
     }
 

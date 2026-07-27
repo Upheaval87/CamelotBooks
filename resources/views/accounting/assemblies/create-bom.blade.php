@@ -21,20 +21,21 @@
             @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('accounting.assemblies.store-bom') }}" x-data="bomForm()">
+                <form method="POST" action="{{ route('accounting.assemblies.store-bom') }}">
                     @csrf
 
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="assembly_product_id" value="{{ __('Assembly Product') }}" />
-                            <select id="assembly_product_id" name="assembly_product_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                                <option value="">Select Assembly Product</option>
-                                @foreach($assemblyProducts as $product)
-                                    <option value="{{ $product->id }}" {{ old('assembly_product_id') == $product->id ? 'selected' : '' }}>
-                                        {{ $product->sku ? $product->sku . ' - ' : '' }}{{ $product->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div x-data="buildAssemblySearchable('{{ old('assembly_product_id') }}', '')" class="relative">
+                                <input type="hidden" name="assembly_product_id" :value="selectedId" />
+                                <div class="flex">
+                                    <input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if(query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="Search assembly products..." autocomplete="off" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />
+                                    <button type="button" @click="openAdvancedSearch()" class="mt-1 px-2.5 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-colors" title="Advanced Search">
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                    </button>
+                                </div>
+                            </div>
                             <x-input-error :messages="$errors->get('assembly_product_id')" class="mt-2" />
                         </div>
 
@@ -53,35 +54,25 @@
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <x-input-label value="{{ __('Component Lines') }}" />
-                                <button type="button" @click="addLine()" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Component</button>
+                                <button type="button" onclick="addComponentLine()" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Component</button>
                             </div>
 
-                            <div class="space-y-3">
-                                <template x-for="(line, index) in lines" :key="index">
-                                    <div class="flex items-end gap-3 p-3 bg-gray-50 rounded border border-gray-200">
-                                        <div class="flex-1">
-                                            <label class="block text-xs font-medium text-gray-500 uppercase">Component</label>
-                                            <select :name="'lines[' + index + '][component_product_id]'" x-model="line.product_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" required>
-                                                <option value="">Select Component</option>
-                                                @foreach($componentProducts as $product)
-                                                    <option value="{{ $product->id }}">{{ $product->sku ? $product->sku . ' - ' : '' }}{{ $product->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="w-32">
-                                            <label class="block text-xs font-medium text-gray-500 uppercase">Quantity</label>
-                                            <input :name="'lines[' + index + '][quantity]'" x-model="line.quantity" type="number" step="0.0001" min="0.0001" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" required>
-                                        </div>
-                                        <div class="w-28">
-                                            <label class="block text-xs font-medium text-gray-500 uppercase">UOM</label>
-                                            <input :name="'lines[' + index + '][unit_of_measure]'" x-model="line.uom" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Each">
-                                        </div>
-                                        <button type="button" @click="removeLine(index)" class="mb-1 text-red-600 hover:text-red-900 text-sm">Remove</button>
-                                    </div>
-                                </template>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UOM</th>
+                                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="components-body" class="bg-white divide-y divide-gray-200">
+                                    </tbody>
+                                </table>
                             </div>
 
-                            <div x-show="lines.length === 0" class="text-sm text-gray-500 text-center py-4 border-2 border-dashed border-gray-200 rounded">
+                            <div id="no-lines-msg" class="text-sm text-gray-500 text-center py-4 border-2 border-dashed border-gray-200 rounded mt-2">
                                 No components added. Click "+ Add Component" to begin.
                             </div>
                         </div>
@@ -98,17 +89,115 @@
         </div>
     </div>
 
+    <x-advanced-search-modal name="product" :items="$assemblyProducts->merge($componentProducts)" labelKey="name" :showFields="['sku']" :types="['service', 'inventory', 'non_inventory']" />
+
+    @php
+        $assemblyProductsJson = $assemblyProducts->map(function($p) {
+            return [
+                'id' => $p->id, 'name' => $p->name, 'sku' => $p->sku, 'barcode' => $p->barcode,
+                'type' => $p->type, 'description' => $p->description,
+            ];
+        })->values();
+        $componentProductsJson = $componentProducts->map(function($p) {
+            return [
+                'id' => $p->id, 'name' => $p->name, 'sku' => $p->sku, 'barcode' => $p->barcode,
+                'type' => $p->type, 'description' => $p->description,
+            ];
+        })->values();
+    @endphp
+
     <script>
-    function bomForm() {
-        return {
-            lines: [{ product_id: '', quantity: '1', uom: 'Each' }],
-            addLine() {
-                this.lines.push({ product_id: '', quantity: '1', uom: 'Each' });
-            },
-            removeLine(index) {
-                this.lines.splice(index, 1);
+        const assemblyProducts = @json($assemblyProductsJson);
+        const componentProducts = @json($componentProductsJson);
+        let lineIndex = 0;
+
+        function buildAssemblySearchable(selectedId, selectedName) {
+            var config = {
+                name: 'assembly_product_id',
+                items: assemblyProducts,
+                valueKey: 'id',
+                labelKey: 'name',
+                searchKeys: ['name', 'sku'],
+                showFields: ['sku'],
+                preload: selectedId || '',
+                preloadLabel: selectedName || '',
+                onSelectCallback: 'onAssemblyProductSelected',
+                enableAdvancedSearch: true,
+                advancedSearchName: 'product',
+            };
+            return 'searchableSelect(' + JSON.stringify(config) + ')';
+        }
+
+        function onAssemblyProductSelected(id, item) {}
+
+        function buildComponentSearchable(idx, selectedId, selectedName) {
+            var config = {
+                name: 'lines[' + idx + '][component_product_id]',
+                items: componentProducts,
+                valueKey: 'id',
+                labelKey: 'name',
+                searchKeys: ['name', 'sku', 'barcode'],
+                showFields: ['sku'],
+                preload: selectedId || '',
+                preloadLabel: selectedName || '',
+                onSelectCallback: 'onComponentSelect_' + idx,
+                enableAdvancedSearch: true,
+                advancedSearchName: 'product',
+            };
+            window['onComponentSelect_' + idx] = function(id, item) {};
+            return 'searchableSelect(' + JSON.stringify(config) + ')';
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function addComponentLine(data) {
+            var tbody = document.getElementById('components-body');
+            var idx = lineIndex++;
+            var selectedId = data ? String(data.component_product_id || data.product_id || '') : '';
+            var selectedName = '';
+            if (selectedId) {
+                var allProducts = assemblyProducts.concat(componentProducts);
+                var found = allProducts.find(function(p) { return p.id == selectedId; });
+                if (found) selectedName = found.name;
             }
-        };
-    }
+            var xDataAttr = buildComponentSearchable(idx, selectedId, selectedName);
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td class="px-4 py-2" style="min-width: 220px;">' +
+                    '<div x-data="' + escapeHtml(xDataAttr) + '" class="relative">' +
+                        '<input type="hidden" name="lines[' + idx + '][component_product_id]" :value="selectedId" />' +
+                        '<div class="flex">' +
+                            '<input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if(query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="Search components..." autocomplete="off" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />' +
+                            '<button type="button" @click="openAdvancedSearch()" class="px-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none" title="Advanced Search">' +
+                                '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>' +
+                            '</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</td>' +
+                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="' + (data ? data.quantity : 1) + '" step="0.0001" min="0.0001" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" required /></td>' +
+                '<td class="px-4 py-2"><input type="text" name="lines[' + idx + '][unit_of_measure]" value="' + (data ? (data.unit_of_measure || data.uom || 'Each') : 'Each') + '" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Each" /></td>' +
+                '<td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">Remove</button></td>';
+            tbody.appendChild(tr);
+            updateNoLinesMsg();
+        }
+
+        function removeLine(btn) {
+            btn.closest('tr').remove();
+            updateNoLinesMsg();
+        }
+
+        function updateNoLinesMsg() {
+            var tbody = document.getElementById('components-body');
+            var msg = document.getElementById('no-lines-msg');
+            if (tbody.children.length === 0) {
+                msg.style.display = '';
+            } else {
+                msg.style.display = 'none';
+            }
+        }
+
+        addComponentLine();
     </script>
 </x-app-layout>

@@ -31,14 +31,19 @@
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="assembly_product_id" value="{{ __('Assembly Product') }}" />
-                            <select id="assembly_product_id" name="assembly_product_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                                <option value="">Select Assembly Product</option>
-                                @foreach($products as $product)
-                                    <option value="{{ $product->id }}" {{ old('assembly_product_id') == $product->id ? 'selected' : '' }}>
-                                        {{ $product->sku ? $product->sku . ' - ' : '' }}{{ $product->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-searchable-select
+                                name="assembly_product_id"
+                                :items="$products"
+                                valueKey="id"
+                                labelKey="name"
+                                :searchKeys="['name', 'sku', 'barcode']"
+                                :showFields="['sku']"
+                                :preload="old('assembly_product_id')"
+                                placeholder="Search assembly products..."
+                                :enableAdvancedSearch="true"
+                                advancedSearchName="product"
+                                :required="true"
+                            />
                             <x-input-error :messages="$errors->get('assembly_product_id')" class="mt-2" />
                         </div>
 
@@ -81,4 +86,6 @@
             </div>
         </div>
     </div>
+
+    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku']" :types="['inventory']" />
 </x-app-layout>

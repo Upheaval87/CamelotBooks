@@ -77,6 +77,17 @@
                     </div>
                 </div>
 
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                    <div class="flex justify-end">
+                        <div class="w-64 space-y-2">
+                            <div class="flex justify-between text-sm font-semibold border-t pt-2">
+                                <span class="text-gray-800">Estimated Total:</span>
+                                <span id="estimated-grand-total" class="text-gray-900">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('accounting.purchase-requisitions.show', $requisition) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
                         {{ __('Cancel') }}
@@ -87,41 +98,119 @@
         </div>
     </div>
 
+    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku', 'sales_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
+
+    @php
+        $productsJson = $products->map(function($p) {
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'sku' => $p->sku,
+                'barcode' => $p->barcode,
+                'sales_price' => $p->sales_price,
+                'purchase_price' => $p->purchase_price,
+                'type' => $p->type,
+                'description' => $p->description,
+                'tracked_as_inventory' => $p->tracked_as_inventory,
+            ];
+        })->values();
+        $existingLinesJson = $requisition->lines->map(function($line) {
+            return [
+                'product_id' => $line->product_id,
+                'description' => $line->description,
+                'quantity' => $line->quantity,
+                'estimated_unit_cost' => $line->estimated_unit_cost,
+                'estimated_total' => $line->estimated_total,
+            ];
+        })->values();
+    @endphp
+
     <script>
-        const products = @json($products);
-        const existingLines = @json($requisition->lines);
+        var products = @json($productsJson);
+        var existingLines = @json($existingLinesJson);
         let lineIndex = 0;
 
+        function onProductSelected(idx, id, item) {
+            const row = document.querySelector(`[data-line-idx="${idx}"]`);
+            if (!row) return;
+            const descInput = row.querySelector('[name*="[description]"]');
+            if (descInput) descInput.value = item.description || '';
+            const costInput = row.querySelector('[name*="[estimated_unit_cost]"]');
+            if (costInput) costInput.value = item.purchase_price ? parseFloat(item.purchase_price).toFixed(2) : '0.00';
+            updateTotals();
+        }
+
+        function buildProductSearchable(idx, selectedId, selectedName) {
+            const config = {
+                name: 'lines[' + idx + '][product_id]',
+                items: products,
+                valueKey: 'id',
+                labelKey: 'name',
+                searchKeys: ['name', 'sku', 'barcode'],
+                showFields: ['sku', 'sales_price'],
+                preload: selectedId || '',
+                preloadLabel: selectedName || '',
+                onSelectCallback: 'onProductSelect_' + idx,
+                enableAdvancedSearch: true,
+                advancedSearchName: 'product',
+            };
+            window['onProductSelect_' + idx] = function(id, item) { onProductSelected(idx, id, item); };
+            return 'searchableSelect(' + JSON.stringify(config) + ')';
+        }
+
         function updateTotals() {
+            var grandTotal = 0;
             document.querySelectorAll('#lines-body tr').forEach(row => {
                 const qty = parseFloat(row.querySelector('[name*="[quantity]"]').value) || 0;
                 const price = parseFloat(row.querySelector('[name*="[estimated_unit_cost]"]').value) || 0;
-                row.querySelector('.line-total').textContent = (qty * price).toFixed(2);
+                var total = qty * price;
+                row.querySelector('.line-total').textContent = total.toFixed(2);
+                grandTotal += total;
             });
+            var grandEl = document.getElementById('estimated-grand-total');
+            if (grandEl) grandEl.textContent = grandTotal.toFixed(2);
         }
 
         function addLine(data = null) {
             const tbody = document.getElementById('lines-body');
             const idx = lineIndex++;
-            const productOptions = products.map(p =>
-                `<option value="${p.id}" ${data && data.product_id == p.id ? 'selected' : ''}>${p.name}</option>`
-            ).join('');
+            const selectedId = data ? String(data.product_id || '') : '';
+            const selectedName = data && data.product_id
+                ? (products.find(p => p.id == data.product_id)?.name || '')
+                : '';
+            const xDataAttr = buildProductSearchable(idx, selectedId, selectedName);
             const tr = document.createElement('tr');
+            tr.setAttribute('data-line-idx', idx);
             tr.innerHTML = `
-                <td class="px-4 py-2">
-                    <select name="lines[${idx}][product_id]" class="block w-full border-gray-300 rounded-md shadow-sm text-sm">
-                        <option value="">None</option>
-                        ${productOptions}
-                    </select>
+                <td class="px-4 py-2" style="min-width: 220px;">
+                    <div x-data="${escapeHtml(xDataAttr)}" class="relative">
+                        <input type="hidden" name="lines[${idx}][product_id]" :value="selectedId" />
+                        <div class="flex">
+                            <input type="text" x-model="query"
+                                @input.debounce.200ms="filter()"
+                                @focus="if(query.length > 0) open = true"
+                                @keydown.down.prevent="moveHighlight(1)"
+                                @keydown.up.prevent="moveHighlight(-1)"
+                                @keydown.enter.prevent="confirmHighlight()"
+                                @keydown.escape="open = false"
+                                @keydown.tab="open = false"
+                                placeholder="Search products..." autocomplete="off"
+                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />
+                            <button type="button" @click="openAdvancedSearch()"
+                                class="px-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none" title="Advanced Search">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </button>
+                        </div>
+                    </div>
                 </td>
                 <td class="px-4 py-2">
-                    <input type="text" name="lines[${idx}][description]" value="${data ? data.description : ''}" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" required />
+                    <input type="text" name="lines[${idx}][description]" value="${data ? (data.description || '') : ''}" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required />
                 </td>
                 <td class="px-4 py-2">
-                    <input type="number" name="lines[${idx}][quantity]" value="${data ? data.quantity : 1}" min="0.01" step="any" class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" required />
+                    <input type="number" name="lines[${idx}][quantity]" value="${data ? data.quantity : 1}" min="0.01" step="any" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" required />
                 </td>
                 <td class="px-4 py-2">
-                    <input type="number" name="lines[${idx}][estimated_unit_cost]" value="${data ? (data.estimated_unit_cost || 0) : 0}" min="0" step="0.01" class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" />
+                    <input type="number" name="lines[${idx}][estimated_unit_cost]" value="${data ? (data.estimated_unit_cost || 0) : 0}" min="0" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" />
                 </td>
                 <td class="px-4 py-2 text-right text-sm font-medium line-total">${data ? (data.estimated_total || 0) : 0}</td>
                 <td class="px-4 py-2 text-center">
@@ -129,10 +218,16 @@
                 </td>
             `;
             tbody.appendChild(tr);
+            updateTotals();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
         function removeLine(btn) {
             btn.closest('tr').remove();
+            updateTotals();
         }
 
         existingLines.forEach(line => addLine(line));

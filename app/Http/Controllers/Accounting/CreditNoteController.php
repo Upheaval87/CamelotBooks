@@ -7,6 +7,7 @@ use App\Models\Account;
 use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\ItemCategory;
 use App\Models\Product;
 use App\Services\Accounting\CreditNoteService;
 use Illuminate\Http\Request;
@@ -61,6 +62,10 @@ class CreditNoteController extends Controller
             ->orderBy('code')
             ->get();
 
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+
         $invoice = null;
         if ($invoiceId) {
             $invoice = Invoice::where('id', $invoiceId)
@@ -74,7 +79,7 @@ class CreditNoteController extends Controller
             ->orderByDesc('invoice_date')
             ->get();
 
-        return view('accounting.credit-notes.create', compact('customers', 'products', 'incomeAccounts', 'invoice', 'invoices', 'invoiceId'));
+        return view('accounting.credit-notes.create', compact('customers', 'products', 'incomeAccounts', 'invoice', 'invoices', 'invoiceId', 'itemCategories'));
     }
 
     public function store(Request $request)

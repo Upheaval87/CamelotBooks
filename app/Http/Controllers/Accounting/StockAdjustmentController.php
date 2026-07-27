@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryStock;
+use App\Models\ItemCategory;
 use App\Models\Product;
 use App\Services\Accounting\InventoryService;
 use App\Services\Accounting\JournalPostingEngine;
@@ -43,7 +44,12 @@ class StockAdjustmentController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('accounting.stock-adjustments.create', compact('products', 'branches'));
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('accounting.stock-adjustments.create', compact('products', 'branches', 'itemCategories'));
     }
 
     public function store(Request $request, InventoryService $inventoryService, JournalPostingEngine $postingEngine)

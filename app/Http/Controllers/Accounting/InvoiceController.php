@@ -7,6 +7,7 @@ use App\Models\Account;
 use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\ItemCategory;
 use App\Models\Product;
 use App\Services\Accounting\InvoiceService;
 use Illuminate\Http\Request;
@@ -67,7 +68,11 @@ class InvoiceController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.invoices.create', compact('customers', 'products', 'incomeAccounts', 'costCenters'));
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+
+        return view('accounting.invoices.create', compact('customers', 'products', 'incomeAccounts', 'costCenters', 'itemCategories'));
     }
 
     public function store(Request $request)
@@ -148,7 +153,11 @@ class InvoiceController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.invoices.edit', compact('invoice', 'customers', 'products', 'incomeAccounts', 'costCenters'));
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+
+        return view('accounting.invoices.edit', compact('invoice', 'customers', 'products', 'incomeAccounts', 'costCenters', 'itemCategories'));
     }
 
     public function update(Request $request, Invoice $invoice)

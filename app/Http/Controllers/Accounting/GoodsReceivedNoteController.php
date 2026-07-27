@@ -7,6 +7,7 @@ use App\Models\Account;
 use App\Models\Branch;
 use App\Models\CostCenter;
 use App\Models\GoodsReceivedNote;
+use App\Models\ItemCategory;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
@@ -70,13 +71,18 @@ class GoodsReceivedNoteController extends Controller
             ->orderByDesc('date')
             ->get();
 
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         $selectedPo = null;
         if ($request->filled('purchase_order_id')) {
             $selectedPo = $purchaseOrders->firstWhere('id', $request->purchase_order_id);
         }
 
         return view('accounting.goods-received-notes.create', compact(
-            'vendors', 'products', 'accounts', 'costCenters', 'branches', 'purchaseOrders', 'selectedPo'
+            'vendors', 'products', 'accounts', 'costCenters', 'branches', 'purchaseOrders', 'selectedPo', 'itemCategories'
         ));
     }
 

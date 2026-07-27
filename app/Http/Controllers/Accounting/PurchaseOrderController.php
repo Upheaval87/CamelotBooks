@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\CostCenter;
+use App\Models\ItemCategory;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
@@ -61,6 +62,11 @@ class PurchaseOrderController extends Controller
             ->orderBy('name')
             ->get();
 
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         $requisition = null;
         if ($request->filled('requisition_id')) {
             $requisition = PurchaseRequisition::where('company_id', $companyId)
@@ -69,7 +75,7 @@ class PurchaseOrderController extends Controller
                 ->find($request->requisition_id);
         }
 
-        return view('accounting.purchase-orders.create', compact('vendors', 'products', 'accounts', 'costCenters', 'branches', 'requisition'));
+        return view('accounting.purchase-orders.create', compact('vendors', 'products', 'accounts', 'costCenters', 'branches', 'requisition', 'itemCategories'));
     }
 
     public function store(Request $request)
@@ -187,6 +193,11 @@ class PurchaseOrderController extends Controller
             ->orderBy('name')
             ->get();
 
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         return view('accounting.purchase-orders.edit', [
             'order' => $purchaseOrder,
             'vendors' => $vendors,
@@ -194,6 +205,7 @@ class PurchaseOrderController extends Controller
             'accounts' => $accounts,
             'costCenters' => $costCenters,
             'branches' => $branches,
+            'itemCategories' => $itemCategories,
         ]);
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\InventoryTransfer;
+use App\Models\ItemCategory;
 use App\Models\Product;
 use App\Models\Branch;
 use App\Services\Accounting\InventoryService;
@@ -42,7 +43,12 @@ class StockTransferController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('accounting.stock-transfers.create', compact('products', 'branches'));
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('accounting.stock-transfers.create', compact('products', 'branches', 'itemCategories'));
     }
 
     public function store(Request $request, InventoryService $inventoryService, JournalPostingEngine $postingEngine)

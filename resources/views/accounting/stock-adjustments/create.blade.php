@@ -28,14 +28,19 @@
                         <div x-data="{ adjustmentType: '{{ old('type', 'increase') }}' }">
                             <div>
                                 <x-input-label for="product_id" value="{{ __('Product') }}" />
-                                <select id="product_id" name="product_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                                    <option value="">Select Product</option>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->id }}" {{ old('product_id') == $product->id ? 'selected' : '' }}>
-                                            {{ $product->sku ? $product->sku . ' - ' : '' }}{{ $product->name }} (On Hand: {{ format_money($product->stock->sum('quantity_on_hand')) }})
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-searchable-select
+                                    name="product_id"
+                                    :items="$products"
+                                    valueKey="id"
+                                    labelKey="name"
+                                    :searchKeys="['name', 'sku', 'barcode']"
+                                    :showFields="['sku']"
+                                    :preload="old('product_id')"
+                                    placeholder="Search products..."
+                                    :enableAdvancedSearch="true"
+                                    advancedSearchName="product"
+                                    :required="true"
+                                />
                                 <x-input-error :messages="$errors->get('product_id')" class="mt-2" />
                             </div>
 
@@ -112,4 +117,6 @@
             </div>
         </div>
     </div>
+
+    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku']" :types="['inventory']" />
 </x-app-layout>

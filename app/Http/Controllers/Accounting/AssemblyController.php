@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\AssemblyBuild;
 use App\Models\BillOfMaterial;
+use App\Models\ItemCategory;
 use App\Models\Product;
 use App\Services\Inventory\AssemblyBuildService;
 use Illuminate\Http\Request;
@@ -34,13 +35,18 @@ class AssemblyController extends Controller
             ->orderBy('name')
             ->get();
 
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         $boms = BillOfMaterial::where('company_id', $companyId)
             ->active()
             ->with('assemblyProduct')
             ->orderBy('bom_number')
             ->get();
 
-        return view('accounting.assemblies.create', compact('products', 'boms'));
+        return view('accounting.assemblies.create', compact('products', 'boms', 'itemCategories'));
     }
 
     public function store(Request $request, AssemblyBuildService $service)
@@ -78,13 +84,18 @@ class AssemblyController extends Controller
             ->orderBy('name')
             ->get();
 
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         $boms = BillOfMaterial::where('company_id', $companyId)
             ->active()
             ->with('assemblyProduct')
             ->orderBy('bom_number')
             ->get();
 
-        return view('accounting.assemblies.unbuild', compact('products', 'boms'));
+        return view('accounting.assemblies.unbuild', compact('products', 'boms', 'itemCategories'));
     }
 
     public function storeUnbuild(Request $request, AssemblyBuildService $service)
@@ -153,7 +164,12 @@ class AssemblyController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('accounting.assemblies.create-bom', compact('assemblyProducts', 'componentProducts'));
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('accounting.assemblies.create-bom', compact('assemblyProducts', 'componentProducts', 'itemCategories'));
     }
 
     public function storeBom(Request $request)

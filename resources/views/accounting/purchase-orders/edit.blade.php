@@ -96,11 +96,66 @@
         </div>
     </div>
 
+    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku', 'purchase_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
+
+    @php
+        $productsJson = $products->map(function($p) {
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'sku' => $p->sku,
+                'barcode' => $p->barcode,
+                'sales_price' => $p->sales_price,
+                'purchase_price' => $p->purchase_price,
+                'type' => $p->type,
+                'description' => $p->description,
+                'tracked_as_inventory' => $p->tracked_as_inventory,
+                'income_account_id' => $p->income_account_id,
+                'expense_account_id' => $p->expense_account_id ?? null,
+                'tax_rate' => $p->tax_rate,
+            ];
+        })->values();
+    @endphp
+
     <script>
-        const products = @json($products);
+        const products = @json($productsJson);
         const expenseAccounts = @json($accounts);
         const existingLines = @json($order->lines);
         let lineIndex = 0;
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function onProductSelected(idx, id, item) {
+            var row = document.querySelector('[data-line-idx="' + idx + '"]');
+            if (!row) return;
+            var descInput = row.querySelector('[name*="[description]"]');
+            if (descInput) descInput.value = item.description || '';
+            var priceInput = row.querySelector('[name*="[unit_price]"]');
+            if (priceInput) priceInput.value = item.purchase_price ? parseFloat(item.purchase_price).toFixed(2) : '0.00';
+            var accSelect = row.querySelector('[name*="[expense_account_id]"]');
+            if (accSelect && item.expense_account_id) accSelect.value = item.expense_account_id;
+            updateTotals();
+        }
+
+        function buildProductSearchable(idx, selectedId, selectedName) {
+            var config = {
+                name: 'lines[' + idx + '][product_id]',
+                items: products,
+                valueKey: 'id',
+                labelKey: 'name',
+                searchKeys: ['name', 'sku', 'barcode'],
+                showFields: ['sku', 'purchase_price'],
+                preload: selectedId || '',
+                preloadLabel: selectedName || '',
+                onSelectCallback: 'onProductSelect_' + idx,
+                enableAdvancedSearch: true,
+                advancedSearchName: 'product',
+            };
+            window['onProductSelect_' + idx] = function(id, item) { onProductSelected(idx, id, item); };
+            return 'searchableSelect(' + JSON.stringify(config) + ')';
+        }
 
         function updateTotals() {
             let total = 0;
@@ -110,28 +165,55 @@
                 row.querySelector('.line-total').textContent = (qty * price).toFixed(2);
                 total += qty * price;
             });
+            document.getElementById('grand-total').textContent = total.toFixed(2);
         }
 
-        function addLine(data = null) {
-            const tbody = document.getElementById('lines-body');
-            const idx = lineIndex++;
-            const productOptions = products.map(p =>
-                `<option value="${p.id}" ${data && data.product_id == p.id ? 'selected' : ''}>${p.name}</option>`
-            ).join('');
-            const accountOptions = expenseAccounts.map(a =>
-                `<option value="${a.id}" ${data && data.expense_account_id == a.id ? 'selected' : ''}>${a.code} - ${a.name}</option>`
-            ).join('');
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="px-4 py-2"><select name="lines[${idx}][product_id]" class="block w-full border-gray-300 rounded-md shadow-sm text-sm"><option value="">None</option>${productOptions}</select></td>
-                <td class="px-4 py-2"><input type="text" name="lines[${idx}][description]" value="${data ? data.description : ''}" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" required /></td>
-                <td class="px-4 py-2"><input type="number" name="lines[${idx}][quantity]" value="${data ? data.quantity : 1}" min="0.01" step="any" class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" required /></td>
-                <td class="px-4 py-2"><input type="number" name="lines[${idx}][unit_price]" value="${data ? data.unit_price : 0}" min="0" step="0.01" class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" required /></td>
-                <td class="px-4 py-2"><select name="lines[${idx}][expense_account_id]" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" required><option value="">Select</option>${accountOptions}</select></td>
-                <td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>
-                <td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">Remove</button></td>
-            `;
+        function addLine(data) {
+            var tbody = document.getElementById('lines-body');
+            var idx = lineIndex++;
+            var selectedId = data ? String(data.product_id || '') : '';
+            var selectedName = data && data.product_id
+                ? (products.find(function(p) { return p.id == data.product_id; }) || {}).name || ''
+                : '';
+            var xDataAttr = buildProductSearchable(idx, selectedId, selectedName);
+            var accountOptions = expenseAccounts.map(function(a) {
+                return '<option value="' + a.id + '" ' + (data && data.expense_account_id == a.id ? 'selected' : '') + '>' + a.code + ' - ' + a.name + '</option>';
+            }).join('');
+            var tr = document.createElement('tr');
+            tr.setAttribute('data-line-idx', idx);
+            tr.innerHTML =
+                '<td class="px-4 py-2" style="min-width: 220px;">' +
+                    '<div x-data="' + escapeHtml(xDataAttr) + '" class="relative">' +
+                        '<input type="hidden" name="lines[' + idx + '][product_id]" :value="selectedId" />' +
+                        '<div class="flex">' +
+                            '<input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if(query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="Search products..." autocomplete="off" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />' +
+                            '<button type="button" @click="openAdvancedSearch()" class="px-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none" title="Advanced Search">' +
+                                '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>' +
+                            '</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</td>' +
+                '<td class="px-4 py-2">' +
+                    '<input type="text" name="lines[' + idx + '][description]" value="' + (data ? (data.description || '') : '') + '" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required />' +
+                '</td>' +
+                '<td class="px-4 py-2">' +
+                    '<input type="number" name="lines[' + idx + '][quantity]" value="' + (data ? data.quantity : 1) + '" min="0.01" step="any" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" required />' +
+                '</td>' +
+                '<td class="px-4 py-2">' +
+                    '<input type="number" name="lines[' + idx + '][unit_price]" value="' + (data ? (data.unit_price || 0) : 0) + '" min="0" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" required />' +
+                '</td>' +
+                '<td class="px-4 py-2">' +
+                    '<select name="lines[' + idx + '][expense_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required>' +
+                        '<option value="">Select</option>' +
+                        accountOptions +
+                    '</select>' +
+                '</td>' +
+                '<td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>' +
+                '<td class="px-4 py-2 text-center">' +
+                    '<button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">Remove</button>' +
+                '</td>';
             tbody.appendChild(tr);
+            updateTotals();
         }
 
         function removeLine(btn) {
