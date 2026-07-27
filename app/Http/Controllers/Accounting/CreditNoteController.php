@@ -62,10 +62,6 @@ class CreditNoteController extends Controller
             ->orderBy('code')
             ->get();
 
-        $itemCategories = ItemCategory::where('company_id', $companyId)
-            ->orderBy('name')
-            ->get();
-
         $invoice = null;
         if ($invoiceId) {
             $invoice = Invoice::where('id', $invoiceId)
@@ -77,6 +73,10 @@ class CreditNoteController extends Controller
         $invoices = Invoice::where('company_id', $companyId)
             ->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_PARTIALLY_PAID])
             ->orderByDesc('invoice_date')
+            ->get();
+
+        $itemCategories = ItemCategory::where('company_id', $companyId)
+            ->orderBy('name')
             ->get();
 
         return view('accounting.credit-notes.create', compact('customers', 'products', 'incomeAccounts', 'invoice', 'invoices', 'invoiceId', 'itemCategories'));

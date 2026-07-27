@@ -86,17 +86,6 @@
                     <x-input-error :messages="$errors->get('lines')" class="mt-2" />
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <div class="flex justify-end">
-                        <div class="w-64 space-y-2">
-                            <div class="flex justify-between text-sm font-semibold border-t pt-2">
-                                <span class="text-gray-800">Estimated Total:</span>
-                                <span id="estimated-grand-total" class="text-gray-900">0.00</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('accounting.purchase-requisitions.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                         {{ __('Cancel') }}
@@ -107,35 +96,35 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku', 'sales_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
-
-    @php
-        $productsJson = $products->map(function($p) {
-            return [
-                'id' => $p->id,
-                'name' => $p->name,
-                'sku' => $p->sku,
-                'barcode' => $p->barcode,
-                'sales_price' => $p->sales_price,
-                'purchase_price' => $p->purchase_price,
-                'type' => $p->type,
-                'description' => $p->description,
-                'tracked_as_inventory' => $p->tracked_as_inventory,
-            ];
-        })->values();
-    @endphp
+    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku', 'sales_price', 'stock_qty']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
 
     <script>
-        var products = @json($productsJson);
+        const products = @json($products->map(fn($p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'sku' => $p->sku,
+            'barcode' => $p->barcode,
+            'sales_price' => $p->sales_price,
+            'purchase_price' => $p->purchase_price,
+            'type' => $p->type,
+            'description' => $p->description,
+            'tracked_as_inventory' => $p->tracked_as_inventory,
+        ]));
         let lineIndex = 0;
 
         function onProductSelected(idx, id, item) {
             const row = document.querySelector(`[data-line-idx="${idx}"]`);
             if (!row) return;
             const descInput = row.querySelector('[name*="[description]"]');
-            if (descInput) descInput.value = item.description || '';
-            const costInput = row.querySelector('[name*="[estimated_unit_cost]"]');
-            if (costInput) costInput.value = item.purchase_price ? parseFloat(item.purchase_price).toFixed(2) : '0.00';
+            if (descInput && item.description) {
+                descInput.value = item.description;
+            }
+            if (item.purchase_price) {
+                const costInput = row.querySelector('[name*="[estimated_unit_cost]"]');
+                if (costInput && (!costInput.value || parseFloat(costInput.value) === 0)) {
+                    costInput.value = parseFloat(item.purchase_price).toFixed(2);
+                }
+            }
             updateTotals();
         }
 
@@ -158,16 +147,11 @@
         }
 
         function updateTotals() {
-            var grandTotal = 0;
             document.querySelectorAll('#lines-body tr').forEach(row => {
                 const qty = parseFloat(row.querySelector('[name*="[quantity]"]').value) || 0;
                 const price = parseFloat(row.querySelector('[name*="[estimated_unit_cost]"]').value) || 0;
-                var total = qty * price;
-                row.querySelector('.line-total').textContent = total.toFixed(2);
-                grandTotal += total;
+                row.querySelector('.line-total').textContent = (qty * price).toFixed(2);
             });
-            var grandEl = document.getElementById('estimated-grand-total');
-            if (grandEl) grandEl.textContent = grandTotal.toFixed(2);
         }
 
         function addLine(data = null) {
@@ -200,6 +184,22 @@
                                 <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             </button>
                         </div>
+                        <div x-show="open && results.length > 0" x-cloak
+                            class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                            <template x-for="(item, idx2) in results" :key="item[valueKey]">
+                                <div @click="select(item)" @mouseenter="highlightIndex = parseInt(idx2)"
+                                    class="px-3 py-2 cursor-pointer flex justify-between items-center text-sm border-b border-gray-100 last:border-0"
+                                    :style="parseInt(idx2) === highlightIndex ? 'background-color: #4f46e5; color: white;' : ''">
+                                    <div class="flex flex-col min-w-0">
+                                        <span class="font-medium truncate" x-text="item[labelKey]"></span>
+                                        <div class="flex gap-2 text-xs" :style="parseInt(idx2) === highlightIndex ? 'color: #c7d2fe;' : 'color: #6b7280;'">
+                                            <span x-show="item.sku" x-text="item.sku"></span>
+                                            <span x-show="item.sales_price" x-text="formatMoney(parseFloat(item.sales_price))"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </td>
                 <td class="px-4 py-2">
@@ -217,7 +217,6 @@
                 </td>
             `;
             tbody.appendChild(tr);
-            updateTotals();
         }
 
         function escapeHtml(str) {
@@ -226,7 +225,6 @@
 
         function removeLine(btn) {
             btn.closest('tr').remove();
-            updateTotals();
         }
 
         document.getElementById('add-line').addEventListener('click', () => addLine());

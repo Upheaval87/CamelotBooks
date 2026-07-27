@@ -78,4 +78,27 @@
             </span>
         @endif
     </div>
+    <div
+        x-show="open && results.length > 0"
+        x-cloak
+        class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+    >
+        <template x-for="(item, idx) in results" :key="item[valueKey]">
+            <div
+                @click="select(item)"
+                @mouseenter="highlightIndex = parseInt(idx)"
+                class="px-3 py-2 cursor-pointer flex justify-between items-center text-sm border-b border-gray-100 last:border-0"
+                :style="parseInt(idx) === highlightIndex ? 'background-color: #4f46e5; color: white;' : ''"
+            >
+                <div class="flex flex-col min-w-0">
+                    <span class="font-medium truncate" x-text="item[labelKey]"></span>
+                    <div class="flex gap-2 text-xs" :style="parseInt(idx) === highlightIndex ? 'color: #c7d2fe;' : 'color: #6b7280;'">
+                        <template x-for="field in showFields" :key="field">
+                            <span x-show="item[field]" x-text="item[field]"></span>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
 </div>
