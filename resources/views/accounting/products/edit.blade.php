@@ -33,6 +33,14 @@
                             </div>
 
                             <div>
+                                <x-input-label for="barcode" value="{{ __('Barcode') }}" />
+                                <x-text-input id="barcode" name="barcode" type="text" class="mt-1 block w-full" :value="old('barcode', $product->barcode)" />
+                                <x-input-error :messages="$errors->get('barcode')" class="mt-2" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
                                 <x-input-label for="type" value="{{ __('Type') }}" />
                                 <select id="type" name="type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
                                     <option value="">Select Type</option>
