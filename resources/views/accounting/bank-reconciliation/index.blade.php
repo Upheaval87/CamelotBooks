@@ -31,7 +31,7 @@
 
             @if(!isset($bankAccount) || !$bankAccount)
                 <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <form method="GET" action="{{ route('accounting.bank-reconciliation.index') }}" class="flex items-end gap-4">
+                    <form method="GET" onsubmit="event.preventDefault(); var v = document.getElementById('bank_account_id').value; if(v) window.location.href = '{{ url('accounting/bank-reconciliation') }}/' + v;" class="flex items-end gap-4">
                         <div class="flex-1">
                             <x-input-label for="bank_account_id" value="{{ __('Bank Account') }}" />
                             <select id="bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
