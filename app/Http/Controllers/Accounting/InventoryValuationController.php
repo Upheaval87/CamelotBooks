@@ -60,20 +60,11 @@ class InventoryValuationController extends Controller
         $valuation = $inventoryService->getValuationByProduct($companyId);
         $totalValue = array_sum(array_column($valuation, 'total_value'));
 
+        $content = view('accounting.inventory-valuation.print', compact('valuation', 'totalValue'))->render();
+
         return response()->view('accounting.print-export', [
             'title' => 'Inventory Valuation Report',
-            'subtitle' => 'As of ' . now()->format('M d, Y'),
-            'headers' => ['SKU', 'Product', 'Quantity', 'Avg Cost', 'Total Value'],
-            'rows' => array_map(function ($row) {
-                return [
-                    $row['sku'],
-                    $row['product_name'],
-                    $row['total_quantity'],
-                    '$' . number_format((float) $row['avg_cost'], 4),
-                    '$' . number_format((float) $row['total_value'], 2),
-                ];
-            }, $valuation),
-            'totals' => ['Total Inventory Value', '', '', '', '$' . number_format($totalValue, 2)],
+            'content' => $content,
         ], 200)->header('Content-Type', 'text/html');
     }
 
