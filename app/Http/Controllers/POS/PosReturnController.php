@@ -29,7 +29,7 @@ class PosReturnController extends Controller
         $sales = PosSale::where('company_id', $companyId)
             ->where('status', 'posted')
             ->latest()
-            ->get(['id', 'sale_number', 'total', 'date', 'customer_id']);
+            ->get(['id', 'sale_number', 'total', 'created_at', 'customer_id']);
 
         $sale = null;
         if ($saleId) {

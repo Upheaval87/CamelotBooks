@@ -49,7 +49,7 @@
                                     'fully_paid' => 'emerald',
                                 ];
                             @endphp
-                            @forelse($payrollRuns as $run)
+                            @forelse($runs as $run)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         <a href="{{ route('accounting.payroll-runs.show', $run) }}" class="text-indigo-600 hover:text-indigo-900">
@@ -95,9 +95,9 @@
                         </tbody>
                     </table>
                 </div>
-                @if($payrollRuns->hasPages())
+                @if($runs->hasPages())
                     <div class="px-6 py-3 border-t border-gray-200">
-                        {{ $payrollRuns->links() }}
+                        {{ $runs->links() }}
                     </div>
                 @endif
             </div>

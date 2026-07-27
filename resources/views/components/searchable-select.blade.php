@@ -42,7 +42,7 @@
     })"
     class="relative"
 >
-    <input type="hidden" name="{{ $name }}" :value="selectedId" {{ $required ? 'required' }} />
+    <input type="hidden" name="{{ $name }}" :value="selectedId" {{ $required ? 'required' : '' }} />
     <div class="flex">
         <input
             type="text"
