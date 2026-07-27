@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Edit Customer') }}: {{ $customer->name }}
@@ -54,7 +55,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="currency" value="{{ __('Currency') }}" />
-                                <x-text-input id="currency" name="currency" type="text" class="mt-1 block w-full" :value="old('currency', $customer->currency)" maxlength="10" />
+                                <x-text-input id="currency" name="currency" type="text" class="mt-1 block w-full" :value="old('currency', $customer->currency ?? $cs)" maxlength="10" />
                                 <x-input-error :messages="$errors->get('currency')" class="mt-2" />
                             </div>
 
@@ -88,7 +89,7 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <x-input-label for="opening_balance" value="{{ __('Opening Balance') }}" />
+                                <x-input-label for="opening_balance" value="{{ __('Opening Balance') }} ({{ $cs }})" />
                                 <x-text-input id="opening_balance" name="opening_balance" type="number" step="0.01" class="mt-1 block w-full" :value="old('opening_balance', $customer->opening_balance)" />
                                 <x-input-error :messages="$errors->get('opening_balance')" class="mt-2" />
                             </div>
