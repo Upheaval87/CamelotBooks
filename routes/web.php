@@ -570,6 +570,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/account-mappings', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateAccountMappings'])->name('update-account-mappings');
             Route::put('/accounting', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateAccounting'])->name('update-accounting');
             Route::put('/approval', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateApproval'])->name('update-approval');
+            Route::put('/numbering', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateNumbering'])->name('update-numbering');
         });
 
         // Analytics

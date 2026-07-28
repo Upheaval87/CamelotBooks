@@ -9,7 +9,9 @@ use App\Models\ApprovalThreshold;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\DefaultAccountMapping;
+use App\Models\NumberingSequence;
 use App\Models\SystemSetting;
+use App\Services\Admin\NumberingSequenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,9 +28,19 @@ class SettingsController extends Controller
         $mappings = DefaultAccountMapping::getAll($companyId);
         $approvalSetting = ApprovalSetting::firstOrCreate(['company_id' => $companyId], ['requires_approval' => false, 'threshold_amount' => 0]);
         $approvalThresholds = ApprovalThreshold::getAllForCompany($companyId);
+        $sequences = NumberingSequence::where('company_id', $companyId)->orderBy('document_type')->get();
+        $documentTypeLabels = NumberingSequence::documentTypeLabels();
+        $nextNumbers = [];
+        $ns = app(NumberingSequenceService::class);
+        foreach ($sequences as $seq) {
+            $nextNumbers[$seq->document_type] = $ns->peekNextNumber($companyId, $seq->document_type);
+        }
 
         return view('system-settings.index', compact(
-            'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings', 'approvalSetting', 'approvalThresholds', 'tab'
+            'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings',
+            'approvalSetting', 'approvalThresholds',
+            'sequences', 'documentTypeLabels', 'nextNumbers',
+            'tab'
         ));
     }
 
@@ -278,6 +290,71 @@ class SettingsController extends Controller
 
         return redirect()->route('system-settings.index', 'approval')
             ->with('success', 'Approval settings updated successfully.');
+    }
+
+    public function updateNumbering(Request $request)
+    {
+        $companyId = session('current_company_id');
+
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $oldSequences = NumberingSequence::where('company_id', $companyId)
+            ->get()
+            ->keyBy('document_type')
+            ->map(fn($s) => $s->only(['prefix', 'padding_width', 'reset_policy', 'is_active']))
+            ->toArray();
+
+        $labels = NumberingSequence::documentTypeLabels();
+        $validated = $request->validate([
+            'prefixes' => 'required|array',
+            'prefixes.*' => 'required|string|max:20',
+            'padding_widths' => 'required|array',
+            'padding_widths.*' => 'required|integer|min:1|max:10',
+            'reset_policies' => 'required|array',
+            'reset_policies.*' => 'required|in:never,annually,monthly',
+        ]);
+
+        $changes = [];
+        foreach ($labels as $type => $label) {
+            $prefix = $validated['prefixes'][$type] ?? null;
+            $padding = (int) ($validated['padding_widths'][$type] ?? 4);
+            $policy = $validated['reset_policies'][$type] ?? 'never';
+            $active = $request->boolean("active.{$type}", false);
+
+            if (!$prefix) continue;
+
+            $old = $oldSequences[$type] ?? null;
+            $oldPrefix = $old ? $old['prefix'] : null;
+            $oldPadding = $old ? $old['padding_width'] : null;
+            $oldPolicy = $old ? $old['reset_policy'] : null;
+            $oldActive = $old ? $old['is_active'] : null;
+
+            if ($prefix !== $oldPrefix || $padding !== $oldPadding || $policy !== $oldPolicy || $active !== $oldActive) {
+                $changes[$type] = [
+                    'prefix' => ['from' => $oldPrefix, 'to' => $prefix],
+                    'padding_width' => ['from' => $oldPadding, 'to' => $padding],
+                    'reset_policy' => ['from' => $oldPolicy, 'to' => $policy],
+                    'is_active' => ['from' => $oldActive, 'to' => $active],
+                ];
+            }
+
+            NumberingSequence::updateOrCreate(
+                ['company_id' => $companyId, 'document_type' => $type],
+                [
+                    'prefix' => $prefix,
+                    'padding_width' => $padding,
+                    'reset_policy' => $policy,
+                    'is_active' => $active,
+                ]
+            );
+        }
+
+        if (!empty($changes)) {
+            AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldSequences, $changes, 'Numbering Sequences');
+        }
+
+        return redirect()->route('system-settings.index', 'numbering')
+            ->with('success', 'Numbering sequences updated successfully.');
     }
 
     public function updateAccounting(Request $request)
