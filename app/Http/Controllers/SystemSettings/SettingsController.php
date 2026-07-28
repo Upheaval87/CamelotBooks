@@ -458,4 +458,136 @@ class SettingsController extends Controller
         return redirect()->route('system-settings.index', 'accounting')
             ->with('success', 'Accounting settings updated successfully.');
     }
+
+    public function exportSettings(Request $request)
+    {
+        $companyId = session('current_company_id');
+        $company = Company::findOrFail($companyId);
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $settings = [
+            'exported_at' => now()->toIso8601String(),
+            'company_name' => $company->name,
+            'company_code' => $company->company_code,
+            'version' => '1.0',
+            'regional' => SystemSetting::getMany('regional', $companyId),
+            'currency' => array_merge(
+                ['base_currency' => $company->base_currency],
+                SystemSetting::getMany('currency', $companyId)
+            ),
+            'accounting' => SystemSetting::getMany('accounting', $companyId),
+            'account_mappings' => DefaultAccountMapping::getAll($companyId),
+            'approval' => $approval = ApprovalSetting::where('company_id', $companyId)->first()?->only(['requires_approval', 'threshold_amount']) ?? [],
+            'numbering' => NumberingSequence::where('company_id', $companyId)
+                ->get()
+                ->mapWithKeys(fn($s) => [$s->document_type => $s->only(['prefix', 'padding_width', 'reset_policy', 'is_active'])])
+                ->toArray(),
+            'approval_thresholds' => ApprovalThreshold::where('company_id', $companyId)
+                ->get()
+                ->mapWithKeys(fn($t) => [$t->document_type => $t->only(['threshold_amount', 'is_active'])])
+                ->toArray(),
+        ];
+
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.exported', null, null, 'Settings exported');
+
+        $filename = 'settings-' . ($company->company_code ?? $company->id) . '-' . now()->format('Y-m-d') . '.json';
+        return response()->streamDownload(function () use ($settings) {
+            echo json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        }, $filename, [
+            'Content-Type' => 'application/json',
+        ]);
+    }
+
+    public function importSettings(Request $request)
+    {
+        $companyId = session('current_company_id');
+        $company = Company::findOrFail($companyId);
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $request->validate([
+            'settings_file' => 'required|file|mimes:json,txt|max:10240',
+        ]);
+
+        $content = file_get_contents($request->file('settings_file')->getRealPath());
+        $data = json_decode($content, true);
+
+        if (!is_array($data) || !isset($data['version'])) {
+            return back()->with('error', 'Invalid settings file. Please export settings from a compatible version of CamelotBooks.');
+        }
+
+        $imported = 0;
+
+        if (!empty($data['regional'])) {
+            foreach ($data['regional'] as $key => $value) {
+                SystemSetting::setValue('regional', $key, $value, $companyId);
+                $imported++;
+            }
+        }
+
+        if (!empty($data['currency'])) {
+            $baseCurrency = $data['currency']['base_currency'] ?? null;
+            if ($baseCurrency) {
+                Company::where('id', $companyId)->update(['base_currency' => $baseCurrency]);
+            }
+            foreach (['decimal_places', 'rate_source'] as $key) {
+                if (isset($data['currency'][$key])) {
+                    SystemSetting::setValue('currency', $key, $data['currency'][$key], $companyId);
+                    $imported++;
+                }
+            }
+        }
+
+        if (!empty($data['accounting'])) {
+            foreach ($data['accounting'] as $key => $value) {
+                SystemSetting::setValue('accounting', $key, $value, $companyId);
+                $imported++;
+            }
+        }
+
+        if (!empty($data['account_mappings'])) {
+            foreach ($data['account_mappings'] as $mappingKey => $accountId) {
+                if ($accountId) {
+                    $account = Account::find($accountId);
+                    if ($account && $account->company_id === $companyId) {
+                        DefaultAccountMapping::setMapping($companyId, $mappingKey, (int) $accountId);
+                        $imported++;
+                    }
+                }
+            }
+        }
+
+        if (!empty($data['approval'])) {
+            $approvalSetting = ApprovalSetting::firstOrCreate(['company_id' => $companyId]);
+            $approvalSetting->update([
+                'requires_approval' => $data['approval']['requires_approval'] ?? false,
+                'threshold_amount' => $data['approval']['threshold_amount'] ?? 0,
+            ]);
+            $imported++;
+        }
+
+        if (!empty($data['numbering'])) {
+            foreach ($data['numbering'] as $docType => $seq) {
+                NumberingSequence::updateOrCreate(
+                    ['company_id' => $companyId, 'document_type' => $docType],
+                    $seq
+                );
+                $imported++;
+            }
+        }
+
+        if (!empty($data['approval_thresholds'])) {
+            foreach ($data['approval_thresholds'] as $docType => $threshold) {
+                ApprovalThreshold::updateOrCreate(
+                    ['company_id' => $companyId, 'document_type' => $docType],
+                    $threshold
+                );
+                $imported++;
+            }
+        }
+
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.imported', null, ['records_imported' => $imported, 'source' => $data['company_name'] ?? 'Unknown'], 'Settings imported from ' . ($data['company_name'] ?? 'Unknown'));
+
+        return redirect()->route('system-settings.index', 'import-export')
+            ->with('success', "Settings imported successfully. {$imported} setting(s) updated.");
+    }
 }

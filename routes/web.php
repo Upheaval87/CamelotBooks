@@ -573,6 +573,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/numbering', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateNumbering'])->name('update-numbering');
             Route::put('/notifications', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateNotifications'])->name('update-notifications');
             Route::patch('/branches/{branch}/toggle', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'toggleBranch'])->name('toggle-branch');
+            Route::post('/export', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'exportSettings'])->name('export-settings');
+            Route::post('/import', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'importSettings'])->name('import-settings');
         });
 
         // Analytics
