@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Account;
 use App\Models\AccountingPeriod;
+use App\Models\DefaultAccountMapping;
 use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Services\Reporting\IncomeStatementService;
@@ -97,12 +98,10 @@ class YearEndCloseService
                 $fy->end_date->toDateString()
             );
 
-            $retainedEarnings = Account::where('company_id', $companyId)
-                ->where('code', '3100')
-                ->first();
+            $retainedEarnings = DefaultAccountMapping::getAccount($companyId, 'retained_earnings');
 
             if (!$retainedEarnings) {
-                throw new InvalidArgumentException('Retained Earnings account (3100) not found.');
+                throw new InvalidArgumentException('Retained Earnings account not found.');
             }
 
             $plBalances = $this->getPAndLBalancesByBranch($companyId, $fy);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\PosPaymentMethod;
 use App\Models\PosSettlement;
 use App\Services\POS\PosSettlementService;
@@ -28,17 +29,14 @@ class PosSettlementController extends Controller
         $companyId = session('current_company_id');
 
         $paymentMethods = PosPaymentMethod::forCompany($companyId)->active()->get();
-        $bankAccounts = Account::where('company_id', $companyId)
-            ->whereIn('code', ['1000', '1050'])
-            ->orWhere('type', 'asset')
-            ->where('sub_type', 'bank')
-            ->get();
+        $defaultBank = DefaultAccountMapping::getAccount($companyId, 'default_bank');
+        $undepositedFunds = DefaultAccountMapping::getAccount($companyId, 'undeposited_funds');
 
-        if ($bankAccounts->isEmpty()) {
-            $bankAccounts = Account::where('company_id', $companyId)
-                ->where('code', '1000')
-                ->get();
-        }
+        $bankAccountIds = array_filter([$defaultBank?->id, $undepositedFunds?->id]);
+
+        $bankAccounts = $bankAccountIds
+            ? Account::where('company_id', $companyId)->whereIn('id', $bankAccountIds)->get()
+            : Account::where('company_id', $companyId)->where('type', 'asset')->where('sub_type', 'bank')->get();
 
         return view('pos.settlements.create', compact('paymentMethods', 'bankAccounts'));
     }

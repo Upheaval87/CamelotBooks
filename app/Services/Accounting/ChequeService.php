@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Models\Account;
 use App\Models\BankTransaction;
 use App\Models\Cheque;
+use App\Models\DefaultAccountMapping;
 use App\Models\NumberingSequence;
 use App\Services\Admin\NumberingSequenceService;
 use Illuminate\Support\Facades\DB;
@@ -223,8 +224,6 @@ class ChequeService
             }
         }
 
-        return Account::where('company_id', $cheque->company_id)
-            ->where('code', '5000')
-            ->firstOrFail();
+        return DefaultAccountMapping::getAccount($cheque->company_id, 'default_expense');
     }
 }

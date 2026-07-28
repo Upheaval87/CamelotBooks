@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Account;
 use App\Models\AccountAuditLog;
+use App\Models\DefaultAccountMapping;
 use App\Models\AccountingPeriod;
 use App\Models\ApprovalSetting;
 use App\Models\JournalEntry;
@@ -289,12 +290,10 @@ class JournalPostingEngine
                 );
             }
 
-            $retainedEarnings = Account::where('company_id', $companyId)
-                ->where('code', '3100')
-                ->first();
+            $retainedEarnings = DefaultAccountMapping::getAccount($companyId, 'retained_earnings');
 
             if (!$retainedEarnings) {
-                throw new InvalidArgumentException('Retained Earnings account (3100) not found for this company.');
+                throw new InvalidArgumentException('Retained Earnings account not found for this company.');
             }
 
             $plBalances = JournalEntryLine::whereHas('journalEntry', function ($q) use ($companyId, $period) {

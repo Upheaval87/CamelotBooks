@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
-use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\InventoryTransfer;
 use App\Models\ItemCategory;
 use App\Models\Product;
@@ -90,9 +90,7 @@ class StockTransferController extends Controller
             $transfer = $result['transfer'];
             $totalCost = $result['total_cost'];
 
-            $invAssetAccount = Account::where('company_id', $companyId)
-                ->where('code', '1200')
-                ->first();
+            $invAssetAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
 
             if ($invAssetAccount && $totalCost > 0) {
                 $journalEntry = $postingEngine->post([

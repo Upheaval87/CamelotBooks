@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Account;
 use App\Models\AccountAuditLog;
+use App\Models\DefaultAccountMapping;
 use App\Models\GoodsReceivedNote;
 use App\Models\GrnLine;
 use App\Models\Product;
@@ -202,9 +203,7 @@ class GoodsReceivedNoteService
             return $line->expense_account_id;
         }
 
-        $inventoryAccount = Account::where('company_id', $companyId)
-            ->where('code', '1200')
-            ->first();
+        $inventoryAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
 
         return $inventoryAccount->id;
     }

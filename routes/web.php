@@ -560,6 +560,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('setup-wizard', [\App\Http\Controllers\Admin\SetupWizardController::class, 'store'])->name('setup-wizard.store');
         });
 
+        // System Settings
+        Route::prefix('system-settings')->name('system-settings.')->group(function () {
+            Route::get('/{tab?}', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'index'])->name('index');
+            Route::put('/company', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateCompany'])->name('update-company');
+            Route::put('/regional', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateRegional'])->name('update-regional');
+            Route::put('/currency', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateCurrency'])->name('update-currency');
+            Route::put('/account-mappings', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateAccountMappings'])->name('update-account-mappings');
+            Route::put('/accounting', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateAccounting'])->name('update-accounting');
+        });
+
         // Analytics
         Route::prefix('analytics')->name('analytics.')->group(function () {
             Route::get('financial-ratios', [\App\Http\Controllers\AnalyticsController::class, 'financialRatios'])->name('financial-ratios');

@@ -2,7 +2,7 @@
 
 namespace App\Services\POS;
 
-use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\AuditLog;
 use App\Models\EisTerminal;
 use App\Models\JournalEntry;
@@ -221,10 +221,10 @@ class PosSaleService
         $lines = $sale->lines()->with('product')->get();
         $payments = $sale->payments()->with('paymentMethod')->get();
 
-        $taxPayable = Account::where('company_id', $companyId)->where('code', '2300')->first();
-        $cogsAccount = Account::where('company_id', $companyId)->where('code', '5000')->first();
-        $invAssetAccount = Account::where('company_id', $companyId)->where('code', '1200')->first();
-        $defaultRevenue = Account::where('company_id', $companyId)->where('code', '4000')->first();
+        $taxPayable = DefaultAccountMapping::getAccount($companyId, 'tax_payable');
+        $cogsAccount = DefaultAccountMapping::getAccount($companyId, 'default_expense');
+        $invAssetAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
+        $defaultRevenue = DefaultAccountMapping::getAccount($companyId, 'default_revenue');
 
         $jeLines = [];
 

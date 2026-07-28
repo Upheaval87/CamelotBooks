@@ -2,7 +2,7 @@
 
 namespace App\Services\Inventory;
 
-use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\InventoryCostLayer;
 use App\Models\Product;
 use App\Models\StockCount;
@@ -107,8 +107,8 @@ class StockCountService
         return DB::transaction(function () use ($count, $countedLines, $userId) {
             $companyId = $count->company_id;
 
-            $invAssetAccount = Account::where('company_id', $companyId)->where('code', '1200')->first();
-            $varianceAccount = Account::where('company_id', $companyId)->where('code', '6850')->first();
+            $invAssetAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
+            $varianceAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_count_variance');
 
             if (!$invAssetAccount || !$varianceAccount) {
                 throw new InvalidArgumentException('Required accounts (1200 or 6850) not found.');

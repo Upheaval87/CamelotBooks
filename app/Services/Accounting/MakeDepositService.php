@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Account;
 use App\Models\BankTransaction;
+use App\Models\DefaultAccountMapping;
 use App\Models\JournalEntryLine;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -19,9 +20,7 @@ class MakeDepositService
 
     public function getUndepositedFundsLines(int $companyId): \Illuminate\Support\Collection
     {
-        $undepositedAccount = Account::where('company_id', $companyId)
-            ->where('code', '1050')
-            ->first();
+        $undepositedAccount = DefaultAccountMapping::getAccount($companyId, 'undeposited_funds');
 
         if (!$undepositedAccount) {
             return collect();
@@ -58,9 +57,7 @@ class MakeDepositService
 
     public function getUndepositedFundsBalance(int $companyId): float
     {
-        $undepositedAccount = Account::where('company_id', $companyId)
-            ->where('code', '1050')
-            ->first();
+        $undepositedAccount = DefaultAccountMapping::getAccount($companyId, 'undeposited_funds');
 
         if (!$undepositedAccount) {
             return 0;
@@ -95,12 +92,10 @@ class MakeDepositService
             throw new InvalidArgumentException("Bank account ID {$bankAccountId} not found or is not a bank account.");
         }
 
-        $undepositedAccount = Account::where('company_id', $companyId)
-            ->where('code', '1050')
-            ->first();
+        $undepositedAccount = DefaultAccountMapping::getAccount($companyId, 'undeposited_funds');
 
         if (!$undepositedAccount) {
-            throw new InvalidArgumentException('Undeposited Funds account (1050) not found.');
+            throw new InvalidArgumentException('Undeposited Funds account not found.');
         }
 
         $selectedJEs = JournalEntryLine::whereIn('journal_entry_id', $data['journal_entry_ids'])

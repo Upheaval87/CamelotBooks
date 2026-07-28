@@ -2,8 +2,8 @@
 
 namespace App\Services\POS;
 
-use App\Models\Account;
 use App\Models\AuditLog;
+use App\Models\DefaultAccountMapping;
 use App\Models\JournalEntry;
 use App\Models\NumberingSequence;
 use App\Models\PosPayment;
@@ -82,7 +82,7 @@ class PosSettlementService
         $bankAccountId = $bankAccount->id;
         $clearingAccountId = $paymentMethod->clearing_account_id;
 
-        $merchantFeeAccount = Account::where('company_id', $companyId)->where('code', '6950')->first();
+        $merchantFeeAccount = DefaultAccountMapping::getAccount($companyId, 'merchant_fee_expense');
 
         $lines = [
             [

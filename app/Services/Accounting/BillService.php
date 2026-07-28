@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Account;
 use App\Models\AccountAuditLog;
+use App\Models\DefaultAccountMapping;
 use App\Models\Bill;
 use App\Models\BillLine;
 use App\Models\Product;
@@ -120,8 +121,8 @@ class BillService
         }
 
         $companyId = $bill->company_id;
-        $apAccount = $this->findAccountByCode($companyId, '2000');
-        $taxReceivableAccount = $this->findAccountByCode($companyId, '1150');
+        $apAccount = $this->resolveAccount($companyId, 'accounts_payable', '2000');
+        $taxReceivableAccount = $this->resolveAccount($companyId, 'tax_receivable', '1150');
         $isPoBacked = !is_null($bill->purchase_order_id);
 
         return DB::transaction(function () use ($bill, $userId, $companyId, $apAccount, $taxReceivableAccount, $isPoBacked) {
@@ -136,8 +137,8 @@ class BillService
                 // PO-backed bill: clear the accrual created by the GRN
                 // DR Accrued Purchases (2150) for GRN total / CR AP (2000) for bill total
                 // PPV (6800) absorbs any price variance
-                $accruedAccount = $this->findAccountByCode($companyId, '2150');
-                $ppvAccount = $this->findAccountByCode($companyId, '6800');
+                $accruedAccount = $this->resolveAccount($companyId, 'accrued_purchases', '2150');
+                $ppvAccount = $this->resolveAccount($companyId, 'purchase_price_variance', '6800');
 
                 $totalBillAmount = 0;
                 $totalTaxAmount = 0;
@@ -297,9 +298,7 @@ class BillService
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
                 $diff = round($totalDebit - $totalCredit, 2);
-                $roundingAccountId = Account::where('company_id', $companyId)
-                    ->where('code', '9999')
-                    ->value('id');
+                $roundingAccountId = DefaultAccountMapping::getAccountId($companyId, 'rounding');
 
                 if ($roundingAccountId && abs($diff) <= 0.05 && abs($diff) > 0) {
                     if ($diff > 0) {
@@ -370,8 +369,8 @@ class BillService
 
             if (!$bill->journal_entry_id) {
                 $companyId = $bill->company_id;
-                $apAccount = $this->findAccountByCode($companyId, '2000');
-                $taxReceivableAccount = $this->findAccountByCode($companyId, '1150');
+                $apAccount = $this->resolveAccount($companyId, 'accounts_payable', '2000');
+                $taxReceivableAccount = $this->resolveAccount($companyId, 'tax_receivable', '1150');
                 $isPoBacked = !is_null($bill->purchase_order_id);
 
                 $lines = $bill->lines()->with('product')->get();
@@ -380,8 +379,8 @@ class BillService
                 $totalCredit = 0;
 
                 if ($isPoBacked) {
-                    $accruedAccount = $this->findAccountByCode($companyId, '2150');
-                    $ppvAccount = $this->findAccountByCode($companyId, '6800');
+                    $accruedAccount = $this->resolveAccount($companyId, 'accrued_purchases', '2150');
+                    $ppvAccount = $this->resolveAccount($companyId, 'purchase_price_variance', '6800');
                     $totalBillAmount = 0;
                     $totalLineTotal = 0;
 
@@ -702,14 +701,18 @@ class BillService
         }
     }
 
-    protected function findAccountByCode(int $companyId, string $code): Account
+    protected function resolveAccount(int $companyId, string $mappingKey, string $fallbackCode): Account
     {
-        $account = Account::where('company_id', $companyId)
-            ->where('code', $code)
-            ->first();
+        $account = DefaultAccountMapping::getAccount($companyId, $mappingKey);
 
         if (!$account) {
-            throw new InvalidArgumentException("Account with code {$code} not found for this company.");
+            $account = Account::where('company_id', $companyId)
+                ->where('code', $fallbackCode)
+                ->first();
+        }
+
+        if (!$account) {
+            throw new InvalidArgumentException("Account for mapping '{$mappingKey}' (fallback code {$fallbackCode}) not found for this company.");
         }
 
         return $account;

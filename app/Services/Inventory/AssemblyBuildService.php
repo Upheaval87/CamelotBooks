@@ -2,8 +2,8 @@
 
 namespace App\Services\Inventory;
 
-use App\Models\Account;
 use App\Models\AssemblyBuild;
+use App\Models\DefaultAccountMapping;
 use App\Models\BillOfMaterial;
 use App\Models\InventoryCostLayer;
 use App\Models\Product;
@@ -111,8 +111,8 @@ class AssemblyBuildService
 
             $buildNumber = $this->generateBuildNumber($companyId);
 
-            $assemblyAccount = Account::where('company_id', $companyId)->where('code', '1200')->first();
-            $componentsAccount = Account::where('company_id', $companyId)->where('code', '1200')->first();
+            $assemblyAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
+            $componentsAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
 
             $journalLines = [];
             if ($assemblyAccount && $componentsAccount && $totalComponentCost > 0) {
@@ -261,7 +261,7 @@ class AssemblyBuildService
 
             $buildNumber = $this->generateBuildNumber($companyId);
 
-            $assemblyAccount = Account::where('company_id', $companyId)->where('code', '1200')->first();
+            $assemblyAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
             $journalLines = [];
             if ($assemblyAccount && $totalComponentCost > 0) {
                 $journalLines[] = [

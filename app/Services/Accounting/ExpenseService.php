@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Account;
 use App\Models\AccountAuditLog;
+use App\Models\DefaultAccountMapping;
 use App\Models\Expense;
 use App\Models\ExpenseLine;
 use App\Models\Vendor;
@@ -118,13 +119,13 @@ class ExpenseService
         $companyId = $expense->company_id;
         $bankAccount = $expense->bank_account_id
             ? $this->findAccountById($companyId, $expense->bank_account_id)
-            : $this->findAccountByCode($companyId, '1000');
+            : DefaultAccountMapping::getAccount($companyId, 'default_bank');
 
         return DB::transaction(function () use ($expense, $userId, $companyId, $bankAccount) {
             $oldValues = $expense->toArray();
 
             $lines = $expense->lines()->get();
-            $taxReceivableAccount = $this->findAccountByCode($companyId, '1150');
+            $taxReceivableAccount = DefaultAccountMapping::getAccount($companyId, 'tax_receivable');
             $jeLines = [];
             $totalDebit = 0;
             $totalCredit = 0;
@@ -168,9 +169,7 @@ class ExpenseService
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
                 $diff = round($totalDebit - $totalCredit, 2);
-                $roundingAccountId = Account::where('company_id', $companyId)
-                    ->where('code', '9999')
-                    ->value('id');
+                $roundingAccountId = DefaultAccountMapping::getAccountId($companyId, 'rounding');
 
                 if ($roundingAccountId && abs($diff) <= 0.05 && abs($diff) > 0) {
                     if ($diff > 0) {

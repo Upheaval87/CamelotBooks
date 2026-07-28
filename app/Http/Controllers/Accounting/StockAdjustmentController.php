@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
-use App\Models\Account;
 use App\Models\Branch;
+use App\Models\DefaultAccountMapping;
 use App\Models\InventoryAdjustment;
 use App\Models\InventoryStock;
 use App\Models\ItemCategory;
@@ -123,7 +123,7 @@ class StockAdjustmentController extends Controller
                 );
             }
 
-            $invAdjAccount = Account::where('company_id', $companyId)->where('code', '6700')->first();
+            $invAdjAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_adjustment');
             $invAssetAccount = $product->inventoryAssetAccount;
 
             if ($invAdjAccount && $invAssetAccount) {

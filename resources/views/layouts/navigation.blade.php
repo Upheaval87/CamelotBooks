@@ -228,6 +228,21 @@
 
                     @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('system-settings.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                            {{ __('Settings') }}
+                        </button>
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute right-0 z-50 mt-1 w-56 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <a href="{{ route('system-settings.index', 'company') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Company Profile') }}</a>
+                            <a href="{{ route('system-settings.index', 'regional') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Regional Settings') }}</a>
+                            <a href="{{ route('system-settings.index', 'currency') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Currency Settings') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <a href="{{ route('system-settings.index', 'accounts') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Account Mappings') }}</a>
+                            <a href="{{ route('system-settings.index', 'accounting') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Accounting Settings') }}</a>
+                        </div>
+                    </div>
+                    @endif
+
+                    <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
                         <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('admin.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                             {{ __('Admin') }}
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -422,6 +437,10 @@
             <x-responsive-nav-link :href="route('pos.eis.submissions')" :active="request()->routeIs('pos.eis.submissions*')">{{ __('EIS Submissions') }}</x-responsive-nav-link>
             @endif
             @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
+            <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">System Settings</div>
+            <x-responsive-nav-link :href="route('system-settings.index', 'company')" :active="request()->routeIs('system-settings.*')">{{ __('Company Profile') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('system-settings.index', 'regional')" :active="request()->routeIs('system-settings.*')">{{ __('Regional Settings') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('system-settings.index', 'currency')" :active="request()->routeIs('system-settings.*')">{{ __('Currency Settings') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Admin</div>
             <x-responsive-nav-link :href="route('admin.setup-wizard.index')" :active="request()->routeIs('admin.setup-wizard.*')">{{ __('Setup Wizard') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">{{ __('Users & Roles') }}</x-responsive-nav-link>

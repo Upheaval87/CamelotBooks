@@ -5,7 +5,7 @@ namespace App\Services\Reporting\Analytics;
 use App\Models\Bill;
 use App\Models\BillLine;
 use App\Models\Vendor;
-use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +44,7 @@ class PurchasingAnalyticsService
             ->limit(10)
             ->get();
 
-        $ppvAccount = Account::where('company_id', $companyId)->where('code', '6800')->first();
+        $ppvAccount = DefaultAccountMapping::getAccount($companyId, 'purchase_price_variance');
         $ppvTrend = collect();
         $ppvTotal = 0;
 

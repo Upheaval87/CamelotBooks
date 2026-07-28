@@ -3,6 +3,7 @@
 namespace App\Services\Inventory;
 
 use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\GoodsReceivedNote;
 use App\Models\InventoryCostLayer;
 use App\Models\InventoryStock;
@@ -174,10 +175,8 @@ class LandedCostAllocationService
         $totalDebit = 0;
         $totalCredit = 0;
 
-        $inventoryAssetAccount = Account::where('company_id', $companyId)
-            ->where('code', '1200')->first();
-        $cogsAccount = Account::where('company_id', $companyId)
-            ->where('code', '5000')->first();
+        $inventoryAssetAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
+        $cogsAccount = DefaultAccountMapping::getAccount($companyId, 'default_expense');
 
         foreach ($allocation as $alloc) {
             if ($alloc['inventory_asset_amount'] > 0 && $alloc['inventory_asset_account_id']) {

@@ -2,7 +2,7 @@
 
 namespace App\Services\Accounting;
 
-use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\JournalEntry;
 use InvalidArgumentException;
 
@@ -51,10 +51,10 @@ class SalesPostingService
         $lines = $context['lines'];
         $payments = $context['payments'];
 
-        $taxPayable = Account::where('company_id', $companyId)->where('code', '2300')->first();
-        $cogsAccount = Account::where('company_id', $companyId)->where('code', '5000')->first();
-        $invAssetAccount = Account::where('company_id', $companyId)->where('code', '1200')->first();
-        $defaultRevenue = Account::where('company_id', $companyId)->where('code', '4000')->first();
+        $taxPayable = DefaultAccountMapping::getAccount($companyId, 'tax_payable');
+        $cogsAccount = DefaultAccountMapping::getAccount($companyId, 'default_expense');
+        $invAssetAccount = DefaultAccountMapping::getAccount($companyId, 'inventory_asset');
+        $defaultRevenue = DefaultAccountMapping::getAccount($companyId, 'default_revenue');
 
         $jeLines = [];
         $totalDebits = 0;
@@ -160,7 +160,7 @@ class SalesPostingService
 
         if (abs($diff) > 0.001) {
             if (abs($diff) <= 0.05) {
-                $roundingAccount = Account::where('company_id', $companyId)->where('code', '9999')->first();
+                $roundingAccount = DefaultAccountMapping::getAccount($companyId, 'rounding');
                 if ($roundingAccount) {
                     if ($diff > 0) {
                         $jeLines[] = [

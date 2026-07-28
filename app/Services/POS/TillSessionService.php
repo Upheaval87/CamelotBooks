@@ -2,8 +2,8 @@
 
 namespace App\Services\POS;
 
-use App\Models\Account;
 use App\Models\AuditLog;
+use App\Models\DefaultAccountMapping;
 use App\Models\JournalEntry;
 use App\Models\PosCashierSession;
 use App\Services\Accounting\JournalPostingEngine;
@@ -108,10 +108,10 @@ class TillSessionService
     {
         $companyId = $session->company_id;
 
-        $undepositedFunds = Account::where('company_id', $companyId)->where('code', '1050')->firstOrFail();
-        $cashInDrawer = Account::where('company_id', $companyId)->where('code', '1060')->firstOrFail();
-        $cashOverage = Account::where('company_id', $companyId)->where('code', '7400')->firstOrFail();
-        $cashShortage = Account::where('company_id', $companyId)->where('code', '6900')->firstOrFail();
+        $undepositedFunds = DefaultAccountMapping::getAccount($companyId, 'undeposited_funds');
+        $cashInDrawer = DefaultAccountMapping::getAccount($companyId, 'cash_in_drawer');
+        $cashOverage = DefaultAccountMapping::getAccount($companyId, 'cash_overage');
+        $cashShortage = DefaultAccountMapping::getAccount($companyId, 'cash_shortage');
 
         $lines = [
             [

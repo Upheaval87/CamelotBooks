@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Account;
 use App\Models\AccountingPeriod;
+use App\Models\DefaultAccountMapping;
 use App\Models\Company;
 use App\Models\CustomerPayment;
 use App\Models\ExchangeRate;
@@ -202,8 +203,8 @@ class ForeignCurrencyService
         }
 
         $companyId = $payment->company_id;
-        $fxGainLossAccount = $this->findFxAccount($companyId, '7200');
-        $arAccount = Account::where('company_id', $companyId)->where('code', '1100')->first();
+        $fxGainLossAccount = DefaultAccountMapping::getAccount($companyId, 'realized_fx_gain_loss');
+        $arAccount = DefaultAccountMapping::getAccount($companyId, 'accounts_receivable');
 
         $lines = [];
         if ($gainLoss > 0) {
@@ -257,8 +258,8 @@ class ForeignCurrencyService
         }
 
         $companyId = $payment->company_id;
-        $fxGainLossAccount = $this->findFxAccount($companyId, '7200');
-        $apAccount = Account::where('company_id', $companyId)->where('code', '2000')->first();
+        $fxGainLossAccount = DefaultAccountMapping::getAccount($companyId, 'realized_fx_gain_loss');
+        $apAccount = DefaultAccountMapping::getAccount($companyId, 'accounts_payable');
 
         $lines = [];
         if ($gainLoss > 0) {
@@ -357,9 +358,9 @@ class ForeignCurrencyService
             return 0;
         }
 
-        $unrealizedAccount = $this->findFxAccount($companyId, '7300');
-        $arAccount = Account::where('company_id', $companyId)->where('code', '1100')->first();
-        $apAccount = Account::where('company_id', $companyId)->where('code', '2000')->first();
+        $unrealizedAccount = DefaultAccountMapping::getAccount($companyId, 'unrealized_fx_gain_loss');
+        $arAccount = DefaultAccountMapping::getAccount($companyId, 'accounts_receivable');
+        $apAccount = DefaultAccountMapping::getAccount($companyId, 'accounts_payable');
 
         $hasInvoices = $openInvoices->isNotEmpty();
         $hasBills = $openBills->isNotEmpty();
@@ -424,16 +425,4 @@ class ForeignCurrencyService
         return $totalGainLoss;
     }
 
-    private function findFxAccount(int $companyId, string $code): Account
-    {
-        $account = Account::where('company_id', $companyId)
-            ->where('code', $code)
-            ->first();
-
-        if (!$account) {
-            throw new \InvalidArgumentException("FX account {$code} not found for company {$companyId}.");
-        }
-
-        return $account;
-    }
 }

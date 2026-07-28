@@ -3,6 +3,7 @@
 namespace App\Services\Accounting;
 
 use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\Employee;
 use App\Models\EmployeePayment;
 use App\Models\EmployeeSalaryStructure;
@@ -151,14 +152,14 @@ class PayrollService
 
         $companyId = $run->company_id;
 
-        $salaryExpenseAccount = Account::where('company_id', $companyId)->where('code', '6000')->first();
-        $pensionExpenseAccount = Account::where('company_id', $companyId)->where('code', '6010')->first();
-        $payePayableAccount = Account::where('company_id', $companyId)->where('code', '2400')->first();
-        $pensionPayableAccount = Account::where('company_id', $companyId)->where('code', '2410')->first();
-        $netPayPayableAccount = Account::where('company_id', $companyId)->where('code', '2420')->first();
+        $salaryExpenseAccount = DefaultAccountMapping::getAccount($companyId, 'salary_expense');
+        $pensionExpenseAccount = DefaultAccountMapping::getAccount($companyId, 'pension_expense');
+        $payePayableAccount = DefaultAccountMapping::getAccount($companyId, 'paye_payable');
+        $pensionPayableAccount = DefaultAccountMapping::getAccount($companyId, 'pension_payable');
+        $netPayPayableAccount = DefaultAccountMapping::getAccount($companyId, 'net_pay_payable');
 
         if (!$salaryExpenseAccount || !$payePayableAccount || !$pensionPayableAccount || !$netPayPayableAccount) {
-            throw new InvalidArgumentException('Required payroll GL accounts not found. Please ensure accounts 6000, 2400, 2410, and 2420 exist.');
+            throw new InvalidArgumentException('Required payroll GL accounts not found. Please check Default Account Mappings in System Settings.');
         }
 
         $items = $run->items()->with('employee')->get();
@@ -232,7 +233,7 @@ class PayrollService
 
         $companyId = $run->company_id;
 
-        $netPayPayableAccount = Account::where('company_id', $companyId)->where('code', '2420')->first();
+        $netPayPayableAccount = DefaultAccountMapping::getAccount($companyId, 'net_pay_payable');
         $bankAccount = Account::find($bankAccountId);
 
         if (!$netPayPayableAccount || !$bankAccount) {
@@ -294,7 +295,7 @@ class PayrollService
 
         $companyId = $run->company_id;
 
-        $payePayableAccount = Account::where('company_id', $companyId)->where('code', '2400')->first();
+        $payePayableAccount = DefaultAccountMapping::getAccount($companyId, 'paye_payable');
         $bankAccount = Account::find($bankAccountId);
 
         if (!$payePayableAccount || !$bankAccount) {
@@ -352,7 +353,7 @@ class PayrollService
 
         $companyId = $run->company_id;
 
-        $pensionPayableAccount = Account::where('company_id', $companyId)->where('code', '2410')->first();
+        $pensionPayableAccount = DefaultAccountMapping::getAccount($companyId, 'pension_payable');
         $bankAccount = Account::find($bankAccountId);
 
         if (!$pensionPayableAccount || !$bankAccount) {

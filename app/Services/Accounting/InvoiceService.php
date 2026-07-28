@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Models\Account;
 use App\Models\AccountAuditLog;
 use App\Models\Customer;
+use App\Models\DefaultAccountMapping;
 use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\Product;
@@ -35,7 +36,7 @@ class InvoiceService
             throw new InvalidArgumentException('At least one invoice line is required.');
         }
 
-        $arAccount = $this->findAccountByCode($companyId, '1100');
+        $arAccount = DefaultAccountMapping::getAccount($companyId, 'accounts_receivable');
 
         return DB::transaction(function () use ($data, $userId, $companyId, $arAccount) {
             $invoiceNumber = $this->generateInvoiceNumber($companyId);
@@ -116,8 +117,8 @@ class InvoiceService
         }
 
         $companyId = $invoice->company_id;
-        $arAccount = $this->findAccountByCode($companyId, '1100');
-        $taxPayableAccount = $this->findAccountByCode($companyId, '2300');
+        $arAccount = DefaultAccountMapping::getAccount($companyId, 'accounts_receivable');
+        $taxPayableAccount = DefaultAccountMapping::getAccount($companyId, 'tax_payable');
 
         return DB::transaction(function () use ($invoice, $userId, $companyId, $arAccount, $taxPayableAccount) {
             $oldValues = $invoice->toArray();
@@ -208,9 +209,7 @@ class InvoiceService
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
                 $diff = round($totalDebit - $totalCredit, 2);
-                $roundingAccountId = Account::where('company_id', $companyId)
-                    ->where('code', '9999')
-                    ->value('id');
+                $roundingAccountId = DefaultAccountMapping::getAccountId($companyId, 'rounding');
 
                 if ($roundingAccountId && abs($diff) <= 0.05 && abs($diff) > 0) {
                     if ($diff > 0) {

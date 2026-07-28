@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\AccountingPeriod;
 use App\Models\ApprovalSetting;
 use App\Models\Company;
+use App\Models\DefaultAccountMapping;
 use App\Services\Admin\NumberingSequenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +57,9 @@ class CompanyController extends Controller
 
             $this->createAccountingPeriods($company);
 
-            $this->copyDefaultChartOfAccounts($company);
+            $createdAccounts = $this->copyDefaultChartOfAccounts($company);
+
+            $this->seedDefaultAccountMappings($company, $createdAccounts);
 
             ApprovalSetting::create([
                 'company_id' => $company->id,
@@ -156,6 +159,36 @@ class CompanyController extends Controller
             ]);
 
             $createdAccounts[$accountData['code']] = $account->id;
+        }
+
+        return $createdAccounts;
+    }
+
+    private function seedDefaultAccountMappings(Company $company, array $createdAccounts = []): void
+    {
+        $defaults = DefaultAccountMapping::defaultCodes();
+
+        foreach ($defaults as $mappingKey => $accountCode) {
+            if ($accountCode === null) {
+                continue;
+            }
+
+            $accountId = $createdAccounts[$accountCode] ?? null;
+
+            if (!$accountId) {
+                $account = Account::where('company_id', $company->id)
+                    ->where('code', $accountCode)
+                    ->first();
+                $accountId = $account?->id;
+            }
+
+            if ($accountId) {
+                DefaultAccountMapping::create([
+                    'company_id' => $company->id,
+                    'mapping_key' => $mappingKey,
+                    'account_id' => $accountId,
+                ]);
+            }
         }
     }
 

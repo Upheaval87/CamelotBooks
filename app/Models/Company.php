@@ -24,6 +24,7 @@ class Company extends Model
         'base_currency',
         'fiscal_year_start_month',
         'logo',
+        'website',
         'is_active',
         'allow_negative_stock',
     ];
