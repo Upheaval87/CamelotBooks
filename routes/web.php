@@ -552,6 +552,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Compliance
             Route::get('reports/period-lock-status', [\App\Http\Controllers\Accounting\ReportControllers\PeriodLockStatusController::class, 'index'])->name('reports.period-lock-status');
+
+            // Batch 4 – Operational & Cross-Module
+            Route::get('reports/chart-of-accounts', [\App\Http\Controllers\Accounting\ReportControllers\ChartOfAccountsController::class, 'index'])->name('reports.chart-of-accounts');
+            Route::get('reports/customer-statement', [\App\Http\Controllers\Accounting\ReportControllers\CustomerStatementController::class, 'index'])->name('reports.customer-statement');
+            Route::get('reports/vendor-statement', [\App\Http\Controllers\Accounting\ReportControllers\VendorStatementController::class, 'index'])->name('reports.vendor-statement');
+            Route::get('reports/unbilled-deliveries', [\App\Http\Controllers\Accounting\ReportControllers\UnbilledDeliveriesController::class, 'index'])->name('reports.unbilled-deliveries');
+            Route::get('reports/bank-reconciliation-history', [\App\Http\Controllers\Accounting\ReportControllers\BankReconciliationHistoryController::class, 'index'])->name('reports.bank-reconciliation-history');
+            Route::get('reports/cheque-register', [\App\Http\Controllers\Accounting\ReportControllers\ChequeRegisterController::class, 'index'])->name('reports.cheque-register');
+
+            // Fixed Assets
+            Route::get('reports/asset-disposal-report', [\App\Http\Controllers\Accounting\ReportControllers\AssetDisposalReportController::class, 'index'])->name('reports.asset-disposal-report');
+            Route::get('reports/tax-depreciation-schedule', [\App\Http\Controllers\Accounting\ReportControllers\TaxDepreciationScheduleController::class, 'index'])->name('reports.tax-depreciation-schedule');
+
+            // Payroll
+            Route::get('reports/paye-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PayeRemittanceReportController::class, 'index'])->name('reports.paye-remittance-report');
+            Route::get('reports/pension-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PensionRemittanceReportController::class, 'index'])->name('reports.pension-remittance-report');
+            Route::get('reports/payslip-report', [\App\Http\Controllers\Accounting\ReportControllers\PayslipReportController::class, 'index'])->name('reports.payslip-report');
+
+            // Consolidated
+            Route::get('reports/consolidated-balance-sheet', [\App\Http\Controllers\Accounting\ReportControllers\ConsolidatedBalanceSheetController::class, 'index'])->name('reports.consolidated-balance-sheet');
+            Route::get('reports/consolidated-income-statement', [\App\Http\Controllers\Accounting\ReportControllers\ConsolidatedIncomeStatementController::class, 'index'])->name('reports.consolidated-income-statement');
+
+            // Cross-Module
+            Route::get('reports/pending-approvals-aging', [\App\Http\Controllers\Accounting\ReportControllers\PendingApprovalsAgingController::class, 'index'])->name('reports.pending-approvals-aging');
+            Route::get('reports/eis-submission-status', [\App\Http\Controllers\Accounting\ReportControllers\EisSubmissionStatusController::class, 'index'])->name('reports.eis-submission-status');
+            Route::get('reports/assembly-build-history', [\App\Http\Controllers\Accounting\ReportControllers\AssemblyBuildHistoryController::class, 'index'])->name('reports.assembly-build-history');
         });
 
         // Administration
