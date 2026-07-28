@@ -4,6 +4,8 @@ namespace App\Http\Controllers\SystemSettings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\ApprovalSetting;
+use App\Models\ApprovalThreshold;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\DefaultAccountMapping;
@@ -22,9 +24,11 @@ class SettingsController extends Controller
         $accounting = SystemSetting::getMany('accounting', $companyId);
         $accounts = Account::where('company_id', $companyId)->where('is_active', true)->orderBy('code')->get();
         $mappings = DefaultAccountMapping::getAll($companyId);
+        $approvalSetting = ApprovalSetting::firstOrCreate(['company_id' => $companyId], ['requires_approval' => false, 'threshold_amount' => 0]);
+        $approvalThresholds = ApprovalThreshold::getAllForCompany($companyId);
 
         return view('system-settings.index', compact(
-            'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings', 'tab'
+            'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings', 'approvalSetting', 'approvalThresholds', 'tab'
         ));
     }
 
@@ -63,6 +67,7 @@ class SettingsController extends Controller
             'Currency Settings',
             'Account Mappings',
             'Accounting Settings',
+            'Approval Settings',
         ];
 
         return view('system-settings.audit-log', compact('logs', 'users', 'groups', 'company', 'tab'));
@@ -223,6 +228,56 @@ class SettingsController extends Controller
 
         return redirect()->route('system-settings.index', 'accounts')
             ->with('success', 'Account mappings updated successfully.');
+    }
+
+    public function updateApproval(Request $request)
+    {
+        $companyId = session('current_company_id');
+
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $approvalSetting = ApprovalSetting::firstOrCreate(['company_id' => $companyId]);
+
+        $oldGlobal = $approvalSetting->only(['requires_approval', 'threshold_amount']);
+        $oldThresholds = ApprovalThreshold::getAllForCompany($companyId);
+
+        $validated = $request->validate([
+            'requires_approval' => 'required|boolean',
+            'threshold_amount' => 'required|numeric|min:0',
+        ]);
+
+        $approvalSetting->update([
+            'requires_approval' => (bool) $validated['requires_approval'],
+            'threshold_amount' => $validated['threshold_amount'],
+        ]);
+
+        $docTypes = ApprovalThreshold::documentTypes();
+        $newThresholds = [];
+        foreach ($docTypes as $type => $label) {
+            $amount = (float) ($request->input("thresholds.{$type}") ?? 0);
+            $active = $request->boolean("active.{$type}", false);
+
+            $old = $oldThresholds[$type] ?? null;
+            $oldAmount = $old ? (float) $old['threshold_amount'] : 0;
+            $oldActive = $old ? (bool) $old['is_active'] : false;
+
+            if ($oldAmount != $amount || $oldActive != $active) {
+                $newThresholds[$type] = ['threshold' => $amount, 'active' => $active];
+            }
+
+            ApprovalThreshold::updateOrCreate(
+                ['company_id' => $companyId, 'document_type' => $type],
+                ['threshold_amount' => $amount, 'is_active' => $active]
+            );
+        }
+
+        $auditNew = array_merge(['global' => $validated], $newThresholds);
+        $auditOld = array_merge(['global' => $oldGlobal], collect($oldThresholds)->mapWithKeys(fn($t) => [$t['document_type'] => ['threshold' => $t['threshold_amount'], 'active' => $t['is_active']]])->toArray());
+
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $auditOld, $auditNew, 'Approval Settings');
+
+        return redirect()->route('system-settings.index', 'approval')
+            ->with('success', 'Approval settings updated successfully.');
     }
 
     public function updateAccounting(Request $request)

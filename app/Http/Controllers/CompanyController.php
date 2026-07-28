@@ -67,6 +67,15 @@ class CompanyController extends Controller
                 'threshold_amount' => 0,
             ]);
 
+            foreach (\App\Models\ApprovalThreshold::documentTypes() as $type => $label) {
+                \App\Models\ApprovalThreshold::create([
+                    'company_id' => $company->id,
+                    'document_type' => $type,
+                    'threshold_amount' => 0,
+                    'is_active' => false,
+                ]);
+            }
+
             app(NumberingSequenceService::class)->seedDefaults($company->id);
         });
 

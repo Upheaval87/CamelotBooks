@@ -29,7 +29,7 @@ class JournalPostingEngine
             $approvalSetting = ApprovalSetting::where('company_id', $companyId)->first();
             $totalAmount = $this->calculateTotalDebit($data['lines']);
 
-            if ($approvalSetting && $approvalSetting->isApprovalRequired($totalAmount)) {
+            if ($approvalSetting && $approvalSetting->isApprovalRequiredForType('journal_entry', $totalAmount)) {
                 $data['status'] = JournalEntry::STATUS_PENDING_APPROVAL;
             }
 
@@ -126,7 +126,7 @@ class JournalPostingEngine
 
             $totalAmount = $this->calculateTotalFromLines($entry->lines);
 
-            if (!$approvalSetting->isApprovalRequired($totalAmount)) {
+            if (!$approvalSetting->isApprovalRequiredForType('journal_entry', $totalAmount)) {
                 $entry->status = JournalEntry::STATUS_POSTED;
                 $entry->posted_by = $entry->created_by;
                 $entry->posted_at = now();
@@ -209,7 +209,7 @@ class JournalPostingEngine
 
             $initialStatus = JournalEntry::STATUS_POSTED;
 
-            if ($approvalSetting && $approvalSetting->isApprovalRequired($totalAmount)) {
+            if ($approvalSetting && $approvalSetting->isApprovalRequiredForType('journal_entry', $totalAmount)) {
                 $initialStatus = JournalEntry::STATUS_PENDING_APPROVAL;
             }
 

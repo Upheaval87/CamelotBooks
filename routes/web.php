@@ -569,6 +569,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/currency', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateCurrency'])->name('update-currency');
             Route::put('/account-mappings', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateAccountMappings'])->name('update-account-mappings');
             Route::put('/accounting', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateAccounting'])->name('update-accounting');
+            Route::put('/approval', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateApproval'])->name('update-approval');
         });
 
         // Analytics

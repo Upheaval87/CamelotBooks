@@ -33,4 +33,12 @@ class ApprovalSetting extends Model
         }
         return $amount >= $this->threshold_amount;
     }
+
+    /**
+     * Check approval using per-document-type thresholds (delegates to ApprovalThreshold).
+     */
+    public function isApprovalRequiredForType(string $documentType, float $amount = 0): bool
+    {
+        return \App\Models\ApprovalThreshold::isApprovalRequired($this->company_id, $documentType, $amount);
+    }
 }
