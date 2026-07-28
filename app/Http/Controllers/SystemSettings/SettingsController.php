@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SystemSettings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\DefaultAccountMapping;
 use App\Models\SystemSetting;
@@ -27,12 +28,58 @@ class SettingsController extends Controller
         ));
     }
 
+    public function logs(Request $request)
+    {
+        $companyId = session('current_company_id');
+        $company = Company::findOrFail($companyId);
+
+        $query = AuditLog::where('company_id', $companyId)
+            ->where('auditable_type', Company::class)
+            ->where('action', 'settings.updated')
+            ->with('user');
+
+        if ($group = $request->input('group')) {
+            $query->where('notes', $group);
+        }
+
+        if ($userId = $request->input('user_id')) {
+            $query->where('user_id', $userId);
+        }
+
+        if ($from = $request->input('from')) {
+            $query->where('created_at', '>=', $from);
+        }
+
+        if ($to = $request->input('to')) {
+            $query->where('created_at', '<=', $to . ' 23:59:59');
+        }
+
+        $logs = $query->orderBy('created_at', 'desc')->paginate(25)->withQueryString();
+        $users = \App\Models\User::whereHas('companies', fn($q) => $q->where('company_id', $companyId))->orderBy('name')->get();
+
+        $groups = [
+            'Company Profile',
+            'Regional Settings',
+            'Currency Settings',
+            'Account Mappings',
+            'Accounting Settings',
+        ];
+
+        return view('system-settings.audit-log', compact('logs', 'users', 'groups', 'company', 'tab'));
+    }
+
     public function updateCompany(Request $request)
     {
         $companyId = session('current_company_id');
         $company = Company::findOrFail($companyId);
 
         abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $oldValues = $company->only([
+            'name', 'legal_name', 'company_code', 'tax_id', 'address', 'city',
+            'state', 'country', 'postal_code', 'phone', 'email', 'website',
+            'fiscal_year_start_month', 'logo',
+        ]);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -67,6 +114,9 @@ class SettingsController extends Controller
 
         $company->update($validated);
 
+        $newValues = $company->only(array_keys($validated));
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldValues, $newValues, 'Company Profile');
+
         return redirect()->route('system-settings.index', 'company')
             ->with('success', 'Company profile updated successfully.');
     }
@@ -76,6 +126,8 @@ class SettingsController extends Controller
         $companyId = session('current_company_id');
 
         abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $oldValues = SystemSetting::getMany('regional', $companyId);
 
         $validated = $request->validate([
             'country' => 'nullable|string|max:100',
@@ -90,6 +142,8 @@ class SettingsController extends Controller
             SystemSetting::setValue('regional', $key, $value, $companyId);
         }
 
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldValues, $validated, 'Regional Settings');
+
         return redirect()->route('system-settings.index', 'regional')
             ->with('success', 'Regional settings updated successfully.');
     }
@@ -99,6 +153,11 @@ class SettingsController extends Controller
         $companyId = session('current_company_id');
 
         abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $oldValues = array_merge(
+            ['base_currency' => Company::findOrFail($companyId)->base_currency],
+            SystemSetting::getMany('currency', $companyId)
+        );
 
         $validated = $request->validate([
             'base_currency' => 'required|string|max:10',
@@ -112,6 +171,8 @@ class SettingsController extends Controller
             SystemSetting::setValue('currency', $key, $validated[$key], $companyId);
         }
 
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldValues, $validated, 'Currency Settings');
+
         return redirect()->route('system-settings.index', 'currency')
             ->with('success', 'Currency settings updated successfully.');
     }
@@ -122,6 +183,12 @@ class SettingsController extends Controller
 
         abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
 
+        $oldMappings = DefaultAccountMapping::getAll($companyId);
+        $oldAccountNames = collect($oldMappings)->mapWithKeys(function ($accountId, $key) {
+            $account = Account::find($accountId);
+            return [$key => $account ? "{$account->code} — {$account->name}" : null];
+        })->toArray();
+
         $keys = DefaultAccountMapping::availableKeys();
         $rules = [];
         foreach ($keys as $key => $label) {
@@ -130,7 +197,17 @@ class SettingsController extends Controller
 
         $validated = $request->validate($rules);
 
+        $changes = [];
         foreach ($validated as $mappingKey => $accountId) {
+            $oldAccount = $oldAccountNames[$mappingKey] ?? null;
+            $newAccount = null;
+            if ($accountId) {
+                $account = Account::find($accountId);
+                $newAccount = $account ? "{$account->code} — {$account->name}" : null;
+            }
+            if ($oldAccount !== $newAccount) {
+                $changes[$mappingKey] = ['from' => $oldAccount, 'to' => $newAccount];
+            }
             if ($accountId) {
                 DefaultAccountMapping::setMapping($companyId, $mappingKey, (int) $accountId);
             } else {
@@ -138,6 +215,10 @@ class SettingsController extends Controller
                     ->where('mapping_key', $mappingKey)
                     ->delete();
             }
+        }
+
+        if (!empty($changes)) {
+            AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldAccountNames, $changes, 'Account Mappings');
         }
 
         return redirect()->route('system-settings.index', 'accounts')
@@ -150,6 +231,8 @@ class SettingsController extends Controller
 
         abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
 
+        $oldValues = SystemSetting::getMany('accounting', $companyId);
+
         $validated = $request->validate([
             'mandatory_narration' => 'required|boolean',
             'enforce_credit_limit' => 'required|boolean',
@@ -160,6 +243,8 @@ class SettingsController extends Controller
         foreach ($validated as $key => $value) {
             SystemSetting::setValue('accounting', $key, $value, $companyId);
         }
+
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldValues, $validated, 'Accounting Settings');
 
         return redirect()->route('system-settings.index', 'accounting')
             ->with('success', 'Accounting settings updated successfully.');

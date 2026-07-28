@@ -129,7 +129,7 @@ class CompanyController extends Controller
         }
     }
 
-    private function copyDefaultChartOfAccounts(Company $company): void
+    private function copyDefaultChartOfAccounts(Company $company): array
     {
         $accounts = $this->getDefaultAccounts();
 

@@ -562,6 +562,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // System Settings
         Route::prefix('system-settings')->name('system-settings.')->group(function () {
+            Route::get('/audit-log', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'logs'])->name('audit-log');
             Route::get('/{tab?}', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'index'])->name('index');
             Route::put('/company', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateCompany'])->name('update-company');
             Route::put('/regional', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateRegional'])->name('update-regional');
