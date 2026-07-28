@@ -1,5 +1,4 @@
-@extends('layouts.app')
-@section('content')
+<x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('regional', 'currency_symbol', session('current_company_id'), 'KES'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
     <h1 class="text-2xl font-bold text-gray-900 mb-4">Journal Report</h1>
@@ -47,4 +46,4 @@
         </table>
     </div>
 </div>
-@endsection
+</x-app-layout>
