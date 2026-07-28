@@ -453,30 +453,43 @@ class AdminModuleTest extends TestCase
     // LOCALIZATION
     // =============================================
 
-    public function test_localization_page_loads(): void
+    public function test_localization_settings_migrated_to_settings(): void
     {
         $this->actingAsAdmin();
-        $response = $this->get(route('admin.localization.index'));
-        $response->assertStatus(200);
-        $response->assertSee('Date Format');
-    }
 
-    public function test_localization_settings_can_be_updated(): void
-    {
-        $this->actingAsAdmin();
-        $response = $this->put(route('admin.localization.update'), [
-            'date_format' => 'd/m/Y',
-            'number_format' => '1.234,56',
+        // Number format is now in Regional settings
+        $response = $this->put(route('system-settings.update-regional'), [
+            'country' => 'Malawi',
+            'language' => 'en',
             'timezone' => 'Africa/Blantyre',
-            'currency_display' => 'code',
+            'date_format' => 'd/m/Y',
+            'time_format' => '24h',
+            'first_day_of_week' => 1,
+            'number_format' => '1.234,56',
         ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('system_settings', [
             'company_id' => $this->company->id,
-            'group' => 'localization',
-            'key' => 'timezone',
-            'value' => 'Africa/Blantyre',
+            'group' => 'regional',
+            'key' => 'number_format',
+            'value' => '1.234,56',
+        ]);
+
+        // Currency symbol is now in Currency settings
+        $response = $this->put(route('system-settings.update-currency'), [
+            'base_currency' => 'MWK',
+            'decimal_places' => 2,
+            'rate_source' => 'manual',
+            'currency_symbol' => 'K',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('system_settings', [
+            'company_id' => $this->company->id,
+            'group' => 'currency',
+            'key' => 'currency_symbol',
+            'value' => 'K',
         ]);
     }
 

@@ -7,15 +7,12 @@ use App\Models\Account;
 use App\Models\ApprovalSetting;
 use App\Models\ApprovalThreshold;
 use App\Models\AuditLog;
-use App\Models\Branch;
 use App\Models\Company;
 use App\Models\DefaultAccountMapping;
 use App\Models\EmailTemplate;
-use App\Models\FiscalYear;
 use App\Models\NumberingSequence;
-use App\Models\SettingsBackup;
 use App\Models\SystemSetting;
-use App\Services\Admin\NumberingSequenceService;
+use App\Services\FeatureManagement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -34,32 +31,17 @@ class SettingsController extends Controller
         $approvalThresholds = ApprovalThreshold::getAllForCompany($companyId);
         $sequences = NumberingSequence::where('company_id', $companyId)->orderBy('document_type')->get();
         $documentTypeLabels = NumberingSequence::documentTypeLabels();
-        $nextNumbers = [];
-        $ns = app(NumberingSequenceService::class);
-        foreach ($sequences as $seq) {
-            $nextNumbers[$seq->document_type] = $ns->peekNextNumber($companyId, $seq->document_type);
-        }
-        $smtpSettings = SystemSetting::getMany('smtp', $companyId);
+        $notifications = SystemSetting::getMany('notifications', $companyId);
         $emailTemplates = EmailTemplate::where(function ($q) use ($companyId) {
             $q->where('company_id', $companyId)->orWhereNull('company_id');
         })->get();
         $eventLabels = EmailTemplate::eventLabels();
-        $branches = Branch::where('company_id', $companyId)->orderBy('name')->get();
-        $fiscalYears = FiscalYear::where('company_id', $companyId)
-            ->with(['periods', 'closedByUser'])
-            ->orderByDesc('start_date')
-            ->get();
-        $backups = SettingsBackup::where('company_id', $companyId)
-            ->with('createdByUser')
-            ->orderByDesc('created_at')
-            ->get();
 
         return view('system-settings.index', compact(
             'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings',
             'approvalSetting', 'approvalThresholds',
-            'sequences', 'documentTypeLabels', 'nextNumbers',
-            'smtpSettings', 'emailTemplates', 'eventLabels',
-            'branches', 'fiscalYears', 'backups',
+            'sequences', 'documentTypeLabels',
+            'notifications', 'emailTemplates', 'eventLabels',
             'tab'
         ));
     }
@@ -173,6 +155,7 @@ class SettingsController extends Controller
             'date_format' => 'required|string|max:20',
             'time_format' => 'required|string|max:10',
             'first_day_of_week' => 'required|integer|min:0|max:6',
+            'number_format' => 'nullable|string|max:30',
         ]);
 
         foreach ($validated as $key => $value) {
@@ -200,11 +183,12 @@ class SettingsController extends Controller
             'base_currency' => 'required|string|max:10',
             'decimal_places' => 'required|integer|min:0|max:4',
             'rate_source' => 'required|string|max:30',
+            'currency_symbol' => 'nullable|string|max:10',
         ]);
 
         Company::where('id', $companyId)->update(['base_currency' => $validated['base_currency']]);
 
-        foreach (['decimal_places', 'rate_source'] as $key) {
+        foreach (['decimal_places', 'rate_source', 'currency_symbol'] as $key) {
             SystemSetting::setValue('currency', $key, $validated[$key], $companyId);
         }
 
@@ -312,131 +296,28 @@ class SettingsController extends Controller
             ->with('success', 'Approval settings updated successfully.');
     }
 
-    public function updateNumbering(Request $request)
-    {
-        $companyId = session('current_company_id');
-
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
-
-        $oldSequences = NumberingSequence::where('company_id', $companyId)
-            ->get()
-            ->keyBy('document_type')
-            ->map(fn($s) => $s->only(['prefix', 'padding_width', 'reset_policy', 'is_active']))
-            ->toArray();
-
-        $labels = NumberingSequence::documentTypeLabels();
-        $validated = $request->validate([
-            'prefixes' => 'required|array',
-            'prefixes.*' => 'required|string|max:20',
-            'padding_widths' => 'required|array',
-            'padding_widths.*' => 'required|integer|min:1|max:10',
-            'reset_policies' => 'required|array',
-            'reset_policies.*' => 'required|in:never,annually,monthly',
-        ]);
-
-        $changes = [];
-        foreach ($labels as $type => $label) {
-            $prefix = $validated['prefixes'][$type] ?? null;
-            $padding = (int) ($validated['padding_widths'][$type] ?? 4);
-            $policy = $validated['reset_policies'][$type] ?? 'never';
-            $active = $request->boolean("active.{$type}", false);
-
-            if (!$prefix) continue;
-
-            $old = $oldSequences[$type] ?? null;
-            $oldPrefix = $old ? $old['prefix'] : null;
-            $oldPadding = $old ? $old['padding_width'] : null;
-            $oldPolicy = $old ? $old['reset_policy'] : null;
-            $oldActive = $old ? $old['is_active'] : null;
-
-            if ($prefix !== $oldPrefix || $padding !== $oldPadding || $policy !== $oldPolicy || $active !== $oldActive) {
-                $changes[$type] = [
-                    'prefix' => ['from' => $oldPrefix, 'to' => $prefix],
-                    'padding_width' => ['from' => $oldPadding, 'to' => $padding],
-                    'reset_policy' => ['from' => $oldPolicy, 'to' => $policy],
-                    'is_active' => ['from' => $oldActive, 'to' => $active],
-                ];
-            }
-
-            NumberingSequence::updateOrCreate(
-                ['company_id' => $companyId, 'document_type' => $type],
-                [
-                    'prefix' => $prefix,
-                    'padding_width' => $padding,
-                    'reset_policy' => $policy,
-                    'is_active' => $active,
-                ]
-            );
-        }
-
-        if (!empty($changes)) {
-            AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldSequences, $changes, 'Numbering Sequences');
-        }
-
-        return redirect()->route('system-settings.index', 'numbering')
-            ->with('success', 'Numbering sequences updated successfully.');
-    }
-
     public function updateNotifications(Request $request)
     {
         $companyId = session('current_company_id');
 
         abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
 
-        $oldValues = SystemSetting::getMany('smtp', $companyId);
+        $oldValues = SystemSetting::getMany('notifications', $companyId);
 
         $validated = $request->validate([
-            'smtp_host' => 'nullable|string|max:255',
-            'smtp_port' => 'nullable|integer|min:1|max:65535',
-            'smtp_username' => 'nullable|string|max:255',
-            'smtp_password' => 'nullable|string|max:255',
-            'smtp_encryption' => 'required|in:tls,ssl,none',
-            'smtp_from_address' => 'nullable|email|max:255',
-            'smtp_from_name' => 'nullable|string|max:255',
+            'sender_display_name' => 'nullable|string|max:255',
+            'email_footer' => 'nullable|string|max:2000',
+            'email_signature' => 'nullable|string|max:2000',
         ]);
 
-        $map = [
-            'smtp_host' => 'host',
-            'smtp_port' => 'port',
-            'smtp_username' => 'username',
-            'smtp_password' => 'password',
-            'smtp_encryption' => 'encryption',
-            'smtp_from_address' => 'from_address',
-            'smtp_from_name' => 'from_name',
-        ];
-
-        foreach ($map as $requestKey => $settingKey) {
-            if (isset($validated[$requestKey]) && $validated[$requestKey] !== null) {
-                SystemSetting::setValue('smtp', $settingKey, $validated[$requestKey], $companyId);
-            }
+        foreach ($validated as $key => $value) {
+            SystemSetting::setValue('notifications', $key, $value, $companyId);
         }
 
         AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldValues, $validated, 'Email & Notification Settings');
 
         return redirect()->route('system-settings.index', 'notifications')
-            ->with('success', 'Email settings updated successfully.');
-    }
-
-    public function toggleBranch(Branch $branch)
-    {
-        $companyId = session('current_company_id');
-        abort_unless($branch->company_id === $companyId, 404);
-
-        $user = request()->user();
-        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
-
-        $oldActive = $branch->is_active;
-        $branch->update(['is_active' => !$oldActive]);
-
-        AuditLog::log($companyId, $user->id, Branch::class, $branch->id, 'settings.updated',
-            ['is_active' => $oldActive],
-            ['is_active' => !$oldActive],
-            "Branch: {$branch->name}"
-        );
-
-        $status = $branch->is_active ? 'activated' : 'deactivated';
-        return redirect()->route('system-settings.index', 'branches')
-            ->with('success', "Branch \"{$branch->name}\" {$status} successfully.");
+            ->with('success', 'Email content settings updated successfully.');
     }
 
     public function updateAccounting(Request $request)
@@ -462,57 +343,6 @@ class SettingsController extends Controller
 
         return redirect()->route('system-settings.index', 'accounting')
             ->with('success', 'Accounting settings updated successfully.');
-    }
-
-    public function createBackup(Request $request)
-    {
-        $companyId = session('current_company_id');
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
-
-        $validated = $request->validate([
-            'label' => 'required|string|max:255',
-            'notes' => 'nullable|string|max:1000',
-        ]);
-
-        $backup = SettingsBackup::capture($companyId, $request->user()->id, $validated['label'], $validated['notes'] ?? null);
-
-        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.backup_created', null, ['backup_id' => $backup->id, 'label' => $backup->label, 'record_count' => $backup->record_count], 'Backup created: ' . $backup->label);
-
-        return redirect()->route('system-settings.index', 'backups')
-            ->with('success', "Backup \"{$backup->label}\" created with {$backup->record_count} setting(s).");
-    }
-
-    public function restoreBackup(SettingsBackup $backup)
-    {
-        $companyId = session('current_company_id');
-        abort_unless($backup->company_id === $companyId, 404);
-
-        $user = request()->user();
-        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
-
-        $restored = $backup->restore();
-
-        AuditLog::log($companyId, $user->id, Company::class, $companyId, 'settings.backup_restored', null, ['backup_id' => $backup->id, 'label' => $backup->label, 'records_restored' => $restored], 'Settings restored from backup: ' . $backup->label);
-
-        return redirect()->route('system-settings.index', 'backups')
-            ->with('success', "Settings restored from \"{$backup->label}\". {$restored} setting(s) updated.");
-    }
-
-    public function deleteBackup(SettingsBackup $backup)
-    {
-        $companyId = session('current_company_id');
-        abort_unless($backup->company_id === $companyId, 404);
-
-        $user = request()->user();
-        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
-
-        $label = $backup->label;
-        $backup->delete();
-
-        AuditLog::log($companyId, $user->id, Company::class, $companyId, 'settings.backup_deleted', null, ['label' => $label], 'Backup deleted: ' . $label);
-
-        return redirect()->route('system-settings.index', 'backups')
-            ->with('success', "Backup \"{$label}\" deleted.");
     }
 
     public function exportSettings(Request $request)
@@ -645,5 +475,41 @@ class SettingsController extends Controller
 
         return redirect()->route('system-settings.index', 'import-export')
             ->with('success', "Settings imported successfully. {$imported} setting(s) updated.");
+    }
+
+    public function featuresIndex(Request $request)
+    {
+        $companyId = session('current_company_id');
+
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $features = FeatureManagement::getAvailableFeatures();
+        $enabled = FeatureManagement::getEnabledFeatures($companyId);
+
+        return view('system-settings.features', compact('features', 'enabled'));
+    }
+
+    public function featuresToggle(Request $request, string $feature)
+    {
+        $companyId = session('current_company_id');
+
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $available = FeatureManagement::getAvailableFeatures();
+
+        if (!array_key_exists($feature, $available)) {
+            abort(404);
+        }
+
+        if (FeatureManagement::isEnabled($companyId, $feature)) {
+            FeatureManagement::disable($companyId, $feature);
+            $status = 'disabled';
+        } else {
+            FeatureManagement::enable($companyId, $feature);
+            $status = 'enabled';
+        }
+
+        return redirect()->route('system-settings.features')
+            ->with('success', "{$available[$feature]} has been {$status}.");
     }
 }

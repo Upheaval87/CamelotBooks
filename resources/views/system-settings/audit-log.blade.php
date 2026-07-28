@@ -36,21 +36,9 @@
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         Approval Settings
                     </a>
-                    <a href="{{ route('system-settings.index', 'numbering') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Numbering
-                    </a>
                     <a href="{{ route('system-settings.index', 'notifications') }}"
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         Email
-                    </a>
-                    <a href="{{ route('system-settings.index', 'branches') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Branches
-                    </a>
-                    <a href="{{ route('system-settings.index', 'fiscal-years') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Fiscal Years
                     </a>
                     <a href="{{ route('system-settings.index', 'data-hub') }}"
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">

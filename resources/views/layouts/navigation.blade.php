@@ -241,14 +241,11 @@
                             <a href="{{ route('system-settings.index', 'accounts') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Account Mappings') }}</a>
                             <a href="{{ route('system-settings.index', 'accounting') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Accounting Settings') }}</a>
                             <a href="{{ route('system-settings.index', 'approval') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Approval Settings') }}</a>
-                            <a href="{{ route('system-settings.index', 'numbering') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Numbering') }}</a>
                             <a href="{{ route('system-settings.index', 'notifications') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Email & Notifications') }}</a>
-                            <a href="{{ route('system-settings.index', 'branches') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Branches') }}</a>
-                            <a href="{{ route('system-settings.index', 'fiscal-years') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Fiscal Years') }}</a>
                             <a href="{{ route('system-settings.index', 'data-hub') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Data Hub') }}</a>
                             <a href="{{ route('system-settings.index', 'import-export') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Import/Export') }}</a>
-                            <a href="{{ route('system-settings.index', 'backups') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Backups') }}</a>
                             <div class="border-t border-gray-100 my-1"></div>
+                            <a href="{{ route('system-settings.features') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Features') }}</a>
                             <a href="{{ route('system-settings.audit-log') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Settings Audit Log') }}</a>
                         </div>
                     </div>
@@ -273,13 +270,11 @@
                             <a href="{{ route('admin.security.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Security') }}</a>
                             <div class="border-t border-gray-100 my-1"></div>
                             <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">System</div>
-                            <a href="{{ route('admin.features.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Features') }}</a>
                             <a href="{{ route('admin.numbering-sequences.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Numbering Sequences') }}</a>
                             <a href="{{ route('admin.audit-log.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Audit Log') }}</a>
                             <a href="{{ route('admin.notifications.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Notifications') }}</a>
                             <a href="{{ route('admin.backups.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Backups') }}</a>
                             <a href="{{ route('admin.system-health.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('System Health') }}</a>
-                            <a href="{{ route('admin.localization.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Localization') }}</a>
                         </div>
                     </div>
                     @endif
@@ -455,25 +450,20 @@
             <x-responsive-nav-link :href="route('system-settings.index', 'currency')" :active="request()->routeIs('system-settings.*')">{{ __('Currency Settings') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.index', 'accounting')" :active="request()->routeIs('system-settings.*')">{{ __('Accounting Settings') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.index', 'approval')" :active="request()->routeIs('system-settings.*')">{{ __('Approval Settings') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('system-settings.index', 'numbering')" :active="request()->routeIs('system-settings.*')">{{ __('Numbering') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.index', 'notifications')" :active="request()->routeIs('system-settings.*')">{{ __('Email & Notifications') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('system-settings.index', 'branches')" :active="request()->routeIs('system-settings.*')">{{ __('Branches') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('system-settings.index', 'fiscal-years')" :active="request()->routeIs('system-settings.*')">{{ __('Fiscal Years') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.index', 'data-hub')" :active="request()->routeIs('system-settings.*')">{{ __('Data Hub') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.index', 'import-export')" :active="request()->routeIs('system-settings.*')">{{ __('Import/Export') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('system-settings.index', 'backups')" :active="request()->routeIs('system-settings.*')">{{ __('Backups') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('system-settings.features')" :active="request()->routeIs('system-settings.features')">{{ __('Features') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.audit-log')" :active="request()->routeIs('system-settings.audit-log')">{{ __('Settings Audit Log') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Admin</div>
             <x-responsive-nav-link :href="route('admin.setup-wizard.index')" :active="request()->routeIs('admin.setup-wizard.*')">{{ __('Setup Wizard') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">{{ __('Users & Roles') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.security.index')" :active="request()->routeIs('admin.security.*')">{{ __('Security') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.features.index')" :active="request()->routeIs('admin.features.*')">{{ __('Features') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.numbering-sequences.index')" :active="request()->routeIs('admin.numbering-sequences.*')">{{ __('Numbering Sequences') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.audit-log.index')" :active="request()->routeIs('admin.audit-log.*')">{{ __('Audit Log') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.notifications.index')" :active="request()->routeIs('admin.notifications.*')">{{ __('Notifications') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.backups.index')" :active="request()->routeIs('admin.backups.*')">{{ __('Backups') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.system-health.index')" :active="request()->routeIs('admin.system-health.*')">{{ __('System Health') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.localization.index')" :active="request()->routeIs('admin.localization.*')">{{ __('Localization') }}</x-responsive-nav-link>
             @endif
             @endif
         </div>

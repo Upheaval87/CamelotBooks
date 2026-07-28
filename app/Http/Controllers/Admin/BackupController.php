@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\BackupLog;
+use App\Models\Company;
+use App\Models\SettingsBackup;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Process;
 
 class BackupController extends Controller
 {
@@ -19,7 +21,12 @@ class BackupController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return view('admin.backups.index', compact('backups'));
+        $snapshots = SettingsBackup::where('company_id', $companyId)
+            ->with('createdByUser')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('admin.backups.index', compact('backups', 'snapshots'));
     }
 
     public function trigger(Request $request)
@@ -89,5 +96,56 @@ class BackupController extends Controller
                     ? "Backup completed successfully: {$filename} ({$log->file_size_human})"
                     : "Backup failed: {$log->error_message}"
             );
+    }
+
+    public function createSnapshot(Request $request)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $validated = $request->validate([
+            'label' => 'required|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $backup = SettingsBackup::capture($companyId, $request->user()->id, $validated['label'], $validated['notes'] ?? null);
+
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.backup_created', null, ['backup_id' => $backup->id, 'label' => $backup->label, 'record_count' => $backup->record_count], 'Backup created: ' . $backup->label);
+
+        return redirect()->route('admin.backups.index')
+            ->with('success', "Settings snapshot \"{$backup->label}\" created with {$backup->record_count} setting(s).");
+    }
+
+    public function restoreSnapshot(SettingsBackup $backup)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($backup->company_id === $companyId, 404);
+
+        $user = request()->user();
+        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $restored = $backup->restore();
+
+        AuditLog::log($companyId, $user->id, Company::class, $companyId, 'settings.backup_restored', null, ['backup_id' => $backup->id, 'label' => $backup->label, 'records_restored' => $restored], 'Settings restored from backup: ' . $backup->label);
+
+        return redirect()->route('admin.backups.index')
+            ->with('success', "Settings restored from \"{$backup->label}\". {$restored} setting(s) updated.");
+    }
+
+    public function deleteSnapshot(SettingsBackup $backup)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($backup->company_id === $companyId, 404);
+
+        $user = request()->user();
+        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $label = $backup->label;
+        $backup->delete();
+
+        AuditLog::log($companyId, $user->id, Company::class, $companyId, 'settings.backup_deleted', null, ['label' => $label], 'Backup deleted: ' . $label);
+
+        return redirect()->route('admin.backups.index')
+            ->with('success', "Settings snapshot \"{$label}\" deleted.");
     }
 }

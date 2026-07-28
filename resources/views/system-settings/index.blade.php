@@ -46,21 +46,9 @@
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'approval' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                         Approval Settings
                     </a>
-                    <a href="{{ route('system-settings.index', 'numbering') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'numbering' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                        Numbering
-                    </a>
                     <a href="{{ route('system-settings.index', 'notifications') }}"
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'notifications' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                         Email
-                    </a>
-                    <a href="{{ route('system-settings.index', 'branches') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'branches' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                        Branches
-                    </a>
-                    <a href="{{ route('system-settings.index', 'fiscal-years') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'fiscal-years' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                        Fiscal Years
                     </a>
                     <a href="{{ route('system-settings.index', 'data-hub') }}"
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'data-hub' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
@@ -69,10 +57,6 @@
                     <a href="{{ route('system-settings.index', 'import-export') }}"
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'import-export' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                         Import/Export
-                    </a>
-                    <a href="{{ route('system-settings.index', 'backups') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'backups' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                        Backups
                     </a>
                     <a href="{{ route('system-settings.audit-log') }}"
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
@@ -290,6 +274,20 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div>
+                                <label for="number_format" class="block text-sm font-medium text-gray-700">Number Format</label>
+                                <select name="number_format" id="number_format"
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    @foreach([
+                                        '1,234.56' => '1,234.56 (dot decimal, comma thousands)',
+                                        '1.234,56' => '1.234,56 (comma decimal, dot thousands)',
+                                        '1 234.56' => '1 234.56 (dot decimal, space thousands)',
+                                    ] as $fmt => $fmtLabel)
+                                        <option value="{{ $fmt }}" {{ old('number_format', $regional['number_format'] ?? '1,234.56') === $fmt ? 'selected' : '' }}>{{ $fmtLabel }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Controls how numbers are formatted for display.</p>
+                            </div>
                         </div>
                     </div>
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
@@ -363,6 +361,14 @@
                                     <option value="manual" {{ old('rate_source', $currency['rate_source'] ?? 'manual') === 'manual' ? 'selected' : '' }}>Manual Entry Only</option>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500">Currently, exchange rates are entered manually via the Exchange Rates screen. Live rate feeds are not yet available.</p>
+                            </div>
+                            <div>
+                                <label for="currency_symbol" class="block text-sm font-medium text-gray-700">Currency Symbol</label>
+                                <input type="text" name="currency_symbol" id="currency_symbol"
+                                    value="{{ old('currency_symbol', $currency['currency_symbol'] ?? '$') }}"
+                                    placeholder="e.g. K, $, MWK, EUR"
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                <p class="mt-1 text-xs text-gray-500">The symbol or code shown before amounts (e.g. <code>K</code>, <code>$</code>, <code>MWK</code>).</p>
                             </div>
                         </div>
                     </div>
@@ -491,24 +497,9 @@
             @include('system-settings._approval-tab')
             @endif
 
-            {{-- Numbering Overrides Tab --}}
-            @if($tab === 'numbering')
-            @include('system-settings._numbering-tab')
-            @endif
-
             {{-- Email & Notifications Tab --}}
             @if($tab === 'notifications')
             @include('system-settings._notifications-tab')
-            @endif
-
-            {{-- Branch Management Tab --}}
-            @if($tab === 'branches')
-            @include('system-settings._branches-tab')
-            @endif
-
-            {{-- Fiscal Years Tab --}}
-            @if($tab === 'fiscal-years')
-            @include('system-settings._fiscal-years-tab')
             @endif
 
             {{-- Data Hub Tab --}}
@@ -519,11 +510,6 @@
             {{-- Import/Export Tab --}}
             @if($tab === 'import-export')
             @include('system-settings._import-export-tab')
-            @endif
-
-            {{-- Backups Tab --}}
-            @if($tab === 'backups')
-            @include('system-settings._backups-tab')
             @endif
         </div>
     </div>

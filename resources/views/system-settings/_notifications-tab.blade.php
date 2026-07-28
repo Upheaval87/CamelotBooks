@@ -3,59 +3,37 @@
     @method('PUT')
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">SMTP Configuration</h3>
-            <p class="mt-1 text-sm text-gray-600">Configure the outbound email server for this company. These settings are used when sending invoices, receipts, payslips, and other notifications.</p>
+            <h3 class="text-lg font-medium text-gray-900">Business Email Content</h3>
+            <p class="mt-1 text-sm text-gray-600">Configure the display name, footer, and signature used in outbound emails. SMTP server settings are managed separately by the system administrator.</p>
         </div>
         <div class="p-6 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label for="smtp_host" class="block text-sm font-medium text-gray-700">SMTP Host</label>
-                    <input type="text" name="smtp_host" id="smtp_host" value="{{ $smtpSettings['host'] ?? '' }}"
-                        placeholder="smtp.example.com"
+                    <label for="sender_display_name" class="block text-sm font-medium text-gray-700">Sender Display Name</label>
+                    <input type="text" name="sender_display_name" id="sender_display_name" value="{{ $notifications['sender_display_name'] ?? '' }}"
+                        placeholder="e.g. Camelot Books Accounts"
                         class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                    <p class="mt-1 text-xs text-gray-500">The friendly name recipients see when they receive emails from the system.</p>
                 </div>
-                <div>
-                    <label for="smtp_port" class="block text-sm font-medium text-gray-700">Port</label>
-                    <input type="number" name="smtp_port" id="smtp_port" value="{{ $smtpSettings['port'] ?? '587' }}"
-                        min="1" max="65535"
-                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
-                </div>
-                <div>
-                    <label for="smtp_username" class="block text-sm font-medium text-gray-700">Username</label>
-                    <input type="text" name="smtp_username" id="smtp_username" value="{{ $smtpSettings['username'] ?? '' }}"
-                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
-                </div>
-                <div>
-                    <label for="smtp_password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" name="smtp_password" id="smtp_password" value="{{ $smtpSettings['password'] ?? '' }}"
-                        placeholder="{{ $smtpSettings['password'] ? '••••••••' : '' }}"
-                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
-                </div>
-                <div>
-                    <label for="smtp_encryption" class="block text-sm font-medium text-gray-700">Encryption</label>
-                    <select name="smtp_encryption" id="smtp_encryption" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                        <option value="tls" {{ ($smtpSettings['encryption'] ?? 'tls') === 'tls' ? 'selected' : '' }}>TLS</option>
-                        <option value="ssl" {{ ($smtpSettings['encryption'] ?? '') === 'ssl' ? 'selected' : '' }}>SSL</option>
-                        <option value="none" {{ ($smtpSettings['encryption'] ?? '') === 'none' ? 'selected' : '' }}>None</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="smtp_from_name" class="block text-sm font-medium text-gray-700">From Name</label>
-                    <input type="text" name="smtp_from_name" id="smtp_from_name" value="{{ $smtpSettings['from_name'] ?? '' }}"
-                        placeholder="Camelot Books"
-                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
-                </div>
-                <div class="md:col-span-2">
-                    <label for="smtp_from_address" class="block text-sm font-medium text-gray-700">From Address</label>
-                    <input type="email" name="smtp_from_address" id="smtp_from_address" value="{{ $smtpSettings['from_address'] ?? '' }}"
-                        placeholder="noreply@example.com"
-                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
-                </div>
+            </div>
+            <div>
+                <label for="email_footer" class="block text-sm font-medium text-gray-700">Email Footer</label>
+                <textarea name="email_footer" id="email_footer" rows="3"
+                    placeholder="This email was sent by Camelot Books Accounting System."
+                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ $notifications['email_footer'] ?? '' }}</textarea>
+                <p class="mt-1 text-xs text-gray-500">Appended to the bottom of all outbound emails.</p>
+            </div>
+            <div>
+                <label for="email_signature" class="block text-sm font-medium text-gray-700">Email Signature</label>
+                <textarea name="email_signature" id="email_signature" rows="3"
+                    placeholder="Kind regards,&#10;The Accounts Team"
+                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ $notifications['email_signature'] ?? '' }}</textarea>
+                <p class="mt-1 text-xs text-gray-500">Appended to the body of outbound emails before the footer.</p>
             </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
             <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                Save SMTP Settings
+                Save Email Content
             </button>
         </div>
     </div>

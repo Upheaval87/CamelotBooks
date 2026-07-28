@@ -582,17 +582,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Backup Management
             Route::get('backups', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backups.index');
             Route::post('backups/trigger', [\App\Http\Controllers\Admin\BackupController::class, 'trigger'])->name('backups.trigger');
+            Route::post('backups/snapshots', [\App\Http\Controllers\Admin\BackupController::class, 'createSnapshot'])->name('backups.create-snapshot');
+            Route::patch('backups/snapshots/{backup}/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restoreSnapshot'])->name('backups.restore-snapshot');
+            Route::delete('backups/snapshots/{backup}', [\App\Http\Controllers\Admin\BackupController::class, 'deleteSnapshot'])->name('backups.delete-snapshot');
 
             // System Health
             Route::get('system-health', [\App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system-health.index');
-
-            // Feature Management
-            Route::get('features', [\App\Http\Controllers\Admin\FeatureManagementController::class, 'index'])->name('features.index');
-            Route::post('features/{feature}/toggle', [\App\Http\Controllers\Admin\FeatureManagementController::class, 'toggle'])->name('features.toggle');
-
-            // Localization
-            Route::get('localization', [\App\Http\Controllers\Admin\LocalizationController::class, 'index'])->name('localization.index');
-            Route::put('localization', [\App\Http\Controllers\Admin\LocalizationController::class, 'update'])->name('localization.update');
 
             // User Management
             Route::get('users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
@@ -615,14 +610,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/account-mappings', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateAccountMappings'])->name('update-account-mappings');
             Route::put('/accounting', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateAccounting'])->name('update-accounting');
             Route::put('/approval', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateApproval'])->name('update-approval');
-            Route::put('/numbering', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateNumbering'])->name('update-numbering');
             Route::put('/notifications', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateNotifications'])->name('update-notifications');
-            Route::patch('/branches/{branch}/toggle', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'toggleBranch'])->name('toggle-branch');
             Route::post('/export', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'exportSettings'])->name('export-settings');
             Route::post('/import', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'importSettings'])->name('import-settings');
-            Route::post('/backups', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'createBackup'])->name('create-backup');
-            Route::patch('/backups/{backup}/restore', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'restoreBackup'])->name('restore-backup');
-            Route::delete('/backups/{backup}', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'deleteBackup'])->name('delete-backup');
+            Route::get('/features', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'featuresIndex'])->name('features');
+            Route::post('/features/{feature}/toggle', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'featuresToggle'])->name('features.toggle');
         });
 
         // Analytics
