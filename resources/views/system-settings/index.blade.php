@@ -390,7 +390,7 @@
                             $accountOptions = $accounts->mapWithKeys(fn($a) => [$a->id => "{$a->code} — {$a->name}"])->toArray();
                         @endphp
                         <div class="space-y-4">
-                            @foreach(DefaultAccountMapping::availableKeys() as $key => $label)
+                            @foreach(\App\Models\DefaultAccountMapping::availableKeys() as $key => $label)
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center py-2 border-b border-gray-100 last:border-0">
                                 <div class="md:col-span-1">
                                     <label class="block text-sm font-medium text-gray-700">{{ $label }}</label>

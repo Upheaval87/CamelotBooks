@@ -17,8 +17,8 @@
                         ['label' => 'Cash Flow Statement', 'csv' => route('accounting.cash-flow.export-csv'), 'pdf' => route('accounting.cash-flow.export-pdf')],
                         ['label' => 'Inventory Valuation', 'csv' => route('accounting.inventory-valuation.export-csv'), 'pdf' => route('accounting.inventory-valuation.export-pdf')],
                         ['label' => 'Low Stock Report', 'csv' => route('accounting.low-stock.export-csv'), 'pdf' => null],
-                        ['label' => 'AR Aging Summary', 'csv' => route('accounting.aging.ar-summary.export-csv'), 'pdf' => null],
-                        ['label' => 'AP Aging Summary', 'csv' => route('accounting.aging.ap-summary.export-csv'), 'pdf' => null],
+                        ['label' => 'AR Aging Summary', 'csv' => route('accounting.aging.export-csv', ['type' => 'ar']), 'pdf' => null],
+                        ['label' => 'AP Aging Summary', 'csv' => route('accounting.aging.export-csv', ['type' => 'ap']), 'pdf' => null],
                         ['label' => 'Audit Log', 'csv' => route('admin.audit-log.export-csv'), 'pdf' => null],
                     ];
                 @endphp

@@ -102,7 +102,7 @@ class SettingsController extends Controller
             'Approval Settings',
         ];
 
-        return view('system-settings.audit-log', compact('logs', 'users', 'groups', 'company', 'tab'));
+        return view('system-settings.audit-log', compact('logs', 'users', 'groups', 'company')); 
     }
 
     public function updateCompany(Request $request)
