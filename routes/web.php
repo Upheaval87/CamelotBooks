@@ -42,6 +42,7 @@ use App\Http\Controllers\Accounting\PurchaseRequisitionController;
 use App\Http\Controllers\Accounting\PurchaseOrderController;
 use App\Http\Controllers\Accounting\GoodsReceivedNoteController;
 use App\Http\Controllers\Accounting\QuotationController;
+use App\Http\Controllers\Accounting\ReportCenterController;
 use App\Http\Controllers\Accounting\SalesReceiptController;
 use App\Http\Controllers\Accounting\SalesRegisterController;
 use App\Http\Controllers\Accounting\MakeDepositController;
@@ -507,6 +508,50 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('landed-costs', [\App\Http\Controllers\Accounting\LandedCostController::class, 'store'])->name('landed-costs.store');
             Route::get('landed-costs/{voucher}', [\App\Http\Controllers\Accounting\LandedCostController::class, 'show'])->name('landed-costs.show');
             Route::post('landed-costs/{voucher}/post', [\App\Http\Controllers\Accounting\LandedCostController::class, 'post'])->name('landed-costs.post');
+
+            // ── Report Center ──
+            Route::get('report-center', [ReportCenterController::class, 'index'])->name('report-center.index');
+            Route::post('report-center/favorite/{key}', [ReportCenterController::class, 'toggleFavorite'])->name('report-center.toggle-favorite');
+
+            // ── New Reports ──
+            // Financial Statements
+            Route::get('reports/journal', [\App\Http\Controllers\Accounting\ReportControllers\JournalReportController::class, 'index'])->name('reports.journal');
+            Route::get('reports/trial-balance-comparison', [\App\Http\Controllers\Accounting\ReportControllers\TrialBalanceComparisonController::class, 'index'])->name('reports.trial-balance-comparison');
+
+            // Sales
+            Route::get('reports/sales-by-customer', [\App\Http\Controllers\Accounting\ReportControllers\SalesByCustomerController::class, 'index'])->name('reports.sales-by-customer');
+            Route::get('reports/sales-by-item', [\App\Http\Controllers\Accounting\ReportControllers\SalesByItemController::class, 'index'])->name('reports.sales-by-item');
+            Route::get('reports/customer-credit-balance', [\App\Http\Controllers\Accounting\ReportControllers\CustomerCreditBalanceController::class, 'index'])->name('reports.customer-credit-balance');
+            Route::get('reports/quotation-status', [\App\Http\Controllers\Accounting\ReportControllers\QuotationStatusController::class, 'index'])->name('reports.quotation-status');
+
+            // Purchasing
+            Route::get('reports/purchase-register', [\App\Http\Controllers\Accounting\ReportControllers\PurchaseRegisterController::class, 'index'])->name('reports.purchase-register');
+            Route::get('reports/purchases-by-vendor', [\App\Http\Controllers\Accounting\ReportControllers\PurchasesByVendorController::class, 'index'])->name('reports.purchases-by-vendor');
+            Route::get('reports/purchases-by-item', [\App\Http\Controllers\Accounting\ReportControllers\PurchasesByItemController::class, 'index'])->name('reports.purchases-by-item');
+            Route::get('reports/unbilled-receipts', [\App\Http\Controllers\Accounting\ReportControllers\UnbilledReceiptsController::class, 'index'])->name('reports.unbilled-receipts');
+            Route::get('reports/po-status', [\App\Http\Controllers\Accounting\ReportControllers\PurchaseOrderStatusController::class, 'index'])->name('reports.po-status');
+            Route::get('reports/vendor-credit-balance', [\App\Http\Controllers\Accounting\ReportControllers\VendorCreditBalanceController::class, 'index'])->name('reports.vendor-credit-balance');
+
+            // Inventory
+            Route::get('reports/stock-movement', [\App\Http\Controllers\Accounting\ReportControllers\StockMovementController::class, 'index'])->name('reports.stock-movement');
+            Route::get('reports/stock-count-variance', [\App\Http\Controllers\Accounting\ReportControllers\StockCountVarianceController::class, 'index'])->name('reports.stock-count-variance');
+            Route::get('reports/item-profitability', [\App\Http\Controllers\Accounting\ReportControllers\ItemProfitabilityController::class, 'index'])->name('reports.item-profitability');
+
+            // Banking
+            Route::get('reports/bank-balances', [\App\Http\Controllers\Accounting\ReportControllers\BankBalancesController::class, 'index'])->name('reports.bank-balances');
+            Route::get('reports/deposits-in-transit', [\App\Http\Controllers\Accounting\ReportControllers\DepositsInTransitController::class, 'index'])->name('reports.deposits-in-transit');
+
+            // Fixed Assets
+            Route::get('reports/asset-revaluation', [\App\Http\Controllers\Accounting\ReportControllers\AssetRevaluationReportController::class, 'index'])->name('reports.asset-revaluation');
+            Route::get('reports/asset-impairment', [\App\Http\Controllers\Accounting\ReportControllers\AssetImpairmentReportController::class, 'index'])->name('reports.asset-impairment');
+
+            // Payroll
+            Route::get('reports/payroll-register', [\App\Http\Controllers\Accounting\ReportControllers\PayrollRegisterController::class, 'index'])->name('reports.payroll-register');
+            Route::get('reports/payroll-summary', [\App\Http\Controllers\Accounting\ReportControllers\PayrollSummaryController::class, 'index'])->name('reports.payroll-summary');
+            Route::get('reports/employee-cost-by-branch', [\App\Http\Controllers\Accounting\ReportControllers\EmployeeCostByBranchController::class, 'index'])->name('reports.employee-cost-by-branch');
+
+            // Compliance
+            Route::get('reports/period-lock-status', [\App\Http\Controllers\Accounting\ReportControllers\PeriodLockStatusController::class, 'index'])->name('reports.period-lock-status');
         });
 
         // Administration

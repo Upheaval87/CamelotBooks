@@ -148,6 +148,8 @@
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <a href="{{ route('accounting.report-center.index') }}" class="block px-4 py-1.5 text-sm font-semibold text-indigo-600 hover:bg-gray-100">{{ __('Report Center') }}</a>
+                            <div class="border-t border-gray-100 my-1"></div>
                             <a href="{{ route('accounting.income-statement.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Income Statement') }}</a>
                             <a href="{{ route('accounting.balance-sheet.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Balance Sheet') }}</a>
                             <a href="{{ route('accounting.cash-flow.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Cash Flow Statement') }}</a>
@@ -400,6 +402,7 @@
             <x-responsive-nav-link :href="route('accounting.asset-impairments.index')" :active="request()->routeIs('accounting.asset-impairments.*')">{{ __('Impairments') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.asset-revaluations.index')" :active="request()->routeIs('accounting.asset-revaluations.*')">{{ __('Revaluations') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Reports</div>
+            <x-responsive-nav-link :href="route('accounting.report-center.index')" :active="request()->routeIs('accounting.report-center.*')">{{ __('Report Center') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.income-statement.index')" :active="request()->routeIs('accounting.income-statement.*')">{{ __('Income Statement') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.balance-sheet.index')" :active="request()->routeIs('accounting.balance-sheet.*')">{{ __('Balance Sheet') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.cash-flow.index')" :active="request()->routeIs('accounting.cash-flow.*')">{{ __('Cash Flow') }}</x-responsive-nav-link>
