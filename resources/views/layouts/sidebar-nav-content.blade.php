@@ -3,6 +3,8 @@
     $currentRoute = request()->route();
     $routeName = $currentRoute ? $currentRoute->getName() : '';
 
+    $companyId = session('current_company_id') ?? 0;
+
     $sectionMap = [
         'sales-purchases' => ['accounting.customers', 'accounting.quotations', 'accounting.invoices', 'accounting.sales-receipts', 'accounting.credit-notes', 'accounting.vendors', 'accounting.purchase-orders', 'accounting.goods-received-notes', 'accounting.bills', 'accounting.expenses', 'accounting.vendor-centre', 'accounting.products'],
         'inventory'       => ['accounting.inventory-items', 'accounting.stock-adjustments', 'accounting.stock-transfers', 'accounting.stock-counts', 'accounting.inventory-valuation'],
@@ -11,7 +13,9 @@
         'fixed-assets'    => ['accounting.fixed-assets', 'accounting.asset-depreciation', 'accounting.depreciation'],
         'payroll'         => ['accounting.employees', 'accounting.payroll-runs'],
         'reports'         => ['accounting.report', 'accounting.income-statement', 'accounting.balance-sheet', 'accounting.cash-flow'],
-        'analytics'       => ['analytics'],
+        'analytics'       => ['analytics.financial-ratios', 'analytics.revenue-expense-trends', 'analytics.sales', 'analytics.purchasing', 'analytics.inventory', 'analytics.profitability', 'analytics.budget-vs-actual', 'analytics.cash-flow-trend'],
+        'bi'              => ['bi.true-total-cost', 'bi.customer-lifetime-value', 'bi.employee-productivity', 'bi.branch-profitability'],
+        'pos'             => ['pos.terminals', 'pos.payment-methods', 'pos.till-sessions', 'pos.returns', 'pos.sales', 'pos.settlements', 'pos.reports', 'pos.eis'],
         'settings'        => ['system-settings', 'admin'],
     ];
 
@@ -325,7 +329,7 @@
         </div>
 
         {{-- Analytics --}}
-        @if(Route::has('analytics.financial-ratios'))
+        @if(\App\Services\FeatureManagement::isEnabled($companyId, 'analytics'))
         <button type="button"
                 @click="openSection = (openSection === 'analytics') ? '' : 'analytics'"
                 class="sidebar-parent-item"
@@ -339,9 +343,144 @@
         <div id="section-analytics"
              x-show="openSection === 'analytics'" x-collapse.duration.300ms
              role="region" :aria-hidden="openSection !== 'analytics'">
-            <a href="{{ route('analytics.financial-ratios') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics') ? 'active' : '' }}">
+            <a href="{{ route('analytics.financial-ratios') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics.financial-ratios') ? 'active' : '' }}">
                 <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                <span>Analytics</span>
+                <span>Financial Ratios</span>
+            </a>
+            <a href="{{ route('analytics.revenue-expense-trends') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics.revenue-expense-trends') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                <span>Revenue & Expense Trends</span>
+            </a>
+            <a href="{{ route('analytics.sales') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics.sales') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>Sales Analytics</span>
+            </a>
+            @if(\App\Services\FeatureManagement::isEnabled($companyId, 'purchasing'))
+            <a href="{{ route('analytics.purchasing') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics.purchasing') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                <span>Purchasing Analytics</span>
+            </a>
+            @endif
+            @if(\App\Services\FeatureManagement::isEnabled($companyId, 'inventory'))
+            <a href="{{ route('analytics.inventory') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics.inventory') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <span>Inventory Analytics</span>
+            </a>
+            @endif
+            <a href="{{ route('analytics.profitability') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics.profitability') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Profitability Analytics</span>
+            </a>
+            @if(\App\Services\FeatureManagement::isEnabled($companyId, 'budgets'))
+            <a href="{{ route('analytics.budget-vs-actual-trend') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics.budget-vs-actual') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Budget vs Actual</span>
+            </a>
+            @endif
+            <a href="{{ route('analytics.cash-flow-trend') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'analytics.cash-flow-trend') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+                <span>Cash Flow Trend</span>
+            </a>
+        </div>
+        @endif
+
+        {{-- Business Intelligence --}}
+        @if(\App\Services\FeatureManagement::isEnabled($companyId, 'bi'))
+        <button type="button"
+                @click="openSection = (openSection === 'bi') ? '' : 'bi'"
+                class="sidebar-parent-item"
+                :class="{ 'parent-active': openSection === 'bi' || '{{ $activeSection }}' === 'bi' }"
+                aria-controls="section-bi"
+                :aria-expanded="openSection === 'bi'">
+            <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span class="flex-1 text-left">Business Intelligence</span>
+            <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openSection === 'bi' }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="section-bi"
+             x-show="openSection === 'bi'" x-collapse.duration.300ms
+             role="region" :aria-hidden="openSection !== 'bi'">
+            <a href="{{ route('bi.true-total-cost') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'bi.true-total-cost') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>True Total Cost</span>
+            </a>
+            <a href="{{ route('bi.customer-lifetime-value') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'bi.customer-lifetime-value') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Customer Lifetime Value</span>
+            </a>
+            <a href="{{ route('bi.employee-productivity') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'bi.employee-productivity') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span>Employee Productivity</span>
+            </a>
+            <a href="{{ route('bi.branch-profitability') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'bi.branch-profitability') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                <span>Branch Profitability</span>
+            </a>
+        </div>
+        @endif
+
+        {{-- Point of Sale --}}
+        @if(\App\Services\FeatureManagement::isEnabled($companyId, 'pos'))
+        <button type="button"
+                @click="openSection = (openSection === 'pos') ? '' : 'pos'"
+                class="sidebar-parent-item"
+                :class="{ 'parent-active': openSection === 'pos' || '{{ $activeSection }}' === 'pos' }"
+                aria-controls="section-pos"
+                :aria-expanded="openSection === 'pos'">
+            <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+            <span class="flex-1 text-left">Point of Sale</span>
+            <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openSection === 'pos' }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="section-pos"
+             x-show="openSection === 'pos'" x-collapse.duration.300ms
+             role="region" :aria-hidden="openSection !== 'pos'">
+            <a href="{{ route('pos.terminals.index') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.terminals') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+                <span>Terminals</span>
+            </a>
+            <a href="{{ route('pos.payment-methods.index') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.payment-methods') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span>Payment Methods</span>
+            </a>
+            <a href="{{ route('pos.till-sessions.index') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.till-sessions') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1m0-13a9 9 0 100 18 9 9 0 000-18z"/></svg>
+                <span>Till Sessions</span>
+            </a>
+            <a href="{{ route('pos.returns.index') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.returns') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Returns / Refunds</span>
+            </a>
+            <a href="{{ route('pos.sales.checkout') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.sales') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                <span>Checkout</span>
+            </a>
+            <a href="{{ route('pos.settlements.index') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.settlements') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3m4-3v3m4-3v3"/></svg>
+                <span>Payment Settlements</span>
+            </a>
+            <div class="sidebar-section-label">Reports</div>
+            <a href="{{ route('pos.reports.x-report') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.reports.x-report') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>X-Report</span>
+            </a>
+            <a href="{{ route('pos.reports.z-report') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.reports.z-report') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Z-Report</span>
+            </a>
+            <a href="{{ route('pos.reports.sales-by-terminal') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.reports.sales-by-terminal') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>Sales by Terminal</span>
+            </a>
+            <a href="{{ route('pos.reports.sales-by-cashier') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.reports.sales-by-cashier') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Sales by Cashier</span>
+            </a>
+            <a href="{{ route('pos.eis.terminals') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.eis') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+                <span>EIS Terminals</span>
+            </a>
+            <a href="{{ route('pos.eis.submissions') }}" class="sidebar-nav-item sidebar-child-item {{ str_starts_with($routeName ?? '', 'pos.eis.submissions') ? 'active' : '' }}">
+                <svg class="sidebar-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+                <span>EIS Submissions</span>
             </a>
         </div>
         @endif
