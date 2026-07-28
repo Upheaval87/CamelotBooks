@@ -46,6 +46,34 @@ class TillSessionTest extends TestCase
         FeatureManagement::enable($this->company->id, 'pos');
         PosSetupService::seedDefaultsForCompany($this->company->id);
 
+        Account::firstOrCreate(
+            ['company_id' => $this->company->id, 'code' => '1000'],
+            ['name' => 'Cash and Cash Equivalents', 'type' => 'asset', 'sub_type' => 'current_asset', 'is_active' => true]
+        );
+        Account::firstOrCreate(
+            ['company_id' => $this->company->id, 'code' => '9999'],
+            ['name' => 'Rounding', 'type' => 'expense', 'sub_type' => 'operating_expense', 'is_active' => true]
+        );
+
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'undeposited_funds' => '1050',
+            'default_bank' => '1000',
+            'cash_in_drawer' => '1060',
+            'cash_shortage' => '6900',
+            'cash_overage' => '7400',
+            'rounding' => '9999',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id,
+                    $key,
+                    $accounts[$code]->id
+                );
+            }
+        }
+
         $year = (int) now()->format('Y');
         AccountingPeriod::create([
             'company_id' => $this->company->id,

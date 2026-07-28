@@ -79,6 +79,27 @@ class PosSettlementTest extends TestCase
             ['company_id' => $this->company->id, 'code' => '1000'],
             ['name' => 'Cash and Cash Equivalents', 'type' => 'asset', 'sub_type' => 'current_asset', 'is_active' => true]
         );
+
+        Account::firstOrCreate(
+            ['company_id' => $this->company->id, 'code' => '9999'],
+            ['name' => 'Rounding', 'type' => 'expense', 'sub_type' => 'operating_expense', 'is_active' => true]
+        );
+
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'merchant_fee_expense' => '6950',
+            'default_bank' => '1000',
+            'rounding' => '9999',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id,
+                    $key,
+                    $accounts[$code]->id
+                );
+            }
+        }
     }
 
     private function baseSettlementData(array $overrides = []): array
