@@ -35,6 +35,21 @@ class FiscalYearTest extends TestCase
 
         $this->seedChartOfAccounts($this->company);
 
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'retained_earnings' => '3100',
+            'default_bank' => '1000',
+            'default_revenue' => '4000',
+            'default_expense' => '5000',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id, $key, $accounts[$code]->id
+                );
+            }
+        }
+
         app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->company->id);
     }
 

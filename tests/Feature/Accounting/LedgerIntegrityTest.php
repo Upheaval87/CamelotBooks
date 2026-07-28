@@ -85,6 +85,18 @@ class LedgerIntegrityTest extends TestCase
             'is_active' => true,
         ]);
 
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'retained_earnings' => '3100',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id, $key, $accounts[$code]->id
+                );
+            }
+        }
+
         $this->period = AccountingPeriod::create([
             'company_id' => $this->company->id,
             'label' => '2026 Q1',

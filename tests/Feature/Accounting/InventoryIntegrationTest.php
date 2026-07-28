@@ -134,6 +134,28 @@ class InventoryIntegrationTest extends TestCase
             'is_active' => true,
         ]);
 
+        Account::create(['company_id' => $this->company->id, 'code' => '1000', 'name' => 'Cash', 'type' => 'asset', 'sub_type' => 'current_asset', 'is_active' => true]);
+        Account::create(['company_id' => $this->company->id, 'code' => '9999', 'name' => 'Rounding Differences', 'type' => 'expense', 'sub_type' => 'non_operating_expense', 'is_active' => true]);
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'accounts_receivable' => '1100',
+            'accounts_payable' => '2000',
+            'default_revenue' => '4000',
+            'default_expense' => '5000',
+            'inventory_asset' => '1200',
+            'tax_payable' => '2300',
+            'tax_receivable' => '1150',
+            'default_bank' => '1000',
+            'rounding' => '9999',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id, $key, $accounts[$code]->id
+                );
+            }
+        }
+
         $this->inventoryProduct = Product::create([
             'company_id' => $this->company->id,
             'name' => 'Widget',

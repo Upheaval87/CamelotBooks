@@ -76,6 +76,27 @@ class SalesModuleTest extends TestCase
             ]);
         }
 
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'default_revenue' => '4000',
+            'tax_payable' => '2300',
+            'accounts_receivable' => '1100',
+            'default_expense' => '5000',
+            'inventory_asset' => '1200',
+            'rounding' => '9999',
+            'default_bank' => '1000',
+            'undeposited_funds' => '1050',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id,
+                    $key,
+                    $accounts[$code]->id
+                );
+            }
+        }
+
         \App\Models\AccountingPeriod::create([
             'company_id' => $this->company->id,
             'label' => '2026 Q1',

@@ -78,6 +78,19 @@ class MakeDepositTest extends TestCase
             'is_active' => true,
         ]);
 
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'undeposited_funds' => '1050',
+            'default_bank' => '1000',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id, $key, $accounts[$code]->id
+                );
+            }
+        }
+
         app(\App\Services\Admin\NumberingSequenceService::class)->seedDefaults($this->company->id);
     }
 

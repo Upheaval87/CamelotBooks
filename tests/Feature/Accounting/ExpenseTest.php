@@ -76,6 +76,22 @@ class ExpenseTest extends TestCase
             'is_active' => true,
         ]);
 
+        Account::create(['company_id' => $this->company->id, 'code' => '9999', 'name' => 'Rounding Differences', 'type' => 'expense', 'sub_type' => 'non_operating_expense', 'is_active' => true]);
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'default_bank' => '1000',
+            'default_expense' => '6100',
+            'tax_receivable' => '1150',
+            'rounding' => '9999',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id, $key, $accounts[$code]->id
+                );
+            }
+        }
+
         $this->vendor = Vendor::create([
             'company_id' => $this->company->id,
             'name' => 'Utility Company',

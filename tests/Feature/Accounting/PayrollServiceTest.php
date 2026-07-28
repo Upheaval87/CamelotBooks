@@ -151,6 +151,23 @@ class PayrollServiceTest extends TestCase
             'is_current' => true,
         ]);
 
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'default_bank' => '1000',
+            'salary_expense' => '6000',
+            'pension_expense' => '6010',
+            'paye_payable' => '2400',
+            'pension_payable' => '2410',
+            'net_pay_payable' => '2420',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id, $key, $accounts[$code]->id
+                );
+            }
+        }
+
         AccountingPeriod::create([
             'company_id' => $this->company->id,
             'label' => '2026',

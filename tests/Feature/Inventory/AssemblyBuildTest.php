@@ -68,6 +68,22 @@ class AssemblyBuildTest extends TestCase
             ['company_id' => $this->company->id, 'code' => '6850'],
             ['name' => 'Inventory Count Variance', 'type' => 'expense', 'sub_type' => 'operating_expense', 'is_active' => true]
         );
+
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'inventory_asset' => '1200',
+            'default_revenue' => '4000',
+            'default_expense' => '5000',
+            'inventory_adjustment' => '6700',
+            'inventory_count_variance' => '6850',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id, $key, $accounts[$code]->id
+                );
+            }
+        }
     }
 
     private function createProducts(): array
