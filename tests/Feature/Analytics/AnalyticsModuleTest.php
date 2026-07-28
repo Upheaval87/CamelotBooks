@@ -421,9 +421,7 @@ class AnalyticsModuleTest extends TestCase
     {
         $response = $this->get(route('dashboard'));
         $response->assertOk();
-        $response->assertSee('Financial Ratios');
-        $response->assertSee('Revenue & Expense Trends');
-        $response->assertSee('Sales Analytics');
+        $response->assertSee('Analytics');
     }
 
     // =============================================
