@@ -103,6 +103,27 @@ class PosAuditLogTest extends TestCase
             ['name' => 'COGS', 'type' => 'expense', 'sub_type' => 'cost_of_goods_sold', 'is_active' => true]
         );
 
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'tax_payable' => '2300',
+            'default_revenue' => '4000',
+            'default_expense' => '5000',
+            'inventory_asset' => '1200',
+            'undeposited_funds' => '1050',
+            'cash_in_drawer' => '1060',
+            'cash_shortage' => '6900',
+            'cash_overage' => '7400',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id,
+                    $key,
+                    $accounts[$code]->id
+                );
+            }
+        }
+
         $this->product = Product::create([
             'company_id' => $this->company->id,
             'name' => 'Widget',

@@ -131,6 +131,21 @@ class LandedCostTest extends TestCase
             'sub_type' => 'operating_expense',
             'is_active' => true,
         ]);
+
+        $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
+        $mappingData = [
+            'inventory_asset' => '1200',
+            'default_expense' => '5000',
+        ];
+        foreach ($mappingData as $key => $code) {
+            if (isset($accounts[$code])) {
+                \App\Models\DefaultAccountMapping::setMapping(
+                    $this->company->id,
+                    $key,
+                    $accounts[$code]->id
+                );
+            }
+        }
     }
 
     protected function createProduct(string $name, string $sku): Product
