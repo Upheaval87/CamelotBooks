@@ -11,7 +11,7 @@
     </x-slot>
 
     <div class="py-12">
-        @php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
+        @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <form method="POST" action="{{ route('accounting.expenses.update', $expense) }}" id="expense-form">
                 @csrf

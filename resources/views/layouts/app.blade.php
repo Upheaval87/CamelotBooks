@@ -6,7 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         @php
             $companyId = session('current_company_id');
-            $currencySymbol = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', $companyId, '$');
+            $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
         @endphp
         <meta name="currency-symbol" content="{{ $currencySymbol }}">
 

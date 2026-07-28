@@ -88,11 +88,30 @@
                             <div>
                                 <x-input-label for="base_currency" value="{{ __('Base Currency') }}" />
                                 <select id="base_currency" name="base_currency" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                    <option value="USD">USD - US Dollar</option>
-                                    <option value="EUR">EUR - Euro</option>
-                                    <option value="GBP">GBP - British Pound</option>
-                                    <option value="PHP">PHP - Philippine Peso</option>
-                                    <option value="JPY">JPY - Japanese Yen</option>
+                                    @foreach([
+                                        'USD' => 'USD - US Dollar',
+                                        'EUR' => 'EUR - Euro',
+                                        'GBP' => 'GBP - British Pound',
+                                        'MWK' => 'MWK - Malawian Kwacha',
+                                        'KES' => 'KES - Kenyan Shilling',
+                                        'ZMW' => 'ZMW - Zambian Kwacha',
+                                        'ZWL' => 'ZWL - Zimbabwean Dollar',
+                                        'PHP' => 'PHP - Philippine Peso',
+                                        'JPY' => 'JPY - Japanese Yen',
+                                        'INR' => 'INR - Indian Rupee',
+                                        'ZAR' => 'ZAR - South African Rand',
+                                        'BWP' => 'BWP - Botswana Pula',
+                                        'TZS' => 'TZS - Tanzanian Shilling',
+                                        'UGX' => 'UGX - Ugandan Shilling',
+                                        'NGN' => 'NGN - Nigerian Naira',
+                                        'GHS' => 'GHS - Ghanaian Cedi',
+                                        'CAD' => 'CAD - Canadian Dollar',
+                                        'AUD' => 'AUD - Australian Dollar',
+                                        'CHF' => 'CHF - Swiss Franc',
+                                        'CNY' => 'CNY - Chinese Yuan',
+                                    ] as $code => $label)
+                                        <option value="{{ $code }}">{{ $label }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div>

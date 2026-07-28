@@ -1,4 +1,4 @@
-@php $cs = \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$'); @endphp
+@php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 
 <div class="header">
     <div class="report-title">Inventory Valuation Report</div>

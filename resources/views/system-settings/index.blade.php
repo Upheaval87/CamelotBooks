@@ -472,7 +472,7 @@
                                 </div>
                             </div>
                             <div class="p-4 bg-gray-50 rounded-lg">
-                                <label for="rounding_tolerance" class="block text-sm font-medium text-gray-700">Rounding Tolerance ({{ \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$') }})</label>
+                                <label for="rounding_tolerance" class="block text-sm font-medium text-gray-700">Rounding Tolerance ({{ \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$') }})</label>
                                 <input type="number" step="0.01" min="0" max="10" name="rounding_tolerance" id="rounding_tolerance"
                                     value="{{ old('rounding_tolerance', $accounting['rounding_tolerance'] ?? '0.05') }}"
                                     class="mt-1 block w-32 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />

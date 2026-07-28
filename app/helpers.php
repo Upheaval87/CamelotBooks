@@ -16,7 +16,7 @@ if (!function_exists('format_money')) {
         $companyId = $companyId ?? session('current_company_id');
         $amount = (float) $amount;
 
-        $symbol = SystemSetting::getValue('localization', 'currency_symbol', $companyId, '$');
+        $symbol = SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
 
         $formatted = number_format(abs($amount), $decimals, '.', ',');
         $negative = $amount < 0 ? '-' : '';

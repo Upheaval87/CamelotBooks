@@ -37,7 +37,7 @@
                     <textarea name="body" rows="12" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono text-sm" required>{{ old('body', $emailTemplate->body) }}</textarea>
                 </div>
 
-                <p class="text-xs text-gray-500">Use {{curly braces}} for variables. Common variables: company_name, customer_name, invoice_number, amount, due_date, document_type, document_number.</p>
+                <p class="text-xs text-gray-500">Use @{{curly braces}} for variables. Common variables: company_name, customer_name, invoice_number, amount, due_date, document_type, document_number.</p>
             </div>
 
             <div class="flex justify-end gap-3">

@@ -24,7 +24,7 @@
             {{-- Global Fallback Threshold --}}
             <div class="p-4 bg-gray-50 rounded-lg">
                 <label for="global_threshold" class="block text-sm font-medium text-gray-700">
-                    Global Fallback Threshold ({{ \App\Models\SystemSetting::getValue('localization', 'currency_symbol', session('current_company_id'), '$') }})
+                    Global Fallback Threshold ({{ \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$') }})
                 </label>
                 <input type="number" step="0.01" min="0" name="threshold_amount" id="global_threshold"
                     value="{{ old('threshold_amount', $approvalSetting->threshold_amount) }}"
