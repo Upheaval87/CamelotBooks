@@ -11,6 +11,7 @@ use App\Models\Branch;
 use App\Models\Company;
 use App\Models\DefaultAccountMapping;
 use App\Models\EmailTemplate;
+use App\Models\FiscalYear;
 use App\Models\NumberingSequence;
 use App\Models\SystemSetting;
 use App\Services\Admin\NumberingSequenceService;
@@ -43,13 +44,17 @@ class SettingsController extends Controller
         })->get();
         $eventLabels = EmailTemplate::eventLabels();
         $branches = Branch::where('company_id', $companyId)->orderBy('name')->get();
+        $fiscalYears = FiscalYear::where('company_id', $companyId)
+            ->with(['periods', 'closedByUser'])
+            ->orderByDesc('start_date')
+            ->get();
 
         return view('system-settings.index', compact(
             'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings',
             'approvalSetting', 'approvalThresholds',
             'sequences', 'documentTypeLabels', 'nextNumbers',
             'smtpSettings', 'emailTemplates', 'eventLabels',
-            'branches',
+            'branches', 'fiscalYears',
             'tab'
         ));
     }
