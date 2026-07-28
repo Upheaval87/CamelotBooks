@@ -7,6 +7,7 @@ use App\Models\Account;
 use App\Models\ApprovalSetting;
 use App\Models\ApprovalThreshold;
 use App\Models\AuditLog;
+use App\Models\Branch;
 use App\Models\Company;
 use App\Models\DefaultAccountMapping;
 use App\Models\EmailTemplate;
@@ -41,12 +42,14 @@ class SettingsController extends Controller
             $q->where('company_id', $companyId)->orWhereNull('company_id');
         })->get();
         $eventLabels = EmailTemplate::eventLabels();
+        $branches = Branch::where('company_id', $companyId)->orderBy('name')->get();
 
         return view('system-settings.index', compact(
             'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings',
             'approvalSetting', 'approvalThresholds',
             'sequences', 'documentTypeLabels', 'nextNumbers',
             'smtpSettings', 'emailTemplates', 'eventLabels',
+            'branches',
             'tab'
         ));
     }
@@ -402,6 +405,28 @@ class SettingsController extends Controller
 
         return redirect()->route('system-settings.index', 'notifications')
             ->with('success', 'Email settings updated successfully.');
+    }
+
+    public function toggleBranch(Branch $branch)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($branch->company_id === $companyId, 404);
+
+        $user = request()->user();
+        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $oldActive = $branch->is_active;
+        $branch->update(['is_active' => !$oldActive]);
+
+        AuditLog::log($companyId, $user->id, Branch::class, $branch->id, 'settings.updated',
+            ['is_active' => $oldActive],
+            ['is_active' => !$oldActive],
+            "Branch: {$branch->name}"
+        );
+
+        $status = $branch->is_active ? 'activated' : 'deactivated';
+        return redirect()->route('system-settings.index', 'branches')
+            ->with('success', "Branch \"{$branch->name}\" {$status} successfully.");
     }
 
     public function updateAccounting(Request $request)

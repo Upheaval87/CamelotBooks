@@ -572,6 +572,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/approval', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateApproval'])->name('update-approval');
             Route::put('/numbering', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateNumbering'])->name('update-numbering');
             Route::put('/notifications', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'updateNotifications'])->name('update-notifications');
+            Route::patch('/branches/{branch}/toggle', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'toggleBranch'])->name('toggle-branch');
         });
 
         // Analytics

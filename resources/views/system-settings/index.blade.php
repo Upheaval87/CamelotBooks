@@ -54,6 +54,10 @@
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'notifications' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                         Email
                     </a>
+                    <a href="{{ route('system-settings.index', 'branches') }}"
+                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'branches' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        Branches
+                    </a>
                     <a href="{{ route('system-settings.audit-log') }}"
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         Audit Log
@@ -479,6 +483,11 @@
             {{-- Email & Notifications Tab --}}
             @if($tab === 'notifications')
             @include('system-settings._notifications-tab')
+            @endif
+
+            {{-- Branch Management Tab --}}
+            @if($tab === 'branches')
+            @include('system-settings._branches-tab')
             @endif
         </div>
     </div>
