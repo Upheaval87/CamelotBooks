@@ -3,6 +3,7 @@
 namespace App\Services\Reporting;
 
 use App\Models\Bill;
+use App\Models\Expense;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseRegisterService
@@ -17,13 +18,22 @@ class PurchaseRegisterService
             ->orderBy('bill_date')
             ->get();
 
+        $expenses = Expense::forCompany($companyId)
+            ->where('status', 'posted')
+            ->where('expense_date', '>=', $dateFrom)
+            ->where('expense_date', '<=', $dateTo)
+            ->with('vendor')
+            ->orderBy('expense_date')
+            ->get();
+
         $results = [];
         $totalAmount = 0;
         $totalTax = 0;
 
         foreach ($bills as $bill) {
             $results[] = [
-                'bill_number' => $bill->bill_number,
+                'type' => 'Bill',
+                'reference' => $bill->bill_number,
                 'date' => $bill->bill_date,
                 'vendor_name' => $bill->vendor->name ?? 'N/A',
                 'amount' => (float) $bill->amount,
@@ -34,6 +44,22 @@ class PurchaseRegisterService
             $totalAmount += (float) $bill->amount;
             $totalTax += (float) $bill->tax_total;
         }
+
+        foreach ($expenses as $expense) {
+            $results[] = [
+                'type' => 'Expense',
+                'reference' => $expense->expense_number,
+                'date' => $expense->expense_date,
+                'vendor_name' => $expense->vendor->name ?? 'N/A',
+                'amount' => (float) $expense->amount,
+                'tax_total' => 0,
+                'total' => (float) $expense->amount,
+                'status' => $expense->status,
+            ];
+            $totalAmount += (float) $expense->amount;
+        }
+
+        usort($results, fn ($a, $b) => $a['date'] <=> $b['date']);
 
         return [
             'bills' => $results,
