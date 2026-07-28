@@ -383,7 +383,7 @@ class ReportRegistry
                 'name' => 'Budget vs Actual',
                 'description' => 'Budget amounts compared to actuals with variance.',
                 'category' => 'budgeting',
-                'route' => 'accounting.budgets.variance',
+                'route' => 'accounting.budgets.index',
                 'permission' => 'view_budgets',
                 'feature_flag' => ['budgets'],
             ],
