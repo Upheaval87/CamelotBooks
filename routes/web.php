@@ -644,7 +644,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         // Analytics
-        Route::prefix('analytics')->name('analytics.')->group(function () {
+        Route::prefix('analytics')->name('analytics.')->middleware('feature:analytics')->group(function () {
             Route::get('financial-ratios', [\App\Http\Controllers\AnalyticsController::class, 'financialRatios'])->name('financial-ratios');
             Route::get('revenue-expense-trends', [\App\Http\Controllers\AnalyticsController::class, 'revenueExpenseTrends'])->name('revenue-expense-trends');
             Route::get('sales', [\App\Http\Controllers\AnalyticsController::class, 'sales'])->name('sales');
@@ -656,7 +656,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         // Business Intelligence (BI)
-        Route::prefix('bi')->name('bi.')->group(function () {
+        Route::prefix('bi')->name('bi.')->middleware('feature:bi')->group(function () {
             Route::get('true-total-cost', [\App\Http\Controllers\BiController::class, 'trueTotalCost'])->name('true-total-cost');
             Route::get('customer-lifetime-value', [\App\Http\Controllers\BiController::class, 'customerLifetimeValue'])->name('customer-lifetime-value');
             Route::get('employee-productivity', [\App\Http\Controllers\BiController::class, 'employeeProductivity'])->name('employee-productivity');
