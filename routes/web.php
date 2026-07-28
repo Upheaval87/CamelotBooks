@@ -575,6 +575,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('/branches/{branch}/toggle', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'toggleBranch'])->name('toggle-branch');
             Route::post('/export', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'exportSettings'])->name('export-settings');
             Route::post('/import', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'importSettings'])->name('import-settings');
+            Route::post('/backups', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'createBackup'])->name('create-backup');
+            Route::patch('/backups/{backup}/restore', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'restoreBackup'])->name('restore-backup');
+            Route::delete('/backups/{backup}', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'deleteBackup'])->name('delete-backup');
         });
 
         // Analytics

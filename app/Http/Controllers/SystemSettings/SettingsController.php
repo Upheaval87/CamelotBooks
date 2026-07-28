@@ -13,6 +13,7 @@ use App\Models\DefaultAccountMapping;
 use App\Models\EmailTemplate;
 use App\Models\FiscalYear;
 use App\Models\NumberingSequence;
+use App\Models\SettingsBackup;
 use App\Models\SystemSetting;
 use App\Services\Admin\NumberingSequenceService;
 use Illuminate\Http\Request;
@@ -48,13 +49,17 @@ class SettingsController extends Controller
             ->with(['periods', 'closedByUser'])
             ->orderByDesc('start_date')
             ->get();
+        $backups = SettingsBackup::where('company_id', $companyId)
+            ->with('createdByUser')
+            ->orderByDesc('created_at')
+            ->get();
 
         return view('system-settings.index', compact(
             'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings',
             'approvalSetting', 'approvalThresholds',
             'sequences', 'documentTypeLabels', 'nextNumbers',
             'smtpSettings', 'emailTemplates', 'eventLabels',
-            'branches', 'fiscalYears',
+            'branches', 'fiscalYears', 'backups',
             'tab'
         ));
     }
@@ -457,6 +462,57 @@ class SettingsController extends Controller
 
         return redirect()->route('system-settings.index', 'accounting')
             ->with('success', 'Accounting settings updated successfully.');
+    }
+
+    public function createBackup(Request $request)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $validated = $request->validate([
+            'label' => 'required|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $backup = SettingsBackup::capture($companyId, $request->user()->id, $validated['label'], $validated['notes'] ?? null);
+
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.backup_created', null, ['backup_id' => $backup->id, 'label' => $backup->label, 'record_count' => $backup->record_count], 'Backup created: ' . $backup->label);
+
+        return redirect()->route('system-settings.index', 'backups')
+            ->with('success', "Backup \"{$backup->label}\" created with {$backup->record_count} setting(s).");
+    }
+
+    public function restoreBackup(SettingsBackup $backup)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($backup->company_id === $companyId, 404);
+
+        $user = request()->user();
+        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $restored = $backup->restore();
+
+        AuditLog::log($companyId, $user->id, Company::class, $companyId, 'settings.backup_restored', null, ['backup_id' => $backup->id, 'label' => $backup->label, 'records_restored' => $restored], 'Settings restored from backup: ' . $backup->label);
+
+        return redirect()->route('system-settings.index', 'backups')
+            ->with('success', "Settings restored from \"{$backup->label}\". {$restored} setting(s) updated.");
+    }
+
+    public function deleteBackup(SettingsBackup $backup)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($backup->company_id === $companyId, 404);
+
+        $user = request()->user();
+        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $label = $backup->label;
+        $backup->delete();
+
+        AuditLog::log($companyId, $user->id, Company::class, $companyId, 'settings.backup_deleted', null, ['label' => $label], 'Backup deleted: ' . $label);
+
+        return redirect()->route('system-settings.index', 'backups')
+            ->with('success', "Backup \"{$label}\" deleted.");
     }
 
     public function exportSettings(Request $request)
