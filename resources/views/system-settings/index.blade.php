@@ -50,6 +50,10 @@
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'numbering' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                         Numbering
                     </a>
+                    <a href="{{ route('system-settings.index', 'notifications') }}"
+                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm {{ $tab === 'notifications' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        Email
+                    </a>
                     <a href="{{ route('system-settings.audit-log') }}"
                        class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         Audit Log
@@ -470,6 +474,11 @@
             {{-- Numbering Overrides Tab --}}
             @if($tab === 'numbering')
             @include('system-settings._numbering-tab')
+            @endif
+
+            {{-- Email & Notifications Tab --}}
+            @if($tab === 'notifications')
+            @include('system-settings._notifications-tab')
             @endif
         </div>
     </div>

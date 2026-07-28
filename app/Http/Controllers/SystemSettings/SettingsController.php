@@ -9,6 +9,7 @@ use App\Models\ApprovalThreshold;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\DefaultAccountMapping;
+use App\Models\EmailTemplate;
 use App\Models\NumberingSequence;
 use App\Models\SystemSetting;
 use App\Services\Admin\NumberingSequenceService;
@@ -35,11 +36,17 @@ class SettingsController extends Controller
         foreach ($sequences as $seq) {
             $nextNumbers[$seq->document_type] = $ns->peekNextNumber($companyId, $seq->document_type);
         }
+        $smtpSettings = SystemSetting::getMany('smtp', $companyId);
+        $emailTemplates = EmailTemplate::where(function ($q) use ($companyId) {
+            $q->where('company_id', $companyId)->orWhereNull('company_id');
+        })->get();
+        $eventLabels = EmailTemplate::eventLabels();
 
         return view('system-settings.index', compact(
             'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings',
             'approvalSetting', 'approvalThresholds',
             'sequences', 'documentTypeLabels', 'nextNumbers',
+            'smtpSettings', 'emailTemplates', 'eventLabels',
             'tab'
         ));
     }
@@ -355,6 +362,46 @@ class SettingsController extends Controller
 
         return redirect()->route('system-settings.index', 'numbering')
             ->with('success', 'Numbering sequences updated successfully.');
+    }
+
+    public function updateNotifications(Request $request)
+    {
+        $companyId = session('current_company_id');
+
+        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+
+        $oldValues = SystemSetting::getMany('smtp', $companyId);
+
+        $validated = $request->validate([
+            'smtp_host' => 'nullable|string|max:255',
+            'smtp_port' => 'nullable|integer|min:1|max:65535',
+            'smtp_username' => 'nullable|string|max:255',
+            'smtp_password' => 'nullable|string|max:255',
+            'smtp_encryption' => 'required|in:tls,ssl,none',
+            'smtp_from_address' => 'nullable|email|max:255',
+            'smtp_from_name' => 'nullable|string|max:255',
+        ]);
+
+        $map = [
+            'smtp_host' => 'host',
+            'smtp_port' => 'port',
+            'smtp_username' => 'username',
+            'smtp_password' => 'password',
+            'smtp_encryption' => 'encryption',
+            'smtp_from_address' => 'from_address',
+            'smtp_from_name' => 'from_name',
+        ];
+
+        foreach ($map as $requestKey => $settingKey) {
+            if (isset($validated[$requestKey]) && $validated[$requestKey] !== null) {
+                SystemSetting::setValue('smtp', $settingKey, $validated[$requestKey], $companyId);
+            }
+        }
+
+        AuditLog::log($companyId, $request->user()->id, Company::class, $companyId, 'settings.updated', $oldValues, $validated, 'Email & Notification Settings');
+
+        return redirect()->route('system-settings.index', 'notifications')
+            ->with('success', 'Email settings updated successfully.');
     }
 
     public function updateAccounting(Request $request)

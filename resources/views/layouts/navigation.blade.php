@@ -240,6 +240,7 @@
                             <a href="{{ route('system-settings.index', 'accounting') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Accounting Settings') }}</a>
                             <a href="{{ route('system-settings.index', 'approval') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Approval Settings') }}</a>
                             <a href="{{ route('system-settings.index', 'numbering') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Numbering') }}</a>
+                            <a href="{{ route('system-settings.index', 'notifications') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Email & Notifications') }}</a>
                             <div class="border-t border-gray-100 my-1"></div>
                             <a href="{{ route('system-settings.audit-log') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Settings Audit Log') }}</a>
                         </div>
@@ -448,6 +449,7 @@
             <x-responsive-nav-link :href="route('system-settings.index', 'accounting')" :active="request()->routeIs('system-settings.*')">{{ __('Accounting Settings') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.index', 'approval')" :active="request()->routeIs('system-settings.*')">{{ __('Approval Settings') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.index', 'numbering')" :active="request()->routeIs('system-settings.*')">{{ __('Numbering') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('system-settings.index', 'notifications')" :active="request()->routeIs('system-settings.*')">{{ __('Email & Notifications') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.audit-log')" :active="request()->routeIs('system-settings.audit-log')">{{ __('Settings Audit Log') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Admin</div>
             <x-responsive-nav-link :href="route('admin.setup-wizard.index')" :active="request()->routeIs('admin.setup-wizard.*')">{{ __('Setup Wizard') }}</x-responsive-nav-link>
