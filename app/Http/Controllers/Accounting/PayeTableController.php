@@ -77,7 +77,7 @@ class PayeTableController extends Controller
 
     public function show(PayeTable $payeTable)
     {
-        $this->authorize($payeTable);
+        $this->authorizeCompanyAccess($payeTable);
 
         $payeTable->load('bands');
 
@@ -86,7 +86,7 @@ class PayeTableController extends Controller
 
     public function edit(PayeTable $payeTable)
     {
-        $this->authorize($payeTable);
+        $this->authorizeCompanyAccess($payeTable);
 
         $payeTable->load('bands');
 
@@ -95,7 +95,7 @@ class PayeTableController extends Controller
 
     public function update(Request $request, PayeTable $payeTable)
     {
-        $this->authorize($payeTable);
+        $this->authorizeCompanyAccess($payeTable);
 
         $validated = $request->validate([
             'version_name' => 'required|string|max:100',
@@ -138,7 +138,7 @@ class PayeTableController extends Controller
 
     public function activate(PayeTable $payeTable)
     {
-        $this->authorize($payeTable);
+        $this->authorizeCompanyAccess($payeTable);
 
         $companyId = session('current_company_id');
 
@@ -166,7 +166,7 @@ class PayeTableController extends Controller
 
     public function destroy(PayeTable $payeTable)
     {
-        $this->authorize($payeTable);
+        $this->authorizeCompanyAccess($payeTable);
 
         if ($payeTable->is_current) {
             return back()->withErrors(['error' => 'Cannot delete the currently active PAYE table. Activate another table first.']);
@@ -179,7 +179,7 @@ class PayeTableController extends Controller
             ->with('success', 'PAYE tax table deleted successfully.');
     }
 
-    private function authorize(PayeTable $payeTable): void
+    private function authorizeCompanyAccess(PayeTable $payeTable): void
     {
         if ($payeTable->company_id !== session('current_company_id')) {
             abort(404);

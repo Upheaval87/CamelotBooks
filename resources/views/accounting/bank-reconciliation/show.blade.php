@@ -1,18 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Reconciliation') }} — {{ $reconciliation->bankAccount->name ?? '' }}
-            </h2>
-            <div class="flex items-center space-x-3">
-                <a href="{{ route('accounting.bank-reconciliation.import-form', $reconciliation->bank_account_id) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Import Statement') }}
-                </a>
-                <a href="{{ route('accounting.bank-reconciliation.index', $reconciliation->bank_account_id) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Back to Reconciliation') }}
-                </a>
-            </div>
-        </div>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Reconciliation') }} — {{ $reconciliation->bankAccount->name ?? '' }}
+        </h2>
     </x-slot>
 
     <div class="py-12">
@@ -28,6 +18,65 @@
                     {{ session('error') }}
                 </div>
             @endif
+
+            <x-toolbar class="mb-6">
+                @if($reconciliation->status === 'in_progress')
+                    <form method="POST" action="{{ route('accounting.bank-reconciliation.complete', $reconciliation) }}" class="inline">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" {{ $reconciliation->difference != 0 ? 'disabled' : '' }} class="inline-flex items-center gap-1.5 px-3 py-1.5 {{ $reconciliation->difference == 0 ? 'bg-atlas-amber text-atlas-navy hover:brightness-110' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }} text-sm font-medium rounded-md transition-colors">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Complete Reconciliation
+                        </button>
+                    </form>
+                    <a href="{{ route('accounting.bank-reconciliation.import-form', $reconciliation->bank_account_id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-atlas-navy/20 text-atlas-navy text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        Import Statement
+                    </a>
+                @else
+                    <a href="{{ route('accounting.bank-reconciliation.import-form', $reconciliation->bank_account_id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-atlas-amber text-atlas-navy text-sm font-medium rounded-md hover:brightness-110 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        Import Statement
+                    </a>
+                @endif
+
+                <span class="w-px h-5 bg-gray-200 mx-1" role="separator"></span>
+
+                <span id="differencePill" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md {{ $reconciliation->difference == 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Difference: {{ format_money($reconciliation->difference) }}
+                </span>
+
+                @if($reconciliation->difference != 0)
+                    <p class="text-xs text-gray-500 ml-2">Complete when difference is 0.00</p>
+                @endif
+
+                <x-slot name="right">
+                    <x-dropdown align="right" width="48">
+                        <x-slot name="trigger">
+                            <button type="button" class="inline-flex items-center justify-center w-7 h-7 bg-transparent text-atlas-navy/50 rounded-md hover:bg-gray-100 transition-colors">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                            </button>
+                        </x-slot>
+                        <x-slot name="content">
+                            <div class="py-1">
+                                <button type="button" onclick="window.print()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                    Print
+                                </button>
+                                <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    Export to CSV
+                                </button>
+                                <a href="{{ route('accounting.bank-reconciliation.index', $reconciliation->bank_account_id) }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                                    Back to Reconciliation
+                                </a>
+                            </div>
+                        </x-slot>
+                    </x-dropdown>
+                </x-slot>
+            </x-toolbar>
 
             <div class="grid grid-cols-4 gap-6 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4">
@@ -49,21 +98,6 @@
                     </dd>
                 </div>
             </div>
-
-            @if($reconciliation->status === 'in_progress')
-                <div class="flex justify-end mb-6">
-                    <form method="POST" action="{{ route('accounting.bank-reconciliation.complete', $reconciliation) }}">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" {{ $reconciliation->difference != 0 ? 'disabled' : '' }} class="inline-flex items-center px-4 py-2 {{ $reconciliation->difference == 0 ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-300 cursor-not-allowed' }} border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Complete Reconciliation') }}
-                        </button>
-                        @if($reconciliation->difference != 0)
-                            <p class="text-xs text-gray-500 mt-2">Reconciliation can only be completed when the difference is 0.00</p>
-                        @endif
-                    </form>
-                </div>
-            @endif
 
             <div class="grid grid-cols-2 gap-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

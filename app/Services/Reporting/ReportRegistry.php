@@ -753,7 +753,11 @@ class ReportRegistry
         }
 
         if ($report['permission']) {
-            return $user->hasAnyRoleInCompany(['system_admin', 'company_admin', $report['permission']], $companyId);
+            $currentTeamId = getPermissionsTeamId();
+            setPermissionsTeamId($companyId);
+            $result = $user->hasAnyRole([$report['permission'], 'system_admin', 'company_admin']);
+            setPermissionsTeamId($currentTeamId);
+            return $result;
         }
 
         return true;

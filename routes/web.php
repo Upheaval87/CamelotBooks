@@ -88,7 +88,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/branches/{branch}/toggle', [BranchController::class, 'toggle'])
             ->name('branches.toggle');
 
-        Route::prefix('accounting')->name('accounting.')->group(function () {
+        Route::prefix('accounting')->name('accounting.')
+            ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer')
+            ->group(function () {
             // Chart of Accounts
             Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
             Route::get('accounts/create', [AccountController::class, 'create'])->name('accounts.create');

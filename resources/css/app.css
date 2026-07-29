@@ -10,247 +10,481 @@
         margin: 0;
     }
     body {
-        font-feature-settings: 'cv11', 'ss01';
+        font-feature-settings: 'cv11', 'ss01', 'salt', 'kern';
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        @apply text-sm text-neutral-800 bg-neutral-50;
+    }
+    .dark body,
+    .dark {
+        @apply bg-neutral-950 text-neutral-200;
     }
     .tabular-nums {
         font-variant-numeric: tabular-nums;
     }
+    ::selection {
+        @apply bg-accent-subtle text-accent-700;
+    }
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-accent/40;
+    }
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: theme('colors.neutral.200') transparent;
+    }
+    *::-webkit-scrollbar { width: 5px; height: 5px; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    *::-webkit-scrollbar-thumb { background: theme('colors.neutral.200'); border-radius: 3px; }
+    *::-webkit-scrollbar-thumb:hover { background: theme('colors.neutral.300'); }
 }
 
 @layer components {
-    /* ── Atlas Cards ── */
-    .atlas-card {
-        @apply bg-white border border-gray-200 rounded-card;
+    /* ═══════════════════════════════════════════
+       CARDS
+    ═══════════════════════════════════════════ */
+    .card {
+        @apply bg-white rounded-card border border-neutral-200 shadow-card transition-shadow duration-200;
     }
-    .atlas-card-header {
-        @apply px-5 py-3 border-b border-gray-200;
+    .card:hover {
+        @apply shadow-elevated;
     }
-
-    /* ── Status Badges ── */
-    .badge {
-        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    .card-header {
+        @apply px-6 py-4 border-b border-neutral-100;
     }
-    .badge-navy {
-        background: rgba(4,28,68,0.07);
-        color: #041C44;
+    .card-body {
+        @apply p-6;
     }
-    .badge-navy-outline {
-        @apply border border-gray-300;
-        color: rgba(4,28,68,0.55);
+    .card-footer {
+        @apply px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 rounded-b-card;
     }
-    .badge-amber-16 {
-        background: rgba(244,180,67,0.16);
-        color: #041C44;
+    .card-premium {
+        @apply card relative overflow-hidden;
     }
-    .badge-amber-24 {
-        background: rgba(244,180,67,0.24);
-        color: #041C44;
-    }
-    .badge-amber-32 {
-        background: rgba(244,180,67,0.32);
-        color: #041C44;
-    }
-    .badge-amber-solid {
-        @apply bg-atlas-amber text-white font-semibold;
-    }
-    .badge-blue {
-        background: rgba(101,145,224,0.16);
-        color: #041C44;
-    }
-    .badge-danger {
-        background: rgba(193,68,59,0.12);
-        color: #C1443B;
-    }
-
-    /* ── Compact dotted badge variant ── */
-    .badge-dot {
-        @apply badge relative pl-3;
-    }
-    .badge-dot::before {
+    .card-premium::before {
         content: '';
-        @apply absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full;
+        @apply absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-accent via-accent-400 to-accent;
     }
-    .badge-dot-navy::before { background: #041C44; }
-    .badge-dot-amber::before { background: #F4B443; }
-    .badge-dot-blue::before { background: #6591E0; }
-    .badge-dot-danger::before { background: #C1443B; }
 
-    /* ── Atlas Sidebar ── */
-    .atlas-sidebar {
-        @apply fixed left-0 top-0 bottom-0 z-40 flex flex-col;
-        width: 216px;
-        background: #041C44;
+    /* KPI Card */
+    .kpi-card {
+        @apply card p-5;
     }
-    .sidebar-nav-item {
-        @apply flex items-center gap-3 px-5 py-2.5 text-sm font-normal rounded-r-lg cursor-pointer transition-all duration-200;
-        color: rgba(255,255,255,0.55);
+    .kpi-label {
+        @apply text-xs font-medium text-neutral-400 uppercase tracking-wider;
     }
-    .sidebar-nav-item:hover {
-        background: rgba(101,145,224,0.12);
-        color: rgba(255,255,255,0.85);
-        transform: translateX(2px);
+    .kpi-value {
+        @apply text-2xl font-bold text-neutral-900 mt-1;
     }
-    .sidebar-nav-item:hover .sidebar-nav-icon {
-        @apply text-atlas-blue;
+    .kpi-trend {
+        @apply text-xs font-medium mt-1.5 inline-flex items-center gap-1;
     }
-    .sidebar-nav-item.active {
-        background: rgba(101,145,224,0.18);
-        color: #FFFFFF;
-        @apply font-medium;
-        box-shadow: inset 3px 0 0 #6591E0;
+
+    /* ═══════════════════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════════════════ */
+    .sidebar {
+        @apply fixed left-0 top-0 bottom-0 z-40 flex flex-col w-56 bg-neutral-900 border-r border-neutral-800;
     }
-    .sidebar-nav-item.active .sidebar-nav-icon {
-        @apply text-atlas-blue;
+    .sidebar-brand {
+        @apply flex items-center gap-3 px-5 h-16 shrink-0 border-b border-neutral-800/50;
     }
-    .sidebar-nav-icon {
-        @apply w-5 h-5 shrink-0 transition-colors duration-200;
+    .sidebar-scroll {
+        @apply flex-1 overflow-y-auto py-3;
     }
     .sidebar-section-label {
-        @apply px-5 pt-4 pb-1 text-xs font-medium uppercase tracking-wider;
-        color: rgba(255,255,255,0.3);
+        @apply px-5 pt-4 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-neutral-400/60;
     }
-    .sidebar-parent-item {
-        @apply flex items-center gap-3 px-5 py-2.5 text-sm font-normal w-full text-left cursor-pointer transition-all duration-200;
-        color: rgba(255,255,255,0.55);
+    .sidebar-link {
+        @apply flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-neutral-400 rounded-none transition-all duration-150 cursor-pointer;
     }
-    .sidebar-parent-item:hover {
-        background: rgba(101,145,224,0.12);
-        color: rgba(255,255,255,0.85);
+    .sidebar-link:hover {
+        @apply text-neutral-200 bg-white/[0.04];
     }
-    .sidebar-parent-item:hover .sidebar-nav-icon {
-        @apply text-atlas-blue;
+    .sidebar-link.active {
+        @apply text-white bg-white/[0.08] shadow-[inset_3px_0_0_theme('colors.accent.DEFAULT')];
     }
-    .sidebar-parent-item.parent-active {
-        color: rgba(255,255,255,0.85);
+    .sidebar-link .icon {
+        @apply w-4.5 h-4.5 shrink-0 opacity-60 transition-opacity duration-150;
     }
-    .sidebar-parent-item.parent-active .sidebar-nav-icon {
-        @apply text-atlas-blue;
+    .sidebar-link:hover .icon,
+    .sidebar-link.active .icon {
+        @apply opacity-100;
     }
 
-    /* ── Atlas Top Nav ── */
-    .atlas-topnav {
-        @apply bg-white border-b border-gray-200;
+    /* Sidebar parent (collapsible) */
+    .sidebar-parent {
+        @apply flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-neutral-400 w-full text-left cursor-pointer transition-all duration-150;
+    }
+    .sidebar-parent:hover {
+        @apply text-neutral-200 bg-white/[0.04];
+    }
+    .sidebar-parent.active {
+        @apply text-white bg-white/[0.08] shadow-[inset_3px_0_0_theme('colors.accent.DEFAULT')];
+    }
+    .sidebar-parent .icon {
+        @apply w-4.5 h-4.5 shrink-0 opacity-60 transition-opacity duration-150;
+    }
+    .sidebar-parent:hover .icon,
+    .sidebar-parent.active .icon {
+        @apply opacity-100;
+    }
+    .sidebar-chevron {
+        @apply w-3.5 h-3.5 ml-auto opacity-40 transition-transform duration-200;
+    }
+    .sidebar-child {
+        @apply block pl-12 pr-5 py-2 text-sm font-normal text-neutral-500 transition-all duration-150;
+    }
+    .sidebar-child:hover {
+        @apply text-neutral-300;
+    }
+    .sidebar-child.active {
+        @apply text-accent-400 font-medium;
     }
 
-    /* ── Atlas Page Header ── */
-    .atlas-page-title {
-        @apply text-heading text-atlas-amber;
+    /* ═══════════════════════════════════════════
+       TOP NAV
+    ═══════════════════════════════════════════ */
+    .topnav {
+        @apply bg-white/80 backdrop-blur-xl border-b border-neutral-200 sticky top-0 z-30;
     }
-    .atlas-page-subtitle {
-        @apply text-body;
-        color: rgba(4,28,68,0.4);
-    }
-
-    /* ── Atlas Form Fields ── */
-    .atlas-input {
-        @apply block w-full border-gray-300 rounded-md shadow-sm text-sm;
-        @apply focus:border-atlas-blue focus:ring-1 focus:ring-atlas-blue;
-        @apply focus:shadow-[0_0_0_3px_rgba(101,145,224,0.2)];
-        transition: box-shadow 0.2s, border-color 0.2s;
+    .dark .topnav {
+        @apply bg-neutral-900/80 border-neutral-800;
     }
 
-    /* ── Atlas Tables ── */
-    .atlas-table {
-        @apply min-w-full divide-y divide-gray-200;
+    /* ═══════════════════════════════════════════
+       BUTTONS
+    ═══════════════════════════════════════════ */
+    .btn {
+        @apply inline-flex items-center justify-center gap-1.5 font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-40 disabled:cursor-not-allowed select-none;
+        font-size: 0.8125rem;
+        line-height: 1.25rem;
     }
-    .atlas-table thead {
-        @apply bg-gray-50;
+    .btn-primary {
+        @apply btn text-white bg-accent hover:bg-accent-hover shadow-btn hover:shadow-btn-hover active:scale-[0.98];
     }
-    .atlas-table th {
-        @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wider;
-        color: rgba(4,28,68,0.55);
+    .btn-secondary {
+        @apply btn text-neutral-700 bg-white border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 shadow-btn active:scale-[0.98];
     }
-    .atlas-table td {
-        @apply px-4 py-3 text-sm;
-        color: #041C44;
+    .btn-danger {
+        @apply btn text-white bg-danger hover:bg-red-600 shadow-btn active:scale-[0.98];
     }
-    .atlas-table tbody tr {
-        @apply border-b border-gray-100 transition-colors duration-150;
+    .btn-ghost {
+        @apply btn text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 active:scale-[0.98];
     }
-    .atlas-table tbody tr:hover {
-        background: rgba(101,145,224,0.04);
+    .btn-outline-accent {
+        @apply btn text-accent border border-accent/30 hover:bg-accent-subtle hover:border-accent/50 active:scale-[0.98];
+    }
+    .btn-amber {
+        @apply btn text-neutral-900 bg-warning hover:bg-amber-500 shadow-btn active:scale-[0.98];
+    }
+    .btn-sm { @apply px-2.5 py-1.5 text-xs; }
+    .btn-md { @apply px-3.5 py-2 text-sm; }
+    .btn-lg { @apply px-5 py-2.5 text-base; }
+    .btn-icon { @apply p-1.5; }
+    .btn-icon-sm { @apply p-1; }
+
+    /* ═══════════════════════════════════════════
+       FORM INPUTS
+    ═══════════════════════════════════════════ */
+    .input {
+        @apply block w-full rounded-lg border-neutral-200 bg-white text-sm text-neutral-900 placeholder-neutral-400 shadow-sm transition-all duration-150;
+        @apply focus:border-accent/50 focus:ring-2 focus:ring-accent/10 focus:shadow-[0_0_0_1px_rgba(99,102,241,0.15)];
+    }
+    .dark .input {
+        @apply bg-neutral-800 border-neutral-700 text-neutral-200 placeholder-neutral-500;
+    }
+    .input-error {
+        @apply border-danger/50 focus:border-danger/50 focus:ring-danger/10 focus:shadow-[0_0_0_1px_rgba(239,68,68,0.15)];
+    }
+    .input-group {
+        @apply relative;
+    }
+    .input-group .input {
+        @apply pl-9;
+    }
+    .input-group .input-icon {
+        @apply absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none;
+    }
+    .input-label {
+        @apply block text-sm font-medium text-neutral-700 mb-1.5;
+    }
+    .input-help {
+        @apply text-xs text-neutral-400 mt-1.5;
+    }
+    .input-error-text {
+        @apply text-xs text-danger mt-1.5;
     }
 
-    /* ── Atlas Datasheet Cells ── */
-    .datasheet-cell-active {
-        @apply bg-atlas-blue/5;
-        box-shadow: inset 0 0 0 2px #6591E0;
+    /* Floating label */
+    .floating-input {
+        @apply block w-full rounded-lg border-neutral-200 bg-white text-sm text-neutral-900 pt-5 pb-2 px-3 shadow-sm transition-all duration-150;
+        @apply focus:border-accent/50 focus:ring-2 focus:ring-accent/10 focus:shadow-[0_0_0_1px_rgba(99,102,241,0.15)];
     }
-    .datasheet-cell-dirty::after {
-        content: '';
-        @apply absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-atlas-amber;
+    .floating-label {
+        @apply absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400 pointer-events-none transition-all duration-150;
     }
-
-    /* ── Atlas Modals ── */
-    .atlas-modal-backdrop {
-        @apply fixed inset-0 z-50 flex items-center justify-center p-4;
-        background: rgba(4,28,68,0.5);
-    }
-    .atlas-modal-card {
-        @apply bg-white rounded-lg overflow-hidden w-full;
-        max-width: 28rem;
+    .floating-input:focus + .floating-label,
+    .floating-input:not(:placeholder-shown) + .floating-label {
+        @apply text-xs top-2.5 -translate-y-0 text-accent font-medium;
     }
 
-    /* ── Atlas KPI Card ── */
-    .atlas-kpi {
-        @apply atlas-card px-5 py-4;
+    /* ═══════════════════════════════════════════
+       TABLES
+    ═══════════════════════════════════════════ */
+    .table-wrap {
+        @apply card overflow-hidden;
     }
-    .atlas-kpi-label {
-        @apply text-meta;
-        color: rgba(4,28,68,0.4);
+    .table-wrap table {
+        @apply min-w-full divide-y divide-neutral-100;
     }
-    .atlas-kpi-value {
-        @apply text-xl font-bold;
-        color: #041C44;
+    .table-wrap thead {
+        @apply bg-neutral-50/80;
+    }
+    .table-wrap th {
+        @apply px-5 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider;
+    }
+    .table-wrap td {
+        @apply px-5 py-3.5 text-sm text-neutral-700;
+    }
+    .table-wrap tbody tr {
+        @apply border-b border-neutral-100 transition-colors duration-150;
+    }
+    .table-wrap tbody tr:last-child {
+        @apply border-b-0;
+    }
+    .table-wrap tbody tr:hover {
+        @apply bg-accent-subtle/30;
+    }
+    .table-wrap tbody tr.selected {
+        @apply bg-accent-subtle/40;
     }
 
-    /* ── Atlas Empty State ── */
-    .atlas-empty {
-        @apply flex flex-col items-center justify-center py-12 px-6 text-center;
+    /* ═══════════════════════════════════════════
+       BADGES
+    ═══════════════════════════════════════════ */
+    .badge {
+        @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium leading-4;
+    }
+    .badge-default { @apply badge bg-neutral-100 text-neutral-600; }
+    .badge-accent { @apply badge bg-accent-subtle text-accent-700; }
+    .badge-success { @apply badge bg-success-light text-success-dark; }
+    .badge-warning { @apply badge bg-warning-light text-warning-dark; }
+    .badge-danger { @apply badge bg-danger-light text-danger-dark; }
+    .badge-info { @apply badge bg-info-light text-info-dark; }
+
+    /* ═══════════════════════════════════════════
+       MODALS
+    ═══════════════════════════════════════════ */
+    .modal-backdrop {
+        @apply fixed inset-0 z-50 bg-neutral-900/40 backdrop-blur-sm;
+    }
+    .modal-panel {
+        @apply fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-xl shadow-modal border border-neutral-200 overflow-hidden;
+    }
+    .modal-header {
+        @apply px-6 py-4 border-b border-neutral-100;
+    }
+    .modal-body {
+        @apply px-6 py-5;
+    }
+    .modal-footer {
+        @apply px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-end gap-3;
     }
 
-    /* ── Flyout menu ── */
-    .sidebar-flyout {
-        @apply fixed top-0 bottom-0 z-50 bg-white shadow-xl overflow-y-auto;
-        left: 216px;
-        width: 256px;
+    /* ═══════════════════════════════════════════
+       DROPDOWN
+    ═══════════════════════════════════════════ */
+    .dropdown {
+        @apply absolute z-50 min-w-[180px] bg-white rounded-xl border border-neutral-200 shadow-dropdown overflow-hidden;
+    }
+    .dropdown-item {
+        @apply flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-neutral-700 hover:bg-accent-subtle hover:text-accent-700 transition-colors duration-100 cursor-pointer;
     }
 
-    /* ── Theme toggle ── */
-    .atlas-theme-toggle {
-        @apply p-2 rounded-md transition-colors duration-200;
-        color: rgba(4,28,68,0.55);
+    /* ═══════════════════════════════════════════
+       NOTIFICATIONS / TOASTS
+    ═══════════════════════════════════════════ */
+    .toast {
+        @apply pointer-events-auto flex items-start gap-3 bg-white border-l-[3px] rounded-xl px-4 py-3.5 shadow-elevated min-w-[300px] max-w-sm animate-fade-in-up;
     }
-    .atlas-theme-toggle:hover {
-        background: rgba(4,28,68,0.04);
-        color: #041C44;
+    .toast-success { @apply toast border-l-success; }
+    .toast-warning { @apply toast border-l-warning; }
+    .toast-error { @apply toast border-l-danger; }
+    .toast-info { @apply toast border-l-info; }
+
+    /* ═══════════════════════════════════════════
+       EMPTY STATE
+    ═══════════════════════════════════════════ */
+    .empty-state {
+        @apply flex flex-col items-center justify-center py-16 px-6 text-center;
+    }
+    .empty-state-icon {
+        @apply w-12 h-12 text-neutral-300 mb-4;
+    }
+    .empty-state-title {
+        @apply text-base font-semibold text-neutral-700 mb-1;
+    }
+    .empty-state-text {
+        @apply text-sm text-neutral-400 max-w-xs;
+    }
+
+    /* ═══════════════════════════════════════════
+       TOOLBAR
+    ═══════════════════════════════════════════ */
+    .toolbar {
+        @apply card px-4 py-2.5 flex items-center justify-between gap-2;
+    }
+
+    /* ═══════════════════════════════════════════
+       PAGINATION
+    ═══════════════════════════════════════════ */
+    .pagination {
+        @apply flex items-center gap-1;
+    }
+    .pagination-link {
+        @apply inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-neutral-500 rounded-lg hover:bg-neutral-100 transition-colors;
+    }
+    .pagination-link.active {
+        @apply bg-accent text-white hover:bg-accent-hover;
+    }
+    .pagination-link.disabled {
+        @apply opacity-40 cursor-not-allowed;
+    }
+
+    /* ═══════════════════════════════════════════
+       TIMELINE / ACTIVITY
+    ═══════════════════════════════════════════ */
+    .timeline {
+        @apply relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-0 before:w-px before:bg-neutral-200;
+    }
+    .timeline-item {
+        @apply relative pb-6 last:pb-0;
+    }
+    .timeline-dot {
+        @apply absolute -left-[19px] top-1 w-3 h-3 rounded-full bg-white border-2 border-accent;
+    }
+    .timeline-content {
+        @apply text-sm;
+    }
+
+    /* ═══════════════════════════════════════════
+       LOADING SKELETON
+    ═══════════════════════════════════════════ */
+    .skeleton {
+        @apply bg-neutral-200 rounded-md animate-pulse;
+    }
+    .skeleton-text {
+        @apply skeleton h-4 w-full;
+    }
+    .skeleton-text-sm {
+        @apply skeleton h-3 w-2/3;
+    }
+
+    /* ═══════════════════════════════════════════
+       DIVIDER
+    ═══════════════════════════════════════════ */
+    .divider {
+        @apply w-px h-5 bg-neutral-200 mx-1.5;
     }
 }
 
 @layer utilities {
-    .muted-navy-light {
-        color: rgba(4,28,68,0.4);
+    /* Text utilities */
+    .text-muted { @apply text-neutral-400; }
+    .text-muted-light { @apply text-neutral-500; }
+
+    /* Background utilities */
+    .bg-subtle { @apply bg-neutral-50; }
+
+    /* Animation utilities */
+    .animate-fade-in { animation: fadeIn 0.2s ease-out both; }
+    .animate-fade-in-up { animation: fadeInUp 0.25s ease-out both; }
+    .animate-scale-in { animation: scaleIn 0.15s ease-out both; }
+
+    /* Layout */
+    .page-container {
+        @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
     }
-    .muted-navy-medium {
-        color: rgba(4,28,68,0.55);
+    .page-header {
+        @apply mb-6 flex items-center justify-between;
     }
-    .muted-white {
-        color: rgba(255,255,255,0.55);
+    .page-title {
+        @apply text-heading text-neutral-900 font-semibold tracking-tight;
     }
-    .muted-white-dim {
-        color: rgba(255,255,255,0.4);
+    .page-subtitle {
+        @apply text-sm text-neutral-400 mt-0.5;
+    }
+
+    /* Focus ring */
+    .focus-ring {
+        @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2;
+    }
+
+    /* Grid */
+    .grid-auto {
+        @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5;
+    }
+    .grid-stats {
+        @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5;
     }
 }
 
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(4,28,68,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    z-index: 9999;
+/* ═══════════════════════════════════════════
+   DARK MODE (enhanced)
+═══════════════════════════════════════════ */
+.dark .card {
+    @apply bg-neutral-900 border-neutral-800;
+}
+.dark .card-header,
+.dark .card-footer {
+    @apply border-neutral-800;
+}
+.dark .table-wrap thead {
+    @apply bg-neutral-800/40;
+}
+.dark .table-wrap th {
+    @apply text-neutral-400;
+}
+.dark .table-wrap td {
+    @apply text-neutral-300;
+}
+.dark .table-wrap tbody tr {
+    @apply border-neutral-800/50;
+}
+.dark .table-wrap tbody tr:hover {
+    @apply bg-white/[0.02];
+}
+.dark .modal-panel {
+    @apply bg-neutral-900 border-neutral-800;
+}
+.dark .modal-header,
+.dark .modal-footer {
+    @apply border-neutral-800 bg-neutral-800/30;
+}
+.dark .dropdown {
+    @apply bg-neutral-900 border-neutral-800;
+}
+.dark .dropdown-item {
+    @apply text-neutral-300 hover:bg-accent-subtle/20 hover:text-accent-300;
+}
+.dark .sidebar {
+    @apply bg-neutral-950 border-neutral-900;
+}
+.dark .topnav {
+    @apply bg-neutral-950/80 border-neutral-800;
+}
+.dark .kpi-value {
+    @apply text-neutral-100;
+}
+.dark .btn-secondary {
+    @apply bg-neutral-800 border-neutral-700 text-neutral-200 hover:bg-neutral-700 hover:border-neutral-600;
+}
+.dark .btn-ghost {
+    @apply text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800;
+}
+.dark .skeleton {
+    @apply bg-neutral-700;
+}
+.dark .badge-default {
+    @apply bg-neutral-800 text-neutral-300;
 }

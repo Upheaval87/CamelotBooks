@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'name',
@@ -57,46 +58,7 @@ class User extends Authenticatable
 
     public function getRoleInCurrentCompanyAttribute(): ?string
     {
-        $companyId = session('current_company_id');
-        if (!$companyId) {
-            return null;
-        }
-        $pivot = $this->companies()->where('company_id', $companyId)->first()?->pivot;
-        return $pivot?->role;
-    }
-
-    public function hasRoleInCompany(string $role, ?int $companyId = null): bool
-    {
-        $companyId = $companyId ?? session('current_company_id');
-        if (!$companyId) {
-            return false;
-        }
-        return $this->companies()
-            ->where('company_id', $companyId)
-            ->where('company_user.role', $role)
-            ->exists();
-    }
-
-    public function hasAnyRoleInCompany(array $roles, ?int $companyId = null): bool
-    {
-        $companyId = $companyId ?? session('current_company_id');
-        if (!$companyId) {
-            return false;
-        }
-        return $this->companies()
-            ->where('company_id', $companyId)
-            ->whereIn('company_user.role', $roles)
-            ->exists();
-    }
-
-    public function canApproveInCompany(?int $companyId = null): bool
-    {
-        return $this->hasAnyRoleInCompany(['company_admin', 'approver', 'system_admin'], $companyId);
-    }
-
-    public function canManagePeriodsInCompany(?int $companyId = null): bool
-    {
-        return $this->hasAnyRoleInCompany(['company_admin', 'system_admin'], $companyId);
+        return $this->roles->first()?->name;
     }
 
     public function getActiveCompanyId(): ?int

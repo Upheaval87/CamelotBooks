@@ -46,6 +46,12 @@ class CompanyIsolationTest extends TestCase
 
         $this->user->companies()->attach($this->companyA->id, ['role' => 'company_admin']);
         $this->user->companies()->attach($this->companyB->id, ['role' => 'company_admin']);
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+        setPermissionsTeamId($this->companyA->id);
+        $this->user->assignRole('company_admin');
+        setPermissionsTeamId($this->companyB->id);
+        $this->user->assignRole('company_admin');
+        setPermissionsTeamId($this->companyA->id);
         $this->user->update(['current_company_id' => $this->companyA->id]);
 
         $this->companyAAccount = Account::create([

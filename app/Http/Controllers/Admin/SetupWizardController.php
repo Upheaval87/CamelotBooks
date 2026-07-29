@@ -18,7 +18,7 @@ class SetupWizardController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $company = Company::findOrFail($companyId);
 
@@ -45,7 +45,7 @@ class SetupWizardController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $validated = $request->validate([
             'branch_name' => 'required|string|max:255',

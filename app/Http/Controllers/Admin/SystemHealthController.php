@@ -13,7 +13,7 @@ class SystemHealthController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $checks = [];
 

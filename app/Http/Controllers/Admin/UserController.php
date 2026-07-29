@@ -13,9 +13,9 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $companyId = $request->user()->getActiveCompanyId();
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        $companyId = $request->user()->getActiveCompanyId();
 
         $users = User::whereHas('companies', function ($q) use ($companyId) {
             $q->where('company_id', $companyId);
@@ -28,9 +28,9 @@ class UserController extends Controller
 
     public function edit(Request $request, User $user)
     {
-        $companyId = $request->user()->getActiveCompanyId();
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        $companyId = $request->user()->getActiveCompanyId();
 
         $pivot = $user->companies()->where('company_id', $companyId)->first()?->pivot;
 
@@ -39,9 +39,9 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $companyId = $request->user()->getActiveCompanyId();
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        $companyId = $request->user()->getActiveCompanyId();
 
         $validated = $request->validate([
             'role' => 'required|in:system_admin,company_admin,accountant,approver,viewer',
@@ -51,14 +51,19 @@ class UserController extends Controller
             'role' => $validated['role'],
         ]);
 
+        $currentTeamId = getPermissionsTeamId();
+        setPermissionsTeamId($companyId);
+        $user->syncRoles([$validated['role']]);
+        setPermissionsTeamId($currentTeamId);
+
         return redirect()->route('admin.users.index')->with('success', 'User role updated successfully.');
     }
 
     public function toggle2fa(Request $request, User $user)
     {
-        $companyId = $request->user()->getActiveCompanyId();
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        $companyId = $request->user()->getActiveCompanyId();
 
         $user->update([
             'two_factor_enabled' => !$user->two_factor_enabled,

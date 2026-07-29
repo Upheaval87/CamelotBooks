@@ -29,6 +29,9 @@ class ProductSearchTest extends TestCase
             'fiscal_year_start_month' => 1,
         ]);
         $this->user->companies()->attach($this->company->id, ['role' => 'company_admin']);
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+        setPermissionsTeamId($this->company->id);
+        $this->user->assignRole('company_admin');
         session(['current_company_id' => $this->company->id]);
 
         $this->incomeAccount = Account::create([

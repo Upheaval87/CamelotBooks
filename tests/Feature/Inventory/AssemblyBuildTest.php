@@ -37,6 +37,9 @@ class AssemblyBuildTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->user->companies()->attach($this->company->id, ['role' => 'company_admin']);
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+        setPermissionsTeamId($this->company->id);
+        $this->user->assignRole('company_admin');
         session(['current_company_id' => $this->company->id]);
         $this->actingAs($this->user);
 

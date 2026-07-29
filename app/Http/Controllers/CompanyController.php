@@ -55,6 +55,9 @@ class CompanyController extends Controller
 
             $user->companies()->attach($company->id, ['role' => 'company_admin']);
 
+            setPermissionsTeamId($company->id);
+            $user->assignRole('company_admin');
+
             $this->createAccountingPeriods($company);
 
             $createdAccounts = $this->copyDefaultChartOfAccounts($company);
@@ -88,7 +91,10 @@ class CompanyController extends Controller
     {
         $user = $request->user();
 
-        abort_unless($user->hasRoleInCompany('company_admin', $company->id), 403);
+        $currentTeamId = getPermissionsTeamId();
+        setPermissionsTeamId($company->id);
+        abort_unless($user->hasRole('company_admin'), 403);
+        setPermissionsTeamId($currentTeamId);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',

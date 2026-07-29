@@ -79,7 +79,7 @@ class FixedAssetController extends Controller
 
     public function show(Asset $asset)
     {
-        $this->authorizeAsset($asset);
+        $this->authorizeCompanyAccess($asset);
 
         $asset->load([
             'category',
@@ -99,7 +99,7 @@ class FixedAssetController extends Controller
 
     public function edit(Asset $asset)
     {
-        $this->authorizeAsset($asset);
+        $this->authorizeCompanyAccess($asset);
 
         $companyId = session('current_company_id');
 
@@ -113,7 +113,7 @@ class FixedAssetController extends Controller
 
     public function update(Request $request, Asset $asset)
     {
-        $this->authorizeAsset($asset);
+        $this->authorizeCompanyAccess($asset);
 
         $validated = $request->validate([
             'category_id' => 'required|exists:asset_categories,id',
@@ -151,7 +151,7 @@ class FixedAssetController extends Controller
 
     public function activate(Asset $asset)
     {
-        $this->authorizeAsset($asset);
+        $this->authorizeCompanyAccess($asset);
 
         $this->service->activateAsset($asset, auth()->id());
 
@@ -169,7 +169,7 @@ class FixedAssetController extends Controller
         ]);
 
         $asset = Asset::findOrFail($validated['asset_id']);
-        $this->authorizeAsset($asset);
+        $this->authorizeCompanyAccess($asset);
 
         $this->service->logUsage(
             $asset,
@@ -183,7 +183,7 @@ class FixedAssetController extends Controller
             ->with('success', 'Usage entry logged successfully.');
     }
 
-    private function authorizeAsset(Asset $asset): void
+    private function authorizeCompanyAccess(Asset $asset): void
     {
         if ($asset->company_id !== session('current_company_id')) {
             abort(404);

@@ -25,6 +25,8 @@ class AdminModuleTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+
         $this->company = Company::create([
             'name' => 'Admin Test Co',
             'company_code' => 'ATC',
@@ -38,6 +40,10 @@ class AdminModuleTest extends TestCase
 
         $this->viewer = User::factory()->create();
         $this->viewer->companies()->attach($this->company->id, ['role' => 'viewer']);
+
+        setPermissionsTeamId($this->company->id);
+        $this->admin->assignRole('company_admin');
+        $this->viewer->assignRole('viewer');
 
         session(['current_company_id' => $this->company->id]);
     }

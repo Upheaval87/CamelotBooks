@@ -1,14 +1,9 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('New Journal Entry') }}
-            </h2>
-            <a href="{{ route('accounting.journal-entries.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Back to Journal Entries') }}
-            </a>
-        </div>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('New Journal Entry') }}
+        </h2>
     </x-slot>
 
     <div class="py-12">
@@ -23,6 +18,51 @@
                 @csrf
 
                 <input type="hidden" name="action" id="actionInput" value="">
+
+                <x-toolbar class="mb-6">
+                    <button type="submit" onclick="document.getElementById('actionInput').value='save_draft'" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-atlas-navy/20 text-atlas-navy text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        Save as Draft
+                    </button>
+                    <button type="submit" onclick="document.getElementById('actionInput').value='post'" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-atlas-amber text-atlas-navy text-sm font-medium rounded-md hover:brightness-110 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Post
+                    </button>
+
+                    <span class="w-px h-5 bg-gray-200 mx-1" role="separator"></span>
+
+                    <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent text-atlas-navy/70 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        Attach File
+                    </button>
+
+                    <span class="w-px h-5 bg-gray-200 mx-1" role="separator"></span>
+
+                    <span id="balanceStatusPill" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md">
+                    </span>
+
+                    <x-slot name="right">
+                        <x-dropdown align="right" width="48">
+                            <x-slot name="trigger">
+                                <button type="button" class="inline-flex items-center justify-center w-7 h-7 bg-transparent text-atlas-navy/50 rounded-md hover:bg-gray-100 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                                </button>
+                            </x-slot>
+                            <x-slot name="content">
+                                <div class="py-1">
+                                    <button type="button" onclick="clearAllLines()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        Clear All Lines
+                                    </button>
+                                    <button type="button" onclick="resetForm()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        Reset Form
+                                    </button>
+                                </div>
+                            </x-slot>
+                        </x-dropdown>
+                    </x-slot>
+                </x-toolbar>
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Entry Details') }}</h3>
@@ -96,18 +136,6 @@
                     </div>
 
                     <x-input-error :messages="$errors->get('lines')" class="mt-2" />
-                </div>
-
-                <div class="flex items-center justify-end space-x-3">
-                    <a href="{{ route('accounting.journal-entries.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Cancel') }}
-                    </a>
-                    <button type="submit" onclick="document.getElementById('actionInput').value='save_draft'" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Save as Draft') }}
-                    </button>
-                    <button type="submit" onclick="document.getElementById('actionInput').value='post'" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Post') }}
-                    </button>
                 </div>
             </form>
         </div>
@@ -202,13 +230,20 @@
             document.getElementById('totalCredit').textContent = totalCredit.toFixed(2);
 
             const indicator = document.getElementById('balanceIndicator');
+            const pill = document.getElementById('balanceStatusPill');
             const diff = Math.abs(totalDebit - totalCredit);
             if (totalDebit === 0 && totalCredit === 0) {
                 indicator.innerHTML = '';
+                pill.innerHTML = '';
+                pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md';
             } else if (diff < 0.005) {
                 indicator.innerHTML = '<span class="text-green-600 font-semibold">Balanced</span>';
+                pill.innerHTML = '<svg class="w-4 h-4 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Balanced';
+                pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-green-50 text-green-700';
             } else {
                 indicator.innerHTML = '<span class="text-red-600 font-semibold">Out of balance: ' + diff.toFixed(2) + '</span>';
+                pill.innerHTML = '<svg class="w-4 h-4 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Out of Balance: ' + window.currencySymbol + diff.toFixed(2);
+                pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-red-50 text-red-700';
             }
         }
 
@@ -217,6 +252,27 @@
                 input.removeEventListener('input', updateTotals);
                 input.addEventListener('input', updateTotals);
             });
+        }
+
+        function clearAllLines() {
+            if (!confirm('Clear all lines?')) return;
+            const tbody = document.getElementById('linesBody');
+            tbody.innerHTML = '';
+            addLine();
+            addLine();
+            updateTotals();
+        }
+
+        function resetForm() {
+            if (!confirm('Reset the entire form?')) return;
+            document.getElementById('journalForm').reset();
+            document.getElementById('memo').value = '';
+            const tbody = document.getElementById('linesBody');
+            tbody.innerHTML = '';
+            lineIndex = 0;
+            addLine();
+            addLine();
+            updateTotals();
         }
 
         document.getElementById('addLineBtn').addEventListener('click', addLine);

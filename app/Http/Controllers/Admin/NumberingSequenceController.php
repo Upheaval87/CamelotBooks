@@ -17,7 +17,7 @@ class NumberingSequenceController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $sequences = NumberingSequence::where('company_id', $companyId)
             ->orderBy('document_type')
@@ -32,7 +32,7 @@ class NumberingSequenceController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $labels = NumberingSequence::documentTypeLabels();
 
@@ -49,7 +49,7 @@ class NumberingSequenceController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $validated = $request->validate([
             'document_type' => 'required|string|in:' . implode(',', array_keys(NumberingSequence::documentTypeLabels())),
@@ -74,7 +74,7 @@ class NumberingSequenceController extends Controller
         $companyId = $request->user()->getActiveCompanyId();
 
         abort_unless($numberingSequence->company_id === $companyId, 403);
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $labels = NumberingSequence::documentTypeLabels();
         $nextPreview = $this->service->peekNextNumber($companyId, $numberingSequence->document_type);
@@ -87,7 +87,7 @@ class NumberingSequenceController extends Controller
         $companyId = $request->user()->getActiveCompanyId();
 
         abort_unless($numberingSequence->company_id === $companyId, 403);
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $labels = NumberingSequence::documentTypeLabels();
 
@@ -99,7 +99,7 @@ class NumberingSequenceController extends Controller
         $companyId = $request->user()->getActiveCompanyId();
 
         abort_unless($numberingSequence->company_id === $companyId, 403);
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $validated = $request->validate([
             'prefix' => 'required|string|max:20',
@@ -122,7 +122,7 @@ class NumberingSequenceController extends Controller
         $companyId = $request->user()->getActiveCompanyId();
 
         abort_unless($numberingSequence->company_id === $companyId, 403);
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $this->service->resetSequence($numberingSequence);
 

@@ -15,7 +15,7 @@ class NotificationSettingsController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $smtpSettings = SystemSetting::getMany(self::SMTP_GROUP, $companyId);
 
@@ -32,7 +32,7 @@ class NotificationSettingsController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $validated = $request->validate([
             'smtp.host' => 'nullable|string|max:255',
@@ -55,7 +55,7 @@ class NotificationSettingsController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $emailTemplate = EmailTemplate::where('company_id', $companyId)
             ->where('event_type', $template)
@@ -77,7 +77,7 @@ class NotificationSettingsController extends Controller
         $companyId = $request->user()->getActiveCompanyId();
 
         abort_unless($template->company_id === $companyId, 403);
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $validated = $request->validate([
             'subject' => 'required|string|max:255',

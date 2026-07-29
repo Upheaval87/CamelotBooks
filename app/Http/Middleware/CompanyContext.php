@@ -22,6 +22,8 @@ class CompanyContext
         }
 
         if ($companyId) {
+            setPermissionsTeamId($companyId);
+
             $company = Company::with('branches')->find($companyId);
 
             if ($company && $company->is_active) {

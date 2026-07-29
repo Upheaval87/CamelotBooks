@@ -11,9 +11,9 @@ class AuditLogController extends Controller
 {
     public function index(Request $request)
     {
-        $companyId = $request->user()->getActiveCompanyId();
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        $companyId = $request->user()->getActiveCompanyId();
 
         $query = AuditLog::where('company_id', $companyId)->with('user');
 
@@ -48,9 +48,9 @@ class AuditLogController extends Controller
 
     public function exportCsv(Request $request)
     {
-        $companyId = $request->user()->getActiveCompanyId();
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        $companyId = $request->user()->getActiveCompanyId();
 
         $query = AuditLog::where('company_id', $companyId)->with('user');
 

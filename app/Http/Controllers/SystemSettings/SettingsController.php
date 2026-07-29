@@ -92,7 +92,7 @@ class SettingsController extends Controller
         $companyId = session('current_company_id');
         $company = Company::findOrFail($companyId);
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $oldValues = $company->only([
             'name', 'legal_name', 'company_code', 'tax_id', 'address', 'city',
@@ -144,7 +144,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $oldValues = SystemSetting::getMany('regional', $companyId);
 
@@ -172,7 +172,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $oldValues = array_merge(
             ['base_currency' => Company::findOrFail($companyId)->base_currency],
@@ -202,7 +202,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $oldMappings = DefaultAccountMapping::getAll($companyId);
         $oldAccountNames = collect($oldMappings)->mapWithKeys(function ($accountId, $key) {
@@ -250,7 +250,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $approvalSetting = ApprovalSetting::firstOrCreate(['company_id' => $companyId]);
 
@@ -300,7 +300,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $oldValues = SystemSetting::getMany('notifications', $companyId);
 
@@ -324,7 +324,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $oldValues = SystemSetting::getMany('accounting', $companyId);
 
@@ -349,7 +349,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
         $company = Company::findOrFail($companyId);
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $settings = [
             'exported_at' => now()->toIso8601String(),
@@ -388,7 +388,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
         $company = Company::findOrFail($companyId);
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $request->validate([
             'settings_file' => 'required|file|mimes:json,txt|max:10240',
@@ -481,7 +481,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $features = FeatureManagement::getAvailableFeatures();
         $enabled = FeatureManagement::getEnabledFeatures($companyId);
@@ -493,7 +493,7 @@ class SettingsController extends Controller
     {
         $companyId = session('current_company_id');
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $available = FeatureManagement::getAvailableFeatures();
 

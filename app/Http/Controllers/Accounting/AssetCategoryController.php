@@ -76,7 +76,7 @@ class AssetCategoryController extends Controller
 
     public function show(AssetCategory $category)
     {
-        $this->authorize($category);
+        $this->authorizeCompanyAccess($category);
 
         $category->load([
             'assetAccount',
@@ -94,7 +94,7 @@ class AssetCategoryController extends Controller
 
     public function edit(AssetCategory $category)
     {
-        $this->authorize($category);
+        $this->authorizeCompanyAccess($category);
 
         $companyId = session('current_company_id');
 
@@ -108,7 +108,7 @@ class AssetCategoryController extends Controller
 
     public function update(Request $request, AssetCategory $category)
     {
-        $this->authorize($category);
+        $this->authorizeCompanyAccess($category);
 
         $companyId = session('current_company_id');
 
@@ -138,7 +138,7 @@ class AssetCategoryController extends Controller
             ->with('success', 'Asset category updated successfully.');
     }
 
-    private function authorize(AssetCategory $category): void
+    private function authorizeCompanyAccess(AssetCategory $category): void
     {
         if ($category->company_id !== session('current_company_id')) {
             abort(404);

@@ -37,7 +37,7 @@ class SecuritySettingsController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $settings = SystemSetting::getMany(self::GROUP, $companyId);
 
@@ -48,7 +48,7 @@ class SecuritySettingsController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $validated = $request->validate([
             'password.min_length' => 'required|integer|min:4|max:128',

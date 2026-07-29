@@ -15,7 +15,7 @@ class BackupController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $backups = BackupLog::where('company_id', $companyId)
             ->orderByDesc('created_at')
@@ -33,7 +33,7 @@ class BackupController extends Controller
     {
         $companyId = $request->user()->getActiveCompanyId();
 
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $filename = 'backup_' . now()->format('Y-m-d_His') . '.sql';
 
@@ -101,7 +101,7 @@ class BackupController extends Controller
     public function createSnapshot(Request $request)
     {
         $companyId = session('current_company_id');
-        abort_unless($request->user()->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $validated = $request->validate([
             'label' => 'required|string|max:255',
@@ -122,7 +122,7 @@ class BackupController extends Controller
         abort_unless($backup->company_id === $companyId, 404);
 
         $user = request()->user();
-        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($user->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $restored = $backup->restore();
 
@@ -138,7 +138,7 @@ class BackupController extends Controller
         abort_unless($backup->company_id === $companyId, 404);
 
         $user = request()->user();
-        abort_unless($user->hasAnyRoleInCompany(['system_admin', 'company_admin'], $companyId), 403);
+        abort_unless($user->hasAnyRole(['system_admin', 'company_admin']), 403);
 
         $label = $backup->label;
         $backup->delete();

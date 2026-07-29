@@ -228,7 +228,7 @@
                     </div>
                     @endif
 
-                    @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
+                    @hasanyrole('system_admin|company_admin')
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
                         <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('system-settings.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                             {{ __('Settings') }}
@@ -443,7 +443,7 @@
             <x-responsive-nav-link :href="route('pos.eis.terminals')" :active="request()->routeIs('pos.eis.*')">{{ __('EIS Terminals') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('pos.eis.submissions')" :active="request()->routeIs('pos.eis.submissions*')">{{ __('EIS Submissions') }}</x-responsive-nav-link>
             @endif
-            @if(Auth::user()->hasAnyRoleInCompany(['system_admin', 'company_admin']))
+            @hasanyrole('system_admin|company_admin')
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">System Settings</div>
             <x-responsive-nav-link :href="route('system-settings.index', 'company')" :active="request()->routeIs('system-settings.*')">{{ __('Company Profile') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('system-settings.index', 'regional')" :active="request()->routeIs('system-settings.*')">{{ __('Regional Settings') }}</x-responsive-nav-link>
@@ -464,7 +464,7 @@
             <x-responsive-nav-link :href="route('admin.notifications.index')" :active="request()->routeIs('admin.notifications.*')">{{ __('Notifications') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.backups.index')" :active="request()->routeIs('admin.backups.*')">{{ __('Backups') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.system-health.index')" :active="request()->routeIs('admin.system-health.*')">{{ __('System Health') }}</x-responsive-nav-link>
-            @endif
+            @endhasanyrole
             @endif
         </div>
         <div class="pt-4 pb-1 border-t border-gray-200">

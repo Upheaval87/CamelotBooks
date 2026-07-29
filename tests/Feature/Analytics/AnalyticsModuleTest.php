@@ -31,6 +31,8 @@ class AnalyticsModuleTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+
         $this->company = Company::create([
             'name' => 'Analytics Test Co',
             'company_code' => 'ATC',
@@ -41,6 +43,9 @@ class AnalyticsModuleTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->user->companies()->attach($this->company->id, ['role' => 'company_admin']);
+
+        setPermissionsTeamId($this->company->id);
+        $this->user->assignRole('company_admin');
 
         session(['current_company_id' => $this->company->id]);
         $this->actingAs($this->user);

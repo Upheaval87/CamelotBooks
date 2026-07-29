@@ -13,58 +13,52 @@
         <title>{{ config('app.name', 'CamelotBooks') }}</title>
 
         <link rel="manifest" href="/manifest.json">
-        <meta name="theme-color" content="#041C44">
+        <meta name="theme-color" content="#6366f1">
 
-        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="h-full font-sans antialiased bg-atlas-canvas">
+    <body class="h-full font-sans antialiased bg-neutral-50 dark:bg-neutral-950">
 
-        {{-- ═══ Sidebar (desktop only) ═══ --}}
         @include('layouts.sidebar')
 
-        {{-- ═══ Main area ═══ --}}
-        <div class="flex flex-col ml-[216px] min-h-screen lg:ml-[216px] max-lg:ml-0">
-
-            {{-- ═══ Top Navigation Bar ═══ --}}
+        <div class="flex flex-col ml-56 min-h-screen max-lg:ml-0">
             @include('layouts.topnav')
 
-            {{-- ═══ Page Content ═══ --}}
-            <main class="flex-1 p-6">
+            <main class="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full">
                 @isset($header)
-                    <div class="mb-6">
-                        {{ $header }}
+                    <div class="mb-6 animate-fade-in-down">
+                        <h1 class="text-heading text-neutral-900 dark:text-white font-semibold tracking-tight">{{ $header }}</h1>
                     </div>
                 @endisset
-                {{ $slot }}
+
+                <div class="animate-fade-in-up">
+                    {{ $slot }}
+                </div>
             </main>
         </div>
 
-        {{-- ═══ Mobile sidebar overlay ═══ --}}
+        {{-- Mobile sidebar overlay --}}
         <div x-data="{ mobileOpen: false }"
              x-on:open-mobile-sidebar.window="mobileOpen = true"
              x-on:close-mobile-sidebar.window="mobileOpen = false"
              x-on:keydown.escape.window="mobileOpen = false"
              class="lg:hidden">
 
-            {{-- Backdrop --}}
             <div x-show="mobileOpen" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                  x-transition:leave="transition-opacity duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 z-50 bg-navy/50" x-cloak x-on:click="mobileOpen = false"></div>
+                 class="fixed inset-0 z-50 bg-neutral-900/50 backdrop-blur-sm" x-cloak x-on:click="mobileOpen = false"></div>
 
-            {{-- Drawer --}}
             <div x-show="mobileOpen" x-transition:enter="transition-transform duration-300" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
                  x-transition:leave="transition-transform duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
-                 class="fixed inset-y-0 left-0 z-50 w-[216px] overflow-y-auto" x-cloak>
+                 class="fixed inset-y-0 left-0 z-50 w-56 overflow-y-auto" x-cloak>
                 @include('layouts.sidebar-nav-content')
             </div>
         </div>
 
-        {{-- ═══ Toast Container ═══ --}}
+        {{-- Toast container --}}
         <div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
 
         <script>
@@ -84,27 +78,26 @@
                 return label + ' (' + window.currencySymbol + ')';
             };
 
-            /* ── Atlas Toast ── */
             window.atlasToast = function(message, type) {
                 type = type || 'success';
                 var container = document.getElementById('toast-container');
                 if (!container) return;
-                var colors = { success: 'border-atlas-blue', warning: 'border-atlas-amber', error: 'border-atlas-danger' };
                 var icons = {
-                    success: '<svg class="w-5 h-5 text-atlas-blue shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
-                    warning: '<svg class="w-5 h-5 text-atlas-amber shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-                    error: '<svg class="w-5 h-5 text-atlas-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
+                    success: '<svg class="w-5 h-5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
+                    warning: '<svg class="w-5 h-5 text-warning shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                    error: '<svg class="w-5 h-5 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
+                    info: '<svg class="w-5 h-5 text-info shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
                 };
-                var persist = type === 'error' ? '' : 'setTimeout(function(){ t.remove(); }, 4000)';
+                var colors = { success: 'border-l-success', warning: 'border-l-warning', error: 'border-l-danger', info: 'border-l-info' };
                 var t = document.createElement('div');
-                t.className = 'pointer-events-auto flex items-center gap-3 bg-white border-l-[3px] ' + (colors[type] || colors.success) + ' rounded-lg px-4 py-3 shadow-lg min-w-[280px] max-w-sm';
-                t.innerHTML = (icons[type] || icons.success) + '<span class="text-sm text-atlas-navy">' + message + '</span>';
+                t.className = 'pointer-events-auto flex items-start gap-3 bg-white dark:bg-neutral-900 border-l-[3px] ' + (colors[type] || colors.success) + ' rounded-xl px-4 py-3.5 shadow-elevated min-w-[300px] max-w-sm animate-fade-in-up';
+                t.innerHTML = (icons[type] || icons.success) + '<span class="text-sm text-neutral-700 dark:text-neutral-300">' + message + '</span>';
                 container.appendChild(t);
-                if (persist) { var id = setTimeout(function(){ if (t.parentNode) t.remove(); }, 5000); }
+                setTimeout(function(){ if (t.parentNode) { t.style.opacity = '0'; t.style.transform = 'translateX(20px)'; t.style.transition = 'all 0.3s ease'; setTimeout(function(){ t.remove(); }, 300); } }, 4000);
             };
 
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
+                navigator.serviceWorker.register('/sw.js').catch(function(){});
             }
         </script>
     </body>

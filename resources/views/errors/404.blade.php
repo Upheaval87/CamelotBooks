@@ -3,30 +3,22 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>404 — {{ config('app.name', 'CamelotBooks') }}</title>
+        <title>{{ config('app.name', 'CamelotBooks') }} &mdash; 404</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css'])
     </head>
-    <body class="h-full font-sans antialiased">
-        <div class="min-h-full flex flex-col items-center justify-center px-4 bg-atlas-navy">
-            <div class="mb-8 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-atlas-amber flex items-center justify-center">
-                    <span class="text-white font-bold text-lg">CB</span>
-                </div>
-                <span class="text-atlas-amber font-semibold text-xl tracking-wide">CamelotBooks</span>
+    <body class="h-full font-sans antialiased bg-gradient-to-br from-neutral-50 via-white to-neutral-100 flex items-center justify-center">
+        <div class="text-center px-6 animate-fade-in-up">
+            <div class="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
             </div>
-            <div class="w-full max-w-md text-center px-8 py-10 bg-white rounded-lg border border-gray-200">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-atlas-blue/10 flex items-center justify-center">
-                    <span class="text-atlas-blue text-2xl font-bold">404</span>
-                </div>
-                <h1 class="text-xl font-semibold text-atlas-navy mb-2">Page not found</h1>
-                <p class="text-sm text-navy-400 mb-6">The page you're looking for doesn't exist or has been moved.</p>
-                <a href="{{ url('/') }}" class="inline-flex items-center px-5 py-2 bg-atlas-amber text-white text-sm font-semibold rounded-md hover:brightness-110 transition">
-                    Back to Home
-                </a>
-            </div>
+            <h1 class="text-5xl font-bold text-neutral-900 mb-2 tracking-tight">404</h1>
+            <p class="text-lg text-neutral-400 mb-8">Page not found</p>
+            <a href="{{ url('/') }}" class="btn-primary btn-md inline-flex">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Back to Dashboard
+            </a>
         </div>
     </body>
 </html>

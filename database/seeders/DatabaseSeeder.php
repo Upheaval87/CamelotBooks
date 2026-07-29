@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        $this->call(RolePermissionSeeder::class);
+
         $admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin@test.com',
@@ -103,6 +105,13 @@ class DatabaseSeeder extends Seeder
         $admin->companies()->attach($companyB->id, ['role' => 'company_admin']);
         $accountant->companies()->attach($companyA->id, ['role' => 'accountant']);
         $accountant->companies()->attach($companyB->id, ['role' => 'accountant']);
+
+        setPermissionsTeamId($companyA->id);
+        $admin->assignRole('company_admin');
+        $accountant->assignRole('accountant');
+        setPermissionsTeamId($companyB->id);
+        $admin->assignRole('company_admin');
+        $accountant->assignRole('accountant');
 
         $admin->update(['current_company_id' => $companyA->id]);
 

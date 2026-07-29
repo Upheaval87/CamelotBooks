@@ -12,23 +12,23 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="h-full font-sans antialiased">
-        <div class="min-h-full flex flex-col sm:justify-center items-center pt-6 sm:pt-0 px-4 bg-atlas-navy">
-            {{-- Brand --}}
-            <div class="mb-6 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-atlas-amber flex items-center justify-center">
-                    <span class="text-white font-bold text-lg">CB</span>
+    <body class="h-full font-sans antialiased bg-gradient-to-br from-neutral-50 via-white to-neutral-100 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+        <div class="min-h-full flex flex-col sm:justify-center items-center pt-6 sm:pt-0 px-4">
+            <div class="w-full sm:max-w-md">
+                <div class="mb-8 flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-xl bg-accent flex items-center justify-center shadow-lg shadow-accent/20 mb-4">
+                        <span class="text-white font-bold text-lg tracking-tight">CB</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">CamelotBooks</h1>
+                    <p class="text-sm text-neutral-400 mt-1">Enterprise Accounting Platform</p>
                 </div>
-                <span class="text-atlas-amber font-semibold text-xl tracking-wide">CamelotBooks</span>
-            </div>
 
-            {{-- Card --}}
-            <div class="w-full sm:max-w-md px-8 py-6 bg-white rounded-lg border border-gray-200">
-                {{ $slot }}
-            </div>
+                <div class="bg-white dark:bg-neutral-900 rounded-xl shadow-elevated border border-neutral-200 dark:border-neutral-800 px-8 py-8">
+                    {{ $slot }}
+                </div>
 
-            {{-- Footer note --}}
-            <p class="mt-6 text-sm text-white/40">Contact your administrator for access.</p>
+                <p class="mt-8 text-center text-xs text-neutral-400">Contact your administrator for access.</p>
+            </div>
         </div>
     </body>
 </html>
