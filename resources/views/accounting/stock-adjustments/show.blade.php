@@ -37,7 +37,7 @@
                     <x-detail-field :label="__('Reason')" :value="str_replace('_', ' ', $adjustment->reason_code)" />
                     <x-detail-field :label="__('Branch')" :value="$adjustment->branch->name ?? __('All Locations')" />
                     @if($adjustment->memo)
-                        <x-detail-field :label="__('Memo')" :value="$adjustment->memo" class="col-span-3" />
+                        <x-detail-field :label="__('Description')" :value="$adjustment->memo" class="col-span-4" />
                     @endif
                     @if($adjustment->journalEntry)
                         <x-detail-field :label="__('Journal Entry')">

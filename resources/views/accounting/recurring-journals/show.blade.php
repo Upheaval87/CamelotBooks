@@ -106,8 +106,8 @@
                     @if($template->day_of_week !== null)
                         <x-detail-field :label="__('Day of Week')" :value="['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][$template->day_of_week]" />
                     @endif
-                    <x-detail-field :label="__('Memo')" :value="$template->memo ?? '—'" class="col-span-3" />
                     <x-detail-field :label="__('Created By')" :value="$template->createdBy->name ?? '—'" />
+                    <x-detail-field :label="__('Description')" :value="$template->memo ?? '—'" class="col-span-4" />
                 </div>
             </div>
 

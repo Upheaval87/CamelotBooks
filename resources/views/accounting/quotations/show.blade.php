@@ -64,8 +64,8 @@
                     <x-detail-field :label="__('Date')" :value="$quotation->quotation_date?->format('M d, Y') ?? '—'" />
                     <x-detail-field :label="__('Valid Until')" :value="$quotation->valid_until?->format('M d, Y') ?? '—'" />
                     <x-detail-field :label="__('Reference')" :value="$quotation->reference ?? '—'" />
-                    <x-detail-field :label="__('Memo')" :value="$quotation->memo ?? '—'" />
                     <x-detail-field :label="__('Created By')" :value="$quotation->createdByUser->name ?? '—'" />
+                    <x-detail-field :label="__('Description')" :value="$quotation->memo ?? '—'" />
                 </div>
             </div>
 

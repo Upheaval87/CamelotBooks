@@ -30,7 +30,7 @@
     <table class="meta-table">
         <tr><td class="label">Customer:</td><td>{{ $quotation->customer->name ?? '—' }}</td></tr>
         @if($quotation->reference)<tr><td class="label">Reference:</td><td>{{ $quotation->reference }}</td></tr>@endif
-        @if($quotation->memo)<tr><td class="label">Memo:</td><td>{{ $quotation->memo }}</td></tr>@endif
+        @if($quotation->memo)<tr><td class="label">Description:</td><td>{{ $quotation->memo }}</td></tr>@endif
     </table>
     <table class="items-table">
         <thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Tax Rate</th><th>Total</th></tr></thead>

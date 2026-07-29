@@ -53,12 +53,12 @@
                     <x-detail-field :label="__('Created By')" :value="$requisition->createdBy->name ?? '—'" />
                     <x-detail-field :label="__('Branch')" :value="$requisition->branch->name ?? '—'" />
                     <x-detail-field :label="__('Cost Center')" :value="$requisition->costCenter->name ?? '—'" />
-                    @if($requisition->memo)
-                        <x-detail-field :label="__('Memo')" :value="$requisition->memo" class="col-span-3" />
-                    @endif
                     @if($requisition->approvedBy)
                         <x-detail-field :label="__('Approved By')" :value="$requisition->approvedBy->name" />
                         <x-detail-field :label="__('Approved At')" :value="$requisition->approved_at?->format('M d, Y g:i A') ?? '—'" />
+                    @endif
+                    @if($requisition->memo)
+                        <x-detail-field :label="__('Description')" :value="$requisition->memo" class="col-span-4" />
                     @endif
                 </div>
             </div>

@@ -55,8 +55,8 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-span-2">
-                            <x-input-label for="memo" value="{{ __('Memo') }}" />
+                        <div class="col-span-4">
+                            <x-input-label for="memo" value="{{ __('Description') }}" />
                             <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo')" placeholder="Optional memo" />
                         </div>
                     </div>

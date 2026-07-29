@@ -49,7 +49,7 @@
                         <x-detail-field :label="__('Reference')" :value="$payment->reference" />
                     @endif
                     @if($payment->memo)
-                        <x-detail-field :label="__('Memo')" :value="$payment->memo" />
+                        <x-detail-field :label="__('Description')" :value="$payment->memo" />
                     @endif
                 </div>
             </div>

@@ -84,8 +84,8 @@
                                 <span class="ml-2 text-sm text-gray-600">{{ __('Auto Post') }}</span>
                             </label>
                         </div>
-                        <div class="col-span-2">
-                            <x-input-label for="memo" value="{{ __('Memo') }}" />
+                        <div class="col-span-4">
+                            <x-input-label for="memo" value="{{ __('Description') }}" />
                             <textarea id="memo" name="memo" rows="2" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('memo', $template->memo) }}</textarea>
                             <x-input-error :messages="$errors->get('memo')" class="mt-2" />
                         </div>

@@ -60,13 +60,13 @@
                     <x-detail-field :label="__('Customer')" :value="$salesReceipt->customer->name ?? __('Walk-in')" />
                     <x-detail-field :label="__('Date')" :value="$salesReceipt->receipt_date?->format('M d, Y') ?? '—'" />
                     <x-detail-field :label="__('Reference')" :value="$salesReceipt->reference ?? '—'" />
-                    <x-detail-field :label="__('Memo')" :value="$salesReceipt->memo ?? '—'" />
                     <x-detail-field :label="__('Branch')" :value="$salesReceipt->branch->name ?? '—'" />
                     @if($salesReceipt->journal_entry_id)
                         <x-detail-field :label="__('Journal Entry')">
                             <a href="{{ route('accounting.journal-entries.show', $salesReceipt->journal_entry_id) }}" class="text-ink hover:text-gold">JE-{{ str_pad($salesReceipt->journal_entry_id, 4, '0', STR_PAD_LEFT) }}</a>
                         </x-detail-field>
                     @endif
+                    <x-detail-field :label="__('Description')" :value="$salesReceipt->memo ?? '—'" />
                 </div>
             </div>
 

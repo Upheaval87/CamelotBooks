@@ -81,7 +81,7 @@
                         </div>
 
                         <div>
-                            <x-input-label for="memo" value="{{ __('Memo (optional)') }}" />
+                            <x-input-label for="memo" value="{{ __('Description (optional)') }}" />
                             <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo')" placeholder="Brief explanation" />
                         </div>
                     </div>

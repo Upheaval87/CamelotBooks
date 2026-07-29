@@ -127,14 +127,14 @@
                     </x-detail-field>
                     <x-detail-field :label="__('Branch')" :value="$journalEntry->branch->name ?? '—'" />
                     <x-detail-field :label="__('Adjusting Entry')" :value="$journalEntry->is_adjusting_entry ? __('Yes') : __('No')" />
-                    <x-detail-field :label="__('Memo')" :value="$journalEntry->memo ?? '—'" class="col-span-3" />
                     <x-detail-field :label="__('Created By')" :value="$journalEntry->createdBy->name ?? '—'" />
                     <x-detail-field :label="__('Posted By')" :value="$journalEntry->postedByUser->name ?? '—'" />
                     @if($journalEntry->posted_at)
                         <x-detail-field :label="__('Posted At')" :value="\Illuminate\Support\Carbon::parse($journalEntry->posted_at)->format('M d, Y h:i A')" />
                     @endif
+                    <x-detail-field :label="__('Description')" :value="$journalEntry->memo ?? '—'" class="col-span-4" />
                     @if($journalEntry->rejection_reason)
-                        <x-detail-field :label="__('Rejection Reason')" :value="$journalEntry->rejection_reason" class="col-span-3" value-class="text-red-600" />
+                        <x-detail-field :label="__('Rejection Reason')" :value="$journalEntry->rejection_reason" class="col-span-4" value-class="text-red-600" />
                     @endif
                 </div>
             </div>

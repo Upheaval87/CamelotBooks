@@ -50,7 +50,7 @@
                     <x-detail-field :label="__('Expected Delivery')" :value="$order->expected_delivery_date?->format('M d, Y') ?? '—'" />
                     <x-detail-field :label="__('Requisition')" :value="$order->requisition->requisition_number ?? '—'" />
                     @if($order->memo)
-                        <x-detail-field :label="__('Memo')" :value="$order->memo" class="col-span-3" />
+                        <x-detail-field :label="__('Description')" :value="$order->memo" class="col-span-4" />
                     @endif
                 </div>
             </div>

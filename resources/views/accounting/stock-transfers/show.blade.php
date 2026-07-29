@@ -27,7 +27,7 @@
                     <x-detail-field :label="__('Quantity Transferred')" :value="number_format($transfer->quantity, 4)" />
                     <x-detail-field :label="__('Created By')" :value="$transfer->creator->name ?? '—'" />
                     @if($transfer->memo)
-                        <x-detail-field :label="__('Memo')" :value="$transfer->memo" class="col-span-3" />
+                        <x-detail-field :label="__('Description')" :value="$transfer->memo" class="col-span-4" />
                     @endif
                 </div>
             </div>

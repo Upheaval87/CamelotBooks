@@ -36,9 +36,6 @@
                             <span class="status-pill negative">{{ __('Void') }}</span>
                         @endif
                     </x-detail-field>
-                    @if($cheque->memo)
-                        <x-detail-field :label="__('Memo')" :value="$cheque->memo" class="col-span-3" />
-                    @endif
                     @if($cheque->journal_entry_id)
                         <x-detail-field :label="__('Journal Entry')">
                             <a href="{{ route('accounting.journal-entries.show', $cheque->journal_entry_id) }}" class="text-ink hover:text-gold">
@@ -47,6 +44,9 @@
                         </x-detail-field>
                     @endif
                     <x-detail-field :label="__('Created By')" :value="$cheque->createdBy->name ?? '—'" />
+                    @if($cheque->memo)
+                        <x-detail-field :label="__('Description')" :value="$cheque->memo" class="col-span-4" />
+                    @endif
                 </div>
 
                 @if($cheque->voided_at)

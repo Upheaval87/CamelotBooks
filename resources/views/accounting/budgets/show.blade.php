@@ -97,7 +97,7 @@
                         {{ format_money($budget->total_actual ?? 0) }}
                     </x-detail-field>
                     @if($budget->description)
-                        <x-detail-field :label="__('Description')" :value="$budget->description" class="col-span-3" />
+                        <x-detail-field :label="__('Description')" :value="$budget->description" class="col-span-4" />
                     @endif
                 </div>
             </div>

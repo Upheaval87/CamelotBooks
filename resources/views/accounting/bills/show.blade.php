@@ -138,7 +138,7 @@
                 <x-detail-field :label="__('Due Date')" :value="$bill->due_date?->format('M d, Y') ?? '—'" />
                 <x-detail-field :label="__('Reference')" :value="$bill->reference ?? '—'" />
                 @if($bill->memo)
-                    <x-detail-field :label="__('Memo')" :value="$bill->memo" class="col-span-3" />
+                    <x-detail-field :label="__('Description')" :value="$bill->memo" class="col-span-4" />
                 @endif
             </div>
         </div>

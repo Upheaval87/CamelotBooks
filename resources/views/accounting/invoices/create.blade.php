@@ -52,7 +52,7 @@
                             <x-input-error :messages="$errors->get('reference')" class="mt-2" />
                         </div>
                         <div>
-                            <x-input-label for="memo" value="{{ __('Memo') }}" />
+                            <x-input-label for="memo" value="{{ __('Description') }}" />
                             <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo')" placeholder="Optional memo" />
                             <x-input-error :messages="$errors->get('memo')" class="mt-2" />
                         </div>

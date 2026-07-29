@@ -125,7 +125,7 @@
     /* Navigation offset — invisible element to align Row 2 links under Row 1 divider */
     .topbar-nav-offset {
         @apply shrink-0;
-        width: 150px; /* brand mark (26) + gap-3 (12) + system name (~99) + gap-3 (12) + divider (1) = 150px */
+        width: 0; /* nav links start at the same left edge as the system icon (brand mark) */
     }
 
     /* Overflow button */
@@ -493,7 +493,7 @@
 
     /* Detail grid — 3-column */
     .detail-grid {
-        @apply grid grid-cols-1 md:grid-cols-3 gap-6;
+        @apply grid grid-cols-1 md:grid-cols-4 gap-6;
     }
 
     /* Balance panel */

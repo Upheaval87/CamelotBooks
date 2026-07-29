@@ -30,7 +30,7 @@
                         <div><x-input-label for="reference" value="{{ __('Reference') }}" /><x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference', $quotation->reference)" /></div>
                         <div><x-input-label for="branch_id" value="{{ __('Branch') }}" /><select id="branch_id" name="branch_id" class="input mt-1"><option value="">None</option>@foreach($branches as $b)<option value="{{ $b->id }}" {{ old('branch_id', $quotation->branch_id) == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>@endforeach</select></div>
                         <div><x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" /><select id="cost_center_id" name="cost_center_id" class="input mt-1"><option value="">None</option>@foreach($costCenters as $cc)<option value="{{ $cc->id }}" {{ old('cost_center_id', $quotation->cost_center_id) == $cc->id ? 'selected' : '' }}>{{ $cc->code }} - {{ $cc->name }}</option>@endforeach</select></div>
-                        <div class="col-span-2"><x-input-label for="memo" value="{{ __('Memo') }}" /><x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $quotation->memo)" /></div>
+                        <div class="col-span-4"><x-input-label for="memo" value="{{ __('Description') }}" /><x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $quotation->memo)" /></div>
                     </div>
                 </div>
                 <div class="card p-6 mb-6">

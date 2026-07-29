@@ -56,8 +56,8 @@
                             <x-text-input id="due_date" name="due_date" type="date" class="mt-1 block w-full" :value="old('due_date', $bill->due_date?->format('Y-m-d'))" required />
                             <x-input-error :messages="$errors->get('due_date')" class="mt-2" />
                         </div>
-                        <div class="col-span-2">
-                            <x-input-label for="memo" value="{{ __('Memo') }}" />
+                        <div class="col-span-4">
+                            <x-input-label for="memo" value="{{ __('Description') }}" />
                             <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $bill->memo)" placeholder="Optional memo" />
                             <x-input-error :messages="$errors->get('memo')" class="mt-2" />
                         </div>

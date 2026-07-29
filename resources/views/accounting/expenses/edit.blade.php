@@ -46,8 +46,8 @@
                             <x-input-label for="reference" value="{{ __('Reference') }}" />
                             <x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference', $expense->reference)" />
                         </div>
-                        <div class="col-span-2">
-                            <x-input-label for="memo" value="{{ __('Memo') }}" />
+                        <div class="col-span-4">
+                            <x-input-label for="memo" value="{{ __('Description') }}" />
                             <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $expense->memo)" />
                         </div>
                     </div>

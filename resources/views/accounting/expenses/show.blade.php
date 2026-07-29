@@ -114,7 +114,7 @@
                     </x-detail-field>
                     <x-detail-field :label="__('Branch')" :value="$expense->branch->name ?? '—'" />
                     @if($expense->description)
-                        <x-detail-field :label="__('Description')" :value="$expense->description" class="col-span-3" />
+                        <x-detail-field :label="__('Description')" :value="$expense->description" class="col-span-4" />
                     @endif
                 </div>
             </div>

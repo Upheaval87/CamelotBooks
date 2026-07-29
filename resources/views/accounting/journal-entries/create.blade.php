@@ -62,7 +62,7 @@
 
                 <div class="card p-6 mb-6">
                     <div class="form-section-label">1 · ENTRY DETAILS</div>
-                    <div class="grid grid-cols-2 gap-6">
+                    <div class="grid grid-cols-4 gap-6">
                         <div>
                             <x-input-label for="date" value="{{ __('Date') }}" />
                             <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', date('Y-m-d'))" required />
@@ -89,8 +89,8 @@
                                 <span class="ml-2 text-sm text-gray-600">{{ __('Adjusting Entry') }}</span>
                             </label>
                         </div>
-                        <div class="col-span-2">
-                            <x-input-label for="memo" value="{{ __('Memo') }}" />
+                        <div class="col-span-4">
+                            <x-input-label for="memo" value="{{ __('Description') }}" />
                             <textarea id="memo" name="memo" rows="2" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('memo') }}</textarea>
                             <x-input-error :messages="$errors->get('memo')" class="mt-2" />
                         </div>

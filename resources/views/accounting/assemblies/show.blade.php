@@ -35,9 +35,6 @@
                     @if($build->billOfMaterial)
                         <x-detail-field label="{{ __('BOM') }}">{{ $build->billOfMaterial->bom_number }}</x-detail-field>
                     @endif
-                    @if($build->memo)
-                        <x-detail-field label="{{ __('Memo') }}">{{ $build->memo }}</x-detail-field>
-                    @endif
                     @if($build->journalEntry)
                         <x-detail-field label="{{ __('Journal Entry') }}">
                             <a href="{{ route('accounting.journal-entries.show', $build->journalEntry) }}" class="text-ink hover:text-gold">
@@ -46,6 +43,9 @@
                         </x-detail-field>
                     @endif
                     <x-detail-field label="{{ __('Created By') }}">{{ $build->creator->name ?? '—' }}</x-detail-field>
+                    @if($build->memo)
+                        <x-detail-field label="{{ __('Description') }}">{{ $build->memo }}</x-detail-field>
+                    @endif
                 </div>
             </div>
         </div>

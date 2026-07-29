@@ -49,7 +49,7 @@
                         @endif
                     </x-detail-field>
                     @if($grn->memo)
-                        <x-detail-field :label="__('Memo')" :value="$grn->memo" class="col-span-3" />
+                        <x-detail-field :label="__('Description')" :value="$grn->memo" class="col-span-4" />
                     @endif
                 </div>
             </div>
