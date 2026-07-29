@@ -9,28 +9,28 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Carrying Amount ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Recoverable Amount ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount ({{ $cs }})</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Date</th>
+                <th>Asset</th>
+                <th>Code</th>
+                <th>Category</th>
+                <th class="text-right">Carrying Amount ({{ $cs }})</th>
+                <th class="text-right">Recoverable Amount ({{ $cs }})</th>
+                <th class="text-right">Amount ({{ $cs }})</th>
+                <th>Type</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($rows as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['date'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['asset'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['code'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['category'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['carrying_amount']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['recoverable_amount']) }}</td>
+                    <td>{{ $row['date'] }}</td>
+                    <td>{{ $row['asset'] }}</td>
+                    <td>{{ $row['code'] }}</td>
+                    <td>{{ $row['category'] }}</td>
+                    <td class="numeric">{{ format_number($row['carrying_amount']) }}</td>
+                    <td class="numeric">{{ format_number($row['recoverable_amount']) }}</td>
                     <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['amount']) }}</td>
-                    <td class="px-4 py-2 text-sm">{{ ucfirst($row['type']) }}</td>
+                    <td>{{ ucfirst($row['type']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No impairment data found.</td></tr>
@@ -56,28 +56,28 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Carrying Amount ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Recoverable Amount ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount ({{ $cs }})</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Date</th>
+                <th>Asset</th>
+                <th>Code</th>
+                <th>Category</th>
+                <th class="text-right">Carrying Amount ({{ $cs }})</th>
+                <th class="text-right">Recoverable Amount ({{ $cs }})</th>
+                <th class="text-right">Amount ({{ $cs }})</th>
+                <th>Type</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($rows as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['date'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['asset'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['code'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['category'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['carrying_amount']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['recoverable_amount']) }}</td>
+                    <td>{{ $row['date'] }}</td>
+                    <td>{{ $row['asset'] }}</td>
+                    <td>{{ $row['code'] }}</td>
+                    <td>{{ $row['category'] }}</td>
+                    <td class="numeric">{{ format_number($row['carrying_amount']) }}</td>
+                    <td class="numeric">{{ format_number($row['recoverable_amount']) }}</td>
                     <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['amount']) }}</td>
-                    <td class="px-4 py-2 text-sm">{{ ucfirst($row['type']) }}</td>
+                    <td>{{ ucfirst($row['type']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No impairment data found.</td></tr>

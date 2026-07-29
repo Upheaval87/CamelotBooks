@@ -1,56 +1,54 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('POS Z-Report') }}</h2>
-    </x-slot>
+    <x-slot name="header">{{ __('POS Z-Report') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(!$data)
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center text-gray-500">
+                <div class="card p-6 text-center text-ink-soft">
                     No closed till sessions found.
                 </div>
                 @return
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+            <div class="card p-6 mb-6">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                        <p class="text-xs text-gray-500 uppercase">Terminal</p>
+                        <p class="text-xs text-ink-soft uppercase">Terminal</p>
                         <p class="font-semibold text-gray-900">{{ $data['session']->terminal?->identifier ?? '—' }}</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-500 uppercase">Cashier</p>
+                        <p class="text-xs text-ink-soft uppercase">Cashier</p>
                         <p class="font-semibold text-gray-900">{{ $data['session']->user?->name ?? '—' }}</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-500 uppercase">Opened</p>
+                        <p class="text-xs text-ink-soft uppercase">Opened</p>
                         <p class="font-semibold text-gray-900">{{ $data['session']->opened_at?->format('M d, H:i') ?? '—' }}</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-500 uppercase">Closed</p>
+                        <p class="text-xs text-ink-soft uppercase">Closed</p>
                         <p class="font-semibold text-gray-900">{{ $data['session']->closed_at?->format('M d, H:i') ?? '—' }}</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Sales Summary') }}</h3>
+            <div class="card p-6 mb-6">
+                <div class="form-section-label">1 · Sales Summary</div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="text-center p-4 bg-gray-50 rounded-lg">
                         <p class="text-2xl font-bold text-gray-900">{{ $data['sales_count'] }}</p>
-                        <p class="text-xs text-gray-500 uppercase">Gross Sales</p>
+                        <p class="text-xs text-ink-soft uppercase">Gross Sales</p>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-lg">
                         <p class="text-2xl font-bold text-red-600">{{ $data['returns_count'] }}</p>
-                        <p class="text-xs text-gray-500 uppercase">Returns</p>
+                        <p class="text-xs text-ink-soft uppercase">Returns</p>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-lg">
                         <p class="text-2xl font-bold text-gray-900">@money($data['sales_total'])</p>
-                        <p class="text-xs text-gray-500 uppercase">Gross Amount</p>
+                        <p class="text-xs text-ink-soft uppercase">Gross Amount</p>
                     </div>
                     <div class="text-center p-4 bg-indigo-50 rounded-lg">
                         <p class="text-2xl font-bold text-indigo-700">@money($data['net_sales'])</p>
-                        <p class="text-xs text-gray-500 uppercase">Net Sales</p>
+                        <p class="text-xs text-ink-soft uppercase">Net Sales</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 mt-4">
@@ -69,34 +67,34 @@
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payments by Method') }}</h3>
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+            <div class="card p-6 mb-6">
+                <div class="form-section-label">2 · Payments by Method</div>
+                <table class="datasheet">
+                    <thead>
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Sales</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                            <th>Method</th>
+                            <th class="text-right">Sales</th>
+                            <th class="text-right">Total</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         @forelse($data['payments_by_method'] as $pm)
                             <tr>
-                                <td class="px-4 py-2 text-sm text-gray-900">{{ $pm->method_name }}</td>
-                                <td class="px-4 py-2 text-sm text-right text-gray-900">{{ $pm->sale_count }}</td>
-                                <td class="px-4 py-2 text-sm text-right font-semibold text-gray-900">@money($pm->total_amount)</td>
+                                <td>{{ $pm->method_name }}</td>
+                                <td class="numeric">{{ $pm->sale_count }}</td>
+                                <td class="numeric font-semibold">@money($pm->total_amount)</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="px-4 py-2 text-center text-sm text-gray-500">No payments recorded.</td>
+                                <td colspan="3" class="text-ink-soft text-center">No payments recorded.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
-            <div class="bg-indigo-50 border border-indigo-200 overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold text-indigo-800 mb-4">{{ __('Cash Drawer Reconciliation') }}</h3>
+            <div class="bg-indigo-50 border border-indigo-200 card p-6 mb-6">
+                <div class="form-section-label">3 · Cash Drawer Reconciliation</div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <p class="text-sm text-indigo-600">Opening Float</p>

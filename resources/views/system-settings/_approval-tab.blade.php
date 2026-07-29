@@ -1,10 +1,10 @@
 <form method="POST" action="{{ route('system-settings.update-approval') }}">
     @csrf
     @method('PUT')
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="card">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Approval Workflow Settings</h3>
-            <p class="mt-1 text-sm text-gray-600">Configure when transactions require approval before posting. The master toggle enables or disables the entire approval workflow. Per-document thresholds let you set different trigger amounts for each transaction type.</p>
+            <div class="form-section-label">1 · Approval Workflow Settings</div>
+            <p class="mt-1 text-sm text-ink-soft">Configure when transactions require approval before posting. The master toggle enables or disables the entire approval workflow. Per-document thresholds let you set different trigger amounts for each transaction type.</p>
         </div>
         <div class="p-6 space-y-6">
             {{-- Master Toggle --}}
@@ -83,9 +83,7 @@
             </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-            <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                Save Approval Settings
-            </button>
+            <x-button variant="primary" type="submit">Save Approval Settings</x-button>
         </div>
     </div>
 </form>

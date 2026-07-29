@@ -10,28 +10,28 @@
         </form>
     </div>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quotation #</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total ({{ $cs }})</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Quotation #</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit Price ({{ $cs }})</th>
+                <th class="text-right">Total ({{ $cs }})</th>
+                <th>Status</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($lines as $l)
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 text-sm font-mono">{{ $l['quotation_number'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $l['date'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $l['customer'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $l['product'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($l['quantity']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($l['unit_price']) }}</td>
+                    <td>{{ $l['date'] }}</td>
+                    <td>{{ $l['customer'] }}</td>
+                    <td>{{ $l['product'] }}</td>
+                    <td class="numeric">{{ format_number($l['quantity']) }}</td>
+                    <td class="numeric">{{ format_number($l['unit_price']) }}</td>
                     <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($l['line_total']) }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $l['status'] }}</td>
+                    <td>{{ $l['status'] }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No unbilled deliveries found.</td></tr>

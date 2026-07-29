@@ -1,20 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Sales Receipt {{ $salesReceipt->receipt_number }}</h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.sales-receipts.print', $salesReceipt) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Print') }}
-                </a>
-                <a href="{{ route('accounting.sales-receipts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Back to Sales Receipts') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">Sales Receipt {{ $salesReceipt->receipt_number }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.sales-receipts.print', $salesReceipt) }}" target="_blank">{{ __('Print') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.sales-receipts.index') }}">{{ __('Back to Sales Receipts') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
             @endif
@@ -29,13 +22,13 @@
                         <span class="ml-2">
                             @switch($salesReceipt->status)
                                 @case('draft')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                    <span class="status-pill neutral">Draft</span>
                                     @break
                                 @case('posted')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Posted</span>
+                                    <span class="status-pill positive">Posted</span>
                                     @break
                                 @case('voided')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Voided</span>
+                                    <span class="status-pill negative">Voided</span>
                                     @break
                             @endswitch
                         </span>
@@ -54,28 +47,28 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Line Items</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tax</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th>Product</th>
+                                <th>Description</th>
+                                <th class="text-right">Qty</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-right">Discount</th>
+                                <th class="text-right">Tax</th>
+                                <th class="text-right">Total</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($salesReceipt->lines as $line)
                                 <tr>
-                                    <td class="px-4 py-2 text-sm text-gray-900">{{ $line->product->name ?? '—' }}</td>
+                                    <td>{{ $line->product->name ?? '—' }}</td>
                                     <td class="px-4 py-2 text-sm text-gray-700">{{ $line->description }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($line->quantity, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->unit_price) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($line->discount, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->tax_amount) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{{ format_money($line->line_total) }}</td>
+                                    <td class="numeric">{{ number_format($line->quantity, 2) }}</td>
+                                    <td class="numeric">{{ format_money($line->unit_price) }}</td>
+                                    <td class="numeric">{{ number_format($line->discount, 2) }}</td>
+                                    <td class="numeric">{{ format_money($line->tax_amount) }}</td>
+                                    <td class="numeric">{{ format_money($line->line_total) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -102,23 +95,23 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Payments</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cash Tendered</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
+                                <th>Method</th>
+                                <th class="text-right">Amount</th>
+                                <th class="text-right">Cash Tendered</th>
+                                <th class="text-right">Change</th>
+                                <th>Reference</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($salesReceipt->payments as $payment)
                                 <tr>
-                                    <td class="px-4 py-2 text-sm text-gray-900">{{ $payment->paymentMethod->name ?? '—' }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($payment->amount) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ $payment->cash_tendered ? format_money($payment->cash_tendered) : '—' }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ $payment->change_given ? format_money($payment->change_given) : '—' }}</td>
+                                    <td>{{ $payment->paymentMethod->name ?? '—' }}</td>
+                                    <td class="numeric">{{ format_money($payment->amount) }}</td>
+                                    <td class="numeric">{{ $payment->cash_tendered ? format_money($payment->cash_tendered) : '—' }}</td>
+                                    <td class="numeric">{{ $payment->change_given ? format_money($payment->change_given) : '—' }}</td>
                                     <td class="px-4 py-2 text-sm text-gray-700">{{ $payment->reference_number ?? '—' }}</td>
                                 </tr>
                             @endforeach

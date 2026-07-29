@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.employees.update', $employee) }}">
                     @csrf
                     @method('PUT')
@@ -15,7 +15,7 @@
                     <div class="space-y-8">
                         {{-- Personal Information --}}
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">{{ __('Personal Information') }}</h3>
+                            <div class="form-section-label">1 · PERSONAL INFORMATION</div>
                             <div class="space-y-4">
                                 <div>
                                     <x-input-label for="employee_number" value="{{ __('Employee Number') }}" />
@@ -62,7 +62,7 @@
                                     </div>
                                     <div>
                                         <x-input-label for="gender" value="{{ __('Gender') }}" />
-                                        <select id="gender" name="gender" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <select id="gender" name="gender" class="input mt-1">
                                             <option value="">Select Gender</option>
                                             <option value="male" {{ old('gender', $employee->gender) === 'male' ? 'selected' : '' }}>Male</option>
                                             <option value="female" {{ old('gender', $employee->gender) === 'female' ? 'selected' : '' }}>Female</option>
@@ -82,7 +82,7 @@
 
                         {{-- Employment Information --}}
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">{{ __('Employment Information') }}</h3>
+                            <div class="form-section-label">2 · EMPLOYMENT INFORMATION</div>
                             <div class="space-y-4">
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
@@ -106,7 +106,7 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                                        <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <select id="branch_id" name="branch_id" class="input mt-1">
                                             <option value="">Select Branch</option>
                                             @foreach($branches as $branch)
                                                 <option value="{{ $branch->id }}" {{ old('branch_id', $employee->branch_id) == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
@@ -116,7 +116,7 @@
                                     </div>
                                     <div>
                                         <x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" />
-                                        <select id="cost_center_id" name="cost_center_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                        <select id="cost_center_id" name="cost_center_id" class="input mt-1">
                                             <option value="">Select Cost Center</option>
                                             @foreach($costCenters as $costCenter)
                                                 <option value="{{ $costCenter->id }}" {{ old('cost_center_id', $employee->cost_center_id) == $costCenter->id ? 'selected' : '' }}>{{ $costCenter->name }}</option>
@@ -130,7 +130,7 @@
 
                         {{-- Tax & Pension --}}
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">{{ __('Tax & Pension') }}</h3>
+                            <div class="form-section-label">3 · TAX & PENSION</div>
                             <div class="space-y-4">
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
@@ -162,7 +162,7 @@
 
                         {{-- Bank Details --}}
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">{{ __('Bank Details') }}</h3>
+                            <div class="form-section-label">4 · BANK DETAILS</div>
                             <div class="space-y-4">
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
@@ -194,7 +194,7 @@
 
                         {{-- Compensation --}}
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">{{ __('Compensation') }}</h3>
+                            <div class="form-section-label">5 · COMPENSATION</div>
                             <div class="space-y-4">
                                 <div>
                                     <x-input-label for="basic_pay" value="{{ __('Basic Pay') }}" />
@@ -213,9 +213,7 @@
                     </div>
 
                     <div class="flex items-center justify-end mt-6 space-x-3">
-                        <a href="{{ route('accounting.employees.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Cancel') }}
-                        </a>
+                        <x-button variant="ghost" href="{{ route('accounting.employees.index') }}">{{ __('Cancel') }}</x-button>
                         <x-primary-button>{{ __('Update Employee') }}</x-primary-button>
                     </div>
                 </form>

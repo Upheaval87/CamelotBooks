@@ -104,9 +104,9 @@
                         <dt class="text-sm font-medium text-gray-500">{{ __('Status') }}</dt>
                         <dd class="mt-1">
                             @if($template->is_active)
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                <span class="status-pill positive">Active</span>
                             @else
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                                <span class="status-pill negative">Inactive</span>
                             @endif
                         </dd>
                     </div>
@@ -160,34 +160,34 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Template Lines') }}</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                                <th>#</th>
+                                <th>Account</th>
+                                <th class="text-right">Debit ({{ $cs }})</th>
+                                <th class="text-right">Credit ({{ $cs }})</th>
+                                <th>Description</th>
+                                <th>Branch</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($template->templateLines as $index => $line)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $index + 1 }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td class="text-ink-soft">{{ $index + 1 }}</td>
+                                    <td>
                                         {{ $line->account->code }} - {{ $line->account->name }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ $line->debit > 0 ? format_number($line->debit) : '' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ $line->credit > 0 ? format_number($line->credit) : '' }}
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">
+                                    <td class="text-ink-soft">
                                         {{ $line->memo ?? '' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="text-ink-soft">
                                         {{ $line->branch->name ?? $template->branch->name ?? '—' }}
                                     </td>
                                 </tr>
@@ -209,38 +209,38 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Recent Generated Entries') }}</h3>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Journal #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit ({{ $cs }})</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit ({{ $cs }})</th>
+                                    <th>Journal #</th>
+                                    <th>Date</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-right">Debit ({{ $cs }})</th>
+                                    <th class="text-right">Credit ({{ $cs }})</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 @foreach($template->journalEntries as $entry)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('accounting.journal-entries.show', $entry) }}" class="text-indigo-600 hover:text-indigo-900">
+                                        <td>
+                                            <a href="{{ route('accounting.journal-entries.show', $entry) }}" class="text-ink hover:text-gold">
                                                 {{ $entry->journal_number }}
                                             </a>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td>
                                             {{ $entry->date->format('M d, Y') }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <td class="text-center">
                                             @if($entry->status === 'posted')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Posted</span>
+                                                <span class="status-pill positive">Posted</span>
                                             @elseif($entry->status === 'draft')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                                <span class="status-pill neutral">Draft</span>
                                             @else
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ ucfirst($entry->status) }}</span>
+                                                <span class="status-pill neutral">{{ ucfirst($entry->status) }}</span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_number($entry->total_debit) }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_number($entry->total_credit) }}</td>
+                                        <td class="numeric">{{ format_number($entry->total_debit) }}</td>
+                                        <td class="numeric">{{ format_number($entry->total_credit) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

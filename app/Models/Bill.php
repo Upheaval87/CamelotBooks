@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphedByMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Bill extends Model
 {
@@ -118,7 +118,7 @@ class Bill extends Model
         return $this->belongsTo(User::class, 'voided_by');
     }
 
-    public function payments(): MorphedByMany
+    public function payments(): MorphToMany
     {
         return $this->morphedByMany(VendorPayment::class, 'payable')
             ->using(VendorPaymentAllocation::class);

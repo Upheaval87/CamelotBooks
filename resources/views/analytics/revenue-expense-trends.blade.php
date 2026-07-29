@@ -1,10 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Revenue & Expense Trends</h2>
-    </x-slot>
+    <x-slot name="header">Revenue & Expense Trends</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-report-filters mode="period" :showBranch="true" :showCostCenter="true" :showDimension="true" :dimensions="['none' => 'Consolidated', 'branch' => 'By Branch', 'cost_center' => 'By Cost Center']" :action="route('analytics.revenue-expense-trends')" />
 
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
@@ -19,33 +17,33 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Period Details</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Expenses</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Net Income</th>
+                                <th>Period</th>
+                                <th class="text-right">Revenue</th>
+                                <th class="text-right">Expenses</th>
+                                <th class="text-right">Net Income</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody>
                             @foreach($data['results'] as $result)
                                 <tr>
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ $result['period'] }}</td>
-                                    <td class="px-6 py-4 text-sm text-right text-gray-900">@money($result['revenue'] ?? array_sum(array_column($result['dimensions'] ?? [], 'revenue')))</td>
-                                    <td class="px-6 py-4 text-sm text-right text-gray-900">@money($result['expense'] ?? array_sum(array_column($result['dimensions'] ?? [], 'expense')))</td>
-                                    <td class="px-6 py-4 text-sm text-right font-medium {{ ($result['net_income'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <td>{{ $result['period'] }}</td>
+                                    <td class="numeric">@money($result['revenue'] ?? array_sum(array_column($result['dimensions'] ?? [], 'revenue')))</td>
+                                    <td class="numeric">@money($result['expense'] ?? array_sum(array_column($result['dimensions'] ?? [], 'expense')))</td>
+                                    <td class="numeric font-medium {{ ($result['net_income'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                         @money($result['net_income'] ?? (array_sum(array_column($result['dimensions'] ?? [], 'revenue')) - array_sum(array_column($result['dimensions'] ?? [], 'expense'))))
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
-                        <tfoot class="bg-gray-50">
+                        <tfoot>
                             <tr class="font-semibold">
-                                <td class="px-6 py-4 text-sm">Total</td>
-                                <td class="px-6 py-4 text-sm text-right">@money($data['total_revenue'])</td>
-                                <td class="px-6 py-4 text-sm text-right">@money($data['total_expense'])</td>
-                                <td class="px-6 py-4 text-sm text-right">@money($data['total_revenue'] - $data['total_expense'])</td>
+                                <td>Total</td>
+                                <td class="numeric">@money($data['total_revenue'])</td>
+                                <td class="numeric">@money($data['total_expense'])</td>
+                                <td class="numeric">@money($data['total_revenue'] - $data['total_expense'])</td>
                             </tr>
                         </tfoot>
                     </table>

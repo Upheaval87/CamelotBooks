@@ -1,16 +1,16 @@
 {{-- Audit Log tab is rendered via a separate Blade view, included from the tab nav --}}
 
-<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+<div class="card">
     <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-medium text-gray-900">Settings Change History</h3>
-        <p class="mt-1 text-sm text-gray-600">Track all changes made to system settings for this company.</p>
+        <div class="form-section-label">1 · Settings Change History</div>
+        <p class="mt-1 text-sm text-ink-soft">Track all changes made to system settings for this company.</p>
     </div>
 
     <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <form method="GET" action="{{ route('system-settings.audit-log') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Settings Group</label>
-                <select name="group" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <select name="group" class="input mt-1">
                     <option value="">All Groups</option>
                     @foreach($groups as $g)
                         <option value="{{ $g }}" {{ request('group') === $g ? 'selected' : '' }}>{{ $g }}</option>
@@ -19,7 +19,7 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">User</label>
-                <select name="user_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <select name="user_id" class="input mt-1">
                     <option value="">All Users</option>
                     @foreach($users as $u)
                         <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
@@ -28,51 +28,47 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">From</label>
-                <input type="date" name="from" value="{{ request('from') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <input type="date" name="from" value="{{ request('from') }}" class="input">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">To</label>
-                <input type="date" name="to" value="{{ request('to') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <input type="date" name="to" value="{{ request('to') }}" class="input">
             </div>
             <div class="flex items-end gap-2">
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    Filter
-                </button>
+                <x-button variant="primary" type="submit">Filter</x-button>
                 @if(request()->hasAny(['group', 'user_id', 'from', 'to']))
-                    <a href="{{ route('system-settings.audit-log') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">
-                        Clear
-                    </a>
+                    <x-button variant="ghost" href="{{ route('system-settings.audit-log') }}">Clear</x-button>
                 @endif
             </div>
         </form>
     </div>
 
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="datasheet">
+            <thead>
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Settings Group</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Changes</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
+                    <th>Date/Time</th>
+                    <th>User</th>
+                    <th>Settings Group</th>
+                    <th>Changes</th>
+                    <th>IP Address</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
                 @forelse($logs as $log)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <tr>
+                    <td class="text-ink-soft">
                         {{ $log->created_at?->format('M d, Y H:i:s') ?? '-' }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td>
                         {{ $log->user?->name ?? 'System' }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <td>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                             {{ $log->notes ?? 'Settings' }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-500 max-w-lg">
+                    <td class="text-ink-soft max-w-lg">
                         @if($log->notes === 'Account Mappings' && is_array($log->new_values))
                             <div class="space-y-1">
                                 @foreach($log->new_values as $key => $change)
@@ -103,13 +99,13 @@
                             {{ $log->notes ?? '-' }}
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="text-ink-soft">
                         {{ $log->ip_address ?? '-' }}
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">
+                    <td colspan="5" class="text-ink-soft text-center">
                         No settings changes recorded yet.
                     </td>
                 </tr>

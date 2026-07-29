@@ -35,32 +35,32 @@
                 </form>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($costCenters as $costCenter)
                                 <tr class="{{ $costCenter->is_active ? '' : 'bg-gray-50 text-gray-400' }}">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $costCenter->code }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $costCenter->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $costCenter->description ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td>{{ $costCenter->code }}</td>
+                                    <td>{{ $costCenter->name }}</td>
+                                    <td class="text-ink-soft">{{ $costCenter->description ?? '—' }}</td>
+                                    <td class="text-center">
                                         @if($costCenter->is_active)
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                            <span class="status-pill positive">Active</span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
+                                            <span class="status-pill neutral">Inactive</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <td class="text-right">
                                         <form method="POST" action="{{ route('accounting.cost-centers.toggle', $costCenter) }}" class="inline">
                                             @csrf
                                             @method('PATCH')
@@ -72,7 +72,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No cost centers found.</td>
+                                    <td colspan="5" class="text-center text-ink-soft">No cost centers found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

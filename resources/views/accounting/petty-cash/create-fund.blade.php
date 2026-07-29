@@ -1,15 +1,14 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Create Petty Cash Fund') }}</h2>
-            <a href="{{ route('accounting.petty-cash.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                {{ __('Back') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Create Petty Cash Fund') }}</x-slot>
 
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.petty-cash.index') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </x-button>
+            </div>
             @if(session('error'))
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{{ session('error') }}</div>
             @endif

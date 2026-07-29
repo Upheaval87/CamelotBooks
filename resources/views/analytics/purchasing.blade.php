@@ -1,10 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Purchasing Analytics</h2>
-    </x-slot>
+    <x-slot name="header">Purchasing Analytics</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-report-filters mode="period" :showBranch="true" :showCostCenter="false" :action="route('analytics.purchasing')" />
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -37,23 +35,23 @@
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Vendors</h3>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bills</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Spend</th>
+                                    <th>Vendor</th>
+                                    <th class="text-right">Bills</th>
+                                    <th class="text-right">Total Spend</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($data['top_vendors'] as $vendor)
                                     <tr>
-                                        <td class="px-4 py-3 text-sm text-gray-900">{{ $vendor['vendor_name'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $vendor['bill_count'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($vendor['total_spend'])</td>
+                                        <td>{{ $vendor['vendor_name'] }}</td>
+                                        <td class="numeric">{{ $vendor['bill_count'] }}</td>
+                                        <td class="numeric">@money($vendor['total_spend'])</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>
+                                    <tr><td colspan="3" class="text-ink-soft text-center">No data</td></tr>
                                 @endforelse
                             </tbody>
                         </table>

@@ -1,33 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    {{ __('Payroll Run') }} #{{ $run->run_number }}
-                </h2>
-                @php
-                    $statusColors = [
-                        'draft' => 'gray',
-                        'calculated' => 'yellow',
-                        'approved' => 'blue',
-                        'posted' => 'green',
-                        'partially_paid' => 'orange',
-                        'fully_paid' => 'emerald',
-                    ];
-                    $color = $statusColors[$run->status] ?? 'gray';
-                @endphp
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $color }}-100 text-{{ $color }}-800">
-                    {{ str_replace('_', ' ', ucfirst($run->status)) }}
-                </span>
-            </div>
-            <a href="{{ route('accounting.payroll-runs.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Back to Payroll Runs') }}
-            </a>
-        </div>
+        {{ __('Payroll Run') }} #{{ $run->run_number }}
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.payroll-runs.index') }}">{{ __('Back to Payroll Runs') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -142,48 +123,48 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Employee Items') }}</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee Name</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Pay</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Allowances</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Gross</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">PAYE</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Pension EE</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Deductions</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Net Pay</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th>Employee Name</th>
+                                <th class="text-right">Basic Pay</th>
+                                <th class="text-right">Allowances</th>
+                                <th class="text-right">Gross</th>
+                                <th class="text-right">PAYE</th>
+                                <th class="text-right">Pension EE</th>
+                                <th class="text-right">Deductions</th>
+                                <th class="text-right">Net Pay</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($run->items as $item)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td>
                                         {{ $item->employee->name ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ format_money($item->basic_pay) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ format_money($item->allowances) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                    <td class="numeric">
                                         {{ format_money($item->gross_pay) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 text-right">
+                                    <td class="text-red-600 text-right">
                                         {{ format_money($item->paye) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-600 text-right">
+                                    <td class="text-orange-600 text-right">
                                         {{ format_money($item->pension_ee) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-600 text-right">
+                                    <td class="text-yellow-600 text-right">
                                         {{ format_money($item->other_deductions) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right font-bold">
+                                    <td class="text-green-600 text-right font-bold">
                                         {{ format_money($item->net_pay) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <td class="text-right">
                                         @if(in_array($run->status, ['posted', 'partially_paid', 'fully_paid']) && !$item->is_paid)
                                             <button type="button" @click="openPaymentModal({{ $item->id }}, '{{ addslashes($item->employee->name ?? '') }}', {{ $item->net_pay }})" class="text-green-600 hover:text-green-900">
                                                 {{ __('Pay') }}
@@ -196,7 +177,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-6 py-12 text-center text-sm text-gray-500">
+                                    <td colspan="9" class="text-center text-ink-soft">
                                         No employee items found.
                                     </td>
                                 </tr>
@@ -311,40 +292,40 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payment History') }}</h3>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank Account</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th>Employee</th>
+                                    <th class="text-right">Amount</th>
+                                    <th>Payment Date</th>
+                                    <th>Bank Account</th>
+                                    <th class="text-center">Status</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($payments as $payment)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td>
                                             {{ $payment->payrollRunItem->employee->name ?? '—' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                        <td class="numeric">
                                             {{ format_money($payment->amount) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="text-ink-soft">
                                             {{ $payment->payment_date?->format('M d, Y') ?? '—' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="text-ink-soft">
                                             {{ $payment->bankAccount->name ?? '—' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        <td class="text-center">
+                                            <span class="status-pill positive">
                                                 {{ ucfirst($payment->status ?? 'completed') }}
                                             </span>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">
+                                        <td colspan="5" class="text-center text-ink-soft">
                                             No payments recorded yet.
                                         </td>
                                     </tr>
@@ -359,22 +340,22 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Delivery Status') }}</h3>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sent At</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
+                                    <th>Employee</th>
+                                    <th class="text-center">Status</th>
+                                    <th>Sent At</th>
+                                    <th>Error</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($deliveries as $delivery)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td>
                                             {{ $delivery->payrollRunItem->employee->name ?? '—' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <td class="text-center">
                                             @php
                                                 $deliveryStatusColors = [
                                                     'pending' => 'gray',
@@ -388,7 +369,7 @@
                                                 {{ ucfirst($delivery->status) }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="text-ink-soft">
                                             {{ $delivery->sent_at?->format('M d, Y H:i') ?? '—' }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-red-600">
@@ -397,7 +378,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-6 py-12 text-center text-sm text-gray-500">
+                                        <td colspan="4" class="text-center text-ink-soft">
                                             No deliveries recorded yet.
                                         </td>
                                     </tr>

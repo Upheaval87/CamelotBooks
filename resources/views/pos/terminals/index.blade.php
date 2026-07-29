@@ -1,20 +1,16 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('POS Terminals') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('POS Terminals') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
                 </div>
             @endif
 
-            <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Add Terminal') }}</h3>
+            <div class="mb-6 card p-6">
+                <div class="form-section-label">1 · Add Terminal</div>
                 <form method="POST" action="{{ route('pos.terminals.store') }}" class="flex items-end gap-4 flex-wrap">
                     @csrf
                     <div class="flex-1 min-w-[150px]">
@@ -29,7 +25,7 @@
                     </div>
                     <div class="flex-1 min-w-[180px]">
                         <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                        <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <select id="branch_id" name="branch_id" class="input mt-1">
                             <option value="">No branch</option>
                             @foreach($branches as $branch)
                                 <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
@@ -48,36 +44,36 @@
                 </form>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifier</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">PIN Timeout</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th>Identifier</th>
+                                <th>Name</th>
+                                <th>Branch</th>
+                                <th class="text-center">PIN Timeout</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($terminals as $terminal)
                                 <tr class="{{ $terminal->is_active ? '' : 'bg-gray-50 text-gray-400' }}">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $terminal->identifier }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $terminal->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $terminal->branch?->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                                    <td>{{ $terminal->identifier }}</td>
+                                    <td>{{ $terminal->name }}</td>
+                                    <td class="text-ink-soft">{{ $terminal->branch?->name ?? '—' }}</td>
+                                    <td class="text-center text-ink-soft">
                                         {{ $terminal->cashier_pin_timeout_minutes > 0 ? $terminal->cashier_pin_timeout_minutes . ' min' : 'Disabled' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td class="text-center">
                                         @if($terminal->is_active)
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                            <span class="status-pill positive">Active</span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
+                                            <span class="status-pill negative">Inactive</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <td class="text-right">
                                         <form method="POST" action="{{ route('pos.terminals.toggle', $terminal) }}" class="inline">
                                             @csrf
                                             @method('PATCH')
@@ -89,7 +85,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No terminals found.</td>
+                                    <td colspan="6" class="text-ink-soft text-center">No terminals found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

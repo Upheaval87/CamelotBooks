@@ -1,15 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Cheque Register') }}</h2>
-            <a href="{{ route('accounting.cheques.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                {{ __('Back to Cheques') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Cheque Register') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.cheques.index') }}">{{ __('Back to Cheques') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 p-4">
                 <form method="GET" action="{{ route('accounting.cheques.register') }}" class="flex items-end gap-4">
                     <div>
@@ -37,46 +34,46 @@
                 </form>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheque #</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bank Account</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payee</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Memo</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th>Cheque #</th>
+                                <th>Date</th>
+                                <th>Bank Account</th>
+                                <th>Payee</th>
+                                <th>Memo</th>
+                                <th class="text-right">Amount</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($cheques as $cheque)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('accounting.cheques.show', $cheque->id) }}" class="text-indigo-600 hover:text-indigo-900">
+                                    <td>
+                                        <a href="{{ route('accounting.cheques.show', $cheque->id) }}" class="text-ink hover:text-gold">
                                             {{ str_pad($cheque->cheque_number, 6, '0', STR_PAD_LEFT) }}
                                         </a>
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ $cheque->date->format('M d, Y') }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ $cheque->bankAccount->name ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">{{ $cheque->payee }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">{{ $cheque->memo ?? '—' }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($cheque->amount) }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <td class="text-ink-soft">{{ $cheque->date->format('M d, Y') }}</td>
+                                    <td class="text-ink-soft">{{ $cheque->bankAccount->name ?? '—' }}</td>
+                                    <td class="text-ink-soft">{{ $cheque->payee }}</td>
+                                    <td class="text-ink-soft">{{ $cheque->memo ?? '—' }}</td>
+                                    <td class="numeric">{{ format_money($cheque->amount) }}</td>
+                                    <td class="text-center">
                                         @if($cheque->status === 'outstanding')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Outstanding</span>
+                                            <span class="status-pill neutral">Outstanding</span>
                                         @elseif($cheque->status === 'cleared')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Cleared</span>
+                                            <span class="status-pill positive">Cleared</span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Void</span>
+                                            <span class="status-pill negative">Void</span>
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-4 py-4 text-center text-sm text-gray-500">No cheques found.</td>
+                                    <td colspan="7" class="text-center text-ink-soft">No cheques found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

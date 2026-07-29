@@ -40,7 +40,7 @@
         </div>
 
         {{-- Quick Actions --}}
-        <div class="card-premium animate-fade-in-up" style="animation-delay: 200ms">
+        <div class="card animate-fade-in-up" style="animation-delay: 200ms">
             <div class="card-header">
                 <h3 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">Quick Actions</h3>
             </div>

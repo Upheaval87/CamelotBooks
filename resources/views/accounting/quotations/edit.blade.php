@@ -1,18 +1,19 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Quotation {{ $quotation->quotation_number }}</h2>
-            <a href="{{ route('accounting.quotations.show', $quotation) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 shadow-sm hover:bg-gray-50">{{ __('Back') }}</a>
-        </div>
-    </x-slot>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <x-slot name="header">Edit Quotation {{ $quotation->quotation_number }}</x-slot>
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.quotations.show', $quotation) }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </x-button>
+            </div>
             <form method="POST" action="{{ route('accounting.quotations.update', $quotation) }}">
                 @csrf
                 @method('PUT')
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Quotation Details') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">1 · QUOTATION DETAILS</div>
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="customer_id" value="{{ __('Customer') }}" />
@@ -27,33 +28,33 @@
                         <div><x-input-label for="quotation_date" value="{{ __('Date') }}" /><x-text-input id="quotation_date" name="quotation_date" type="date" class="mt-1 block w-full" :value="old('quotation_date', $quotation->quotation_date?->format('Y-m-d'))" required /></div>
                         <div><x-input-label for="valid_until" value="{{ __('Valid Until') }}" /><x-text-input id="valid_until" name="valid_until" type="date" class="mt-1 block w-full" :value="old('valid_until', $quotation->valid_until?->format('Y-m-d'))" /></div>
                         <div><x-input-label for="reference" value="{{ __('Reference') }}" /><x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference', $quotation->reference)" /></div>
-                        <div><x-input-label for="branch_id" value="{{ __('Branch') }}" /><select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option value="">None</option>@foreach($branches as $b)<option value="{{ $b->id }}" {{ old('branch_id', $quotation->branch_id) == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>@endforeach</select></div>
-                        <div><x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" /><select id="cost_center_id" name="cost_center_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><option value="">None</option>@foreach($costCenters as $cc)<option value="{{ $cc->id }}" {{ old('cost_center_id', $quotation->cost_center_id) == $cc->id ? 'selected' : '' }}>{{ $cc->code }} - {{ $cc->name }}</option>@endforeach</select></div>
+                        <div><x-input-label for="branch_id" value="{{ __('Branch') }}" /><select id="branch_id" name="branch_id" class="input mt-1"><option value="">None</option>@foreach($branches as $b)<option value="{{ $b->id }}" {{ old('branch_id', $quotation->branch_id) == $b->id ? 'selected' : '' }}>{{ $b->name }}</option>@endforeach</select></div>
+                        <div><x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" /><select id="cost_center_id" name="cost_center_id" class="input mt-1"><option value="">None</option>@foreach($costCenters as $cc)<option value="{{ $cc->id }}" {{ old('cost_center_id', $quotation->cost_center_id) == $cc->id ? 'selected' : '' }}>{{ $cc->code }} - {{ $cc->name }}</option>@endforeach</select></div>
                         <div class="col-span-2"><x-input-label for="memo" value="{{ __('Memo') }}" /><x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $quotation->memo)" /></div>
                     </div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">{{ __('Line Items') }}</h3>
+                        <div class="form-section-label">2 · LINE ITEMS</div>
                         <button type="button" id="add-line" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 shadow-sm hover:bg-gray-50">{{ __('Add Line') }}</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200" id="lines-table">
-                            <thead class="bg-gray-50"><tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price ({{ $cs }})</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Discount %</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Income Account</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Line Total ({{ $cs }})</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Action</th>
+                            <thead><tr>
+                                <th>Product</th>
+                                <th>Description</th>
+                                <th class="text-right">Qty</th>
+                                <th class="text-right">Unit Price ({{ $cs }})</th>
+                                <th class="text-right">Discount %</th>
+                                <th>Income Account</th>
+                                <th class="text-right">Line Total ({{ $cs }})</th>
+                                <th class="text-center">Action</th>
                             </tr></thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="lines-body"></tbody>
                         </table>
                     </div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="card p-6 mb-6">
                     <div class="flex justify-end"><div class="w-64 space-y-2">
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal:</span><span id="subtotal" class="text-gray-900">0.00</span></div>
                         <div class="flex justify-between text-sm"><span class="text-gray-500">Tax:</span><span id="total-tax" class="text-gray-900">0.00</span></div>
@@ -61,7 +62,7 @@
                     </div></div>
                 </div>
                 <div class="flex justify-end gap-3">
-                    <a href="{{ route('accounting.quotations.show', $quotation) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 shadow-sm hover:bg-gray-50">{{ __('Cancel') }}</a>
+                    <x-button variant="ghost" href="{{ route('accounting.quotations.show', $quotation) }}">{{ __('Cancel') }}</x-button>
                     <x-primary-button type="submit">{{ __('Update Quotation') }}</x-primary-button>
                 </div>
             </form>

@@ -1,10 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Financial Ratios</h2>
-    </x-slot>
+    <x-slot name="header">Financial Ratios</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-report-filters mode="point_in_time" :showBranch="true" :showCostCenter="true" :action="route('analytics.financial-ratios')" />
 
             @if(isset($data['error']))

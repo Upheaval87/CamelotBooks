@@ -22,41 +22,41 @@
         @endphp
 
         <div class="px-4 py-3 bg-blue-50 border-b border-blue-200"><h3 class="text-sm font-semibold text-blue-800">Assets</h3></div>
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th><th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance ({{ $cs }})</th></tr></thead>
+        <table class="datasheet">
+            <thead><tr><th>Account</th><th class="text-right">Balance ({{ $cs }})</th></tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($cAssets as $a)
-                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $a['name'] }} <span class="text-gray-400">({{ $a['code'] }})</span></td><td class="px-4 py-2 text-sm text-right">{{ format_number($a['balance']) }}</td></tr>
+                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $a['name'] }} <span class="text-gray-400">({{ $a['code'] }})</span></td><td class="numeric">{{ format_number($a['balance']) }}</td></tr>
                 @empty
-                <tr><td colspan="2" class="px-4 py-4 text-center text-sm text-gray-500">No asset accounts.</td></tr>
+                <tr><td colspan="2" class="text-center text-ink-soft">No asset accounts.</td></tr>
                 @endforelse
-                <tr class="bg-gray-50 font-bold"><td class="px-4 py-2 text-sm">Total Assets</td><td class="px-4 py-2 text-sm text-right">{{ format_number($cAssetsTotal) }}</td></tr>
+                <tr class="bg-gray-50 font-bold"><td>Total Assets</td><td class="numeric">{{ format_number($cAssetsTotal) }}</td></tr>
             </tbody>
         </table>
 
         <div class="px-4 py-3 bg-red-50 border-b border-red-200"><h3 class="text-sm font-semibold text-red-800">Liabilities</h3></div>
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th><th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance ({{ $cs }})</th></tr></thead>
+        <table class="datasheet">
+            <thead><tr><th>Account</th><th class="text-right">Balance ({{ $cs }})</th></tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($cLiabilities as $l)
-                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $l['name'] }} <span class="text-gray-400">({{ $l['code'] }})</span></td><td class="px-4 py-2 text-sm text-right">{{ format_number($l['balance']) }}</td></tr>
+                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $l['name'] }} <span class="text-gray-400">({{ $l['code'] }})</span></td><td class="numeric">{{ format_number($l['balance']) }}</td></tr>
                 @empty
-                <tr><td colspan="2" class="px-4 py-4 text-center text-sm text-gray-500">No liability accounts.</td></tr>
+                <tr><td colspan="2" class="text-center text-ink-soft">No liability accounts.</td></tr>
                 @endforelse
-                <tr class="bg-gray-50 font-bold"><td class="px-4 py-2 text-sm">Total Liabilities</td><td class="px-4 py-2 text-sm text-right">{{ format_number($cLiabTotal) }}</td></tr>
+                <tr class="bg-gray-50 font-bold"><td>Total Liabilities</td><td class="numeric">{{ format_number($cLiabTotal) }}</td></tr>
             </tbody>
         </table>
 
         <div class="px-4 py-3 bg-purple-50 border-b border-purple-200"><h3 class="text-sm font-semibold text-purple-800">Equity</h3></div>
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th><th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance ({{ $cs }})</th></tr></thead>
+        <table class="datasheet">
+            <thead><tr><th>Account</th><th class="text-right">Balance ({{ $cs }})</th></tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($cEquity as $e)
-                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $e['name'] }} <span class="text-gray-400">({{ $e['code'] }})</span></td><td class="px-4 py-2 text-sm text-right">{{ format_number($e['balance']) }}</td></tr>
+                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $e['name'] }} <span class="text-gray-400">({{ $e['code'] }})</span></td><td class="numeric">{{ format_number($e['balance']) }}</td></tr>
                 @empty
-                <tr><td colspan="2" class="px-4 py-4 text-center text-sm text-gray-500">No equity accounts.</td></tr>
+                <tr><td colspan="2" class="text-center text-ink-soft">No equity accounts.</td></tr>
                 @endforelse
-                <tr class="bg-gray-50 font-bold"><td class="px-4 py-2 text-sm">Total Equity</td><td class="px-4 py-2 text-sm text-right">{{ format_number($cEqTotal) }}</td></tr>
+                <tr class="bg-gray-50 font-bold"><td>Total Equity</td><td class="numeric">{{ format_number($cEqTotal) }}</td></tr>
             </tbody>
         </table>
 

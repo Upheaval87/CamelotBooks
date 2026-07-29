@@ -17,20 +17,20 @@
                 @endif
             </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="datasheet">
             <thead class="bg-white"><tr>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Label</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Start</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">End</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th>Label</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @foreach($fy->periods as $period)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $period->label }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $period->start_date }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $period->end_date }}</td>
-                    <td class="px-4 py-2 text-sm">
+                    <td>{{ $period->label }}</td>
+                    <td>{{ $period->start_date }}</td>
+                    <td>{{ $period->end_date }}</td>
+                    <td>
                         @if($period->is_locked)
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Locked</span>
                         @else
@@ -66,20 +66,20 @@
                 @endif
             </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="datasheet">
             <thead class="bg-white"><tr>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Label</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Start</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">End</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th>Label</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @foreach($fy->periods as $period)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $period->label }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $period->start_date }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $period->end_date }}</td>
-                    <td class="px-4 py-2 text-sm">
+                    <td>{{ $period->label }}</td>
+                    <td>{{ $period->start_date }}</td>
+                    <td>{{ $period->end_date }}</td>
+                    <td>
                         @if($period->is_locked)
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Locked</span>
                         @else

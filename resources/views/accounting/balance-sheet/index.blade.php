@@ -1,18 +1,10 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Balance Sheet') }}
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.balance-sheet.export-csv', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Export CSV') }}
-                </a>
-                <a href="{{ route('accounting.balance-sheet.export-pdf', request()->query()) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Export PDF') }}
-                </a>
-            </div>
-        </div>
+    <x-slot name="header">{{ __('Balance Sheet') }}</x-slot>
+
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.balance-sheet.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.balance-sheet.export-pdf', request()->query()) }}" target="_blank">{{ __('Export PDF') }}</x-button>
+    </div>
     </x-slot>
 
     <div class="py-12">
@@ -41,19 +33,19 @@
                 </form>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-800">Balance Sheet as of {{ \Carbon\Carbon::parse($asOfDate)->format('M d, Y') }}</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th>Description</th>
+                                <th class="text-right">Amount</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($groups['asset'] as $subType => $items)
                                 @if(!empty($items))
                                     <tr class="bg-gray-50">
@@ -61,15 +53,15 @@
                                     </tr>
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['balance']) }}</td>
+                                            <td><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-ink hover:text-gold underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
+                                            <td class="numeric">{{ format_money($item['balance']) }}</td>
                                         </tr>
                                     @endforeach
                                 @endif
                             @endforeach
                             <tr class="bg-indigo-50">
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900">Total Assets</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($total_assets) }}</td>
+                                <td>Total Assets</td>
+                                <td class="numeric">{{ format_money($total_assets) }}</td>
                             </tr>
 
                             @foreach($groups['liability'] as $subType => $items)
@@ -79,15 +71,15 @@
                                     </tr>
                                     @foreach($items as $item)
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['balance']) }}</td>
+                                            <td><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-ink hover:text-gold underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
+                                            <td class="numeric">{{ format_money($item['balance']) }}</td>
                                         </tr>
                                     @endforeach
                                 @endif
                             @endforeach
                             <tr class="bg-indigo-50">
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900">Total Liabilities</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($total_liabilities) }}</td>
+                                <td>Total Liabilities</td>
+                                <td class="numeric">{{ format_money($total_liabilities) }}</td>
                             </tr>
 
                             <tr class="bg-gray-50">
@@ -96,23 +88,23 @@
                             @foreach($groups['equity'] as $subType => $items)
                                 @foreach($items as $item)
                                     <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10"><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['balance']) }}</td>
+                                        <td><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-ink hover:text-gold underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
+                                        <td class="numeric">{{ format_money($item['balance']) }}</td>
                                     </tr>
                                 @endforeach
                             @endforeach
                             <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">Current Year Earnings</td>
-                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($current_year_earnings) }}</td>
+                                <td>Current Year Earnings</td>
+                                <td class="numeric">{{ format_money($current_year_earnings) }}</td>
                             </tr>
                             <tr class="bg-indigo-50">
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900">Total Equity</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($total_equity) }}</td>
+                                <td>Total Equity</td>
+                                <td class="numeric">{{ format_money($total_equity) }}</td>
                             </tr>
 
                             <tr class="bg-gray-900">
-                                <td class="px-6 py-3 text-sm font-bold text-white">Total Liabilities & Equity</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-white text-right">{{ format_money($total_liabilities + $total_equity) }}</td>
+                                <td>Total Liabilities & Equity</td>
+                                <td class="numeric">{{ format_money($total_liabilities + $total_equity) }}</td>
                             </tr>
                         </tbody>
                     </table>

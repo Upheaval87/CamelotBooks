@@ -16,7 +16,7 @@
         <meta name="theme-color" content="#6366f1">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|source-serif-4:400,400i,500,500i,600,600i|ibm-plex-mono:400,500,600,700&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
@@ -27,13 +27,18 @@
         <div class="flex flex-col ml-56 min-h-screen max-lg:ml-0">
             @include('layouts.topnav')
 
-            <main class="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full">
-                @isset($header)
-                    <div class="mb-6 animate-fade-in-down">
-                        <h1 class="text-heading text-neutral-900 dark:text-white font-semibold tracking-tight">{{ $header }}</h1>
+            @isset($header)
+                <div class="page-header-bar">
+                    <div class="max-w-8xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-between">
+                        <h1 class="page-title">{{ $header }}</h1>
+                        @isset($headerEyebrow)
+                            <span class="page-eyebrow">{{ $headerEyebrow }}</span>
+                        @endisset
                     </div>
-                @endisset
+                </div>
+            @endisset
 
+            <main class="flex-1 p-6 lg:p-8 max-w-8xl mx-auto w-full">
                 <div class="animate-fade-in-up">
                     {{ $slot }}
                 </div>

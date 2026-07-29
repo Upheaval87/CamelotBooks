@@ -1,20 +1,13 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('General Ledger') }}
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.general-ledger.export-csv', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Export CSV') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('General Ledger') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.general-ledger.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.general-ledger.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
@@ -66,50 +59,50 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Journal #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Running Balance</th>
+                                <th>Date</th>
+                                <th>Journal #</th>
+                                <th>Account</th>
+                                <th>Description</th>
+                                <th class="text-right">Debit ({{ $cs }})</th>
+                                <th class="text-right">Credit ({{ $cs }})</th>
+                                <th class="text-right">Running Balance</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($glPaginator as $row)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td>
                                         {{ $row['line']->journalEntry->date->format('M d, Y') }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('accounting.journal-entries.show', $row['line']->journalEntry) }}" class="text-indigo-600 hover:text-indigo-900">
+                                    <td>
+                                        <a href="{{ route('accounting.journal-entries.show', $row['line']->journalEntry) }}" class="text-ink hover:text-gold">
                                             {{ $row['line']->journalEntry->journal_number }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td>
                                         {{ $row['line']->account->code }} - {{ $row['line']->account->name }}
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                    <td class="text-ink-soft max-w-xs truncate">
                                         {{ $row['line']->memo ?? $row['line']->journalEntry->memo ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ (float) $row['line']->debit > 0 ? format_number((float) $row['line']->debit) : '' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ (float) $row['line']->credit > 0 ? format_number((float) $row['line']->credit) : '' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                    <td class="numeric">
                                         {{ format_money($row['running_balance']) }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="7" class="text-center text-ink-soft">
                                         No journal entry lines found.
                                     </td>
                                 </tr>

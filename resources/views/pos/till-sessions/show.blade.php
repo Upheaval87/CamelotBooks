@@ -1,12 +1,8 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Till Session #') . $session->id }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Till Session #') . $session->id }}</x-slot>
 
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
@@ -14,10 +10,10 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+            <div class="card p-6 mb-6">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div>
-                        <p class="text-sm text-gray-500">Session</p>
+                        <p class="text-sm text-ink-soft">Session</p>
                         <p class="text-lg font-semibold text-gray-900">#{{ $session->id }}</p>
                     </div>
                     <div>
@@ -47,8 +43,8 @@
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Cash Summary') }}</h3>
+            <div class="card p-6 mb-6">
+                <div class="form-section-label">1 · Cash Summary</div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div>
                         <p class="text-sm text-gray-500">Opening Float</p>
@@ -77,36 +73,31 @@
             </div>
 
             @if($session->journalEntry)
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                        {{ __('Journal Entry') }}
-                        <a href="{{ route('accounting.journal-entries.show', $session->journalEntry) }}" class="text-sm text-indigo-600 hover:text-indigo-900 ml-2">
-                            #{{ $session->journalEntry->journal_number }}
-                        </a>
-                    </h3>
+                <div class="card p-6">
+                    <div class="form-section-label">2 · Journal Entry</div>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit ({{ $cs }})</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit ({{ $cs }})</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                    <th>Account</th>
+                                    <th class="text-right">Debit ({{ $cs }})</th>
+                                    <th class="text-right">Credit ({{ $cs }})</th>
+                                    <th>Description</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 @foreach($session->journalEntry->lines as $line)
                                     <tr>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                        <td>
                                             {{ $line->account?->code }} – {{ $line->account?->name }}
                                         </td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                                        <td class="numeric">
                                             {{ $line->debit > 0 ? format_number($line->debit) : '' }}
                                         </td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                                        <td class="numeric">
                                             {{ $line->credit > 0 ? format_number($line->credit) : '' }}
                                         </td>
-                                        <td class="px-4 py-2 text-sm text-gray-500">{{ $line->description }}</td>
+                                        <td class="text-ink-soft">{{ $line->description }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

@@ -9,27 +9,27 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entry #</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Memo</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Debit ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Credit ({{ $cs }})</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Date</th>
+                <th>Entry #</th>
+                <th>Reference</th>
+                <th>Memo</th>
+                <th>Account</th>
+                <th class="text-right">Debit ({{ $cs }})</th>
+                <th class="text-right">Credit ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($entries as $entry)
                     @foreach($entry->lines as $line)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2 text-sm whitespace-nowrap">{{ $entry->date }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $entry->entry_number ?? $entry->id }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $entry->reference }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $entry->memo }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $line->account->code }} - {{ $line->account->name }}</td>
-                        <td class="px-4 py-2 text-sm text-right">{{ $line->debit > 0 ? format_number($line->debit) : '' }}</td>
-                        <td class="px-4 py-2 text-sm text-right">{{ $line->credit > 0 ? format_number($line->credit) : '' }}</td>
+                        <td>{{ $entry->entry_number ?? $entry->id }}</td>
+                        <td>{{ $entry->reference }}</td>
+                        <td>{{ $entry->memo }}</td>
+                        <td>{{ $line->account->code }} - {{ $line->account->name }}</td>
+                        <td class="numeric">{{ $line->debit > 0 ? format_number($line->debit) : '' }}</td>
+                        <td class="numeric">{{ $line->credit > 0 ? format_number($line->credit) : '' }}</td>
                     </tr>
                     @endforeach
                 @empty
@@ -56,27 +56,27 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entry #</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Memo</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Debit ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Credit ({{ $cs }})</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Date</th>
+                <th>Entry #</th>
+                <th>Reference</th>
+                <th>Memo</th>
+                <th>Account</th>
+                <th class="text-right">Debit ({{ $cs }})</th>
+                <th class="text-right">Credit ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($entries as $entry)
                     @foreach($entry->lines as $line)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2 text-sm whitespace-nowrap">{{ $entry->date }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $entry->entry_number ?? $entry->id }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $entry->reference }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $entry->memo }}</td>
-                        <td class="px-4 py-2 text-sm">{{ $line->account->code }} - {{ $line->account->name }}</td>
-                        <td class="px-4 py-2 text-sm text-right">{{ $line->debit > 0 ? format_number($line->debit) : '' }}</td>
-                        <td class="px-4 py-2 text-sm text-right">{{ $line->credit > 0 ? format_number($line->credit) : '' }}</td>
+                        <td>{{ $entry->entry_number ?? $entry->id }}</td>
+                        <td>{{ $entry->reference }}</td>
+                        <td>{{ $entry->memo }}</td>
+                        <td>{{ $line->account->code }} - {{ $line->account->name }}</td>
+                        <td class="numeric">{{ $line->debit > 0 ? format_number($line->debit) : '' }}</td>
+                        <td class="numeric">{{ $line->credit > 0 ? format_number($line->credit) : '' }}</td>
                     </tr>
                     @endforeach
                 @empty

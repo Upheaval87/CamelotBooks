@@ -1,24 +1,15 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Inventory Valuation Report') }}</h2>
-            <div class="flex items-center space-x-3">
-                <a href="{{ route('accounting.inventory-valuation.by-category') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                    {{ __('By Category') }}
-                </a>
-                <a href="{{ route('accounting.inventory-valuation.export-csv') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                    {{ __('Export CSV') }}
-                </a>
-                <a href="{{ route('accounting.inventory-valuation.export-pdf') }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                    {{ __('Print / PDF') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Inventory Valuation Report') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.inventory-valuation.by-category') }}">{{ __('By Category') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.inventory-valuation.export-csv') }}">{{ __('Export CSV') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.inventory-valuation.export-pdf') }}" target="_blank">{{ __('Print / PDF') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="datasheet-wrap">
                 <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                     <h3 class="text-lg font-medium text-gray-900">All Products (FIFO Valuation)</h3>
                     <div class="text-right">
@@ -27,32 +18,32 @@
                     </div>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Keeping Unit (SKU)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Unit Cost</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Value</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
+                                <th>Stock Keeping Unit (SKU)</th>
+                                <th>Product</th>
+                                <th class="text-right">Quantity</th>
+                                <th class="text-right">Avg Unit Cost</th>
+                                <th class="text-right">Total Value</th>
+                                <th class="text-right">% of Total</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($valuation as $row)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $row['sku'] ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['product_name'] }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($row['total_quantity']) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money((float)$row['avg_cost'], null, 4) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">@money((float)$row['total_value'])</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                                    <td class="text-ink-soft">{{ $row['sku'] ?? '—' }}</td>
+                                    <td>{{ $row['product_name'] }}</td>
+                                    <td class="numeric">{{ format_money($row['total_quantity']) }}</td>
+                                    <td class="numeric">{{ format_money((float)$row['avg_cost'], null, 4) }}</td>
+                                    <td class="numeric">@money((float)$row['total_value'])</td>
+                                    <td class="text-ink-soft text-right">
                                         {{ $totalValue > 0 ? number_format(((float)$row['total_value'] / $totalValue) * 100, 1) . '%' : '0.0%' }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="6" class="text-center text-ink-soft">
                                         No inventory items found.
                                     </td>
                                 </tr>

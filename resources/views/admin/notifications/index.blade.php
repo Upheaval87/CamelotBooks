@@ -1,7 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Notification Settings</h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Notification Settings') }}</x-slot>
 
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -61,32 +59,34 @@
             </div>
         </form>
 
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Email Templates</h2>
-            <p class="text-sm text-gray-500 mb-4">Available variables are shown in double curly braces. Keep templates lightweight — emails are sent synchronously.</p>
+        <div class="datasheet-wrap">
+            <div class="card-header">
+                <h2 class="text-base font-semibold text-ink">Email Templates</h2>
+                <p class="text-sm text-ink-soft mt-1">Available variables are shown in double curly braces. Keep templates lightweight — emails are sent synchronously.</p>
+            </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="datasheet">
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Event</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <th>Event</th>
+                            <th>Status</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         @foreach($eventLabels as $key => $label)
                         @php $tpl = $templates->firstWhere('event_type', $key); @endphp
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $label }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <tr>
+                            <td>{{ $label }}</td>
+                            <td>
                                 @if($tpl && $tpl->is_enabled)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Enabled</span>
+                                    <span class="status-pill positive">Enabled</span>
                                 @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Disabled</span>
+                                    <span class="status-pill neutral">Disabled</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <a href="{{ route('admin.notifications.template-edit', $key) }}" class="text-indigo-600 hover:text-indigo-900">Edit Template</a>
+                            <td class="text-right">
+                                <a href="{{ route('admin.notifications.template-edit', $key) }}" class="text-ink hover:text-gold">Edit Template</a>
                             </td>
                         </tr>
                         @endforeach

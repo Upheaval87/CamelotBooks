@@ -27,24 +27,24 @@
         </div>
     </div>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quote #</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total ({{ $cs }})</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valid Until</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Quote #</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th class="text-right">Total ({{ $cs }})</th>
+                <th>Valid Until</th>
+                <th>Status</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($rows as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['quote_number'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['date'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['customer'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['total']) }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['valid_until'] }}</td>
-                    <td class="px-4 py-2 text-sm">
+                    <td>{{ $row['quote_number'] }}</td>
+                    <td>{{ $row['date'] }}</td>
+                    <td>{{ $row['customer'] }}</td>
+                    <td class="numeric">{{ format_number($row['total']) }}</td>
+                    <td>{{ $row['valid_until'] }}</td>
+                    <td>
                         @if($row['status'] === 'accepted')
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Accepted</span>
                         @elseif($row['status'] === 'pending')
@@ -91,24 +91,24 @@
         </div>
     </div>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quote #</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total ({{ $cs }})</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valid Until</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Quote #</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th class="text-right">Total ({{ $cs }})</th>
+                <th>Valid Until</th>
+                <th>Status</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($rows as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['quote_number'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['date'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['customer'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['total']) }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['valid_until'] }}</td>
-                    <td class="px-4 py-2 text-sm">
+                    <td>{{ $row['quote_number'] }}</td>
+                    <td>{{ $row['date'] }}</td>
+                    <td>{{ $row['customer'] }}</td>
+                    <td class="numeric">{{ format_number($row['total']) }}</td>
+                    <td>{{ $row['valid_until'] }}</td>
+                    <td>
                         @if($row['status'] === 'accepted')
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Accepted</span>
                         @elseif($row['status'] === 'pending')

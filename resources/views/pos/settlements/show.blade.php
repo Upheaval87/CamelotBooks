@@ -1,12 +1,8 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Settlement') }} – {{ $settlement->settlement_number }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Settlement') }} – {{ $settlement->settlement_number }}</x-slot>
 
-    <div class="py-6">
+    <div class="pb-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
@@ -16,8 +12,8 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {{-- Settlement Details --}}
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Settlement Details</h3>
+                <div class="card p-6">
+                    <div class="form-section-label">1 · Settlement Details</div>
 
                     <dl class="space-y-3">
                         <div class="flex justify-between">
@@ -64,8 +60,8 @@
                 </div>
 
                 {{-- Amounts --}}
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Amounts</h3>
+                <div class="card p-6">
+                    <div class="form-section-label">2 · Amounts</div>
 
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
@@ -86,31 +82,31 @@
 
             {{-- Journal Entry --}}
             @if($settlement->journalEntry)
-                <div class="mt-6 bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Journal Entry – {{ $settlement->journalEntry->reference }}</h3>
+                <div class="mt-6 card p-6">
+                    <div class="form-section-label">3 · Journal Entry – {{ $settlement->journalEntry->reference }}</div>
 
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit ({{ $cs }})</th>
-                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit ({{ $cs }})</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                <th>Account</th>
+                                <th class="text-right">Debit ({{ $cs }})</th>
+                                <th class="text-right">Credit ({{ $cs }})</th>
+                                <th>Description</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($settlement->journalEntry->lines as $line)
                                 <tr>
-                                    <td class="px-4 py-2 text-sm text-gray-900">
+                                    <td>
                                         {{ $line->account->code }} – {{ $line->account->name }}
                                     </td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ $line->debit > 0 ? format_number($line->debit) : '' }}
                                     </td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ $line->credit > 0 ? format_number($line->credit) : '' }}
                                     </td>
-                                    <td class="px-4 py-2 text-sm text-gray-500">{{ $line->description }}</td>
+                                    <td class="text-ink-soft">{{ $line->description }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -119,9 +115,7 @@
             @endif
 
             <div class="mt-6">
-                <a href="{{ route('pos.settlements.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900">
-                    &larr; Back to Settlements
-                </a>
+                <x-button variant="ghost" href="{{ route('pos.settlements.index') }}">&larr; Back to Settlements</x-button>
             </div>
         </div>
     </div>

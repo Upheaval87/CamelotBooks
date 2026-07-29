@@ -1,18 +1,10 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Cash Flow Statement') }}
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.cash-flow.export-csv', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Export CSV') }}
-                </a>
-                <a href="{{ route('accounting.cash-flow.export-pdf', request()->query()) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Export PDF') }}
-                </a>
-            </div>
-        </div>
+    <x-slot name="header">{{ __('Cash Flow Statement') }}</x-slot>
+
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.cash-flow.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.cash-flow.export-pdf', request()->query()) }}" target="_blank">{{ __('Export PDF') }}</x-button>
+    </div>
     </x-slot>
 
     <div class="py-12">
@@ -45,41 +37,41 @@
                 </form>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-800">Cash Flow Statement: {{ \Carbon\Carbon::parse($dateFrom)->format('M d, Y') }} to {{ \Carbon\Carbon::parse($dateTo)->format('M d, Y') }}</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th>Description</th>
+                                <th class="text-right">Amount</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             <tr class="bg-gray-50">
                                 <td colspan="2" class="px-6 py-2 text-sm font-semibold text-gray-700">Operating Activities</td>
                             </tr>
                             <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">Net Income</td>
-                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($net_income) }}</td>
+                                <td>Net Income</td>
+                                <td class="numeric">{{ format_money($net_income) }}</td>
                             </tr>
                             @foreach($non_cash_expenses['items'] as $item)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">Add: {{ $item['account']->name }}</td>
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['amount']) }}</td>
+                                    <td>Add: {{ $item['account']->name }}</td>
+                                    <td class="numeric">{{ format_money($item['amount']) }}</td>
                                 </tr>
                             @endforeach
                             @foreach($sections['operating'] as $item)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['cash_effect']) }}</td>
+                                    <td>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
+                                    <td class="numeric">{{ format_money($item['cash_effect']) }}</td>
                                 </tr>
                             @endforeach
                             <tr class="bg-indigo-50">
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900">Net Cash from Operating</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($operating_total) }}</td>
+                                <td>Net Cash from Operating</td>
+                                <td class="numeric">{{ format_money($operating_total) }}</td>
                             </tr>
 
                             <tr class="bg-gray-50">
@@ -87,8 +79,8 @@
                             </tr>
                             @forelse($sections['investing'] as $item)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['cash_effect']) }}</td>
+                                    <td>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
+                                    <td class="numeric">{{ format_money($item['cash_effect']) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -97,8 +89,8 @@
                                 </tr>
                             @endforelse
                             <tr class="bg-indigo-50">
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900">Net Cash from Investing</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($investing_total) }}</td>
+                                <td>Net Cash from Investing</td>
+                                <td class="numeric">{{ format_money($investing_total) }}</td>
                             </tr>
 
                             <tr class="bg-gray-50">
@@ -106,8 +98,8 @@
                             </tr>
                             @forelse($sections['financing'] as $item)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 pl-10">{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
-                                    <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($item['cash_effect']) }}</td>
+                                    <td>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
+                                    <td class="numeric">{{ format_money($item['cash_effect']) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -116,21 +108,21 @@
                                 </tr>
                             @endforelse
                             <tr class="bg-indigo-50">
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900">Net Cash from Financing</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($financing_total) }}</td>
+                                <td>Net Cash from Financing</td>
+                                <td class="numeric">{{ format_money($financing_total) }}</td>
                             </tr>
 
                             <tr class="bg-gray-900">
-                                <td class="px-6 py-3 text-sm font-bold text-white">Net Change in Cash</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-white text-right">{{ format_money($net_change) }}</td>
+                                <td>Net Change in Cash</td>
+                                <td class="numeric">{{ format_money($net_change) }}</td>
                             </tr>
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-2 text-sm text-gray-900">Beginning Cash Balance</td>
                                 <td class="px-6 py-2 text-right text-sm text-gray-900">{{ format_money($beginning_cash) }}</td>
                             </tr>
                             <tr class="bg-indigo-50">
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900">Ending Cash Balance</td>
-                                <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($ending_cash) }}</td>
+                                <td>Ending Cash Balance</td>
+                                <td class="numeric">{{ format_money($ending_cash) }}</td>
                             </tr>
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-2 text-sm text-gray-500">Actual Ending Cash</td>

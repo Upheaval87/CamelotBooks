@@ -1,18 +1,15 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Edit Recurring Journal Template') }} - {{ $template->name }}
-            </h2>
-            <a href="{{ route('accounting.recurring-journals.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Back to Templates') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Edit Recurring Journal Template') }} - {{ $template->name }}</x-slot>
 
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.recurring-journals.index') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back to Templates') }}
+                </x-button>
+            </div>
             @if(session('error'))
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                     {{ session('error') }}
@@ -23,8 +20,8 @@
                 @csrf
                 @method('PUT')
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Template Details') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">1 · TEMPLATE DETAILS</div>
                     <div class="grid grid-cols-2 gap-6">
                         <div class="col-span-2">
                             <x-input-label for="name" value="{{ __('Template Name') }}" />
@@ -33,7 +30,7 @@
                         </div>
                         <div>
                             <x-input-label for="frequency" value="{{ __('Frequency') }}" />
-                            <select id="frequency" name="frequency" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                            <select id="frequency" name="frequency" class="input mt-1" required>
                                 <option value="weekly" {{ old('frequency', $template->frequency) === 'weekly' ? 'selected' : '' }}>Weekly</option>
                                 <option value="biweekly" {{ old('frequency', $template->frequency) === 'biweekly' ? 'selected' : '' }}>Biweekly</option>
                                 <option value="monthly" {{ old('frequency', $template->frequency) === 'monthly' ? 'selected' : '' }}>Monthly</option>
@@ -44,7 +41,7 @@
                         </div>
                         <div>
                             <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="branch_id" name="branch_id" class="input mt-1">
                                 <option value="">No Branch</option>
                                 @foreach($branches as $branch)
                                     <option value="{{ $branch->id }}" {{ old('branch_id', $template->branch_id) == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
@@ -69,7 +66,7 @@
                         </div>
                         <div>
                             <x-input-label for="day_of_week" value="{{ __('Day of Week') }}" />
-                            <select id="day_of_week" name="day_of_week" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="day_of_week" name="day_of_week" class="input mt-1">
                                 <option value="">Not set</option>
                                 <option value="0" {{ old('day_of_week', $template->day_of_week) == '0' ? 'selected' : '' }}>Sunday</option>
                                 <option value="1" {{ old('day_of_week', $template->day_of_week) == '1' ? 'selected' : '' }}>Monday</option>
@@ -95,9 +92,9 @@
                     </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">{{ __('Template Lines') }}</h3>
+                        <div class="form-section-label">2 · TEMPLATE LINES</div>
                         <button type="button" id="addLineBtn" class="inline-flex items-center px-3 py-1 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             + {{ __('Add Line') }}
                         </button>
@@ -105,13 +102,13 @@
 
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200" id="linesTable">
-                            <thead class="bg-gray-50">
+                            <thead>
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">#</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
+                                    <th>Account</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Dr ({{ $cs }})</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Cr ({{ $cs }})</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                    <th>Description</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Branch</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"></th>
                                 </tr>
@@ -133,9 +130,7 @@
                 </div>
 
                 <div class="flex items-center justify-end space-x-3">
-                    <a href="{{ route('accounting.recurring-journals.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Cancel') }}
-                    </a>
+                    <x-button variant="ghost" href="{{ route('accounting.recurring-journals.index') }}">{{ __('Cancel') }}</x-button>
                     <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                         {{ __('Update Template') }}
                     </button>
@@ -173,7 +168,7 @@
             const tr = document.createElement('tr');
             tr.setAttribute('data-index', lineIndex);
             tr.innerHTML =
-                '<td class="px-4 py-2 text-sm text-gray-500">' + (tbody.rows.length + 1) + '</td>' +
+                '<td class="text-ink-soft">' + (tbody.rows.length + 1) + '</td>' +
                 '<td class="px-4 py-2">' +
                     '<select name="lines[' + lineIndex + '][account_id]" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required>' +
                         buildAccountOptions(preselectedAccountId) +

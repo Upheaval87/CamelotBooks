@@ -1,9 +1,9 @@
 <div class="space-y-6">
     {{-- Export Hub --}}
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="card">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Report Exports</h3>
-            <p class="mt-1 text-sm text-gray-600">Quick access to all available report exports. Each report can be downloaded as CSV or PDF.</p>
+            <div class="form-section-label">1 · Report Exports</div>
+            <p class="mt-1 text-sm text-ink-soft">Quick access to all available report exports. Each report can be downloaded as CSV or PDF.</p>
         </div>
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -42,10 +42,10 @@
     </div>
 
     {{-- Master Data Import --}}
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="card">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Master Data Import</h3>
-            <p class="mt-1 text-sm text-gray-600">Import your business data from CSV files. Download a template, fill in your data, then upload.</p>
+            <div class="form-section-label">2 · Master Data Import</div>
+            <p class="mt-1 text-sm text-ink-soft">Import your business data from CSV files. Download a template, fill in your data, then upload.</p>
         </div>
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -11,16 +11,16 @@
 
     <h2 class="text-lg font-semibold text-gray-900 mb-3">By Branch</h2>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden mb-8">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Cost ({{ $cs }})</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Branch</th>
+                <th class="text-right">Total Cost ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($byBranch as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['branch'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['total_cost']) }}</td>
+                    <td>{{ $row['branch'] }}</td>
+                    <td class="numeric">{{ format_number($row['total_cost']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="2" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>
@@ -31,16 +31,16 @@
 
     <h2 class="text-lg font-semibold text-gray-900 mb-3">By Cost Center</h2>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost Center</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Cost ({{ $cs }})</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Cost Center</th>
+                <th class="text-right">Total Cost ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($byCostCenter as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['cost_center'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['total_cost']) }}</td>
+                    <td>{{ $row['cost_center'] }}</td>
+                    <td class="numeric">{{ format_number($row['total_cost']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="2" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>
@@ -61,16 +61,16 @@
 
     <h2 class="text-lg font-semibold text-gray-900 mb-3">By Branch</h2>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden mb-8">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Cost ({{ $cs }})</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Branch</th>
+                <th class="text-right">Total Cost ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($byBranch as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['branch'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['total_cost']) }}</td>
+                    <td>{{ $row['branch'] }}</td>
+                    <td class="numeric">{{ format_number($row['total_cost']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="2" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>
@@ -81,16 +81,16 @@
 
     <h2 class="text-lg font-semibold text-gray-900 mb-3">By Cost Center</h2>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost Center</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Cost ({{ $cs }})</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Cost Center</th>
+                <th class="text-right">Total Cost ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($byCostCenter as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['cost_center'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['total_cost']) }}</td>
+                    <td>{{ $row['cost_center'] }}</td>
+                    <td class="numeric">{{ format_number($row['total_cost']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="2" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>

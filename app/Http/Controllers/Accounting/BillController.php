@@ -36,12 +36,24 @@ class BillController extends Controller
             $query->where('bill_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('bill_number', 'like', "%{$search}%")
+                  ->orWhereHas('vendor', fn($v) => $v->where('name', 'like', "%{$search}%"));
+            });
+        }
+
         $bills = $query->orderByDesc('bill_date')->paginate(15)->withQueryString();
 
         return view('accounting.bills.index', compact('bills'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $companyId = session('current_company_id');
 
@@ -49,6 +61,8 @@ class BillController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+
+        $selectedVendorId = $request->input('vendor_id');
 
         $products = Product::where('company_id', $companyId)
             ->where('is_active', true)
@@ -66,7 +80,7 @@ class BillController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.bills.create', compact('vendors', 'products', 'expenseAccounts', 'costCenters'));
+        return view('accounting.bills.create', compact('vendors', 'products', 'expenseAccounts', 'costCenters', 'selectedVendorId'));
     }
 
     public function store(Request $request)

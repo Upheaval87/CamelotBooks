@@ -1,16 +1,15 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('New Bill of Materials') }}</h2>
-            <a href="{{ route('accounting.assemblies.boms') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                {{ __('Back') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('New Bill of Materials') }}</x-slot>
 
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.assemblies.boms') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </x-button>
+            </div>
             @if($errors->any())
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                     <ul class="list-disc list-inside">
@@ -59,13 +58,13 @@
                             </div>
 
                             <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
+                                <table class="datasheet">
+                                    <thead>
                                         <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UOM</th>
-                                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>UOM</th>
+                                            <th class="text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody id="components-body" class="bg-white divide-y divide-gray-200">

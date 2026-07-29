@@ -1,13 +1,14 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Create Landed Cost Voucher') }}</h2>
-            <a href="{{ route('accounting.landed-costs.index') }}" class="text-sm text-gray-600 hover:text-gray-900">&larr; Back</a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Create Landed Cost Voucher') }}</x-slot>
 
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.landed-costs.index') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </x-button>
+            </div>
             @if($errors->any())
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                     <ul class="list-disc list-inside text-sm">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
@@ -17,12 +18,12 @@
             <form method="POST" action="{{ route('accounting.landed-costs.store') }}">
                 @csrf
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('General Information') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">1 · GENERAL INFORMATION</div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
-                            <select id="vendor_id" name="vendor_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                            <select id="vendor_id" name="vendor_id" class="input mt-1" required>
                                 <option value="">Select Vendor</option>
                                 @foreach($vendors as $vendor)
                                     <option value="{{ $vendor->id }}" {{ old('vendor_id') == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
@@ -37,7 +38,7 @@
                         </div>
                         <div>
                             <x-input-label for="allocation_method" value="{{ __('Allocation Method') }}" />
-                            <select id="allocation_method" name="allocation_method" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                            <select id="allocation_method" name="allocation_method" class="input mt-1" required>
                                 <option value="by_value" {{ old('allocation_method') === 'by_value' ? 'selected' : '' }}>By Invoice Value</option>
                                 <option value="by_quantity" {{ old('allocation_method') === 'by_quantity' ? 'selected' : '' }}>By Quantity</option>
                             </select>
@@ -50,8 +51,8 @@
                     </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Link GRNs') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">2 · LINK GRNS</div>
                     <p class="text-sm text-gray-500 mb-3">Select the Goods Received Notes this landed cost applies to.</p>
                     <div class="space-y-2 max-h-60 overflow-y-auto">
                         @forelse($grns as $grn)
@@ -68,11 +69,11 @@
                     <x-input-error :messages="$errors->get('grn_ids')" class="mt-2" />
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6" x-data="{
+                <div class="card p-6 mb-6" x-data="{
                     components: {{ Js::from(old('components', [['component_type' => 'freight', 'description' => '', 'amount' => '', 'payee_account_id' => '']])) }}
                 }">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">{{ __('Cost Components') }}</h3>
+                        <div class="form-section-label">3 · COST COMPONENTS</div>
                         <button type="button" @click="components.push({ component_type: 'freight', description: '', amount: '', payee_account_id: '' })" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Component</button>
                     </div>
                     <template x-for="(comp, index) in components" :key="index">
@@ -106,7 +107,7 @@
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <a href="{{ route('accounting.landed-costs.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300">Cancel</a>
+                    <x-button variant="ghost" href="{{ route('accounting.landed-costs.index') }}">{{ __('Cancel') }}</x-button>
                     <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Create Landed Cost Voucher</button>
                 </div>
             </form>

@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.accounts.update', $account) }}">
                     @csrf
                     @method('PUT')
@@ -28,7 +28,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="type" value="{{ __('Type') }}" />
-                                <select id="type" name="type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <select id="type" name="type" class="input mt-1" required>
                                     <option value="">Select Type</option>
                                     <option value="asset" {{ old('type', $account->type) === 'asset' ? 'selected' : '' }}>Asset</option>
                                     <option value="liability" {{ old('type', $account->type) === 'liability' ? 'selected' : '' }}>Liability</option>
@@ -41,7 +41,7 @@
 
                             <div>
                                 <x-input-label for="sub_type" value="{{ __('Sub Type') }}" />
-                                <select id="sub_type" name="sub_type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <select id="sub_type" name="sub_type" class="input mt-1" required>
                                     <option value="">Select Sub Type</option>
                                 </select>
                                 <x-input-error :messages="$errors->get('sub_type')" class="mt-2" />
@@ -50,7 +50,7 @@
 
                         <div>
                             <x-input-label for="parent_id" value="{{ __('Parent Account (Optional)') }}" />
-                            <select id="parent_id" name="parent_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="parent_id" name="parent_id" class="input mt-1">
                                 <option value="">None (Top Level)</option>
                                 @foreach($parentAccounts as $parent)
                                     <option value="{{ $parent->id }}" data-type="{{ $parent->type }}" {{ old('parent_id', $account->parent_id) == $parent->id ? 'selected' : '' }}>
@@ -89,9 +89,7 @@
                     </div>
 
                     <div class="flex items-center justify-end mt-6 space-x-3">
-                        <a href="{{ route('accounting.accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Cancel') }}
-                        </a>
+                        <x-button variant="ghost" href="{{ route('accounting.accounts.index') }}">{{ __('Cancel') }}</x-button>
                         <x-primary-button>{{ __('Update Account') }}</x-primary-button>
                     </div>
                 </form>

@@ -1,16 +1,15 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Manage UOM Conversions:') }} {{ $product->name }}
-            </h2>
-            <a href="{{ route('accounting.uom-conversions.index') }}" class="text-sm text-gray-600 hover:text-gray-900">&larr; Back</a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Manage UOM Conversions:') }} {{ $product->name }}</x-slot>
 
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.uom-conversions.index') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </x-button>
+            </div>
+            <div class="card p-6">
                 <p class="text-sm text-gray-600 mb-4">SKU: <span class="font-medium">{{ $product->sku }}</span> &middot; Type: <span class="font-medium">{{ ucfirst($product->type) }}</span></p>
 
                 <form method="POST" action="{{ route('accounting.uom-conversions.update', $product) }}">
@@ -69,7 +68,7 @@
                         <button type="button" @click="addUom()" class="mb-6 inline-flex items-center px-3 py-1.5 border border-dashed border-gray-400 rounded-md text-sm text-gray-600 hover:border-indigo-500 hover:text-indigo-600">+ Add UOM</button>
 
                         <div class="border-t pt-4 flex justify-end gap-3">
-                            <a href="{{ route('accounting.uom-conversions.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300">Cancel</a>
+                            <x-button variant="ghost" href="{{ route('accounting.uom-conversions.index') }}">{{ __('Cancel') }}</x-button>
                             <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Save UOM Conversions</button>
                         </div>
                     </div>

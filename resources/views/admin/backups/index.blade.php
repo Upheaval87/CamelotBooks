@@ -1,7 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Backup Management</h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Backup Management') }}</x-slot>
 
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -20,9 +18,7 @@
             </div>
             <form method="POST" action="{{ route('admin.backups.trigger') }}" onsubmit="return confirm('Trigger a database backup now? This may take a moment for large databases.')">
                 @csrf
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition ease-in-out duration-150">
-                    Trigger Backup Now
-                </button>
+                <x-button variant="primary" type="submit">{{ __('Trigger Backup Now') }}</x-button>
             </form>
         </div>
 
@@ -38,52 +34,50 @@
             </div>
         </div>
 
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-10">
+        <div class="datasheet-wrap mb-10">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="datasheet">
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Filename</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Triggered By</th>
+                            <th>Date/Time</th>
+                            <th>Filename</th>
+                            <th>Size</th>
+                            <th>Status</th>
+                            <th>Triggered By</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         @forelse($backups as $backup)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $backup->created_at->format('M d, Y H:i:s') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">{{ $backup->filename }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $backup->file_size_human }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <tr>
+                            <td>{{ $backup->created_at->format('M d, Y H:i:s') }}</td>
+                            <td>{{ $backup->filename }}</td>
+                            <td>{{ $backup->file_size_human }}</td>
+                            <td>
                                 @php
                                     $statusClass = match($backup->status) {
-                                        'success' => 'bg-green-100 text-green-800',
-                                        'running' => 'bg-yellow-100 text-yellow-800',
-                                        default => 'bg-red-100 text-red-800',
+                                        'success' => 'positive',
+                                        'running' => 'neutral',
+                                        default => 'negative',
                                     };
                                 @endphp
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusClass }}">
+                                <span class="status-pill {{ $statusClass }}">
                                     {{ ucfirst($backup->status) }}
                                 </span>
                                 @if($backup->error_message)
                                     <p class="mt-1 text-xs text-red-600 max-w-xs truncate">{{ $backup->error_message }}</p>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($backup->triggered_by) }}</td>
+                            <td>{{ ucfirst($backup->triggered_by) }}</td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">
-                                No database backups have been triggered yet.
-                            </td>
+                            <td colspan="5" class="text-center">No database backups have been triggered yet.</td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <div class="px-6 py-4 border-t border-gray-200">
+            <div class="datasheet-footer">
                 {{ $backups->links() }}
             </div>
         </div>
@@ -128,45 +122,43 @@
             </div>
         </div>
 
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="datasheet-wrap">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="datasheet">
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Label</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created By</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Settings</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <th>Label</th>
+                            <th>Created By</th>
+                            <th>Date</th>
+                            <th>Settings</th>
+                            <th>Notes</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         @forelse($snapshots as $snapshot)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $snapshot->label }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ $snapshot->createdByUser?->name ?? 'System' }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $snapshot->created_at->format('M d, Y H:i') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $snapshot->record_count }} settings</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{{ $snapshot->notes ?? '—' }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                        <tr>
+                            <td>{{ $snapshot->label }}</td>
+                            <td>{{ $snapshot->createdByUser?->name ?? 'System' }}</td>
+                            <td>{{ $snapshot->created_at->format('M d, Y H:i') }}</td>
+                            <td>{{ $snapshot->record_count }} settings</td>
+                            <td>{{ $snapshot->notes ?? '—' }}</td>
+                            <td class="text-right">
                                 <form method="POST" action="{{ route('admin.backups.restore-snapshot', $snapshot) }}" class="inline" onsubmit="return confirm('Restore settings from this snapshot? Current settings will be overwritten.')">
                                     @csrf
                                     @method('PATCH')
-                                    <button type="submit" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Restore</button>
+                                    <x-button variant="ghost" type="submit">{{ __('Restore') }}</x-button>
                                 </form>
-                                <form method="POST" action="{{ route('admin.backups.delete-snapshot', $snapshot) }}" class="inline" onsubmit="return confirm('Delete this snapshot permanently?')">
+                                <form method="POST" action="{{ route('admin.backups.delete-snapshot', $snapshot) }}" class="inline ml-2" onsubmit="return confirm('Delete this snapshot permanently?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium">Delete</button>
+                                    <x-button variant="ghost" type="submit">{{ __('Delete') }}</x-button>
                                 </form>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">
-                                No settings snapshots created yet.
-                            </td>
+                            <td colspan="6" class="text-center">No settings snapshots created yet.</td>
                         </tr>
                         @endforelse
                     </tbody>

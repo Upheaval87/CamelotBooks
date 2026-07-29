@@ -1,21 +1,19 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Quotation {{ $quotation->quotation_number }}</h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.quotations.print', $quotation) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 shadow-sm hover:bg-gray-50">Print</a>
-                @if($quotation->customer && $quotation->customer->email)
-                    <form method="POST" action="{{ route('accounting.quotations.email', $quotation) }}" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 shadow-sm hover:bg-gray-50">Email</button>
-                    </form>
-                @endif
-                <a href="{{ route('accounting.quotations.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 shadow-sm hover:bg-gray-50">Back to Quotations</a>
-            </div>
-        </div>
-    </x-slot>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <x-slot name="header">Quotation {{ $quotation->quotation_number }}</x-slot>
+
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.quotations.print', $quotation) }}" target="_blank">Print</x-button>
+        @if($quotation->customer && $quotation->customer->email)
+            <form method="POST" action="{{ route('accounting.quotations.email', $quotation) }}" class="inline">
+                @csrf
+                <x-button variant="ghost" type="submit">Email</x-button>
+            </form>
+        @endif
+        <x-button variant="ghost" href="{{ route('accounting.quotations.index') }}">Back to Quotations</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))<div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>@endif
             @if(session('error'))<div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>@endif
 
@@ -43,24 +41,24 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Line Items</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50"><tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tax</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                    <table class="datasheet">
+                        <thead><tr>
+                            <th>Product</th>
+                            <th>Description</th>
+                            <th class="text-right">Qty</th>
+                            <th class="text-right">Unit Price</th>
+                            <th class="text-right">Tax</th>
+                            <th class="text-right">Total</th>
                         </tr></thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($quotation->lines as $line)
                                 <tr>
-                                    <td class="px-4 py-2 text-sm text-gray-900">{{ $line->product->name ?? '—' }}</td>
+                                    <td>{{ $line->product->name ?? '—' }}</td>
                                     <td class="px-4 py-2 text-sm text-gray-700">{{ $line->description }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ number_format($line->quantity, 2) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->unit_price) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->tax_amount) }}</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">{{ format_money($line->line_total) }}</td>
+                                    <td class="numeric">{{ number_format($line->quantity, 2) }}</td>
+                                    <td class="numeric">{{ format_money($line->unit_price) }}</td>
+                                    <td class="numeric">{{ format_money($line->tax_amount) }}</td>
+                                    <td class="numeric">{{ format_money($line->line_total) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

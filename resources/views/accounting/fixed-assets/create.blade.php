@@ -7,14 +7,14 @@
 
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.fixed-assets.store') }}">
                     @csrf
 
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="category_id" value="{{ __('Asset Category') }}" />
-                            <select id="category_id" name="category_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                            <select id="category_id" name="category_id" class="input mt-1" required>
                                 <option value="">Select Category</option>
                                 @foreach($categories as $cat)
                                     <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
@@ -77,7 +77,7 @@
                             </div>
                             <div>
                                 <x-input-label for="depreciation_method_financial" value="{{ __('Financial Depreciation Method') }}" />
-                                <select id="depreciation_method_financial" name="depreciation_method_financial" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <select id="depreciation_method_financial" name="depreciation_method_financial" class="input mt-1">
                                     <option value="">Select Method</option>
                                     <option value="straight_line" {{ old('depreciation_method_financial') === 'straight_line' ? 'selected' : '' }}>Straight Line</option>
                                     <option value="declining_balance" {{ old('depreciation_method_financial') === 'declining_balance' ? 'selected' : '' }}>Declining Balance</option>
@@ -96,7 +96,7 @@
                             </div>
                             <div>
                                 <x-input-label for="depreciation_method_tax" value="{{ __('Tax Depreciation Method') }}" />
-                                <select id="depreciation_method_tax" name="depreciation_method_tax" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <select id="depreciation_method_tax" name="depreciation_method_tax" class="input mt-1">
                                     <option value="">Select Method</option>
                                     <option value="straight_line" {{ old('depreciation_method_tax') === 'straight_line' ? 'selected' : '' }}>Straight Line</option>
                                     <option value="declining_balance" {{ old('depreciation_method_tax') === 'declining_balance' ? 'selected' : '' }}>Declining Balance</option>
@@ -121,11 +121,11 @@
                         </div>
 
                         <div class="border-t pt-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Optional Details') }}</h3>
+                            <div class="form-section-label">3 · OPTIONAL DETAILS</div>
                             <div class="space-y-4">
                                 <div>
                                     <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                                    <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="branch_id" name="branch_id" class="input mt-1">
                                         <option value="">None</option>
                                         @foreach($branches ?? [] as $branch)
                                             <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
@@ -137,7 +137,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" />
-                                    <select id="cost_center_id" name="cost_center_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="cost_center_id" name="cost_center_id" class="input mt-1">
                                         <option value="">None</option>
                                         @foreach($costCenters ?? [] as $cc)
                                             <option value="{{ $cc->id }}" {{ old('cost_center_id') == $cc->id ? 'selected' : '' }}>
@@ -149,7 +149,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
-                                    <select id="vendor_id" name="vendor_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="vendor_id" name="vendor_id" class="input mt-1">
                                         <option value="">None</option>
                                         @foreach($vendors ?? [] as $vendor)
                                             <option value="{{ $vendor->id }}" {{ old('vendor_id') == $vendor->id ? 'selected' : '' }}>
@@ -164,9 +164,7 @@
                     </div>
 
                     <div class="flex items-center justify-end mt-6 space-x-3">
-                        <a href="{{ route('accounting.fixed-assets.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Cancel') }}
-                        </a>
+                        <x-button variant="ghost" href="{{ route('accounting.fixed-assets.index') }}">{{ __('Cancel') }}</x-button>
                         <x-primary-button>{{ __('Create Asset') }}</x-primary-button>
                     </div>
                 </form>

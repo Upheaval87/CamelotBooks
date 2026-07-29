@@ -1,10 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Cash Flow Trend & Projection</h2>
-    </x-slot>
+    <x-slot name="header">Cash Flow Trend & Projection</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <form method="GET" action="{{ route('analytics.cash-flow-trend') }}" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
@@ -58,17 +56,17 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly Breakdown</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Operating</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Investing</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Financing</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Net</th>
+                                <th>Month</th>
+                                <th class="text-right">Operating</th>
+                                <th class="text-right">Investing</th>
+                                <th class="text-right">Financing</th>
+                                <th class="text-right">Net</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody>
                             @for($i = 0; $i < count($data['labels']); $i++)
                                 @php
                                     $isProjection = $i >= $data['historical_count'];
@@ -77,17 +75,17 @@
                                     $financing = $isProjection ? ($data['projection_financing'][$i - $data['historical_count']] ?? 0) : ($data['financing'][$i] ?? 0);
                                     $net = $isProjection ? ($data['projection_net'][$i - $data['historical_count']] ?? 0) : ($data['net'][$i] ?? 0);
                                 @endphp
-                                <tr class="{{ $isProjection ? 'bg-gray-50' : '' }}">
-                                    <td class="px-4 py-3 text-sm text-gray-900">
+                                <tr class="{{ $isProjection ? 'text-ink-soft' : '' }}">
+                                    <td>
                                         {{ $data['labels'][$i] }}
                                         @if($isProjection)
                                             <span class="text-xs text-amber-600 ml-1">(Projected)</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">@money($operating)</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">@money($investing)</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">@money($financing)</td>
-                                    <td class="px-4 py-3 text-sm text-right font-medium {{ $net >= 0 ? 'text-green-600' : 'text-red-600' }}">@money($net)</td>
+                                    <td class="numeric">@money($operating)</td>
+                                    <td class="numeric">@money($investing)</td>
+                                    <td class="numeric">@money($financing)</td>
+                                    <td class="numeric font-medium {{ $net >= 0 ? 'text-green-600' : 'text-red-600' }}">@money($net)</td>
                                 </tr>
                             @endfor
                         </tbody>

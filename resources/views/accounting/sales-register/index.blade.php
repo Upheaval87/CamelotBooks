@@ -1,12 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Sales Register</h2>
-        </div>
-    </x-slot>
+    <x-slot name="header">Sales Register</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.sales-register.index') }}" class="flex items-end gap-4">
                     <div>
@@ -51,42 +47,42 @@
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tax</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th>Date</th>
+                                <th>Document #</th>
+                                <th>Type</th>
+                                <th>Customer</th>
+                                <th class="text-right">Amount</th>
+                                <th class="text-right">Tax</th>
+                                <th class="text-right">Total</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($allSales as $sale)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ \Carbon\Carbon::parse($sale['date'])->format('M d, Y') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $sale['document_number'] }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $sale['type'] }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $sale['customer'] }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($sale['amount']) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($sale['tax']) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{{ format_money($sale['total']) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td class="text-ink-soft">{{ \Carbon\Carbon::parse($sale['date'])->format('M d, Y') }}</td>
+                                    <td>{{ $sale['document_number'] }}</td>
+                                    <td>{{ $sale['type'] }}</td>
+                                    <td>{{ $sale['customer'] }}</td>
+                                    <td class="numeric">{{ format_money($sale['amount']) }}</td>
+                                    <td class="numeric">{{ format_money($sale['tax']) }}</td>
+                                    <td class="numeric">{{ format_money($sale['total']) }}</td>
+                                    <td class="text-center">
                                         @switch($sale['status'])
-                                            @case('posted') <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Posted</span>@break
-                                            @case('paid') <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Paid</span>@break
-                                            @case('partially_paid') <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Partial</span>@break
-                                            @default <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($sale['status']) }}</span>
+                                            @case('posted') <span class="status-pill positive">Posted</span>@break
+                                            @case('paid') <span class="status-pill positive">Paid</span>@break
+                                            @case('partially_paid') <span class="status-pill neutral">Partial</span>@break
+                                            @default <span class="status-pill neutral">{{ ucfirst($sale['status']) }}</span>
                                         @endswitch
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">No sales found.</td></tr>
+                                <tr><td colspan="8" class="text-center text-ink-soft">No sales found.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

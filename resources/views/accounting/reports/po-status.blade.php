@@ -20,22 +20,22 @@
                 @endif
             </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="datasheet">
             <thead class="bg-white"><tr>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Ordered</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Received</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Remaining</th>
+                <th>Product</th>
+                <th>SKU</th>
+                <th class="text-right">Ordered</th>
+                <th class="text-right">Received</th>
+                <th class="text-right">Remaining</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @foreach($po->lines as $line)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $line->product->name ?? 'N/A' }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $line->product->sku ?? 'N/A' }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($line->qty_ordered) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($line->qty_received) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($line->qty_ordered - $line->qty_received) }}</td>
+                    <td>{{ $line->product->name ?? 'N/A' }}</td>
+                    <td>{{ $line->product->sku ?? 'N/A' }}</td>
+                    <td class="numeric">{{ format_number($line->qty_ordered) }}</td>
+                    <td class="numeric">{{ format_number($line->qty_received) }}</td>
+                    <td class="numeric">{{ format_number($line->qty_ordered - $line->qty_received) }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -68,22 +68,22 @@
                 @endif
             </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="datasheet">
             <thead class="bg-white"><tr>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Ordered</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Received</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Remaining</th>
+                <th>Product</th>
+                <th>SKU</th>
+                <th class="text-right">Ordered</th>
+                <th class="text-right">Received</th>
+                <th class="text-right">Remaining</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @foreach($po->lines as $line)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $line->product->name ?? 'N/A' }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $line->product->sku ?? 'N/A' }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($line->qty_ordered) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($line->qty_received) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($line->qty_ordered - $line->qty_received) }}</td>
+                    <td>{{ $line->product->name ?? 'N/A' }}</td>
+                    <td>{{ $line->product->sku ?? 'N/A' }}</td>
+                    <td class="numeric">{{ format_number($line->qty_ordered) }}</td>
+                    <td class="numeric">{{ format_number($line->qty_received) }}</td>
+                    <td class="numeric">{{ format_number($line->qty_ordered - $line->qty_received) }}</td>
                 </tr>
                 @endforeach
             </tbody>

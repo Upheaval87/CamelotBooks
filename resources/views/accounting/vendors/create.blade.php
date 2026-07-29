@@ -1,19 +1,16 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Create Vendor') }}
-            </h2>
-            <a href="{{ route('accounting.vendors.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Back') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Create Vendor') }}</x-slot>
 
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.vendors.index') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </x-button>
+            </div>
+            <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.vendors.store') }}">
                     @csrf
 
@@ -65,7 +62,7 @@
 
                             <div>
                                 <x-input-label for="payment_terms" value="{{ __('Payment Terms') }}" />
-                                <select id="payment_terms" name="payment_terms" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <select id="payment_terms" name="payment_terms" class="input mt-1">
                                     <option value="due_on_receipt" {{ old('payment_terms') === 'due_on_receipt' ? 'selected' : '' }}>Due on Receipt</option>
                                     <option value="net_15" {{ old('payment_terms') === 'net_15' ? 'selected' : '' }}>Net 15</option>
                                     <option value="net_30" {{ old('payment_terms') === 'net_30' ? 'selected' : '' }}>Net 30</option>
@@ -99,9 +96,7 @@
                     </div>
 
                     <div class="flex items-center justify-end mt-6 space-x-3">
-                        <a href="{{ route('accounting.vendors.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Cancel') }}
-                        </a>
+                        <x-button variant="ghost" href="{{ route('accounting.vendors.index') }}">{{ __('Cancel') }}</x-button>
                         <x-primary-button>{{ __('Create Vendor') }}</x-primary-button>
                     </div>
                 </form>

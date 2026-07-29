@@ -10,26 +10,26 @@
         </form>
     </div>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Run #</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pay Date</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total PAYE ({{ $cs }})</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Approved By</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Posted</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Period</th>
+                <th>Run #</th>
+                <th>Pay Date</th>
+                <th class="text-right">Total PAYE ({{ $cs }})</th>
+                <th>Status</th>
+                <th>Approved By</th>
+                <th>Posted</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($runs as $r)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $r['period_label'] }}</td>
+                    <td>{{ $r['period_label'] }}</td>
                     <td class="px-4 py-2 text-sm font-mono">{{ $r['run_number'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $r['pay_date'] }}</td>
+                    <td>{{ $r['pay_date'] }}</td>
                     <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($r['total_paye']) }}</td>
-                    <td class="px-4 py-2 text-sm"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $r['status'] === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($r['status']) }}</span></td>
-                    <td class="px-4 py-2 text-sm text-gray-500">{{ $r['approved_by'] ?? '—' }}</td>
-                    <td class="px-4 py-2 text-sm text-gray-500">{{ $r['posted_at'] ?? '—' }}</td>
+                    <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $r['status'] === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($r['status']) }}</span></td>
+                    <td class="text-ink-soft">{{ $r['approved_by'] ?? '—' }}</td>
+                    <td class="text-ink-soft">{{ $r['posted_at'] ?? '—' }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">No PAYE remittances found.</td></tr>

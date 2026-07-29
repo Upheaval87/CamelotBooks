@@ -1,17 +1,14 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Record Vendor Payment') }}
-            </h2>
-            <a href="{{ route('accounting.bills.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Back to Bills') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Record Vendor Payment') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.bills.index') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back to Bills') }}
+                </x-button>
+            </div>
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -27,12 +24,12 @@
             <form method="POST" action="{{ route('accounting.vendor-payments.store') }}">
                 @csrf
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payment Details') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">1 · PAYMENT DETAILS</div>
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
-                            <select id="vendor_id" name="vendor_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required onchange="loadBills()">
+                            <select id="vendor_id" name="vendor_id" class="input mt-1" required onchange="loadBills()">
                                 <option value="">Select Vendor</option>
                                 @foreach($vendors as $vendor)
                                     <option value="{{ $vendor->id }}" {{ old('vendor_id') == $vendor->id ? 'selected' : '' }}>
@@ -54,7 +51,7 @@
                         </div>
                         <div>
                             <x-input-label for="payment_method" value="{{ __('Payment Method') }}" />
-                            <select id="payment_method" name="payment_method" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                            <select id="payment_method" name="payment_method" class="input mt-1" required>
                                 <option value="cash" {{ old('payment_method') === 'cash' ? 'selected' : '' }}>Cash</option>
                                 <option value="check" {{ old('payment_method') === 'check' ? 'selected' : '' }}>Check</option>
                                 <option value="bank_transfer" {{ old('payment_method') === 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
@@ -65,7 +62,7 @@
                         </div>
                         <div>
                             <x-input-label for="bank_account_id" value="{{ __('Pay From') }}" />
-                            <select id="bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                            <select id="bank_account_id" name="bank_account_id" class="input mt-1" required>
                                 <option value="">Select Bank Account</option>
                                 @foreach($bankAccounts as $bankAccount)
                                     <option value="{{ $bankAccount->id }}" {{ old('bank_account_id') == $bankAccount->id ? 'selected' : '' }}>
@@ -88,17 +85,17 @@
                     </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Allocate to Bills') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">2 · ALLOCATE TO BILLS</div>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance Due</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Allocation</th>
+                                    <th>Bill #</th>
+                                    <th>Date</th>
+                                    <th class="text-right">Total</th>
+                                    <th class="text-right">Balance Due</th>
+                                    <th class="text-right">Allocation</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="bills-body">
@@ -112,7 +109,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="card p-6 mb-6">
                     <div class="flex justify-end">
                         <div class="w-64 space-y-2">
                             <div class="flex justify-between text-sm">
@@ -132,9 +129,7 @@
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <a href="{{ route('accounting.bills.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Cancel') }}
-                    </a>
+                    <x-button variant="ghost" href="{{ route('accounting.bills.index') }}">{{ __('Cancel') }}</x-button>
                     <x-primary-button type="submit">{{ __('Record Payment') }}</x-primary-button>
                 </div>
             </form>
@@ -149,16 +144,16 @@
             const tbody = document.getElementById('bills-body');
             const bills = openBillsByVendor[vendorId] || [];
             if (!bills.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No open bills for this vendor.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-ink-soft">No open bills for this vendor.</td></tr>';
                 return;
             }
             tbody.innerHTML = bills.map(bill => `
                 <tr data-bill-id="${bill.id}" data-balance="${bill.balance_due}">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${bill.bill_number}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${bill.bill_date ?? '—'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">${parseFloat(bill.total).toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">${parseFloat(bill.balance_due).toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                    <td>${bill.bill_number}</td>
+                    <td class="text-ink-soft">${bill.bill_date ?? '—'}</td>
+                    <td class="numeric">${parseFloat(bill.total).toFixed(2)}</td>
+                    <td class="numeric">${parseFloat(bill.balance_due).toFixed(2)}</td>
+                    <td class="numeric">
                         <input type="number" name="allocations[${bill.id}]" class="allocation-input block w-32 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" min="0" max="${bill.balance_due}" step="0.01" value="0" oninput="updateAllocationTotals()" />
                     </td>
                 </tr>

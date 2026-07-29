@@ -18,32 +18,32 @@
         </form>
     </div>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Build #</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assembly Product</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">BOM</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total ({{ $cs }})</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created By</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Build #</th>
+                <th>Type</th>
+                <th>Assembly Product</th>
+                <th>BOM</th>
+                <th>Date</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit Cost ({{ $cs }})</th>
+                <th class="text-right">Total ({{ $cs }})</th>
+                <th>Status</th>
+                <th>Created By</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($builds as $b)
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 text-sm font-mono">{{ $b['build_number'] }}</td>
-                    <td class="px-4 py-2 text-sm"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $b['type'] === 'build' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800' }}">{{ ucfirst($b['type']) }}</span></td>
-                    <td class="px-4 py-2 text-sm">{{ $b['assembly_product'] }}</td>
-                    <td class="px-4 py-2 text-sm text-gray-500">{{ $b['bom_name'] ?? '—' }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $b['date'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($b['quantity']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($b['unit_cost']) }}</td>
+                    <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $b['type'] === 'build' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800' }}">{{ ucfirst($b['type']) }}</span></td>
+                    <td>{{ $b['assembly_product'] }}</td>
+                    <td class="text-ink-soft">{{ $b['bom_name'] ?? '—' }}</td>
+                    <td>{{ $b['date'] }}</td>
+                    <td class="numeric">{{ format_number($b['quantity']) }}</td>
+                    <td class="numeric">{{ format_number($b['unit_cost']) }}</td>
                     <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($b['total_component_cost']) }}</td>
-                    <td class="px-4 py-2 text-sm"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $b['status'] === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($b['status']) }}</span></td>
-                    <td class="px-4 py-2 text-sm text-gray-500">{{ $b['created_by'] }}</td>
+                    <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $b['status'] === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($b['status']) }}</span></td>
+                    <td class="text-ink-soft">{{ $b['created_by'] }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="10" class="px-4 py-8 text-center text-sm text-gray-500">No assembly builds found.</td></tr>

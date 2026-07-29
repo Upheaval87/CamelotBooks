@@ -1,12 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('EIS Submissions') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('EIS Submissions') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -18,50 +14,50 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt #</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terminal</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Retries</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th>Receipt #</th>
+                                <th>Terminal</th>
+                                <th class="text-center">Type</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Retries</th>
+                                <th>Submitted</th>
+                                <th>Error</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($submissions as $submission)
                                 <tr>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $submission->receipt_number }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ $submission->terminal->site_id ?? '-' }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-center text-sm">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $submission->invoice_type === 'B2B' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+                                    <td>{{ $submission->receipt_number }}</td>
+                                    <td class="text-ink-soft">{{ $submission->terminal->site_id ?? '-' }}</td>
+                                    <td class="text-center">
+                                        <span class="status-pill {{ $submission->invoice_type === 'B2B' ? 'positive' : 'negative' }}">
                                             {{ $submission->invoice_type }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <td class="text-center">
                                         @if($submission->status === 'accepted')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Accepted</span>
+                                            <span class="status-pill positive">Accepted</span>
                                         @elseif($submission->status === 'pending' || $submission->status === 'submitted')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ ucfirst($submission->status) }}</span>
+                                            <span class="status-pill negative">{{ ucfirst($submission->status) }}</span>
                                         @elseif($submission->status === 'rejected')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>
+                                            <span class="status-pill negative">Rejected</span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">Error</span>
+                                            <span class="status-pill negative">Error</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-center text-sm text-gray-500">{{ $submission->retry_count }}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="text-center text-ink-soft">{{ $submission->retry_count }}</td>
+                                    <td class="text-ink-soft">
                                         {{ $submission->submitted_at ? $submission->submitted_at->diffForHumans() : '-' }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-red-600 max-w-xs truncate">
+                                    <td class="text-red-600 max-w-xs truncate">
                                         {{ $submission->error_message ?? '-' }}
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-right text-sm">
+                                    <td class="text-right">
                                         @if($submission->status === 'error' && $submission->retry_count < 5)
                                             <form method="POST" action="{{ route('pos.eis.submissions.retry', $submission) }}" class="inline">
                                                 @csrf
@@ -75,7 +71,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-4 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="8" class="text-ink-soft text-center">
                                         No EIS submissions yet.
                                     </td>
                                 </tr>

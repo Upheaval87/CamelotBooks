@@ -7,14 +7,14 @@
 
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.asset-transfers.store') }}">
                     @csrf
 
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="asset_id" value="{{ __('Fixed Asset') }}" />
-                            <select id="asset_id" name="asset_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                            <select id="asset_id" name="asset_id" class="input mt-1" required>
                                 <option value="">Select Asset</option>
                                 @foreach($assets as $asset)
                                     <option value="{{ $asset->id }}" {{ old('asset_id', request('asset_id')) == $asset->id ? 'selected' : '' }}>
@@ -28,7 +28,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="from_branch_id" value="{{ __('From Branch') }}" />
-                                <select id="from_branch_id" name="from_branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <select id="from_branch_id" name="from_branch_id" class="input mt-1">
                                     <option value="">None</option>
                                     @foreach($branches ?? [] as $branch)
                                         <option value="{{ $branch->id }}" {{ old('from_branch_id') == $branch->id ? 'selected' : '' }}>
@@ -40,7 +40,7 @@
                             </div>
                             <div>
                                 <x-input-label for="to_branch_id" value="{{ __('To Branch') }}" />
-                                <select id="to_branch_id" name="to_branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <select id="to_branch_id" name="to_branch_id" class="input mt-1">
                                     <option value="">None</option>
                                     @foreach($branches ?? [] as $branch)
                                         <option value="{{ $branch->id }}" {{ old('to_branch_id') == $branch->id ? 'selected' : '' }}>
@@ -55,7 +55,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="from_cost_center_id" value="{{ __('From Cost Center') }}" />
-                                <select id="from_cost_center_id" name="from_cost_center_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <select id="from_cost_center_id" name="from_cost_center_id" class="input mt-1">
                                     <option value="">None</option>
                                     @foreach($costCenters ?? [] as $cc)
                                         <option value="{{ $cc->id }}" {{ old('from_cost_center_id') == $cc->id ? 'selected' : '' }}>
@@ -67,7 +67,7 @@
                             </div>
                             <div>
                                 <x-input-label for="to_cost_center_id" value="{{ __('To Cost Center') }}" />
-                                <select id="to_cost_center_id" name="to_cost_center_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <select id="to_cost_center_id" name="to_cost_center_id" class="input mt-1">
                                     <option value="">None</option>
                                     @foreach($costCenters ?? [] as $cc)
                                         <option value="{{ $cc->id }}" {{ old('to_cost_center_id') == $cc->id ? 'selected' : '' }}>
@@ -93,9 +93,7 @@
                     </div>
 
                     <div class="flex items-center justify-end mt-6 space-x-3">
-                        <a href="{{ route('accounting.asset-transfers.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Cancel') }}
-                        </a>
+                        <x-button variant="ghost" href="{{ route('accounting.asset-transfers.index') }}">{{ __('Cancel') }}</x-button>
                         <x-primary-button>{{ __('Create Transfer') }}</x-primary-button>
                     </div>
                 </form>

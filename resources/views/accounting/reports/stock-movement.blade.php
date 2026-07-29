@@ -11,28 +11,28 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Running Qty</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Date</th>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Type</th>
+                <th>Reference</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit Cost ({{ $cs }})</th>
+                <th class="text-right">Running Qty</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($movements as $movement)
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 text-sm whitespace-nowrap">{{ $movement->date }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $movement->product->name ?? 'N/A' }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $movement->product->sku ?? 'N/A' }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $movement->type }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $movement->reference }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($movement->qty) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($movement->unit_cost) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($movement->running_qty) }}</td>
+                    <td>{{ $movement->product->name ?? 'N/A' }}</td>
+                    <td>{{ $movement->product->sku ?? 'N/A' }}</td>
+                    <td>{{ $movement->type }}</td>
+                    <td>{{ $movement->reference }}</td>
+                    <td class="numeric">{{ format_number($movement->qty) }}</td>
+                    <td class="numeric">{{ format_number($movement->unit_cost) }}</td>
+                    <td class="numeric">{{ format_number($movement->running_qty) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No stock movements found.</td></tr>
@@ -72,28 +72,28 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Running Qty</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Date</th>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Type</th>
+                <th>Reference</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit Cost ({{ $cs }})</th>
+                <th class="text-right">Running Qty</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($movements as $movement)
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 text-sm whitespace-nowrap">{{ $movement->date }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $movement->product->name ?? 'N/A' }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $movement->product->sku ?? 'N/A' }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $movement->type }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $movement->reference }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($movement->qty) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($movement->unit_cost) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($movement->running_qty) }}</td>
+                    <td>{{ $movement->product->name ?? 'N/A' }}</td>
+                    <td>{{ $movement->product->sku ?? 'N/A' }}</td>
+                    <td>{{ $movement->type }}</td>
+                    <td>{{ $movement->reference }}</td>
+                    <td class="numeric">{{ format_number($movement->qty) }}</td>
+                    <td class="numeric">{{ format_number($movement->unit_cost) }}</td>
+                    <td class="numeric">{{ format_number($movement->running_qty) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No stock movements found.</td></tr>

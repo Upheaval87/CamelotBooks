@@ -1,10 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Sales Analytics</h2>
-    </x-slot>
+    <x-slot name="header">Sales Analytics</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-report-filters mode="period" :showBranch="true" :showCostCenter="false" :action="route('analytics.sales')" />
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -60,23 +58,23 @@
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Customers</h3>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Invoices</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                                    <th>Customer</th>
+                                    <th class="text-right">Invoices</th>
+                                    <th class="text-right">Revenue</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($data['top_customers'] as $customer)
                                     <tr>
-                                        <td class="px-4 py-3 text-sm text-gray-900">{{ $customer['customer_name'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $customer['invoice_count'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($customer['total_revenue'])</td>
+                                        <td>{{ $customer['customer_name'] }}</td>
+                                        <td class="numeric">{{ $customer['invoice_count'] }}</td>
+                                        <td class="numeric">@money($customer['total_revenue'])</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>
+                                    <tr><td colspan="3" class="text-ink-soft text-center">No data</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -86,23 +84,23 @@
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Products</h3>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty Sold</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                                    <th>Product</th>
+                                    <th class="text-right">Qty Sold</th>
+                                    <th class="text-right">Revenue</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($data['top_products'] as $product)
                                     <tr>
-                                        <td class="px-4 py-3 text-sm text-gray-900">{{ $product['product_name'] }} <span class="text-xs text-gray-400">({{ $product['sku'] }})</span></td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($product['total_quantity'], 0) }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($product['total_revenue'])</td>
+                                        <td>{{ $product['product_name'] }} <span class="text-ink-soft">({{ $product['sku'] }})</span></td>
+                                        <td class="numeric">{{ number_format($product['total_quantity'], 0) }}</td>
+                                        <td class="numeric">@money($product['total_revenue'])</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>
+                                    <tr><td colspan="3" class="text-ink-soft text-center">No data</td></tr>
                                 @endforelse
                             </tbody>
                         </table>

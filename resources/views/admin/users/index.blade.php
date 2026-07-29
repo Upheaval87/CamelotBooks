@@ -1,7 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">User Management</h2>
-    </x-slot>
+    <x-slot name="header">{{ __('User Management') }}</x-slot>
 
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -11,47 +9,47 @@
             <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">{{ session('success') }}</div>
         @endif
 
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+        <div class="datasheet-wrap">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="datasheet">
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">2FA</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>2FA</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         @foreach($users as $user)
                         @php $pivot = $user->companies->firstWhere('id', session('current_company_id'))?->pivot; @endphp
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $user->name }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $user->email }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <tr>
+                            <td>{{ $user->name }}</td>
+                            <td>{{ $user->email }}</td>
+                            <td>
                                 @php
                                     $roleClass = match($pivot->role) {
-                                        'system_admin' => 'bg-purple-100 text-purple-800',
-                                        'company_admin' => 'bg-blue-100 text-blue-800',
-                                        'approver' => 'bg-green-100 text-green-800',
-                                        'accountant' => 'bg-indigo-100 text-indigo-800',
-                                        default => 'bg-gray-100 text-gray-800',
+                                        'system_admin' => 'neutral',
+                                        'company_admin' => 'neutral',
+                                        'approver' => 'positive',
+                                        'accountant' => 'neutral',
+                                        default => 'neutral',
                                     };
                                 @endphp
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $roleClass }}">
+                                <span class="status-pill {{ $roleClass }}">
                                     {{ ucfirst(str_replace('_', ' ', $pivot->role)) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <td>
                                 @if($user->two_factor_enabled)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Enabled</span>
+                                    <span class="status-pill positive">Enabled</span>
                                 @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Disabled</span>
+                                    <span class="status-pill neutral">Disabled</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <a href="{{ route('admin.users.edit', $user) }}" class="text-indigo-600 hover:text-indigo-900">Edit Role</a>
+                            <td class="text-right">
+                                <a href="{{ route('admin.users.edit', $user) }}" class="text-ink hover:text-gold">Edit Role</a>
                             </td>
                         </tr>
                         @endforeach

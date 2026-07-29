@@ -1,18 +1,10 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Bank Reconciliation') }} — {{ $bankAccount->name ?? '' }}
-            </h2>
-            <div class="flex items-center space-x-3">
-                <a href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id ?? '') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Import Statement') }}
-                </a>
-                <a href="{{ route('accounting.bank-accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Back to Accounts') }}
-                </a>
-            </div>
-        </div>
+    <x-slot name="header">{{ __('Bank Reconciliation') }} — {{ $bankAccount->name ?? '' }}</x-slot>
+
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id ?? '') }}">{{ __('Import Statement') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.bank-accounts.index') }}">{{ __('Back to Accounts') }}</x-button>
+    </div>
     </x-slot>
 
     <div class="py-12">
@@ -61,53 +53,53 @@
                     </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="datasheet-wrap">
                     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                         <h3 class="text-lg font-semibold text-gray-800">{{ __('Reconciliation History') }}</h3>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statement Date</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Statement Balance</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cleared Balance</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th>Period</th>
+                                    <th>Statement Date</th>
+                                    <th class="text-right">Statement Balance</th>
+                                    <th class="text-right">Cleared Balance</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($reconciliations as $reconciliation)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td>
                                             {{ $reconciliation->start_date?->format('M d, Y') }} — {{ $reconciliation->end_date?->format('M d, Y') }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="text-ink-soft">
                                             {{ $reconciliation->statement_date?->format('M d, Y') ?? '—' }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                        <td class="numeric">
                                             {{ format_money($reconciliation->statement_balance) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                        <td class="numeric">
                                             {{ format_money($reconciliation->cleared_balance) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <td class="text-center">
                                             @if($reconciliation->status === 'completed')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                                                <span class="status-pill positive">Completed</span>
                                             @elseif($reconciliation->status === 'in_progress')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">In Progress</span>
+                                                <span class="status-pill neutral">In Progress</span>
                                             @else
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($reconciliation->status) }}</span>
+                                                <span class="status-pill neutral">{{ ucfirst($reconciliation->status) }}</span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ route('accounting.bank-reconciliation.show', $reconciliation) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                        <td class="text-right">
+                                            <a href="{{ route('accounting.bank-reconciliation.show', $reconciliation) }}" class="text-ink hover:text-gold">View</a>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                        <td colspan="6" class="text-center text-ink-soft">
                                             No reconciliations found.
                                         </td>
                                     </tr>

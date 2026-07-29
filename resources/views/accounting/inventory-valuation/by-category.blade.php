@@ -1,16 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Inventory Valuation by Category') }}</h2>
-            <a href="{{ route('accounting.inventory-valuation.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                {{ __('Back to Valuation') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Inventory Valuation by Category') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.inventory-valuation.index') }}">{{ __('Back to Valuation') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="datasheet-wrap">
                 <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                     <h3 class="text-lg font-medium text-gray-900">Valuation by Category (FIFO)</h3>
                     <div class="text-right">
@@ -33,24 +30,24 @@
                                 </div>
                             </div>
                             @if(count($category['products']) > 0)
-                                <table class="min-w-full divide-y divide-gray-200">
+                                <table class="datasheet">
                                     <thead>
                                         <tr>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase pl-8">Stock Keeping Unit (SKU)</th>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
-                                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">% of Category</th>
+                                            <th>Stock Keeping Unit (SKU)</th>
+                                            <th>Product</th>
+                                            <th class="text-right">Quantity</th>
+                                            <th class="text-right">Value</th>
+                                            <th class="text-right">% of Category</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y divide-gray-100">
+                                    <tbody>
                                         @foreach($category['products'] as $product)
                                             <tr class="hover:bg-gray-50">
-                                                <td class="px-4 py-2 text-sm text-gray-500 pl-8">{{ $product['sku'] ?? '—' }}</td>
-                                                <td class="px-4 py-2 text-sm text-gray-900">{{ $product['name'] }}</td>
-                                                <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($product['quantity']) }}</td>
-                                                <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">@money($product['value'])</td>
-                                                <td class="px-4 py-2 text-sm text-gray-500 text-right">
+                                                <td class="text-ink-soft">{{ $product['sku'] ?? '—' }}</td>
+                                                <td>{{ $product['name'] }}</td>
+                                                <td class="numeric">{{ format_money($product['quantity']) }}</td>
+                                                <td class="numeric">@money($product['value'])</td>
+                                                <td class="text-ink-soft text-right">
                                                     {{ $category['total_value'] > 0 ? number_format(($product['value'] / $category['total_value']) * 100, 1) . '%' : '0.0%' }}
                                                 </td>
                                             </tr>
@@ -76,22 +73,22 @@
                                     <span class="ml-4 font-bold text-orange-800">@money(array_sum(array_column($uncategorizedData, 'value')))</span>
                                 </div>
                             </div>
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="datasheet">
                                 <thead>
                                     <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase pl-8">Stock Keeping Unit (SKU)</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
+                                        <th>Stock Keeping Unit (SKU)</th>
+                                        <th>Product</th>
+                                        <th class="text-right">Quantity</th>
+                                        <th class="text-right">Value</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100">
+                                <tbody>
                                     @foreach($uncategorizedData as $product)
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-2 text-sm text-gray-500 pl-8">{{ $product['sku'] ?? '—' }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900">{{ $product['name'] }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($product['quantity']) }}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-900 text-right font-medium">@money($product['value'])</td>
+                                            <td class="text-ink-soft">{{ $product['sku'] ?? '—' }}</td>
+                                            <td>{{ $product['name'] }}</td>
+                                            <td class="numeric">{{ format_money($product['quantity']) }}</td>
+                                            <td class="numeric">@money($product['value'])</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

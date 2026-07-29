@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.asset-categories.store') }}">
                     @csrf
 
@@ -36,7 +36,7 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <x-input-label for="depreciation_method_financial" value="{{ __('Depreciation Method') }}" />
-                                    <select id="depreciation_method_financial" name="depreciation_method_financial" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                    <select id="depreciation_method_financial" name="depreciation_method_financial" class="input mt-1" required>
                                         <option value="">Select Method</option>
                                         <option value="straight_line" {{ old('depreciation_method_financial') === 'straight_line' ? 'selected' : '' }}>Straight Line</option>
                                         <option value="declining_balance" {{ old('depreciation_method_financial') === 'declining_balance' ? 'selected' : '' }}>Declining Balance</option>
@@ -52,7 +52,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="residual_value_type_financial" value="{{ __('Residual Value Type') }}" />
-                                    <select id="residual_value_type_financial" name="residual_value_type_financial" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="residual_value_type_financial" name="residual_value_type_financial" class="input mt-1">
                                         <option value="percentage" {{ old('residual_value_type_financial') === 'percentage' ? 'selected' : '' }}>Percentage</option>
                                         <option value="fixed" {{ old('residual_value_type_financial', 'fixed') === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
                                     </select>
@@ -71,7 +71,7 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <x-input-label for="depreciation_method_tax" value="{{ __('Depreciation Method') }}" />
-                                    <select id="depreciation_method_tax" name="depreciation_method_tax" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                    <select id="depreciation_method_tax" name="depreciation_method_tax" class="input mt-1" required>
                                         <option value="">Select Method</option>
                                         <option value="straight_line" {{ old('depreciation_method_tax') === 'straight_line' ? 'selected' : '' }}>Straight Line</option>
                                         <option value="declining_balance" {{ old('depreciation_method_tax') === 'declining_balance' ? 'selected' : '' }}>Declining Balance</option>
@@ -86,7 +86,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="residual_value_type_tax" value="{{ __('Residual Value Type') }}" />
-                                    <select id="residual_value_type_tax" name="residual_value_type_tax" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="residual_value_type_tax" name="residual_value_type_tax" class="input mt-1">
                                         <option value="percentage" {{ old('residual_value_type_tax') === 'percentage' ? 'selected' : '' }}>Percentage</option>
                                         <option value="fixed" {{ old('residual_value_type_tax', 'fixed') === 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
                                     </select>
@@ -117,7 +117,7 @@
                             <div class="space-y-4">
                                 <div>
                                     <x-input-label for="asset_account_id" value="{{ __('Asset Account') }}" />
-                                    <select id="asset_account_id" name="asset_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="asset_account_id" name="asset_account_id" class="input mt-1">
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('asset_account_id') == $account->id ? 'selected' : '' }}>
@@ -129,7 +129,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="accumulated_depreciation_account_id" value="{{ __('Accumulated Depreciation Account') }}" />
-                                    <select id="accumulated_depreciation_account_id" name="accumulated_depreciation_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="accumulated_depreciation_account_id" name="accumulated_depreciation_account_id" class="input mt-1">
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('accumulated_depreciation_account_id') == $account->id ? 'selected' : '' }}>
@@ -141,7 +141,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="depreciation_expense_account_id" value="{{ __('Depreciation Expense Account') }}" />
-                                    <select id="depreciation_expense_account_id" name="depreciation_expense_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="depreciation_expense_account_id" name="depreciation_expense_account_id" class="input mt-1">
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('depreciation_expense_account_id') == $account->id ? 'selected' : '' }}>
@@ -153,7 +153,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="accumulated_impairment_account_id" value="{{ __('Accumulated Impairment Account') }}" />
-                                    <select id="accumulated_impairment_account_id" name="accumulated_impairment_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="accumulated_impairment_account_id" name="accumulated_impairment_account_id" class="input mt-1">
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('accumulated_impairment_account_id') == $account->id ? 'selected' : '' }}>
@@ -165,7 +165,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="impairment_loss_account_id" value="{{ __('Impairment Loss Account') }}" />
-                                    <select id="impairment_loss_account_id" name="impairment_loss_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="impairment_loss_account_id" name="impairment_loss_account_id" class="input mt-1">
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('impairment_loss_account_id') == $account->id ? 'selected' : '' }}>
@@ -177,7 +177,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="disposal_gain_loss_account_id" value="{{ __('Disposal Gain/Loss Account') }}" />
-                                    <select id="disposal_gain_loss_account_id" name="disposal_gain_loss_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="disposal_gain_loss_account_id" name="disposal_gain_loss_account_id" class="input mt-1">
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('disposal_gain_loss_account_id') == $account->id ? 'selected' : '' }}>
@@ -189,7 +189,7 @@
                                 </div>
                                 <div>
                                     <x-input-label for="revaluation_surplus_account_id" value="{{ __('Revaluation Surplus Account') }}" />
-                                    <select id="revaluation_surplus_account_id" name="revaluation_surplus_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <select id="revaluation_surplus_account_id" name="revaluation_surplus_account_id" class="input mt-1">
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('revaluation_surplus_account_id') == $account->id ? 'selected' : '' }}>
@@ -204,9 +204,7 @@
                     </div>
 
                     <div class="flex items-center justify-end mt-6 space-x-3">
-                        <a href="{{ route('accounting.asset-categories.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Cancel') }}
-                        </a>
+                        <x-button variant="ghost" href="{{ route('accounting.asset-categories.index') }}">{{ __('Cancel') }}</x-button>
                         <x-primary-button>{{ __('Create Category') }}</x-primary-button>
                     </div>
                 </form>

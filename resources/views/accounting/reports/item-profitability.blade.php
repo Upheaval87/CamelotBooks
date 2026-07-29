@@ -9,26 +9,26 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty Sold</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">COGS ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Profit ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Margin %</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th class="text-right">Qty Sold</th>
+                <th class="text-right">Revenue ({{ $cs }})</th>
+                <th class="text-right">COGS ({{ $cs }})</th>
+                <th class="text-right">Profit ({{ $cs }})</th>
+                <th class="text-right">Margin %</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($rows as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['product'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['sku'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['qty_sold']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['revenue']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['cogs']) }}</td>
+                    <td>{{ $row['product'] }}</td>
+                    <td>{{ $row['sku'] }}</td>
+                    <td class="numeric">{{ format_number($row['qty_sold']) }}</td>
+                    <td class="numeric">{{ format_number($row['revenue']) }}</td>
+                    <td class="numeric">{{ format_number($row['cogs']) }}</td>
                     <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['profit']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['margin']) }}%</td>
+                    <td class="numeric">{{ format_number($row['margin']) }}%</td>
                 </tr>
                 @empty
                     <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>
@@ -57,26 +57,26 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty Sold</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">COGS ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Profit ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Margin %</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th class="text-right">Qty Sold</th>
+                <th class="text-right">Revenue ({{ $cs }})</th>
+                <th class="text-right">COGS ({{ $cs }})</th>
+                <th class="text-right">Profit ({{ $cs }})</th>
+                <th class="text-right">Margin %</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($rows as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['product'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $row['sku'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['qty_sold']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['revenue']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['cogs']) }}</td>
+                    <td>{{ $row['product'] }}</td>
+                    <td>{{ $row['sku'] }}</td>
+                    <td class="numeric">{{ format_number($row['qty_sold']) }}</td>
+                    <td class="numeric">{{ format_number($row['revenue']) }}</td>
+                    <td class="numeric">{{ format_number($row['cogs']) }}</td>
                     <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['profit']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['margin']) }}%</td>
+                    <td class="numeric">{{ format_number($row['margin']) }}%</td>
                 </tr>
                 @empty
                     <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>

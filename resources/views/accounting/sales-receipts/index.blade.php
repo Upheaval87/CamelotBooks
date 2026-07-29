@@ -1,16 +1,14 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Sales Receipts</h2>
-            <a href="{{ route('accounting.sales-receipts.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Create Sales Receipt') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Create Sales Receipt') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4 flex items-center justify-end">
+                <x-button variant="primary" href="{{ route('accounting.sales-receipts.create') }}">
+                    {{ __('Create Sales Receipt') }}
+                </x-button>
+            </div>
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.sales-receipts.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
@@ -44,43 +42,43 @@
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th>Receipt #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th class="text-right">Total ({{ $cs }})</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($receipts as $receipt)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        <a href="{{ route('accounting.sales-receipts.show', $receipt) }}" class="text-indigo-600 hover:text-indigo-900">{{ $receipt->receipt_number }}</a>
+                                    <td>
+                                        <a href="{{ route('accounting.sales-receipts.show', $receipt) }}" class="text-ink hover:text-gold">{{ $receipt->receipt_number }}</a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $receipt->customer->name ?? 'Walk-in' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $receipt->receipt_date?->format('M d, Y') ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_number($receipt->total) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td>{{ $receipt->customer->name ?? 'Walk-in' }}</td>
+                                    <td class="text-ink-soft">{{ $receipt->receipt_date?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="numeric">{{ format_number($receipt->total) }}</td>
+                                    <td class="text-center">
                                         @switch($receipt->status)
                                             @case('draft')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                                <span class="status-pill neutral">Draft</span>
                                                 @break
                                             @case('posted')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Posted</span>
+                                                <span class="status-pill positive">Posted</span>
                                                 @break
                                             @case('voided')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Voided</span>
+                                                <span class="status-pill negative">Voided</span>
                                                 @break
                                         @endswitch
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                        <a href="{{ route('accounting.sales-receipts.show', $receipt) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                    <td class="text-right">
+                                        <a href="{{ route('accounting.sales-receipts.show', $receipt) }}" class="text-ink hover:text-gold">View</a>
                                         @if($receipt->status === 'draft')
                                             <form method="POST" action="{{ route('accounting.sales-receipts.post', $receipt) }}" class="inline">
                                                 @csrf
@@ -97,7 +95,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No sales receipts found.</td>
+                                    <td colspan="6" class="text-center text-ink-soft">No sales receipts found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

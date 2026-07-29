@@ -1,27 +1,26 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('New Deposit') }}</h2>
-            <a href="{{ route('accounting.deposits.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                {{ __('Back') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('New Deposit') }}</x-slot>
 
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.deposits.index') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </x-button>
+            </div>
             @if(session('error'))
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{{ session('error') }}</div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.deposits.store') }}" x-data="{ selectedTotal: 0, selectedIds: [] }">
                     @csrf
 
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="bank_account_id" value="{{ __('Deposit To') }}" />
-                            <select id="bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
+                            <select id="bank_account_id" name="bank_account_id" class="input mt-1" required>
                                 <option value="">Select Bank Account</option>
                                 @foreach($bankAccounts as $account)
                                     <option value="{{ $account->id }}" {{ old('bank_account_id') == $account->id ? 'selected' : '' }}>
@@ -45,18 +44,18 @@
                                 <p class="text-sm text-gray-500">No undeposited items available.</p>
                             @else
                                 <div class="border border-gray-200 rounded-md overflow-hidden">
-                                    <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
+                                    <table class="datasheet">
+                                        <thead>
                                             <tr>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-10">
                                                     <input type="checkbox" @change="let checked = $event.target.checked; document.querySelectorAll('.deposit-item').forEach(cb => { cb.checked = checked; cb.dispatchEvent(new Event('change')) })" class="rounded border-gray-300" />
                                                 </th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                                <th>Date</th>
+                                                <th>Description</th>
+                                                <th class="text-right">Amount</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="bg-white divide-y divide-gray-200">
+                                        <tbody>
                                             @foreach($undepositedLines as $line)
                                                 <tr>
                                                     <td class="px-4 py-2">
@@ -65,9 +64,9 @@
                                                             @change="if($event.target.checked){selectedTotal += {{ $line->debit }}; selectedIds.push({{ $line->journal_entry_id }})} else {selectedTotal -= {{ $line->debit }}; selectedIds = selectedIds.filter(id => id !== {{ $line->journal_entry_id }})}"
                                                         />
                                                     </td>
-                                                    <td class="px-4 py-2 text-sm text-gray-500">{{ $line->journalEntry->date->format('M d, Y') }}</td>
-                                                    <td class="px-4 py-2 text-sm text-gray-500">{{ $line->memo ?? $line->journalEntry->memo ?? '—' }}</td>
-                                                    <td class="px-4 py-2 text-sm text-gray-900 text-right">{{ format_money($line->debit) }}</td>
+                                                    <td class="text-ink-soft">{{ $line->journalEntry->date->format('M d, Y') }}</td>
+                                                    <td class="text-ink-soft">{{ $line->memo ?? $line->journalEntry->memo ?? '—' }}</td>
+                                                    <td class="numeric">{{ format_money($line->debit) }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -95,9 +94,7 @@
                     </div>
 
                     <div class="flex justify-end gap-3 mt-6">
-                        <a href="{{ route('accounting.deposits.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                            {{ __('Cancel') }}
-                        </a>
+                        <x-button variant="ghost" href="{{ route('accounting.deposits.index') }}">{{ __('Cancel') }}</x-button>
                         <x-primary-button type="submit">{{ __('Record Deposit') }}</x-primary-button>
                     </div>
                 </form>

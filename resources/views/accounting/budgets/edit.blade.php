@@ -1,17 +1,14 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Edit Budget') }}: {{ $budget->name }}
-            </h2>
-            <a href="{{ route('accounting.budgets.show', $budget) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Back to Budget') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Edit Budget') }}: {{ $budget->name }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.budgets.show', $budget) }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back to Budget') }}
+                </x-button>
+            </div>
             @if(session('error'))
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                     {{ session('error') }}
@@ -22,12 +19,12 @@
                 @csrf
                 @method('PUT')
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Budget Details') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">1 · BUDGET DETAILS</div>
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="fiscal_year_id" value="{{ __('Fiscal Year') }}" />
-                            <select id="fiscal_year_id" name="fiscal_year_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-gray-100" disabled>
+                            <select id="fiscal_year_id" name="fiscal_year_id" class="input mt-1 bg-gray-100" disabled>
                                 @foreach($fiscalYears as $fy)
                                     <option value="{{ $fy->id }}" data-start="{{ $fy->start_date->format('Y-m-d') }}" data-end="{{ $fy->end_date->format('Y-m-d') }}" {{ $budget->fiscal_year_id == $fy->id ? 'selected' : '' }}>
                                         {{ $fy->label }} ({{ $fy->start_date->format('M Y') }} - {{ $fy->end_date->format('M Y') }})
@@ -48,9 +45,9 @@
                     </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">{{ __('Budget Lines') }}</h3>
+                        <div class="form-section-label">2 · BUDGET LINES</div>
                         <button type="button" id="add-line" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Add Line') }}
                         </button>
@@ -58,13 +55,13 @@
 
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200" id="lines-table">
-                            <thead class="bg-gray-50">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                    <th>Account</th>
+                                    <th>Period</th>
+                                    <th class="text-right">Amount</th>
+                                    <th>Notes</th>
+                                    <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="lines-body">
@@ -76,9 +73,7 @@
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <a href="{{ route('accounting.budgets.show', $budget) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Cancel') }}
-                    </a>
+                    <x-button variant="ghost" href="{{ route('accounting.budgets.show', $budget) }}">{{ __('Cancel') }}</x-button>
                     <x-primary-button type="submit">{{ __('Update Budget') }}</x-primary-button>
                 </div>
             </form>

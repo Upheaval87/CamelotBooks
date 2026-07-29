@@ -1,57 +1,55 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Stock Transfers') }}</h2>
-            <a href="{{ route('accounting.stock-transfers.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                {{ __('New Transfer') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('New Transfer') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4 flex items-center justify-end">
+                <x-button variant="primary" href="{{ route('accounting.stock-transfers.create') }}">
+                    {{ __('New Transfer') }}
+                </x-button>
+            </div>
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transfer #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th>Transfer #</th>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th class="text-right">Quantity</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($transfers as $transfer)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('accounting.stock-transfers.show', $transfer) }}" class="text-indigo-600 hover:text-indigo-900">
+                                    <td>
+                                        <a href="{{ route('accounting.stock-transfers.show', $transfer) }}" class="text-ink hover:text-gold">
                                             {{ $transfer->transfer_number }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transfer->date->format('M d, Y') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $transfer->product->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transfer->fromBranch->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transfer->toBranch->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($transfer->quantity) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td class="text-ink-soft">{{ $transfer->date->format('M d, Y') }}</td>
+                                    <td>{{ $transfer->product->name ?? '—' }}</td>
+                                    <td class="text-ink-soft">{{ $transfer->fromBranch->name ?? '—' }}</td>
+                                    <td class="text-ink-soft">{{ $transfer->toBranch->name ?? '—' }}</td>
+                                    <td class="numeric">{{ format_money($transfer->quantity) }}</td>
+                                    <td class="text-center">
                                         @if($transfer->status === 'completed')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                                            <span class="status-pill positive">Completed</span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ ucfirst($transfer->status) }}</span>
+                                            <span class="status-pill neutral">{{ ucfirst($transfer->status) }}</span>
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="7" class="text-center text-ink-soft">
                                         No stock transfers found.
                                     </td>
                                 </tr>

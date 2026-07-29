@@ -1,20 +1,13 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Vendor Centre') }} — {{ $vendor->name }}
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.vendor-centre.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Back') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Vendor Centre') }} — {{ $vendor->name }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.vendor-centre.index') }}">{{ __('Back') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -83,24 +76,12 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
                 <div class="flex flex-wrap gap-3">
-                    <a href="{{ route('accounting.bills.create') }}?vendor_id={{ $vendor->id }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Create Bill') }}
-                    </a>
-                    <a href="{{ route('accounting.vendor-payments.create') }}?vendor_id={{ $vendor->id }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Record Payment') }}
-                    </a>
-                    <a href="{{ route('accounting.vendor-credits.create') }}?vendor_id={{ $vendor->id }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Vendor Credit') }}
-                    </a>
-                    <a href="{{ route('accounting.expenses.create') }}?vendor_id={{ $vendor->id }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Record Expense') }}
-                    </a>
-                    <a href="{{ route('accounting.purchase-orders.create') }}?vendor_id={{ $vendor->id }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Create PO') }}
-                    </a>
-                    <a href="{{ route('accounting.aging.ap-detail') }}?vendor_id={{ $vendor->id }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('A/P Aging Detail') }}
-                    </a>
+                    <x-button variant="ghost" href="{{ route('accounting.bills.create') }}?vendor_id={{ $vendor->id }}">{{ __('Create Bill') }}</x-button>
+                    <x-button variant="ghost" href="{{ route('accounting.vendor-payments.create') }}?vendor_id={{ $vendor->id }}">{{ __('Record Payment') }}</x-button>
+                    <x-button variant="ghost" href="{{ route('accounting.vendor-credits.create') }}?vendor_id={{ $vendor->id }}">{{ __('Vendor Credit') }}</x-button>
+                    <x-button variant="ghost" href="{{ route('accounting.expenses.create') }}?vendor_id={{ $vendor->id }}">{{ __('Record Expense') }}</x-button>
+                    <x-button variant="ghost" href="{{ route('accounting.purchase-orders.create') }}?vendor_id={{ $vendor->id }}">{{ __('Create PO') }}</x-button>
+                    <x-button variant="ghost" href="{{ route('accounting.aging.ap-detail') }}?vendor_id={{ $vendor->id }}">{{ __('A/P Aging Detail') }}</x-button>
                 </div>
             </div>
 
@@ -111,53 +92,53 @@
                     <p class="text-sm text-gray-500">No transactions found for this vendor.</p>
                 @else
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount ({{ $cs }})</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                    <th>Type</th>
+                                    <th>Reference</th>
+                                    <th>Date</th>
+                                    <th class="text-right">Amount ({{ $cs }})</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-right">Action</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 @foreach($timeline as $item)
                                     <tr>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <td>
                                             @switch($item['type'])
                                                 @case('bill')
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Bill</span>
+                                                    <span class="status-pill neutral">Bill</span>
                                                     @break
                                                 @case('payment')
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Payment</span>
+                                                    <span class="status-pill positive">Payment</span>
                                                     @break
                                                 @case('credit')
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Credit</span>
+                                                    <span class="status-pill neutral">Credit</span>
                                                     @break
                                                 @case('po')
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">PO</span>
+                                                    <span class="status-pill neutral">PO</span>
                                                     @break
                                                 @case('expense')
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">Expense</span>
+                                                    <span class="status-pill neutral">Expense</span>
                                                     @break
                                             @endswitch
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        <td>
                                             {{ $item['reference'] }}
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="text-ink-soft">
                                             {{ $item['date'] instanceof \Carbon\Carbon ? $item['date']->format('M d, Y') : $item['date'] }}
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                        <td class="numeric">
                                             {{ format_number($item['amount']) }}
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-center text-sm">
+                                        <td class="text-center">
                                             <span class="text-xs text-gray-600">{{ ucfirst(str_replace('_', ' ', $item['status'])) }}</span>
                                         </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-right text-sm">
-                                            <a href="{{ $item['url'] }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                        <td class="text-right">
+                                            <a href="{{ $item['url'] }}" class="text-ink hover:text-gold">View</a>
                                         </td>
                                     </tr>
                                 @endforeach

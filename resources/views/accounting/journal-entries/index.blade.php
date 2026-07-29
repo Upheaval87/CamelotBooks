@@ -1,18 +1,14 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Journal Entries') }}
-            </h2>
-            <a href="{{ route('accounting.journal-entries.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('New Journal Entry') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('New Journal Entry') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4 flex items-center justify-end">
+                <x-button variant="primary" href="{{ route('accounting.journal-entries.create') }}">
+                    {{ __('New Journal Entry') }}
+                </x-button>
+            </div>
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.journal-entries.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
@@ -65,62 +61,62 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Journal #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th>Journal #</th>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th class="text-right">Debit ({{ $cs }})</th>
+                                <th class="text-right">Credit ({{ $cs }})</th>
+                                <th class="text-center">Status</th>
+                                <th>Branch</th>
+                                <th>Created By</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($journalEntries as $je)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('accounting.journal-entries.show', $je) }}" class="text-indigo-600 hover:text-indigo-900">
+                                    <td>
+                                        <a href="{{ route('accounting.journal-entries.show', $je) }}" class="text-ink hover:text-gold">
                                             {{ $je->journal_number }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td>
                                         {{ $je->date->format('M d, Y') }}
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                    <td class="text-ink-soft max-w-xs truncate">
                                         {{ $je->memo ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ format_number($je->total_debit) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ format_number($je->total_credit) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td class="text-center">
                                         @if($je->status === 'draft')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                            <span class="status-pill neutral">Draft</span>
                                         @elseif($je->status === 'pending_approval')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending Approval</span>
+                                            <span class="status-pill neutral">Pending Approval</span>
                                         @elseif($je->status === 'posted')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Posted</span>
+                                            <span class="status-pill positive">Posted</span>
                                         @elseif($je->status === 'reversed')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Reversed</span>
+                                            <span class="status-pill negative">Reversed</span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($je->status) }}</span>
+                                            <span class="status-pill neutral">{{ ucfirst($je->status) }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="text-ink-soft">
                                         {{ $je->branch->name ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="text-ink-soft">
                                         {{ $je->createdBy->name ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <td class="text-right">
                                         @if($je->status === 'draft')
                                             <form method="POST" action="{{ route('accounting.journal-entries.submit-for-approval', $je) }}" class="inline">
                                                 @csrf
@@ -143,7 +139,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="10" class="text-center text-ink-soft">
                                         No journal entries found.
                                     </td>
                                 </tr>

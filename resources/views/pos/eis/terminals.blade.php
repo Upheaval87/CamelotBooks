@@ -1,12 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('EIS Terminals') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('EIS Terminals') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -18,8 +14,8 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Register New Terminal') }}</h3>
+            <div class="card p-6">
+                <div class="form-section-label">1 · Register New Terminal</div>
                 <form method="POST" action="{{ route('pos.eis.terminals.store') }}">
                     @csrf
                     <div class="grid grid-cols-3 gap-4">
@@ -33,59 +29,57 @@
                             <x-text-input id="device_serial" name="device_serial" type="text" class="mt-1 block w-full" :value="old('device_serial')" />
                         </div>
                         <div class="flex items-end">
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                                Register Terminal
-                            </button>
+                            <x-button variant="primary" type="submit">Register Terminal</x-button>
                         </div>
                     </div>
                 </form>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site ID</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Serial</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Submissions</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Blocked</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Submission</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th>Site ID</th>
+                                <th>Serial</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Submissions</th>
+                                <th class="text-center">Blocked</th>
+                                <th>Last Submission</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($terminals as $terminal)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $terminal->site_id }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $terminal->device_serial ?? '-' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td>{{ $terminal->site_id }}</td>
+                                    <td class="text-ink-soft">{{ $terminal->device_serial ?? '-' }}</td>
+                                    <td class="text-center">
                                         @if($terminal->status === 'active')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                            <span class="status-pill positive">Active</span>
                                         @elseif($terminal->status === 'pending')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                            <span class="status-pill negative">Pending</span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{{ ucfirst($terminal->status) }}</span>
+                                            <span class="status-pill negative">{{ ucfirst($terminal->status) }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{{ $terminal->submissions_count }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td class="text-center text-ink-soft">{{ $terminal->submissions_count }}</td>
+                                    <td class="text-center">
                                         @if($terminal->should_block_terminal)
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">YES</span>
+                                            <span class="status-pill negative">YES</span>
                                         @else
-                                            <span class="text-gray-400 text-xs">No</span>
+                                            <span class="text-xs text-gray-400">No</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="text-ink-soft">
                                         {{ $terminal->last_submission_at ? $terminal->last_submission_at->diffForHumans() : 'Never' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                    <td class="text-right">
                                         @if($terminal->status === 'pending')
                                             <form method="POST" action="{{ route('pos.eis.terminals.activate', $terminal) }}" class="inline-flex items-center gap-2">
                                                 @csrf
                                                 <input type="text" name="tac" placeholder="Enter TAC" required
-                                                    class="border-gray-300 rounded-md shadow-sm text-xs focus:ring-indigo-500 focus:border-indigo-500 w-32">
+                                                    class="input w-32">
                                                 <button type="submit" class="text-green-600 hover:text-green-900 text-xs font-medium">Activate</button>
                                             </form>
                                         @endif
@@ -93,7 +87,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="7" class="text-ink-soft text-center">
                                         No terminals registered. Register one above.
                                     </td>
                                 </tr>

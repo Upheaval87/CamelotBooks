@@ -14,28 +14,28 @@
         <div class="px-4 py-3 bg-indigo-50 border-b border-indigo-200"><h2 class="text-lg font-semibold text-indigo-800">{{ $c['company_name'] }}</h2></div>
 
         <div class="px-4 py-3 bg-green-50 border-b border-green-200"><h3 class="text-sm font-semibold text-green-800">Income</h3></div>
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th><th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance ({{ $cs }})</th></tr></thead>
+        <table class="datasheet">
+            <thead><tr><th>Account</th><th class="text-right">Balance ({{ $cs }})</th></tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($c['income'] as $i)
-                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $i['name'] }} <span class="text-gray-400">({{ $i['code'] }})</span></td><td class="px-4 py-2 text-sm text-right">{{ format_number($i['balance']) }}</td></tr>
+                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $i['name'] }} <span class="text-gray-400">({{ $i['code'] }})</span></td><td class="numeric">{{ format_number($i['balance']) }}</td></tr>
                 @empty
-                <tr><td colspan="2" class="px-4 py-4 text-center text-sm text-gray-500">No income accounts.</td></tr>
+                <tr><td colspan="2" class="text-center text-ink-soft">No income accounts.</td></tr>
                 @endforelse
-                <tr class="bg-gray-50 font-bold"><td class="px-4 py-2 text-sm">Total Income</td><td class="px-4 py-2 text-sm text-right">{{ format_number(collect($c['income'])->sum('balance')) }}</td></tr>
+                <tr class="bg-gray-50 font-bold"><td>Total Income</td><td class="numeric">{{ format_number(collect($c['income'])->sum('balance')) }}</td></tr>
             </tbody>
         </table>
 
         <div class="px-4 py-3 bg-orange-50 border-b border-orange-200"><h3 class="text-sm font-semibold text-orange-800">Expenses</h3></div>
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th><th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance ({{ $cs }})</th></tr></thead>
+        <table class="datasheet">
+            <thead><tr><th>Account</th><th class="text-right">Balance ({{ $cs }})</th></tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($c['expense'] as $e)
-                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $e['name'] }} <span class="text-gray-400">({{ $e['code'] }})</span></td><td class="px-4 py-2 text-sm text-right">{{ format_number($e['balance']) }}</td></tr>
+                <tr class="hover:bg-gray-50"><td class="px-4 py-2 text-sm pl-8">{{ $e['name'] }} <span class="text-gray-400">({{ $e['code'] }})</span></td><td class="numeric">{{ format_number($e['balance']) }}</td></tr>
                 @empty
-                <tr><td colspan="2" class="px-4 py-4 text-center text-sm text-gray-500">No expense accounts.</td></tr>
+                <tr><td colspan="2" class="text-center text-ink-soft">No expense accounts.</td></tr>
                 @endforelse
-                <tr class="bg-gray-50 font-bold"><td class="px-4 py-2 text-sm">Total Expenses</td><td class="px-4 py-2 text-sm text-right">{{ format_number(collect($c['expense'])->sum('balance')) }}</td></tr>
+                <tr class="bg-gray-50 font-bold"><td>Total Expenses</td><td class="numeric">{{ format_number(collect($c['expense'])->sum('balance')) }}</td></tr>
             </tbody>
         </table>
 

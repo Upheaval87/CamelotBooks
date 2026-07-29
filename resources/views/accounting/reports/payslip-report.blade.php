@@ -26,24 +26,24 @@
         </form>
     </div>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Basic ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Allowances ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">PAYE ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Pension EE ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Ded ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Net Pay ({{ $cs }})</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Employee</th>
+                <th>Period</th>
+                <th class="text-right">Basic ({{ $cs }})</th>
+                <th class="text-right">Allowances ({{ $cs }})</th>
+                <th class="text-right">PAYE ({{ $cs }})</th>
+                <th class="text-right">Pension EE ({{ $cs }})</th>
+                <th class="text-right">Total Ded ({{ $cs }})</th>
+                <th class="text-right">Net Pay ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($items as $i)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $i['employee_name'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $i['period_label'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($i['basic_pay']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($i['total_allowances']) }}</td>
+                    <td>{{ $i['employee_name'] }}</td>
+                    <td>{{ $i['period_label'] }}</td>
+                    <td class="numeric">{{ format_number($i['basic_pay']) }}</td>
+                    <td class="numeric">{{ format_number($i['total_allowances']) }}</td>
                     <td class="px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['paye']) }}</td>
                     <td class="px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['pension_ee']) }}</td>
                     <td class="px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['total_deductions']) }}</td>

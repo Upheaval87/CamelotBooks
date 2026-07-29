@@ -19,34 +19,34 @@
                     <h3 class="text-lg font-medium text-gray-900">Bank Accounts</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Book Balance</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Reconciled Balance</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Last Reconciled</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th>Account</th>
+                                <th class="text-right">Book Balance</th>
+                                <th class="text-right">Reconciled Balance</th>
+                                <th class="text-center">Last Reconciled</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($bankAccounts as $account)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        <a href="{{ route('accounting.bank-accounts.register', $account->id) }}" class="text-indigo-600 hover:text-indigo-900">
+                                    <td>
+                                        <a href="{{ route('accounting.bank-accounts.register', $account->id) }}" class="text-ink hover:text-gold">
                                             {{ $account->code }} - {{ $account->name }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($account->current_balance) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ format_money($account->reconciled_balance) }}</td>
+                                    <td class="numeric">{{ format_money($account->current_balance) }}</td>
+                                    <td class="text-ink-soft text-right">{{ format_money($account->reconciled_balance) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">{{ $account->last_reconciled_date?->format('M d, Y') ?? 'Never' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <a href="{{ route('accounting.bank-accounts.register', $account->id) }}" class="text-indigo-600 hover:text-indigo-900">Register</a>
+                                        <a href="{{ route('accounting.bank-accounts.register', $account->id) }}" class="text-ink hover:text-gold">Register</a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No bank accounts found.</td>
+                                    <td colspan="5" class="text-center text-ink-soft">No bank accounts found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -55,34 +55,34 @@
             </div>
 
             @if(!empty($pettyCashSummary))
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-gray-900">Petty Cash Funds</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fund</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Float</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Spent</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th>Fund</th>
+                                <th class="text-right">Float</th>
+                                <th class="text-right">Balance</th>
+                                <th class="text-right">Spent</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($pettyCashSummary as $fund)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('accounting.petty-cash.show', $fund['id']) }}" class="text-indigo-600 hover:text-indigo-900">
+                                    <td>
+                                        <a href="{{ route('accounting.petty-cash.show', $fund['id']) }}" class="text-ink hover:text-gold">
                                             {{ $fund['code'] }} - {{ $fund['name'] }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ format_money($fund['float']) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($fund['current_balance']) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ format_money($fund['spent']) }}</td>
+                                    <td class="text-ink-soft text-right">{{ format_money($fund['float']) }}</td>
+                                    <td class="numeric">{{ format_money($fund['current_balance']) }}</td>
+                                    <td class="text-ink-soft text-right">{{ format_money($fund['spent']) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <a href="{{ route('accounting.petty-cash.show', $fund['id']) }}" class="text-indigo-600 hover:text-indigo-900">Manage</a>
+                                        <a href="{{ route('accounting.petty-cash.show', $fund['id']) }}" class="text-ink hover:text-gold">Manage</a>
                                     </td>
                                 </tr>
                             @endforeach

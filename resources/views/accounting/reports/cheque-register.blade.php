@@ -10,28 +10,28 @@
         </form>
     </div>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cheque #</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payee</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bank Account</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount ({{ $cs }})</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reconciled</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entered By</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Date</th>
+                <th>Cheque #</th>
+                <th>Payee</th>
+                <th>Bank Account</th>
+                <th class="text-right">Amount ({{ $cs }})</th>
+                <th>Type</th>
+                <th>Reconciled</th>
+                <th>Entered By</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($cheques as $ch)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $ch['date'] }}</td>
+                    <td>{{ $ch['date'] }}</td>
                     <td class="px-4 py-2 text-sm font-mono">{{ $ch['cheque_number'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $ch['payee'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $ch['bank_account'] }}</td>
+                    <td>{{ $ch['payee'] }}</td>
+                    <td>{{ $ch['bank_account'] }}</td>
                     <td class="px-4 py-2 text-sm text-right {{ $ch['type'] === 'payment' ? 'text-red-600' : 'text-green-600' }}">{{ format_number($ch['amount']) }}</td>
-                    <td class="px-4 py-2 text-sm">{{ ucfirst($ch['type']) }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $ch['is_reconciled'] ? 'Yes' : 'No' }}</td>
-                    <td class="px-4 py-2 text-sm text-gray-500">{{ $ch['created_by'] }}</td>
+                    <td>{{ ucfirst($ch['type']) }}</td>
+                    <td>{{ $ch['is_reconciled'] ? 'Yes' : 'No' }}</td>
+                    <td class="text-ink-soft">{{ $ch['created_by'] }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No cheques found.</td></tr>

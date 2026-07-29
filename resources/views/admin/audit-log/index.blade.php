@@ -1,7 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Audit Log') }}</h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Audit Log') }}</x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -41,61 +39,59 @@
                 </form>
             </x-toolbar>
 
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                                <th>Date/Time</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Subject</th>
+                                <th>IP Address</th>
+                                <th>Notes</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($logs as $log)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <tr>
+                                <td>
                                     {{ $log->created_at?->format('M d, Y H:i:s') ?? '-' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td>
                                     {{ $log->user?->name ?? 'System' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <td>
                                     @php
                                         $actionClass = match($log->action) {
-                                            'posted' => 'bg-green-100 text-green-800',
-                                            'voided', 'deleted', 'login_failed' => 'bg-red-100 text-red-800',
-                                            default => 'bg-blue-100 text-blue-800',
+                                            'posted' => 'positive',
+                                            'voided', 'deleted', 'login_failed' => 'negative',
+                                            default => 'neutral',
                                         };
                                     @endphp
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $actionClass }}">
+                                    <span class="status-pill {{ $actionClass }}">
                                         {{ $log->action }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td>
                                     {{ class_basename($log->auditable_type) }} #{{ $log->auditable_id }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td>
                                     {{ $log->ip_address ?? '-' }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                <td>
                                     {{ $log->notes ?? '-' }}
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">
-                                    No audit log entries found.
-                                </td>
+                                <td colspan="6" class="text-center">No audit log entries found.</td>
                             </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-                <div class="px-6 py-4 border-t border-gray-200">
+                <div class="datasheet-footer">
                     {{ $logs->links() }}
                 </div>
             </div>

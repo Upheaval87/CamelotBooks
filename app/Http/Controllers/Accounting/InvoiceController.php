@@ -38,6 +38,18 @@ class InvoiceController extends Controller
             $query->where('invoice_date', '<=', $request->to_date);
         }
 
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$search}%"));
+            });
+        }
+
         $invoices = $query->orderByDesc('invoice_date')->paginate(15)->withQueryString();
 
         return view('accounting.invoices.index', compact('invoices'));

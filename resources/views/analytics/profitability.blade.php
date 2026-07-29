@@ -1,10 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Profitability Analytics</h2>
-    </x-slot>
+    <x-slot name="header">Profitability Analytics</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-report-filters mode="period" :showBranch="true" :showCostCenter="true" :action="route('analytics.profitability')" />
 
             @if(count($data['by_branch']) > 0)
@@ -30,25 +28,25 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Profitability by Product</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty Sold</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Avg Price</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                                <th>Product</th>
+                                <th class="text-right">Qty Sold</th>
+                                <th class="text-right">Avg Price</th>
+                                <th class="text-right">Revenue</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody>
                             @forelse($data['by_product'] as $product)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900">{{ $product['product_name'] }} <span class="text-xs text-gray-400">({{ $product['sku'] }})</span></td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($product['quantity_sold'], 0) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">@money($product['avg_price'])</td>
-                                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($product['revenue'])</td>
+                                    <td>{{ $product['product_name'] }} <span class="text-ink-soft">({{ $product['sku'] }})</span></td>
+                                    <td class="numeric">{{ number_format($product['quantity_sold'], 0) }}</td>
+                                    <td class="numeric">@money($product['avg_price'])</td>
+                                    <td class="numeric">@money($product['revenue'])</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>
+                                <tr><td colspan="4" class="text-ink-soft text-center">No data</td></tr>
                             @endforelse
                         </tbody>
                     </table>

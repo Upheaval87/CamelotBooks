@@ -1,9 +1,9 @@
 <div class="space-y-6">
     {{-- Export Settings --}}
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="card">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Export Settings</h3>
-            <p class="mt-1 text-sm text-gray-600">Download all your company's system settings as a JSON file. This includes regional, currency, accounting, approval, numbering, and account mapping settings.</p>
+            <div class="form-section-label">1 · Export Settings</div>
+            <p class="mt-1 text-sm text-ink-soft">Download all your company's system settings as a JSON file. This includes regional, currency, accounting, approval, numbering, and account mapping settings.</p>
         </div>
         <div class="p-6">
             <div class="bg-gray-50 rounded-lg p-4 mb-4">
@@ -28,10 +28,10 @@
     </div>
 
     {{-- Import Settings --}}
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="card">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Import Settings</h3>
-            <p class="mt-1 text-sm text-gray-600">Upload a previously exported settings JSON file to apply its configuration to this company. Only compatible settings will be imported.</p>
+            <div class="form-section-label">2 · Import Settings</div>
+            <p class="mt-1 text-sm text-ink-soft">Upload a previously exported settings JSON file to apply its configuration to this company. Only compatible settings will be imported.</p>
         </div>
         <div class="p-6">
             <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200 mb-4">

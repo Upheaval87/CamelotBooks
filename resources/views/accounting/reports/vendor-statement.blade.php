@@ -23,28 +23,28 @@
         <p class="text-sm text-gray-500">{{ $vendor->email ?? '' }} {{ $vendor->phone ?? '' }}</p>
     </div>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Debit ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Credit ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance ({{ $cs }})</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Reference</th>
+                <th class="text-right">Debit ({{ $cs }})</th>
+                <th class="text-right">Credit ({{ $cs }})</th>
+                <th class="text-right">Balance ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 <tr class="bg-gray-50 font-medium">
                     <td colspan="3" class="px-4 py-2 text-sm">Opening Balance</td>
                     <td colspan="2" class="px-4 py-2 text-sm text-right">{{ format_number($opening_balance) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($opening_balance) }}</td>
+                    <td class="numeric">{{ format_number($opening_balance) }}</td>
                 </tr>
                 @forelse($transactions as $t)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $t['date'] }}</td>
-                    <td class="px-4 py-2 text-sm">{{ $t['type'] }}</td>
+                    <td>{{ $t['date'] }}</td>
+                    <td>{{ $t['type'] }}</td>
                     <td class="px-4 py-2 text-sm font-mono">{{ $t['reference'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ $t['debit'] > 0 ? format_number($t['debit']) : '' }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ $t['credit'] > 0 ? format_number($t['credit']) : '' }}</td>
+                    <td class="numeric">{{ $t['debit'] > 0 ? format_number($t['debit']) : '' }}</td>
+                    <td class="numeric">{{ $t['credit'] > 0 ? format_number($t['credit']) : '' }}</td>
                     <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($t['balance']) }}</td>
                 </tr>
                 @empty
@@ -52,9 +52,9 @@
                 @endforelse
                 <tr class="bg-gray-50 font-bold">
                     <td colspan="3" class="px-4 py-2 text-sm">Closing Balance</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($total_payments) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($total_bills) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($closing_balance) }}</td>
+                    <td class="numeric">{{ format_number($total_payments) }}</td>
+                    <td class="numeric">{{ format_number($total_bills) }}</td>
+                    <td class="numeric">{{ format_number($closing_balance) }}</td>
                 </tr>
             </tbody>
         </table>

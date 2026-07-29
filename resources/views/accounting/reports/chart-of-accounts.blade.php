@@ -9,34 +9,30 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-toolbar class="mb-6">
-                <button type="button" class="inline-flex items-center justify-center w-7 h-7 bg-transparent text-atlas-navy/50 rounded-md hover:bg-gray-100 transition-colors" title="{{ __('New') }}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                </button>
-                <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-atlas-amber text-atlas-navy text-sm font-medium rounded-md hover:brightness-110 transition-colors">
+                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider mr-1">Record</span>
+                <a href="{{ url()->current() }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent text-atlas-navy/70 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    Refresh
+                </a>
+                <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-atlas-navy/20 text-atlas-navy text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                    Save
+                    Save Preset
                 </button>
 
                 <span class="w-px h-5 bg-gray-200 mx-1" role="separator"></span>
 
+                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider mr-1">Document</span>
                 <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent text-atlas-navy/70 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    Search Account
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Export CSV
                 </button>
                 <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent text-atlas-navy/70 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-                    Account History
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    Export PDF
                 </button>
-
-                <span class="w-px h-5 bg-gray-200 mx-1" role="separator"></span>
-
                 <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent text-atlas-navy/70 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                     Print
-                </button>
-                <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent text-atlas-navy/70 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    Export
                 </button>
 
                 <span class="w-px h-5 bg-gray-200 mx-1" role="separator"></span>
@@ -49,6 +45,14 @@
                     </x-slot>
                     <x-slot name="content">
                         <div class="py-1">
+                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                Search Account
+                            </button>
+                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                                Account History
+                            </button>
                             <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                 Merge Accounts
@@ -89,23 +93,23 @@
                 <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
                     <h2 class="text-lg font-semibold text-gray-800">{{ ucfirst($group['type']) }} Accounts</h2>
                 </div>
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50"><tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sub Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Opening ({{ $cs }})</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Current ({{ $cs }})</th>
+                <table class="datasheet">
+                    <thead><tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Sub Type</th>
+                        <th>Description</th>
+                        <th class="text-right">Opening ({{ $cs }})</th>
+                        <th class="text-right">Current ({{ $cs }})</th>
                     </tr></thead>
                     <tbody class="divide-y divide-gray-200">
                         @forelse($group['accounts'] as $a)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2 text-sm font-mono">{{ $a['code'] }}</td>
-                            <td class="px-4 py-2 text-sm">{{ $a['name'] }}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500">{{ $a['sub_type'] ?? '—' }}</td>
-                            <td class="px-4 py-2 text-sm text-gray-500">{{ $a['description'] ?? '—' }}</td>
-                            <td class="px-4 py-2 text-sm text-right">{{ format_number($a['opening_balance']) }}</td>
+                            <td>{{ $a['name'] }}</td>
+                            <td class="text-ink-soft">{{ $a['sub_type'] ?? '—' }}</td>
+                            <td class="text-ink-soft">{{ $a['description'] ?? '—' }}</td>
+                            <td class="numeric">{{ format_number($a['opening_balance']) }}</td>
                             <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($a['current_balance']) }}</td>
                         </tr>
                         @empty

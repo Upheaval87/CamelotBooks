@@ -1,21 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Product Detail') }}
-            </h2>
-            <div class="flex items-center space-x-3">
-                <a href="{{ route('accounting.products.edit', $product) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Edit') }}
-                </a>
-                <a href="{{ route('accounting.products.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Back to Products') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Product Detail') }}</x-slot>
 
-    <div class="py-12">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="primary" href="{{ route('accounting.products.edit', $product) }}">{{ __('Edit') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.products.index') }}">{{ __('Back to Products') }}</x-button>
+    </div>
+
+    <div class="pb-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="grid grid-cols-2 gap-6">

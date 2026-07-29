@@ -64,8 +64,8 @@
                     </x-slot>
                 </x-toolbar>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Entry Details') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">1 · ENTRY DETAILS</div>
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="date" value="{{ __('Date') }}" />
@@ -79,7 +79,7 @@
                         </div>
                         <div>
                             <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="branch_id" name="branch_id" class="input mt-1">
                                 <option value="">No Branch</option>
                                 @foreach($branches as $branch)
                                     <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
@@ -101,9 +101,9 @@
                     </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">{{ __('Lines') }}</h3>
+                        <div class="form-section-label">2 · LINES</div>
                         <button type="button" id="addLineBtn" class="inline-flex items-center px-3 py-1 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             + {{ __('Add Line') }}
                         </button>
@@ -111,13 +111,13 @@
 
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200" id="linesTable">
-                            <thead class="bg-gray-50">
+                            <thead>
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">#</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
+                                    <th>Account</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Dr ({{ $cs }})</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Cr ({{ $cs }})</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                    <th>Description</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Branch</th>
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"></th>
                                 </tr>
@@ -167,7 +167,7 @@
             const tr = document.createElement('tr');
             tr.setAttribute('data-index', lineIndex);
             tr.innerHTML =
-                '<td class="px-4 py-2 text-sm text-gray-500">' + (tbody.rows.length + 1) + '</td>' +
+                '<td class="text-ink-soft">' + (tbody.rows.length + 1) + '</td>' +
                 '<td class="px-4 py-2">' +
                     '<select name="lines[' + lineIndex + '][account_id]" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required>' +
                         buildAccountOptions() +

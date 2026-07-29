@@ -27,50 +27,50 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Run Number</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Assets Processed</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Assets Skipped</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posted At</th>
+                                <th>Run Number</th>
+                                <th>Period</th>
+                                <th class="text-center">Assets Processed</th>
+                                <th class="text-center">Assets Skipped</th>
+                                <th class="text-right">Total Amount</th>
+                                <th class="text-center">Status</th>
+                                <th>Posted At</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($runs as $run)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td>
                                         #{{ $run->id }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td>
                                         {{ $run->period }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                                    <td class="text-center">
                                         {{ $run->assets_processed }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                                    <td class="text-center">
                                         {{ $run->assets_skipped }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ format_money($run->total_amount) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td class="text-center">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $run->status === 'completed' ? 'green' : ($run->status === 'posted' ? 'blue' : 'yellow') }}-100 text-{{ $run->status === 'completed' ? 'green' : ($run->status === 'posted' ? 'blue' : 'yellow') }}-800">
                                             {{ ucfirst($run->status) }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="text-ink-soft">
                                         {{ $run->posted_at?->format('M d, Y H:i') ?? '—' }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="7" class="text-center text-ink-soft">
                                         No depreciation runs found.
                                     </td>
                                 </tr>

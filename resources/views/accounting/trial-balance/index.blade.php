@@ -1,23 +1,14 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Trial Balance') }}
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.trial-balance.export-csv', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Export CSV') }}
-                </a>
-                <a href="{{ route('accounting.trial-balance.export-pdf', request()->query()) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Export PDF') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Trial Balance') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.trial-balance.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.trial-balance.export-pdf', request()->query()) }}" target="_blank">{{ __('Export PDF') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.trial-balance.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
@@ -42,39 +33,39 @@
                 </form>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-800">Trial Balance as of {{ \Carbon\Carbon::parse($asOfDate)->format('M d, Y') }}</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Code</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Name</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dr ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cr ({{ $cs }})</th>
+                                <th>Account Code</th>
+                                <th>Account Name</th>
+                                <th class="text-right">Dr ({{ $cs }})</th>
+                                <th class="text-right">Cr ({{ $cs }})</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($trialBalance as $row)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $row['account']->code }}</a>
+                                    <td>
+                                        <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-ink hover:text-gold underline">{{ $row['account']->code }}</a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-indigo-600 hover:text-indigo-800 hover:underline">{{ $row['account']->name }}</a>
+                                    <td>
+                                        <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-ink hover:text-gold underline">{{ $row['account']->name }}</a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ $row['debit_balance'] > 0 ? format_number($row['debit_balance']) : '' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ $row['credit_balance'] > 0 ? format_number($row['credit_balance']) : '' }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="4" class="text-center text-ink-soft">
                                         No accounts with balances found.
                                     </td>
                                 </tr>
@@ -83,10 +74,10 @@
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td colspan="2" class="px-6 py-4 text-right text-sm font-bold text-gray-900">Totals</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                <td class="numeric">
                                     {{ format_number($totalDebit) }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                <td class="numeric">
                                     {{ format_number($totalCredit) }}
                                 </td>
                             </tr>

@@ -1,7 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Numbering Sequence Details</h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Numbering Sequence Details') }}</x-slot>
 
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -34,9 +32,9 @@
                     <label class="block text-sm font-medium text-gray-500">Status</label>
                     <p class="mt-1">
                         @if($numberingSequence->is_active)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                            <span class="status-pill positive">Active</span>
                         @else
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Inactive</span>
+                            <span class="status-pill negative">Inactive</span>
                         @endif
                     </p>
                 </div>
@@ -59,7 +57,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-500">Reset Policy</label>
                     <p class="mt-1">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $numberingSequence->reset_policy === 'never' ? 'bg-gray-100 text-gray-800' : ($numberingSequence->reset_policy === 'annually' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800') }}">
+                        <span class="status-pill neutral">
                             {{ ucfirst($numberingSequence->reset_policy) }}
                         </span>
                     </p>

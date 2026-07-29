@@ -1,20 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('POS Terminal') }} — {{ session('pos_terminal_identifier') }}
-            </h2>
-            <div class="flex items-center gap-3 text-sm text-gray-600">
-                <span>Cashier: <strong>{{ session('pos_cashier_name') }}</strong></span>
-                <form method="POST" action="{{ route('pos.cashier.logout') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="text-red-600 hover:text-red-800 font-medium">
-                        End Session
-                    </button>
-                </form>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('POS Terminal') }} — {{ session('pos_terminal_identifier') }}</x-slot>
+
+    <div class="flex justify-end mb-4 px-4 sm:px-0 gap-3">
+        <span class="text-sm text-gray-600 self-center">Cashier: <strong>{{ session('pos_cashier_name') }}</strong></span>
+        <form method="POST" action="{{ route('pos.cashier.logout') }}" class="inline">
+            @csrf
+            <x-button variant="ghost" type="submit" class="text-red-600 hover:text-red-800">End Session</x-button>
+        </form>
+    </div>
 
     @php
         $companyId = session('current_company_id');
@@ -41,39 +34,30 @@
         $terminal = \App\Models\PosTerminal::find($terminalId);
     @endphp
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Till Status Card --}}
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
+            <div class="card p-6">
                 @if($openSession)
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-lg font-semibold text-green-700">Till Open</h3>
-                            <p class="text-sm text-gray-500 mt-1">
+                            <div class="form-section-label">Till Open</div>
+                            <p class="text-sm text-ink-soft mt-1">
                                 Opened at {{ $openSession->opened_at?->format('g:i A') }} ·
                                 Float: @money($openSession->opening_float)
                             </p>
                         </div>
                         <div class="flex gap-3">
-                            <a href="{{ route('pos.till-sessions.show', $openSession->id) }}"
-                                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                Session Details
-                            </a>
-                            <a href="{{ route('pos.sales.checkout') }}"
-                                class="inline-flex items-center px-6 py-3 bg-indigo-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-indigo-500 text-lg">
-                                Open Cash Register
-                            </a>
+                            <x-button variant="ghost" href="{{ route('pos.till-sessions.show', $openSession->id) }}">Session Details</x-button>
+                            <x-button variant="primary" href="{{ route('pos.sales.checkout') }}">Open Cash Register</x-button>
                         </div>
                     </div>
                 @else
                     <div class="text-center py-4">
-                        <h3 class="text-lg font-semibold text-gray-700 mb-2">No Open Till</h3>
-                        <p class="text-sm text-gray-500 mb-4">Open a till session to start making sales.</p>
-                        <a href="{{ route('pos.till-sessions.index') }}"
-                            class="inline-flex items-center px-6 py-3 bg-indigo-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-indigo-500">
-                            Open Till Session
-                        </a>
+                        <div class="form-section-label">No Open Till</div>
+                        <p class="text-sm text-ink-soft mb-4">Open a till session to start making sales.</p>
+                        <x-button variant="primary" href="{{ route('pos.till-sessions.index') }}">Open Till Session</x-button>
                     </div>
                 @endif
             </div>
@@ -81,16 +65,16 @@
             {{-- Today's Summary --}}
             @if($openSession)
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                        <p class="text-sm font-medium text-gray-500">Sales Today</p>
+                    <div class="card p-6">
+                        <p class="text-sm font-medium text-ink-soft">Sales Today</p>
                         <p class="mt-1 text-3xl font-bold text-gray-900">{{ $todaySalesCount }}</p>
                     </div>
-                    <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                        <p class="text-sm font-medium text-gray-500">Revenue Today</p>
+                    <div class="card p-6">
+                        <p class="text-sm font-medium text-ink-soft">Revenue Today</p>
                         <p class="mt-1 text-3xl font-bold text-gray-900">@money($todaySalesTotal)</p>
                     </div>
-                    <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                        <p class="text-sm font-medium text-gray-500">Expected in Drawer</p>
+                    <div class="card p-6">
+                        <p class="text-sm font-medium text-ink-soft">Expected in Drawer</p>
                         @php
                             $expectedCash = (float) $openSession->opening_float + (float) $todaySalesTotal;
                         @endphp
@@ -102,7 +86,7 @@
             {{-- Quick Actions --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <a href="{{ route('pos.sales.checkout') }}"
-                    class="block bg-white shadow-sm sm:rounded-lg p-6 hover:shadow-md transition">
+                    class="block card p-6 hover:shadow-md transition">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -111,13 +95,13 @@
                         </div>
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800">Checkout</h4>
-                            <p class="text-sm text-gray-500">Make a new sale</p>
+                            <p class="text-sm text-ink-soft">Make a new sale</p>
                         </div>
                     </div>
                 </a>
 
                 <a href="{{ route('pos.till-sessions.index') }}"
-                    class="block bg-white shadow-sm sm:rounded-lg p-6 hover:shadow-md transition">
+                    class="block card p-6 hover:shadow-md transition">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -126,13 +110,13 @@
                         </div>
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800">Till Sessions</h4>
-                            <p class="text-sm text-gray-500">Open, close, and view till sessions</p>
+                            <p class="text-sm text-ink-soft">Open, close, and view till sessions</p>
                         </div>
                     </div>
                 </a>
 
                 <a href="{{ route('pos.settlements.index') }}"
-                    class="block bg-white shadow-sm sm:rounded-lg p-6 hover:shadow-md transition">
+                    class="block card p-6 hover:shadow-md transition">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -141,13 +125,13 @@
                         </div>
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800">Settlements</h4>
-                            <p class="text-sm text-gray-500">Record card/mobile money settlements</p>
+                            <p class="text-sm text-ink-soft">Record card/mobile money settlements</p>
                         </div>
                     </div>
                 </a>
 
                 <a href="{{ route('accounting.journal-entries.index') }}"
-                    class="block bg-white shadow-sm sm:rounded-lg p-6 hover:shadow-md transition">
+                    class="block card p-6 hover:shadow-md transition">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -156,7 +140,7 @@
                         </div>
                         <div>
                             <h4 class="text-lg font-semibold text-gray-800">Journal Entries</h4>
-                            <p class="text-sm text-gray-500">View posted POS journal entries</p>
+                            <p class="text-sm text-ink-soft">View posted POS journal entries</p>
                         </div>
                     </div>
                 </a>

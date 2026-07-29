@@ -20,6 +20,7 @@ class QuotationController extends Controller
         $quotations = Quotation::forCompany($companyId)
             ->with(['customer', 'createdByUser', 'postedByUser'])
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->when($request->customer_id, fn($q, $id) => $q->where('customer_id', $id))
             ->when($request->search, fn($q, $s) => $q->where(function ($q2) use ($s) {
                 $q2->where('quotation_number', 'like', "%{$s}%")
                     ->orWhere('reference', 'like', "%{$s}%")

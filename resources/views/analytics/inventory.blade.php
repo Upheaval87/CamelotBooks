@@ -1,10 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Inventory Analytics</h2>
-    </x-slot>
+    <x-slot name="header">Inventory Analytics</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <form method="GET" action="{{ route('analytics.inventory') }}" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
@@ -55,23 +53,23 @@
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Slow-Moving Stock (>{{ $slowMovingDays }} days)</h3>
                     <div class="overflow-x-auto max-h-80 overflow-y-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
+                                    <th>Product</th>
+                                    <th class="text-right">Qty</th>
+                                    <th class="text-right">Value</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($data['slow_moving'] as $item)
                                     <tr>
-                                        <td class="px-4 py-3 text-sm text-gray-900">{{ $item['product_name'] }} <span class="text-xs text-gray-400">({{ $item['sku'] }})</span></td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($item['old_quantity'], 0) }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">@money($item['old_value'])</td>
+                                        <td>{{ $item['product_name'] }} <span class="text-ink-soft">({{ $item['sku'] }})</span></td>
+                                        <td class="numeric">{{ number_format($item['old_quantity'], 0) }}</td>
+                                        <td class="numeric">@money($item['old_value'])</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No slow-moving items</td></tr>
+                                    <tr><td colspan="3" class="text-ink-soft text-center">No slow-moving items</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -81,25 +79,25 @@
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Low Stock Items</h3>
                     <div class="overflow-x-auto max-h-80 overflow-y-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">On Hand</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Reorder Point</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Shortage</th>
+                                    <th>Product</th>
+                                    <th class="text-right">On Hand</th>
+                                    <th class="text-right">Reorder Point</th>
+                                    <th class="text-right">Shortage</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            <tbody>
                                 @forelse($data['low_stock'] as $item)
                                     <tr>
-                                        <td class="px-4 py-3 text-sm text-gray-900">{{ $item['product_name'] }} <span class="text-xs text-gray-400">({{ $item['sku'] }})</span></td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($item['quantity_on_hand'], 0) }}</td>
-                                        <td class="px-4 py-3 text-sm text-right text-gray-600">{{ number_format($item['reorder_point'], 0) }}</td>
-                                        <td class="px-4 py-3 text-sm text-right font-medium text-red-600">{{ number_format($item['shortage'], 0) }}</td>
+                                        <td>{{ $item['product_name'] }} <span class="text-ink-soft">({{ $item['sku'] }})</span></td>
+                                        <td class="numeric">{{ number_format($item['quantity_on_hand'], 0) }}</td>
+                                        <td class="numeric">{{ number_format($item['reorder_point'], 0) }}</td>
+                                        <td class="numeric font-medium text-red-600">{{ number_format($item['shortage'], 0) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="4" class="px-4 py-3 text-sm text-gray-500 text-center">All stock levels OK</td></tr>
+                                    <tr><td colspan="4" class="text-ink-soft text-center">All stock levels OK</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -110,27 +108,27 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Turnover by Product</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Avg Cost</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Turnover</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Days on Hand</th>
+                                <th>Product</th>
+                                <th class="text-right">Value</th>
+                                <th class="text-right">Avg Cost</th>
+                                <th class="text-right">Turnover</th>
+                                <th class="text-right">Days on Hand</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody>
                             @forelse($data['turnover'] as $item)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900">{{ $item['product_name'] }} <span class="text-xs text-gray-400">({{ $item['sku'] }})</span></td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-900">@money($item['total_value'])</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">{{ format_money($item['avg_cost'], null, 4) }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $item['turnover'] !== null ? number_format($item['turnover'], 1) : 'N/A' }}</td>
-                                    <td class="px-4 py-3 text-sm text-right text-gray-600">{{ $item['days_on_hand'] !== null ? number_format($item['days_on_hand'], 0) : 'N/A' }}</td>
+                                    <td>{{ $item['product_name'] }} <span class="text-ink-soft">({{ $item['sku'] }})</span></td>
+                                    <td class="numeric">@money($item['total_value'])</td>
+                                    <td class="numeric">{{ format_money($item['avg_cost'], null, 4) }}</td>
+                                    <td class="numeric">{{ $item['turnover'] !== null ? number_format($item['turnover'], 1) : 'N/A' }}</td>
+                                    <td class="numeric">{{ $item['days_on_hand'] !== null ? number_format($item['days_on_hand'], 0) : 'N/A' }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="px-4 py-3 text-sm text-gray-500 text-center">No data</td></tr>
+                                <tr><td colspan="5" class="text-ink-soft text-center">No data</td></tr>
                             @endforelse
                         </tbody>
                     </table>

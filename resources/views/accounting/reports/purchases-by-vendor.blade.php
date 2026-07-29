@@ -9,18 +9,18 @@
         <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">Apply</button>
     </form>
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total ({{ $cs }})</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Count</th>
+        <table class="datasheet">
+            <thead><tr>
+                <th>Vendor</th>
+                <th class="text-right">Total ({{ $cs }})</th>
+                <th class="text-right">Count</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($rows as $row)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm">{{ $row['vendor'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['total']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right">{{ format_number($row['count']) }}</td>
+                    <td>{{ $row['vendor'] }}</td>
+                    <td class="numeric">{{ format_number($row['total']) }}</td>
+                    <td class="numeric">{{ format_number($row['count']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="3" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>

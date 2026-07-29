@@ -1,43 +1,28 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Purchase Order') }} #{{ $order->po_number }}
-            </h2>
-            <div class="flex items-center space-x-3">
-                @if($order->status === 'draft')
-                    <form method="POST" action="{{ route('accounting.purchase-orders.confirm', $order) }}" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Confirm & Send') }}
-                        </button>
-                    </form>
-                    <a href="{{ route('accounting.purchase-orders.edit', $order) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                        {{ __('Edit') }}
-                    </a>
-                @endif
-                @if(in_array($order->status, ['draft', 'sent']))
-                    <form method="POST" action="{{ route('accounting.purchase-orders.cancel', $order) }}" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="return confirm('Are you sure?')">
-                            {{ __('Cancel') }}
-                        </button>
-                    </form>
-                @endif
-                @if(in_array($order->status, ['sent', 'partially_received']))
-                    <a href="{{ route('accounting.goods-received-notes.create', ['purchase_order_id' => $order->id]) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Create GRN') }}
-                    </a>
-                @endif
-                <a href="{{ route('accounting.purchase-orders.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                    {{ __('Back') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Purchase Order') }} #{{ $order->po_number }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        @if($order->status === 'draft')
+            <form method="POST" action="{{ route('accounting.purchase-orders.confirm', $order) }}" class="inline">
+                @csrf
+                <x-button variant="primary" type="submit">{{ __('Confirm & Send') }}</x-button>
+            </form>
+            <x-button variant="primary" href="{{ route('accounting.purchase-orders.edit', $order) }}">{{ __('Edit') }}</x-button>
+        @endif
+        @if(in_array($order->status, ['draft', 'sent']))
+            <form method="POST" action="{{ route('accounting.purchase-orders.cancel', $order) }}" class="inline">
+                @csrf
+                <x-button variant="ghost" type="submit" onclick="return confirm('Are you sure?')">{{ __('Cancel') }}</x-button>
+            </form>
+        @endif
+        @if(in_array($order->status, ['sent', 'partially_received']))
+            <x-button variant="primary" href="{{ route('accounting.goods-received-notes.create', ['purchase_order_id' => $order->id]) }}">{{ __('Create GRN') }}</x-button>
+        @endif
+        <x-button variant="ghost" href="{{ route('accounting.purchase-orders.index') }}">{{ __('Back') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
             @endif
@@ -53,19 +38,19 @@
                         <dd class="mt-1">
                             @switch($order->status)
                                 @case('draft')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                    <span class="status-pill neutral">Draft</span>
                                     @break
                                 @case('sent')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Sent</span>
+                                    <span class="status-pill neutral">Sent</span>
                                     @break
                                 @case('partially_received')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Partially Received</span>
+                                    <span class="status-pill neutral">Partially Received</span>
                                     @break
                                 @case('fully_received')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Fully Received</span>
+                                    <span class="status-pill positive">Fully Received</span>
                                     @break
                                 @case('cancelled')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>
+                                    <span class="status-pill negative">Cancelled</span>
                                     @break
                             @endswitch
                         </dd>
@@ -98,28 +83,28 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Line Items') }}</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty Received</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty Billed</th>
+                                <th>Product</th>
+                                <th>Description</th>
+                                <th class="text-right">Qty</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-right">Amount</th>
+                                <th class="text-right">Qty Received</th>
+                                <th class="text-right">Qty Billed</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($order->lines as $line)
                                 <tr>
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ $line->product->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $line->description }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ $line->quantity }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ format_money($line->unit_price) }}</td>
+                                    <td>{{ $line->product->name ?? '—' }}</td>
+                                    <td class="text-ink-soft">{{ $line->description }}</td>
+                                    <td class="numeric">{{ $line->quantity }}</td>
+                                    <td class="numeric">{{ format_money($line->unit_price) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">{{ format_money($line->amount) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ $line->quantity_received }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ $line->quantity_billed }}</td>
+                                    <td class="numeric">{{ $line->quantity_received }}</td>
+                                    <td class="numeric">{{ $line->quantity_billed }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -138,26 +123,26 @@
             @if($order->grns->count() > 0)
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Goods Received Notes') }}</h3>
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GRN #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th>GRN #</th>
+                                <th>Date</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($order->grns as $grn)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('accounting.goods-received-notes.show', $grn) }}" class="text-indigo-600 hover:text-indigo-900">{{ $grn->grn_number }}</a>
+                                    <td>
+                                        <a href="{{ route('accounting.goods-received-notes.show', $grn) }}" class="text-ink hover:text-gold">{{ $grn->grn_number }}</a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $grn->date?->format('M d, Y') ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td class="text-ink-soft">{{ $grn->date?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="text-center">
                                         @if($grn->status === 'posted')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Posted</span>
+                                            <span class="status-pill positive">Posted</span>
                                         @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($grn->status) }}</span>
+                                            <span class="status-pill neutral">{{ ucfirst($grn->status) }}</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -170,7 +155,7 @@
             @if($order->journalEntry)
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Journal Entry') }}</h3>
-                    <a href="{{ route('accounting.journal-entries.show', $order->journalEntry) }}" class="text-indigo-600 hover:text-indigo-900">
+                    <a href="{{ route('accounting.journal-entries.show', $order->journalEntry) }}" class="text-ink hover:text-gold">
                         {{ $order->journalEntry->reference }} — View Journal Entry
                     </a>
                 </div>

@@ -1,21 +1,20 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Create Sales Receipt</h2>
-            <a href="{{ route('accounting.sales-receipts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Back to Sales Receipts') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">Create Sales Receipt</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4">
+                <x-button variant="ghost" href="{{ route('accounting.sales-receipts.index') }}">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back to Sales Receipts') }}
+                </x-button>
+            </div>
             <form method="POST" action="{{ route('accounting.sales-receipts.store') }}" id="receipt-form">
                 @csrf
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Receipt Details') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">1 · RECEIPT DETAILS</div>
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="customer_id" value="{{ __('Customer (optional)') }}" />
@@ -39,7 +38,7 @@
                         </div>
                         <div>
                             <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="branch_id" name="branch_id" class="input mt-1">
                                 <option value="">None</option>
                                 @foreach($branches as $branch)
                                     <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
@@ -53,25 +52,25 @@
                     </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">{{ __('Line Items') }}</h3>
+                        <div class="form-section-label">2 · LINE ITEMS</div>
                         <button type="button" id="add-line" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Add Line') }}
                         </button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200" id="lines-table">
-                            <thead class="bg-gray-50">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price ({{ $cs }})</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Discount %</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Line Total ({{ $cs }})</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                    <th>Product</th>
+                                    <th>Description</th>
+                                    <th class="text-right">Qty</th>
+                                    <th class="text-right">Unit Price ({{ $cs }})</th>
+                                    <th class="text-right">Discount %</th>
+                                    <th>Income Account</th>
+                                    <th class="text-right">Line Total ({{ $cs }})</th>
+                                    <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="lines-body"></tbody>
@@ -80,8 +79,8 @@
                     <x-input-error :messages="$errors->get('lines')" class="mt-2" />
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payments') }}</h3>
+                <div class="card p-6 mb-6">
+                    <div class="form-section-label">3 · PAYMENTS</div>
                     <div x-data="paymentSection()" id="payments-section">
                         <template x-for="(payment, pIdx) in payments" :key="pIdx">
                             <div class="flex items-end gap-3 mb-3 w-full">
@@ -128,7 +127,7 @@
                     <x-input-error :messages="$errors->get('payments')" class="mt-2" />
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
+                <div class="card p-6 mb-6">
                     <div class="flex justify-end">
                         <div class="w-64 space-y-2">
                             <div class="flex justify-between text-sm">
@@ -148,9 +147,7 @@
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <a href="{{ route('accounting.sales-receipts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Cancel') }}
-                    </a>
+                    <x-button variant="ghost" href="{{ route('accounting.sales-receipts.index') }}">{{ __('Cancel') }}</x-button>
                     <x-primary-button type="submit">{{ __('Create Sales Receipt') }}</x-primary-button>
                 </div>
             </form>

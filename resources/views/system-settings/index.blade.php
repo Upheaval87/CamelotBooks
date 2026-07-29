@@ -1,10 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">System Settings</h2>
-    </x-slot>
+    <x-slot name="header">System Settings</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">{{ session('success') }}</div>
             @endif
@@ -70,77 +68,77 @@
             <form method="POST" action="{{ route('system-settings.update-company') }}" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="card">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Company Profile</h3>
-                        <p class="mt-1 text-sm text-gray-600">Legal and contact information for this company. The logo appears on all printed documents (invoices, statements, payslips).</p>
+                        <div class="form-section-label">1 · Company Profile</div>
+                        <p class="mt-1 text-sm text-ink-soft">Legal and contact information for this company. The logo appears on all printed documents (invoices, statements, payslips).</p>
                     </div>
                     <div class="p-6 space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700">Company Name *</label>
                                 <input type="text" name="name" id="name" value="{{ old('name', $company->name) }}" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="legal_name" class="block text-sm font-medium text-gray-700">Legal Name</label>
                                 <input type="text" name="legal_name" id="legal_name" value="{{ old('legal_name', $company->legal_name) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="company_code" class="block text-sm font-medium text-gray-700">Company Code</label>
                                 <input type="text" name="company_code" id="company_code" value="{{ old('company_code', $company->company_code) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="tax_id" class="block text-sm font-medium text-gray-700">Tax ID / Registration Number</label>
                                 <input type="text" name="tax_id" id="tax_id" value="{{ old('tax_id', $company->tax_id) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div class="md:col-span-2">
                                 <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
                                 <input type="text" name="address" id="address" value="{{ old('address', $company->address) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="city" class="block text-sm font-medium text-gray-700">City</label>
                                 <input type="text" name="city" id="city" value="{{ old('city', $company->city) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="state" class="block text-sm font-medium text-gray-700">State / Province</label>
                                 <input type="text" name="state" id="state" value="{{ old('state', $company->state) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
                                 <input type="text" name="country" id="country" value="{{ old('country', $company->country) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="postal_code" class="block text-sm font-medium text-gray-700">Postal Code</label>
                                 <input type="text" name="postal_code" id="postal_code" value="{{ old('postal_code', $company->postal_code) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-gray-700">Phone</label>
                                 <input type="text" name="phone" id="phone" value="{{ old('phone', $company->phone) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                                 <input type="email" name="email" id="email" value="{{ old('email', $company->email) }}"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="website" class="block text-sm font-medium text-gray-700">Website</label>
                                 <input type="url" name="website" id="website" value="{{ old('website', $company->website ?? '') }}" placeholder="https://example.com"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="fiscal_year_start_month" class="block text-sm font-medium text-gray-700">Fiscal Year Start Month *</label>
                                 <select name="fiscal_year_start_month" id="fiscal_year_start_month" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     @foreach(range(1, 12) as $m)
                                         <option value="{{ $m }}" {{ old('fiscal_year_start_month', $company->fiscal_year_start_month) == $m ? 'selected' : '' }}>
                                             {{ \Carbon\Carbon::create()->month($m)->format('F') }}
@@ -180,9 +178,9 @@
                         </div>
                     </div>
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                        <x-button variant="primary" type="submit">
                             Save Company Profile
-                        </button>
+                        </x-button>
                     </div>
                 </div>
             </form>
@@ -193,10 +191,10 @@
             <form method="POST" action="{{ route('system-settings.update-regional') }}">
                 @csrf
                 @method('PUT')
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="card">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Regional Settings</h3>
-                        <p class="mt-1 text-sm text-gray-600">Language, timezone, and formatting preferences for this company.</p>
+                        <div class="form-section-label">2 · Regional Settings</div>
+                        <p class="mt-1 text-sm text-ink-soft">Language, timezone, and formatting preferences for this company.</p>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -204,12 +202,12 @@
                                 <label for="reg_country" class="block text-sm font-medium text-gray-700">Country</label>
                                 <input type="text" name="country" id="reg_country" value="{{ old('country', $regional['country'] ?? $company->country ?? '') }}"
                                     placeholder="e.g. Malawi, Kenya, United States"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                             </div>
                             <div>
                                 <label for="language" class="block text-sm font-medium text-gray-700">Language</label>
                                 <select name="language" id="language"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     @foreach(['en' => 'English', 'fr' => 'French', 'es' => 'Spanish', 'pt' => 'Portuguese', 'sw' => 'Swahili', 'zh' => 'Chinese', 'ar' => 'Arabic'] as $code => $label)
                                         <option value="{{ $code }}" {{ old('language', $regional['language'] ?? 'en') === $code ? 'selected' : '' }}>{{ $label }}</option>
                                     @endforeach
@@ -218,7 +216,7 @@
                             <div>
                                 <label for="timezone" class="block text-sm font-medium text-gray-700">Timezone *</label>
                                 <select name="timezone" id="timezone" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     @foreach([
                                         'UTC' => 'UTC',
                                         'Africa/Blantyre' => 'Africa/Blantyre (CAT)',
@@ -245,7 +243,7 @@
                             <div>
                                 <label for="date_format" class="block text-sm font-medium text-gray-700">Date Format *</label>
                                 <select name="date_format" id="date_format" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     @foreach([
                                         'Y-m-d' => 'YYYY-MM-DD (2026-01-15)',
                                         'd/m/Y' => 'DD/MM/YYYY (15/01/2026)',
@@ -260,7 +258,7 @@
                             <div>
                                 <label for="time_format" class="block text-sm font-medium text-gray-700">Time Format *</label>
                                 <select name="time_format" id="time_format" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     <option value="24h" {{ old('time_format', $regional['time_format'] ?? '24h') === '24h' ? 'selected' : '' }}>24-hour (14:30)</option>
                                     <option value="12h" {{ old('time_format', $regional['time_format'] ?? '24h') === '12h' ? 'selected' : '' }}>12-hour (2:30 PM)</option>
                                 </select>
@@ -268,7 +266,7 @@
                             <div>
                                 <label for="first_day_of_week" class="block text-sm font-medium text-gray-700">First Day of Week *</label>
                                 <select name="first_day_of_week" id="first_day_of_week" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     @foreach([0 => 'Sunday', 1 => 'Monday', 6 => 'Saturday'] as $day => $dayLabel)
                                         <option value="{{ $day }}" {{ old('first_day_of_week', $regional['first_day_of_week'] ?? '1') == $day ? 'selected' : '' }}>{{ $dayLabel }}</option>
                                     @endforeach
@@ -277,7 +275,7 @@
                             <div>
                                 <label for="number_format" class="block text-sm font-medium text-gray-700">Number Format</label>
                                 <select name="number_format" id="number_format"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     @foreach([
                                         '1,234.56' => '1,234.56 (dot decimal, comma thousands)',
                                         '1.234,56' => '1.234,56 (comma decimal, dot thousands)',
@@ -291,9 +289,9 @@
                         </div>
                     </div>
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                        <x-button variant="primary" type="submit">
                             Save Regional Settings
-                        </button>
+                        </x-button>
                     </div>
                 </div>
             </form>
@@ -304,17 +302,17 @@
             <form method="POST" action="{{ route('system-settings.update-currency') }}">
                 @csrf
                 @method('PUT')
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="card">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Currency Settings</h3>
-                        <p class="mt-1 text-sm text-gray-600">Configure the base currency and display preferences for monetary values.</p>
+                        <div class="form-section-label">3 · Currency Settings</div>
+                        <p class="mt-1 text-sm text-ink-soft">Configure the base currency and display preferences for monetary values.</p>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="base_currency" class="block text-sm font-medium text-gray-700">Base Currency *</label>
                                 <select name="base_currency" id="base_currency" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     @foreach([
                                         'USD' => 'USD - US Dollar',
                                         'EUR' => 'EUR - Euro',
@@ -345,7 +343,7 @@
                             <div>
                                 <label for="decimal_places" class="block text-sm font-medium text-gray-700">Decimal Places for Display *</label>
                                 <select name="decimal_places" id="decimal_places" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     @foreach([0, 2, 3, 4] as $dp)
                                         <option value="{{ $dp }}" {{ old('decimal_places', $currency['decimal_places'] ?? '2') == $dp ? 'selected' : '' }}>
                                             {{ $dp }}{{ $dp === 0 ? ' (whole numbers)' : ($dp === 2 ? ' (standard)' : '') }}
@@ -357,7 +355,7 @@
                             <div>
                                 <label for="rate_source" class="block text-sm font-medium text-gray-700">Exchange Rate Source *</label>
                                 <select name="rate_source" id="rate_source" required
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="input">
                                     <option value="manual" {{ old('rate_source', $currency['rate_source'] ?? 'manual') === 'manual' ? 'selected' : '' }}>Manual Entry Only</option>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500">Currently, exchange rates are entered manually via the Exchange Rates screen. Live rate feeds are not yet available.</p>
@@ -367,13 +365,13 @@
                                 <input type="text" name="currency_symbol" id="currency_symbol"
                                     value="{{ old('currency_symbol', $currency['currency_symbol'] ?? '$') }}"
                                     placeholder="e.g. K, $, MWK, EUR"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                                    class="input" />
                                 <p class="mt-1 text-xs text-gray-500">The symbol or code shown before amounts (e.g. <code>K</code>, <code>$</code>, <code>MWK</code>).</p>
                             </div>
                         </div>
                     </div>
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                        <x-button variant="primary" type="submit">
                             Save Currency Settings
                         </button>
                     </div>
@@ -386,10 +384,10 @@
             <form method="POST" action="{{ route('system-settings.update-account-mappings') }}">
                 @csrf
                 @method('PUT')
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="card">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Default Account Mappings</h3>
-                        <p class="mt-1 text-sm text-gray-600">Map system operations to your Chart of Accounts. Every journal entry posted by the system uses these mappings. If a mapping is empty, the relevant operation will fail until one is assigned.</p>
+                        <div class="form-section-label">4 · Default Account Mappings</div>
+                        <p class="mt-1 text-sm text-ink-soft">Map system operations to your Chart of Accounts. Every journal entry posted by the system uses these mappings. If a mapping is empty, the relevant operation will fail until one is assigned.</p>
                     </div>
                     <div class="p-6">
                         @php
@@ -415,7 +413,7 @@
                         </div>
                     </div>
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                        <x-button variant="primary" type="submit">
                             Save Account Mappings
                         </button>
                     </div>
@@ -428,10 +426,10 @@
             <form method="POST" action="{{ route('system-settings.update-accounting') }}">
                 @csrf
                 @method('PUT')
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="card">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Accounting Settings</h3>
-                        <p class="mt-1 text-sm text-gray-600">Company-wide accounting controls and defaults.</p>
+                        <div class="form-section-label">5 · Accounting Settings</div>
+                        <p class="mt-1 text-sm text-ink-soft">Company-wide accounting controls and defaults.</p>
                     </div>
                     <div class="p-6 space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -484,7 +482,7 @@
                         </div>
                     </div>
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                        <x-button variant="primary" type="submit">
                             Save Accounting Settings
                         </button>
                     </div>

@@ -1,21 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Account Detail') }}
-            </h2>
-            <div class="flex items-center space-x-3">
-                <a href="{{ route('accounting.accounts.edit', $account) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Edit') }}
-                </a>
-                <a href="{{ route('accounting.accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Back to Accounts') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Account Detail') }}</x-slot>
 
-    <div class="py-12">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="primary" href="{{ route('accounting.accounts.edit', $account) }}">{{ __('Edit') }}</x-button>
+        <x-button variant="ghost" href="{{ route('accounting.accounts.index') }}">{{ __('Back to Accounts') }}</x-button>
+    </div>
+
+    <div class="pb-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="grid grid-cols-2 gap-6">
@@ -39,9 +30,9 @@
                         <dt class="text-sm font-medium text-gray-500">{{ __('Status') }}</dt>
                         <dd class="mt-1">
                             @if($account->is_active)
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                <span class="status-pill positive">Active</span>
                             @else
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
+                                <span class="status-pill neutral">Inactive</span>
                             @endif
                         </dd>
                     </div>
@@ -53,7 +44,7 @@
                         <div class="col-span-2">
                             <dt class="text-sm font-medium text-gray-500">{{ __('Parent Account') }}</dt>
                             <dd class="mt-1 text-sm text-gray-900">
-                                <a href="{{ route('accounting.accounts.show', $account->parent) }}" class="text-indigo-600 hover:text-indigo-900">
+                                <a href="{{ route('accounting.accounts.show', $account->parent) }}" class="text-ink hover:text-gold">
                                     {{ $account->parent->code }} - {{ $account->parent->name }}
                                 </a>
                             </dd>
@@ -90,36 +81,36 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Child Accounts') }}</h3>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th class="text-right">Balance</th>
+                                    <th class="text-center">Status</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 @foreach($account->children as $child)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <a href="{{ route('accounting.accounts.show', $child) }}" class="text-indigo-600 hover:text-indigo-900">
+                                        <td>
+                                            <a href="{{ route('accounting.accounts.show', $child) }}" class="text-ink hover:text-gold">
                                                 {{ $child->code }}
                                             </a>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td>
                                             <a href="{{ route('accounting.accounts.show', $child) }}" class="hover:text-indigo-600">
                                                 {{ $child->name }}
                                             </a>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                        <td class="numeric">
                                             {{ format_money($child->current_balance) }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        <td class="text-center">
                                             @if($child->is_active)
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                                <span class="status-pill positive">Active</span>
                                             @else
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
+                                                <span class="status-pill neutral">Inactive</span>
                                             @endif
                                         </td>
                                     </tr>

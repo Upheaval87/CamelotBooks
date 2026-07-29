@@ -1,15 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Budget vs Actual Trend</h2>
-    </x-slot>
+    <x-slot name="header">Budget vs Actual Trend</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <form method="GET" action="{{ route('analytics.budget-vs-actual-trend') }}" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <x-input-label for="fiscal_year_id" value="Fiscal Year" />
-                        <select id="fiscal_year_id" name="fiscal_year_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <select id="fiscal_year_id" name="fiscal_year_id" class="input mt-1">
                             @foreach($fiscalYears as $fy)
                                 <option value="{{ $fy->id }}" {{ $fy->id == $fiscalYearId ? 'selected' : '' }}>{{ $fy->name ?? $fy->start_date . ' - ' . $fy->end_date }}</option>
                             @endforeach
@@ -17,7 +15,7 @@
                     </div>
                     <div>
                         <x-input-label for="branch_id" value="Branch" />
-                        <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <select id="branch_id" name="branch_id" class="input mt-1">
                             <option value="">All Branches</option>
                             @if(isset($currentBranches))
                                 @foreach($currentBranches as $branch)

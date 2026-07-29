@@ -1,41 +1,28 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Credit Note') }} #{{ $creditNote->credit_note_number }}
-            </h2>
-            <div class="flex items-center space-x-3">
-                @if($creditNote->status === 'draft')
-                    <form method="POST" action="{{ route('accounting.credit-notes.issue', $creditNote) }}" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Issue') }}
-                        </button>
-                    </form>
-                @endif
-                @if($creditNote->status === 'issued' && $creditNote->available > 0)
-                    <a href="{{ route('accounting.customer-payments.create', ['credit_note_id' => $creditNote->id]) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Apply Credit') }}
-                    </a>
-                @endif
-                @if($creditNote->status !== 'void' && $creditNote->status !== 'applied')
-                    <form method="POST" action="{{ route('accounting.credit-notes.void', $creditNote) }}" class="inline">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="return confirm('Are you sure you want to void this credit note?')">
-                            {{ __('Void') }}
-                        </button>
-                    </form>
-                @endif
-                <a href="{{ route('accounting.credit-notes.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Back to Credit Notes') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Credit Note') }} #{{ $creditNote->credit_note_number }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        @if($creditNote->status === 'draft')
+            <form method="POST" action="{{ route('accounting.credit-notes.issue', $creditNote) }}" class="inline">
+                @csrf
+                <x-button variant="primary" type="submit">{{ __('Issue') }}</x-button>
+            </form>
+        @endif
+        @if($creditNote->status === 'issued' && $creditNote->available > 0)
+            <x-button variant="primary" href="{{ route('accounting.customer-payments.create', ['credit_note_id' => $creditNote->id]) }}">{{ __('Apply Credit') }}</x-button>
+        @endif
+        @if($creditNote->status !== 'void' && $creditNote->status !== 'applied')
+            <form method="POST" action="{{ route('accounting.credit-notes.void', $creditNote) }}" class="inline">
+                @csrf
+                @method('PATCH')
+                <x-button variant="ghost" type="submit" onclick="return confirm('Are you sure you want to void this credit note?')">{{ __('Void') }}</x-button>
+            </form>
+        @endif
+        <x-button variant="ghost" href="{{ route('accounting.credit-notes.index') }}">{{ __('Back to Credit Notes') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -59,16 +46,16 @@
                         <dd class="mt-1">
                             @switch($creditNote->status)
                                 @case('draft')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                    <span class="status-pill neutral">Draft</span>
                                     @break
                                 @case('issued')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Issued</span>
+                                    <span class="status-pill neutral">Issued</span>
                                     @break
                                 @case('applied')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Applied</span>
+                                    <span class="status-pill positive">Applied</span>
                                     @break
                                 @case('void')
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">Void</span>
+                                    <span class="status-pill neutral">Void</span>
                                     @break
                             @endswitch
                         </dd>
@@ -85,7 +72,7 @@
                         <div>
                             <dt class="text-sm font-medium text-gray-500">{{ __('Reference Invoice') }}</dt>
                             <dd class="mt-1 text-sm text-gray-900">
-                                <a href="{{ route('accounting.invoices.show', $creditNote->invoice) }}" class="text-indigo-600 hover:text-indigo-900">
+                                <a href="{{ route('accounting.invoices.show', $creditNote->invoice) }}" class="text-ink hover:text-gold">
                                     {{ $creditNote->invoice->invoice_number }}
                                 </a>
                             </dd>
@@ -103,26 +90,26 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Line Items') }}</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tax</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th>Product</th>
+                                <th>Description</th>
+                                <th class="text-right">Qty</th>
+                                <th class="text-right">Unit Price</th>
+                                <th class="text-right">Tax</th>
+                                <th class="text-right">Total</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($creditNote->lines as $line)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $line->product->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $line->description }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->quantity }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_money($line->unit_price) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ $line->tax_rate }}%</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">{{ format_money($line->total) }}</td>
+                                    <td>{{ $line->product->name ?? '—' }}</td>
+                                    <td class="text-ink-soft">{{ $line->description }}</td>
+                                    <td class="numeric">{{ $line->quantity }}</td>
+                                    <td class="numeric">{{ format_money($line->unit_price) }}</td>
+                                    <td class="numeric">{{ $line->tax_rate }}%</td>
+                                    <td class="numeric">{{ format_money($line->total) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

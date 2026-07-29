@@ -1,16 +1,11 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Import Bank Statement') }}
-            </h2>
-            <a href="{{ route('accounting.bank-reconciliation.index', $bankAccount->id) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Back to Reconciliation') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Import Bank Statement') }}</x-slot>
 
-    <div class="py-12">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.bank-reconciliation.index', $bankAccount->id) }}">{{ __('Back to Reconciliation') }}</x-button>
+    </div>
+
+    <div class="pb-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">

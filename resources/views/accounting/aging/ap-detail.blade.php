@@ -1,19 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('A/P Aging Detail') }}
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ap'])) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Export CSV') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('A/P Aging Detail') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        <x-button variant="ghost" href="{{ route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ap'])) }}">{{ __('Export CSV') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.aging.ap-detail') }}" class="flex items-end gap-4">
                     <div class="flex-1">
@@ -43,33 +36,33 @@
                 <a href="{{ route('accounting.aging.ap-detail', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest shadow-sm">Detail</a>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-800">A/P Aging Detail as of {{ \Carbon\Carbon::parse($as_of_date)->format('M d, Y') }}</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Overdue</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Due</th>
+                                <th>Vendor</th>
+                                <th>Bill #</th>
+                                <th>Due Date</th>
+                                <th>Days Overdue</th>
+                                <th class="text-right">Amount Due</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($vendors as $row)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['vendor_name'] }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row['bill_number'] ?? '-' }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row['due_date'] ?? '-' }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row['days_overdue'] ?? 0 }}</td>
-                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{{ format_money($row['total']) }}</td>
+                                    <td>{{ $row['vendor_name'] }}</td>
+                                    <td>{{ $row['bill_number'] ?? '-' }}</td>
+                                    <td>{{ $row['due_date'] ?? '-' }}</td>
+                                    <td>{{ $row['days_overdue'] ?? 0 }}</td>
+                                    <td class="numeric">{{ format_money($row['total']) }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No outstanding bills found.</td>
+                                    <td colspan="5" class="text-center text-ink-soft">No outstanding bills found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

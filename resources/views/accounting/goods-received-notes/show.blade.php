@@ -1,28 +1,19 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('GRN') }} #{{ $grn->grn_number }}
-            </h2>
-            <div class="flex items-center space-x-3">
-                @if($grn->status === 'draft')
-                    <form method="POST" action="{{ route('accounting.goods-received-notes.post', $grn) }}" class="inline">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="return confirm('Post this GRN? This will create inventory cost layers and a journal entry.')">
-                            {{ __('Post') }}
-                        </button>
-                    </form>
-                @endif
-                <a href="{{ route('accounting.goods-received-notes.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">
-                    {{ __('Back') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('GRN') }} #{{ $grn->grn_number }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        @if($grn->status === 'draft')
+            <form method="POST" action="{{ route('accounting.goods-received-notes.post', $grn) }}" class="inline">
+                @csrf
+                <x-button variant="primary" type="submit" onclick="return confirm('Post this GRN? This will create inventory cost layers and a journal entry.')">{{ __('Post') }}</x-button>
+            </form>
+        @endif
+        <x-button variant="ghost" href="{{ route('accounting.goods-received-notes.index') }}">{{ __('Back') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
             @endif
@@ -41,11 +32,11 @@
                         <dt class="text-sm font-medium text-gray-500">{{ __('Status') }}</dt>
                         <dd class="mt-1">
                             @if($grn->status === 'posted')
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Posted</span>
+                                <span class="status-pill positive">Posted</span>
                             @elseif($grn->status === 'draft')
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                <span class="status-pill neutral">Draft</span>
                             @else
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{{ ucfirst($grn->status) }}</span>
+                                <span class="status-pill negative">{{ ucfirst($grn->status) }}</span>
                             @endif
                         </dd>
                     </div>
@@ -61,7 +52,7 @@
                         <dt class="text-sm font-medium text-gray-500">{{ __('Purchase Order') }}</dt>
                         <dd class="mt-1 text-sm text-gray-900">
                             @if($grn->purchaseOrder)
-                                <a href="{{ route('accounting.purchase-orders.show', $grn->purchaseOrder) }}" class="text-indigo-600 hover:text-indigo-900">{{ $grn->purchaseOrder->po_number }}</a>
+                                <a href="{{ route('accounting.purchase-orders.show', $grn->purchaseOrder) }}" class="text-ink hover:text-gold">{{ $grn->purchaseOrder->po_number }}</a>
                             @else
                                 —
                             @endif
@@ -79,25 +70,25 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Received Items') }}</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty Ordered</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty Received</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost ({{ $cs }})</th>
+                                <th>Product</th>
+                                <th>Description</th>
+                                <th class="text-right">Qty Ordered</th>
+                                <th class="text-right">Qty Received</th>
+                                <th class="text-right">Unit Cost ({{ $cs }})</th>
+                                <th class="text-right">Total Cost ({{ $cs }})</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($grn->lines as $line)
                                 <tr>
-                                    <td class="px-6 py-4 text-sm text-gray-900">{{ $line->product->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $line->description }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ $line->quantity_ordered ?? '—' }}</td>
+                                    <td>{{ $line->product->name ?? '—' }}</td>
+                                    <td class="text-ink-soft">{{ $line->description }}</td>
+                                    <td class="numeric">{{ $line->quantity_ordered ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">{{ $line->quantity_received }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">{{ format_number($line->unit_cost) }}</td>
+                                    <td class="numeric">{{ format_number($line->unit_cost) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold">{{ format_number($line->total_cost) }}</td>
                                 </tr>
                             @endforeach
@@ -117,7 +108,7 @@
             @if($grn->journalEntry)
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Journal Entry') }}</h3>
-                    <a href="{{ route('accounting.journal-entries.show', $grn->journalEntry) }}" class="text-indigo-600 hover:text-indigo-900">
+                    <a href="{{ route('accounting.journal-entries.show', $grn->journalEntry) }}" class="text-ink hover:text-gold">
                         {{ $grn->journalEntry->reference }} — View Journal Entry
                     </a>
                 </div>

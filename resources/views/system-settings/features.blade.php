@@ -1,33 +1,33 @@
-<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+<div class="card">
     <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-medium text-gray-900">Feature Management</h3>
-        <p class="mt-1 text-sm text-gray-600">Toggle modules on or off for this company. Disabled features are hidden from navigation and inaccessible to users.</p>
+        <div class="form-section-label">1 · Feature Management</div>
+        <p class="mt-1 text-sm text-ink-soft">Toggle modules on or off for this company. Disabled features are hidden from navigation and inaccessible to users.</p>
     </div>
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="datasheet">
+            <thead>
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feature</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    <th>Feature</th>
+                    <th>Status</th>
+                    <th class="text-right">Action</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
                 @foreach($features as $key => $label)
                     @php $isOn = array_key_exists($key, $enabled); @endphp
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ $label }}</div>
-                            <div class="text-xs text-gray-500">{{ $key }}</div>
+                        <td>
+                            <div>{{ $label }}</div>
+                            <div class="text-ink-soft">{{ $key }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td>
                             @if($isOn)
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Enabled</span>
+                                <span class="status-pill positive">Enabled</span>
                             @else
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">Disabled</span>
+                                <span class="status-pill negative">Disabled</span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <td class="text-right">
                             <form method="POST" action="{{ route('system-settings.features.toggle', $key) }}" class="inline">
                                 @csrf
                                 @if($isOn)

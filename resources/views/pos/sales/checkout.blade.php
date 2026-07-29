@@ -1,12 +1,8 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('POS Checkout') }} – {{ session('pos_terminal_identifier') ?? '' }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('POS Checkout') }} – {{ session('pos_terminal_identifier') ?? '' }}</x-slot>
 
-    <div class="py-6" x-data="posCheckout()" x-effect="reactiveFilter()">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12" x-data="posCheckout()" x-effect="reactiveFilter()">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Offline Indicator --}}
             <div x-show="!isOnline" x-cloak
@@ -38,8 +34,8 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {{-- Product Selection & Lines --}}
-                <div class="lg:col-span-2 bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Add Items') }}</h3>
+                <div class="lg:col-span-2 card p-6">
+                    <div class="form-section-label">1 · Add Items</div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
@@ -99,27 +95,27 @@
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="datasheet">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">UOM</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Discount</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Tax</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase"></th>
+                                    <th>Product</th>
+                                    <th class="text-center">UOM</th>
+                                    <th class="text-right">Qty</th>
+                                    <th class="text-right">Price</th>
+                                    <th class="text-right">Discount</th>
+                                    <th class="text-right">Tax</th>
+                                    <th class="text-right">Total</th>
+                                    <th class="text-center"></th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 <template x-for="(line, index) in lines" :key="index">
                                     <tr>
-                                        <td class="px-4 py-2 text-sm text-gray-900" x-text="line.product_name"></td>
-                                        <td class="px-4 py-2 text-sm text-center">
+                                        <td x-text="line.product_name"></td>
+                                        <td class="text-center">
                                             <template x-if="line.transaction_uom">
                                                 <select x-model="line.transaction_uom" @change="onLineUomChange(index)"
-                                                    class="w-28 border-gray-300 rounded-md shadow-sm text-xs">
+                                                    class="w-28 input">
                                                     <option value="">Each</option>
                                                     <template x-for="u in (uomConversions[line.product_id] || [])" :key="u.uom_name">
                                                         <option :value="u.uom_name" x-text="u.uom_name"></option>
@@ -130,28 +126,28 @@
                                                 <span class="text-gray-400 text-xs">Each</span>
                                             </template>
                                         </td>
-                                        <td class="px-4 py-2 text-sm text-right">
+                                        <td class="text-right">
                                             <input type="number" x-model.number="line.transaction_qty" min="0.01" step="1"
-                                                class="w-20 text-right border-gray-300 rounded-md shadow-sm text-sm"
+                                                class="input w-20 text-right"
                                                 @input="onLineQtyChange(index)" />
                                         </td>
-                                        <td class="px-4 py-2 text-sm text-right">
+                                        <td class="text-right">
                                             <input type="number" x-model.number="line.unit_price" min="0" step="0.01"
-                                                class="w-24 text-right border-gray-300 rounded-md shadow-sm text-sm" @input="recalcLine(index)" />
+                                                class="input w-24 text-right" @input="recalcLine(index)" />
                                         </td>
-                                        <td class="px-4 py-2 text-sm text-right">
+                                        <td class="text-right">
                                             <input type="number" x-model.number="line.discount_amount" min="0" step="0.01"
-                                                class="w-20 text-right border-gray-300 rounded-md shadow-sm text-sm" @input="recalcLine(index)" />
+                                                class="input w-20 text-right" @input="recalcLine(index)" />
                                         </td>
-                                        <td class="px-4 py-2 text-sm text-right text-gray-500" x-text="formatMoney(line.tax_amount)"></td>
-                                        <td class="px-4 py-2 text-sm text-right font-semibold" x-text="formatMoney(line.line_total)"></td>
-                                        <td class="px-4 py-2 text-center">
+                                        <td class="numeric text-ink-soft" x-text="formatMoney(line.tax_amount)"></td>
+                                        <td class="numeric font-semibold" x-text="formatMoney(line.line_total)"></td>
+                                        <td class="text-center">
                                             <button type="button" @click="removeLine(index)" class="text-red-600 hover:text-red-900 text-sm font-medium">Remove</button>
                                         </td>
                                     </tr>
                                 </template>
                                 <tr x-show="lines.length === 0">
-                                    <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-400">No items added yet. Search and add products above.</td>
+                                    <td colspan="8" class="text-ink-soft text-center py-6">No items added yet. Search and add products above.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -160,8 +156,8 @@
 
                 {{-- Payment Panel (sticky) --}}
                 <div class="lg:sticky lg:top-6 lg:self-start">
-                    <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payment') }}</h3>
+                    <div class="card p-6">
+                        <div class="form-section-label">2 · Payment</div>
 
                         <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700">Customer</label>

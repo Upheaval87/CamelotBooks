@@ -1,28 +1,19 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Vendor Payment') }}
-            </h2>
-            <div class="flex items-center space-x-3">
-                @if($payment->status !== 'void')
-                    <form method="POST" action="{{ route('accounting.vendor-payments.void', $payment) }}" class="inline">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="return confirm('Are you sure you want to void this payment?')">
-                            {{ __('Void') }}
-                        </button>
-                    </form>
-                @endif
-                <a href="{{ route('accounting.bills.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    {{ __('Back to Bills') }}
-                </a>
-            </div>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('Vendor Payment') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="flex items-center justify-end gap-2 mb-4">
+        @if($payment->status !== 'void')
+            <form method="POST" action="{{ route('accounting.vendor-payments.void', $payment) }}" class="inline">
+                @csrf
+                @method('PATCH')
+                <x-button variant="ghost" type="submit" onclick="return confirm('Are you sure you want to void this payment?')">{{ __('Void') }}</x-button>
+            </form>
+        @endif
+        <x-button variant="ghost" href="{{ route('accounting.bills.index') }}">{{ __('Back to Bills') }}</x-button>
+    </div>
+
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -45,9 +36,9 @@
                         <dt class="text-sm font-medium text-gray-500">{{ __('Status') }}</dt>
                         <dd class="mt-1">
                             @if($payment->status === 'void')
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">Void</span>
+                                <span class="status-pill neutral">Void</span>
                             @else
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                                <span class="status-pill positive">Completed</span>
                             @endif
                         </dd>
                     </div>
@@ -85,36 +76,36 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Bill Allocations') }}</h3>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Total</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Allocated</th>
+                                <th>Bill #</th>
+                                <th>Date</th>
+                                <th class="text-right">Bill Total</th>
+                                <th class="text-right">Amount Allocated</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($payment->bills as $bill)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        <a href="{{ route('accounting.bills.show', $bill) }}" class="text-indigo-600 hover:text-indigo-900">
+                                    <td>
+                                        <a href="{{ route('accounting.bills.show', $bill) }}" class="text-ink hover:text-gold">
                                             {{ $bill->bill_number }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="text-ink-soft">
                                         {{ $bill->bill_date?->format('M d, Y') ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ format_money($bill->total) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+                                    <td class="numeric">
                                         {{ format_money($bill->pivot->amount) }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="4" class="text-center text-ink-soft">
                                         No allocations found.
                                     </td>
                                 </tr>

@@ -13,6 +13,36 @@ export default {
     theme: {
         extend: {
             colors: {
+                ink: {
+                    DEFAULT: 'rgba(28,37,48,<alpha-value>)',
+                    soft: 'rgba(91,101,114,<alpha-value>)',
+                    faint: 'rgba(140,147,160,<alpha-value>)',
+                },
+                line: {
+                    DEFAULT: 'rgba(229,227,220,<alpha-value>)',
+                },
+                panel: {
+                    DEFAULT: 'rgba(246,245,241,<alpha-value>)',
+                },
+                gold: {
+                    DEFAULT: 'rgba(156,122,60,<alpha-value>)',
+                    soft: 'rgba(243,236,220,<alpha-value>)',
+                    line: 'rgba(217,200,154,<alpha-value>)',
+                },
+                brick: {
+                    DEFAULT: 'rgba(142,59,59,<alpha-value>)',
+                    soft: 'rgba(245,233,231,<alpha-value>)',
+                },
+                forest: {
+                    DEFAULT: 'rgba(62,107,78,<alpha-value>)',
+                    soft: 'rgba(233,241,236,<alpha-value>)',
+                },
+                atlas: {
+                    navy: 'rgba(28,37,48,<alpha-value>)',
+                    amber: 'rgba(156,122,60,<alpha-value>)',
+                    danger: 'rgba(142,59,59,<alpha-value>)',
+                    blue: 'rgba(59,130,246,<alpha-value>)',
+                },
                 brand: {
                     50: '#eef2ff',
                     100: '#e0e7ff',
@@ -88,6 +118,8 @@ export default {
             fontFamily: {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans],
                 display: ['Inter', ...defaultTheme.fontFamily.sans],
+                serif: ['"Source Serif 4"', 'Georgia', 'serif'],
+                mono: ['"IBM Plex Mono"', ...defaultTheme.fontFamily.mono],
             },
             fontSize: {
                 'xs': ['0.75rem', { lineHeight: '1rem' }],
@@ -189,6 +221,10 @@ export default {
                 '18': '4.5rem',
                 '88': '22rem',
                 '120': '30rem',
+            },
+            maxWidth: {
+                '8xl': '88rem',
+                '9xl': '96rem',
             },
         },
     },

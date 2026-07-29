@@ -1,15 +1,13 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Quotations</h2>
-            <a href="{{ route('accounting.quotations.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                {{ __('Create Quotation') }}
-            </a>
-        </div>
-    </x-slot>
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <x-slot name="header">{{ __('Create Quotation') }}</x-slot>
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4 flex items-center justify-end">
+                <x-button variant="primary" href="{{ route('accounting.quotations.create') }}">
+                    {{ __('Create Quotation') }}
+                </x-button>
+            </div>
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.quotations.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
@@ -42,56 +40,56 @@
             @if(session('error'))
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
             @endif
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Until</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total ({{ $cs }})</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th>Quotation #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Valid Until</th>
+                                <th class="text-right">Total ({{ $cs }})</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($quotations as $q)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        <a href="{{ route('accounting.quotations.show', $q) }}" class="text-indigo-600 hover:text-indigo-900">{{ $q->quotation_number }}</a>
+                                    <td>
+                                        <a href="{{ route('accounting.quotations.show', $q) }}" class="text-ink hover:text-gold">{{ $q->quotation_number }}</a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $q->customer->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $q->quotation_date?->format('M d, Y') ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $q->valid_until?->format('M d, Y') ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ format_number($q->total) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td>{{ $q->customer->name ?? '—' }}</td>
+                                    <td class="text-ink-soft">{{ $q->quotation_date?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="text-ink-soft">{{ $q->valid_until?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="numeric">{{ format_number($q->total) }}</td>
+                                    <td class="text-center">
                                         @switch($q->status)
                                             @case('draft')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                                <span class="status-pill neutral">Draft</span>
                                                 @break
                                             @case('sent')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Sent</span>
+                                                <span class="status-pill neutral">Sent</span>
                                                 @break
                                             @case('accepted')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Accepted</span>
+                                                <span class="status-pill positive">Accepted</span>
                                                 @break
                                             @case('declined')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Declined</span>
+                                                <span class="status-pill negative">Declined</span>
                                                 @break
                                             @case('converted')
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Converted</span>
                                                 @break
                                             @case('void')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">Void</span>
+                                                <span class="status-pill neutral">Void</span>
                                                 @break
                                         @endswitch
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                        <a href="{{ route('accounting.quotations.show', $q) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                    <td class="text-right">
+                                        <a href="{{ route('accounting.quotations.show', $q) }}" class="text-ink hover:text-gold">View</a>
                                         @if($q->status === 'draft')
-                                            <a href="{{ route('accounting.quotations.edit', $q) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                                            <a href="{{ route('accounting.quotations.edit', $q) }}" class="text-ink hover:text-gold">Edit</a>
                                             <form method="POST" action="{{ route('accounting.quotations.send', $q) }}" class="inline">@csrf<button type="submit" class="text-blue-600 hover:text-blue-900">Send</button></form>
                                         @endif
                                         @if(in_array($q->status, ['draft', 'sent', 'accepted']))
@@ -100,7 +98,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No quotations found.</td></tr>
+                                <tr><td colspan="7" class="text-center text-ink-soft">No quotations found.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

@@ -1,63 +1,59 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Asset Impairments') }}
-            </h2>
-            <a href="{{ route('accounting.asset-impairments.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('New Impairment') }}
-            </a>
-        </div>
-    </x-slot>
+    <x-slot name="header">{{ __('New Impairment') }}</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="pb-12">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <div class="mb-4 flex items-center justify-end">
+                <x-button variant="primary" href="{{ route('accounting.asset-impairments.create') }}">
+                    {{ __('New Impairment') }}
+                </x-button>
+            </div>
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="datasheet">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impairment #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Carrying Amount</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Recoverable Amount</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Impairment Loss</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th>Impairment #</th>
+                                <th>Asset</th>
+                                <th>Date</th>
+                                <th class="text-right">Carrying Amount</th>
+                                <th class="text-right">Recoverable Amount</th>
+                                <th class="text-right">Impairment Loss</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @forelse($impairments as $impairment)
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <td>
                                         #{{ $impairment->id }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <a href="{{ route('accounting.fixed-assets.show', $impairment->asset) }}" class="text-indigo-600 hover:text-indigo-900">
+                                    <td>
+                                        <a href="{{ route('accounting.fixed-assets.show', $impairment->asset) }}" class="text-ink hover:text-gold">
                                             {{ $impairment->asset->asset_code }} - {{ $impairment->asset->name }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="text-ink-soft">
                                         {{ $impairment->impairment_date?->format('M d, Y') ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ format_money($impairment->carrying_amount ?? 0) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                    <td class="numeric">
                                         {{ format_money($impairment->recoverable_amount ?? 0) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 text-right font-semibold">
+                                    <td class="text-red-600 text-right font-semibold">
                                         {{ format_money($impairment->impairment_loss ?? 0) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <td class="text-center">
                                         @if($impairment->is_reversed)
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Reversed</span>
+                                            <span class="status-pill neutral">Reversed</span>
                                         @else
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $impairment->status === 'posted' ? 'green' : 'yellow' }}-100 text-{{ $impairment->status === 'posted' ? 'green' : 'yellow' }}-800">
                                                 {{ ucfirst($impairment->status) }}
@@ -67,7 +63,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <td colspan="7" class="text-center text-ink-soft">
                                         No asset impairments found.
                                     </td>
                                 </tr>
