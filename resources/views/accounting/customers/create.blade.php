@@ -1,13 +1,9 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Create Customer') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Create Customer') }}</x-slot>
 
     <div class="py-12">
-        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.customers.store') }}">
                     @csrf

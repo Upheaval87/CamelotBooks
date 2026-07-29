@@ -2,7 +2,7 @@
     <x-slot name="header">{{ __('Record Payment Settlement') }}</x-slot>
 
     <div class="pb-12">
-        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="card p-6">
                 <div class="form-section-label">1 · Settlement Details</div>
                 <form method="POST" action="{{ route('pos.settlements.store') }}">

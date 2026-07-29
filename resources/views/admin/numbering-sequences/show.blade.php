@@ -2,7 +2,7 @@
     <x-slot name="header">{{ __('Numbering Sequence Details') }}</x-slot>
 
 <div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-semibold text-gray-900">Numbering Sequence Details</h1>
             <div class="flex items-center gap-3">

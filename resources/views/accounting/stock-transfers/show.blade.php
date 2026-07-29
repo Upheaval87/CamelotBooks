@@ -1,55 +1,35 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Stock Transfer') }} {{ $transfer->transfer_number }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.stock-transfers.index') }}">{{ __('Back') }}</x-button>
-    </div>
-
     <div class="pb-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <x-record-toolbar>
+                <div class="tr-spacer"></div>
+                <a href="{{ route('accounting.stock-transfers.index') }}" class="tr-item">{{ __('Back') }}</a>
+            </x-record-toolbar>
+
+            <div class="card p-6">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $transfer->transfer_number }}</h3>
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                        <p class="text-base font-semibold text-ink">{{ $transfer->transfer_number }}</p>
+                        <span class="status-pill positive">{{ __('Completed') }}</span>
                     </div>
-                    <div class="text-right text-sm text-gray-500">
+                    <div class="text-right text-sm text-ink-soft">
                         {{ $transfer->date->format('M d, Y') }}
                     </div>
                 </div>
 
-                <dl class="grid grid-cols-2 gap-4">
-                    <div>
-                        <dt class="text-sm text-gray-500">Product</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $transfer->product->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Stock Keeping Unit (SKU)</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $transfer->product->sku ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">From Branch</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $transfer->fromBranch->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">To Branch</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $transfer->toBranch->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Quantity Transferred</dt>
-                        <dd class="text-sm text-gray-900 font-bold mt-1">{{ number_format($transfer->quantity, 4) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Created By</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $transfer->creator->name ?? '—' }}</dd>
-                    </div>
+                <div class="detail-grid">
+                    <x-detail-field :label="__('Product')" :value="$transfer->product->name ?? '—'" />
+                    <x-detail-field :label="__('SKU')" :value="$transfer->product->sku ?? '—'" />
+                    <x-detail-field :label="__('From Branch')" :value="$transfer->fromBranch->name ?? '—'" />
+                    <x-detail-field :label="__('To Branch')" :value="$transfer->toBranch->name ?? '—'" />
+                    <x-detail-field :label="__('Quantity Transferred')" :value="number_format($transfer->quantity, 4)" />
+                    <x-detail-field :label="__('Created By')" :value="$transfer->creator->name ?? '—'" />
                     @if($transfer->memo)
-                        <div class="col-span-2">
-                            <dt class="text-sm text-gray-500">Memo</dt>
-                            <dd class="text-sm text-gray-900 font-medium mt-1">{{ $transfer->memo }}</dd>
-                        </div>
+                        <x-detail-field :label="__('Memo')" :value="$transfer->memo" class="col-span-3" />
                     @endif
-                </dl>
+                </div>
             </div>
         </div>
     </div>

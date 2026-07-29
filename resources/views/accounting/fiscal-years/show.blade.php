@@ -1,21 +1,29 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Fiscal Year: ') }} {{ $fiscalYear->label }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.fiscal-years.index') }}">{{ __('Back') }}</x-button>
-        @if($fiscalYear->isOpen() && $fiscalYear->allPeriodsClosedOrLocked())
-            <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}" onsubmit="return confirm('Are you sure you want to close fiscal year {{ $fiscalYear->label }}? This will post a closing journal entry to Retained Earnings.');">
-                @csrf
-                <x-button variant="primary" type="submit">{{ __('Run Year-End Close') }}</x-button>
-            </form>
-        @endif
-        @if($fiscalYear->isClosed())
-            <x-button variant="ghost" onclick="document.getElementById('reopen-modal').classList.remove('hidden')">{{ __('Reopen Year') }}</x-button>
-        @endif
-    </div>
-
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            <x-record-toolbar>
+                <div class="tr-group">
+                    <span class="tr-group-label">{{ __('Actions') }}</span>
+                    @if($fiscalYear->isOpen() && $fiscalYear->allPeriodsClosedOrLocked())
+                        <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}" class="inline" onsubmit="return confirm('Are you sure you want to close fiscal year {{ $fiscalYear->label }}?');">
+                            @csrf
+                            <button type="submit" class="tr-save">{{ __('Run Year-End Close') }}</button>
+                        </form>
+                    @endif
+                    @if($fiscalYear->isClosed())
+                        <button type="button" onclick="document.getElementById('reopen-modal').classList.remove('hidden')" class="tr-item">{{ __('Reopen Year') }}</button>
+                    @endif
+                </div>
+                <div class="tr-spacer"></div>
+                <a href="{{ route('accounting.fiscal-years.index') }}" class="tr-item">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </a>
+            </x-record-toolbar>
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -29,63 +37,49 @@
             @endif
 
             {{-- FY Summary --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <div class="text-sm text-gray-500">Label</div>
-                        <div class="text-lg font-semibold">{{ $fiscalYear->label }}</div>
-                    </div>
-                    <div>
-                        <div class="text-sm text-gray-500">Period</div>
-                        <div class="text-lg font-semibold">{{ $fiscalYear->start_date->format('M d, Y') }} — {{ $fiscalYear->end_date->format('M d, Y') }}</div>
-                    </div>
-                    <div>
-                        <div class="text-sm text-gray-500">Status</div>
-                        <div class="mt-1">
-                            @if($fiscalYear->isOpen())
-                                <span class="status-pill positive">Open</span>
-                            @elseif($fiscalYear->isClosed())
-                                <span class="status-pill neutral">Closed</span>
-                            @endif
-                        </div>
-                    </div>
-                    <div>
-                        <div class="text-sm text-gray-500">Closed By</div>
-                        <div>{{ $fiscalYear->closedByUser->name ?? '—' }}</div>
-                    </div>
+            <div class="card p-6">
+                <div class="detail-grid">
+                    <x-detail-field label="{{ __('Label') }}" strong>{{ $fiscalYear->label }}</x-detail-field>
+                    <x-detail-field label="{{ __('Period') }}" strong>{{ $fiscalYear->start_date->format('M d, Y') }} — {{ $fiscalYear->end_date->format('M d, Y') }}</x-detail-field>
+                    <x-detail-field label="{{ __('Status') }}">
+                        @if($fiscalYear->isOpen())
+                            <span class="status-pill positive">{{ __('Open') }}</span>
+                        @elseif($fiscalYear->isClosed())
+                            <span class="status-pill neutral">{{ __('Closed') }}</span>
+                        @endif
+                    </x-detail-field>
+                    <x-detail-field label="{{ __('Closed By') }}">{{ $fiscalYear->closedByUser->name ?? '—' }}</x-detail-field>
                 </div>
                 @if($fiscalYear->closingEntry)
                     <div class="mt-4 pt-4 border-t border-gray-200">
-                        <div class="text-sm text-gray-500">Closing Entry: <span class="font-mono text-gray-900">{{ $fiscalYear->closingEntry->journal_number }}</span></div>
+                        <div class="text-sm text-gray-500">{{ __('Closing Entry') }}: <span class="font-mono text-gray-900">{{ $fiscalYear->closingEntry->journal_number }}</span></div>
                     </div>
                 @endif
                 @if($fiscalYear->reopened_at)
                     <div class="mt-2">
-                        <div class="text-sm text-red-600">Reopened {{ $fiscalYear->reopened_at->format('M d, Y H:i') }} by {{ $fiscalYear->reopenedByUser->name }} — Reason: {{ $fiscalYear->reopen_reason }}</div>
+                        <div class="text-sm text-red-600">{{ __('Reopened') }} {{ $fiscalYear->reopened_at->format('M d, Y H:i') }} {{ __('by') }} {{ $fiscalYear->reopenedByUser->name }} — {{ __('Reason') }}: {{ $fiscalYear->reopen_reason }}</div>
                     </div>
                 @endif
                 @if($fiscalYear->isOpen() && !$fiscalYear->allPeriodsClosedOrLocked())
                     <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-700">
-                        All periods must be closed or locked before running year-end close. Close/lock remaining periods in the <a href="{{ route('accounting.periods.index') }}" class="underline">Accounting Periods</a> page.
+                        {{ __('All periods must be closed or locked before running year-end close.') }}
                     </div>
                 @endif
             </div>
 
             {{-- Periods --}}
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Periods</h3>
-                </div>
+            <div class="card p-6">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Periods') }}</p>
                 <div class="overflow-x-auto">
                     <table class="datasheet">
                         <thead>
                             <tr>
-                                <th>Label</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th class="text-center">Status</th>
-                                <th>Closed By</th>
-                                <th class="text-right">Actions</th>
+                                <th>{{ __('Label') }}</th>
+                                <th>{{ __('Start Date') }}</th>
+                                <th>{{ __('End Date') }}</th>
+                                <th class="text-center">{{ __('Status') }}</th>
+                                <th>{{ __('Closed By') }}</th>
+                                <th class="text-right">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -96,11 +90,11 @@
                                     <td>{{ $period->end_date->format('M d, Y') }}</td>
                                     <td class="text-center">
                                         @if($period->isOpen())
-                                            <span class="status-pill positive">Open</span>
+                                            <span class="status-pill positive">{{ __('Open') }}</span>
                                         @elseif($period->isClosed())
-                                            <span class="status-pill neutral">Closed</span>
+                                            <span class="status-pill neutral">{{ __('Closed') }}</span>
                                         @elseif($period->isLocked())
-                                            <span class="status-pill negative">Locked</span>
+                                            <span class="status-pill negative">{{ __('Locked') }}</span>
                                         @endif
                                     </td>
                                     <td class="text-ink-soft">{{ $period->closedByUser->name ?? '—' }}</td>
@@ -108,17 +102,17 @@
                                         @if($period->isOpen())
                                             <form method="POST" action="{{ route('accounting.periods.close', $period) }}" class="inline" onsubmit="return confirm('Close this period?');">
                                                 @csrf
-                                                <button type="submit" class="text-yellow-600 hover:text-yellow-900">Close</button>
+                                                <button type="submit" class="text-yellow-600 hover:text-yellow-900">{{ __('Close') }}</button>
                                             </form>
                                         @endif
                                         @if($period->isClosed())
                                             <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" class="inline" onsubmit="return confirm('Lock this period?');">
                                                 @csrf
-                                                <button type="submit" class="text-red-600 hover:text-red-900">Lock</button>
+                                                <button type="submit" class="text-red-600 hover:text-red-900">{{ __('Lock') }}</button>
                                             </form>
                                             <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" class="inline" onsubmit="return confirm('Reopen this period?');">
                                                 @csrf
-                                                <button type="submit" class="text-ink hover:text-gold">Reopen</button>
+                                                <button type="submit" class="text-ink hover:text-gold">{{ __('Reopen') }}</button>
                                             </form>
                                         @endif
                                     </td>

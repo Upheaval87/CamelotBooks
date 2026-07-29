@@ -2,7 +2,7 @@
     <x-slot name="header">{{ __('System Health') }}</x-slot>
 
 <div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         <h1 class="text-2xl font-semibold text-gray-900 mb-6">System Health</h1>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

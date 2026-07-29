@@ -2,7 +2,7 @@
     <x-slot name="header">{{ __('Document Numbering Sequences') }}</x-slot>
 
 <div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-semibold text-gray-900">Document Numbering Sequences</h1>
             <x-button variant="primary" href="{{ route('admin.numbering-sequences.create') }}">{{ __('Add Sequence') }}</x-button>

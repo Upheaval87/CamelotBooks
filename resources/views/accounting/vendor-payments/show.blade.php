@@ -1,19 +1,22 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Vendor Payment') }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        @if($payment->status !== 'void')
-            <form method="POST" action="{{ route('accounting.vendor-payments.void', $payment) }}" class="inline">
-                @csrf
-                @method('PATCH')
-                <x-button variant="ghost" type="submit" onclick="return confirm('Are you sure you want to void this payment?')">{{ __('Void') }}</x-button>
-            </form>
-        @endif
-        <x-button variant="ghost" href="{{ route('accounting.bills.index') }}">{{ __('Back to Bills') }}</x-button>
-    </div>
-
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <x-record-toolbar>
+                <div class="tr-spacer"></div>
+
+                @if($payment->status !== 'void')
+                    <form method="POST" action="{{ route('accounting.vendor-payments.void', $payment) }}" class="inline">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to void this payment?') }}')">{{ __('Void') }}</button>
+                    </form>
+                @endif
+
+                <a href="{{ route('accounting.bills.index') }}" class="tr-item">{{ __('Back to Bills') }}</a>
+            </x-record-toolbar>
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -26,63 +29,41 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Vendor') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $payment->vendor->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Status') }}</dt>
-                        <dd class="mt-1">
-                            @if($payment->status === 'void')
-                                <span class="status-pill neutral">Void</span>
-                            @else
-                                <span class="status-pill positive">Completed</span>
-                            @endif
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Payment Date') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Amount') }}</dt>
-                        <dd class="mt-1 text-2xl font-bold text-gray-900">{{ format_money($payment->amount) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Payment Method') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Bank Account') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $payment->bankAccount->name ?? '—' }}</dd>
-                    </div>
+            <div class="card p-6">
+                <div class="detail-grid">
+                    <x-detail-field :label="__('Vendor')" :value="$payment->vendor->name ?? '—'" />
+                    <x-detail-field :label="__('Status')">
+                        @if($payment->status === 'void')
+                            <span class="status-pill neutral">{{ __('Void') }}</span>
+                        @else
+                            <span class="status-pill positive">{{ __('Completed') }}</span>
+                        @endif
+                    </x-detail-field>
+                    <x-detail-field :label="__('Payment Date')" :value="$payment->payment_date?->format('M d, Y') ?? '—'" />
+                    <x-detail-field :label="__('Amount')" value-class="text-2xl font-bold text-ink">
+                        {{ format_money($payment->amount) }}
+                    </x-detail-field>
+                    <x-detail-field :label="__('Payment Method')" :value="ucfirst(str_replace('_', ' ', $payment->payment_method))" />
+                    <x-detail-field :label="__('Bank Account')" :value="$payment->bankAccount->name ?? '—'" />
                     @if($payment->reference)
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('Reference') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $payment->reference }}</dd>
-                        </div>
+                        <x-detail-field :label="__('Reference')" :value="$payment->reference" />
                     @endif
                     @if($payment->memo)
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">{{ __('Memo') }}</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $payment->memo }}</dd>
-                        </div>
+                        <x-detail-field :label="__('Memo')" :value="$payment->memo" />
                     @endif
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Bill Allocations') }}</h3>
+            <div class="card p-6">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Bill Allocations') }}</p>
                 <div class="overflow-x-auto">
                     <table class="datasheet">
                         <thead>
                             <tr>
-                                <th>Bill #</th>
-                                <th>Date</th>
-                                <th class="text-right">Bill Total</th>
-                                <th class="text-right">Amount Allocated</th>
+                                <th>{{ __('Bill #') }}</th>
+                                <th>{{ __('Date') }}</th>
+                                <th class="text-right">{{ __('Bill Total') }}</th>
+                                <th class="text-right">{{ __('Amount Allocated') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -106,7 +87,7 @@
                             @empty
                                 <tr>
                                     <td colspan="4" class="text-center text-ink-soft">
-                                        No allocations found.
+                                        {{ __('No allocations found.') }}
                                     </td>
                                 </tr>
                             @endforelse

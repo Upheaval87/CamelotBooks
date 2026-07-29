@@ -1,69 +1,63 @@
 <x-app-layout>
     <x-slot name="header">{{ $table->version_name }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.paye-tables.index') }}">{{ __('Back') }}</x-button>
-        <x-button variant="primary" href="{{ route('accounting.paye-tables.edit', $table) }}">{{ __('Edit') }}</x-button>
-        @if(!$table->is_current)
-            <form method="POST" action="{{ route('accounting.paye-tables.activate', $table) }}" onsubmit="return confirm('Are you sure you want to activate this PAYE tax table?');">
-                @csrf
-                <x-button variant="primary" type="submit">{{ __('Activate') }}</x-button>
-            </form>
-            <form method="POST" action="{{ route('accounting.paye-tables.destroy', $table) }}" onsubmit="return confirm('Are you sure you want to delete this PAYE tax table? This action cannot be undone.');">
-                @csrf
-                @method('DELETE')
-                <x-button variant="ghost" type="submit">{{ __('Delete') }}</x-button>
-            </form>
-        @endif
-    </div>
-
     <div class="pb-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            <x-record-toolbar>
+                <div class="tr-spacer"></div>
+                <a href="{{ route('accounting.paye-tables.edit', $table) }}" class="tr-save">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                    {{ __('Edit') }}
+                </a>
+                @if(!$table->is_current)
+                    <form method="POST" action="{{ route('accounting.paye-tables.activate', $table) }}" class="inline" onsubmit="return confirm('Are you sure you want to activate this PAYE tax table?');">
+                        @csrf
+                        <button type="submit" class="tr-save">{{ __('Activate') }}</button>
+                    </form>
+                    <form method="POST" action="{{ route('accounting.paye-tables.destroy', $table) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this PAYE tax table?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="tr-archive">{{ __('Delete') }}</button>
+                    </form>
+                @endif
+                <a href="{{ route('accounting.paye-tables.index') }}" class="tr-item">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </a>
+            </x-record-toolbar>
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div>
-                        <div class="text-xs font-medium text-gray-500 uppercase">Version</div>
-                        <div class="mt-1 text-sm text-gray-900">{{ $table->version_name }}</div>
-                    </div>
-                    <div>
-                        <div class="text-xs font-medium text-gray-500 uppercase">Effective From</div>
-                        <div class="mt-1 text-sm text-gray-900">{{ $table->effective_from->format('d M Y') }}</div>
-                    </div>
-                    <div>
-                        <div class="text-xs font-medium text-gray-500 uppercase">Effective To</div>
-                        <div class="mt-1 text-sm text-gray-900">{{ $table->effective_to ? $table->effective_to->format('d M Y') : '—' }}</div>
-                    </div>
-                    <div>
-                        <div class="text-xs font-medium text-gray-500 uppercase">Status</div>
-                        <div class="mt-1">
-                            @if($table->is_current)
-                                <span class="status-pill positive">Active</span>
-                            @else
-                                <span class="status-pill neutral">Inactive</span>
-                            @endif
-                        </div>
-                    </div>
+            <div class="card p-6">
+                <div class="detail-grid">
+                    <x-detail-field label="{{ __('Version') }}" strong>{{ $table->version_name }}</x-detail-field>
+                    <x-detail-field label="{{ __('Effective From') }}">{{ $table->effective_from->format('d M Y') }}</x-detail-field>
+                    <x-detail-field label="{{ __('Effective To') }}">{{ $table->effective_to ? $table->effective_to->format('d M Y') : '—' }}</x-detail-field>
+                    <x-detail-field label="{{ __('Status') }}">
+                        @if($table->is_current)
+                            <span class="status-pill positive">{{ __('Active') }}</span>
+                        @else
+                            <span class="status-pill neutral">{{ __('Inactive') }}</span>
+                        @endif
+                    </x-detail-field>
                 </div>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Tax Bands</h3>
-                </div>
+            <div class="card p-6">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Tax Bands') }}</p>
                 <div class="overflow-x-auto">
                     <table class="datasheet">
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Threshold (MWK)</th>
-                                <th>Upper Limit (MWK)</th>
-                                <th>Rate</th>
+                                <th>{{ __('Threshold') }}</th>
+                                <th>{{ __('Upper Limit') }}</th>
+                                <th>{{ __('Rate') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -71,12 +65,12 @@
                                 <tr>
                                     <td class="text-ink-soft">{{ $band->sort_order + 1 }}</td>
                                     <td>{{ format_money((float) $band->threshold) }}</td>
-                                    <td>{{ $band->upper_limit ? format_money((float) $band->upper_limit) : 'No limit' }}</td>
+                                    <td>{{ $band->upper_limit ? format_money((float) $band->upper_limit) : __('No limit') }}</td>
                                     <td>{{ format_money((float) $band->rate) }}%</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center text-ink-soft">No bands defined.</td>
+                                    <td colspan="4" class="text-center text-ink-soft">{{ __('No bands defined.') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>

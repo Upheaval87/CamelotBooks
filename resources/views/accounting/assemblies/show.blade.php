@@ -1,74 +1,52 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Build') }} {{ $build->build_number }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.assemblies.index') }}">{{ __('Back') }}</x-button>
-    </div>
-
     <div class="pb-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="flex items-center justify-between mb-6">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            <x-record-toolbar>
+                <div class="tr-spacer"></div>
+                <a href="{{ route('accounting.assemblies.index') }}" class="tr-item">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </a>
+            </x-record-toolbar>
+
+            <div class="card p-6">
+                <div class="flex items-center justify-between mb-5">
                     <div class="flex items-center gap-3">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $build->build_number }}</h3>
+                        <p class="text-base font-semibold text-ink">{{ $build->build_number }}</p>
                         @if($build->type === 'build')
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Build</span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">{{ __('Build') }}</span>
                         @else
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">Unbuild</span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">{{ __('Unbuild') }}</span>
                         @endif
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ __('Completed') }}</span>
                     </div>
-                    <div class="text-right text-sm text-gray-500">{{ $build->date->format('M d, Y') }}</div>
+                    <div class="text-right text-sm text-ink-soft">{{ $build->date->format('M d, Y') }}</div>
                 </div>
 
-                <dl class="grid grid-cols-2 gap-4">
-                    <div>
-                        <dt class="text-sm text-gray-500">Assembly Product</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $build->assemblyProduct->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Stock Keeping Unit (SKU)</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $build->assemblyProduct->sku ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Quantity</dt>
-                        <dd class="text-sm text-gray-900 font-bold mt-1">{{ format_money($build->quantity) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Unit Cost</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ format_money($build->unit_cost, null, 4) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Total Component Cost</dt>
-                        <dd class="text-sm text-gray-900 font-bold mt-1">@money($build->total_component_cost)</dd>
-                    </div>
+                <div class="detail-grid">
+                    <x-detail-field label="{{ __('Assembly Product') }}" strong>{{ $build->assemblyProduct->name ?? '—' }}</x-detail-field>
+                    <x-detail-field label="{{ __('SKU') }}">{{ $build->assemblyProduct->sku ?? '—' }}</x-detail-field>
+                    <x-detail-field label="{{ __('Quantity') }}" strong>{{ format_money($build->quantity) }}</x-detail-field>
+                    <x-detail-field label="{{ __('Unit Cost') }}">{{ format_money($build->unit_cost, null, 4) }}</x-detail-field>
+                    <x-detail-field label="{{ __('Total Component Cost') }}" strong>@money($build->total_component_cost)</x-detail-field>
                     @if($build->billOfMaterial)
-                        <div>
-                            <dt class="text-sm text-gray-500">BOM</dt>
-                            <dd class="text-sm text-gray-900 font-medium mt-1">{{ $build->billOfMaterial->bom_number }}</dd>
-                        </div>
+                        <x-detail-field label="{{ __('BOM') }}">{{ $build->billOfMaterial->bom_number }}</x-detail-field>
                     @endif
                     @if($build->memo)
-                        <div class="col-span-2">
-                            <dt class="text-sm text-gray-500">Memo</dt>
-                            <dd class="text-sm text-gray-900 font-medium mt-1">{{ $build->memo }}</dd>
-                        </div>
+                        <x-detail-field label="{{ __('Memo') }}">{{ $build->memo }}</x-detail-field>
                     @endif
                     @if($build->journalEntry)
-                        <div>
-                            <dt class="text-sm text-gray-500">Journal Entry</dt>
-                            <dd class="text-sm text-indigo-600 font-medium mt-1">
-                                <a href="{{ route('accounting.journal-entries.show', $build->journalEntry) }}" class="hover:text-indigo-900">
-                                    {{ $build->journalEntry->entry_number }}
-                                </a>
-                            </dd>
-                        </div>
+                        <x-detail-field label="{{ __('Journal Entry') }}">
+                            <a href="{{ route('accounting.journal-entries.show', $build->journalEntry) }}" class="text-ink hover:text-gold">
+                                {{ $build->journalEntry->entry_number }}
+                            </a>
+                        </x-detail-field>
                     @endif
-                    <div>
-                        <dt class="text-sm text-gray-500">Created By</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $build->creator->name ?? '—' }}</dd>
-                    </div>
-                </dl>
+                    <x-detail-field label="{{ __('Created By') }}">{{ $build->creator->name ?? '—' }}</x-detail-field>
+                </div>
             </div>
         </div>
     </div>

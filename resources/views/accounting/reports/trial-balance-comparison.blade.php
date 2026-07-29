@@ -1,13 +1,9 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Trial Balance Comparison') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Trial Balance Comparison') }}</x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-reports-toolbar :action="route('accounting.reports.trial-balance-comparison')" showCompare />
 
             <form method="GET" class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 mb-6 flex gap-4 items-end flex-wrap">

@@ -1,65 +1,55 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Stock Count') }} {{ $count->count_number }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.stock-counts.index') }}">{{ __('Back') }}</x-button>
-    </div>
-
     <div class="pb-12">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="flex items-center justify-between mb-4">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <x-record-toolbar>
+                <div class="tr-spacer"></div>
+                <a href="{{ route('accounting.stock-counts.index') }}" class="tr-item">{{ __('Back') }}</a>
+            </x-record-toolbar>
+
+            <div class="card p-6">
+                <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $count->count_number }}</h3>
+                        <p class="text-base font-semibold text-ink">{{ $count->count_number }}</p>
                         @if($count->status === 'posted')
-                            <span class="status-pill positive">Posted</span>
+                            <span class="status-pill positive">{{ __('Posted') }}</span>
                         @else
-                            <span class="status-pill neutral">In Progress</span>
+                            <span class="status-pill neutral">{{ __('In Progress') }}</span>
                         @endif
                     </div>
-                    <div class="text-sm text-gray-500">{{ $count->date->format('M d, Y') }}</div>
+                    <div class="text-sm text-ink-soft">{{ $count->date->format('M d, Y') }}</div>
                 </div>
-                <dl class="grid grid-cols-3 gap-4">
-                    <div>
-                        <dt class="text-sm text-gray-500">Branch</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $count->branch->name ?? 'All Locations' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Created By</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $count->creator->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Total Variance</dt>
-                        <dd class="text-sm font-bold text-gray-900 mt-1">@money($count->variance_total)</dd>
-                    </div>
+
+                <div class="detail-grid">
+                    <x-detail-field :label="__('Branch')" :value="$count->branch->name ?? __('All Locations')" />
+                    <x-detail-field :label="__('Created By')" :value="$count->creator->name ?? '—'" />
+                    <x-detail-field :label="__('Total Variance')" value-class="font-bold">
+                        @money($count->variance_total)
+                    </x-detail-field>
                     @if($count->journalEntry)
-                        <div>
-                            <dt class="text-sm text-gray-500">Journal Entry</dt>
-                            <dd class="text-sm text-indigo-600 font-medium mt-1">
-                                <a href="{{ route('accounting.journal-entries.show', $count->journalEntry) }}" class="hover:text-indigo-900">{{ $count->journalEntry->entry_number }}</a>
-                            </dd>
-                        </div>
+                        <x-detail-field :label="__('Journal Entry')">
+                            <a href="{{ route('accounting.journal-entries.show', $count->journalEntry) }}" class="text-ink hover:text-gold">{{ $count->journalEntry->entry_number }}</a>
+                        </x-detail-field>
                     @endif
                     @if($count->notes)
-                        <div class="col-span-3">
-                            <dt class="text-sm text-gray-500">Notes</dt>
-                            <dd class="text-sm text-gray-900 mt-1">{{ $count->notes }}</dd>
-                        </div>
+                        <x-detail-field :label="__('Notes')" :value="$count->notes" class="col-span-3" />
                     @endif
-                </dl>
+                </div>
             </div>
 
-            <div class="datasheet-wrap">
+            <div class="card p-6">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Count Lines') }}</p>
                 <div class="overflow-x-auto">
                     <table class="datasheet">
                         <thead>
                             <tr>
-                                <th>Product</th>
-                                <th class="text-right">Expected</th>
-                                <th class="text-right">Counted</th>
-                                <th class="text-right">Variance</th>
-                                <th class="text-right">Unit Cost</th>
-                                <th class="text-right">Variance $</th>
+                                <th>{{ __('Product') }}</th>
+                                <th class="text-right">{{ __('Expected') }}</th>
+                                <th class="text-right">{{ __('Counted') }}</th>
+                                <th class="text-right">{{ __('Variance') }}</th>
+                                <th class="text-right">{{ __('Unit Cost') }}</th>
+                                <th class="text-right">{{ __('Variance $') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -80,8 +70,8 @@
                         </tbody>
                         <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                             <tr>
-                                <td colspan="5" class="text-right">Total Variance</td>
-                                <td class="text-right">@money($count->variance_total)</td>
+                                <td colspan="5" class="text-right font-semibold">{{ __('Total Variance') }}</td>
+                                <td class="text-right font-bold">@money($count->variance_total)</td>
                             </tr>
                         </tfoot>
                     </table>

@@ -1,13 +1,9 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Chart of Accounts') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('Chart of Accounts') }}</x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-toolbar class="mb-6">
                 <span class="text-xs font-medium text-gray-500 uppercase tracking-wider mr-1">Record</span>
                 <a href="{{ url()->current() }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent text-atlas-navy/70 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">

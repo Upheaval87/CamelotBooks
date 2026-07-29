@@ -1,13 +1,9 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('New Journal Entry') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">{{ __('New Journal Entry') }}</x-slot>
 
     <div class="py-12">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('error'))
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                     {{ session('error') }}

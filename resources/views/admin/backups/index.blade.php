@@ -2,7 +2,7 @@
     <x-slot name="header">{{ __('Backup Management') }}</x-slot>
 
 <div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         @if(session('success'))
             <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">{{ session('success') }}</div>
         @endif

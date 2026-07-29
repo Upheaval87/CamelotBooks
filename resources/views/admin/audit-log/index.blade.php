@@ -2,7 +2,7 @@
     <x-slot name="header">{{ __('Audit Log') }}</x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-toolbar class="mb-6">
                 <form method="GET" action="{{ route('admin.audit-log.index') }}" class="flex items-center gap-2 w-full">
                     <select name="user_id" class="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-atlas-navy focus:outline-none focus:ring-2 focus:ring-atlas-blue focus:border-transparent">

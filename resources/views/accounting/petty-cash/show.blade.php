@@ -1,12 +1,8 @@
 <x-app-layout>
     <x-slot name="header">{{ $fund->name }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.petty-cash.index') }}">{{ __('Back') }}</x-button>
-    </div>
-
     <div class="pb-12">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
             @endif
@@ -14,24 +10,34 @@
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{{ session('error') }}</div>
             @endif
 
+            <div class="space-y-6">
+
+            <x-record-toolbar>
+                <div class="tr-spacer"></div>
+                <a href="{{ route('accounting.petty-cash.index') }}" class="tr-item">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </a>
+            </x-record-toolbar>
+
             <div class="grid grid-cols-3 gap-6 mb-6">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-xs font-medium text-gray-500 uppercase">Float Amount</p>
+                <div class="card p-6">
+                    <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Float Amount') }}</p>
                     <p class="mt-1 text-2xl font-bold text-indigo-600">{{ format_money($fund->petty_cash_float ?? 0) }}</p>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-xs font-medium text-gray-500 uppercase">Current Balance</p>
+                <div class="card p-6">
+                    <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Current Balance') }}</p>
                     <p class="mt-1 text-2xl font-bold text-green-600">{{ format_money($fund->current_balance) }}</p>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-xs font-medium text-gray-500 uppercase">Spent</p>
+                <div class="card p-6">
+                    <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Spent') }}</p>
                     <p class="mt-1 text-2xl font-bold text-red-600">{{ format_money(($fund->petty_cash_float ?? 0) - $fund->current_balance) }}</p>
                 </div>
             </div>
 
             @if(($fund->petty_cash_float ?? 0) == 0)
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6" x-data="{ show: false }">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Establish Fund</h3>
+                <div class="card p-6 mb-6" x-data="{ show: false }">
+                    <p class="text-base font-semibold text-ink mb-4">{{ __('Establish Fund') }}</p>
                     <p class="text-sm text-gray-500 mb-4">Transfer money from a bank account to establish this petty cash fund.</p>
                     <form method="POST" action="{{ route('accounting.petty-cash.establish') }}">
                         @csrf
@@ -63,8 +69,8 @@
             @endif
 
             <div class="grid grid-cols-2 gap-6 mb-6">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="{ show: false }">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Record Expense</h3>
+                <div class="card p-6" x-data="{ show: false }">
+                    <p class="text-base font-semibold text-ink mb-4">{{ __('Record Expense') }}</p>
                     <form method="POST" action="{{ route('accounting.petty-cash.expense') }}">
                         @csrf
                         <input type="hidden" name="petty_cash_account_id" value="{{ $fund->id }}" />
@@ -72,7 +78,7 @@
                             <div>
                                 <x-input-label for="exp_account" value="{{ __('Expense Account') }}" />
                                 <select id="exp_account" name="debit_account_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" required>
-                                    <option value="">Select Account</option>
+                                    <option value="">{{ __('Select Account') }}</option>
                                     @foreach($expenseAccounts as $account)
                                         <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
                                     @endforeach
@@ -97,8 +103,8 @@
                     </form>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Replenish Fund</h3>
+                <div class="card p-6">
+                    <p class="text-base font-semibold text-ink mb-4">{{ __('Replenish Fund') }}</p>
                     <form method="POST" action="{{ route('accounting.petty-cash.replenish') }}">
                         @csrf
                         <input type="hidden" name="petty_cash_account_id" value="{{ $fund->id }}" />
@@ -106,7 +112,7 @@
                             <div>
                                 <x-input-label for="rep_bank" value="{{ __('From Bank Account') }}" />
                                 <select id="rep_bank" name="bank_account_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" required>
-                                    <option value="">Select Bank Account</option>
+                                    <option value="">{{ __('Select Bank Account') }}</option>
                                     @foreach($bankAccounts as $account)
                                         <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
                                     @endforeach
@@ -122,7 +128,7 @@
                             </div>
                             <div>
                                 <x-input-label for="rep_desc" value="{{ __('Description') }}" />
-                                <x-text-input id="rep_desc" name="description" type="text" class="mt-1 block w-full" placeholder="Optional" />
+                                <x-text-input id="rep_desc" name="description" type="text" class="mt-1 block w-full" placeholder="{{ __('Optional') }}" />
                             </div>
                         </div>
                         <div class="mt-4">
@@ -132,17 +138,15 @@
                 </div>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Expense History</h3>
-                </div>
+            <div class="card p-6">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Expense History') }}</p>
                 <div class="overflow-x-auto">
                     <table class="datasheet">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Description</th>
-                                <th class="text-right">Amount</th>
+                                <th>{{ __('Date') }}</th>
+                                <th>{{ __('Description') }}</th>
+                                <th class="text-right">{{ __('Amount') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -154,7 +158,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="text-center text-ink-soft">No expenses recorded yet.</td>
+                                    <td colspan="3" class="text-center text-ink-soft">{{ __('No expenses recorded yet.') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>

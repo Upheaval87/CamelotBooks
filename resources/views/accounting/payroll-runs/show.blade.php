@@ -1,11 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        {{ __('Payroll Run') }} #{{ $run->run_number }}
-    </x-slot>
-
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.payroll-runs.index') }}">{{ __('Back to Payroll Runs') }}</x-button>
-    </div>
+    <x-slot name="header">{{ __('Payroll Run') }} #{{ $run->run_number }}</x-slot>
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -21,47 +15,25 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Run Number') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $run->run_number }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Period') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $run->period_label }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Period Start') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $run->period_start?->format('M d, Y') ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Period End') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $run->period_end?->format('M d, Y') ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Pay Date') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $run->pay_date?->format('M d, Y') ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Status') }}</dt>
-                        <dd class="mt-1">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $color }}-100 text-{{ $color }}-800">
-                                {{ str_replace('_', ' ', ucfirst($run->status)) }}
-                            </span>
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">{{ __('Employees') }}</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $run->items->count() }}</dd>
-                    </div>
+            <div class="card p-6">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Run Details') }}</p>
+                <div class="detail-grid">
+                    <x-detail-field :label="__('Run Number')" :value="$run->run_number" />
+                    <x-detail-field :label="__('Period')" :value="$run->period_label" />
+                    <x-detail-field :label="__('Period Start')" :value="$run->period_start?->format('M d, Y') ?? '—'" />
+                    <x-detail-field :label="__('Period End')" :value="$run->period_end?->format('M d, Y') ?? '—'" />
+                    <x-detail-field :label="__('Pay Date')" :value="$run->pay_date?->format('M d, Y') ?? '—'" />
+                    <x-detail-field :label="__('Status')">
+                        <span class="status-pill {{ $color }}">{{ str_replace('_', ' ', ucfirst($run->status)) }}</span>
+                    </x-detail-field>
+                    <x-detail-field :label="__('Employees')" :value="$run->items->count()" />
                 </div>
 
                 <div class="mt-6 flex items-center space-x-3">
                     @if($run->status === 'calculated')
                         <form method="POST" action="{{ route('accounting.payroll-runs.approve', $run) }}">
                             @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 focus:bg-blue-500 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="return confirm('Are you sure you want to approve this payroll run?')">
+                            <button type="submit" class="x-button x-button-primary" onclick="return confirm('Are you sure you want to approve this payroll run?')">
                                 {{ __('Approve Run') }}
                             </button>
                         </form>
@@ -70,7 +42,7 @@
                     @if($run->status === 'approved')
                         <form method="POST" action="{{ route('accounting.payroll-runs.post', $run) }}">
                             @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 focus:bg-green-500 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="return confirm('Are you sure you want to post this payroll run to the General Ledger?')">
+                            <button type="submit" class="x-button x-button-positive" onclick="return confirm('Are you sure you want to post this payroll run to the General Ledger?')">
                                 {{ __('Post to GL') }}
                             </button>
                         </form>
@@ -79,98 +51,82 @@
                     @if(in_array($run->status, ['posted', 'partially_paid', 'fully_paid']))
                         <form method="POST" action="{{ route('accounting.payroll-runs.send-payslips', $run) }}">
                             @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="return confirm('Send payslips to all employees?')">
+                            <button type="submit" class="x-button x-button-primary" onclick="return confirm('Send payslips to all employees?')">
                                 {{ __('Send Payslips') }}
                             </button>
                         </form>
                     @endif
 
-                    <a href="{{ route('accounting.payroll-runs.print-payslips', $run) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150" target="_blank">
+                    <a href="{{ route('accounting.payroll-runs.print-payslips', $run) }}" class="x-button x-button-ghost" target="_blank">
                         {{ __('Print Payslips') }}
                     </a>
-                    <a href="{{ route('accounting.payroll-runs.paye-schedule', $run) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150" target="_blank">
+                    <a href="{{ route('accounting.payroll-runs.paye-schedule', $run) }}" class="x-button x-button-ghost" target="_blank">
                         {{ __('PAYE Schedule') }}
                     </a>
-                    <a href="{{ route('accounting.payroll-runs.pension-schedule', $run) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150" target="_blank">
+                    <a href="{{ route('accounting.payroll-runs.pension-schedule', $run) }}" class="x-button x-button-ghost" target="_blank">
                         {{ __('Pension Schedule') }}
                     </a>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <dt class="text-sm font-medium text-gray-500">{{ __('Gross Pay') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-gray-900">{{ format_money($run->total_gross) }}</dd>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="kpi-card">
+                    <p class="kpi-label">{{ __('Gross Pay') }}</p>
+                    <p class="kpi-value">{{ format_money($run->total_gross) }}</p>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <dt class="text-sm font-medium text-gray-500">{{ __('Total PAYE') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-red-600">{{ format_money($run->total_paye) }}</dd>
+                <div class="kpi-card">
+                    <p class="kpi-label">{{ __('Total PAYE') }}</p>
+                    <p class="kpi-value text-brick">{{ format_money($run->total_paye) }}</p>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <dt class="text-sm font-medium text-gray-500">{{ __('Total Pension') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-orange-600">{{ format_money($run->total_pension) }}</dd>
+                <div class="kpi-card">
+                    <p class="kpi-label">{{ __('Total Pension') }}</p>
+                    <p class="kpi-value text-gold">{{ format_money($run->total_pension) }}</p>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <dt class="text-sm font-medium text-gray-500">{{ __('Total Deductions') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-yellow-600">{{ format_money($run->total_deductions) }}</dd>
+                <div class="kpi-card">
+                    <p class="kpi-label">{{ __('Total Deductions') }}</p>
+                    <p class="kpi-value text-gold">{{ format_money($run->total_deductions) }}</p>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <dt class="text-sm font-medium text-gray-500">{{ __('Net Pay') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-green-600">{{ format_money($run->total_net_pay) }}</dd>
+                <div class="kpi-card">
+                    <p class="kpi-label">{{ __('Net Pay') }}</p>
+                    <p class="kpi-value text-forest">{{ format_money($run->total_net_pay) }}</p>
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Employee Items') }}</h3>
+            <div class="card p-6">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Employee Items') }}</p>
                 <div class="overflow-x-auto">
                     <table class="datasheet">
                         <thead>
                             <tr>
-                                <th>Employee Name</th>
-                                <th class="text-right">Basic Pay</th>
-                                <th class="text-right">Allowances</th>
-                                <th class="text-right">Gross</th>
-                                <th class="text-right">PAYE</th>
-                                <th class="text-right">Pension EE</th>
-                                <th class="text-right">Deductions</th>
-                                <th class="text-right">Net Pay</th>
-                                <th class="text-right">Actions</th>
+                                <th>{{ __('Employee Name') }}</th>
+                                <th class="text-right">{{ __('Basic Pay') }}</th>
+                                <th class="text-right">{{ __('Allowances') }}</th>
+                                <th class="text-right">{{ __('Gross') }}</th>
+                                <th class="text-right">{{ __('PAYE') }}</th>
+                                <th class="text-right">{{ __('Pension EE') }}</th>
+                                <th class="text-right">{{ __('Deductions') }}</th>
+                                <th class="text-right">{{ __('Net Pay') }}</th>
+                                <th class="text-right">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($run->items as $item)
                                 <tr>
-                                    <td>
-                                        {{ $item->employee->name ?? '—' }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ format_money($item->basic_pay) }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ format_money($item->allowances) }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ format_money($item->gross_pay) }}
-                                    </td>
-                                    <td class="text-red-600 text-right">
-                                        {{ format_money($item->paye) }}
-                                    </td>
-                                    <td class="text-orange-600 text-right">
-                                        {{ format_money($item->pension_ee) }}
-                                    </td>
-                                    <td class="text-yellow-600 text-right">
-                                        {{ format_money($item->other_deductions) }}
-                                    </td>
-                                    <td class="text-green-600 text-right font-bold">
-                                        {{ format_money($item->net_pay) }}
-                                    </td>
+                                    <td>{{ $item->employee->name ?? '—' }}</td>
+                                    <td class="numeric">{{ format_money($item->basic_pay) }}</td>
+                                    <td class="numeric">{{ format_money($item->allowances) }}</td>
+                                    <td class="numeric">{{ format_money($item->gross_pay) }}</td>
+                                    <td class="text-brick text-right">{{ format_money($item->paye) }}</td>
+                                    <td class="text-gold text-right">{{ format_money($item->pension_ee) }}</td>
+                                    <td class="text-gold text-right">{{ format_money($item->other_deductions) }}</td>
+                                    <td class="text-forest text-right font-bold">{{ format_money($item->net_pay) }}</td>
                                     <td class="text-right">
                                         @if(in_array($run->status, ['posted', 'partially_paid', 'fully_paid']) && !$item->is_paid)
-                                            <button type="button" @click="openPaymentModal({{ $item->id }}, '{{ addslashes($item->employee->name ?? '') }}', {{ $item->net_pay }})" class="text-green-600 hover:text-green-900">
+                                            <button type="button" @click="openPaymentModal({{ $item->id }}, '{{ addslashes($item->employee->name ?? '') }}', {{ $item->net_pay }})" class="text-forest hover:text-forest/80">
                                                 {{ __('Pay') }}
                                             </button>
                                         @endif
-                                        <a href="{{ route('accounting.payroll-runs.print-payslips', $run) }}?employee={{ $item->employee_id }}" class="text-gray-600 hover:text-gray-900" target="_blank">
+                                        <a href="{{ route('accounting.payroll-runs.print-payslips', $run) }}?employee={{ $item->employee_id }}" class="text-ink-soft hover:text-ink" target="_blank">
                                             {{ __('Payslip') }}
                                         </a>
                                     </td>
@@ -178,7 +134,7 @@
                             @empty
                                 <tr>
                                     <td colspan="9" class="text-center text-ink-soft">
-                                        No employee items found.
+                                        {{ __('No employee items found.') }}
                                     </td>
                                 </tr>
                             @endforelse
@@ -187,13 +143,13 @@
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6" x-data="{ showPayeModal: false, showPensionModal: false }">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Remittances') }}</h3>
+            <div class="card p-6" x-data="{ showPayeModal: false, showPensionModal: false }">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Remittances') }}</p>
                 <div class="flex items-center space-x-3 mb-4">
-                    <button type="button" @click="showPayeModal = true" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:bg-red-500 active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <button type="button" @click="showPayeModal = true" class="x-button x-button-negative">
                         {{ __('Record PAYE Remittance') }}
                     </button>
-                    <button type="button" @click="showPensionModal = true" class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-500 focus:bg-orange-500 active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <button type="button" @click="showPensionModal = true" class="x-button x-button-negative">
                         {{ __('Record Pension Remittance') }}
                     </button>
                 </div>
@@ -207,19 +163,19 @@
                                 @csrf
                                 <div class="space-y-4">
                                     <div>
-                                        <x-input-label for="paye_amount" value="{{ __('Amount') }}" />
-                                        <x-text-input id="paye_amount" name="amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('amount', $run->total_paye)" required />
+                                        <label for="paye_amount" class="form-section-label">{{ __('Amount') }}</label>
+                                        <input id="paye_amount" name="amount" type="number" step="0.01" min="0" class="input mt-1" :value="old('amount', $run->total_paye)" required />
                                         <x-input-error :messages="$errors->get('amount')" class="mt-2" />
                                     </div>
                                     <div>
-                                        <x-input-label for="paye_date" value="{{ __('Payment Date') }}" />
-                                        <x-text-input id="paye_date" name="payment_date" type="date" class="mt-1 block w-full" :value="old('payment_date', now()->format('Y-m-d'))" required />
+                                        <label for="paye_date" class="form-section-label">{{ __('Payment Date') }}</label>
+                                        <input id="paye_date" name="payment_date" type="date" class="input mt-1" :value="old('payment_date', now()->format('Y-m-d'))" required />
                                         <x-input-error :messages="$errors->get('payment_date')" class="mt-2" />
                                     </div>
                                     <div>
-                                        <x-input-label for="paye_bank_account_id" value="{{ __('Bank Account') }}" />
-                                        <select id="paye_bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                            <option value="">Select Bank Account</option>
+                                        <label for="paye_bank_account_id" class="form-section-label">{{ __('Bank Account') }}</label>
+                                        <select id="paye_bank_account_id" name="bank_account_id" class="input mt-1" required>
+                                            <option value="">{{ __('Select Bank Account') }}</option>
                                             @foreach($bankAccounts as $bankAccount)
                                                 <option value="{{ $bankAccount->id }}" {{ old('bank_account_id') == $bankAccount->id ? 'selected' : '' }}>
                                                     {{ $bankAccount->name }}
@@ -230,10 +186,8 @@
                                     </div>
                                 </div>
                                 <div class="mt-6 flex justify-end space-x-3">
-                                    <button type="button" @click="showPayeModal = false" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                        {{ __('Cancel') }}
-                                    </button>
-                                    <x-primary-button type="submit">{{ __('Record Remittance') }}</x-primary-button>
+                                    <button type="button" @click="showPayeModal = false" class="x-button x-button-ghost">{{ __('Cancel') }}</button>
+                                    <button type="submit" class="x-button x-button-primary">{{ __('Record Remittance') }}</button>
                                 </div>
                             </form>
                         </div>
@@ -249,24 +203,24 @@
                                 @csrf
                                 <div class="space-y-4">
                                     <div>
-                                        <x-input-label for="pension_ee_amount" value="{{ __('Employee Pension Amount') }}" />
-                                        <x-text-input id="pension_ee_amount" name="employee_amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('employee_amount')" required />
+                                        <label for="pension_ee_amount" class="form-section-label">{{ __('Employee Pension Amount') }}</label>
+                                        <input id="pension_ee_amount" name="employee_amount" type="number" step="0.01" min="0" class="input mt-1" :value="old('employee_amount')" required />
                                         <x-input-error :messages="$errors->get('employee_amount')" class="mt-2" />
                                     </div>
                                     <div>
-                                        <x-input-label for="pension_er_amount" value="{{ __('Employer Pension Amount') }}" />
-                                        <x-text-input id="pension_er_amount" name="employer_amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('employer_amount')" required />
+                                        <label for="pension_er_amount" class="form-section-label">{{ __('Employer Pension Amount') }}</label>
+                                        <input id="pension_er_amount" name="employer_amount" type="number" step="0.01" min="0" class="input mt-1" :value="old('employer_amount')" required />
                                         <x-input-error :messages="$errors->get('employer_amount')" class="mt-2" />
                                     </div>
                                     <div>
-                                        <x-input-label for="pension_date" value="{{ __('Payment Date') }}" />
-                                        <x-text-input id="pension_date" name="payment_date" type="date" class="mt-1 block w-full" :value="old('payment_date', now()->format('Y-m-d'))" required />
+                                        <label for="pension_date" class="form-section-label">{{ __('Payment Date') }}</label>
+                                        <input id="pension_date" name="payment_date" type="date" class="input mt-1" :value="old('payment_date', now()->format('Y-m-d'))" required />
                                         <x-input-error :messages="$errors->get('payment_date')" class="mt-2" />
                                     </div>
                                     <div>
-                                        <x-input-label for="pension_bank_account_id" value="{{ __('Bank Account') }}" />
-                                        <select id="pension_bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                            <option value="">Select Bank Account</option>
+                                        <label for="pension_bank_account_id" class="form-section-label">{{ __('Bank Account') }}</label>
+                                        <select id="pension_bank_account_id" name="bank_account_id" class="input mt-1" required>
+                                            <option value="">{{ __('Select Bank Account') }}</option>
                                             @foreach($bankAccounts as $bankAccount)
                                                 <option value="{{ $bankAccount->id }}" {{ old('bank_account_id') == $bankAccount->id ? 'selected' : '' }}>
                                                     {{ $bankAccount->name }}
@@ -277,10 +231,8 @@
                                     </div>
                                 </div>
                                 <div class="mt-6 flex justify-end space-x-3">
-                                    <button type="button" @click="showPensionModal = false" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                        {{ __('Cancel') }}
-                                    </button>
-                                    <x-primary-button type="submit">{{ __('Record Remittance') }}</x-primary-button>
+                                    <button type="button" @click="showPensionModal = false" class="x-button x-button-ghost">{{ __('Cancel') }}</button>
+                                    <button type="submit" class="x-button x-button-primary">{{ __('Record Remittance') }}</button>
                                 </div>
                             </form>
                         </div>
@@ -289,45 +241,31 @@
             </div>
 
             @if(isset($payments) && $payments->count())
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Payment History') }}</h3>
+                <div class="card p-6">
+                    <p class="text-base font-semibold text-ink mb-5">{{ __('Payment History') }}</p>
                     <div class="overflow-x-auto">
                         <table class="datasheet">
                             <thead>
                                 <tr>
-                                    <th>Employee</th>
-                                    <th class="text-right">Amount</th>
-                                    <th>Payment Date</th>
-                                    <th>Bank Account</th>
-                                    <th class="text-center">Status</th>
+                                    <th>{{ __('Employee') }}</th>
+                                    <th class="text-right">{{ __('Amount') }}</th>
+                                    <th>{{ __('Payment Date') }}</th>
+                                    <th>{{ __('Bank Account') }}</th>
+                                    <th class="text-center">{{ __('Status') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($payments as $payment)
                                     <tr>
-                                        <td>
-                                            {{ $payment->payrollRunItem->employee->name ?? '—' }}
-                                        </td>
-                                        <td class="numeric">
-                                            {{ format_money($payment->amount) }}
-                                        </td>
-                                        <td class="text-ink-soft">
-                                            {{ $payment->payment_date?->format('M d, Y') ?? '—' }}
-                                        </td>
-                                        <td class="text-ink-soft">
-                                            {{ $payment->bankAccount->name ?? '—' }}
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="status-pill positive">
-                                                {{ ucfirst($payment->status ?? 'completed') }}
-                                            </span>
-                                        </td>
+                                        <td>{{ $payment->payrollRunItem->employee->name ?? '—' }}</td>
+                                        <td class="numeric">{{ format_money($payment->amount) }}</td>
+                                        <td class="text-ink-soft">{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
+                                        <td class="text-ink-soft">{{ $payment->bankAccount->name ?? '—' }}</td>
+                                        <td class="text-center"><span class="status-pill positive">{{ ucfirst($payment->status ?? 'completed') }}</span></td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-ink-soft">
-                                            No payments recorded yet.
-                                        </td>
+                                        <td colspan="5" class="text-center text-ink-soft">{{ __('No payments recorded yet.') }}</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -337,50 +275,40 @@
             @endif
 
             @if(isset($deliveries) && $deliveries->count())
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Delivery Status') }}</h3>
+                <div class="card p-6">
+                    <p class="text-base font-semibold text-ink mb-5">{{ __('Delivery Status') }}</p>
                     <div class="overflow-x-auto">
                         <table class="datasheet">
                             <thead>
                                 <tr>
-                                    <th>Employee</th>
-                                    <th class="text-center">Status</th>
-                                    <th>Sent At</th>
-                                    <th>Error</th>
+                                    <th>{{ __('Employee') }}</th>
+                                    <th class="text-center">{{ __('Status') }}</th>
+                                    <th>{{ __('Sent At') }}</th>
+                                    <th>{{ __('Error') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($deliveries as $delivery)
                                     <tr>
-                                        <td>
-                                            {{ $delivery->payrollRunItem->employee->name ?? '—' }}
-                                        </td>
+                                        <td>{{ $delivery->payrollRunItem->employee->name ?? '—' }}</td>
                                         <td class="text-center">
                                             @php
                                                 $deliveryStatusColors = [
-                                                    'pending' => 'gray',
-                                                    'sent' => 'blue',
-                                                    'delivered' => 'green',
-                                                    'failed' => 'red',
+                                                    'pending' => 'neutral',
+                                                    'sent' => 'info',
+                                                    'delivered' => 'positive',
+                                                    'failed' => 'negative',
                                                 ];
-                                                $dColor = $deliveryStatusColors[$delivery->status] ?? 'gray';
+                                                $dColor = $deliveryStatusColors[$delivery->status] ?? 'neutral';
                                             @endphp
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $dColor }}-100 text-{{ $dColor }}-800">
-                                                {{ ucfirst($delivery->status) }}
-                                            </span>
+                                            <span class="status-pill {{ $dColor }}">{{ ucfirst($delivery->status) }}</span>
                                         </td>
-                                        <td class="text-ink-soft">
-                                            {{ $delivery->sent_at?->format('M d, Y H:i') ?? '—' }}
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-red-600">
-                                            {{ $delivery->error ?? '—' }}
-                                        </td>
+                                        <td class="text-ink-soft">{{ $delivery->sent_at?->format('M d, Y H:i') ?? '—' }}</td>
+                                        <td class="text-sm text-brick">{{ $delivery->error ?? '—' }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-ink-soft">
-                                            No deliveries recorded yet.
-                                        </td>
+                                        <td colspan="4" class="text-center text-ink-soft">{{ __('No deliveries recorded yet.') }}</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -404,33 +332,29 @@
                         <input type="hidden" name="payroll_run_item_id" :value="itemId" />
                         <div class="space-y-4">
                             <div>
-                                <x-input-label for="payment_amount" value="{{ __('Amount') }}" />
-                                <x-text-input id="payment_amount" name="amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="amount" required />
+                                <label for="payment_amount" class="form-section-label">{{ __('Amount') }}</label>
+                                <input id="payment_amount" name="amount" type="number" step="0.01" min="0" class="input mt-1" :value="amount" required />
                                 <x-input-error :messages="$errors->get('amount')" class="mt-2" />
                             </div>
                             <div>
-                                <x-input-label for="payment_payment_date" value="{{ __('Payment Date') }}" />
-                                <x-text-input id="payment_payment_date" name="payment_date" type="date" class="mt-1 block w-full" :value="new Date().toISOString().split('T')[0]" required />
+                                <label for="payment_payment_date" class="form-section-label">{{ __('Payment Date') }}</label>
+                                <input id="payment_payment_date" name="payment_date" type="date" class="input mt-1" :value="new Date().toISOString().split('T')[0]" required />
                                 <x-input-error :messages="$errors->get('payment_date')" class="mt-2" />
                             </div>
                             <div>
-                                <x-input-label for="payment_bank_account_id" value="{{ __('Bank Account') }}" />
-                                <select id="payment_bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                    <option value="">Select Bank Account</option>
+                                <label for="payment_bank_account_id" class="form-section-label">{{ __('Bank Account') }}</label>
+                                <select id="payment_bank_account_id" name="bank_account_id" class="input mt-1" required>
+                                    <option value="">{{ __('Select Bank Account') }}</option>
                                     @foreach($bankAccounts as $bankAccount)
-                                        <option value="{{ $bankAccount->id }}">
-                                            {{ $bankAccount->name }}
-                                        </option>
+                                        <option value="{{ $bankAccount->id }}">{{ $bankAccount->name }}</option>
                                     @endforeach
                                 </select>
                                 <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
                             </div>
                         </div>
                         <div class="mt-6 flex justify-end space-x-3">
-                            <button type="button" @click="close()" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                {{ __('Cancel') }}
-                            </button>
-                            <x-primary-button type="submit">{{ __('Record Payment') }}</x-primary-button>
+                            <button type="button" @click="close()" class="x-button x-button-ghost">{{ __('Cancel') }}</button>
+                            <button type="submit" class="x-button x-button-primary">{{ __('Record Payment') }}</button>
                         </div>
                     </form>
                 </div>

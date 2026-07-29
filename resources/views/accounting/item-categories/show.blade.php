@@ -1,60 +1,44 @@
 <x-app-layout>
     <x-slot name="header">{{ $category->name }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="primary" href="{{ route('accounting.item-categories.edit', $category) }}">{{ __('Edit') }}</x-button>
-        <x-button variant="ghost" href="{{ route('accounting.item-categories.index') }}">{{ __('Back') }}</x-button>
-    </div>
-
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <dl class="grid grid-cols-2 gap-4">
-                    <div>
-                        <dt class="text-sm text-gray-500">Code</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->code }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Status</dt>
-                        <dd class="mt-1">
-                            @if($category->is_active)
-                                <span class="status-pill positive">Active</span>
-                            @else
-                                <span class="status-pill neutral">Inactive</span>
-                            @endif
-                        </dd>
-                    </div>
+
+            <x-record-toolbar>
+                <div class="tr-spacer"></div>
+                <a href="{{ route('accounting.item-categories.edit', $category) }}" class="tr-save">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                    {{ __('Edit') }}
+                </a>
+                <a href="{{ route('accounting.item-categories.index') }}" class="tr-item">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('Back') }}
+                </a>
+            </x-record-toolbar>
+
+            <div class="card p-6">
+                <div class="detail-grid">
+                    <x-detail-field label="{{ __('Code') }}" strong>{{ $category->code }}</x-detail-field>
+                    <x-detail-field label="{{ __('Status') }}">
+                        @if($category->is_active)
+                            <span class="status-pill positive">{{ __('Active') }}</span>
+                        @else
+                            <span class="status-pill neutral">{{ __('Inactive') }}</span>
+                        @endif
+                    </x-detail-field>
                     @if($category->description)
-                        <div class="col-span-2">
-                            <dt class="text-sm text-gray-500">Description</dt>
-                            <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->description }}</dd>
-                        </div>
+                        <x-detail-field label="{{ __('Description') }}">{{ $category->description }}</x-detail-field>
                     @endif
-                    <div>
-                        <dt class="text-sm text-gray-500">Income Account</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->defaultIncomeAccount->code ?? '' }} {{ $category->defaultIncomeAccount->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">COGS Account</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->defaultCogsAccount->code ?? '' }} {{ $category->defaultCogsAccount->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Inventory Asset Account</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->defaultInventoryAssetAccount->code ?? '' }} {{ $category->defaultInventoryAssetAccount->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Default Reorder Point</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->default_reorder_point ? format_money($category->default_reorder_point) : '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm text-gray-500">Default Base UOM</dt>
-                        <dd class="text-sm text-gray-900 font-medium mt-1">{{ $category->default_base_uom ?? '—' }}</dd>
-                    </div>
-                </dl>
+                    <x-detail-field label="{{ __('Income Account') }}">{{ $category->defaultIncomeAccount->code ?? '' }} {{ $category->defaultIncomeAccount->name ?? '—' }}</x-detail-field>
+                    <x-detail-field label="{{ __('COGS Account') }}">{{ $category->defaultCogsAccount->code ?? '' }} {{ $category->defaultCogsAccount->name ?? '—' }}</x-detail-field>
+                    <x-detail-field label="{{ __('Inventory Asset Account') }}">{{ $category->defaultInventoryAssetAccount->code ?? '' }} {{ $category->defaultInventoryAssetAccount->name ?? '—' }}</x-detail-field>
+                    <x-detail-field label="{{ __('Default Reorder Point') }}">{{ $category->default_reorder_point ? format_money($category->default_reorder_point) : '—' }}</x-detail-field>
+                    <x-detail-field label="{{ __('Default Base UOM') }}">{{ $category->default_base_uom ?? '—' }}</x-detail-field>
+                </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Products in this Category ({{ $category->products->count() }})</h3>
+            <div class="card p-6">
+                <p class="text-base font-semibold text-ink mb-5">{{ __('Products in this Category') }} ({{ $category->products->count() }})</p>
                 @if($category->products->isNotEmpty())
                     <div class="overflow-x-auto">
                         <table class="datasheet">
@@ -87,7 +71,7 @@
                         </table>
                     </div>
                 @else
-                    <p class="text-sm text-gray-500">No products in this category.</p>
+                    <p class="text-sm text-ink-soft">{{ __('No products in this category.') }}</p>
                 @endif
             </div>
         </div>

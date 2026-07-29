@@ -40,16 +40,132 @@
 
 @layer components {
     /* ═══════════════════════════════════════════
-       PAGE HEADER — dark ink navy bg, serif italic title
+       TOPBAR — two-row horizontal navigation
     ═══════════════════════════════════════════ */
-    .page-header-bar {
-        @apply bg-ink text-white/90;
+    .topbar {
+        @apply sticky top-0 z-30;
     }
-    .page-header-bar .page-title {
-        @apply text-lg font-serif italic font-medium tracking-tight text-gold;
+    .topbar-row-1 {
+        @apply bg-ink h-[60px];
     }
-    .page-header-bar .page-eyebrow {
-        @apply text-[10px] uppercase tracking-[0.15em] text-white/40 font-sans font-medium;
+    .topbar-row-2 {
+        @apply bg-[#212B37] h-[46px] border-b border-black/10;
+        border-bottom-color: rgba(255,255,255,0.06);
+    }
+    /* Brand mark — gold gradient L inside 26x26 box */
+    .topbar-brand-mark {
+        @apply w-[26px] h-[26px] rounded flex items-center justify-center shrink-0;
+        background: linear-gradient(135deg, #C8A45C, #A8883E);
+    }
+    .topbar-brand-mark span {
+        @apply text-white font-bold text-sm leading-none;
+    }
+    .topbar-system-name {
+        @apply text-white font-semibold text-sm tracking-tight;
+    }
+    .topbar-divider {
+        @apply w-px h-5 shrink-0;
+        background-color: rgba(255,255,255,0.15);
+    }
+    .topbar-company-name {
+        @apply text-white/80 text-[13px] font-medium;
+    }
+    .topbar-branch-name {
+        @apply text-white/50 text-[12px];
+    }
+    /* User area */
+    .topbar-user-avatar {
+        @apply w-7 h-7 rounded-full flex items-center justify-center shrink-0;
+        background: rgba(203,164,92,0.2);
+    }
+    .topbar-user-avatar span {
+        @apply text-xs font-semibold;
+        color: #C8A45C;
+    }
+    .topbar-user-name {
+        @apply text-sm font-medium text-white/90 leading-tight;
+    }
+    .topbar-user-role {
+        @apply text-[10px] uppercase tracking-wider;
+        color: rgba(255,255,255,0.4);
+    }
+    .topbar-logout-btn {
+        @apply p-1.5 rounded-lg transition-colors;
+        color: rgba(255,255,255,0.4);
+    }
+    .topbar-logout-btn:hover {
+        @apply text-white/90;
+        background: rgba(255,255,255,0.08);
+    }
+
+    /* Nav link styling — Row 2 */
+    .topbar-nav-link {
+        @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium h-[34px] transition-all duration-150;
+        color: #AEB6C4;
+    }
+    .topbar-nav-link:hover {
+        background: rgba(203,164,92,0.18);
+        color: #F0DBAE;
+    }
+    .topbar-nav-link.active {
+        background: rgba(203,164,92,0.16);
+        color: #D9BA7B;
+    }
+    .topbar-nav-link svg {
+        @apply shrink-0;
+        opacity: 0.7;
+    }
+    .topbar-nav-link:hover svg {
+        opacity: 1;
+    }
+    .topbar-nav-link.active svg {
+        opacity: 1;
+    }
+
+    /* Navigation offset — invisible element to align Row 2 links under Row 1 divider */
+    .topbar-nav-offset {
+        @apply shrink-0;
+        width: 150px; /* brand mark (26) + gap-3 (12) + system name (~99) + gap-3 (12) + divider (1) = 150px */
+    }
+
+    /* Overflow button */
+    .topbar-overflow-btn {
+        @apply inline-flex items-center justify-center p-2 rounded-md transition-all duration-150;
+        color: #AEB6C4;
+    }
+    .topbar-overflow-btn:hover,
+    .topbar-overflow-btn.active {
+        background: rgba(203,164,92,0.18);
+        color: #F0DBAE;
+    }
+
+    /* Overflow dropdown */
+    .topbar-overflow-dropdown {
+        @apply absolute right-0 top-full mt-1 w-56 rounded-xl shadow-lg overflow-hidden z-40;
+        background: #2A3440;
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+    .topbar-overflow-item {
+        @apply flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors;
+        color: #AEB6C4;
+    }
+    .topbar-overflow-item:hover {
+        background: rgba(203,164,92,0.15);
+        color: #F0DBAE;
+    }
+    .topbar-overflow-item.active {
+        background: rgba(203,164,92,0.12);
+        color: #D9BA7B;
+    }
+    .topbar-overflow-item svg {
+        @apply shrink-0;
+        opacity: 0.6;
+    }
+    .topbar-overflow-item:hover svg {
+        opacity: 1;
+    }
+    .topbar-overflow-item.active svg {
+        opacity: 1;
     }
 
     /* ═══════════════════════════════════════════
@@ -61,7 +177,7 @@
         line-height: 1.25rem;
     }
     .btn-primary {
-        @apply btn text-white/90 bg-ink hover:brightness-125 active:brightness-90;
+        @apply btn text-white bg-gold hover:brightness-110 active:brightness-90 border-0;
         @apply px-3.5 py-2;
     }
     .btn-danger {
@@ -73,48 +189,62 @@
         @apply px-3.5 py-2;
     }
     .btn-ghost {
-        @apply btn text-ink-soft bg-transparent hover:bg-white hover:border hover:border-line active:bg-white;
+        @apply btn text-ink-soft bg-transparent border border-line hover:bg-panel active:bg-panel;
         @apply px-3.5 py-2;
     }
     .btn-sm { @apply px-2.5 py-1.5 text-xs; }
     .btn-icon { @apply p-1.5; }
+    .btn-remove {
+        @apply inline-flex items-center justify-center p-1 text-brick bg-transparent border-0 cursor-pointer transition-opacity duration-150;
+    }
+    .btn-remove:hover { @apply opacity-75; }
+    .btn-remove i { font-size: 17px; }
 
     /* Legacy aliases */
     .btn-secondary { @apply btn-ghost; }
 
     /* ═══════════════════════════════════════════
-       FORM INPUTS — light bg #FBFBF9, thin line border, heavier bottom
+       FORM INPUTS — bottom-border only, no box / bg / radius.  Matches invoice-form-ledger.
     ═══════════════════════════════════════════ */
     .input {
         @apply block w-full text-sm text-ink placeholder-ink-faint/60 transition-all duration-150;
-        background-color: #FBFBF9;
-        border: 1px solid theme('colors.line.DEFAULT');
-        border-bottom-width: 1.5px;
-        border-bottom-color: #D6D3C9;
-        @apply rounded px-3 py-2;
-        @apply focus:outline-none focus:border-gold focus:border-b-gold focus:ring-0;
+        background: transparent;
+        border: 0;
+        border-bottom: 1.5px solid #B4B2A9;
+        @apply px-1.5 py-2;
+        @apply focus:outline-none focus:ring-0;
     }
     .input:focus {
-        background-color: #FFFFFF;
-        box-shadow: 0 0 0 2px rgba(156, 122, 60, 0.08);
+        border-bottom-color: theme('colors.gold.DEFAULT');
+        border-bottom-width: 2px;
+        background: transparent;
+        box-shadow: none;
     }
     .dark .input {
-        @apply bg-neutral-800 border-neutral-700 text-neutral-200 placeholder-neutral-500;
+        @apply bg-transparent text-neutral-200 placeholder-neutral-500;
+        border-bottom-color: #5F5E5A;
+    }
+    .dark .input:focus {
+        border-bottom-color: theme('colors.gold.DEFAULT');
     }
     .input-error {
-        @apply border-brick/50 focus:border-brick focus:border-b-brick;
+        border-bottom-color: theme('colors.brick.DEFAULT');
+    }
+    .input-error:focus {
+        border-bottom-color: theme('colors.brick.DEFAULT');
+        border-bottom-width: 2px;
     }
     .input-group {
         @apply relative;
     }
     .input-group .input {
-        @apply pl-9;
+        @apply pl-8;
     }
     .input-group .input-icon {
-        @apply absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-faint pointer-events-none;
+        @apply absolute left-1.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-faint pointer-events-none;
     }
     .input-label {
-        @apply block text-xs font-medium text-ink-faint uppercase tracking-wider mb-1.5;
+        @apply block text-[11px] font-medium text-ink-faint uppercase tracking-[0.03em] mb-1.5;
     }
     .input-help {
         @apply text-xs text-ink-faint mt-1.5;
@@ -178,77 +308,7 @@
     .kpi-trend.negative { @apply text-brick; }
     .kpi-trend.neutral { @apply text-gold; }
 
-    /* ═══════════════════════════════════════════
-       SIDEBAR
-    ═══════════════════════════════════════════ */
-    .sidebar {
-        @apply fixed left-0 top-0 bottom-0 z-40 flex flex-col w-56 bg-neutral-900 border-r border-neutral-800;
-    }
-    .sidebar-brand {
-        @apply flex items-center gap-3 px-5 h-16 shrink-0 border-b border-neutral-800/50;
-    }
-    .sidebar-scroll {
-        @apply flex-1 overflow-y-auto py-3;
-    }
-    .sidebar-section-label {
-        @apply px-5 pt-4 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-neutral-400/60;
-    }
-    .sidebar-link {
-        @apply flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-neutral-400 rounded-none transition-all duration-150 cursor-pointer;
-    }
-    .sidebar-link:hover {
-        @apply text-neutral-200 bg-white/[0.04];
-    }
-    .sidebar-link.active {
-        @apply text-white bg-white/[0.08] shadow-[inset_3px_0_0_theme('colors.gold.DEFAULT')];
-    }
-    .sidebar-link .icon {
-        @apply w-4.5 h-4.5 shrink-0 opacity-60 transition-opacity duration-150;
-    }
-    .sidebar-link:hover .icon,
-    .sidebar-link.active .icon {
-        @apply opacity-100;
-    }
-
-    /* Sidebar parent (collapsible) */
-    .sidebar-parent {
-        @apply flex items-center gap-3 px-5 py-2.5 text-sm font-medium text-neutral-400 w-full text-left cursor-pointer transition-all duration-150;
-    }
-    .sidebar-parent:hover {
-        @apply text-neutral-200 bg-white/[0.04];
-    }
-    .sidebar-parent.active {
-        @apply text-white bg-white/[0.08] shadow-[inset_3px_0_0_theme('colors.gold.DEFAULT')];
-    }
-    .sidebar-parent .icon {
-        @apply w-4.5 h-4.5 shrink-0 opacity-60 transition-opacity duration-150;
-    }
-    .sidebar-parent:hover .icon,
-    .sidebar-parent.active .icon {
-        @apply opacity-100;
-    }
-    .sidebar-chevron {
-        @apply w-3.5 h-3.5 ml-auto opacity-40 transition-transform duration-200;
-    }
-    .sidebar-child {
-        @apply block pl-12 pr-5 py-2 text-sm font-normal text-neutral-500 transition-all duration-150;
-    }
-    .sidebar-child:hover {
-        @apply text-neutral-300;
-    }
-    .sidebar-child.active {
-        @apply text-gold font-medium;
-    }
-
-    /* ═══════════════════════════════════════════
-       TOP NAV
-    ═══════════════════════════════════════════ */
-    .topnav {
-        @apply bg-white/80 backdrop-blur-xl border-b border-line sticky top-0 z-30;
-    }
-    .dark .topnav {
-        @apply bg-neutral-950/80 border-neutral-800;
-    }
+    /* topbar defined above */
 
     /* ═══════════════════════════════════════════
        DATASHEETS / TABLES
@@ -384,6 +444,77 @@
     }
 
     /* ═══════════════════════════════════════════
+       RECORD PAGE — toolbar, detail grid, balance panel
+    ═══════════════════════════════════════════ */
+    .record-toolbar {
+        @apply rounded-lg px-6 py-3.5 mb-5 flex items-center justify-between gap-2 flex-wrap;
+        background-color: #E9DBB9;
+        border: 1px solid #D9C89A;
+    }
+    .record-toolbar .tr-row {
+        @apply flex items-center gap-1 flex-wrap w-full;
+    }
+    .record-toolbar .tr-group {
+        @apply flex items-center gap-1;
+    }
+    .record-toolbar .tr-group-label {
+        @apply text-[10px] font-semibold uppercase tracking-[0.06em] mr-1.5 whitespace-nowrap;
+        color: #1C1C1A;
+    }
+    .record-toolbar .tr-divider {
+        @apply w-px h-5 mx-3.5;
+        background: rgba(44,44,42,0.14);
+    }
+    .record-toolbar .tr-spacer {
+        @apply flex-1;
+    }
+    .record-toolbar .tr-item {
+        @apply inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm bg-transparent cursor-pointer whitespace-nowrap transition-colors duration-150;
+        color: #5C5844;
+    }
+    .record-toolbar .tr-item:hover {
+        color: #2C2C2A;
+        background: rgba(44,44,42,0.06);
+    }
+    .record-toolbar .tr-save {
+        @apply inline-flex items-center gap-1.5 border-0 bg-gold text-white font-medium rounded-md px-4 py-2 text-sm cursor-pointer transition-all duration-150;
+    }
+    .record-toolbar .tr-save:hover { filter: brightness(1.08); }
+    .record-toolbar .tr-archive {
+        @apply inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm bg-transparent border border-line rounded-md cursor-pointer transition-colors duration-150;
+        color: #5C5844;
+    }
+    .record-toolbar .tr-archive:hover { @apply border-brick text-brick; }
+    .record-toolbar .tr-more {
+        @apply inline-flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150;
+        color: #5C5844;
+    }
+    .record-toolbar .tr-more:hover { color: #2C2C2A; background: rgba(44,44,42,0.06); }
+
+    /* Detail grid — 3-column */
+    .detail-grid {
+        @apply grid grid-cols-1 md:grid-cols-3 gap-6;
+    }
+
+    /* Balance panel */
+    .balance-grid {
+        @apply grid grid-cols-1 md:grid-cols-2 gap-6 mb-1;
+    }
+    .balance-total-row {
+        @apply flex items-baseline justify-between pt-3.5 mt-1.5;
+        border-top: 1.5px dashed #B4B2A9;
+    }
+    .balance-total-row .balance-amount {
+        @apply text-xl font-semibold text-ink;
+    }
+    .record-datasheet td {
+        @apply py-3.5;
+    }
+    .record-datasheet .empty-row td {
+        @apply text-center text-ink-faint py-7;
+    }
+
+    /* ═══════════════════════════════════════════
        PAGINATION
     ═══════════════════════════════════════════ */
     .pagination {
@@ -449,9 +580,6 @@
     .page-header {
         @apply mb-6 flex items-center justify-between;
     }
-    .page-title {
-        @apply text-lg font-serif italic font-medium text-ink;
-    }
     .page-subtitle {
         @apply text-sm text-ink-faint mt-0.5;
     }
@@ -504,17 +632,14 @@
 .dark .dropdown-item {
     @apply text-neutral-300 hover:bg-gold-soft/20 hover:text-gold;
 }
-.dark .sidebar {
-    @apply bg-neutral-950 border-neutral-900;
-}
-.dark .topnav {
-    @apply bg-neutral-950/80 border-neutral-800;
-}
 .dark .kpi-value {
     @apply text-neutral-100;
 }
+.dark .btn-primary {
+    @apply bg-gold/90 hover:brightness-125;
+}
 .dark .btn-ghost {
-    @apply text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800;
+    @apply text-neutral-400 border-neutral-700 hover:text-neutral-200 hover:bg-neutral-800;
 }
 .dark .skeleton {
     @apply bg-neutral-700;
@@ -523,5 +648,6 @@
     @apply bg-neutral-900 border-neutral-800;
 }
 .dark .input {
-    @apply bg-neutral-800 border-neutral-700 text-neutral-200 placeholder-neutral-500;
+    @apply bg-transparent text-neutral-200 placeholder-neutral-500;
+    border-bottom-color: #5F5E5A;
 }

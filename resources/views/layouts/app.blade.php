@@ -22,46 +22,24 @@
     </head>
     <body class="h-full font-sans antialiased bg-neutral-50 dark:bg-neutral-950">
 
-        @include('layouts.sidebar')
+        @include('layouts.topbar-two-row')
 
-        <div class="flex flex-col ml-56 min-h-screen max-lg:ml-0">
-            @include('layouts.topnav')
-
-            @isset($header)
-                <div class="page-header-bar">
-                    <div class="max-w-8xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-between">
-                        <h1 class="page-title">{{ $header }}</h1>
-                        @isset($headerEyebrow)
-                            <span class="page-eyebrow">{{ $headerEyebrow }}</span>
-                        @endisset
-                    </div>
-                </div>
-            @endisset
-
+        <div class="flex flex-col min-h-screen">
             <main class="flex-1 p-6 lg:p-8 max-w-8xl mx-auto w-full">
                 <div class="animate-fade-in-up">
+                    @isset($header)
+                        <div class="mb-6">
+                            <h1 class="text-xl font-serif italic font-medium tracking-tight text-ink">{{ $header }}</h1>
+                            @isset($headerEyebrow)
+                                <p class="text-[10px] uppercase tracking-[0.15em] text-ink-faint font-sans font-medium mt-0.5">{{ $headerEyebrow }}</p>
+                            @endisset
+                        </div>
+                    @endisset
                     {{ $slot }}
                 </div>
             </main>
         </div>
 
-        {{-- Mobile sidebar overlay --}}
-        <div x-data="{ mobileOpen: false }"
-             x-on:open-mobile-sidebar.window="mobileOpen = true"
-             x-on:close-mobile-sidebar.window="mobileOpen = false"
-             x-on:keydown.escape.window="mobileOpen = false"
-             class="lg:hidden">
-
-            <div x-show="mobileOpen" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                 x-transition:leave="transition-opacity duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 z-50 bg-neutral-900/50 backdrop-blur-sm" x-cloak x-on:click="mobileOpen = false"></div>
-
-            <div x-show="mobileOpen" x-transition:enter="transition-transform duration-300" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
-                 x-transition:leave="transition-transform duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
-                 class="fixed inset-y-0 left-0 z-50 w-56 overflow-y-auto" x-cloak>
-                @include('layouts.sidebar-nav-content')
-            </div>
-        </div>
 
         {{-- Toast container --}}
         <div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>

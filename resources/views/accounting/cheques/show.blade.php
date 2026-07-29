@@ -1,84 +1,57 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Cheque') }} #{{ str_pad($cheque->cheque_number, 6, '0', STR_PAD_LEFT) }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.cheques.index') }}">{{ __('Back') }}</x-button>
-    </div>
-
     <div class="pb-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <x-record-toolbar>
+                <div class="tr-spacer"></div>
+                @if($cheque->status === 'outstanding')
+                    <form method="POST" action="{{ route('accounting.cheques.void', $cheque->id) }}" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to void this cheque?') }}')">
+                        @csrf
+                        <button type="submit" class="tr-archive">{{ __('Void Cheque') }}</button>
+                    </form>
+                @endif
+                <a href="{{ route('accounting.cheques.index') }}" class="tr-item">{{ __('Back') }}</a>
+            </x-record-toolbar>
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Cheque Number</p>
-                        <p class="mt-1 text-sm text-gray-900 font-semibold">{{ str_pad($cheque->cheque_number, 6, '0', STR_PAD_LEFT) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Date</p>
-                        <p class="mt-1 text-sm text-gray-900">{{ $cheque->date->format('M d, Y') }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Payee</p>
-                        <p class="mt-1 text-sm text-gray-900">{{ $cheque->payee }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Amount</p>
-                        <p class="mt-1 text-sm text-gray-900 font-semibold text-lg">{{ format_money($cheque->amount) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Bank Account</p>
-                        <p class="mt-1 text-sm text-gray-900">{{ $cheque->bankAccount->name ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Status</p>
-                        <p class="mt-1">
-                            @if($cheque->status === 'outstanding')
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Outstanding</span>
-                            @elseif($cheque->status === 'cleared')
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Cleared</span>
-                            @else
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Void</span>
-                            @endif
-                        </p>
-                    </div>
+            <div class="card p-6">
+                <div class="detail-grid">
+                    <x-detail-field :label="__('Cheque Number')" :value="str_pad($cheque->cheque_number, 6, '0', STR_PAD_LEFT)" />
+                    <x-detail-field :label="__('Date')" :value="$cheque->date->format('M d, Y')" />
+                    <x-detail-field :label="__('Payee')" :value="$cheque->payee" />
+                    <x-detail-field :label="__('Amount')" value-class="text-lg font-semibold text-ink">
+                        {{ format_money($cheque->amount) }}
+                    </x-detail-field>
+                    <x-detail-field :label="__('Bank Account')" :value="$cheque->bankAccount->name ?? '—'" />
+                    <x-detail-field :label="__('Status')">
+                        @if($cheque->status === 'outstanding')
+                            <span class="status-pill neutral">{{ __('Outstanding') }}</span>
+                        @elseif($cheque->status === 'cleared')
+                            <span class="status-pill positive">{{ __('Cleared') }}</span>
+                        @else
+                            <span class="status-pill negative">{{ __('Void') }}</span>
+                        @endif
+                    </x-detail-field>
                     @if($cheque->memo)
-                        <div class="col-span-2">
-                            <p class="text-xs font-medium text-gray-500 uppercase">Memo</p>
-                            <p class="mt-1 text-sm text-gray-900">{{ $cheque->memo }}</p>
-                        </div>
+                        <x-detail-field :label="__('Memo')" :value="$cheque->memo" class="col-span-3" />
                     @endif
                     @if($cheque->journal_entry_id)
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase">Journal Entry</p>
-                            <p class="mt-1 text-sm">
-                                <a href="{{ route('accounting.journal-entries.show', $cheque->journal_entry_id) }}" class="text-indigo-600 hover:text-indigo-900">
-                                    {{ $cheque->journalEntry->journal_number ?? $cheque->journal_entry_id }}
-                                </a>
-                            </p>
-                        </div>
+                        <x-detail-field :label="__('Journal Entry')">
+                            <a href="{{ route('accounting.journal-entries.show', $cheque->journal_entry_id) }}" class="text-ink hover:text-gold">
+                                {{ $cheque->journalEntry->journal_number ?? $cheque->journal_entry_id }}
+                            </a>
+                        </x-detail-field>
                     @endif
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase">Created By</p>
-                        <p class="mt-1 text-sm text-gray-900">{{ $cheque->createdBy->name ?? '—' }}</p>
-                    </div>
+                    <x-detail-field :label="__('Created By')" :value="$cheque->createdBy->name ?? '—'" />
                 </div>
 
                 @if($cheque->voided_at)
                     <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                        <p class="text-sm text-red-800">This cheque was voided on {{ $cheque->voided_at->format('M d, Y') }} by {{ $cheque->voidedBy->name ?? 'Unknown' }}.</p>
-                    </div>
-                @endif
-
-                @if($cheque->status === 'outstanding')
-                    <div class="mt-6 flex justify-end">
-                        <form method="POST" action="{{ route('accounting.cheques.void', $cheque->id) }}" onsubmit="return confirm('Are you sure you want to void this cheque?')">
-                            @csrf
-                            <x-danger-button type="submit">{{ __('Void Cheque') }}</x-danger-button>
-                        </form>
+                        <p class="text-sm text-red-800">{{ __('This cheque was voided on') }} {{ $cheque->voided_at->format('M d, Y') }} {{ __('by') }} {{ $cheque->voidedBy->name ?? 'Unknown' }}.</p>
                     </div>
                 @endif
             </div>

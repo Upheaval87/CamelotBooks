@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">{{ __('VAT / Tax Return') }}</x-slot>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-6">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 mt-6">
         <x-toolbar class="mb-6">
             <span class="text-xs font-medium text-atlas-navy/40 uppercase tracking-wider mr-1">Record</span>
             <x-toolbar-button title="{{ __('New') }}">
