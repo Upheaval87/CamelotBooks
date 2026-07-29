@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin@test.com',
+            'is_super_admin' => true,
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
             'current_company_id' => null,

@@ -13,11 +13,17 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles {
+        hasAnyRole as spatieHasAnyRole;
+        hasRole as spatieHasRole;
+        hasAllRoles as spatieHasAllRoles;
+        hasExactRoles as spatieHasExactRoles;
+    }
 
     protected $fillable = [
         'name',
         'email',
+        'is_super_admin',
         'password',
         'current_company_id',
         'two_factor_secret',
@@ -38,6 +44,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
             'two_factor_enabled' => 'boolean',
             'password_changed_at' => 'datetime',
             'locked_until' => 'datetime',
@@ -64,5 +71,50 @@ class User extends Authenticatable
     public function getActiveCompanyId(): ?int
     {
         return session('current_company_id') ?? $this->current_company_id;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->is_super_admin;
+    }
+
+    public function hasAnyRole(...$roles): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        return $this->spatieHasAnyRole(...$roles);
+    }
+
+    public function hasRole($roles, ?string $guard = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        return $this->spatieHasRole($roles, $guard);
+    }
+
+    public function hasAllRoles($roles, ?string $guard = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        return $this->spatieHasAllRoles($roles, $guard);
+    }
+
+    public function hasExactRoles($roles, ?string $guard = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        return $this->spatieHasExactRoles($roles, $guard);
+    }
+
+    public function can($ability, $arguments = []): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        return parent::can($ability, $arguments);
     }
 }
