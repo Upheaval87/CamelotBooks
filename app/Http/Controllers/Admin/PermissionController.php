@@ -39,7 +39,7 @@ class PermissionController extends Controller
         $role = Role::findOrFail($validated['role_id']);
         $permissionIds = $validated['permissions'] ?? [];
 
-        $role->syncPermissions($permissionIds);
+        $role->permissions()->sync($permissionIds);
 
         return redirect()->route('admin.permissions.index', ['role_id' => $role->id])
             ->with('success', "Permissions updated for role '{$role->name}'.");
