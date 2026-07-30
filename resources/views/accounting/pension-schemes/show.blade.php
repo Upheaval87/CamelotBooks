@@ -20,29 +20,37 @@
                 </a>
             </x-record-toolbar>
 
-            <div class="card p-6">
-                <div class="flex items-center mb-5">
-                    <p class="text-base font-semibold text-ink">{{ $scheme->name }}</p>
-                    @if ($scheme->is_current)
-                        <span class="ml-3 status-pill positive">{{ __('Current') }}</span>
-                    @else
-                        <span class="ml-3 status-pill negative">{{ __('Expired') }}</span>
-                    @endif
-                </div>
+            <div class="detail-page">
+                <div class="detail-page-main">
+                    <div class="card p-6">
+                        <div class="flex items-center mb-5">
+                            <p class="text-base font-semibold text-ink">{{ $scheme->name }}</p>
+                            @if ($scheme->is_current)
+                                <span class="ml-3 status-pill positive">{{ __('Current') }}</span>
+                            @else
+                                <span class="ml-3 status-pill negative">{{ __('Expired') }}</span>
+                            @endif
+                        </div>
 
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Name') }}" strong>{{ $scheme->name }}</x-detail-field>
-                    <x-detail-field label="{{ __('Registration Number') }}">{{ $scheme->registration_number ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Employee Rate') }}">{{ $scheme->employee_rate }}%</x-detail-field>
-                    <x-detail-field label="{{ __('Employer Rate') }}">{{ $scheme->employer_rate }}%</x-detail-field>
-                    <x-detail-field label="{{ __('Max Contributory Salary') }}">{{ $scheme->max_contributory_salary ? format_money($scheme->max_contributory_salary) : '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Effective From') }}">{{ \Carbon\Carbon::parse($scheme->effective_from)->format('d M Y') }}</x-detail-field>
-                    <x-detail-field label="{{ __('Status') }}">{{ $scheme->is_current ? __('Current') : __('Expired') }}</x-detail-field>
-                    <x-detail-field label="{{ __('Created At') }}">{{ $scheme->created_at ? $scheme->created_at->format('d M Y H:i') : '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Updated At') }}">{{ $scheme->updated_at ? $scheme->updated_at->format('d M Y H:i') : '—' }}</x-detail-field>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Name') }}" strong>{{ $scheme->name }}</x-detail-field>
+                            <x-detail-field label="{{ __('Registration Number') }}">{{ $scheme->registration_number ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Employee Rate') }}">{{ $scheme->employee_rate }}%</x-detail-field>
+                            <x-detail-field label="{{ __('Employer Rate') }}">{{ $scheme->employer_rate }}%</x-detail-field>
+                            <x-detail-field label="{{ __('Max Contributory Salary') }}">{{ $scheme->max_contributory_salary ? format_money($scheme->max_contributory_salary) : '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Effective From') }}">{{ \Carbon\Carbon::parse($scheme->effective_from)->format('d M Y') }}</x-detail-field>
+                            <x-detail-field label="{{ __('Status') }}" noBorder>{{ $scheme->is_current ? __('Current') : __('Expired') }}</x-detail-field>
+                            <x-detail-field label="{{ __('Created At') }}">{{ $scheme->created_at ? $scheme->created_at->format('d M Y H:i') : '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Updated At') }}">{{ $scheme->updated_at ? $scheme->updated_at->format('d M Y H:i') : '—' }}</x-detail-field>
+                        </div>
+                    </div>
                 </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.pension-schemes.index'), 'icon' => 'back', 'title' => __('Back')],
+                    ]],
+                ]" />
             </div>
-
         </div>
     </div>
 </x-app-layout>

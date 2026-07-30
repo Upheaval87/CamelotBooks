@@ -26,6 +26,9 @@
                 </a>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -43,7 +46,7 @@
                 <div class="detail-grid">
                     <x-detail-field label="{{ __('Label') }}" strong>{{ $fiscalYear->label }}</x-detail-field>
                     <x-detail-field label="{{ __('Period') }}" strong>{{ $fiscalYear->start_date->format('M d, Y') }} — {{ $fiscalYear->end_date->format('M d, Y') }}</x-detail-field>
-                    <x-detail-field label="{{ __('Status') }}">
+                    <x-detail-field label="{{ __('Status') }}" noBorder>
                         @if($fiscalYear->isOpen())
                             <span class="status-pill positive">{{ __('Open') }}</span>
                         @elseif($fiscalYear->isClosed())
@@ -73,7 +76,7 @@
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Periods') }}</p>
                 <div class="overflow-x-auto">
-                    <table class="datasheet">
+                    <table class="record-datasheet">
                         <thead>
                             <tr>
                                 <th>{{ __('Label') }}</th>
@@ -99,7 +102,7 @@
                                             <span class="status-pill negative">{{ __('Locked') }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-ink-soft">{{ $period->closedByUser->name ?? '—' }}</td>
+                                    <td>{{ $period->closedByUser->name ?? '—' }}</td>
                                     <td class="text-right">
                                         @if($period->isOpen())
                                             <form method="POST" action="{{ route('accounting.periods.close', $period) }}" class="inline" onsubmit="return confirm('Close this period?');">
@@ -123,6 +126,13 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.fiscal-years.index'), 'icon' => 'back', 'title' => __('Back to Fiscal Years')],
+                    ]],
+                ]" />
             </div>
         </div>
     </div>

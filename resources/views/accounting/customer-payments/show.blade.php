@@ -92,6 +92,9 @@
                 </x-dropdown>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
+
             @if(session('success'))
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -107,7 +110,7 @@
             <div class="card p-6">
                 <div class="detail-grid">
                     <x-detail-field :label="__('Customer')" :value="$payment->customer->name ?? '—'" />
-                    <x-detail-field :label="__('Status')">
+                    <x-detail-field :label="__('Status')" noBorder>
                         @if($payment->status === 'void')
                             <span class="status-pill neutral">{{ __('Void') }}</span>
                         @else
@@ -132,7 +135,7 @@
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Invoice Allocations') }}</p>
                 <div class="overflow-x-auto">
-                    <table class="datasheet">
+                    <table class="record-datasheet">
                         <thead>
                             <tr>
                                 <th>{{ __('Invoice #') }}</th>
@@ -149,7 +152,7 @@
                                             {{ $invoice->invoice_number }}
                                         </a>
                                     </td>
-                                    <td class="text-ink-soft">
+                                    <td>
                                         {{ $invoice->invoice_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="numeric">
@@ -161,7 +164,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center text-ink-soft">
+                                    <td colspan="4" class="text-center">
                                         {{ __('No allocations found.') }}
                                     </td>
                                 </tr>
@@ -169,6 +172,17 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                        ['route' => $payment->customer && $payment->customer->email ? 'mailto:'.$payment->customer->email.'?subject=Payment Receipt - '.($payment->reference ?? $payment->id) : '#', 'icon' => 'email', 'title' => __('Email Receipt')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => $payment->customer ? route('accounting.customers.show', $payment->customer) : route('accounting.customers.index'), 'icon' => 'back', 'title' => __('Back to Customer')],
+                    ]],
+                ]" />
             </div>
         </div>
     </div>

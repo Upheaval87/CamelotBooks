@@ -83,125 +83,137 @@
                 </div>
             @endif
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Template Information') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field :label="__('Name')" :value="$template->name" />
-                    <x-detail-field :label="__('Status')">
-                        @if($template->is_active)
-                            <span class="status-pill positive">{{ __('Active') }}</span>
-                        @else
-                            <span class="status-pill negative">{{ __('Inactive') }}</span>
-                        @endif
-                    </x-detail-field>
-                    <x-detail-field :label="__('Frequency')" :value="ucfirst($template->frequency)" />
-                    <x-detail-field :label="__('Branch')" :value="$template->branch->name ?? '—'" />
-                    <x-detail-field :label="__('Start Date')" :value="$template->start_date->format('M d, Y')" />
-                    <x-detail-field :label="__('End Date')" :value="$template->end_date?->format('M d, Y') ?? __('No end date')" />
-                    <x-detail-field :label="__('Next Run Date')" :value="$template->next_run_date?->format('M d, Y') ?? '—'" />
-                    <x-detail-field :label="__('Auto Post')" :value="$template->auto_post ? __('Yes') : __('No')" />
-                    @if($template->day_of_month)
-                        <x-detail-field :label="__('Day of Month')" :value="$template->day_of_month" />
-                    @endif
-                    @if($template->day_of_week !== null)
-                        <x-detail-field :label="__('Day of Week')" :value="['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][$template->day_of_week]" />
-                    @endif
-                    <x-detail-field :label="__('Created By')" :value="$template->createdBy->name ?? '—'" />
-                    <x-detail-field :label="__('Description')" :value="$template->memo ?? '—'" class="col-span-4" />
-                </div>
-            </div>
-
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Template Lines') }}</p>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>{{ __('Account') }}</th>
-                                <th class="text-right">{{ __('Debit') }} ({{ $cs }})</th>
-                                <th class="text-right">{{ __('Credit') }} ({{ $cs }})</th>
-                                <th>{{ __('Description') }}</th>
-                                <th>{{ __('Branch') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($template->templateLines as $index => $line)
-                                <tr>
-                                    <td class="text-ink-soft">{{ $index + 1 }}</td>
-                                    <td>
-                                        {{ $line->account->code }} - {{ $line->account->name }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ $line->debit > 0 ? format_number($line->debit) : '' }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ $line->credit > 0 ? format_number($line->credit) : '' }}
-                                    </td>
-                                    <td class="text-ink-soft">
-                                        {{ $line->memo ?? '' }}
-                                    </td>
-                                    <td class="text-ink-soft">
-                                        {{ $line->branch->name ?? $template->branch->name ?? '—' }}
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                        <tfoot class="bg-gray-50">
-                            <tr>
-                                <td colspan="2" class="px-6 py-4 text-right text-sm font-semibold text-gray-700">{{ __('Totals') }}</td>
-                                <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($template->templateLines->sum('debit')) }}</td>
-                                <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($template->templateLines->sum('credit')) }}</td>
-                                <td colspan="2"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-            @if($template->journalEntries->count() > 0)
-                <div class="card p-6">
-                    <p class="text-base font-semibold text-ink mb-5">{{ __('Recent Generated Entries') }}</p>
-                    <div class="overflow-x-auto">
-                        <table class="datasheet">
-                            <thead>
-                                <tr>
-                                    <th>{{ __('Journal #') }}</th>
-                                    <th>{{ __('Date') }}</th>
-                                    <th class="text-center">{{ __('Status') }}</th>
-                                    <th class="text-right">{{ __('Debit') }} ({{ $cs }})</th>
-                                    <th class="text-right">{{ __('Credit') }} ({{ $cs }})</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($template->journalEntries as $entry)
-                                    <tr>
-                                        <td>
-                                            <a href="{{ route('accounting.journal-entries.show', $entry) }}" class="text-ink hover:text-gold">
-                                                {{ $entry->journal_number }}
-                                            </a>
-                                        </td>
-                                        <td>
-                                            {{ $entry->date->format('M d, Y') }}
-                                        </td>
-                                        <td class="text-center">
-                                            @if($entry->status === 'posted')
-                                                <span class="status-pill positive">{{ __('Posted') }}</span>
-                                            @elseif($entry->status === 'draft')
-                                                <span class="status-pill neutral">{{ __('Draft') }}</span>
-                                            @else
-                                                <span class="status-pill neutral">{{ ucfirst($entry->status) }}</span>
-                                            @endif
-                                        </td>
-                                        <td class="numeric">{{ format_number($entry->total_debit) }}</td>
-                                        <td class="numeric">{{ format_number($entry->total_credit) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+            <div class="detail-page">
+                <div class="detail-page-main">
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Template Information') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field :label="__('Name')" :value="$template->name" />
+                            <x-detail-field :label="__('Status')" noBorder>
+                                @if($template->is_active)
+                                    <span class="status-pill positive">{{ __('Active') }}</span>
+                                @else
+                                    <span class="status-pill negative">{{ __('Inactive') }}</span>
+                                @endif
+                            </x-detail-field>
+                            <x-detail-field :label="__('Frequency')" :value="ucfirst($template->frequency)" />
+                            <x-detail-field :label="__('Branch')" :value="$template->branch->name ?? '—'" />
+                            <x-detail-field :label="__('Start Date')" :value="$template->start_date->format('M d, Y')" />
+                            <x-detail-field :label="__('End Date')" :value="$template->end_date?->format('M d, Y') ?? __('No end date')" />
+                            <x-detail-field :label="__('Next Run Date')" :value="$template->next_run_date?->format('M d, Y') ?? '—'" />
+                            <x-detail-field :label="__('Auto Post')" :value="$template->auto_post ? __('Yes') : __('No')" />
+                            @if($template->day_of_month)
+                                <x-detail-field :label="__('Day of Month')" :value="$template->day_of_month" />
+                            @endif
+                            @if($template->day_of_week !== null)
+                                <x-detail-field :label="__('Day of Week')" :value="['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][$template->day_of_week]" />
+                            @endif
+                            <x-detail-field :label="__('Created By')" :value="$template->createdBy->name ?? '—'" />
+                            <x-detail-field :label="__('Description')" :value="$template->memo ?? '—'" class="col-span-3" />
+                        </div>
                     </div>
+
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Template Lines') }}</p>
+                        <div class="overflow-x-auto">
+                            <table class="record-datasheet">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>{{ __('Account') }}</th>
+                                        <th class="text-right">{{ __('Debit') }} ({{ $cs }})</th>
+                                        <th class="text-right">{{ __('Credit') }} ({{ $cs }})</th>
+                                        <th>{{ __('Description') }}</th>
+                                        <th>{{ __('Branch') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($template->templateLines as $index => $line)
+                                        <tr>
+                                            <td>{{ $index + 1 }}</td>
+                                            <td>
+                                                {{ $line->account->code }} - {{ $line->account->name }}
+                                            </td>
+                                            <td class="numeric">
+                                                {{ $line->debit > 0 ? format_number($line->debit) : '' }}
+                                            </td>
+                                            <td class="numeric">
+                                                {{ $line->credit > 0 ? format_number($line->credit) : '' }}
+                                            </td>
+                                            <td>
+                                                {{ $line->memo ?? '' }}
+                                            </td>
+                                            <td>
+                                                {{ $line->branch->name ?? $template->branch->name ?? '—' }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="bg-gray-50">
+                                    <tr>
+                                        <td colspan="2" class="px-6 py-4 text-right text-sm font-semibold text-gray-700">{{ __('Totals') }}</td>
+                                        <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($template->templateLines->sum('debit')) }}</td>
+                                        <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($template->templateLines->sum('credit')) }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    @if($template->journalEntries->count() > 0)
+                        <div class="card p-6">
+                            <p class="text-base font-semibold text-ink mb-5">{{ __('Recent Generated Entries') }}</p>
+                            <div class="overflow-x-auto">
+                                <table class="record-datasheet">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ __('Journal #') }}</th>
+                                            <th>{{ __('Date') }}</th>
+                                            <th class="text-center">{{ __('Status') }}</th>
+                                            <th class="text-right">{{ __('Debit') }} ({{ $cs }})</th>
+                                            <th class="text-right">{{ __('Credit') }} ({{ $cs }})</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($template->journalEntries as $entry)
+                                            <tr>
+                                                <td>
+                                                    <a href="{{ route('accounting.journal-entries.show', $entry) }}" class="text-ink hover:text-gold">
+                                                        {{ $entry->journal_number }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    {{ $entry->date->format('M d, Y') }}
+                                                </td>
+                                                <td class="text-center">
+                                                    @if($entry->status === 'posted')
+                                                        <span class="status-pill positive">{{ __('Posted') }}</span>
+                                                    @elseif($entry->status === 'draft')
+                                                        <span class="status-pill neutral">{{ __('Draft') }}</span>
+                                                    @else
+                                                        <span class="status-pill neutral">{{ ucfirst($entry->status) }}</span>
+                                                    @endif
+                                                </td>
+                                                <td class="numeric">{{ format_number($entry->total_debit) }}</td>
+                                                <td class="numeric">{{ format_number($entry->total_credit) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
                 </div>
-            @endif
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => route('accounting.recurring-journals.print', $template), 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.recurring-journals.index'), 'icon' => 'back', 'title' => __('Back')],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 </x-app-layout>

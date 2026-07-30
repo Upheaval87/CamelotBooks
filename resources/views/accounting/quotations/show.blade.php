@@ -54,69 +54,81 @@
             @if(session('success'))<div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>@endif
             @if(session('error'))<div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>@endif
 
-            <div class="card p-6">
-                <div class="detail-grid">
-                    <x-detail-field :label="__('Status')">
-                        @switch($quotation->status)
-                            @case('draft') <span class="status-pill neutral">{{ __('Draft') }}</span>@break
-                            @case('sent') <span class="status-pill neutral">{{ __('Sent') }}</span>@break
-                            @case('accepted') <span class="status-pill positive">{{ __('Accepted') }}</span>@break
-                            @case('declined') <span class="status-pill negative">{{ __('Declined') }}</span>@break
-                            @case('converted') <span class="status-pill positive">{{ __('Converted') }}</span>@break
-                            @case('void') <span class="status-pill neutral">{{ __('Void') }}</span>@break
-                        @endswitch
-                    </x-detail-field>
-                    <x-detail-field :label="__('Customer')" :value="$quotation->customer->name ?? '—'" />
-                    <x-detail-field :label="__('Date')" :value="$quotation->quotation_date?->format('M d, Y') ?? '—'" />
-                    <x-detail-field :label="__('Valid Until')" :value="$quotation->valid_until?->format('M d, Y') ?? '—'" />
-                    <x-detail-field :label="__('Reference')" :value="$quotation->reference ?? '—'" />
-                    <x-detail-field :label="__('Created By')" :value="$quotation->createdByUser->name ?? '—'" />
-                    <x-detail-field :label="__('Description')" :value="$quotation->memo ?? '—'" />
-                </div>
-            </div>
+            <div class="detail-page">
+                <div class="detail-page-main">
+                    <div class="card p-6">
+                        <div class="detail-grid">
+                            <x-detail-field :label="__('Status')" noBorder>
+                                @switch($quotation->status)
+                                    @case('draft') <span class="status-pill neutral">{{ __('Draft') }}</span>@break
+                                    @case('sent') <span class="status-pill neutral">{{ __('Sent') }}</span>@break
+                                    @case('accepted') <span class="status-pill positive">{{ __('Accepted') }}</span>@break
+                                    @case('declined') <span class="status-pill negative">{{ __('Declined') }}</span>@break
+                                    @case('converted') <span class="status-pill positive">{{ __('Converted') }}</span>@break
+                                    @case('void') <span class="status-pill neutral">{{ __('Void') }}</span>@break
+                                @endswitch
+                            </x-detail-field>
+                            <x-detail-field :label="__('Customer')" :value="$quotation->customer->name ?? '—'" />
+                            <x-detail-field :label="__('Date')" :value="$quotation->quotation_date?->format('M d, Y') ?? '—'" />
+                            <x-detail-field :label="__('Valid Until')" :value="$quotation->valid_until?->format('M d, Y') ?? '—'" />
+                            <x-detail-field :label="__('Reference')" :value="$quotation->reference ?? '—'" />
+                            <x-detail-field :label="__('Created By')" :value="$quotation->createdByUser->name ?? '—'" />
+                            <x-detail-field :label="__('Description')" :value="$quotation->memo ?? '—'" />
+                        </div>
+                    </div>
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Line Items') }}</p>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead><tr>
-                            <th>{{ __('Product') }}</th>
-                            <th>{{ __('Description') }}</th>
-                            <th class="text-right">{{ __('Qty') }}</th>
-                            <th class="text-right">{{ __('Unit Price') }}</th>
-                            <th class="text-right">{{ __('Tax') }}</th>
-                            <th class="text-right">{{ __('Total') }}</th>
-                        </tr></thead>
-                        <tbody>
-                            @foreach($quotation->lines as $line)
-                                <tr>
-                                    <td>{{ $line->product->name ?? '—' }}</td>
-                                    <td class="text-ink-soft">{{ $line->description }}</td>
-                                    <td class="numeric">{{ number_format($line->quantity, 2) }}</td>
-                                    <td class="numeric">{{ format_money($line->unit_price) }}</td>
-                                    <td class="numeric">{{ format_money($line->tax_amount) }}</td>
-                                    <td class="numeric">{{ format_money($line->line_total) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <div class="balance-grid">
-                        <div class="balance-row">
-                            <span class="balance-label">{{ __('Subtotal') }}:</span>
-                            <span class="balance-value">{{ format_money($quotation->amount) }}</span>
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Line Items') }}</p>
+                        <div class="overflow-x-auto">
+                            <table class="record-datasheet">
+                                <thead><tr>
+                                    <th>{{ __('Product') }}</th>
+                                    <th>{{ __('Description') }}</th>
+                                    <th class="text-right">{{ __('Qty') }}</th>
+                                    <th class="text-right">{{ __('Unit Price') }}</th>
+                                    <th class="text-right">{{ __('Tax') }}</th>
+                                    <th class="text-right">{{ __('Total') }}</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach($quotation->lines as $line)
+                                        <tr>
+                                            <td>{{ $line->product->name ?? '—' }}</td>
+                                            <td>{{ $line->description }}</td>
+                                            <td class="numeric">{{ number_format($line->quantity, 2) }}</td>
+                                            <td class="numeric">{{ format_money($line->unit_price) }}</td>
+                                            <td class="numeric">{{ format_money($line->tax_amount) }}</td>
+                                            <td class="numeric">{{ format_money($line->line_total) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="balance-row">
-                            <span class="balance-label">{{ __('Tax') }}:</span>
-                            <span class="balance-value">{{ format_money($quotation->tax_total) }}</span>
-                        </div>
-                        <div class="balance-total-row">
-                            <span class="balance-label">{{ __('Total') }}:</span>
-                            <span class="balance-value">{{ format_money($quotation->total) }}</span>
+                        <div class="flex justify-end mt-4">
+                            <div class="balance-grid">
+                                <div class="balance-row">
+                                    <span class="balance-label">{{ __('Subtotal') }}:</span>
+                                    <span class="balance-value">{{ format_money($quotation->amount) }}</span>
+                                </div>
+                                <div class="balance-row">
+                                    <span class="balance-label">{{ __('Tax') }}:</span>
+                                    <span class="balance-value">{{ format_money($quotation->tax_total) }}</span>
+                                </div>
+                                <div class="balance-total-row">
+                                    <span class="balance-label">{{ __('Total') }}:</span>
+                                    <span class="balance-value">{{ format_money($quotation->total) }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => route('accounting.quotations.print', $quotation), 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.quotations.index'), 'icon' => 'back', 'title' => __('Back to Quotations')],
+                    ]],
+                ]" />
             </div>
         </div>
     </div>

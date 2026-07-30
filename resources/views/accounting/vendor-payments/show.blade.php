@@ -17,6 +17,9 @@
                 <a href="{{ route('accounting.bills.index') }}" class="tr-item">{{ __('Back to Bills') }}</a>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -32,7 +35,7 @@
             <div class="card p-6">
                 <div class="detail-grid">
                     <x-detail-field :label="__('Vendor')" :value="$payment->vendor->name ?? '—'" />
-                    <x-detail-field :label="__('Status')">
+                    <x-detail-field :label="__('Status')" noBorder>
                         @if($payment->status === 'void')
                             <span class="status-pill neutral">{{ __('Void') }}</span>
                         @else
@@ -57,7 +60,7 @@
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Bill Allocations') }}</p>
                 <div class="overflow-x-auto">
-                    <table class="datasheet">
+                    <table class="record-datasheet">
                         <thead>
                             <tr>
                                 <th>{{ __('Bill #') }}</th>
@@ -74,7 +77,7 @@
                                             {{ $bill->bill_number }}
                                         </a>
                                     </td>
-                                    <td class="text-ink-soft">
+                                    <td>
                                         {{ $bill->bill_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="numeric">
@@ -86,7 +89,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center text-ink-soft">
+                                    <td colspan="4" class="text-center">
                                         {{ __('No allocations found.') }}
                                     </td>
                                 </tr>
@@ -94,6 +97,16 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.bills.index'), 'icon' => 'back', 'title' => __('Back to Bills')],
+                    ]],
+                ]" />
             </div>
         </div>
     </div>

@@ -284,10 +284,10 @@
         @apply absolute left-1.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-faint pointer-events-none;
     }
     .input-label {
-        @apply block text-[11px] font-medium text-ink-faint uppercase tracking-[0.03em] mb-1.5;
+        @apply block text-[11px] font-medium text-ink uppercase tracking-[0.03em] mb-1.5;
     }
     .input-help {
-        @apply text-xs text-ink-faint mt-1.5;
+        @apply text-xs text-ink mt-1.5;
     }
     .input-error-text {
         @apply text-xs text-brick mt-1.5;
@@ -349,12 +349,12 @@
         @apply bg-white border border-line rounded shadow-card;
     }
     .form-sidebar-group-label {
-        @apply text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-faint;
+        @apply text-[10px] font-semibold uppercase tracking-[0.1em] text-ink;
         padding: 16px 16px 8px;
     }
     .form-sidebar-link {
         @apply flex items-center gap-2 px-4 py-1.5 text-sm cursor-pointer no-underline transition-colors duration-150;
-        color: rgba(91,101,114,1);
+        color: rgba(28,37,48,1);
     }
     .form-sidebar-link:hover {
         background: rgba(246,245,241,1);
@@ -362,7 +362,7 @@
     }
     .form-sidebar-link svg {
         @apply w-4 h-4 shrink-0;
-        color: rgba(140,147,160,1);
+        color: rgba(91,101,114,1);
     }
     .form-sidebar-link:hover svg {
         color: rgba(91,101,114,1);
@@ -380,7 +380,7 @@
         @apply bg-white border border-line rounded shadow-card;
     }
     .card-label {
-        @apply text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-faint;
+        @apply text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink;
     }
     .card-value {
         @apply font-bold text-ink;
@@ -604,14 +604,80 @@
     }
     .record-toolbar .tr-more:hover { color: #2C2C2A; background: rgba(44,44,42,0.06); }
 
+    /* Detail page layout — two-column */
+    .detail-page {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+    }
+    .detail-page-main {
+        flex: 1;
+        min-width: 0;
+    }
+    .detail-page-sidebar {
+        width: 240px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 126px;
+    }
+
+    /* Detail sidebar — quick actions */
+    .detail-sidebar-card {
+        @apply bg-white border border-line rounded shadow-card;
+    }
+    .detail-sidebar-group-label {
+        @apply text-[10px] font-semibold uppercase tracking-[0.1em];
+        color: #2C2C2A;
+        padding: 16px 16px 8px;
+    }
+    .detail-sidebar-link {
+        @apply flex items-center gap-2.5 px-4 py-1.5 text-sm no-underline transition-colors duration-150;
+        color: #5F5E5A;
+        cursor: pointer;
+    }
+    .detail-sidebar-link:hover {
+        color: #2C2C2A;
+        background: rgba(246,245,241,1);
+    }
+    .detail-sidebar-link svg {
+        @apply w-4 h-4 shrink-0;
+        color: #96958D;
+    }
+    .detail-sidebar-link:hover svg {
+        color: #5F5E5A;
+    }
+    .detail-sidebar-divider {
+        height: 1px;
+        background: #E6E4DC;
+        margin: 4px 0;
+    }
+
     /* Detail grid — 3-column */
     .detail-grid {
-        @apply grid grid-cols-1 md:grid-cols-4 gap-6;
+        @apply grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-5;
+    }
+    .detail-lbl {
+        @apply text-[11px] font-medium uppercase tracking-[0.03em];
+        color: #96958D;
+        margin: 0 0 4px;
+    }
+    .detail-val {
+        @apply text-sm;
+        color: #2C2C2A;
+        padding-bottom: 9px;
+        border-bottom: 1.5px solid #B4B2A9;
+    }
+    .detail-val.strong {
+        font-weight: 500;
+    }
+    .detail-val.no-border {
+        padding-bottom: 0;
+        border-bottom: none;
     }
 
     /* Balance panel */
     .balance-grid {
-        @apply grid grid-cols-1 md:grid-cols-2 gap-6 mb-1;
+        @apply grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 mb-1;
     }
     .balance-total-row {
         @apply flex items-baseline justify-between pt-3.5 mt-1.5;
@@ -620,11 +686,23 @@
     .balance-total-row .balance-amount {
         @apply text-xl font-semibold text-ink;
     }
-    .record-datasheet td {
-        @apply py-3.5;
+    .record-datasheet thead th {
+        @apply text-[11px] font-medium uppercase tracking-[0.04em];
+        color: #96958D;
+        padding: 0 10px 10px;
+        border-bottom: 1px solid #E6E4DC;
+        text-align: left;
+    }
+    .record-datasheet tbody td {
+        padding: 14px 10px;
+        font-size: 13px;
+        color: #2C2C2A;
+        border-bottom: 1px solid #E6E4DC;
     }
     .record-datasheet .empty-row td {
-        @apply text-center text-ink-faint py-7;
+        @apply text-center;
+        color: #96958D;
+        padding: 28px 10px;
     }
 
     /* ═══════════════════════════════════════════
@@ -763,6 +841,74 @@
 .dark .input {
     @apply bg-transparent text-neutral-200 placeholder-neutral-500;
     border-bottom-color: #5F5E5A;
+}
+.dark .input-label {
+    @apply text-neutral-400;
+}
+.dark .input-help {
+    @apply text-neutral-500;
+}
+.dark .card-label {
+    @apply text-neutral-400;
+}
+.dark .form-sidebar-group-label {
+    @apply text-neutral-400;
+}
+.dark .form-sidebar-link {
+    color: rgba(200,205,214,1);
+}
+.dark .form-sidebar-link:hover {
+    background: rgba(38,45,61,1);
+    color: rgba(241,243,248,1);
+}
+.dark .form-sidebar-link svg {
+    color: rgba(150,158,175,1);
+}
+.dark .form-sidebar-link:hover svg {
+    color: rgba(200,205,214,1);
+}
+.dark .form-sidebar-divider {
+    background: rgba(57,64,81,1);
+}
+.dark .detail-sidebar-card {
+    @apply bg-neutral-900 border-neutral-800 rounded;
+}
+.dark .detail-sidebar-group-label {
+    color: rgba(200,205,214,1);
+}
+.dark .detail-sidebar-link {
+    color: rgba(160,168,186,1);
+}
+.dark .detail-sidebar-link:hover {
+    background: rgba(38,45,61,1);
+    color: rgba(241,243,248,1);
+}
+.dark .detail-sidebar-link svg {
+    color: rgba(120,130,155,1);
+}
+.dark .detail-sidebar-link:hover svg {
+    color: rgba(160,168,186,1);
+}
+.dark .detail-sidebar-divider {
+    background: rgba(57,64,81,1);
+}
+.dark .detail-lbl {
+    color: rgba(150,158,175,1);
+}
+.dark .detail-val {
+    color: rgba(200,205,214,1);
+    border-bottom-color: rgba(57,64,81,1);
+}
+.dark .record-datasheet thead th {
+    color: rgba(150,158,175,1);
+    border-bottom-color: rgba(57,64,81,1);
+}
+.dark .record-datasheet tbody td {
+    color: rgba(200,205,214,1);
+    border-bottom-color: rgba(57,64,81,1);
+}
+.dark .record-datasheet .empty-row td {
+    color: rgba(150,158,175,1);
 }
 
 /* ============================================================
@@ -1823,4 +1969,6 @@ textarea.settings-field-input {
 @media (max-width: 900px) {
     .form-page { flex-direction: column; }
     .form-page-sidebar { width: 100%; position: static; }
+    .detail-page { flex-direction: column; }
+    .detail-page-sidebar { width: 100%; position: static; }
 }

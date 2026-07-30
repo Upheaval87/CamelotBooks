@@ -33,49 +33,58 @@
                 </div>
             @endif
 
-            <div class="card p-6">
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Version') }}" strong>{{ $table->version_name }}</x-detail-field>
-                    <x-detail-field label="{{ __('Effective From') }}">{{ $table->effective_from->format('d M Y') }}</x-detail-field>
-                    <x-detail-field label="{{ __('Effective To') }}">{{ $table->effective_to ? $table->effective_to->format('d M Y') : '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Status') }}">
-                        @if($table->is_current)
-                            <span class="status-pill positive">{{ __('Active') }}</span>
-                        @else
-                            <span class="status-pill neutral">{{ __('Inactive') }}</span>
-                        @endif
-                    </x-detail-field>
-                </div>
-            </div>
+            <div class="detail-page">
+                <div class="detail-page-main">
+                    <div class="card p-6">
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Version') }}" strong>{{ $table->version_name }}</x-detail-field>
+                            <x-detail-field label="{{ __('Effective From') }}">{{ $table->effective_from->format('d M Y') }}</x-detail-field>
+                            <x-detail-field label="{{ __('Effective To') }}">{{ $table->effective_to ? $table->effective_to->format('d M Y') : '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Status') }}" noBorder>
+                                @if($table->is_current)
+                                    <span class="status-pill positive">{{ __('Active') }}</span>
+                                @else
+                                    <span class="status-pill neutral">{{ __('Inactive') }}</span>
+                                @endif
+                            </x-detail-field>
+                        </div>
+                    </div>
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Tax Bands') }}</p>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>{{ __('Threshold') }}</th>
-                                <th>{{ __('Upper Limit') }}</th>
-                                <th>{{ __('Rate') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($table->bands->sortBy('sort_order') as $band)
-                                <tr>
-                                    <td class="text-ink-soft">{{ $band->sort_order + 1 }}</td>
-                                    <td>{{ format_money((float) $band->threshold) }}</td>
-                                    <td>{{ $band->upper_limit ? format_money((float) $band->upper_limit) : __('No limit') }}</td>
-                                    <td>{{ format_money((float) $band->rate) }}%</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-ink-soft">{{ __('No bands defined.') }}</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Tax Bands') }}</p>
+                        <div class="overflow-x-auto">
+                            <table class="record-datasheet">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>{{ __('Threshold') }}</th>
+                                        <th>{{ __('Upper Limit') }}</th>
+                                        <th>{{ __('Rate') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($table->bands->sortBy('sort_order') as $band)
+                                        <tr>
+                                            <td>{{ $band->sort_order + 1 }}</td>
+                                            <td>{{ format_money((float) $band->threshold) }}</td>
+                                            <td>{{ $band->upper_limit ? format_money((float) $band->upper_limit) : __('No limit') }}</td>
+                                            <td>{{ format_money((float) $band->rate) }}%</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center text-ink-soft">{{ __('No bands defined.') }}</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.paye-tables.index'), 'icon' => 'back', 'title' => __('Back')],
+                    ]],
+                ]" />
             </div>
         </div>
     </div>

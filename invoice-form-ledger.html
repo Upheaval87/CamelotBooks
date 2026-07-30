@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New invoice</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+  :root{
+    --ink: #2C2C2A;
+    --ink-soft: #5F5E5A;
+    --ink-muted: #96958D;
+    --page: #FAF9F5;
+    --card: #FFFFFF;
+    --border: #E6E4DC;
+    --border-strong: #B4B2A9;
+    --accent: #B8790C;
+    --accent-bg: #FAEEDA;
+    --accent-on: #FFFFFF;
+    --danger: #A32D2D;
+    --radius: 12px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+    padding: 40px 20px 80px;
+  }
+
+  .wrap{ max-width: 780px; margin: 0 auto; }
+
+  .back{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    width: fit-content;
+  }
+  .back:hover{ color: var(--ink); }
+  .back i{ font-size: 16px; }
+
+  .panel{
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+
+  .section-head{
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .section-head .num{
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: .02em;
+  }
+  .section-head .title{
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: .06em;
+  }
+  .section-head .rule{
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .section-head-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-head-row .section-head{ flex: 1; margin-bottom: 0; }
+
+  .lbl{
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: .03em;
+    margin: 0 0 6px;
+  }
+
+  .field{
+    border: none;
+    border-bottom: 1.5px solid var(--border-strong);
+    background: transparent;
+    padding: 8px 6px;
+    width: 100%;
+    font-size: 14px;
+    color: var(--ink);
+    font-family: inherit;
+    transition: border-color .15s ease, border-bottom-width .15s ease;
+  }
+  .field:focus{
+    outline: none;
+    border-bottom-color: var(--accent);
+    border-bottom-width: 2px;
+  }
+  .field::placeholder{ color: var(--ink-muted); }
+  select.field{ appearance: none; cursor: pointer; }
+
+  .field-icon-wrap{ position: relative; }
+  .field-icon-wrap i{
+    position: absolute;
+    top: 10px;
+    font-size: 14px;
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+  .icon-left{ left: 4px; }
+  .icon-right{ right: 4px; }
+  .pad-left{ padding-left: 22px; }
+  .pad-right{ padding-right: 22px; }
+
+  .grid-2-even{ display: grid; grid-template-columns: 1fr 1fr; gap: 24px 32px; }
+
+  .row-head{
+    display: grid;
+    grid-template-columns: 1.4fr 1.2fr 0.5fr 0.8fr 0.6fr 1fr 0.8fr 0.9fr 32px;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding: 0 0 8px;
+  }
+  .row-head span:nth-child(8){ text-align: right; }
+
+  .line-row{
+    display: grid;
+    grid-template-columns: 1.4fr 1.2fr 0.5fr 0.8fr 0.6fr 1fr 0.8fr 0.9fr 32px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 0.5px solid var(--border);
+  }
+  .line-row .total{ text-align: right; font-size: 14px; font-weight: 500; }
+
+  button{
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn{
+    border: 1px solid var(--border-strong);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 9px 16px;
+  }
+  .btn:hover{ background: #F1EFE8; }
+  .btn-add{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 7px 14px;
+  }
+  .btn-add:hover{ background: #F1EFE8; }
+  .btn-add i{ font-size: 15px; }
+  .btn-primary{
+    border: none;
+    background: var(--accent);
+    color: var(--accent-on);
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-weight: 500;
+  }
+  .btn-primary:hover{ filter: brightness(1.05); }
+  .btn-remove{
+    border: none;
+    background: none;
+    padding: 4px;
+    color: var(--danger);
+    display: flex;
+  }
+  .btn-remove i{ font-size: 17px; }
+  .btn-remove:hover{ opacity: .75; }
+
+  .totals-wrap{ display: flex; justify-content: flex-end; margin-bottom: 20px; }
+  .totals-box{ width: 260px; }
+  .totals-row{
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--ink-soft);
+    padding: 6px 0;
+  }
+  .totals-final{
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+
+  .actions{ display: flex; justify-content: flex-end; gap: 10px; }
+
+  @media (max-width: 720px){
+    .row-head{ display: none; }
+    .line-row{
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 16px 0;
+    }
+    .line-row .total{ text-align: left; }
+    .grid-2-even{ grid-template-columns: 1fr; }
+    .panel{ padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="back">
+    <i class="ti ti-arrow-left"></i>
+    <span>Back to invoices</span>
+  </div>
+
+  <div class="panel">
+    <div class="section-head">
+      <span class="num">01</span>
+      <span class="title">INVOICE DETAILS</span>
+      <span class="rule"></span>
+    </div>
+
+    <div class="grid-2-even" style="margin-bottom: 24px;">
+      <div>
+        <p class="lbl">Customer</p>
+        <div class="field-icon-wrap">
+          <i class="ti ti-search icon-left"></i>
+          <input class="field pad-left" placeholder="Search customers">
+        </div>
+      </div>
+      <div>
+        <p class="lbl">Invoice date</p>
+        <div class="field-icon-wrap">
+          <input class="field pad-right" placeholder="mm/dd/yyyy">
+          <i class="ti ti-calendar icon-right"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2-even">
+      <div>
+        <p class="lbl">Reference</p>
+        <input class="field" placeholder="Optional reference">
+      </div>
+      <div>
+        <p class="lbl">Memo</p>
+        <input class="field" placeholder="Optional memo">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-head-row" style="margin-bottom: 18px;">
+      <div class="section-head">
+        <span class="num">02</span>
+        <span class="title">LINE ITEMS</span>
+        <span class="rule"></span>
+      </div>
+      <button class="btn-add"><i class="ti ti-plus"></i>Add line</button>
+    </div>
+
+    <div class="row-head">
+      <span>Product</span><span>Description</span><span>Qty</span><span>Unit price (K)</span>
+      <span>Disc %</span><span>Income account</span><span>Cost center</span><span>Line total (K)</span><span></span>
+    </div>
+
+    <div id="lineItems">
+      <div class="line-row">
+        <div class="field-icon-wrap">
+          <i class="ti ti-search icon-left"></i>
+          <input class="field pad-left" placeholder="Search products">
+        </div>
+        <input class="field" placeholder="—">
+        <input class="field" value="1">
+        <input class="field" value="0">
+        <input class="field" value="0">
+        <select class="field"><option>Select account</option></select>
+        <select class="field"><option>None</option></select>
+        <span class="total">0.00</span>
+        <button class="btn-remove" aria-label="Remove line" onclick="removeLine(this)"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="totals-wrap">
+    <div class="totals-box">
+      <div class="totals-row"><span>Subtotal</span><span>0.00</span></div>
+      <div class="totals-row"><span>Tax</span><span>0.00</span></div>
+      <div class="totals-final"><span>Total</span><span>K 0.00</span></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn">Cancel</button>
+    <button class="btn-primary">Create invoice</button>
+  </div>
+
+</div>
+
+<script>
+  const container = document.getElementById('lineItems');
+  const template = container.querySelector('.line-row');
+
+  document.querySelector('.btn-add').addEventListener('click', () => {
+    const clone = template.cloneNode(true);
+    clone.querySelectorAll('input').forEach(el => {
+      if (el.placeholder) { el.value = ''; return; }
+      if (el.previousElementSibling) return;
+    });
+    const qtyInput = clone.querySelectorAll('input')[2];
+    if (qtyInput) qtyInput.value = '1';
+    const priceInput = clone.querySelectorAll('input')[3];
+    if (priceInput) priceInput.value = '0';
+    const discInput = clone.querySelectorAll('input')[4];
+    if (discInput) discInput.value = '0';
+    clone.querySelector('.total').textContent = '0.00';
+    clone.querySelector('.btn-remove').addEventListener('click', function () { removeLine(this); });
+    container.appendChild(clone);
+  });
+
+  function removeLine(btn) {
+    const rows = container.querySelectorAll('.line-row');
+    if (rows.length <= 1) return;
+    btn.closest('.line-row').remove();
+  }
+</script>
+</body>
+</html>

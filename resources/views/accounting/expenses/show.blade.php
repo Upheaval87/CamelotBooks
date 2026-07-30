@@ -97,10 +97,12 @@
                 </x-dropdown>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
             <div class="card p-6">
                 <div class="detail-grid">
                     <x-detail-field :label="__('Expense #')" :value="$expense->expense_number" />
-                    <x-detail-field :label="__('Status')">
+                    <x-detail-field :label="__('Status')" noBorder>
                         @if($expense->status === 'draft')
                             <span class="status-pill neutral">{{ __('Draft') }}</span>
                         @elseif($expense->status === 'posted')
@@ -118,7 +120,7 @@
                     </x-detail-field>
                     <x-detail-field :label="__('Branch')" :value="$expense->branch->name ?? '—'" />
                     @if($expense->description)
-                        <x-detail-field :label="__('Description')" :value="$expense->description" class="col-span-4" />
+                        <x-detail-field :label="__('Description')" :value="$expense->description" class="col-span-3" />
                     @endif
                 </div>
             </div>
@@ -127,7 +129,7 @@
                 <div class="card p-6">
                     <p class="text-base font-semibold text-ink mb-5">{{ __('Expense Lines') }}</p>
                     <div class="overflow-x-auto">
-                        <table class="datasheet">
+                        <table class="record-datasheet">
                             <thead>
                                 <tr>
                                     <th>{{ __('Account') }}</th>
@@ -139,7 +141,7 @@
                                 @foreach($expense->lines as $line)
                                     <tr>
                                         <td>{{ $line->account->name ?? '—' }}</td>
-                                        <td class="text-ink-soft">{{ $line->description }}</td>
+                                        <td>{{ $line->description }}</td>
                                         <td class="numeric">{{ format_money($line->amount) }}</td>
                                     </tr>
                                 @endforeach
@@ -148,6 +150,16 @@
                     </div>
                 </div>
             @endif
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.expenses.index'), 'icon' => 'back', 'title' => __('Back to Expenses')],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 

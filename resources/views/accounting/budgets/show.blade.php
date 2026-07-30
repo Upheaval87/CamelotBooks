@@ -75,11 +75,14 @@
                 </x-dropdown>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
+
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Budget Overview') }}</p>
                 <div class="detail-grid">
                     <x-detail-field :label="__('Fiscal Year')" :value="$budget->fiscalYear->name ?? '—'" />
-                    <x-detail-field :label="__('Status')">
+                    <x-detail-field :label="__('Status')" noBorder>
                         @if($budget->status === 'draft')
                             <span class="status-pill neutral">{{ __('Draft') }}</span>
                         @elseif($budget->status === 'approved')
@@ -97,7 +100,7 @@
                         {{ format_money($budget->total_actual ?? 0) }}
                     </x-detail-field>
                     @if($budget->description)
-                        <x-detail-field :label="__('Description')" :value="$budget->description" class="col-span-4" />
+                        <x-detail-field :label="__('Description')" :value="$budget->description" class="col-span-3" />
                     @endif
                 </div>
             </div>
@@ -106,7 +109,7 @@
                 <div class="card p-6">
                     <p class="text-base font-semibold text-ink mb-5">{{ __('Budget Lines') }}</p>
                     <div class="overflow-x-auto">
-                        <table class="datasheet">
+                        <table class="record-datasheet">
                             <thead>
                                 <tr>
                                     <th>{{ __('Account') }}</th>
@@ -131,6 +134,16 @@
                     </div>
                 </div>
             @endif
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.budgets.index'), 'icon' => 'back', 'title' => __('Back to Budgets')],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 </x-app-layout>

@@ -107,111 +107,126 @@
                 </x-dropdown>
             </x-record-toolbar>
 
-            <div class="card p-6">
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Name') }}" strong>{{ $customer->name }}</x-detail-field>
-                    <x-detail-field label="{{ __('Email') }}">{{ $customer->email ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Phone') }}">{{ $customer->phone ?? '—' }}</x-detail-field>
+            <div class="detail-page">
+                <div class="detail-page-main">
+                    <div class="card p-6">
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Name') }}" strong>{{ $customer->name }}</x-detail-field>
+                            <x-detail-field label="{{ __('Email') }}">{{ $customer->email ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Phone') }}">{{ $customer->phone ?? '—' }}</x-detail-field>
 
-                    <x-detail-field label="{{ __('Payment Terms') }}">{{ str_replace('_', ' ', ucfirst($customer->payment_terms ?? 'due_on_receipt')) }}</x-detail-field>
-                    <x-detail-field label="{{ __('Currency') }}">{{ $customer->currency ?? 'USD' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Credit Limit') }}" strong>{{ format_money($customer->credit_limit ?? 0) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Payment Terms') }}">{{ str_replace('_', ' ', ucfirst($customer->payment_terms ?? 'due_on_receipt')) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Currency') }}">{{ $customer->currency ?? 'USD' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Credit Limit') }}" strong>{{ format_money($customer->credit_limit ?? 0) }}</x-detail-field>
 
-                    <x-detail-field label="{{ __('Billing Address') }}">{{ $customer->billing_address ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Shipping Address') }}">{{ $customer->shipping_address ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Status') }}">
-                        @if($customer->is_active)
-                            <span class="status-pill positive">{{ __('Active') }}</span>
-                        @else
-                            <span class="status-pill neutral">{{ __('Inactive') }}</span>
-                        @endif
-                    </x-detail-field>
-                </div>
-            </div>
+                            <x-detail-field label="{{ __('Billing Address') }}">{{ $customer->billing_address ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Shipping Address') }}">{{ $customer->shipping_address ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Status') }}" noBorder>
+                                @if($customer->is_active)
+                                    <span class="status-pill positive">{{ __('Active') }}</span>
+                                @else
+                                    <span class="status-pill neutral">{{ __('Inactive') }}</span>
+                                @endif
+                            </x-detail-field>
+                        </div>
+                    </div>
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Balance') }}</p>
-                <div class="balance-grid">
-                    <x-detail-field label="{{ __('Opening Balance') }}">{{ format_money($customer->opening_balance ?? 0) }}</x-detail-field>
-                    <x-detail-field label="{{ __('Opening Balance Date') }}">{{ $customer->opening_balance_date?->format('M d, Y') ?? '—' }}</x-detail-field>
-                </div>
-                <div class="balance-total-row">
-                    <p class="detail-lbl">{{ __('Open Balance') }}</p>
-                    <span class="balance-amount {{ $balanceDue > 0 ? 'text-brick' : '' }}">{{ format_money($balanceDue) }}</span>
-                </div>
-            </div>
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Balance') }}</p>
+                        <div class="balance-grid">
+                            <x-detail-field label="{{ __('Opening Balance') }}">{{ format_money($customer->opening_balance ?? 0) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Opening Balance Date') }}">{{ $customer->opening_balance_date?->format('M d, Y') ?? '—' }}</x-detail-field>
+                        </div>
+                        <div class="balance-total-row">
+                            <p class="detail-lbl">{{ __('Open Balance') }}</p>
+                            <span class="balance-amount {{ $balanceDue > 0 ? 'text-brick' : '' }}">{{ format_money($balanceDue) }}</span>
+                        </div>
+                    </div>
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Transaction History') }}</p>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>{{ __('Type') }}</th>
-                                <th>{{ __('Date') }}</th>
-                                <th>{{ __('Reference') }}</th>
-                                <th>{{ __('Description') }}</th>
-                                <th class="text-right">{{ __('Amount') }}</th>
-                                <th class="text-right">{{ __('Paid') }}</th>
-                                <th class="text-right">{{ __('Balance') }}</th>
-                                <th class="text-center">{{ __('Status') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($transactions as $txn)
-                                <tr>
-                                    <td>
-                                        @if($txn['type'] === 'Invoice')
-                                            <span class="text-indigo-600">{{ $txn['type'] }}</span>
-                                        @else
-                                            <span class="text-green-600">{{ $txn['type'] }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-ink-soft">
-                                        {{ $txn['date']?->format('M d, Y') ?? '—' }}
-                                    </td>
-                                    <td>
-                                        {{ $txn['reference'] }}
-                                    </td>
-                                    <td class="text-ink-soft">
-                                        {{ $txn['description'] }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ format_money(abs($txn['amount'])) }}
-                                    </td>
-                                    <td class="text-ink-soft text-right">
-                                        {{ format_money($txn['paid']) }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $txn['balance'] > 0 ? 'text-brick' : 'text-ink' }}">
-                                        {{ format_money(abs($txn['balance'])) }}
-                                    </td>
-                                    <td class="text-center">
-                                        @php
-                                            $statusColors = [
-                                                'draft' => 'gray',
-                                                'sent' => 'blue',
-                                                'partially_paid' => 'yellow',
-                                                'paid' => 'green',
-                                                'overdue' => 'red',
-                                                'void' => 'gray',
-                                            ];
-                                            $color = $statusColors[$txn['status']] ?? 'gray';
-                                        @endphp
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $color }}-100 text-{{ $color }}-800">
-                                            {{ str_replace('_', ' ', ucfirst($txn['status'])) }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr class="empty-row">
-                                    <td colspan="8" class="text-center text-ink-soft py-7">
-                                        {{ __('No transactions found.') }}
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Transaction History') }}</p>
+                        <div class="overflow-x-auto">
+                            <table class="record-datasheet">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Type') }}</th>
+                                        <th>{{ __('Date') }}</th>
+                                        <th>{{ __('Reference') }}</th>
+                                        <th>{{ __('Description') }}</th>
+                                        <th class="text-right">{{ __('Amount') }}</th>
+                                        <th class="text-right">{{ __('Paid') }}</th>
+                                        <th class="text-right">{{ __('Balance') }}</th>
+                                        <th class="text-center">{{ __('Status') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($transactions as $txn)
+                                        <tr>
+                                            <td>
+                                                @if($txn['type'] === 'Invoice')
+                                                    <span class="text-indigo-600">{{ $txn['type'] }}</span>
+                                                @else
+                                                    <span class="text-green-600">{{ $txn['type'] }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                {{ $txn['date']?->format('M d, Y') ?? '—' }}
+                                            </td>
+                                            <td>
+                                                {{ $txn['reference'] }}
+                                            </td>
+                                            <td>
+                                                {{ $txn['description'] }}
+                                            </td>
+                                            <td class="numeric">
+                                                {{ format_money(abs($txn['amount'])) }}
+                                            </td>
+                                            <td class="text-right">
+                                                {{ format_money($txn['paid']) }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $txn['balance'] > 0 ? 'text-brick' : 'text-ink' }}">
+                                                {{ format_money(abs($txn['balance'])) }}
+                                            </td>
+                                            <td class="text-center">
+                                                @php
+                                                    $statusColors = [
+                                                        'draft' => 'gray',
+                                                        'sent' => 'blue',
+                                                        'partially_paid' => 'yellow',
+                                                        'paid' => 'green',
+                                                        'overdue' => 'red',
+                                                        'void' => 'gray',
+                                                    ];
+                                                    $color = $statusColors[$txn['status']] ?? 'gray';
+                                                @endphp
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $color }}-100 text-{{ $color }}-800">
+                                                    {{ str_replace('_', ' ', ucfirst($txn['status'])) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr class="empty-row">
+                                            <td colspan="8" class="text-center text-ink-soft py-7">
+                                                {{ __('No transactions found.') }}
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => route('accounting.invoices.index', ['customer_id' => $customer->id]), 'icon' => 'invoice', 'title' => __('View Invoices')],
+                        ['route' => route('accounting.customer-payments.create', ['customer_id' => $customer->id]), 'icon' => 'payment', 'title' => __('Record Payment')],
+                        ['route' => route('accounting.reports.customer-statement', ['customer_id' => $customer->id]), 'icon' => 'statement', 'title' => __('View Statement')],
+                        ['route' => route('accounting.customers.show', $customer), 'icon' => 'print', 'title' => __('Print Statement')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.customers.index'), 'icon' => 'back', 'title' => __('Back to Customers')],
+                    ]],
+                ]" />
             </div>
 
         </div>

@@ -22,91 +22,100 @@
                 </div>
             @endif
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('General Information') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Code') }}" strong>{{ $category->code }}</x-detail-field>
-                    <x-detail-field label="{{ __('Name') }}" strong>{{ $category->name }}</x-detail-field>
-                    <x-detail-field label="{{ __('Description') }}">{{ $category->description ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Revaluation') }}">
-                        @if($category->is_revaluation_enabled)
-                            <span class="status-pill neutral">{{ __('Enabled') }}</span>
-                        @else
-                            <span class="status-pill neutral">{{ __('Disabled') }}</span>
-                        @endif
-                    </x-detail-field>
-                    <x-detail-field label="{{ __('Status') }}">
-                        @if($category->is_active)
-                            <span class="status-pill positive">{{ __('Active') }}</span>
-                        @else
-                            <span class="status-pill neutral">{{ __('Inactive') }}</span>
-                        @endif
-                    </x-detail-field>
-                </div>
-            </div>
-
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Financial Depreciation') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Depreciation Method') }}">{{ str_replace('_', ' ', ucfirst($category->depreciation_method_financial)) }}</x-detail-field>
-                    <x-detail-field label="{{ __('Useful Life') }}">{{ $category->useful_life_financial }} {{ __('years') }}</x-detail-field>
-                    <x-detail-field label="{{ __('Residual Value Type') }}">{{ ucfirst($category->residual_value_type_financial) }}</x-detail-field>
-                    <x-detail-field label="{{ __('Residual Value') }}">{{ format_money($category->residual_value_financial) }}</x-detail-field>
-                </div>
-            </div>
-
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Tax Depreciation') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Depreciation Method') }}">{{ str_replace('_', ' ', ucfirst($category->depreciation_method_tax)) }}</x-detail-field>
-                    <x-detail-field label="{{ __('Useful Life') }}">{{ $category->useful_life_tax }} {{ __('years') }}</x-detail-field>
-                    <x-detail-field label="{{ __('Residual Value Type') }}">{{ ucfirst($category->residual_value_type_tax) }}</x-detail-field>
-                    <x-detail-field label="{{ __('Residual Value') }}">{{ format_money($category->residual_value_tax) }}</x-detail-field>
-                    <x-detail-field label="{{ __('Depreciation Rate') }}">{{ $category->depreciation_rate_tax ? $category->depreciation_rate_tax . '%' : '—' }}</x-detail-field>
-                </div>
-            </div>
-
-            @if($category->assets->count() > 0)
-                <div class="card p-6">
-                    <p class="text-base font-semibold text-ink mb-5">{{ __('Assets in this Category') }} ({{ $category->assets->count() }})</p>
-                    <div class="overflow-x-auto">
-                        <table class="datasheet">
-                            <thead>
-                                <tr>
-                                    <th>Asset Code</th>
-                                    <th>Name</th>
-                                    <th class="text-right">Acquisition Cost</th>
-                                    <th class="text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($category->assets as $asset)
-                                    <tr>
-                                        <td>
-                                            <a href="{{ route('accounting.fixed-assets.show', $asset) }}" class="text-ink hover:text-gold">
-                                                {{ $asset->asset_code }}
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <a href="{{ route('accounting.fixed-assets.show', $asset) }}" class="hover:text-indigo-600">
-                                                {{ $asset->name }}
-                                            </a>
-                                        </td>
-                                        <td class="numeric">
-                                            {{ format_money($asset->acquisition_cost) }}
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $asset->status === 'active' ? 'green' : ($asset->status === 'disposed' ? 'red' : 'gray') }}-100 text-{{ $asset->status === 'active' ? 'green' : ($asset->status === 'disposed' ? 'red' : 'gray') }}-800">
-                                                {{ ucfirst($asset->status) }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+            <div class="detail-page">
+                <div class="detail-page-main">
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('General Information') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Code') }}" strong>{{ $category->code }}</x-detail-field>
+                            <x-detail-field label="{{ __('Name') }}" strong>{{ $category->name }}</x-detail-field>
+                            <x-detail-field label="{{ __('Description') }}">{{ $category->description ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Revaluation') }}" noBorder>
+                                @if($category->is_revaluation_enabled)
+                                    <span class="status-pill neutral">{{ __('Enabled') }}</span>
+                                @else
+                                    <span class="status-pill neutral">{{ __('Disabled') }}</span>
+                                @endif
+                            </x-detail-field>
+                            <x-detail-field label="{{ __('Status') }}" noBorder>
+                                @if($category->is_active)
+                                    <span class="status-pill positive">{{ __('Active') }}</span>
+                                @else
+                                    <span class="status-pill neutral">{{ __('Inactive') }}</span>
+                                @endif
+                            </x-detail-field>
+                        </div>
                     </div>
+
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Financial Depreciation') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Depreciation Method') }}">{{ str_replace('_', ' ', ucfirst($category->depreciation_method_financial)) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Useful Life') }}">{{ $category->useful_life_financial }} {{ __('years') }}</x-detail-field>
+                            <x-detail-field label="{{ __('Residual Value Type') }}">{{ ucfirst($category->residual_value_type_financial) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Residual Value') }}">{{ format_money($category->residual_value_financial) }}</x-detail-field>
+                        </div>
+                    </div>
+
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Tax Depreciation') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Depreciation Method') }}">{{ str_replace('_', ' ', ucfirst($category->depreciation_method_tax)) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Useful Life') }}">{{ $category->useful_life_tax }} {{ __('years') }}</x-detail-field>
+                            <x-detail-field label="{{ __('Residual Value Type') }}">{{ ucfirst($category->residual_value_type_tax) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Residual Value') }}">{{ format_money($category->residual_value_tax) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Depreciation Rate') }}">{{ $category->depreciation_rate_tax ? $category->depreciation_rate_tax . '%' : '—' }}</x-detail-field>
+                        </div>
+                    </div>
+
+                    @if($category->assets->count() > 0)
+                        <div class="card p-6">
+                            <p class="text-base font-semibold text-ink mb-5">{{ __('Assets in this Category') }} ({{ $category->assets->count() }})</p>
+                            <div class="overflow-x-auto">
+                                <table class="record-datasheet">
+                                    <thead>
+                                        <tr>
+                                            <th>Asset Code</th>
+                                            <th>Name</th>
+                                            <th class="text-right">Acquisition Cost</th>
+                                            <th class="text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($category->assets as $asset)
+                                            <tr>
+                                                <td>
+                                                    <a href="{{ route('accounting.fixed-assets.show', $asset) }}" class="text-ink hover:text-gold">
+                                                        {{ $asset->asset_code }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <a href="{{ route('accounting.fixed-assets.show', $asset) }}" class="hover:text-indigo-600">
+                                                        {{ $asset->name }}
+                                                    </a>
+                                                </td>
+                                                <td class="numeric">
+                                                    {{ format_money($asset->acquisition_cost) }}
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $asset->status === 'active' ? 'green' : ($asset->status === 'disposed' ? 'red' : 'gray') }}-100 text-{{ $asset->status === 'active' ? 'green' : ($asset->status === 'disposed' ? 'red' : 'gray') }}-800">
+                                                        {{ ucfirst($asset->status) }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
                 </div>
-            @endif
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.asset-categories.index'), 'icon' => 'back', 'title' => __('Back')],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 </x-app-layout>

@@ -33,6 +33,9 @@
                 <a href="{{ route('accounting.purchase-orders.index') }}" class="tr-item">{{ __('Back') }}</a>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
             @endif
@@ -40,7 +43,7 @@
             <div class="card p-6">
                 <div class="detail-grid">
                     <x-detail-field :label="__('PO Number')" :value="$order->po_number" />
-                    <x-detail-field :label="__('Status')">
+                    <x-detail-field :label="__('Status')" noBorder>
                         @switch($order->status)
                             @case('draft') <span class="status-pill neutral">{{ __('Draft') }}</span> @break
                             @case('sent') <span class="status-pill neutral">{{ __('Sent') }}</span> @break
@@ -54,7 +57,7 @@
                     <x-detail-field :label="__('Expected Delivery')" :value="$order->expected_delivery_date?->format('M d, Y') ?? '—'" />
                     <x-detail-field :label="__('Requisition')" :value="$order->requisition->requisition_number ?? '—'" />
                     @if($order->memo)
-                        <x-detail-field :label="__('Description')" :value="$order->memo" class="col-span-4" />
+                        <x-detail-field :label="__('Description')" :value="$order->memo" class="col-span-3" />
                     @endif
                 </div>
             </div>
@@ -62,7 +65,7 @@
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Line Items') }}</p>
                 <div class="overflow-x-auto">
-                    <table class="datasheet">
+                    <table class="record-datasheet">
                         <thead>
                             <tr>
                                 <th>{{ __('Product') }}</th>
@@ -78,7 +81,7 @@
                             @foreach($order->lines as $line)
                                 <tr>
                                     <td>{{ $line->product->name ?? '—' }}</td>
-                                    <td class="text-ink-soft">{{ $line->description }}</td>
+                                    <td>{{ $line->description }}</td>
                                     <td class="numeric">{{ $line->quantity }}</td>
                                     <td class="numeric">{{ format_money($line->unit_price) }}</td>
                                     <td class="numeric font-semibold">{{ format_money($line->amount) }}</td>
@@ -102,7 +105,7 @@
             @if($order->grns->count() > 0)
                 <div class="card p-6">
                     <p class="text-base font-semibold text-ink mb-5">{{ __('Goods Received Notes') }}</p>
-                    <table class="datasheet">
+                    <table class="record-datasheet">
                         <thead>
                             <tr>
                                 <th>{{ __('GRN #') }}</th>
@@ -116,7 +119,7 @@
                                     <td>
                                         <a href="{{ route('accounting.goods-received-notes.show', $grn) }}" class="text-ink hover:text-gold">{{ $grn->grn_number }}</a>
                                     </td>
-                                    <td class="text-ink-soft">{{ $grn->date?->format('M d, Y') ?? '—' }}</td>
+                                    <td>{{ $grn->date?->format('M d, Y') ?? '—' }}</td>
                                     <td class="text-center">
                                         @if($grn->status === 'posted')
                                             <span class="status-pill positive">{{ __('Posted') }}</span>
@@ -139,6 +142,16 @@
                     </a>
                 </div>
             @endif
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.purchase-orders.index'), 'icon' => 'back', 'title' => __('Back to Purchase Orders')],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 </x-app-layout>

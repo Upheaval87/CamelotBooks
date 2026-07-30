@@ -33,6 +33,9 @@
                 </a>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -100,6 +103,17 @@
                     </div>
                 </div>
             @endif
+            </div>
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.fixed-assets.index'), 'icon' => 'back', 'title' => __('Back to Assets')],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 </x-app-layout>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer record</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+  :root{
+    --ink: #2C2C2A;
+    --ink-soft: #5F5E5A;
+    --ink-muted: #96958D;
+    --page: #FAF9F5;
+    --card: #FFFFFF;
+    --border: #E6E4DC;
+    --border-strong: #B4B2A9;
+    --accent: #B8790C;
+    --accent-bg: #FAEEDA;
+    --accent-on: #FFFFFF;
+    --success: #3B6D11;
+    --success-bg: #EAF3DE;
+    --danger: #A32D2D;
+    --radius: 12px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+    padding: 32px 20px 80px;
+  }
+
+  .wrap{ max-width: 960px; margin: 0 auto; }
+
+  /* toolbar */
+  .toolbar{
+    background: #F3ECDC;
+    border-radius: var(--radius);
+    padding: 14px 24px;
+    margin-bottom: 20px;
+  }
+  .toolbar-row{
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .t-group{
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .t-group-label{
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+  .t-divider{
+    width: 1px;
+    height: 20px;
+    background: rgba(44,44,42,.14);
+    margin: 0 14px;
+  }
+  .toolbar-spacer{ flex: 1; }
+
+  .t-item{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 7px 10px;
+    border-radius: 7px;
+    transition: background .15s ease, color .15s ease;
+  }
+  .t-item:hover{ color: var(--ink); background: rgba(44,44,42,.06); }
+  .t-item i{ font-size: 16px; }
+
+  .t-save{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-on);
+    border-radius: 7px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .t-save:hover{ filter: brightness(1.08); }
+
+  .badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--success-bg);
+    color: var(--success);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .btn-archive{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgba(44,44,42,.22);
+    background: transparent;
+    color: var(--ink-soft);
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn-archive:hover{ border-color: var(--danger); color: var(--danger); }
+
+  .t-more{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+  .t-more:hover{ color: var(--ink); background: rgba(44,44,42,.06); }
+  .t-more i{ font-size: 17px; }
+
+  /* panels */
+  .panel{
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .panel-title{
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 20px;
+  }
+
+  .lbl{
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: .03em;
+    margin: 0 0 4px;
+    text-transform: uppercase;
+  }
+  .val{
+    font-size: 14px;
+    color: var(--ink);
+    padding-bottom: 9px;
+    border-bottom: 1.5px solid var(--border-strong);
+  }
+  .val.strong{ font-weight: 500; }
+
+  /* 3-column detail grid */
+  .grid-3{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px 32px;
+  }
+
+  /* balance */
+  .balance-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px 32px;
+    margin-bottom: 4px;
+  }
+  .open-balance-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 14px;
+    margin-top: 6px;
+    border-top: 1.5px dashed var(--border-strong);
+  }
+  .open-balance-row .lbl{ margin-bottom: 0; }
+  .open-balance-row .amount{ font-size: 20px; font-weight: 600; }
+
+  /* transaction history */
+  table{ width: 100%; border-collapse: collapse; }
+  thead th{
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: .04em;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    padding: 0 10px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td{
+    padding: 14px 10px;
+    font-size: 13px;
+    color: var(--ink);
+    border-bottom: 1px solid var(--border);
+  }
+  .empty-row td{
+    text-align: center;
+    color: var(--ink-muted);
+    padding: 28px 10px;
+  }
+
+  @media (max-width: 720px){
+    .grid-3{ grid-template-columns: 1fr 1fr; }
+    .balance-grid{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px){
+    .grid-3{ grid-template-columns: 1fr; }
+    .toolbar-row{ gap: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+
+      <div class="t-group">
+        <span class="t-group-label">Create</span>
+        <span class="t-item"><i class="ti ti-file-plus"></i>New invoice</span>
+        <span class="t-item"><i class="ti ti-credit-card"></i>New payment</span>
+      </div>
+
+      <div class="t-divider"></div>
+
+      <div class="t-group">
+        <span class="t-group-label">Reports</span>
+        <span class="t-item"><i class="ti ti-clipboard-list"></i>Transaction history</span>
+        <span class="t-item"><i class="ti ti-chart-bar"></i>View statement</span>
+      </div>
+
+      <div class="t-divider"></div>
+
+      <div class="t-group">
+        <span class="t-group-label">Document</span>
+        <span class="t-item"><i class="ti ti-printer"></i>Print statement</span>
+        <span class="t-item"><i class="ti ti-paperclip"></i>Attach file</span>
+        <span class="t-item"><i class="ti ti-mail"></i>Email statement</span>
+      </div>
+
+      <div class="toolbar-spacer"></div>
+
+      <span class="badge"><i class="ti ti-circle-filled" style="font-size:8px"></i>Open balance: K0.00</span>
+      <div class="t-divider"></div>
+      <button class="t-save"><i class="ti ti-device-floppy"></i>Save</button>
+      <button class="btn-archive"><i class="ti ti-archive"></i>Archive</button>
+      <span class="t-more" aria-label="More actions"><i class="ti ti-dots"></i></span>
+
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="grid-3">
+      <div><p class="lbl">Name</p><p class="val strong">Elvis Seyama</p></div>
+      <div><p class="lbl">Display name</p><p class="val strong">Elvis Seyama</p></div>
+      <div><p class="lbl">Email</p><p class="val">elvis.seyama@gmail.com</p></div>
+
+      <div><p class="lbl">Phone</p><p class="val">0999602605</p></div>
+      <div><p class="lbl">Payment terms</p><p class="val">Net 30</p></div>
+      <div><p class="lbl">Currency</p><p class="val">MKW</p></div>
+
+      <div><p class="lbl">Credit limit</p><p class="val strong">K5,000,000.00</p></div>
+      <div><p class="lbl">Status</p><p class="val" style="border-bottom:none;padding-bottom:0;"><span class="badge" style="background:var(--accent-bg);color:var(--accent);">Active</span></p></div>
+      <div><p class="lbl">Billing address</p><p class="val">PO Box 40035 Kanengo, Lilongwe 4</p></div>
+
+      <div><p class="lbl">Shipping address</p><p class="val">Area 25, Sector 8</p></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Balance</p>
+    <div class="balance-grid">
+      <div><p class="lbl">Opening balance</p><p class="val">K0.00</p></div>
+      <div><p class="lbl">Opening balance date</p><p class="val">Jul 01, 2026</p></div>
+    </div>
+    <div class="open-balance-row">
+      <p class="lbl">Open balance</p>
+      <span class="amount">K0.00</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Transaction history</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th><th>Date</th><th>Reference</th><th>Description</th>
+          <th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="empty-row"><td colspan="8">No transactions found.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

@@ -118,122 +118,137 @@
                 </div>
             @endif
 
-            <div class="card p-6">
-                <div class="detail-grid">
-                    <x-detail-field :label="__('Invoice Number')" :value="$invoice->invoice_number" />
-                    <x-detail-field :label="__('Status')">
-                        @switch($invoice->status)
-                            @case('draft') <span class="status-pill neutral">{{ __('Draft') }}</span> @break
-                            @case('sent') <span class="status-pill neutral">{{ __('Sent') }}</span> @break
-                            @case('paid') <span class="status-pill positive">{{ __('Paid') }}</span> @break
-                            @case('overdue') <span class="status-pill negative">{{ __('Overdue') }}</span> @break
-                            @case('void') <span class="status-pill neutral">{{ __('Void') }}</span> @break
-                        @endswitch
-                    </x-detail-field>
-                    <x-detail-field :label="__('Customer')" :value="$invoice->customer->name ?? '—'" />
-                    <x-detail-field :label="__('Invoice Date')" :value="$invoice->invoice_date?->format('M d, Y') ?? '—'" />
-                    <x-detail-field :label="__('Due Date')" :value="$invoice->due_date?->format('M d, Y') ?? '—'" />
-                    <x-detail-field :label="__('Reference')" :value="$invoice->reference ?? '—'" />
-                    @if($invoice->memo)
-                        <x-detail-field :label="__('Description')" :value="$invoice->memo" class="col-span-4" />
+            <div class="detail-page">
+                <div class="detail-page-main">
+                    <div class="card p-6">
+                        <div class="detail-grid">
+                            <x-detail-field :label="__('Invoice Number')" :value="$invoice->invoice_number" />
+                            <x-detail-field :label="__('Status')" noBorder>
+                                @switch($invoice->status)
+                                    @case('draft') <span class="status-pill neutral">{{ __('Draft') }}</span> @break
+                                    @case('sent') <span class="status-pill neutral">{{ __('Sent') }}</span> @break
+                                    @case('paid') <span class="status-pill positive">{{ __('Paid') }}</span> @break
+                                    @case('overdue') <span class="status-pill negative">{{ __('Overdue') }}</span> @break
+                                    @case('void') <span class="status-pill neutral">{{ __('Void') }}</span> @break
+                                @endswitch
+                            </x-detail-field>
+                            <x-detail-field :label="__('Customer')" :value="$invoice->customer->name ?? '—'" />
+                            <x-detail-field :label="__('Invoice Date')" :value="$invoice->invoice_date?->format('M d, Y') ?? '—'" />
+                            <x-detail-field :label="__('Due Date')" :value="$invoice->due_date?->format('M d, Y') ?? '—'" />
+                            <x-detail-field :label="__('Reference')" :value="$invoice->reference ?? '—'" />
+                            @if($invoice->memo)
+                                <x-detail-field :label="__('Description')" :value="$invoice->memo" class="col-span-3" />
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Line Items') }}</p>
+                        <div class="overflow-x-auto">
+                            <table class="record-datasheet">
+                                <thead>
+                                    <tr>
+                                        <th>{{ __('Product') }}</th>
+                                        <th>{{ __('Description') }}</th>
+                                        <th class="text-right">{{ __('Qty') }}</th>
+                                        <th class="text-right">{{ __('Unit Price') }}</th>
+                                        <th class="text-right">{{ __('Discount') }}</th>
+                                        <th>{{ __('Tax') }}</th>
+                                        <th>{{ __('Cost Center') }}</th>
+                                        <th class="text-right">{{ __('Total') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($invoice->lines as $line)
+                                        <tr>
+                                            <td>{{ $line->product->name ?? '—' }}</td>
+                                            <td>{{ $line->description }}</td>
+                                            <td class="numeric">{{ $line->quantity }}</td>
+                                            <td class="numeric">{{ format_money($line->unit_price) }}</td>
+                                            <td class="numeric">{{ $line->discount }}%</td>
+                                            <td class="numeric">{{ $line->tax_rate }}%</td>
+                                            <td>{{ $line->costCenter->name ?? '—' }}</td>
+                                            <td class="numeric">{{ format_money($line->total) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <div class="balance-grid">
+                                <div class="balance-row">
+                                    <span class="balance-label">{{ __('Subtotal') }}:</span>
+                                    <span class="balance-value">{{ format_money($invoice->subtotal) }}</span>
+                                </div>
+                                <div class="balance-row">
+                                    <span class="balance-label">{{ __('Tax') }}:</span>
+                                    <span class="balance-value">{{ format_money($invoice->tax_total) }}</span>
+                                </div>
+                                <div class="balance-total-row">
+                                    <span class="balance-label">{{ __('Total') }}:</span>
+                                    <span class="balance-value">{{ format_money($invoice->total) }}</span>
+                                </div>
+                                <div class="balance-row">
+                                    <span class="balance-label">{{ __('Paid') }}:</span>
+                                    <span class="balance-value">{{ format_money($invoice->amount_paid) }}</span>
+                                </div>
+                                <div class="balance-total-row">
+                                    <span class="balance-label">{{ __('Balance Due') }}:</span>
+                                    <span class="balance-value">{{ format_money($invoice->balance_due) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($invoice->journalEntry)
+                        <div class="card p-6">
+                            <p class="text-base font-semibold text-ink mb-5">{{ __('Journal Entry') }}</p>
+                            <a href="{{ route('accounting.journal-entries.show', $invoice->journalEntry) }}" class="text-ink hover:text-gold">
+                                {{ $invoice->journalEntry->reference }} — {{ __('View Journal Entry') }}
+                            </a>
+                        </div>
+                    @endif
+
+                    @if($invoice->payments->count() > 0)
+                        <div class="card p-6">
+                            <p class="text-base font-semibold text-ink mb-5">{{ __('Payment History') }}</p>
+                            <div class="overflow-x-auto">
+                                <table class="record-datasheet">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ __('Date') }}</th>
+                                            <th>{{ __('Reference') }}</th>
+                                            <th class="text-right">{{ __('Amount') }}</th>
+                                            <th>{{ __('Method') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($invoice->payments as $payment)
+                                            <tr>
+                                                <td>{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
+                                                <td>{{ $payment->reference ?? '—' }}</td>
+                                                <td class="numeric">{{ format_money($payment->pivot->amount) }}</td>
+                                                <td>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     @endif
                 </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => route('accounting.invoices.print', $invoice), 'icon' => 'print', 'title' => __('Print')],
+                        @if($invoice->customer && $invoice->customer->email)
+                            ['route' => 'mailto:' . $invoice->customer->email . '?subject=Invoice ' . $invoice->invoice_number, 'icon' => 'email', 'title' => __('Email Invoice')],
+                        @endif
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.invoices.index'), 'icon' => 'back', 'title' => __('Back to Invoices')],
+                    ]],
+                ]" />
             </div>
-
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Line Items') }}</p>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>{{ __('Product') }}</th>
-                                <th>{{ __('Description') }}</th>
-                                <th class="text-right">{{ __('Qty') }}</th>
-                                <th class="text-right">{{ __('Unit Price') }}</th>
-                                <th class="text-right">{{ __('Discount') }}</th>
-                                <th>{{ __('Tax') }}</th>
-                                <th>{{ __('Cost Center') }}</th>
-                                <th class="text-right">{{ __('Total') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($invoice->lines as $line)
-                                <tr>
-                                    <td>{{ $line->product->name ?? '—' }}</td>
-                                    <td class="text-ink-soft">{{ $line->description }}</td>
-                                    <td class="numeric">{{ $line->quantity }}</td>
-                                    <td class="numeric">{{ format_money($line->unit_price) }}</td>
-                                    <td class="numeric">{{ $line->discount }}%</td>
-                                    <td class="numeric">{{ $line->tax_rate }}%</td>
-                                    <td>{{ $line->costCenter->name ?? '—' }}</td>
-                                    <td class="numeric">{{ format_money($line->total) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <div class="balance-grid">
-                        <div class="balance-row">
-                            <span class="balance-label">{{ __('Subtotal') }}:</span>
-                            <span class="balance-value">{{ format_money($invoice->subtotal) }}</span>
-                        </div>
-                        <div class="balance-row">
-                            <span class="balance-label">{{ __('Tax') }}:</span>
-                            <span class="balance-value">{{ format_money($invoice->tax_total) }}</span>
-                        </div>
-                        <div class="balance-total-row">
-                            <span class="balance-label">{{ __('Total') }}:</span>
-                            <span class="balance-value">{{ format_money($invoice->total) }}</span>
-                        </div>
-                        <div class="balance-row">
-                            <span class="balance-label">{{ __('Paid') }}:</span>
-                            <span class="balance-value">{{ format_money($invoice->amount_paid) }}</span>
-                        </div>
-                        <div class="balance-total-row">
-                            <span class="balance-label">{{ __('Balance Due') }}:</span>
-                            <span class="balance-value">{{ format_money($invoice->balance_due) }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @if($invoice->journalEntry)
-                <div class="card p-6">
-                    <p class="text-base font-semibold text-ink mb-5">{{ __('Journal Entry') }}</p>
-                    <a href="{{ route('accounting.journal-entries.show', $invoice->journalEntry) }}" class="text-ink hover:text-gold">
-                        {{ $invoice->journalEntry->reference }} — {{ __('View Journal Entry') }}
-                    </a>
-                </div>
-            @endif
-
-            @if($invoice->payments->count() > 0)
-                <div class="card p-6">
-                    <p class="text-base font-semibold text-ink mb-5">{{ __('Payment History') }}</p>
-                    <div class="overflow-x-auto">
-                        <table class="datasheet">
-                            <thead>
-                                <tr>
-                                    <th>{{ __('Date') }}</th>
-                                    <th>{{ __('Reference') }}</th>
-                                    <th class="text-right">{{ __('Amount') }}</th>
-                                    <th>{{ __('Method') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($invoice->payments as $payment)
-                                    <tr>
-                                        <td>{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
-                                        <td>{{ $payment->reference ?? '—' }}</td>
-                                        <td class="numeric">{{ format_money($payment->pivot->amount) }}</td>
-                                        <td class="text-ink-soft">{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            @endif
         </div>
     </div>
 </x-app-layout>

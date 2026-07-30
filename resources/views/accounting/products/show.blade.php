@@ -16,41 +16,55 @@
                 </a>
             </x-record-toolbar>
 
-            <div class="card p-6">
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Name') }}" strong>{{ $product->name }}</x-detail-field>
-                    <x-detail-field label="{{ __('SKU') }}" strong>{{ $product->sku ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Type') }}">{{ str_replace('_', ' ', ucfirst($product->type)) }}</x-detail-field>
+            <div class="detail-page">
+                <div class="detail-page-main">
+                    <div class="card p-6">
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Name') }}" strong>{{ $product->name }}</x-detail-field>
+                            <x-detail-field label="{{ __('SKU') }}" strong>{{ $product->sku ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Type') }}">{{ str_replace('_', ' ', ucfirst($product->type)) }}</x-detail-field>
 
-                    <x-detail-field label="{{ __('Status') }}">
-                        @if($product->is_active)
-                            <span class="status-pill positive">{{ __('Active') }}</span>
-                        @else
-                            <span class="status-pill neutral">{{ __('Inactive') }}</span>
-                        @endif
-                    </x-detail-field>
-                    @if($product->description)
-                        <x-detail-field label="{{ __('Description') }}">{{ $product->description }}</x-detail-field>
-                    @endif
-                </div>
-            </div>
+                            <x-detail-field label="{{ __('Status') }}" noBorder>
+                                @if($product->is_active)
+                                    <span class="status-pill positive">{{ __('Active') }}</span>
+                                @else
+                                    <span class="status-pill neutral">{{ __('Inactive') }}</span>
+                                @endif
+                            </x-detail-field>
+                            @if($product->description)
+                                <x-detail-field label="{{ __('Description') }}">{{ $product->description }}</x-detail-field>
+                            @endif
+                        </div>
+                    </div>
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Pricing') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Sales Price') }}" strong>{{ format_money($product->sales_price ?? 0) }}</x-detail-field>
-                    <x-detail-field label="{{ __('Purchase Price') }}" strong>{{ format_money($product->purchase_price ?? 0) }}</x-detail-field>
-                </div>
-            </div>
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Pricing') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Sales Price') }}" strong>{{ format_money($product->sales_price ?? 0) }}</x-detail-field>
+                            <x-detail-field label="{{ __('Purchase Price') }}" strong>{{ format_money($product->purchase_price ?? 0) }}</x-detail-field>
+                        </div>
+                    </div>
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Accounts & Tax') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Income Account') }}">{{ $product->incomeAccount?->name ? "{$product->incomeAccount->code} - {$product->incomeAccount->name}" : '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Expense Account') }}">{{ $product->expenseAccount?->name ? "{$product->expenseAccount->code} - {$product->expenseAccount->name}" : '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Tax Rate') }}">{{ format_money($product->tax_rate ?? 0) }}%</x-detail-field>
-                    <x-detail-field label="{{ __('Taxable') }}">{{ $product->is_taxable ? __('Yes') : __('No') }}</x-detail-field>
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Accounts & Tax') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Income Account') }}">{{ $product->incomeAccount?->name ? "{$product->incomeAccount->code} - {$product->incomeAccount->name}" : '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Expense Account') }}">{{ $product->expenseAccount?->name ? "{$product->expenseAccount->code} - {$product->expenseAccount->name}" : '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Tax Rate') }}">{{ format_money($product->tax_rate ?? 0) }}%</x-detail-field>
+                            <x-detail-field label="{{ __('Taxable') }}">{{ $product->is_taxable ? __('Yes') : __('No') }}</x-detail-field>
+                        </div>
+                    </div>
                 </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => route('accounting.stock-adjustments.create', ['product_id' => $product->id]), 'icon' => 'adjust', 'title' => __('Adjust Stock')],
+                        ['route' => route('accounting.stock-transfers.create', ['product_id' => $product->id]), 'icon' => 'transfer', 'title' => __('Transfer Stock')],
+                        ['route' => route('accounting.products.show', $product), 'icon' => 'print', 'title' => __('Print Details')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.products.index'), 'icon' => 'back', 'title' => __('Back to Products')],
+                    ]],
+                ]" />
             </div>
         </div>
     </div>

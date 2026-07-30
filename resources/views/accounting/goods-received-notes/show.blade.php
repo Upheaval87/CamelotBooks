@@ -21,6 +21,9 @@
                 <a href="{{ route('accounting.goods-received-notes.index') }}" class="tr-item">{{ __('Back') }}</a>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
+
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
             @endif
@@ -32,7 +35,7 @@
             <div class="card p-6">
                 <div class="detail-grid">
                     <x-detail-field :label="__('GRN Number')" :value="$grn->grn_number" />
-                    <x-detail-field :label="__('Status')">
+                    <x-detail-field :label="__('Status')" noBorder>
                         @if($grn->status === 'posted')
                             <span class="status-pill positive">{{ __('Posted') }}</span>
                         @elseif($grn->status === 'draft')
@@ -51,7 +54,7 @@
                         @endif
                     </x-detail-field>
                     @if($grn->memo)
-                        <x-detail-field :label="__('Description')" :value="$grn->memo" class="col-span-4" />
+                        <x-detail-field :label="__('Description')" :value="$grn->memo" class="col-span-3" />
                     @endif
                 </div>
             </div>
@@ -59,7 +62,7 @@
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Received Items') }}</p>
                 <div class="overflow-x-auto">
-                    <table class="datasheet">
+                    <table class="record-datasheet">
                         <thead>
                             <tr>
                                 <th>{{ __('Product') }}</th>
@@ -74,7 +77,7 @@
                             @foreach($grn->lines as $line)
                                 <tr>
                                     <td>{{ $line->product->name ?? '—' }}</td>
-                                    <td class="text-ink-soft">{{ $line->description }}</td>
+                                    <td>{{ $line->description }}</td>
                                     <td class="numeric">{{ $line->quantity_ordered ?? '—' }}</td>
                                     <td class="numeric font-semibold">{{ $line->quantity_received }}</td>
                                     <td class="numeric">{{ format_number($line->unit_cost) }}</td>
@@ -102,6 +105,16 @@
                     </a>
                 </div>
             @endif
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.goods-received-notes.index'), 'icon' => 'back', 'title' => __('Back to GRNs')],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 </x-app-layout>

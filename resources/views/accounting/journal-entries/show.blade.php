@@ -100,6 +100,9 @@
                 </x-dropdown>
             </x-record-toolbar>
 
+            <div class="detail-page">
+                <div class="detail-page-main">
+
             @if(session('success'))
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     {{ session('success') }}
@@ -118,7 +121,7 @@
                     <x-detail-field :label="__('Journal Number')" :value="$journalEntry->journal_number" />
                     <x-detail-field :label="__('Date')" :value="$journalEntry->date->format('M d, Y')" />
                     <x-detail-field :label="__('Reference')" :value="$journalEntry->reference ?? '—'" />
-                    <x-detail-field :label="__('Status')">
+                    <x-detail-field :label="__('Status')" noBorder>
                         @if($journalEntry->status === 'draft')
                             <span class="status-pill neutral">{{ __('Draft') }}</span>
                         @elseif($journalEntry->status === 'pending_approval')
@@ -138,9 +141,9 @@
                     @if($journalEntry->posted_at)
                         <x-detail-field :label="__('Posted At')" :value="\Illuminate\Support\Carbon::parse($journalEntry->posted_at)->format('M d, Y h:i A')" />
                     @endif
-                    <x-detail-field :label="__('Description')" :value="$journalEntry->memo ?? '—'" class="col-span-4" />
+                    <x-detail-field :label="__('Description')" :value="$journalEntry->memo ?? '—'" class="col-span-3" />
                     @if($journalEntry->rejection_reason)
-                        <x-detail-field :label="__('Rejection Reason')" :value="$journalEntry->rejection_reason" class="col-span-4" value-class="text-red-600" />
+                        <x-detail-field :label="__('Rejection Reason')" :value="$journalEntry->rejection_reason" class="col-span-3" value-class="text-red-600" />
                     @endif
                 </div>
             </div>
@@ -148,7 +151,7 @@
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Journal Lines') }}</p>
                 <div class="overflow-x-auto">
-                    <table class="datasheet">
+                    <table class="record-datasheet">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -162,7 +165,7 @@
                         <tbody>
                             @foreach($journalEntry->lines as $index => $line)
                                 <tr>
-                                    <td class="text-ink-soft">{{ $index + 1 }}</td>
+                                    <td>{{ $index + 1 }}</td>
                                     <td>
                                         {{ $line->account->code }} - {{ $line->account->name }}
                                     </td>
@@ -172,10 +175,10 @@
                                     <td class="numeric">
                                         {{ $line->credit > 0 ? format_number($line->credit) : '' }}
                                     </td>
-                                    <td class="text-ink-soft">
+                                    <td>
                                         {{ $line->memo ?? '' }}
                                     </td>
-                                    <td class="text-ink-soft">
+                                    <td>
                                         {{ $line->branch->name ?? $journalEntry->branch->name ?? '—' }}
                                     </td>
                                 </tr>
@@ -197,7 +200,7 @@
                 <div class="card p-6">
                     <p class="text-base font-semibold text-ink mb-5">{{ __('Audit Trail') }}</p>
                     <div class="overflow-x-auto">
-                        <table class="datasheet">
+                        <table class="record-datasheet">
                             <thead>
                                 <tr>
                                     <th>{{ __('Date') }}</th>
@@ -209,16 +212,16 @@
                             <tbody>
                                 @foreach($journalEntry->auditLogs->sortByDesc('created_at') as $log)
                                     <tr>
-                                        <td class="text-ink-soft">
+                                        <td>
                                             {{ $log->created_at->format('M d, Y h:i A') }}
                                         </td>
                                         <td>
                                             <span class="capitalize">{{ str_replace('_', ' ', $log->action) }}</span>
                                         </td>
-                                        <td class="text-ink-soft">
+                                        <td>
                                             {{ $log->user->name ?? '—' }}
                                         </td>
-                                        <td class="text-ink-soft">
+                                        <td>
                                             @if($log->old_values)
                                                 <span class="text-red-600">{{ __('Old') }}:</span> {{ json_encode($log->old_values) }}
                                             @endif
@@ -233,6 +236,16 @@
                     </div>
                 </div>
             @endif
+                </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.journal-entries.index'), 'icon' => 'back', 'title' => __('Back to Journal Entries')],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 

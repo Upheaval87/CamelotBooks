@@ -28,127 +28,143 @@
                 </div>
             @endif
 
-            {{-- Personal Information --}}
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Personal Information') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Employee Number') }}" strong>{{ $employee->employee_number }}</x-detail-field>
-                    <x-detail-field label="{{ __('Full Name') }}" strong>{{ $employee->full_name }}</x-detail-field>
-                    <x-detail-field label="{{ __('Email') }}">{{ $employee->email ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Phone') }}">{{ $employee->phone ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Date of Birth') }}">{{ $employee->date_of_birth?->format('M d, Y') ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Gender') }}">{{ $employee->gender ? ucfirst($employee->gender) : '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Address') }}">{{ $employee->address ?? '—' }}</x-detail-field>
-                </div>
-            </div>
+            <div class="detail-page">
+                <div class="detail-page-main">
 
-            {{-- Employment Information --}}
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Employment Information') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Position') }}">{{ $employee->position ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Department') }}">{{ $employee->department ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Hire Date') }}">{{ $employee->hire_date?->format('M d, Y') ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Branch') }}">{{ $employee->branch->name ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Cost Center') }}">{{ $employee->costCenter->name ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Status') }}">
-                        @if($employee->is_active)
-                            <span class="status-pill positive">{{ __('Active') }}</span>
-                        @else
-                            <span class="status-pill neutral">{{ __('Inactive') }}</span>
-                        @endif
-                    </x-detail-field>
-                </div>
-            </div>
-
-            {{-- Tax & Pension --}}
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Tax & Pension') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Tax ID') }}">{{ $employee->tax_id ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('National ID') }}">{{ $employee->national_id ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Pension Member Number') }}">{{ $employee->pension_member_number ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Pension Scheme ID') }}">{{ $employee->pension_scheme_id ?? '—' }}</x-detail-field>
-                </div>
-            </div>
-
-            {{-- Bank Details --}}
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Bank Details') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Bank Name') }}">{{ $employee->bank_name ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Bank Account Number') }}">{{ $employee->bank_account_number ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Bank Account Name') }}">{{ $employee->bank_account_name ?? '—' }}</x-detail-field>
-                    <x-detail-field label="{{ __('Bank Branch Code') }}">{{ $employee->bank_branch_code ?? '—' }}</x-detail-field>
-                </div>
-            </div>
-
-            {{-- Salary Structure --}}
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Salary Structure') }}</p>
-                @if($employee->currentSalaryStructure)
-                    <div class="detail-grid">
-                        <x-detail-field label="{{ __('Basic Pay') }}" strong>{{ format_money($employee->currentSalaryStructure->basic_pay) }}</x-detail-field>
-                        <x-detail-field label="{{ __('Effective From') }}">{{ $employee->currentSalaryStructure->effective_from?->format('M d, Y') ?? '—' }}</x-detail-field>
+                    {{-- Personal Information --}}
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Personal Information') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Employee Number') }}" strong>{{ $employee->employee_number }}</x-detail-field>
+                            <x-detail-field label="{{ __('Full Name') }}" strong>{{ $employee->full_name }}</x-detail-field>
+                            <x-detail-field label="{{ __('Email') }}">{{ $employee->email ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Phone') }}">{{ $employee->phone ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Date of Birth') }}">{{ $employee->date_of_birth?->format('M d, Y') ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Gender') }}">{{ $employee->gender ? ucfirst($employee->gender) : '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Address') }}">{{ $employee->address ?? '—' }}</x-detail-field>
+                        </div>
                     </div>
-                @else
-                    <p class="text-sm text-ink-soft">{{ __('No salary structure defined.') }}</p>
-                @endif
-            </div>
 
-            {{-- Payslip Password Status --}}
-            <div class="card p-6">
-                <div class="detail-grid">
-                    <x-detail-field label="{{ __('Payslip Password') }}">
-                        @if($employee->payslip_password)
-                            <span class="status-pill positive">{{ __('Set') }}</span>
+                    {{-- Employment Information --}}
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Employment Information') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Position') }}">{{ $employee->position ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Department') }}">{{ $employee->department ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Hire Date') }}">{{ $employee->hire_date?->format('M d, Y') ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Branch') }}">{{ $employee->branch->name ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Cost Center') }}">{{ $employee->costCenter->name ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Status') }}" noBorder>
+                                @if($employee->is_active)
+                                    <span class="status-pill positive">{{ __('Active') }}</span>
+                                @else
+                                    <span class="status-pill neutral">{{ __('Inactive') }}</span>
+                                @endif
+                            </x-detail-field>
+                        </div>
+                    </div>
+
+                    {{-- Tax & Pension --}}
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Tax & Pension') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Tax ID') }}">{{ $employee->tax_id ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('National ID') }}">{{ $employee->national_id ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Pension Member Number') }}">{{ $employee->pension_member_number ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Pension Scheme ID') }}">{{ $employee->pension_scheme_id ?? '—' }}</x-detail-field>
+                        </div>
+                    </div>
+
+                    {{-- Bank Details --}}
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Bank Details') }}</p>
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Bank Name') }}">{{ $employee->bank_name ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Bank Account Number') }}">{{ $employee->bank_account_number ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Bank Account Name') }}">{{ $employee->bank_account_name ?? '—' }}</x-detail-field>
+                            <x-detail-field label="{{ __('Bank Branch Code') }}">{{ $employee->bank_branch_code ?? '—' }}</x-detail-field>
+                        </div>
+                    </div>
+
+                    {{-- Salary Structure --}}
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Salary Structure') }}</p>
+                        @if($employee->currentSalaryStructure)
+                            <div class="detail-grid">
+                                <x-detail-field label="{{ __('Basic Pay') }}" strong>{{ format_money($employee->currentSalaryStructure->basic_pay) }}</x-detail-field>
+                                <x-detail-field label="{{ __('Effective From') }}">{{ $employee->currentSalaryStructure->effective_from?->format('M d, Y') ?? '—' }}</x-detail-field>
+                            </div>
                         @else
-                            <span class="status-pill neutral">{{ __('Not Set') }}</span>
+                            <p class="text-sm text-ink-soft">{{ __('No salary structure defined.') }}</p>
                         @endif
-                    </x-detail-field>
+                    </div>
+
+                    {{-- Payslip Password Status --}}
+                    <div class="card p-6">
+                        <div class="detail-grid">
+                            <x-detail-field label="{{ __('Payslip Password') }}" noBorder>
+                                @if($employee->payslip_password)
+                                    <span class="status-pill positive">{{ __('Set') }}</span>
+                                @else
+                                    <span class="status-pill neutral">{{ __('Not Set') }}</span>
+                                @endif
+                            </x-detail-field>
+                        </div>
+                    </div>
+
+                    {{-- Payment History --}}
+                    <div class="card p-6">
+                        <p class="text-base font-semibold text-ink mb-5">{{ __('Payment History') }}</p>
+                        <div class="overflow-x-auto">
+                            <table class="record-datasheet">
+                                <thead>
+                                    <tr>
+                                        <th>Payment Number</th>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($employee->payments as $payment)
+                                        <tr>
+                                            <td>
+                                                {{ $payment->payment_number }}
+                                            </td>
+                                            <td>
+                                                {{ $payment->payment_date?->format('M d, Y') ?? '—' }}
+                                            </td>
+                                            <td>
+                                                {{ $payment->payment_type ? ucfirst(str_replace('_', ' ', $payment->payment_type)) : '—' }}
+                                            </td>
+                                            <td class="numeric">
+                                                {{ format_money($payment->amount) }}
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center">
+                                                No payment history found.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => [
+                        ['route' => route('accounting.employees.show', $employee), 'icon' => 'payslip', 'title' => __('View')],
+                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
+                    ]],
+                    ['label' => __('Navigation'), 'links' => [
+                        ['route' => route('accounting.employees.index'), 'icon' => 'back', 'title' => __('Back to List')],
+                    ]],
+                ]" />
             </div>
 
-            {{-- Payment History --}}
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Payment History') }}</p>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Payment Number</th>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th class="text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($employee->payments as $payment)
-                                <tr>
-                                    <td>
-                                        {{ $payment->payment_number }}
-                                    </td>
-                                    <td class="text-ink-soft">
-                                        {{ $payment->payment_date?->format('M d, Y') ?? '—' }}
-                                    </td>
-                                    <td class="text-ink-soft">
-                                        {{ $payment->payment_type ? ucfirst(str_replace('_', ' ', $payment->payment_type)) : '—' }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ format_money($payment->amount) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-ink-soft">
-                                        No payment history found.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
     </div>
 </x-app-layout>
