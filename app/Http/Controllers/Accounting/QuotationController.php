@@ -203,7 +203,7 @@ class QuotationController extends Controller
         $quotation->load(['lines.product', 'customer']);
 
         $quotationMail = app(\App\Mail\QuotationMail::class, ['quotation' => $quotation]);
-        \Illuminate\Support\Facades\Mail::to($quotation->customer->email)->send($quotationMail);
+        \Illuminate\Support\Facades\Mail::to($quotation->customer->email)->queue($quotationMail);
 
         return redirect()->route('accounting.quotations.show', $quotation)
             ->with('success', "Quotation {$quotation->quotation_number} emailed to {$quotation->customer->email}.");

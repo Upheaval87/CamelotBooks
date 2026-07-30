@@ -14,6 +14,7 @@ class ItemCategoryController extends Controller
         $companyId = session('current_company_id');
 
         $categories = ItemCategory::where('company_id', $companyId)
+            ->with(['defaultIncomeAccount', 'defaultCogsAccount'])
             ->withCount('products')
             ->orderBy('name')
             ->paginate(20);

@@ -70,7 +70,7 @@ class SendExecutiveDigest extends Command
                 }
 
                 foreach ($recipients as $email) {
-                    Mail::to($email)->send(new ExecutiveDigestMail($digest, $companyName));
+                    Mail::to($email)->queue(new ExecutiveDigestMail($digest, $companyName));
                 }
 
                 $schedule->update(['last_sent_at' => now()]);

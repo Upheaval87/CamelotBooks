@@ -117,7 +117,7 @@ class SalesReceiptController extends Controller
         }
 
         $receiptMail = app(\App\Mail\SalesReceiptMail::class, ['receipt' => $salesReceipt]);
-        \Illuminate\Support\Facades\Mail::to($salesReceipt->customer->email)->send($receiptMail);
+        \Illuminate\Support\Facades\Mail::to($salesReceipt->customer->email)->queue($receiptMail);
 
         return redirect()->route('accounting.sales-receipts.show', $salesReceipt)
             ->with('success', "Sales Receipt {$salesReceipt->receipt_number} emailed to {$salesReceipt->customer->email}.");

@@ -72,7 +72,7 @@ class SendPayslips extends Command
                 $pdfContent = $payslipService->generatePayslipPdf($run, $item);
 
                 Mail::to($employee->email)
-                    ->send(new PayslipMail($run, $employee, $pdfContent));
+                    ->queue(new PayslipMail($run, $employee, $pdfContent));
 
                 $delivery->update([
                     'status' => PayslipDelivery::STATUS_SENT,

@@ -23,7 +23,7 @@ class CreditNoteController extends Controller
         $companyId = session('current_company_id');
 
         $query = CreditNote::where('company_id', $companyId)
-            ->with('customer');
+            ->with(['customer', 'invoice']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);

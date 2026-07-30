@@ -22,7 +22,7 @@ class VendorCreditController extends Controller
         $companyId = session('current_company_id');
 
         $query = VendorCredit::where('company_id', $companyId)
-            ->with('vendor');
+            ->with(['vendor', 'bill']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);

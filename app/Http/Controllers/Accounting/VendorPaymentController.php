@@ -37,6 +37,7 @@ class VendorPaymentController extends Controller
                 ->where('vendor_id', $vendorId)
                 ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID])
                 ->orderByDesc('bill_date')
+                ->limit(100)
                 ->get();
         }
 

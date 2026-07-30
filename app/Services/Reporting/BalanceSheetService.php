@@ -8,6 +8,7 @@ use App\Models\FiscalYear;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BalanceSheetService
 {
@@ -26,11 +27,41 @@ class BalanceSheetService
             ->orderBy('code')
             ->get();
 
+        // Single grouped query: 1 query instead of N*2
+        $lineQuery = JournalEntryLine::select('account_id',
+                DB::raw('COALESCE(SUM(debit), 0) as total_debit'),
+                DB::raw('COALESCE(SUM(credit), 0) as total_credit'))
+            ->whereHas('journalEntry', function ($q) use ($companyId, $asOfDate) {
+                $q->where('company_id', $companyId)
+                    ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
+                    ->where('date', '<=', $asOfDate);
+            });
+
+        if ($branchId) {
+            $lineQuery->where('branch_id', $branchId);
+        }
+
+        if ($costCenterId) {
+            $lineQuery->where('cost_center_id', $costCenterId);
+        }
+
+        $lineTotals = $lineQuery->groupBy('account_id')->get()->keyBy('account_id');
+
         $balances = [];
         $totals = ['asset' => 0, 'liability' => 0, 'equity' => 0];
 
         foreach ($accounts as $account) {
-            $balance = $this->computeBalanceAsOf($account, $companyId, $branchId, $asOfDate, $costCenterId);
+            $totalsData = $lineTotals->get($account->id);
+            $totalDebit = $totalsData ? (float) $totalsData->total_debit : 0;
+            $totalCredit = $totalsData ? (float) $totalsData->total_credit : 0;
+
+            $balance = (float) $account->opening_balance;
+
+            if ($account->isDebitNormal()) {
+                $balance += $totalDebit - $totalCredit;
+            } else {
+                $balance += $totalCredit - $totalDebit;
+            }
 
             if (abs($balance) < 0.001) {
                 continue;
@@ -59,37 +90,6 @@ class BalanceSheetService
             'as_of_date' => $asOfDate,
             'balanced' => abs($totals['asset'] - $totalLiabilitiesEquity) < 0.01,
         ];
-    }
-
-    private function computeBalanceAsOf(Account $account, int $companyId, ?int $branchId, string $asOfDate, ?int $costCenterId = null): float
-    {
-        $lineQuery = JournalEntryLine::where('account_id', $account->id)
-            ->whereHas('journalEntry', function ($q) use ($companyId, $asOfDate) {
-                $q->where('company_id', $companyId)
-                    ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
-                    ->where('date', '<=', $asOfDate);
-            });
-
-        if ($branchId) {
-            $lineQuery->where('branch_id', $branchId);
-        }
-
-        if ($costCenterId) {
-            $lineQuery->where('cost_center_id', $costCenterId);
-        }
-
-        $totalDebit = (float) $lineQuery->sum('debit');
-        $totalCredit = (float) $lineQuery->sum('credit');
-
-        $balance = (float) $account->opening_balance;
-
-        if ($account->isDebitNormal()) {
-            $balance += $totalDebit - $totalCredit;
-        } else {
-            $balance += $totalCredit - $totalDebit;
-        }
-
-        return $balance;
     }
 
     private function computeCurrentYearEarnings(int $companyId, ?int $branchId, string $asOfDate, ?int $costCenterId = null): float

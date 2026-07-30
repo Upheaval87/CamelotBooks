@@ -80,6 +80,24 @@ class InventoryValuationController extends Controller
             ->orderBy('name')
             ->get();
 
+        $uncategorizedProducts = Product::where('company_id', $companyId)
+            ->inventoryTracked()
+            ->whereNull('category_id')
+            ->get();
+
+        // Single query for all cost layers instead of N per product
+        $allProductIds = collect();
+        foreach ($categories as $category) {
+            $allProductIds = $allProductIds->merge($category->products->pluck('id'));
+        }
+        $allProductIds = $allProductIds->merge($uncategorizedProducts->pluck('id'))->unique();
+
+        $layersByProduct = InventoryCostLayer::where('company_id', $companyId)
+            ->whereIn('product_id', $allProductIds)
+            ->available()
+            ->get()
+            ->groupBy('product_id');
+
         $categoryData = [];
         $grandTotal = 0;
 
@@ -89,11 +107,7 @@ class InventoryValuationController extends Controller
             $products = [];
 
             foreach ($category->products as $product) {
-                $layers = InventoryCostLayer::where('company_id', $companyId)
-                    ->where('product_id', $product->id)
-                    ->available()
-                    ->get();
-
+                $layers = $layersByProduct->get($product->id, collect());
                 $qty = (float) $layers->sum('quantity_remaining');
                 $value = (float) $layers->sum(fn($l) => $l->quantity_remaining * $l->unit_cost);
 
@@ -122,18 +136,9 @@ class InventoryValuationController extends Controller
             $grandTotal += $totalValue;
         }
 
-        $uncategorizedProducts = Product::where('company_id', $companyId)
-            ->inventoryTracked()
-            ->whereNull('category_id')
-            ->get();
-
         $uncategorizedData = [];
         foreach ($uncategorizedProducts as $product) {
-            $layers = InventoryCostLayer::where('company_id', $companyId)
-                ->where('product_id', $product->id)
-                ->available()
-                ->get();
-
+            $layers = $layersByProduct->get($product->id, collect());
             $qty = (float) $layers->sum('quantity_remaining');
             $value = (float) $layers->sum(fn($l) => $l->quantity_remaining * $l->unit_cost);
 

@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\View;
 
@@ -20,28 +21,34 @@ class TrialBalanceController extends Controller
             ->orderBy('code')
             ->get();
 
+        // Single grouped query: 1 query instead of N*2
+        $lineQuery = JournalEntryLine::select('account_id',
+                DB::raw('COALESCE(SUM(debit), 0) as total_debit'),
+                DB::raw('COALESCE(SUM(credit), 0) as total_credit'))
+            ->whereHas('journalEntry', function ($q) use ($companyId, $asOfDate) {
+                $q->where('company_id', $companyId)
+                    ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
+                    ->where('date', '<=', $asOfDate);
+            });
+
+        if ($branchId) {
+            $lineQuery->where('branch_id', $branchId);
+        }
+
+        if ($costCenterId) {
+            $lineQuery->where('cost_center_id', $costCenterId);
+        }
+
+        $lineTotals = $lineQuery->groupBy('account_id')->get()->keyBy('account_id');
+
         $trialBalance = [];
         $totalDebit = 0;
         $totalCredit = 0;
 
         foreach ($accounts as $account) {
-            $lineQuery = JournalEntryLine::where('account_id', $account->id)
-                ->whereHas('journalEntry', function ($q) use ($companyId, $asOfDate) {
-                    $q->where('company_id', $companyId)
-                        ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
-                        ->where('date', '<=', $asOfDate);
-                });
-
-            if ($branchId) {
-                $lineQuery->where('branch_id', $branchId);
-            }
-
-            if ($costCenterId) {
-                $lineQuery->where('cost_center_id', $costCenterId);
-            }
-
-            $totalDebitSum = (float) $lineQuery->sum('debit');
-            $totalCreditSum = (float) $lineQuery->sum('credit');
+            $totals = $lineTotals->get($account->id);
+            $totalDebitSum = $totals ? (float) $totals->total_debit : 0;
+            $totalCreditSum = $totals ? (float) $totals->total_credit : 0;
 
             $balance = (float) $account->opening_balance;
 

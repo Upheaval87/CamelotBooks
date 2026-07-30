@@ -36,6 +36,7 @@ class CustomerPaymentController extends Controller
                 ->where('customer_id', $customerId)
                 ->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_PARTIALLY_PAID])
                 ->orderByDesc('invoice_date')
+                ->limit(100)
                 ->get();
         }
 
