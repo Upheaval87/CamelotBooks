@@ -346,7 +346,7 @@
         @apply bg-panel;
     }
     .datasheet th {
-        @apply px-5 py-3 text-left text-[10px] font-semibold text-ink-faint uppercase tracking-wider border-b border-line;
+        @apply px-5 py-3 text-left text-[10px] font-semibold text-ink uppercase tracking-wider border-b border-line;
     }
     .datasheet th.numeric,
     .datasheet td.numeric {
@@ -1284,7 +1284,7 @@ textarea.settings-field-input {
     text-align: left;
     font-weight: 600;
     font-size: 0.6875rem;
-    color: rgba(91,101,114,1);
+    color: rgba(28,37,48,1);
     text-transform: uppercase;
     letter-spacing: 0.03em;
     white-space: nowrap;

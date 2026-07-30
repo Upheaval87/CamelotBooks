@@ -37,60 +37,69 @@
                         </span>
                     </div>
 
-                    {{-- Module Permissions --}}
-                    <h3 class="text-lg font-semibold text-ink mb-3">{{ __('Module Permissions') }}</h3>
-
-                    @foreach($modules as $moduleKey => $actions)
-                        @php
-                            $moduleLabel = ucfirst(str_replace(['-', '_'], ' ', $moduleKey));
-                        @endphp
-                        <div class="mb-4 border border-gray-200 rounded-md overflow-hidden">
-                            <div class="bg-gray-50 px-4 py-2 font-medium text-sm text-ink border-b border-gray-200">
-                                {{ $moduleLabel }}
-                            </div>
-                            <div class="px-4 py-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                                @foreach($actions as $action)
-                                    @php
-                                        $permissionName = "{$moduleKey}.{$action}";
-                                        $permission = $allPermissions->get($permissionName);
-                                        $isChecked = $permission && in_array($permission->id, $hasPermissions);
-                                    @endphp
-                                    @if($permission)
-                                    <label class="flex items-center gap-2 text-sm cursor-pointer hover:text-gold">
-                                        <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                                               {{ $isChecked ? 'checked' : '' }}
-                                               class="rounded border-gray-300 text-gold focus:ring-gold">
-                                        <span>{{ $action }}</span>
-                                    </label>
-                                    @endif
-                                @endforeach
-                            </div>
+                    <div x-data="{ tab: 'modules' }">
+                        <div class="flex gap-0 mb-6 border-b border-line">
+                            <button @click="tab = 'modules'" :class="tab === 'modules' ? 'border-gold text-ink' : 'border-transparent text-ink-faint hover:text-ink'" class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors">
+                                {{ __('Module Permissions') }}
+                            </button>
+                            <button @click="tab = 'reports'" :class="tab === 'reports' ? 'border-gold text-ink' : 'border-transparent text-ink-faint hover:text-ink'" class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors">
+                                {{ __('Report Permissions') }}
+                            </button>
                         </div>
-                    @endforeach
 
-                    {{-- Report Permissions --}}
-                    <h3 class="text-lg font-semibold text-ink mb-3 mt-8">{{ __('Report Permissions') }}</h3>
-
-                    <div class="border border-gray-200 rounded-md overflow-hidden">
-                        <div class="bg-gray-50 px-4 py-2 font-medium text-sm text-ink border-b border-gray-200">
-                            {{ __('Reports') }}
-                        </div>
-                        <div class="px-4 py-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                            @foreach($reportPermissions as $reportKey => $reportLabel)
+                        <div x-show="tab === 'modules'">
+                            @foreach($modules as $moduleKey => $actions)
                                 @php
-                                    $permissionName = "reports.{$reportKey}.view";
-                                    $permission = $allPermissions->get($permissionName);
-                                    $isChecked = $permission && in_array($permission->id, $hasPermissions);
+                                    $moduleLabel = ucfirst(str_replace(['-', '_'], ' ', $moduleKey));
                                 @endphp
-                                @if($permission)
-                                <label class="flex items-center gap-2 text-sm cursor-pointer hover:text-gold">
-                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                                           {{ $isChecked ? 'checked' : '' }}
-                                           class="rounded border-gray-300 text-gold focus:ring-gold">
-                                    <span>{{ $reportLabel }}</span>
-                                </label>
-                                @endif
+                                <div class="mb-4 border border-gray-200 rounded-md overflow-hidden">
+                                    <div class="bg-gray-50 px-4 py-2 font-medium text-sm text-ink border-b border-gray-200">
+                                        {{ $moduleLabel }}
+                                    </div>
+                                    <div class="px-4 py-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                                        @foreach($actions as $action)
+                                            @php
+                                                $permissionName = "{$moduleKey}.{$action}";
+                                                $permission = $allPermissions->get($permissionName);
+                                                $isChecked = $permission && in_array($permission->id, $hasPermissions);
+                                            @endphp
+                                            @if($permission)
+                                            <label class="flex items-center gap-2 text-sm cursor-pointer hover:text-gold">
+                                                <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
+                                                       {{ $isChecked ? 'checked' : '' }}
+                                                       class="rounded border-gray-300 text-gold focus:ring-gold">
+                                                <span>{{ $action }}</span>
+                                            </label>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
                             @endforeach
+                        </div>
+
+                        <div x-show="tab === 'reports'">
+                            <div class="border border-gray-200 rounded-md overflow-hidden">
+                                <div class="bg-gray-50 px-4 py-2 font-medium text-sm text-ink border-b border-gray-200">
+                                    {{ __('Reports') }}
+                                </div>
+                                <div class="px-4 py-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                    @foreach($reportPermissions as $reportKey => $reportLabel)
+                                        @php
+                                            $permissionName = "reports.{$reportKey}.view";
+                                            $permission = $allPermissions->get($permissionName);
+                                            $isChecked = $permission && in_array($permission->id, $hasPermissions);
+                                        @endphp
+                                        @if($permission)
+                                        <label class="flex items-center gap-2 text-sm cursor-pointer hover:text-gold">
+                                            <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
+                                                   {{ $isChecked ? 'checked' : '' }}
+                                                   class="rounded border-gray-300 text-gold focus:ring-gold">
+                                            <span>{{ $reportLabel }}</span>
+                                        </label>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
                     </div>
 
