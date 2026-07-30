@@ -253,6 +253,20 @@
     .dark .input:focus {
         border-bottom-color: theme('colors.gold.DEFAULT');
     }
+    textarea.input {
+        border-bottom: 1.5px solid #B4B2A9;
+        resize: vertical;
+        min-height: 2.5rem;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        background: transparent;
+    }
+    textarea.input:focus {
+        border-bottom-color: theme('colors.gold.DEFAULT');
+        border-bottom-width: 2px;
+        outline: none;
+        box-shadow: none;
+    }
     .input-error {
         border-bottom-color: theme('colors.brick.DEFAULT');
     }
@@ -284,6 +298,79 @@
     ═══════════════════════════════════════════ */
     .form-section-label {
         @apply text-[10px] font-semibold uppercase tracking-[0.12em] text-gold mb-4 pb-2 border-b border-line;
+    }
+    .section-head {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .section-head-num {
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(156,122,60,1);
+        letter-spacing: 0.02em;
+    }
+    .section-head-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(156,122,60,1);
+        letter-spacing: 0.06em;
+    }
+    .section-head-rule {
+        flex: 1;
+        height: 1px;
+        background: rgba(229,227,220,1);
+    }
+
+    /* ═══════════════════════════════════════════
+       FORM LAYOUT — two-column form + sidebar
+    ═══════════════════════════════════════════ */
+    .form-page {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+    }
+    .form-page-main {
+        flex: 1;
+        min-width: 0;
+    }
+    .form-page-sidebar {
+        width: 240px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 126px;
+    }
+
+    /* ═══════════════════════════════════════════
+       FORM SIDEBAR — quick actions
+    ═══════════════════════════════════════════ */
+    .form-sidebar-card {
+        @apply bg-white border border-line rounded shadow-card;
+    }
+    .form-sidebar-group-label {
+        @apply text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-faint;
+        padding: 16px 16px 8px;
+    }
+    .form-sidebar-link {
+        @apply flex items-center gap-2 px-4 py-1.5 text-sm cursor-pointer no-underline transition-colors duration-150;
+        color: rgba(91,101,114,1);
+    }
+    .form-sidebar-link:hover {
+        background: rgba(246,245,241,1);
+        color: rgba(28,37,48,1);
+    }
+    .form-sidebar-link svg {
+        @apply w-4 h-4 shrink-0;
+        color: rgba(140,147,160,1);
+    }
+    .form-sidebar-link:hover svg {
+        color: rgba(91,101,114,1);
+    }
+    .form-sidebar-divider {
+        height: 1px;
+        background: rgba(229,227,220,1);
+        margin: 4px 0;
     }
 
     /* ═══════════════════════════════════════════
@@ -1731,4 +1818,9 @@ textarea.settings-field-input {
     .report-table thead tr:first-child th {
         margin: 0; border-radius: 0 !important;
     }
+}
+
+@media (max-width: 900px) {
+    .form-page { flex-direction: column; }
+    .form-page-sidebar { width: 100%; position: static; }
 }

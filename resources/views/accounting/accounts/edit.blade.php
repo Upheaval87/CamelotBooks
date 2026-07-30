@@ -3,10 +3,14 @@
 
     <div class="py-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="card p-6">
+            <div class="form-page">
+                <div class="form-page-main">
+                    <div class="card p-6">
                 <form method="POST" action="{{ route('accounting.accounts.update', $account) }}">
                     @csrf
                     @method('PUT')
+
+                    <x-form.section number="01" :title="__('Account Details')" />
 
                     <div class="space-y-6">
                         <div>
@@ -59,7 +63,7 @@
 
                         <div>
                             <x-input-label for="description" value="{{ __('Description') }}" />
-                            <textarea id="description" name="description" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('description', $account->description) }}</textarea>
+                            <textarea id="description" name="description" rows="3" class="input mt-1">{{ old('description', $account->description) }}</textarea>
                             <x-input-error :messages="$errors->get('description')" class="mt-2" />
                         </div>
 
@@ -84,11 +88,22 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end mt-6 space-x-3">
+                    <div class="flex items-center justify-end mt-8 gap-3">
                         <x-button variant="ghost" href="{{ route('accounting.accounts.index') }}">{{ __('Cancel') }}</x-button>
                         <x-primary-button>{{ __('Update Account') }}</x-primary-button>
                     </div>
                 </form>
+            </div>
+                </div>
+
+                <x-form.quick-actions :title="__('Quick Actions')" :groups="[
+                    ['label' => __('Create'), 'links' => [
+                        ['title' => __('New Journal Entry'), 'route' => route('accounting.journal-entries.create'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z\"/></svg>'],
+                    ]],
+                    ['label' => __('View'), 'links' => [
+                        ['title' => __('Chart of Accounts'), 'route' => route('accounting.accounts.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.25 18.75a6 6 0 016-6m0 0a6 6 0 016 6M8.25 6.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM17.25 18.75a6 6 0 00-3-5.25m3 5.25a6 6 0 01-3-5.25m3 5.25h5.25m-5.25 0v-5.25M12 8.25a4.5 4.5 0 100-9 4.5 4.5 0 000 9z\"/></svg>'],
+                    ]],
+                ]" />
             </div>
         </div>
     </div>

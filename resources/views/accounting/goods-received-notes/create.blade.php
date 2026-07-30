@@ -14,11 +14,13 @@
                 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
             @endif
 
+            <div class="form-page">
+                <div class="form-page-main">
             <form method="POST" action="{{ route('accounting.goods-received-notes.store') }}" id="grn-form">
                 @csrf
 
                 <div class="card p-6 mb-6">
-                    <div class="form-section-label">1 · GRN DETAILS</div>
+                    <x-form.section number="01" :title="__('GRN Details')" />
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
@@ -63,7 +65,7 @@
 
                 <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <div class="form-section-label">2 · RECEIVED ITEMS</div>
+                        <x-form.section number="02" :title="__('Received Items')" />
                         <x-button variant="ghost" type="button" id="add-line">
                             {{ __('Add Line') }}
                         </button>
@@ -98,11 +100,22 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-3">
+                <div class="flex items-center justify-end mt-8 gap-3">
                     <x-button variant="ghost" href="{{ route('accounting.goods-received-notes.index') }}">{{ __('Cancel') }}</x-button>
                     <x-primary-button type="submit">{{ __('Create GRN') }}</x-primary-button>
                 </div>
             </form>
+                </div>
+                <x-form.quick-actions :title="__('Quick Actions')" :groups="[
+                    ['label' => __('Create'), 'links' => [
+                        ['title' => __('New Purchase Order'), 'route' => route('accounting.purchase-orders.create'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z\"/></svg>'],
+                        ['title' => __('New Bill'), 'route' => route('accounting.bills.create'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z\"/></svg>'],
+                    ]],
+                    ['label' => __('View'), 'links' => [
+                        ['title' => __('GRN List'), 'route' => route('accounting.goods-received-notes.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z\"/></svg>'],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 

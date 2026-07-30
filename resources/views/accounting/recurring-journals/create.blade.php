@@ -16,11 +16,13 @@
                 </div>
             @endif
 
+            <div class="form-page">
+                <div class="form-page-main">
             <form id="templateForm" method="POST" action="{{ route('accounting.recurring-journals.store') }}">
                 @csrf
 
                 <div class="card p-6 mb-6">
-                    <div class="form-section-label">1 · TEMPLATE DETAILS</div>
+                    <x-form.section number="01" :title="__('Template Details')" />
                     <div class="grid grid-cols-2 gap-6">
                         <div class="col-span-2">
                             <x-input-label for="name" value="{{ __('Template Name') }}" />
@@ -85,7 +87,7 @@
                         </div>
                         <div class="col-span-4">
                             <x-input-label for="memo" value="{{ __('Description') }}" />
-                            <textarea id="memo" name="memo" rows="2" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('memo') }}</textarea>
+                            <textarea id="memo" name="memo" rows="2" class="input mt-1">{{ old('memo') }}</textarea>
                             <x-input-error :messages="$errors->get('memo')" class="mt-2" />
                         </div>
                     </div>
@@ -93,7 +95,7 @@
 
                 <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <div class="form-section-label">2 · TEMPLATE LINES</div>
+                        <x-form.section number="02" :title="__('Template Lines')" />
                         <button type="button" id="addLineBtn" class="inline-flex items-center px-3 py-1 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             + {{ __('Add Line') }}
                         </button>
@@ -128,13 +130,20 @@
                     <x-input-error :messages="$errors->get('lines')" class="mt-2" />
                 </div>
 
-                <div class="flex items-center justify-end space-x-3">
+                <div class="flex items-center justify-end mt-8 gap-3">
                     <x-button variant="ghost" href="{{ route('accounting.recurring-journals.index') }}">{{ __('Cancel') }}</x-button>
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Create Template') }}
-                    </button>
+                    <x-primary-button type="submit">{{ __('Create Template') }}</x-primary-button>
                 </div>
             </form>
+                </div>
+
+                <x-form.quick-actions :title="__('Quick Actions')" :groups="[
+                    ['label' => __('View'), 'links' => [
+                        ['title' => __('Chart of Accounts'), 'route' => route('accounting.accounts.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.25 18.75a6 6 0 016-6m0 0a6 6 0 016 6M8.25 6.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM17.25 18.75a6 6 0 00-3-5.25m3 5.25a6 6 0 01-3-5.25m3 5.25h5.25m-5.25 0v-5.25M12 8.25a4.5 4.5 0 100-9 4.5 4.5 0 000 9z\"/></svg>'],
+                        ['title' => __('Recurring Journals List'), 'route' => route('accounting.recurring-journals.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3.75 6h16.5M3.75 12h16.5m-16.5 6h16.5\"/></svg>'],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 

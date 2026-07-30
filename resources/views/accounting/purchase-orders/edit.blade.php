@@ -3,91 +3,89 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-4">
-                <x-button variant="ghost" href="{{ route('accounting.purchase-orders.show', $order) }}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    {{ __('Back') }}
-                </x-button>
+            <div class="form-page">
+                <div class="form-page-main">
+                    <form method="POST" action="{{ route('accounting.purchase-orders.update', $order) }}">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="card p-6 mb-6">
+                            <x-form.section number="01" :title="__('Order Details')" />
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
+                                    <select id="vendor_id" name="vendor_id" class="input mt-1" required>
+                                        <option value="">Select Vendor</option>
+                                        @foreach($vendors as $vendor)
+                                            <option value="{{ $vendor->id }}" {{ old('vendor_id', $order->vendor_id) == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <x-input-label for="date" value="{{ __('Date') }}" />
+                                    <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', $order->date?->format('Y-m-d'))" required />
+                                </div>
+                                <div>
+                                    <x-input-label for="expected_delivery_date" value="{{ __('Expected Delivery') }}" />
+                                    <x-text-input id="expected_delivery_date" name="expected_delivery_date" type="date" class="mt-1 block w-full" :value="old('expected_delivery_date', $order->expected_delivery_date?->format('Y-m-d'))" />
+                                </div>
+                                <div>
+                                    <x-input-label for="branch_id" value="{{ __('Branch') }}" />
+                                    <select id="branch_id" name="branch_id" class="input mt-1">
+                                        <option value="">None</option>
+                                        @foreach($branches as $branch)
+                                            <option value="{{ $branch->id }}" {{ old('branch_id', $order->branch_id) == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" />
+                                    <select id="cost_center_id" name="cost_center_id" class="input mt-1">
+                                        <option value="">None</option>
+                                        @foreach($costCenters as $cc)
+                                            <option value="{{ $cc->id }}" {{ old('cost_center_id', $order->cost_center_id) == $cc->id ? 'selected' : '' }}>{{ $cc->code }} - {{ $cc->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-span-4">
+                                    <x-input-label for="memo" value="{{ __('Description') }}" />
+                                    <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $order->memo)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <x-form.section number="02" :title="__('Line Items')" />
+                                <x-button variant="ghost" type="button" id="add-line">
+                                    {{ __('Add Line') }}
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200" id="lines-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Description</th>
+                                            <th class="text-right">Qty</th>
+                                            <th class="text-right">Unit Price ({{ $cs }})</th>
+                                            <th>Expense Account</th>
+                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"                        >Amount ({{ $cs }})</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200" id="lines-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mt-8 gap-3">
+                            <x-button variant="ghost" href="{{ route('accounting.purchase-orders.show', $order) }}">{{ __('Cancel') }}</x-button>
+                            <x-primary-button type="submit">{{ __('Update Purchase Order') }}</x-primary-button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <form method="POST" action="{{ route('accounting.purchase-orders.update', $order) }}">
-                @csrf
-                @method('PUT')
-
-                <div class="card p-6 mb-6">
-                    <div class="form-section-label">1 · ORDER DETAILS</div>
-                    <div class="grid grid-cols-2 gap-6">
-                        <div>
-                            <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
-                            <select id="vendor_id" name="vendor_id" class="input mt-1" required>
-                                <option value="">Select Vendor</option>
-                                @foreach($vendors as $vendor)
-                                    <option value="{{ $vendor->id }}" {{ old('vendor_id', $order->vendor_id) == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <x-input-label for="date" value="{{ __('Date') }}" />
-                            <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', $order->date?->format('Y-m-d'))" required />
-                        </div>
-                        <div>
-                            <x-input-label for="expected_delivery_date" value="{{ __('Expected Delivery') }}" />
-                            <x-text-input id="expected_delivery_date" name="expected_delivery_date" type="date" class="mt-1 block w-full" :value="old('expected_delivery_date', $order->expected_delivery_date?->format('Y-m-d'))" />
-                        </div>
-                        <div>
-                            <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <select id="branch_id" name="branch_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id', $order->branch_id) == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" />
-                            <select id="cost_center_id" name="cost_center_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($costCenters as $cc)
-                                    <option value="{{ $cc->id }}" {{ old('cost_center_id', $order->cost_center_id) == $cc->id ? 'selected' : '' }}>{{ $cc->code }} - {{ $cc->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-span-4">
-                            <x-input-label for="memo" value="{{ __('Description') }}" />
-                            <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $order->memo)" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="form-section-label">2 · LINE ITEMS</div>
-                        <x-button variant="ghost" type="button" id="add-line">
-                            {{ __('Add Line') }}
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200" id="lines-table">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Description</th>
-                                    <th class="text-right">Qty</th>
-                                    <th class="text-right">Unit Price ({{ $cs }})</th>
-                                    <th>Expense Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"                        >Amount ({{ $cs }})</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200" id="lines-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <x-button variant="ghost" href="{{ route('accounting.purchase-orders.show', $order) }}">{{ __('Cancel') }}</x-button>
-                    <x-primary-button type="submit">{{ __('Update Purchase Order') }}</x-primary-button>
-                </div>
-            </form>
         </div>
     </div>
 

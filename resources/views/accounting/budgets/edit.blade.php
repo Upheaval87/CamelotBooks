@@ -15,12 +15,14 @@
                 </div>
             @endif
 
+            <div class="form-page">
+                <div class="form-page-main">
             <form method="POST" action="{{ route('accounting.budgets.update', $budget) }}" id="budget-form">
                 @csrf
                 @method('PUT')
 
                 <div class="card p-6 mb-6">
-                    <div class="form-section-label">1 · BUDGET DETAILS</div>
+                    <x-form.section number="01" :title="__('Budget Details')" />
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="fiscal_year_id" value="{{ __('Fiscal Year') }}" />
@@ -39,7 +41,7 @@
                         </div>
                         <div class="col-span-2">
                             <x-input-label for="description" value="{{ __('Description') }}" />
-                            <textarea id="description" name="description" rows="2" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('description', $budget->description) }}</textarea>
+                            <textarea id="description" name="description" rows="2" class="input mt-1">{{ old('description', $budget->description) }}</textarea>
                             <x-input-error :messages="$errors->get('description')" class="mt-2" />
                         </div>
                     </div>
@@ -47,7 +49,7 @@
 
                 <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
-                        <div class="form-section-label">2 · BUDGET LINES</div>
+                        <x-form.section number="02" :title="__('Budget Lines')" />
                         <button type="button" id="add-line" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Add Line') }}
                         </button>
@@ -77,6 +79,14 @@
                     <x-primary-button type="submit">{{ __('Update Budget') }}</x-primary-button>
                 </div>
             </form>
+                </div>
+
+                <x-form.quick-actions :title="__('Quick Actions')" :groups="[
+                    ['label' => __('View'), 'links' => [
+                        ['title' => __('Budget List'), 'route' => route('accounting.budgets.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3.75 6h16.5M3.75 12h16.5m-16.5 6h16.5\"/></svg>'],
+                    ]],
+                ]" />
+            </div>
         </div>
     </div>
 

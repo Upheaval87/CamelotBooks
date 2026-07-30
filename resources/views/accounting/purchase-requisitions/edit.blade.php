@@ -4,101 +4,99 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-4">
-                <x-button variant="ghost" href="{{ route('accounting.purchase-requisitions.show', $requisition) }}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    {{ __('Back') }}
-                </x-button>
+            <div class="form-page">
+                <div class="form-page-main">
+                    <form method="POST" action="{{ route('accounting.purchase-requisitions.update', $requisition) }}">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="card p-6 mb-6">
+                            <x-form.section number="01" :title="__('Requisition Details')" />
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <x-input-label for="date" value="{{ __('Date') }}" />
+                                    <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', $requisition->date?->format('Y-m-d'))" required />
+                                </div>
+                                <div>
+                                    <x-input-label for="branch_id" value="{{ __('Branch') }}" />
+                                    <select id="branch_id" name="branch_id" class="input mt-1">
+                                        <option value="">None</option>
+                                        @foreach($branches as $branch)
+                                            <option value="{{ $branch->id }}" {{ old('branch_id', $requisition->branch_id) == $branch->id ? 'selected' : '' }}>
+                                                {{ $branch->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" />
+                                    <select id="cost_center_id" name="cost_center_id" class="input mt-1">
+                                        <option value="">None</option>
+                                        @foreach($costCenters as $cc)
+                                            <option value="{{ $cc->id }}" {{ old('cost_center_id', $requisition->cost_center_id) == $cc->id ? 'selected' : '' }}>
+                                                {{ $cc->code }} - {{ $cc->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-span-4">
+                                    <x-input-label for="memo" value="{{ __('Description') }}" />
+                                    <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $requisition->memo)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <x-form.section number="02" :title="__('Line Items')" />
+                                <x-button variant="ghost" type="button" id="add-line">
+                                    {{ __('Add Line') }}
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200" id="lines-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Description</th>
+                                            <th class="text-right">Qty</th>
+                                            <th class="text-right">Est. Unit Cost ({{ $cs }})</th>
+                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"                        >Est. Total ({{ $cs }})</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200" id="lines-body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card p-6 mb-6">
+                            <div class="flex justify-end">
+                                <div class="w-64 space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Subtotal:</span>
+                                        <span id="subtotal" class="text-gray-900">0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Tax:</span>
+                                        <span id="total-tax" class="text-gray-900">0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm font-semibold border-t pt-2">
+                                        <span class="text-gray-800">Total:</span>
+                                        <span id="grand-total" class="text-gray-900">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mt-8 gap-3">
+                            <x-button variant="ghost" href="{{ route('accounting.purchase-requisitions.show', $requisition) }}">{{ __('Cancel') }}</x-button>
+                            <x-primary-button type="submit">{{ __('Update Requisition') }}</x-primary-button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <form method="POST" action="{{ route('accounting.purchase-requisitions.update', $requisition) }}">
-                @csrf
-                @method('PUT')
-
-                <div class="card p-6 mb-6">
-                    <div class="form-section-label">1 · REQUISITION DETAILS</div>
-                    <div class="grid grid-cols-2 gap-6">
-                        <div>
-                            <x-input-label for="date" value="{{ __('Date') }}" />
-                            <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', $requisition->date?->format('Y-m-d'))" required />
-                        </div>
-                        <div>
-                            <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <select id="branch_id" name="branch_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id', $requisition->branch_id) == $branch->id ? 'selected' : '' }}>
-                                        {{ $branch->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" />
-                            <select id="cost_center_id" name="cost_center_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($costCenters as $cc)
-                                    <option value="{{ $cc->id }}" {{ old('cost_center_id', $requisition->cost_center_id) == $cc->id ? 'selected' : '' }}>
-                                        {{ $cc->code }} - {{ $cc->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-span-4">
-                            <x-input-label for="memo" value="{{ __('Description') }}" />
-                            <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $requisition->memo)" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="form-section-label">2 · LINE ITEMS</div>
-                        <x-button variant="ghost" type="button" id="add-line">
-                            {{ __('Add Line') }}
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200" id="lines-table">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Description</th>
-                                    <th class="text-right">Qty</th>
-                                    <th class="text-right">Est. Unit Cost ({{ $cs }})</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"                        >Est. Total ({{ $cs }})</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200" id="lines-body">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="card p-6 mb-6">
-                    <div class="flex justify-end">
-                        <div class="w-64 space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Subtotal:</span>
-                                <span id="subtotal" class="text-gray-900">0.00</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Tax:</span>
-                                <span id="total-tax" class="text-gray-900">0.00</span>
-                            </div>
-                            <div class="flex justify-between text-sm font-semibold border-t pt-2">
-                                <span class="text-gray-800">Total:</span>
-                                <span id="grand-total" class="text-gray-900">0.00</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <x-button variant="ghost" href="{{ route('accounting.purchase-requisitions.show', $requisition) }}">{{ __('Cancel') }}</x-button>
-                    <x-primary-button type="submit">{{ __('Update Requisition') }}</x-primary-button>
-                </div>
-            </form>
         </div>
     </div>
 

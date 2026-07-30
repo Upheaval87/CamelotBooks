@@ -3,91 +3,102 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-4">
-                <x-button variant="ghost" href="{{ route('accounting.paye-tables.index') }}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    {{ __('Back') }}
-                </x-button>
-            </div>
-            @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    <ul class="list-disc list-inside">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <div class="card p-6">
-                <form method="POST" action="{{ route('accounting.paye-tables.store') }}">
-                    @csrf
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <x-input-label for="version_name" value="{{ __('Version Name') }}" />
-                            <x-text-input id="version_name" name="version_name" type="text" class="mt-1 block w-full" :value="old('version_name')" placeholder="e.g. 2026 PAYE Rates" required />
-                            <x-input-error :messages="$errors->get('version_name')" class="mt-2" />
+            <div class="form-page">
+                <div class="form-page-main">
+                    @if($errors->any())
+                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                            <ul class="list-disc list-inside">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
-                        <div>
-                            <x-input-label for="effective_from" value="{{ __('Effective From') }}" />
-                            <x-text-input id="effective_from" name="effective_from" type="date" class="mt-1 block w-full" :value="old('effective_from')" required />
-                            <x-input-error :messages="$errors->get('effective_from')" class="mt-2" />
-                        </div>
-                    </div>
+                    @endif
 
-                    <div class="mb-6">
-                        <div class="flex items-center justify-between mb-3">
-                            <x-input-label value="{{ __('Tax Bands') }}" />
-                            <button type="button" id="add-band" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Band</button>
-                        </div>
+                    <div class="card p-6">
+                        <form method="POST" action="{{ route('accounting.paye-tables.store') }}">
+                            @csrf
 
-                        <div id="bands-container">
-                            @php $oldBands = old('bands', [['threshold' => '0', 'upper_limit' => '', 'rate' => '']]); @endphp
-                            @foreach($oldBands as $index => $band)
-                                <div class="band-row grid grid-cols-12 gap-3 mb-3 items-end">
-                                    <div class="col-span-4">
-                                        @if($index === 0)
-                                            <label class="block text-xs font-medium text-gray-500 mb-1">Threshold (MWK)</label>
-                                        @endif
-                                        <input type="number" name="bands[{{ $index }}][threshold]" value="{{ $band['threshold'] ?? '' }}" step="0.01" min="0"
-                                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
-                                            placeholder="0.00" required>
-                                    </div>
-                                    <div class="col-span-4">
-                                        @if($index === 0)
-                                            <label class="block text-xs font-medium text-gray-500 mb-1">Upper Limit (MWK)</label>
-                                        @endif
-                                        <input type="number" name="bands[{{ $index }}][upper_limit]" value="{{ $band['upper_limit'] ?? '' }}" step="0.01" min="0"
-                                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
-                                            placeholder="No limit (last band)">
-                                    </div>
-                                    <div class="col-span-3">
-                                        @if($index === 0)
-                                            <label class="block text-xs font-medium text-gray-500 mb-1">Rate (%)</label>
-                                        @endif
-                                        <input type="number" name="bands[{{ $index }}][rate]" value="{{ $band['rate'] ?? '' }}" step="0.01" min="0" max="100"
-                                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
-                                            placeholder="0" required>
-                                    </div>
-                                    <div class="col-span-1 text-right">
-                                        @if($index === 0)
-                                            <label class="block text-xs text-gray-500 mb-1">&nbsp;</label>
-                                        @endif
-                                        <button type="button" class="remove-band text-red-500 hover:text-red-700 text-sm" title="Remove">&times;</button>
-                                    </div>
+                            <x-form.section number="01" :title="__('Tax Table Details')" />
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <x-input-label for="version_name" value="{{ __('Version Name') }}" />
+                                    <x-text-input id="version_name" name="version_name" type="text" class="mt-1 block w-full" :value="old('version_name')" placeholder="e.g. 2026 PAYE Rates" required />
+                                    <x-input-error :messages="$errors->get('version_name')" class="mt-2" />
                                 </div>
-                            @endforeach
-                        </div>
+                                <div>
+                                    <x-input-label for="effective_from" value="{{ __('Effective From') }}" />
+                                    <x-text-input id="effective_from" name="effective_from" type="date" class="mt-1 block w-full" :value="old('effective_from')" required />
+                                    <x-input-error :messages="$errors->get('effective_from')" class="mt-2" />
+                                </div>
+                            </div>
 
-                        <p class="mt-2 text-xs text-gray-500">The last band should have no upper limit (leave blank) to cover all income above the threshold.</p>
-                    </div>
+                            <x-form.section number="02" :title="__('Tax Bands')" />
 
-                    <div class="flex items-center justify-end gap-3">
-                        <x-button variant="ghost" href="{{ route('accounting.paye-tables.index') }}">{{ __('Cancel') }}</x-button>
-                        <x-primary-button type="submit">{{ __('Create Tax Table') }}</x-primary-button>
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-sm text-gray-500">Define the income brackets and applicable rates.</span>
+                                    <button type="button" id="add-band" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Band</button>
+                                </div>
+
+                                <div id="bands-container">
+                                    @php $oldBands = old('bands', [['threshold' => '0', 'upper_limit' => '', 'rate' => '']]); @endphp
+                                    @foreach($oldBands as $index => $band)
+                                        <div class="band-row grid grid-cols-12 gap-3 mb-3 items-end">
+                                            <div class="col-span-4">
+                                                @if($index === 0)
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Threshold (MWK)</label>
+                                                @endif
+                                                <input type="number" name="bands[{{ $index }}][threshold]" value="{{ $band['threshold'] ?? '' }}" step="0.01" min="0"
+                                                    class="input mt-1"
+                                                    placeholder="0.00" required>
+                                            </div>
+                                            <div class="col-span-4">
+                                                @if($index === 0)
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Upper Limit (MWK)</label>
+                                                @endif
+                                                <input type="number" name="bands[{{ $index }}][upper_limit]" value="{{ $band['upper_limit'] ?? '' }}" step="0.01" min="0"
+                                                    class="input mt-1"
+                                                    placeholder="No limit (last band)">
+                                            </div>
+                                            <div class="col-span-3">
+                                                @if($index === 0)
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">Rate (%)</label>
+                                                @endif
+                                                <input type="number" name="bands[{{ $index }}][rate]" value="{{ $band['rate'] ?? '' }}" step="0.01" min="0" max="100"
+                                                    class="input mt-1"
+                                                    placeholder="0" required>
+                                            </div>
+                                            <div class="col-span-1 text-right">
+                                                @if($index === 0)
+                                                    <label class="block text-xs text-gray-500 mb-1">&nbsp;</label>
+                                                @endif
+                                                <button type="button" class="remove-band text-red-500 hover:text-red-700 text-sm" title="Remove">&times;</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <p class="mt-2 text-xs text-gray-500">The last band should have no upper limit (leave blank) to cover all income above the threshold.</p>
+                            </div>
+
+                            <div class="flex items-center justify-end mt-8 gap-3">
+                                <x-button variant="ghost" href="{{ route('accounting.paye-tables.index') }}">{{ __('Cancel') }}</x-button>
+                                <x-primary-button type="submit">{{ __('Create Tax Table') }}</x-primary-button>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
+
+                <x-form.quick-actions :title="__('Quick Actions')" :groups="[
+                    ['label' => __('Create'), 'links' => [
+                        ['title' => __('New Employee'), 'route' => route('accounting.employees.create'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z\"/></svg>'],
+                    ]],
+                    ['label' => __('View'), 'links' => [
+                        ['title' => __('PAYE Tables List'), 'route' => route('accounting.paye-tables.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z\"/></svg>'],
+                    ]],
+                ]" />
             </div>
         </div>
     </div>

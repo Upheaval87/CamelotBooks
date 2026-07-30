@@ -3,107 +3,105 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-4">
-                <x-button variant="ghost" href="{{ route('accounting.expenses.show', $expense) }}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    {{ __('Back to Expense') }}
-                </x-button>
+            <div class="form-page">
+                <div class="form-page-main">
+                    <form method="POST" action="{{ route('accounting.expenses.update', $expense) }}" id="expense-form">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="card p-6 mb-6">
+                            <x-form.section number="01" :title="__('Expense Details')" />
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <x-input-label for="vendor_id" value="{{ __('Vendor (optional)') }}" />
+                                    <select id="vendor_id" name="vendor_id" class="input mt-1">
+                                        <option value="">No Vendor</option>
+                                        @foreach($vendors as $vendor)
+                                            <option value="{{ $vendor->id }}" {{ old('vendor_id', $expense->vendor_id) == $vendor->id ? 'selected' : '' }}>
+                                                {{ $vendor->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <x-input-label for="expense_date" value="{{ __('Expense Date') }}" />
+                                    <x-text-input id="expense_date" name="expense_date" type="date" class="mt-1 block w-full" :value="old('expense_date', $expense->expense_date?->format('Y-m-d'))" required />
+                                </div>
+                                <div>
+                                    <x-input-label for="bank_account_id" value="{{ __('Paid From Account') }}" />
+                                    <select id="bank_account_id" name="bank_account_id" class="input mt-1">
+                                        <option value="">Default Cash (1000)</option>
+                                        @foreach($bankAccounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('bank_account_id', $expense->bank_account_id) == $account->id ? 'selected' : '' }}>
+                                                {{ $account->code }} - {{ $account->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <x-input-label for="reference" value="{{ __('Reference') }}" />
+                                    <x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference', $expense->reference)" />
+                                </div>
+                                <div class="col-span-4">
+                                    <x-input-label for="memo" value="{{ __('Description') }}" />
+                                    <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $expense->memo)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <x-form.section number="02" :title="__('Line Items')" />
+                                <button type="button" id="add-line" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    {{ __('Add Line') }}
+                                </button>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200" id="lines-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Expense Account</th>
+                                            <th>Description</th>
+                                            <th class="text-right">Qty</th>
+                                            <th class="text-right">Unit Price ({{ $cs }})</th>
+                                            <th>Cost Center</th>
+                                            <th class="text-right">Line Total ({{ $cs }})</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200" id="lines-body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card p-6 mb-6">
+                            <div class="flex justify-end">
+                                <div class="w-64 space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Subtotal:</span>
+                                        <span id="subtotal" class="text-gray-900">0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Tax:</span>
+                                        <span id="total-tax" class="text-gray-900">0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm font-semibold border-t pt-2">
+                                        <span class="text-gray-800">Total:</span>
+                                        <span id="grand-total" class="text-gray-900">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mt-8 gap-3">
+                            <x-button variant="ghost" href="{{ route('accounting.expenses.show', $expense) }}">{{ __('Cancel') }}</x-button>
+                            <x-primary-button type="submit">{{ __('Update Expense') }}</x-primary-button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <form method="POST" action="{{ route('accounting.expenses.update', $expense) }}" id="expense-form">
-                @csrf
-                @method('PUT')
-
-                <div class="card p-6 mb-6">
-                    <div class="form-section-label">1 · EXPENSE DETAILS</div>
-                    <div class="grid grid-cols-2 gap-6">
-                        <div>
-                            <x-input-label for="vendor_id" value="{{ __('Vendor (optional)') }}" />
-                            <select id="vendor_id" name="vendor_id" class="input mt-1">
-                                <option value="">No Vendor</option>
-                                @foreach($vendors as $vendor)
-                                    <option value="{{ $vendor->id }}" {{ old('vendor_id', $expense->vendor_id) == $vendor->id ? 'selected' : '' }}>
-                                        {{ $vendor->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <x-input-label for="expense_date" value="{{ __('Expense Date') }}" />
-                            <x-text-input id="expense_date" name="expense_date" type="date" class="mt-1 block w-full" :value="old('expense_date', $expense->expense_date?->format('Y-m-d'))" required />
-                        </div>
-                        <div>
-                            <x-input-label for="bank_account_id" value="{{ __('Paid From Account') }}" />
-                            <select id="bank_account_id" name="bank_account_id" class="input mt-1">
-                                <option value="">Default Cash (1000)</option>
-                                @foreach($bankAccounts as $account)
-                                    <option value="{{ $account->id }}" {{ old('bank_account_id', $expense->bank_account_id) == $account->id ? 'selected' : '' }}>
-                                        {{ $account->code }} - {{ $account->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <x-input-label for="reference" value="{{ __('Reference') }}" />
-                            <x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference', $expense->reference)" />
-                        </div>
-                        <div class="col-span-4">
-                            <x-input-label for="memo" value="{{ __('Description') }}" />
-                            <x-text-input id="memo" name="memo" type="text" class="mt-1 block w-full" :value="old('memo', $expense->memo)" />
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="form-section-label">2 · LINE ITEMS</div>
-                        <button type="button" id="add-line" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Add Line') }}
-                        </button>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200" id="lines-table">
-                            <thead>
-                                <tr>
-                                    <th>Expense Account</th>
-                                    <th>Description</th>
-                                    <th class="text-right">Qty</th>
-                                    <th class="text-right">Unit Price ({{ $cs }})</th>
-                                    <th>Cost Center</th>
-                                    <th class="text-right">Line Total ({{ $cs }})</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200" id="lines-body">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="card p-6 mb-6">
-                    <div class="flex justify-end">
-                        <div class="w-64 space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Subtotal:</span>
-                                <span id="subtotal" class="text-gray-900">0.00</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Tax:</span>
-                                <span id="total-tax" class="text-gray-900">0.00</span>
-                            </div>
-                            <div class="flex justify-between text-sm font-semibold border-t pt-2">
-                                <span class="text-gray-800">Total:</span>
-                                <span id="grand-total" class="text-gray-900">0.00</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <x-button variant="ghost" href="{{ route('accounting.expenses.show', $expense) }}">{{ __('Cancel') }}</x-button>
-                    <x-primary-button type="submit">{{ __('Update Expense') }}</x-primary-button>
-                </div>
-            </form>
         </div>
     </div>
 
