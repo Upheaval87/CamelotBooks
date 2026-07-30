@@ -1,5 +1,9 @@
 <x-app-layout>
-    @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+        $companyId = session('current_company_id');
+        $featPurchasing = \App\Services\FeatureManagement::isEnabled($companyId, 'purchasing');
+    @endphp
     <x-slot name="header">{{ __('Vendor Centre') }} — {{ $vendor->name }}</x-slot>
 
     <div class="pb-12">
@@ -39,10 +43,12 @@
                     <p class="kpi-label">{{ __('Bill Count') }}</p>
                     <p class="kpi-value">{{ $stats['bill_count'] }}</p>
                 </div>
+                @if($featPurchasing)
                 <div class="kpi-card">
                     <p class="kpi-label">{{ __('PO Count') }}</p>
                     <p class="kpi-value">{{ $stats['po_count'] }}</p>
                 </div>
+                @endif
             </div>
 
             {{-- Vendor Info --}}
@@ -64,7 +70,9 @@
                     <a href="{{ route('accounting.vendor-payments.create') }}?vendor_id={{ $vendor->id }}" class="x-button x-button-ghost">{{ __('Record Payment') }}</a>
                     <a href="{{ route('accounting.vendor-credits.create') }}?vendor_id={{ $vendor->id }}" class="x-button x-button-ghost">{{ __('Vendor Credit') }}</a>
                     <a href="{{ route('accounting.expenses.create') }}?vendor_id={{ $vendor->id }}" class="x-button x-button-ghost">{{ __('Record Expense') }}</a>
+                    @if($featPurchasing)
                     <a href="{{ route('accounting.purchase-orders.create') }}?vendor_id={{ $vendor->id }}" class="x-button x-button-ghost">{{ __('Create PO') }}</a>
+                    @endif
                     <a href="{{ route('accounting.aging.ap-detail') }}?vendor_id={{ $vendor->id }}" class="x-button x-button-ghost">{{ __('A/P Aging Detail') }}</a>
                 </div>
             </div>

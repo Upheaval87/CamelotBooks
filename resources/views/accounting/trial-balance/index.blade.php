@@ -2,11 +2,6 @@
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">{{ __('Trial Balance') }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.trial-balance.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
-        <x-button variant="ghost" href="{{ route('accounting.trial-balance.export-pdf', request()->query()) }}" target="_blank">{{ __('Export PDF') }}</x-button>
-    </div>
-
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -33,67 +28,60 @@
                 </form>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Trial Balance as of {{ \Carbon\Carbon::parse($asOfDate)->format('M d, Y') }}</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Account Code</th>
-                                <th>Account Name</th>
-                                <th class="text-right">Dr ({{ $cs }})</th>
-                                <th class="text-right">Cr ({{ $cs }})</th>
+            <x-report.card>
+                <x-report.header
+                    :company="$currentCompany->name ?? config('app.name')"
+                    title="Trial Balance"
+                    :range="'As of ' . \Carbon\Carbon::parse($asOfDate)->format('M d, Y')"
+                />
+
+                <x-report.toolbar
+                    :csvRoute="route('accounting.trial-balance.export-csv', request()->query())"
+                    :pdfRoute="route('accounting.trial-balance.export-pdf', request()->query())"
+                />
+
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Account Code</th>
+                            <th>Account Name</th>
+                            <th class="report-col-amt">Dr ({{ $cs }})</th>
+                            <th class="report-col-amt">Cr ({{ $cs }})</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($trialBalance as $row)
+                            @php $zero = $row['debit_balance'] == 0 && $row['credit_balance'] == 0; @endphp
+                            <tr class="@if($zero) zero @endif">
+                                <td><a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-ink hover:text-gold underline"><span class="report-cell-code">{{ $row['account']->code }}</span></a></td>
+                                <td><a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-ink hover:text-gold underline">{{ $row['account']->name }}</a></td>
+                                <td class="report-cell-amt">{{ $row['debit_balance'] > 0 ? format_number($row['debit_balance']) : '' }}</td>
+                                <td class="report-cell-amt">{{ $row['credit_balance'] > 0 ? format_number($row['credit_balance']) : '' }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($trialBalance as $row)
-                                <tr class="hover:bg-gray-50">
-                                    <td>
-                                        <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-ink hover:text-gold underline">{{ $row['account']->code }}</a>
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('accounting.general-ledger.account', $row['account']->id) }}?date_to={{ $asOfDate }}{{ request('branch_id') ? '&branch_id='.request('branch_id') : '' }}" class="text-ink hover:text-gold underline">{{ $row['account']->name }}</a>
-                                    </td>
-                                    <td class="numeric">
-                                        {{ $row['debit_balance'] > 0 ? format_number($row['debit_balance']) : '' }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ $row['credit_balance'] > 0 ? format_number($row['credit_balance']) : '' }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-ink-soft">
-                                        No accounts with balances found.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot class="bg-gray-50">
+                        @empty
                             <tr>
-                                <td colspan="2" class="px-6 py-4 text-right text-sm font-bold text-gray-900">Totals</td>
-                                <td class="numeric">
-                                    {{ format_number($totalDebit) }}
-                                </td>
-                                <td class="numeric">
-                                    {{ format_number($totalCredit) }}
-                                </td>
+                                <td colspan="4" class="text-center text-ink-soft" style="padding:20px 14px">No accounts with balances found.</td>
                             </tr>
-                            <tr>
-                                <td colspan="2" class="px-6 py-4 text-right text-sm font-bold text-gray-900">Difference</td>
-                                <td colspan="2" class="px-6 py-4 whitespace-nowrap text-sm font-bold {{ $difference == 0 ? 'text-green-600' : 'text-red-600' }} text-right">
-                                    {{ format_number($difference) }}
-                                    @if($difference == 0)
-                                        <span class="ml-2 text-green-600">&#10003; Balanced</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        <tr class="report-subtotal-row">
+                            <td colspan="2" style="text-align:right">Totals</td>
+                            <td class="report-cell-amt">{{ format_number($totalDebit) }}</td>
+                            <td class="report-cell-amt">{{ format_number($totalCredit) }}</td>
+                        </tr>
+                        <tr class="report-total-row">
+                            <td colspan="3" style="text-align:right">Difference</td>
+                            <td class="report-cell-amt report-total-val {{ $difference == 0 ? '' : 'text-red-600' }}">
+                                {{ format_number($difference) }}
+                                @if($difference == 0)
+                                    <span class="ml-1 text-sm">&#10003; Balanced</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </x-report.card>
         </div>
     </div>
 </x-app-layout>

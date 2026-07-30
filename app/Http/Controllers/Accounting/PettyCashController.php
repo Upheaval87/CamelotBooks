@@ -78,6 +78,7 @@ class PettyCashController extends Controller
 
     public function establish(Request $request)
     {
+        $this->requirePermission($request, 'petty-cash.establish');
         $companyId = session('current_company_id');
 
         $validated = $request->validate([
@@ -106,6 +107,7 @@ class PettyCashController extends Controller
 
     public function recordExpense(Request $request)
     {
+        $this->requirePermission($request, 'petty-cash.expense');
         $companyId = session('current_company_id');
 
         $validated = $request->validate([
@@ -130,6 +132,7 @@ class PettyCashController extends Controller
 
     public function replenish(Request $request)
     {
+        $this->requirePermission($request, 'petty-cash.replenish');
         $companyId = session('current_company_id');
 
         $validated = $request->validate([

@@ -1,10 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('A/R Aging Summary') }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ar'])) }}">{{ __('Export CSV') }}</x-button>
-    </div>
-
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -36,54 +32,62 @@
                 <a href="{{ route('accounting.aging.ar-detail', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">Detail</a>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">A/R Aging Summary as of {{ \Carbon\Carbon::parse($as_of_date)->format('M d, Y') }}</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Customer</th>
-                                <th class="text-right">Current</th>
-                                <th class="text-right">1-30 Days</th>
-                                <th class="text-right">31-60 Days</th>
-                                <th class="text-right">61-90 Days</th>
-                                <th class="text-right">90+ Days</th>
-                                <th class="text-right">Total</th>
+            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+
+            <x-report.card>
+                <x-report.header
+                    :company="$currentCompany->name ?? config('app.name')"
+                    title="A/R Aging Summary"
+                    :range="'As of ' . \Carbon\Carbon::parse($as_of_date)->format('M d, Y')"
+                />
+
+                <x-report.toolbar
+                    :csvRoute="route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ar']))"
+                />
+
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th class="report-col-amt">Current ({{ $cs }})</th>
+                            <th class="report-col-amt">1-30 Days ({{ $cs }})</th>
+                            <th class="report-col-amt">31-60 Days ({{ $cs }})</th>
+                            <th class="report-col-amt">61-90 Days ({{ $cs }})</th>
+                            <th class="report-col-amt">90+ Days ({{ $cs }})</th>
+                            <th class="report-col-amt">Total ({{ $cs }})</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($customers as $row)
+                            @php $zero = $row['total'] <= 0; @endphp
+                            <tr class="@if($zero) zero @endif">
+                                <td>{{ $row['customer_name'] }}</td>
+                                <td class="report-cell-amt">{{ format_number($row['current']) }}</td>
+                                <td class="report-cell-amt">{{ format_number($row['days_1_30']) }}</td>
+                                <td class="report-cell-amt">{{ format_number($row['days_31_60']) }}</td>
+                                <td class="report-cell-amt">{{ format_number($row['days_61_90']) }}</td>
+                                <td class="report-cell-amt">{{ format_number($row['days_90_plus']) }}</td>
+                                <td class="report-cell-amt">{{ format_number($row['total']) }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($customers as $row)
-                                <tr class="hover:bg-gray-50">
-                                    <td>{{ $row['customer_name'] }}</td>
-                                    <td class="numeric">{{ format_money($row['current']) }}</td>
-                                    <td class="numeric">{{ format_money($row['days_1_30']) }}</td>
-                                    <td class="numeric">{{ format_money($row['days_31_60']) }}</td>
-                                    <td class="numeric">{{ format_money($row['days_61_90']) }}</td>
-                                    <td class="numeric">{{ format_money($row['days_90_plus']) }}</td>
-                                    <td class="numeric">{{ format_money($row['total']) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center text-ink-soft">No outstanding invoices found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot class="bg-gray-50">
+                        @empty
                             <tr>
-                                <td>Total</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['current']) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['days_1_30']) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['days_31_60']) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['days_61_90']) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['days_90_plus']) }}</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['total']) }}</td>
+                                <td colspan="7" class="text-center text-ink-soft" style="padding:20px 14px">No outstanding invoices found.</td>
                             </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        <tr class="report-total-row">
+                            <td>Total</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($totals['current']) }}</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($totals['days_1_30']) }}</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($totals['days_31_60']) }}</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($totals['days_61_90']) }}</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($totals['days_90_plus']) }}</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($totals['total']) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </x-report.card>
         </div>
     </div>
 </x-app-layout>

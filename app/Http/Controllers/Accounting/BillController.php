@@ -205,6 +205,7 @@ class BillController extends Controller
 
     public function post(Bill $bill)
     {
+        $this->requirePermission('bills.post');
         $companyId = session('current_company_id');
         abort_unless($bill->company_id == $companyId, 403);
 
@@ -220,6 +221,7 @@ class BillController extends Controller
 
     public function approve(Bill $bill)
     {
+        $this->requirePermission('bills.approve');
         $companyId = session('current_company_id');
         abort_unless($bill->company_id == $companyId, 403);
 
@@ -235,6 +237,7 @@ class BillController extends Controller
 
     public function void(Bill $bill, Request $request)
     {
+        $this->requirePermission($request, 'bills.void');
         $companyId = session('current_company_id');
         abort_unless($bill->company_id == $companyId, 403);
 

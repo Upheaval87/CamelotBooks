@@ -1,67 +1,69 @@
-<div class="header">
-    <div class="company">{{ $company->name }}</div>
-    <div class="report-title">Balance Sheet</div>
-    <div class="period">As of: {{ $asOfDate }}</div>
+@php $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+
+<div class="report-head">
+    <p class="company">{{ $company->name }}</p>
+    <p class="report-title">Balance Sheet</p>
+    <p class="report-range">As of {{ \Carbon\Carbon::parse($asOfDate)->format('M d, Y') }}</p>
 </div>
 
-<table>
-    <thead>
-        <tr><th>Description</th><th class="text-right">Amount</th></tr>
-    </thead>
-    <tbody>
-        <tr class="section-header"><td colspan="2">Assets</td></tr>
-        @foreach($groups['asset'] as $subType => $items)
-            @if(!empty($items))
-                @foreach($items as $item)
-                    <tr>
-                        <td class="indent">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
-                        <td class="text-right">{{ format_money($item['balance']) }}</td>
-                    </tr>
-                @endforeach
-            @endif
+<div class="report-toolbar">
+    <label class="zero-toggle">
+        <input type="checkbox" id="reportZeroToggle" checked onchange="toggleZeroRows()">
+        Show zero-balance accounts
+    </label>
+    <button class="btn-outline" onclick="window.print()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Print
+    </button>
+</div>
+
+<div class="report-col-bar"><span>Description</span><span>Amount ({{ $currencySymbol }})</span></div>
+
+<div class="report-section-bar">Assets</div>
+@foreach($groups['asset'] as $subType => $items)
+    @if(!empty($items))
+        @foreach($items as $item)
+            @php $zero = abs($item['balance']) <= 0; @endphp
+            <div class="report-line @if($zero) zero @endif">
+                <span><span class="code">{{ $item['account']->code }}</span>{{ $item['account']->name }}</span>
+                <span class="amt">{{ format_number($item['balance']) }}</span>
+            </div>
         @endforeach
-        <tr class="row-subtotal">
-            <td class="text-right">Total Assets</td>
-            <td class="text-right">{{ format_money($total_assets) }}</td>
-        </tr>
-        <tr><td colspan="2"></td></tr>
-        <tr class="section-header"><td colspan="2">Liabilities</td></tr>
-        @foreach($groups['liability'] as $subType => $items)
-            @if(!empty($items))
-                @foreach($items as $item)
-                    <tr>
-                        <td class="indent">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
-                        <td class="text-right">{{ format_money($item['balance']) }}</td>
-                    </tr>
-                @endforeach
-            @endif
+    @endif
+@endforeach
+<div class="report-subtotal"><span>Total Assets</span><span>{{ format_number($total_assets) }}</span></div>
+
+<div class="report-section-bar">Liabilities</div>
+@foreach($groups['liability'] as $subType => $items)
+    @if(!empty($items))
+        @foreach($items as $item)
+            @php $zero = abs($item['balance']) <= 0; @endphp
+            <div class="report-line @if($zero) zero @endif">
+                <span><span class="code">{{ $item['account']->code }}</span>{{ $item['account']->name }}</span>
+                <span class="amt">{{ format_number($item['balance']) }}</span>
+            </div>
         @endforeach
-        <tr class="row-subtotal">
-            <td class="text-right">Total Liabilities</td>
-            <td class="text-right">{{ format_money($total_liabilities) }}</td>
-        </tr>
-        <tr><td colspan="2"></td></tr>
-        <tr class="section-header"><td colspan="2">Equity</td></tr>
-        @foreach($groups['equity'] as $subType => $items)
-            @foreach($items as $item)
-                <tr>
-                    <td class="indent">{{ $item['account']->code }} - {{ $item['account']->name }}</td>
-                    <td class="text-right">{{ format_money($item['balance']) }}</td>
-                </tr>
-            @endforeach
-        @endforeach
-        <tr>
-            <td class="indent">Current Year Earnings</td>
-            <td class="text-right">{{ format_money($current_year_earnings) }}</td>
-        </tr>
-        <tr class="row-subtotal">
-            <td class="text-right">Total Equity</td>
-            <td class="text-right">{{ format_money($total_equity) }}</td>
-        </tr>
-        <tr><td colspan="2"></td></tr>
-        <tr class="row-grand">
-            <td class="text-right">Total Liabilities &amp; Equity</td>
-            <td class="text-right">{{ format_money($total_liabilities + $total_equity) }}</td>
-        </tr>
-    </tbody>
-</table>
+    @endif
+@endforeach
+<div class="report-subtotal"><span>Total Liabilities</span><span>{{ format_number($total_liabilities) }}</span></div>
+
+<div class="report-section-bar">Equity</div>
+@foreach($groups['equity'] as $subType => $items)
+    @foreach($items as $item)
+        @php $zero = abs($item['balance']) <= 0; @endphp
+        <div class="report-line @if($zero) zero @endif">
+            <span><span class="code">{{ $item['account']->code }}</span>{{ $item['account']->name }}</span>
+            <span class="amt">{{ format_number($item['balance']) }}</span>
+        </div>
+    @endforeach
+@endforeach
+<div class="report-line">
+    <span>Current Year Earnings</span>
+    <span class="amt">{{ format_number($current_year_earnings) }}</span>
+</div>
+<div class="report-subtotal"><span>Total Equity</span><span>{{ format_number($total_equity) }}</span></div>
+
+<div class="report-total">
+    <span class="lbl">Total Liabilities &amp; Equity</span>
+    <span class="val">{{ format_number($total_liabilities + $total_equity) }}</span>
+</div>

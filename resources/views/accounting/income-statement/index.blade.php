@@ -1,11 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Income Statement') }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.income-statement.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
-        <x-button variant="ghost" href="{{ route('accounting.income-statement.export-pdf', request()->query()) }}" target="_blank">{{ __('Export PDF') }}</x-button>
-    </div>
-
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -44,104 +39,65 @@
                 </form>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Income Statement: {{ \Carbon\Carbon::parse($dateFrom)->format('M d, Y') }} to {{ \Carbon\Carbon::parse($dateTo)->format('M d, Y') }}</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th class="text-right">Amount</th>
-                                @if(!empty($comparison))
-                                    <th class="text-right">Compare Amount</th>
-                                @endif
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php $hasIncome = false; @endphp
-                            @foreach($groups['income'] as $subType => $items)
-                                @if(!empty($items))
-                                    @php $hasIncome = true; @endphp
-                                    <tr class="bg-gray-50">
-                                        <td colspan="3" class="font-semibold text-gray-700">{{ ucwords(str_replace('_', ' ', $subType)) }}</td>
-                                    </tr>
-                                    @foreach($items as $item)
-                                        <tr class="hover:bg-gray-50">
-                                            <td><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_from={{ $dateFrom }}&date_to={{ $dateTo }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-ink hover:text-gold underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="numeric">{{ format_money($item['net']) }}</td>
-                                            @if(!empty($comparison))
-                                                <td class="text-right">
-                                                    @php
-                                                        $compNet = 0;
-                                                        foreach (($comparison['groups']['income'][$subType] ?? []) as $ci) {
-                                                            if ($ci['account']->id === $item['account']->id) { $compNet = $ci['net']; break; }
-                                                        }
-                                                    @endphp
-                                                    {{ format_money(max(0, $compNet)) }}
-                                                </td>
-                                            @endif
-                                        </tr>
-                                    @endforeach
-                                @endif
-                            @endforeach
+            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 
-                            <tr class="bg-indigo-50">
-                                <td>Total Income</td>
-                                <td class="numeric">{{ format_money($total_income) }}</td>
-                                @if(!empty($comparison))
-                                    <td class="text-right">{{ format_money($comparison['total_income'] ?? 0) }}</td>
-                                @endif
-                            </tr>
+            <x-report.card>
+                <x-report.header
+                    :company="$currentCompany->name ?? config('app.name')"
+                    title="Income Statement"
+                    :range="\Carbon\Carbon::parse($dateFrom)->format('M d, Y') . ' — ' . \Carbon\Carbon::parse($dateTo)->format('M d, Y')"
+                />
 
-                            @php $hasExpense = false; @endphp
-                            @foreach($groups['expense'] as $subType => $items)
-                                @if(!empty($items))
-                                    @php $hasExpense = true; @endphp
-                                    <tr class="bg-gray-50">
-                                        <td colspan="3" class="font-semibold text-gray-700">{{ ucwords(str_replace('_', ' ', $subType)) }}</td>
-                                    </tr>
-                                    @foreach($items as $item)
-                                        <tr class="hover:bg-gray-50">
-                                            <td><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_from={{ $dateFrom }}&date_to={{ $dateTo }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-ink hover:text-gold underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="numeric">{{ format_money($item['net']) }}</td>
-                                            @if(!empty($comparison))
-                                                <td class="text-right">
-                                                    @php
-                                                        $compNet = 0;
-                                                        foreach (($comparison['groups']['expense'][$subType] ?? []) as $ci) {
-                                                            if ($ci['account']->id === $item['account']->id) { $compNet = $ci['net']; break; }
-                                                        }
-                                                    @endphp
-                                                    {{ format_money(max(0, $compNet)) }}
-                                                </td>
-                                            @endif
-                                        </tr>
-                                    @endforeach
-                                @endif
-                            @endforeach
+                <x-report.toolbar
+                    :csvRoute="route('accounting.income-statement.export-csv', request()->query())"
+                    :pdfRoute="route('accounting.income-statement.export-pdf', request()->query())"
+                />
 
-                            <tr class="bg-indigo-50">
-                                <td>Total Expenses</td>
-                                <td class="numeric">{{ format_money($total_expenses) }}</td>
-                                @if(!empty($comparison))
-                                    <td class="text-right">{{ format_money($comparison['total_expenses'] ?? 0) }}</td>
-                                @endif
-                            </tr>
+                <x-report.col-bar left="Description" :right="'Amount ('.$cs.')'" />
 
-                            <tr class="bg-gray-900">
-                                <td>{{ $net_income >= 0 ? 'Net Income' : 'Net Loss' }}</td>
-                                <td class="numeric">{{ format_money(abs($net_income)) }}</td>
-                                @if(!empty($comparison))
-                                    @php $compNI = ($comparison['net_income'] ?? 0); @endphp
-                                    <td class="text-right">{{ format_money(abs($compNI)) }}</td>
-                                @endif
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                <x-report.section-bar>Income</x-report.section-bar>
+                @foreach($groups['income'] as $subType => $items)
+                    @foreach($items as $item)
+                        <x-report.line
+                            :code="$item['account']->code"
+                            :desc="$item['account']->name"
+                            :amount="format_number(max(0, $item['net']))"
+                            :href="route('accounting.general-ledger.account', $item['account']->id).'?date_from='.$dateFrom.'&date_to='.$dateTo.($branchId ? '&branch_id='.$branchId : '')"
+                            :zero="max(0, $item['net']) <= 0"
+                        />
+                    @endforeach
+                @endforeach
+                <x-report.subtotal desc="Total Income" :amount="format_number($total_income)" />
+
+                <x-report.section-bar>Expenses</x-report.section-bar>
+                @foreach($groups['expense'] as $subType => $items)
+                    @foreach($items as $item)
+                        <x-report.line
+                            :code="$item['account']->code"
+                            :desc="$item['account']->name"
+                            :amount="format_number(max(0, $item['net']))"
+                            :href="route('accounting.general-ledger.account', $item['account']->id).'?date_from='.$dateFrom.'&date_to='.$dateTo.($branchId ? '&branch_id='.$branchId : '')"
+                            :zero="max(0, $item['net']) <= 0"
+                        />
+                    @endforeach
+                @endforeach
+                <x-report.subtotal desc="Total Expenses" :amount="format_number($total_expenses)" />
+
+                <x-report.total
+                    :desc="$net_income >= 0 ? 'Net Income' : 'Net Loss'"
+                    :amount="format_number(abs($net_income))"
+                />
+
+                @if(!empty($comparison))
+                    <div class="mt-8 pt-4 border-t border-ink/10 text-xs text-ink-muted">
+                        <p>Comparison ({{ $compareMode === 'prior_period' ? 'Prior Period' : 'Year Ago' }}):
+                            Income: {{ format_number($comparison['total_income'] ?? 0) }},
+                            Expenses: {{ format_number($comparison['total_expenses'] ?? 0) }},
+                            Net: {{ format_number(abs($comparison['net_income'] ?? 0)) }}
+                        </p>
+                    </div>
+                @endif
+            </x-report.card>
         </div>
     </div>
 </x-app-layout>

@@ -38,6 +38,7 @@ class VendorController extends Controller
 
     public function store(Request $request)
     {
+        $this->requirePermission($request, 'vendors.create');
         $companyId = session('current_company_id');
 
         $validated = $request->validate([
@@ -119,6 +120,7 @@ class VendorController extends Controller
 
     public function update(Request $request, Vendor $vendor)
     {
+        $this->requirePermission($request, 'vendors.edit');
         $companyId = session('current_company_id');
         abort_unless($vendor->company_id == $companyId, 403);
 
@@ -170,6 +172,7 @@ class VendorController extends Controller
 
     public function toggle(Vendor $vendor)
     {
+        $this->requirePermission('vendors.void');
         $companyId = session('current_company_id');
         abort_unless($vendor->company_id == $companyId, 403);
 

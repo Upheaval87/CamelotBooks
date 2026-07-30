@@ -6,10 +6,12 @@
             <x-record-toolbar>
                 <div class="tr-group">
                     @if($salesReceipt->status === 'draft')
-                        <form method="POST" action="{{ route('accounting.sales-receipts.post', $salesReceipt) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Post Receipt') }}</button>
-                        </form>
+                        @can('sales-receipts.post')
+                            <form method="POST" action="{{ route('accounting.sales-receipts.post', $salesReceipt) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Post Receipt') }}</button>
+                            </form>
+                        @endcan
                     @endif
                     @if($salesReceipt->status === 'posted' && $salesReceipt->customer && $salesReceipt->customer->email)
                         <form method="POST" action="{{ route('accounting.sales-receipts.email', $salesReceipt) }}" class="inline">
@@ -31,11 +33,13 @@
                 <div class="tr-spacer"></div>
 
                 @if($salesReceipt->status === 'posted')
-                    <form method="POST" action="{{ route('accounting.sales-receipts.void', $salesReceipt) }}" class="inline" onsubmit="return prompt('{{ __('Enter void reason') }}:')">
-                        @csrf
-                        <input type="hidden" name="void_reason" value="Voided via UI" />
-                        <button type="submit" class="tr-archive">{{ __('Void Receipt') }}</button>
-                    </form>
+                    @can('sales-receipts.void')
+                        <form method="POST" action="{{ route('accounting.sales-receipts.void', $salesReceipt) }}" class="inline" onsubmit="return prompt('{{ __('Enter void reason') }}:')">
+                            @csrf
+                            <input type="hidden" name="void_reason" value="Voided via UI" />
+                            <button type="submit" class="tr-archive">{{ __('Void Receipt') }}</button>
+                        </form>
+                    @endcan
                 @endif
 
                 <a href="{{ route('accounting.sales-receipts.index') }}" class="tr-item">{{ __('Back to Sales Receipts') }}</a>

@@ -119,6 +119,7 @@ class BudgetController extends Controller
 
     public function approve(Budget $budget)
     {
+        $this->requirePermission('budgets.approve');
         $companyId = session('current_company_id');
         abort_unless($budget->company_id == $companyId, 403);
 

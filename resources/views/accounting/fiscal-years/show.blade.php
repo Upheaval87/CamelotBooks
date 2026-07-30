@@ -8,10 +8,12 @@
                 <div class="tr-group">
                     <span class="tr-group-label">{{ __('Actions') }}</span>
                     @if($fiscalYear->isOpen() && $fiscalYear->allPeriodsClosedOrLocked())
-                        <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}" class="inline" onsubmit="return confirm('Are you sure you want to close fiscal year {{ $fiscalYear->label }}?');">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Run Year-End Close') }}</button>
-                        </form>
+                        @can('fiscal-years.close')
+                            <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}" class="inline" onsubmit="return confirm('Are you sure you want to close fiscal year {{ $fiscalYear->label }}?');">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Run Year-End Close') }}</button>
+                            </form>
+                        @endcan
                     @endif
                     @if($fiscalYear->isClosed())
                         <button type="button" onclick="document.getElementById('reopen-modal').classList.remove('hidden')" class="tr-item">{{ __('Reopen Year') }}</button>
@@ -136,23 +138,25 @@
                 </button>
             </div>
             <p class="text-sm text-gray-600 mb-4">This will reverse the closing journal entry and reopen all periods in this fiscal year. This is an audited action.</p>
-            <form method="POST" action="{{ route('accounting.fiscal-years.reopen', $fiscalYear) }}">
-                @csrf
-                @method('PATCH')
-                <div class="mb-6">
-                    <x-input-label for="reason" value="{{ __('Reason for reopening (required, min 10 chars)') }}" />
-                    <textarea id="reason" name="reason" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required minlength="10"></textarea>
-                    <x-input-error :messages="$errors->get('reason')" class="mt-2" />
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button type="button" onclick="document.getElementById('reopen-modal').classList.add('hidden')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Cancel
-                    </button>
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Reopen Year
-                    </button>
-                </div>
-            </form>
+            @can('fiscal-years.reopen')
+                <form method="POST" action="{{ route('accounting.fiscal-years.reopen', $fiscalYear) }}">
+                    @csrf
+                    @method('PATCH')
+                    <div class="mb-6">
+                        <x-input-label for="reason" value="{{ __('Reason for reopening (required, min 10 chars)') }}" />
+                        <textarea id="reason" name="reason" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required minlength="10"></textarea>
+                        <x-input-error :messages="$errors->get('reason')" class="mt-2" />
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" onclick="document.getElementById('reopen-modal').classList.add('hidden')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            Cancel
+                        </button>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            Reopen Year
+                        </button>
+                    </div>
+                </form>
+            @endcan
         </div>
     </div>
     @endif

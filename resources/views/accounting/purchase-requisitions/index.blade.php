@@ -89,20 +89,26 @@
                                         <a href="{{ route('accounting.purchase-requisitions.show', $requisition) }}" class="text-ink hover:text-gold">View</a>
                                         @if($requisition->status === 'draft')
                                             <a href="{{ route('accounting.purchase-requisitions.edit', $requisition) }}" class="text-ink hover:text-gold">Edit</a>
-                                            <form method="POST" action="{{ route('accounting.purchase-requisitions.submit', $requisition) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-yellow-600 hover:text-yellow-900 text-sm">Submit</button>
-                                            </form>
+                                            @can('purchase-requisitions.submit')
+                                                <form method="POST" action="{{ route('accounting.purchase-requisitions.submit', $requisition) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-yellow-600 hover:text-yellow-900 text-sm">Submit</button>
+                                                </form>
+                                            @endcan
                                         @endif
                                         @if($requisition->status === 'submitted')
-                                            <form method="POST" action="{{ route('accounting.purchase-requisitions.approve', $requisition) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-green-600 hover:text-green-900 text-sm">Approve</button>
-                                            </form>
-                                            <form method="POST" action="{{ route('accounting.purchase-requisitions.reject', $requisition) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-red-600 hover:text-red-900 text-sm">Reject</button>
-                                            </form>
+                                            @can('purchase-requisitions.approve')
+                                                <form method="POST" action="{{ route('accounting.purchase-requisitions.approve', $requisition) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-green-600 hover:text-green-900 text-sm">Approve</button>
+                                                </form>
+                                            @endcan
+                                            @can('purchase-requisitions.reject')
+                                                <form method="POST" action="{{ route('accounting.purchase-requisitions.reject', $requisition) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm">Reject</button>
+                                                </form>
+                                            @endcan
                                         @endif
                                     </td>
                                 </tr>

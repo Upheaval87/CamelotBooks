@@ -90,6 +90,7 @@ class SalesReceiptController extends Controller
 
     public function post(SalesReceipt $salesReceipt)
     {
+        $this->requirePermission('sales-receipts.post');
         $receiptService = app(SalesReceiptService::class);
         $receiptService->post($salesReceipt, auth()->id());
         return redirect()->route('accounting.sales-receipts.show', $salesReceipt)
@@ -98,6 +99,7 @@ class SalesReceiptController extends Controller
 
     public function void(SalesReceipt $salesReceipt, Request $request)
     {
+        $this->requirePermission($request, 'sales-receipts.void');
         $request->validate(['void_reason' => 'required|string']);
         $receiptService = app(SalesReceiptService::class);
         $receiptService->void($salesReceipt, $request->void_reason, auth()->id());

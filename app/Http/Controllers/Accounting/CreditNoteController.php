@@ -128,6 +128,7 @@ class CreditNoteController extends Controller
 
     public function post(CreditNote $creditNote)
     {
+        $this->requirePermission('credit-notes.post');
         $companyId = session('current_company_id');
         abort_unless($creditNote->company_id == $companyId, 403);
 
@@ -185,6 +186,7 @@ class CreditNoteController extends Controller
 
     public function void(CreditNote $creditNote, Request $request)
     {
+        $this->requirePermission($request, 'credit-notes.void');
         $companyId = session('current_company_id');
         abort_unless($creditNote->company_id == $companyId, 403);
 

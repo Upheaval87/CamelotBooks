@@ -38,6 +38,7 @@ class CustomerController extends Controller
 
     public function store(Request $request)
     {
+        $this->requirePermission($request, 'customers.create');
         $companyId = session('current_company_id');
 
         $validated = $request->validate([
@@ -120,6 +121,7 @@ class CustomerController extends Controller
 
     public function update(Request $request, Customer $customer)
     {
+        $this->requirePermission($request, 'customers.edit');
         $companyId = session('current_company_id');
         abort_unless($customer->company_id == $companyId, 403);
 
@@ -163,6 +165,7 @@ class CustomerController extends Controller
 
     public function toggle(Customer $customer)
     {
+        $this->requirePermission('customers.void');
         $companyId = session('current_company_id');
         abort_unless($customer->company_id == $companyId, 403);
 

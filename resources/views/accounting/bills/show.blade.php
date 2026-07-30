@@ -68,14 +68,16 @@
                 <div class="tr-spacer"></div>
 
                 @if(!in_array($bill->status, ['void', 'paid', 'draft']))
-                    <form method="POST" action="{{ route('accounting.bills.void', $bill) }}" class="inline">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to cancel this bill?') }}')">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            {{ __('Cancel Bill') }}
-                        </button>
-                    </form>
+                    @can('bills.void')
+                        <form method="POST" action="{{ route('accounting.bills.void', $bill) }}" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to cancel this bill?') }}')">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                {{ __('Cancel Bill') }}
+                            </button>
+                        </form>
+                    @endcan
                 @endif
 
                 <x-dropdown align="left" width="56">

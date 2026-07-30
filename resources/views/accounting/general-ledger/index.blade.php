@@ -97,7 +97,7 @@
                                         {{ (float) $row['line']->credit > 0 ? format_number((float) $row['line']->credit) : '' }}
                                     </td>
                                     <td class="numeric">
-                                        {{ format_money($row['running_balance']) }}
+                                        {{ format_number($row['running_balance']) }}
                                     </td>
                                 </tr>
                             @empty

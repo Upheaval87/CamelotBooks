@@ -6,21 +6,27 @@
             <x-record-toolbar>
                 <div class="tr-group">
                     @if($requisition->status === 'draft')
-                        <form method="POST" action="{{ route('accounting.purchase-requisitions.submit', $requisition) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Submit for Approval') }}</button>
-                        </form>
+                        @can('purchase-requisitions.submit')
+                            <form method="POST" action="{{ route('accounting.purchase-requisitions.submit', $requisition) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Submit for Approval') }}</button>
+                            </form>
+                        @endcan
                         <a href="{{ route('accounting.purchase-requisitions.edit', $requisition) }}" class="tr-save">{{ __('Edit') }}</a>
                     @endif
                     @if($requisition->status === 'submitted')
-                        <form method="POST" action="{{ route('accounting.purchase-requisitions.approve', $requisition) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Approve') }}</button>
-                        </form>
-                        <form method="POST" action="{{ route('accounting.purchase-requisitions.reject', $requisition) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-archive">{{ __('Reject') }}</button>
-                        </form>
+                        @can('purchase-requisitions.approve')
+                            <form method="POST" action="{{ route('accounting.purchase-requisitions.approve', $requisition) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Approve') }}</button>
+                            </form>
+                        @endcan
+                        @can('purchase-requisitions.reject')
+                            <form method="POST" action="{{ route('accounting.purchase-requisitions.reject', $requisition) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="tr-archive">{{ __('Reject') }}</button>
+                            </form>
+                        @endcan
                     @endif
                     @if($requisition->status === 'approved')
                         <a href="{{ route('accounting.purchase-orders.create', ['requisition_id' => $requisition->id]) }}" class="tr-save">{{ __('Create Purchase Order') }}</a>

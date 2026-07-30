@@ -153,6 +153,7 @@ class ReconciliationController extends Controller
 
     public function match(Request $request, int $reconciliationId)
     {
+        $this->requirePermission($request, 'reconciliation.create');
         $companyId = session('current_company_id');
 
         $reconciliation = BankReconciliation::where('id', $reconciliationId)
@@ -179,6 +180,7 @@ class ReconciliationController extends Controller
 
     public function unmatch(Request $request, int $reconciliationId)
     {
+        $this->requirePermission($request, 'reconciliation.create');
         $companyId = session('current_company_id');
 
         $reconciliation = BankReconciliation::where('id', $reconciliationId)
@@ -263,6 +265,7 @@ class ReconciliationController extends Controller
 
     public function complete(int $reconciliationId)
     {
+        $this->requirePermission('reconciliation.create');
         $companyId = session('current_company_id');
 
         $reconciliation = BankReconciliation::where('id', $reconciliationId)

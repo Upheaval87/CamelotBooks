@@ -54,6 +54,7 @@ class StockAdjustmentController extends Controller
 
     public function store(Request $request, InventoryService $inventoryService, JournalPostingEngine $postingEngine)
     {
+        $this->requirePermission($request, 'stock-adjustments.create');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 

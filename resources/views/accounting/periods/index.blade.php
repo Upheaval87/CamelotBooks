@@ -64,20 +64,26 @@
                                     </td>
                                     <td class="text-right">
                                         @if($period->isOpen())
-                                            <form method="POST" action="{{ route('accounting.periods.close', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to close this period?');">
-                                                @csrf
-                                                <button type="submit" class="text-yellow-600 hover:text-yellow-900">Close</button>
-                                            </form>
+                                            @can('accounting-periods.close')
+                                                <form method="POST" action="{{ route('accounting.periods.close', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to close this period?');">
+                                                    @csrf
+                                                    <button type="submit" class="text-yellow-600 hover:text-yellow-900">Close</button>
+                                                </form>
+                                            @endcan
                                         @endif
                                         @if($period->isClosed())
-                                            <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to lock this period? This cannot be undone.');">
-                                                @csrf
-                                                <button type="submit" class="text-red-600 hover:text-red-900">Lock</button>
-                                            </form>
-                                            <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to reopen this period?');">
-                                                @csrf
-                                                <button type="submit" class="text-ink hover:text-gold">Reopen</button>
-                                            </form>
+                                            @can('accounting-periods.lock')
+                                                <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to lock this period? This cannot be undone.');">
+                                                    @csrf
+                                                    <button type="submit" class="text-red-600 hover:text-red-900">Lock</button>
+                                                </form>
+                                            @endcan
+                                            @can('accounting-periods.reopen')
+                                                <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to reopen this period?');">
+                                                    @csrf
+                                                    <button type="submit" class="text-ink hover:text-gold">Reopen</button>
+                                                </form>
+                                            @endcan
                                         @endif
                                     </td>
                                 </tr>

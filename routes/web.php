@@ -105,10 +105,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('journal-entries/create', [JournalEntryController::class, 'create'])->name('journal-entries.create');
             Route::post('journal-entries', [JournalEntryController::class, 'store'])->name('journal-entries.store');
             Route::get('journal-entries/{journalEntry}', [JournalEntryController::class, 'show'])->name('journal-entries.show');
-            Route::post('journal-entries/{journalEntry}/submit-for-approval', [JournalEntryController::class, 'submitForApproval'])->name('journal-entries.submit-for-approval');
-            Route::post('journal-entries/{journalEntry}/approve', [JournalEntryController::class, 'approve'])->name('journal-entries.approve');
-            Route::post('journal-entries/{journalEntry}/reject', [JournalEntryController::class, 'reject'])->name('journal-entries.reject');
-            Route::post('journal-entries/{journalEntry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal-entries.reverse');
+            Route::post('journal-entries/{journalEntry}/submit-for-approval', [JournalEntryController::class, 'submitForApproval'])->name('journal-entries.submit-for-approval')->middleware(['permission:journal-entries.edit', 'sod:journalEntry']);
+            Route::post('journal-entries/{journalEntry}/approve', [JournalEntryController::class, 'approve'])->name('journal-entries.approve')->middleware(['permission:journal-entries.approve', 'sod:journalEntry']);
+            Route::post('journal-entries/{journalEntry}/reject', [JournalEntryController::class, 'reject'])->name('journal-entries.reject')->middleware(['permission:journal-entries.approve', 'sod:journalEntry']);
+            Route::post('journal-entries/{journalEntry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal-entries.reverse')->middleware(['permission:journal-entries.reverse', 'sod:journalEntry']);
 
             // General Ledger
             Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');
@@ -125,16 +125,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Accounting Periods
             Route::get('periods', [AccountingPeriodController::class, 'index'])->name('periods.index');
             Route::post('periods', [AccountingPeriodController::class, 'store'])->name('periods.store');
-            Route::post('periods/{period}/close', [AccountingPeriodController::class, 'close'])->name('periods.close');
-            Route::post('periods/{period}/lock', [AccountingPeriodController::class, 'lock'])->name('periods.lock');
-            Route::post('periods/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('periods.reopen');
+            Route::post('periods/{period}/close', [AccountingPeriodController::class, 'close'])->name('periods.close')->middleware('sod:period');
+            Route::post('periods/{period}/lock', [AccountingPeriodController::class, 'lock'])->name('periods.lock')->middleware('sod:period');
+            Route::post('periods/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('periods.reopen')->middleware('sod:period');
 
             // Fiscal Years
             Route::get('fiscal-years', [FiscalYearController::class, 'index'])->name('fiscal-years.index');
             Route::post('fiscal-years', [FiscalYearController::class, 'store'])->name('fiscal-years.store');
             Route::get('fiscal-years/{fiscalYear}', [FiscalYearController::class, 'show'])->name('fiscal-years.show');
-            Route::post('fiscal-years/{fiscalYear}/close', [FiscalYearController::class, 'close'])->name('fiscal-years.close');
-            Route::patch('fiscal-years/{fiscalYear}/reopen', [FiscalYearController::class, 'reopen'])->name('fiscal-years.reopen');
+            Route::post('fiscal-years/{fiscalYear}/close', [FiscalYearController::class, 'close'])->name('fiscal-years.close')->middleware('sod:fiscalYear');
+            Route::patch('fiscal-years/{fiscalYear}/reopen', [FiscalYearController::class, 'reopen'])->name('fiscal-years.reopen')->middleware('sod:fiscalYear');
 
             // Cost Centers
             Route::get('cost-centers', [CostCenterController::class, 'index'])->name('cost-centers.index');
@@ -195,51 +195,53 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
             Route::patch('products/{product}/toggle', [ProductController::class, 'toggle'])->name('products.toggle');
 
+            Route::middleware('feature:inventory')->group(function () {
             // Inventory Items
-            Route::get('inventory-items', [InventoryItemsController::class, 'index'])->name('inventory-items.index');
-            Route::get('inventory-items/{product}', [InventoryItemsController::class, 'show'])->name('inventory-items.show');
+                Route::get('inventory-items', [InventoryItemsController::class, 'index'])->name('inventory-items.index');
+                Route::get('inventory-items/{product}', [InventoryItemsController::class, 'show'])->name('inventory-items.show');
 
             // Stock Adjustments
-            Route::get('stock-adjustments', [StockAdjustmentController::class, 'index'])->name('stock-adjustments.index');
-            Route::get('stock-adjustments/create', [StockAdjustmentController::class, 'create'])->name('stock-adjustments.create');
-            Route::post('stock-adjustments', [StockAdjustmentController::class, 'store'])->name('stock-adjustments.store');
-            Route::get('stock-adjustments/{adjustment}', [StockAdjustmentController::class, 'show'])->name('stock-adjustments.show');
+                Route::get('stock-adjustments', [StockAdjustmentController::class, 'index'])->name('stock-adjustments.index');
+                Route::get('stock-adjustments/create', [StockAdjustmentController::class, 'create'])->name('stock-adjustments.create');
+                Route::post('stock-adjustments', [StockAdjustmentController::class, 'store'])->name('stock-adjustments.store');
+                Route::get('stock-adjustments/{adjustment}', [StockAdjustmentController::class, 'show'])->name('stock-adjustments.show');
 
             // Stock Transfers
-            Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
-            Route::get('stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
-            Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
-            Route::get('stock-transfers/{transfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
+                Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
+                Route::get('stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
+                Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
+                Route::get('stock-transfers/{transfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
 
             // Assemblies
-            Route::get('assemblies', [AssemblyController::class, 'index'])->name('assemblies.index');
-            Route::get('assemblies/create', [AssemblyController::class, 'create'])->name('assemblies.create');
-            Route::post('assemblies', [AssemblyController::class, 'store'])->name('assemblies.store');
-            Route::get('assemblies/unbuild', [AssemblyController::class, 'createUnbuild'])->name('assemblies.unbuild-form');
-            Route::post('assemblies/unbuild', [AssemblyController::class, 'storeUnbuild'])->name('assemblies.store-unbuild');
-            Route::get('assemblies/history', [AssemblyController::class, 'history'])->name('assemblies.history');
-            Route::get('assemblies/{build}', [AssemblyController::class, 'show'])->name('assemblies.show');
-            Route::get('assemblies-boms', [AssemblyController::class, 'boms'])->name('assemblies.boms');
-            Route::get('assemblies-boms/create', [AssemblyController::class, 'createBom'])->name('assemblies.create-bom');
-            Route::post('assemblies-boms', [AssemblyController::class, 'storeBom'])->name('assemblies.store-bom');
+                Route::get('assemblies', [AssemblyController::class, 'index'])->name('assemblies.index');
+                Route::get('assemblies/create', [AssemblyController::class, 'create'])->name('assemblies.create');
+                Route::post('assemblies', [AssemblyController::class, 'store'])->name('assemblies.store');
+                Route::get('assemblies/unbuild', [AssemblyController::class, 'createUnbuild'])->name('assemblies.unbuild-form');
+                Route::post('assemblies/unbuild', [AssemblyController::class, 'storeUnbuild'])->name('assemblies.store-unbuild');
+                Route::get('assemblies/history', [AssemblyController::class, 'history'])->name('assemblies.history');
+                Route::get('assemblies/{build}', [AssemblyController::class, 'show'])->name('assemblies.show');
+                Route::get('assemblies-boms', [AssemblyController::class, 'boms'])->name('assemblies.boms');
+                Route::get('assemblies-boms/create', [AssemblyController::class, 'createBom'])->name('assemblies.create-bom');
+                Route::post('assemblies-boms', [AssemblyController::class, 'storeBom'])->name('assemblies.store-bom');
 
             // Stock Counts
-            Route::get('stock-counts', [StockCountController::class, 'index'])->name('stock-counts.index');
-            Route::get('stock-counts/create', [StockCountController::class, 'create'])->name('stock-counts.create');
-            Route::post('stock-counts', [StockCountController::class, 'store'])->name('stock-counts.store');
-            Route::get('stock-counts/{count}', [StockCountController::class, 'show'])->name('stock-counts.show');
-            Route::get('stock-counts/{count}/edit', [StockCountController::class, 'edit'])->name('stock-counts.edit');
-            Route::put('stock-counts/{count}', [StockCountController::class, 'update'])->name('stock-counts.update');
+                Route::get('stock-counts', [StockCountController::class, 'index'])->name('stock-counts.index');
+                Route::get('stock-counts/create', [StockCountController::class, 'create'])->name('stock-counts.create');
+                Route::post('stock-counts', [StockCountController::class, 'store'])->name('stock-counts.store');
+                Route::get('stock-counts/{count}', [StockCountController::class, 'show'])->name('stock-counts.show');
+                Route::get('stock-counts/{count}/edit', [StockCountController::class, 'edit'])->name('stock-counts.edit');
+                Route::put('stock-counts/{count}', [StockCountController::class, 'update'])->name('stock-counts.update');
 
             // Inventory Valuation
-            Route::get('inventory-valuation', [InventoryValuationController::class, 'index'])->name('inventory-valuation.index');
-            Route::get('inventory-valuation/by-category', [InventoryValuationController::class, 'byCategory'])->name('inventory-valuation.by-category');
-            Route::get('inventory-valuation/export/csv', [InventoryValuationController::class, 'exportCsv'])->name('inventory-valuation.export-csv');
-            Route::get('inventory-valuation/export/pdf', [InventoryValuationController::class, 'exportPdf'])->name('inventory-valuation.export-pdf');
+                Route::get('inventory-valuation', [InventoryValuationController::class, 'index'])->name('inventory-valuation.index');
+                Route::get('inventory-valuation/by-category', [InventoryValuationController::class, 'byCategory'])->name('inventory-valuation.by-category');
+                Route::get('inventory-valuation/export/csv', [InventoryValuationController::class, 'exportCsv'])->name('inventory-valuation.export-csv');
+                Route::get('inventory-valuation/export/pdf', [InventoryValuationController::class, 'exportPdf'])->name('inventory-valuation.export-pdf');
 
             // Low Stock Report
-            Route::get('low-stock', [LowStockController::class, 'index'])->name('low-stock.index');
-            Route::get('low-stock/export/csv', [LowStockController::class, 'exportCsv'])->name('low-stock.export-csv');
+                Route::get('low-stock', [LowStockController::class, 'index'])->name('low-stock.index');
+                Route::get('low-stock/export/csv', [LowStockController::class, 'exportCsv'])->name('low-stock.export-csv');
+            });
 
             // Employees
             Route::get('employees', [EmployeeController::class, 'index'])->name('employees.index');
@@ -250,38 +252,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
             Route::patch('employees/{employee}/toggle', [EmployeeController::class, 'toggle'])->name('employees.toggle');
 
+            Route::middleware('feature:payroll')->group(function () {
             // Payroll Runs
-            Route::get('payroll-runs', [PayrollRunController::class, 'index'])->name('payroll-runs.index');
-            Route::get('payroll-runs/create', [PayrollRunController::class, 'create'])->name('payroll-runs.create');
-            Route::post('payroll-runs', [PayrollRunController::class, 'store'])->name('payroll-runs.store');
-            Route::get('payroll-runs/{run}', [PayrollRunController::class, 'show'])->name('payroll-runs.show');
-            Route::post('payroll-runs/{run}/approve', [PayrollRunController::class, 'approve'])->name('payroll-runs.approve');
-            Route::post('payroll-runs/{run}/post', [PayrollRunController::class, 'post'])->name('payroll-runs.post');
-            Route::post('payroll-runs/{run}/send-payslips', [PayrollRunController::class, 'sendPayslips'])->name('payroll-runs.send-payslips');
-            Route::post('payroll-runs/{run}/pay-employee/{employeeId}', [PayrollRunController::class, 'payEmployee'])->name('payroll-runs.pay-employee');
-            Route::post('payroll-runs/{run}/remit-paye', [PayrollRunController::class, 'remitPaye'])->name('payroll-runs.remit-paye');
-            Route::post('payroll-runs/{run}/remit-pension', [PayrollRunController::class, 'remitPension'])->name('payroll-runs.remit-pension');
-            Route::get('payroll-runs/{run}/payslip/{itemId}', [PayrollRunController::class, 'payslip'])->name('payroll-runs.payslip');
-            Route::get('payroll-runs/{run}/payslips', [PayrollRunController::class, 'payslips'])->name('payroll-runs.payslips');
-            Route::get('payroll-runs/{run}/paye-schedule', [PayrollRunController::class, 'payeRemittanceSchedule'])->name('payroll-runs.paye-schedule');
-            Route::get('payroll-runs/{run}/pension-schedule', [PayrollRunController::class, 'pensionRemittanceSchedule'])->name('payroll-runs.pension-schedule');
-            Route::get('paye-tables', [\App\Http\Controllers\Accounting\PayeTableController::class, 'index'])->name('paye-tables.index');
-            Route::get('paye-tables/create', [\App\Http\Controllers\Accounting\PayeTableController::class, 'create'])->name('paye-tables.create');
-            Route::post('paye-tables', [\App\Http\Controllers\Accounting\PayeTableController::class, 'store'])->name('paye-tables.store');
-            Route::get('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'show'])->name('paye-tables.show');
-            Route::get('paye-tables/{payeTable}/edit', [\App\Http\Controllers\Accounting\PayeTableController::class, 'edit'])->name('paye-tables.edit');
-            Route::patch('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'update'])->name('paye-tables.update');
-            Route::post('paye-tables/{payeTable}/activate', [\App\Http\Controllers\Accounting\PayeTableController::class, 'activate'])->name('paye-tables.activate');
-            Route::delete('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'destroy'])->name('paye-tables.destroy');
+                Route::get('payroll-runs', [PayrollRunController::class, 'index'])->name('payroll-runs.index');
+                Route::get('payroll-runs/create', [PayrollRunController::class, 'create'])->name('payroll-runs.create');
+                Route::post('payroll-runs', [PayrollRunController::class, 'store'])->name('payroll-runs.store');
+                Route::get('payroll-runs/{run}', [PayrollRunController::class, 'show'])->name('payroll-runs.show');
+                Route::post('payroll-runs/{run}/approve', [PayrollRunController::class, 'approve'])->name('payroll-runs.approve')->middleware('sod:run');
+                Route::post('payroll-runs/{run}/post', [PayrollRunController::class, 'post'])->name('payroll-runs.post')->middleware('sod:run');
+                Route::post('payroll-runs/{run}/send-payslips', [PayrollRunController::class, 'sendPayslips'])->name('payroll-runs.send-payslips');
+                Route::post('payroll-runs/{run}/pay-employee/{employeeId}', [PayrollRunController::class, 'payEmployee'])->name('payroll-runs.pay-employee');
+                Route::post('payroll-runs/{run}/remit-paye', [PayrollRunController::class, 'remitPaye'])->name('payroll-runs.remit-paye');
+                Route::post('payroll-runs/{run}/remit-pension', [PayrollRunController::class, 'remitPension'])->name('payroll-runs.remit-pension');
+                Route::get('payroll-runs/{run}/payslip/{itemId}', [PayrollRunController::class, 'payslip'])->name('payroll-runs.payslip');
+                Route::get('payroll-runs/{run}/payslips', [PayrollRunController::class, 'payslips'])->name('payroll-runs.payslips');
+                Route::get('payroll-runs/{run}/paye-schedule', [PayrollRunController::class, 'payeRemittanceSchedule'])->name('payroll-runs.paye-schedule');
+                Route::get('payroll-runs/{run}/pension-schedule', [PayrollRunController::class, 'pensionRemittanceSchedule'])->name('payroll-runs.pension-schedule');
+                Route::get('paye-tables', [\App\Http\Controllers\Accounting\PayeTableController::class, 'index'])->name('paye-tables.index');
+                Route::get('paye-tables/create', [\App\Http\Controllers\Accounting\PayeTableController::class, 'create'])->name('paye-tables.create');
+                Route::post('paye-tables', [\App\Http\Controllers\Accounting\PayeTableController::class, 'store'])->name('paye-tables.store');
+                Route::get('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'show'])->name('paye-tables.show');
+                Route::get('paye-tables/{payeTable}/edit', [\App\Http\Controllers\Accounting\PayeTableController::class, 'edit'])->name('paye-tables.edit');
+                Route::patch('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'update'])->name('paye-tables.update');
+                Route::post('paye-tables/{payeTable}/activate', [\App\Http\Controllers\Accounting\PayeTableController::class, 'activate'])->name('paye-tables.activate');
+                Route::delete('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'destroy'])->name('paye-tables.destroy');
 
             // Pension Schemes
-            Route::get('pension-schemes', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'index'])->name('pension-schemes.index');
-            Route::get('pension-schemes/create', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'create'])->name('pension-schemes.create');
-            Route::post('pension-schemes', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'store'])->name('pension-schemes.store');
-            Route::get('pension-schemes/{scheme}', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'show'])->name('pension-schemes.show');
-            Route::get('pension-schemes/{scheme}/edit', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'edit'])->name('pension-schemes.edit');
-            Route::put('pension-schemes/{scheme}', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'update'])->name('pension-schemes.update');
-            Route::patch('pension-schemes/{scheme}/toggle', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'toggle'])->name('pension-schemes.toggle');
+                Route::get('pension-schemes', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'index'])->name('pension-schemes.index');
+                Route::get('pension-schemes/create', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'create'])->name('pension-schemes.create');
+                Route::post('pension-schemes', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'store'])->name('pension-schemes.store');
+                Route::get('pension-schemes/{scheme}', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'show'])->name('pension-schemes.show');
+                Route::get('pension-schemes/{scheme}/edit', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'edit'])->name('pension-schemes.edit');
+                Route::put('pension-schemes/{scheme}', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'update'])->name('pension-schemes.update');
+                Route::patch('pension-schemes/{scheme}/toggle', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'toggle'])->name('pension-schemes.toggle');
+            });
 
             // Sales Invoices
             Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
@@ -290,8 +294,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
             Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
             Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
-            Route::post('invoices/{invoice}/post', [InvoiceController::class, 'post'])->name('invoices.post');
-            Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
+            Route::post('invoices/{invoice}/post', [InvoiceController::class, 'post'])->name('invoices.post')->middleware(['permission:invoices.post', 'sod:invoice']);
+            Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void')->middleware(['permission:invoices.void', 'sod:invoice']);
             Route::get('invoices/{invoice}/print', [InvoiceController::class, 'printPdf'])->name('invoices.print');
 
             // Credit Notes
@@ -299,10 +303,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('credit-notes/create', [CreditNoteController::class, 'create'])->name('credit-notes.create');
             Route::post('credit-notes', [CreditNoteController::class, 'store'])->name('credit-notes.store');
             Route::get('credit-notes/{creditNote}', [CreditNoteController::class, 'show'])->name('credit-notes.show');
-            Route::post('credit-notes/{creditNote}/post', [CreditNoteController::class, 'post'])->name('credit-notes.post');
+            Route::post('credit-notes/{creditNote}/post', [CreditNoteController::class, 'post'])->name('credit-notes.post')->middleware(['permission:credit-notes.post', 'sod:creditNote']);
             Route::get('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'applyForm'])->name('credit-notes.apply-form');
             Route::post('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'apply'])->name('credit-notes.apply');
-            Route::post('credit-notes/{creditNote}/void', [CreditNoteController::class, 'void'])->name('credit-notes.void');
+            Route::post('credit-notes/{creditNote}/void', [CreditNoteController::class, 'void'])->name('credit-notes.void')->middleware(['permission:credit-notes.void', 'sod:creditNote']);
 
             // ── Quotations ──
             Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
@@ -312,11 +316,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
             Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
             Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
-            Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept');
-            Route::post('quotations/{quotation}/decline', [QuotationController::class, 'decline'])->name('quotations.decline');
-            Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice'])->name('quotations.convert-to-invoice');
-            Route::post('quotations/{quotation}/convert-to-receipt', [QuotationController::class, 'convertToSalesReceipt'])->name('quotations.convert-to-receipt');
-            Route::post('quotations/{quotation}/void', [QuotationController::class, 'void'])->name('quotations.void');
+            Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept')->middleware(['permission:quotations.approve', 'sod:quotation']);
+            Route::post('quotations/{quotation}/decline', [QuotationController::class, 'decline'])->name('quotations.decline')->middleware(['permission:quotations.approve', 'sod:quotation']);
+            Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice'])->name('quotations.convert-to-invoice')->middleware(['permission:quotations.convert', 'sod:quotation']);
+            Route::post('quotations/{quotation}/convert-to-receipt', [QuotationController::class, 'convertToSalesReceipt'])->name('quotations.convert-to-receipt')->middleware(['permission:quotations.convert', 'sod:quotation']);
+            Route::post('quotations/{quotation}/void', [QuotationController::class, 'void'])->name('quotations.void')->middleware(['permission:quotations.void', 'sod:quotation']);
             Route::get('quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print');
             Route::post('quotations/{quotation}/email', [QuotationController::class, 'email'])->name('quotations.email');
 
@@ -325,8 +329,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('sales-receipts/create', [SalesReceiptController::class, 'create'])->name('sales-receipts.create');
             Route::post('sales-receipts', [SalesReceiptController::class, 'store'])->name('sales-receipts.store');
             Route::get('sales-receipts/{salesReceipt}', [SalesReceiptController::class, 'show'])->name('sales-receipts.show');
-            Route::post('sales-receipts/{salesReceipt}/post', [SalesReceiptController::class, 'post'])->name('sales-receipts.post');
-            Route::post('sales-receipts/{salesReceipt}/void', [SalesReceiptController::class, 'void'])->name('sales-receipts.void');
+            Route::post('sales-receipts/{salesReceipt}/post', [SalesReceiptController::class, 'post'])->name('sales-receipts.post')->middleware(['permission:sales-receipts.post', 'sod:salesReceipt']);
+            Route::post('sales-receipts/{salesReceipt}/void', [SalesReceiptController::class, 'void'])->name('sales-receipts.void')->middleware(['permission:sales-receipts.void', 'sod:salesReceipt']);
             Route::get('sales-receipts/{salesReceipt}/print', [SalesReceiptController::class, 'print'])->name('sales-receipts.print');
             Route::post('sales-receipts/{salesReceipt}/email', [SalesReceiptController::class, 'email'])->name('sales-receipts.email');
 
@@ -345,19 +349,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('bills/{bill}', [BillController::class, 'show'])->name('bills.show');
             Route::get('bills/{bill}/edit', [BillController::class, 'edit'])->name('bills.edit');
             Route::put('bills/{bill}', [BillController::class, 'update'])->name('bills.update');
-            Route::post('bills/{bill}/post', [BillController::class, 'post'])->name('bills.post');
-            Route::post('bills/{bill}/approve', [BillController::class, 'approve'])->name('bills.approve');
-            Route::post('bills/{bill}/void', [BillController::class, 'void'])->name('bills.void');
+            Route::post('bills/{bill}/post', [BillController::class, 'post'])->name('bills.post')->middleware(['permission:bills.post', 'sod:bill']);
+            Route::post('bills/{bill}/approve', [BillController::class, 'approve'])->name('bills.approve')->middleware(['permission:bills.approve', 'sod:bill']);
+            Route::post('bills/{bill}/void', [BillController::class, 'void'])->name('bills.void')->middleware(['permission:bills.void', 'sod:bill']);
 
             // Vendor Credits
             Route::get('vendor-credits', [VendorCreditController::class, 'index'])->name('vendor-credits.index');
             Route::get('vendor-credits/create', [VendorCreditController::class, 'create'])->name('vendor-credits.create');
             Route::post('vendor-credits', [VendorCreditController::class, 'store'])->name('vendor-credits.store');
             Route::get('vendor-credits/{vendorCredit}', [VendorCreditController::class, 'show'])->name('vendor-credits.show');
-            Route::post('vendor-credits/{vendorCredit}/post', [VendorCreditController::class, 'post'])->name('vendor-credits.post');
+            Route::post('vendor-credits/{vendorCredit}/post', [VendorCreditController::class, 'post'])->name('vendor-credits.post')->middleware(['permission:vendor-credits.post', 'sod:vendorCredit']);
             Route::get('vendor-credits/{vendorCredit}/apply', [VendorCreditController::class, 'applyForm'])->name('vendor-credits.apply-form');
             Route::post('vendor-credits/{vendorCredit}/apply', [VendorCreditController::class, 'apply'])->name('vendor-credits.apply');
-            Route::post('vendor-credits/{vendorCredit}/void', [VendorCreditController::class, 'void'])->name('vendor-credits.void');
+            Route::post('vendor-credits/{vendorCredit}/void', [VendorCreditController::class, 'void'])->name('vendor-credits.void')->middleware(['permission:vendor-credits.void', 'sod:vendorCredit']);
 
             // Vendor Payments
             Route::get('vendor-payments/create', [VendorPaymentController::class, 'create'])->name('vendor-payments.create');
@@ -371,85 +375,89 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
             Route::get('expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
             Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
-            Route::post('expenses/{expense}/post', [ExpenseController::class, 'post'])->name('expenses.post');
-            Route::post('expenses/{expense}/void', [ExpenseController::class, 'void'])->name('expenses.void');
+            Route::post('expenses/{expense}/post', [ExpenseController::class, 'post'])->name('expenses.post')->middleware(['permission:expenses.post', 'sod:expense']);
+            Route::post('expenses/{expense}/void', [ExpenseController::class, 'void'])->name('expenses.void')->middleware(['permission:expenses.void', 'sod:expense']);
 
             // Vendor Centre
             Route::get('vendor-centre', [VendorCentreController::class, 'index'])->name('vendor-centre.index');
             Route::get('vendor-centre/{vendor}', [VendorCentreController::class, 'show'])->name('vendor-centre.show');
 
+            Route::middleware('feature:purchasing')->group(function () {
             // Purchase Requisitions
-            Route::get('purchase-requisitions', [PurchaseRequisitionController::class, 'index'])->name('purchase-requisitions.index');
-            Route::get('purchase-requisitions/create', [PurchaseRequisitionController::class, 'create'])->name('purchase-requisitions.create');
-            Route::post('purchase-requisitions', [PurchaseRequisitionController::class, 'store'])->name('purchase-requisitions.store');
-            Route::get('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'show'])->name('purchase-requisitions.show');
-            Route::get('purchase-requisitions/{purchaseRequisition}/edit', [PurchaseRequisitionController::class, 'edit'])->name('purchase-requisitions.edit');
-            Route::put('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'update'])->name('purchase-requisitions.update');
-            Route::post('purchase-requisitions/{purchaseRequisition}/submit', [PurchaseRequisitionController::class, 'submit'])->name('purchase-requisitions.submit');
-            Route::post('purchase-requisitions/{purchaseRequisition}/approve', [PurchaseRequisitionController::class, 'approve'])->name('purchase-requisitions.approve');
-            Route::post('purchase-requisitions/{purchaseRequisition}/reject', [PurchaseRequisitionController::class, 'reject'])->name('purchase-requisitions.reject');
+                Route::get('purchase-requisitions', [PurchaseRequisitionController::class, 'index'])->name('purchase-requisitions.index');
+                Route::get('purchase-requisitions/create', [PurchaseRequisitionController::class, 'create'])->name('purchase-requisitions.create');
+                Route::post('purchase-requisitions', [PurchaseRequisitionController::class, 'store'])->name('purchase-requisitions.store');
+                Route::get('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'show'])->name('purchase-requisitions.show');
+                Route::get('purchase-requisitions/{purchaseRequisition}/edit', [PurchaseRequisitionController::class, 'edit'])->name('purchase-requisitions.edit');
+                Route::put('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'update'])->name('purchase-requisitions.update');
+                Route::post('purchase-requisitions/{purchaseRequisition}/submit', [PurchaseRequisitionController::class, 'submit'])->name('purchase-requisitions.submit')->middleware(['permission:purchase-requisitions.submit', 'sod:purchaseRequisition']);
+                Route::post('purchase-requisitions/{purchaseRequisition}/approve', [PurchaseRequisitionController::class, 'approve'])->name('purchase-requisitions.approve')->middleware(['permission:purchase-requisitions.approve', 'sod:purchaseRequisition']);
+                Route::post('purchase-requisitions/{purchaseRequisition}/reject', [PurchaseRequisitionController::class, 'reject'])->name('purchase-requisitions.reject')->middleware(['permission:purchase-requisitions.reject', 'sod:purchaseRequisition']);
 
             // Purchase Orders
-            Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
-            Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
-            Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
-            Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
-            Route::get('purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
-            Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
-            Route::post('purchase-orders/{purchaseOrder}/confirm', [PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm');
-            Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+                Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+                Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
+                Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+                Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+                Route::get('purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
+                Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+                Route::post('purchase-orders/{purchaseOrder}/confirm', [PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm')->middleware(['permission:purchase-orders.confirm', 'sod:purchaseOrder']);
+                Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel')->middleware(['permission:purchase-orders.cancel', 'sod:purchaseOrder']);
 
             // Goods Received Notes
-            Route::get('goods-received-notes', [GoodsReceivedNoteController::class, 'index'])->name('goods-received-notes.index');
-            Route::get('goods-received-notes/create', [GoodsReceivedNoteController::class, 'create'])->name('goods-received-notes.create');
-            Route::post('goods-received-notes', [GoodsReceivedNoteController::class, 'store'])->name('goods-received-notes.store');
-            Route::get('goods-received-notes/{goodsReceivedNote}', [GoodsReceivedNoteController::class, 'show'])->name('goods-received-notes.show');
-            Route::post('goods-received-notes/{goodsReceivedNote}/post', [GoodsReceivedNoteController::class, 'post'])->name('goods-received-notes.post');
+                Route::get('goods-received-notes', [GoodsReceivedNoteController::class, 'index'])->name('goods-received-notes.index');
+                Route::get('goods-received-notes/create', [GoodsReceivedNoteController::class, 'create'])->name('goods-received-notes.create');
+                Route::post('goods-received-notes', [GoodsReceivedNoteController::class, 'store'])->name('goods-received-notes.store');
+                Route::get('goods-received-notes/{goodsReceivedNote}', [GoodsReceivedNoteController::class, 'show'])->name('goods-received-notes.show');
+                Route::post('goods-received-notes/{goodsReceivedNote}/post', [GoodsReceivedNoteController::class, 'post'])->name('goods-received-notes.post')->middleware('sod:goodsReceivedNote');
+            });
 
+            Route::middleware('feature:banking')->group(function () {
             // Banking
-            Route::get('bank-accounts', [BankController::class, 'index'])->name('bank-accounts.index');
-            Route::get('bank-accounts/{bankAccountId}/register', [BankController::class, 'register'])->name('bank-accounts.register');
-            Route::get('bank-accounts/transfer', [BankController::class, 'transferForm'])->name('bank-accounts.transfer-form');
-            Route::post('bank-accounts/transfer', [BankController::class, 'transfer'])->name('bank-accounts.transfer');
-            Route::get('bank-accounts/{bankAccountId}/manual', [BankController::class, 'manualTransactionForm'])->name('bank-accounts.manual-form');
-            Route::post('bank-accounts/{bankAccountId}/manual', [BankController::class, 'storeManualTransaction'])->name('bank-accounts.store-manual');
+                Route::get('bank-accounts', [BankController::class, 'index'])->name('bank-accounts.index');
+                Route::get('bank-accounts/{bankAccountId}/register', [BankController::class, 'register'])->name('bank-accounts.register');
+                Route::get('bank-accounts/transfer', [BankController::class, 'transferForm'])->name('bank-accounts.transfer-form');
+                Route::post('bank-accounts/transfer', [BankController::class, 'transfer'])->name('bank-accounts.transfer');
+                Route::get('bank-accounts/{bankAccountId}/manual', [BankController::class, 'manualTransactionForm'])->name('bank-accounts.manual-form');
+                Route::post('bank-accounts/{bankAccountId}/manual', [BankController::class, 'storeManualTransaction'])->name('bank-accounts.store-manual');
 
             // Bank Reconciliation
-            Route::get('bank-reconciliation/{bankAccountId}', [ReconciliationController::class, 'index'])->name('bank-reconciliation.index');
-            Route::get('bank-reconciliation/{bankAccountId}/import', [ReconciliationController::class, 'importForm'])->name('bank-reconciliation.import-form');
-            Route::post('bank-reconciliation/{bankAccountId}/import', [ReconciliationController::class, 'import'])->name('bank-reconciliation.import');
-            Route::get('bank-reconciliation/{reconciliationId}', [ReconciliationController::class, 'show'])->name('bank-reconciliation.show');
-            Route::get('bank-reconciliation/{reconciliationId}/suggest', [ReconciliationController::class, 'suggestMatches'])->name('bank-reconciliation.suggest');
-            Route::post('bank-reconciliation/{reconciliationId}/match', [ReconciliationController::class, 'match'])->name('bank-reconciliation.match');
-            Route::post('bank-reconciliation/{reconciliationId}/unmatch', [ReconciliationController::class, 'unmatch'])->name('bank-reconciliation.unmatch');
-            Route::get('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransactionForm'])->name('bank-reconciliation.create-tx-form');
-            Route::post('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransaction'])->name('bank-reconciliation.create-tx');
-            Route::post('bank-reconciliation/{reconciliationId}/complete', [ReconciliationController::class, 'complete'])->name('bank-reconciliation.complete');
+                Route::get('bank-reconciliation/{bankAccountId}', [ReconciliationController::class, 'index'])->name('bank-reconciliation.index');
+                Route::get('bank-reconciliation/{bankAccountId}/import', [ReconciliationController::class, 'importForm'])->name('bank-reconciliation.import-form');
+                Route::post('bank-reconciliation/{bankAccountId}/import', [ReconciliationController::class, 'import'])->name('bank-reconciliation.import');
+                Route::get('bank-reconciliation/{reconciliationId}', [ReconciliationController::class, 'show'])->name('bank-reconciliation.show');
+                Route::get('bank-reconciliation/{reconciliationId}/suggest', [ReconciliationController::class, 'suggestMatches'])->name('bank-reconciliation.suggest');
+                Route::post('bank-reconciliation/{reconciliationId}/match', [ReconciliationController::class, 'match'])->name('bank-reconciliation.match');
+                Route::post('bank-reconciliation/{reconciliationId}/unmatch', [ReconciliationController::class, 'unmatch'])->name('bank-reconciliation.unmatch');
+                Route::get('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransactionForm'])->name('bank-reconciliation.create-tx-form');
+                Route::post('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransaction'])->name('bank-reconciliation.create-tx');
+                Route::post('bank-reconciliation/{reconciliationId}/complete', [ReconciliationController::class, 'complete'])->name('bank-reconciliation.complete');
 
             // Make Deposits
-            Route::get('deposits', [MakeDepositController::class, 'index'])->name('deposits.index');
-            Route::get('deposits/create', [MakeDepositController::class, 'create'])->name('deposits.create');
-            Route::post('deposits', [MakeDepositController::class, 'store'])->name('deposits.store');
+                Route::get('deposits', [MakeDepositController::class, 'index'])->name('deposits.index');
+                Route::get('deposits/create', [MakeDepositController::class, 'create'])->name('deposits.create');
+                Route::post('deposits', [MakeDepositController::class, 'store'])->name('deposits.store');
 
             // Cheques
-            Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
-            Route::get('cheques/create', [ChequeController::class, 'create'])->name('cheques.create');
-            Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
-            Route::get('cheques/{chequeId}', [ChequeController::class, 'show'])->name('cheques.show');
-            Route::post('cheques/{chequeId}/void', [ChequeController::class, 'voidCheque'])->name('cheques.void');
-            Route::get('cheques-register', [ChequeController::class, 'register'])->name('cheques.register');
+                Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
+                Route::get('cheques/create', [ChequeController::class, 'create'])->name('cheques.create');
+                Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
+                Route::get('cheques/{chequeId}', [ChequeController::class, 'show'])->name('cheques.show');
+                Route::post('cheques/{chequeId}/void', [ChequeController::class, 'voidCheque'])->name('cheques.void')->middleware(['permission:cheques.void', 'sod:chequeId']);
+                Route::get('cheques-register', [ChequeController::class, 'register'])->name('cheques.register');
 
             // Petty Cash
-            Route::get('petty-cash', [PettyCashController::class, 'index'])->name('petty-cash.index');
-            Route::get('petty-cash/create', [PettyCashController::class, 'createFund'])->name('petty-cash.create-fund');
-            Route::post('petty-cash', [PettyCashController::class, 'storeFund'])->name('petty-cash.store-fund');
-            Route::get('petty-cash/{fundId}', [PettyCashController::class, 'show'])->name('petty-cash.show');
-            Route::post('petty-cash/establish', [PettyCashController::class, 'establish'])->name('petty-cash.establish');
-            Route::post('petty-cash/expense', [PettyCashController::class, 'recordExpense'])->name('petty-cash.expense');
-            Route::post('petty-cash/replenish', [PettyCashController::class, 'replenish'])->name('petty-cash.replenish');
+                Route::get('petty-cash', [PettyCashController::class, 'index'])->name('petty-cash.index');
+                Route::get('petty-cash/create', [PettyCashController::class, 'createFund'])->name('petty-cash.create-fund');
+                Route::post('petty-cash', [PettyCashController::class, 'storeFund'])->name('petty-cash.store-fund');
+                Route::get('petty-cash/{fundId}', [PettyCashController::class, 'show'])->name('petty-cash.show');
+                Route::post('petty-cash/establish', [PettyCashController::class, 'establish'])->name('petty-cash.establish')->middleware(['permission:petty-cash.establish', 'sod:fundId']);
+                Route::post('petty-cash/expense', [PettyCashController::class, 'recordExpense'])->name('petty-cash.expense')->middleware('permission:petty-cash.expense');
+                Route::post('petty-cash/replenish', [PettyCashController::class, 'replenish'])->name('petty-cash.replenish')->middleware('permission:petty-cash.replenish');
 
             // Cash Position
-            Route::get('cash-position', [CashPositionController::class, 'index'])->name('cash-position.index');
+                Route::get('cash-position', [CashPositionController::class, 'index'])->name('cash-position.index');
+            });
 
             // Financial Statements
             Route::get('income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
@@ -475,25 +483,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('aging/ap-detail', [AgingReportController::class, 'apDetail'])->name('aging.ap-detail');
             Route::get('aging/export/csv', [AgingReportController::class, 'exportCsv'])->name('aging.export-csv');
 
+            Route::middleware('feature:budgets')->group(function () {
             // Budgets
-            Route::resource('budgets', \App\Http\Controllers\Accounting\BudgetController::class);
-            Route::get('budgets/{budget}/variance', [\App\Http\Controllers\Accounting\BudgetController::class, 'variance'])->name('budgets.variance');
-            Route::post('budgets/{budget}/approve', [\App\Http\Controllers\Accounting\BudgetController::class, 'approve'])->name('budgets.approve');
+                Route::resource('budgets', \App\Http\Controllers\Accounting\BudgetController::class);
+                Route::get('budgets/{budget}/variance', [\App\Http\Controllers\Accounting\BudgetController::class, 'variance'])->name('budgets.variance');
+                Route::post('budgets/{budget}/approve', [\App\Http\Controllers\Accounting\BudgetController::class, 'approve'])->name('budgets.approve')->middleware('sod:budget');
+            });
 
+            Route::middleware('feature:fixed_assets')->group(function () {
             // Fixed Assets
-            Route::resource('asset-categories', \App\Http\Controllers\Accounting\AssetCategoryController::class);
-            Route::resource('fixed-assets', \App\Http\Controllers\Accounting\FixedAssetController::class);
-            Route::post('fixed-assets/{asset}/activate', [\App\Http\Controllers\Accounting\FixedAssetController::class, 'activate'])->name('fixed-assets.activate');
-            Route::get('fixed-assets/{asset}/schedule', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'schedule'])->name('fixed-assets.schedule');
-            Route::get('asset-depreciation/runs', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'runHistory'])->name('depreciation.runs');
-            Route::post('asset-depreciation/run', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'run'])->name('depreciation.run');
-            Route::resource('asset-disposals', \App\Http\Controllers\Accounting\AssetDisposalController::class);
-            Route::resource('asset-transfers', \App\Http\Controllers\Accounting\AssetTransferController::class);
-            Route::resource('asset-impairments', \App\Http\Controllers\Accounting\AssetImpairmentController::class);
-            Route::post('asset-impairments/reverse', [\App\Http\Controllers\Accounting\AssetImpairmentController::class, 'reverse'])->name('asset-impairments.reverse');
-            Route::resource('asset-revaluations', \App\Http\Controllers\Accounting\AssetRevaluationController::class);
-            Route::get('asset-usage', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'usageLog'])->name('asset-usage.index');
-            Route::post('asset-usage', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'storeUsage'])->name('asset-usage.store');
+                Route::resource('asset-categories', \App\Http\Controllers\Accounting\AssetCategoryController::class);
+                Route::resource('fixed-assets', \App\Http\Controllers\Accounting\FixedAssetController::class);
+                Route::post('fixed-assets/{asset}/activate', [\App\Http\Controllers\Accounting\FixedAssetController::class, 'activate'])->name('fixed-assets.activate');
+                Route::get('fixed-assets/{asset}/schedule', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'schedule'])->name('fixed-assets.schedule');
+                Route::get('asset-depreciation/runs', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'runHistory'])->name('depreciation.runs');
+                Route::post('asset-depreciation/run', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'run'])->name('depreciation.run');
+                Route::resource('asset-disposals', \App\Http\Controllers\Accounting\AssetDisposalController::class);
+                Route::resource('asset-transfers', \App\Http\Controllers\Accounting\AssetTransferController::class);
+                Route::resource('asset-impairments', \App\Http\Controllers\Accounting\AssetImpairmentController::class);
+                Route::post('asset-impairments/reverse', [\App\Http\Controllers\Accounting\AssetImpairmentController::class, 'reverse'])->name('asset-impairments.reverse');
+                Route::resource('asset-revaluations', \App\Http\Controllers\Accounting\AssetRevaluationController::class);
+                Route::get('asset-usage', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'usageLog'])->name('asset-usage.index');
+                Route::post('asset-usage', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'storeUsage'])->name('asset-usage.store');
+            });
 
             // Account Classification
             Route::get('account-classification', [AccountClassificationController::class, 'index'])->name('account-classification.index');
@@ -509,7 +521,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('landed-costs/create', [\App\Http\Controllers\Accounting\LandedCostController::class, 'create'])->name('landed-costs.create');
             Route::post('landed-costs', [\App\Http\Controllers\Accounting\LandedCostController::class, 'store'])->name('landed-costs.store');
             Route::get('landed-costs/{voucher}', [\App\Http\Controllers\Accounting\LandedCostController::class, 'show'])->name('landed-costs.show');
-            Route::post('landed-costs/{voucher}/post', [\App\Http\Controllers\Accounting\LandedCostController::class, 'post'])->name('landed-costs.post');
+            Route::post('landed-costs/{voucher}/post', [\App\Http\Controllers\Accounting\LandedCostController::class, 'post'])->name('landed-costs.post')->middleware('sod:voucher');
 
             // ── Report Center ──
             Route::get('report-center', [ReportCenterController::class, 'index'])->name('report-center.index');
@@ -543,9 +555,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/bank-balances', [\App\Http\Controllers\Accounting\ReportControllers\BankBalancesController::class, 'index'])->name('reports.bank-balances');
             Route::get('reports/deposits-in-transit', [\App\Http\Controllers\Accounting\ReportControllers\DepositsInTransitController::class, 'index'])->name('reports.deposits-in-transit');
 
+            Route::middleware('feature:fixed_assets')->group(function () {
             // Fixed Assets
-            Route::get('reports/asset-revaluation', [\App\Http\Controllers\Accounting\ReportControllers\AssetRevaluationReportController::class, 'index'])->name('reports.asset-revaluation');
-            Route::get('reports/asset-impairment', [\App\Http\Controllers\Accounting\ReportControllers\AssetImpairmentReportController::class, 'index'])->name('reports.asset-impairment');
+                Route::get('reports/asset-revaluation', [\App\Http\Controllers\Accounting\ReportControllers\AssetRevaluationReportController::class, 'index'])->name('reports.asset-revaluation');
+                Route::get('reports/asset-impairment', [\App\Http\Controllers\Accounting\ReportControllers\AssetImpairmentReportController::class, 'index'])->name('reports.asset-impairment');
+            });
 
             // Payroll
             Route::get('reports/payroll-register', [\App\Http\Controllers\Accounting\ReportControllers\PayrollRegisterController::class, 'index'])->name('reports.payroll-register');
@@ -563,9 +577,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/bank-reconciliation-history', [\App\Http\Controllers\Accounting\ReportControllers\BankReconciliationHistoryController::class, 'index'])->name('reports.bank-reconciliation-history');
             Route::get('reports/cheque-register', [\App\Http\Controllers\Accounting\ReportControllers\ChequeRegisterController::class, 'index'])->name('reports.cheque-register');
 
+            Route::middleware('feature:fixed_assets')->group(function () {
             // Fixed Assets
-            Route::get('reports/asset-disposal-report', [\App\Http\Controllers\Accounting\ReportControllers\AssetDisposalReportController::class, 'index'])->name('reports.asset-disposal-report');
-            Route::get('reports/tax-depreciation-schedule', [\App\Http\Controllers\Accounting\ReportControllers\TaxDepreciationScheduleController::class, 'index'])->name('reports.tax-depreciation-schedule');
+                Route::get('reports/asset-disposal-report', [\App\Http\Controllers\Accounting\ReportControllers\AssetDisposalReportController::class, 'index'])->name('reports.asset-disposal-report');
+                Route::get('reports/tax-depreciation-schedule', [\App\Http\Controllers\Accounting\ReportControllers\TaxDepreciationScheduleController::class, 'index'])->name('reports.tax-depreciation-schedule');
+            });
 
             // Payroll
             Route::get('reports/paye-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PayeRemittanceReportController::class, 'index'])->name('reports.paye-remittance-report');
@@ -622,6 +638,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])->name('users.edit');
             Route::put('users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
             Route::post('users/{user}/toggle-2fa', [\App\Http\Controllers\Admin\UserController::class, 'toggle2fa'])->name('users.toggle-2fa');
+
+            // Permission Manager
+            Route::get('permissions', [\App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('permissions.index');
+            Route::post('permissions/sync', [\App\Http\Controllers\Admin\PermissionController::class, 'sync'])->name('permissions.sync');
 
             // Setup Wizard
             Route::get('setup-wizard', [\App\Http\Controllers\Admin\SetupWizardController::class, 'index'])->name('setup-wizard.index');

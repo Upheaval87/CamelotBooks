@@ -131,6 +131,7 @@ class GoodsReceivedNoteController extends Controller
 
     public function post(GoodsReceivedNote $goodsReceivedNote)
     {
+        $this->requirePermission('goods-received-notes.post');
         $companyId = session('current_company_id');
         abort_unless($goodsReceivedNote->company_id == $companyId, 403);
 

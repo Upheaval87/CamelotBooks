@@ -53,6 +53,7 @@ class StockTransferController extends Controller
 
     public function store(Request $request, InventoryService $inventoryService, JournalPostingEngine $postingEngine)
     {
+        $this->requirePermission($request, 'stock-transfers.create');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 

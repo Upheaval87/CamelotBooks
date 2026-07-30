@@ -19,11 +19,13 @@
                 <div class="tr-spacer"></div>
 
                 @if($creditNote->status !== 'void' && $creditNote->status !== 'applied')
-                    <form method="POST" action="{{ route('accounting.credit-notes.void', $creditNote) }}" class="inline">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to void this credit note?') }}')">{{ __('Void') }}</button>
-                    </form>
+                    @can('credit-notes.void')
+                        <form method="POST" action="{{ route('accounting.credit-notes.void', $creditNote) }}" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to void this credit note?') }}')">{{ __('Void') }}</button>
+                        </form>
+                    @endcan
                 @endif
 
                 <a href="{{ route('accounting.credit-notes.index') }}" class="tr-item">{{ __('Back to Credit Notes') }}</a>

@@ -16,11 +16,13 @@
                 <div class="tr-spacer"></div>
 
                 @if($vendorCredit->status !== 'void')
-                    <form method="POST" action="{{ route('accounting.vendor-credits.void', $vendorCredit) }}" class="inline">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to void this vendor credit?') }}')">{{ __('Void') }}</button>
-                    </form>
+                    @can('vendor-credits.void')
+                        <form method="POST" action="{{ route('accounting.vendor-credits.void', $vendorCredit) }}" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to void this vendor credit?') }}')">{{ __('Void') }}</button>
+                        </form>
+                    @endcan
                 @endif
 
                 <a href="{{ route('accounting.vendor-credits.index') }}" class="tr-item">{{ __('Back to Vendor Credits') }}</a>

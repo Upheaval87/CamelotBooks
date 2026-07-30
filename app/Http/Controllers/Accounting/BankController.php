@@ -61,6 +61,7 @@ class BankController extends Controller
 
     public function transfer(Request $request)
     {
+        $this->requirePermission($request, 'bank-accounts.create');
         $companyId = session('current_company_id');
 
         $validated = $request->validate([
@@ -111,6 +112,7 @@ class BankController extends Controller
 
     public function storeManualTransaction(Request $request)
     {
+        $this->requirePermission($request, 'bank-accounts.create');
         $companyId = session('current_company_id');
 
         $validated = $request->validate([

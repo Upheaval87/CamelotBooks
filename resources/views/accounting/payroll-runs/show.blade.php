@@ -31,21 +31,25 @@
 
                 <div class="mt-6 flex items-center space-x-3">
                     @if($run->status === 'calculated')
-                        <form method="POST" action="{{ route('accounting.payroll-runs.approve', $run) }}">
-                            @csrf
-                            <button type="submit" class="x-button x-button-primary" onclick="return confirm('Are you sure you want to approve this payroll run?')">
-                                {{ __('Approve Run') }}
-                            </button>
-                        </form>
+                        @can('payroll-runs.approve')
+                            <form method="POST" action="{{ route('accounting.payroll-runs.approve', $run) }}">
+                                @csrf
+                                <button type="submit" class="x-button x-button-primary" onclick="return confirm('Are you sure you want to approve this payroll run?')">
+                                    {{ __('Approve Run') }}
+                                </button>
+                            </form>
+                        @endcan
                     @endif
 
                     @if($run->status === 'approved')
-                        <form method="POST" action="{{ route('accounting.payroll-runs.post', $run) }}">
-                            @csrf
-                            <button type="submit" class="x-button x-button-positive" onclick="return confirm('Are you sure you want to post this payroll run to the General Ledger?')">
-                                {{ __('Post to GL') }}
-                            </button>
-                        </form>
+                        @can('payroll-runs.post')
+                            <form method="POST" action="{{ route('accounting.payroll-runs.post', $run) }}">
+                                @csrf
+                                <button type="submit" class="x-button x-button-positive" onclick="return confirm('Are you sure you want to post this payroll run to the General Ledger?')">
+                                    {{ __('Post to GL') }}
+                                </button>
+                            </form>
+                        @endcan
                     @endif
 
                     @if(in_array($run->status, ['posted', 'partially_paid', 'fully_paid']))

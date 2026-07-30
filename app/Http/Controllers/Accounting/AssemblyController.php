@@ -51,6 +51,7 @@ class AssemblyController extends Controller
 
     public function store(Request $request, AssemblyBuildService $service)
     {
+        $this->requirePermission($request, 'assemblies.create');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 
@@ -100,6 +101,7 @@ class AssemblyController extends Controller
 
     public function storeUnbuild(Request $request, AssemblyBuildService $service)
     {
+        $this->requirePermission($request, 'assemblies.void');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 

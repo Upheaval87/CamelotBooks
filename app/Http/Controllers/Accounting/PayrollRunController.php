@@ -91,6 +91,7 @@ class PayrollRunController extends Controller
 
     public function approve(PayrollRun $run, PayrollService $payrollService)
     {
+        $this->requirePermission('payroll-runs.approve');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 
@@ -109,6 +110,7 @@ class PayrollRunController extends Controller
 
     public function post(PayrollRun $run, PayrollService $payrollService)
     {
+        $this->requirePermission('payroll-runs.post');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 
@@ -127,6 +129,7 @@ class PayrollRunController extends Controller
 
     public function payEmployee(Request $request, PayrollRun $run, int $employeeId, PayrollService $payrollService)
     {
+        $this->requirePermission($request, 'payroll-runs.pay');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 
@@ -159,6 +162,7 @@ class PayrollRunController extends Controller
 
     public function remitPaye(Request $request, PayrollRun $run, PayrollService $payrollService)
     {
+        $this->requirePermission($request, 'payroll-runs.remit');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 
@@ -190,6 +194,7 @@ class PayrollRunController extends Controller
 
     public function remitPension(Request $request, PayrollRun $run, PayrollService $payrollService)
     {
+        $this->requirePermission($request, 'payroll-runs.remit');
         $companyId = session('current_company_id');
         $userId = auth()->id();
 
@@ -221,6 +226,7 @@ class PayrollRunController extends Controller
 
     public function sendPayslips(Request $request, PayrollRun $run)
     {
+        $this->requirePermission($request, 'payroll-runs.send-payslips');
         $companyId = session('current_company_id');
 
         if ($run->company_id !== $companyId) {

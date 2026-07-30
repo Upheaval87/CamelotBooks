@@ -1,13 +1,7 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Balance Sheet') }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.balance-sheet.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
-        <x-button variant="ghost" href="{{ route('accounting.balance-sheet.export-pdf', request()->query()) }}" target="_blank">{{ __('Export PDF') }}</x-button>
-    </div>
-    </x-slot>
-
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.balance-sheet.index') }}" class="flex items-end gap-4">
@@ -33,88 +27,77 @@
                 </form>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Balance Sheet as of {{ \Carbon\Carbon::parse($asOfDate)->format('M d, Y') }}</h3>
+            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+
+            <x-report.card>
+                <x-report.header
+                    :company="$currentCompany->name ?? config('app.name')"
+                    title="Balance Sheet"
+                    :range="'As of ' . \Carbon\Carbon::parse($asOfDate)->format('M d, Y')"
+                />
+
+                <x-report.toolbar
+                    :csvRoute="route('accounting.balance-sheet.export-csv', request()->query())"
+                    :pdfRoute="route('accounting.balance-sheet.export-pdf', request()->query())"
+                />
+
+                <x-report.col-bar left="Description" :right="'Amount ('.$cs.')'" />
+
+                <x-report.section-bar>Assets</x-report.section-bar>
+                @foreach($groups['asset'] as $subType => $items)
+                    @if(!empty($items))
+                        @foreach($items as $item)
+                            <x-report.line
+                                :code="$item['account']->code"
+                                :desc="$item['account']->name"
+                                :amount="format_number($item['balance'])"
+                                :href="route('accounting.general-ledger.account', $item['account']->id).'?date_to='.$asOfDate.($branchId ? '&branch_id='.$branchId : '')"
+                                :zero="abs($item['balance']) <= 0"
+                            />
+                        @endforeach
+                    @endif
+                @endforeach
+                <x-report.subtotal desc="Total Assets" :amount="format_number($total_assets)" />
+
+                <x-report.section-bar>Liabilities</x-report.section-bar>
+                @foreach($groups['liability'] as $subType => $items)
+                    @if(!empty($items))
+                        @foreach($items as $item)
+                            <x-report.line
+                                :code="$item['account']->code"
+                                :desc="$item['account']->name"
+                                :amount="format_number($item['balance'])"
+                                :href="route('accounting.general-ledger.account', $item['account']->id).'?date_to='.$asOfDate.($branchId ? '&branch_id='.$branchId : '')"
+                                :zero="abs($item['balance']) <= 0"
+                            />
+                        @endforeach
+                    @endif
+                @endforeach
+                <x-report.subtotal desc="Total Liabilities" :amount="format_number($total_liabilities)" />
+
+                <x-report.section-bar>Equity</x-report.section-bar>
+                @foreach($groups['equity'] as $subType => $items)
+                    @foreach($items as $item)
+                        <x-report.line
+                            :code="$item['account']->code"
+                            :desc="$item['account']->name"
+                            :amount="format_number($item['balance'])"
+                            :href="route('accounting.general-ledger.account', $item['account']->id).'?date_to='.$asOfDate.($branchId ? '&branch_id='.$branchId : '')"
+                            :zero="abs($item['balance']) <= 0"
+                        />
+                    @endforeach
+                @endforeach
+                <x-report.line desc="Current Year Earnings" :amount="format_number($current_year_earnings)" />
+                <x-report.subtotal desc="Total Equity" :amount="format_number($total_equity)" />
+
+                <x-report.total desc="Total Liabilities &amp; Equity" :amount="format_number($total_liabilities + $total_equity)" />
+            </x-report.card>
+
+            @if(!$balanced)
+                <div class="mt-4 px-6 py-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-sm font-semibold text-red-600">Warning: Balance sheet is out of balance by {{ format_number(abs($total_assets - ($total_liabilities + $total_equity))) }}</p>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th class="text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($groups['asset'] as $subType => $items)
-                                @if(!empty($items))
-                                    <tr class="bg-gray-50">
-                                        <td colspan="2" class="px-6 py-2 text-sm font-semibold text-gray-700">{{ ucwords(str_replace('_', ' ', $subType)) }}</td>
-                                    </tr>
-                                    @foreach($items as $item)
-                                        <tr class="hover:bg-gray-50">
-                                            <td><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-ink hover:text-gold underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="numeric">{{ format_money($item['balance']) }}</td>
-                                        </tr>
-                                    @endforeach
-                                @endif
-                            @endforeach
-                            <tr class="bg-indigo-50">
-                                <td>Total Assets</td>
-                                <td class="numeric">{{ format_money($total_assets) }}</td>
-                            </tr>
-
-                            @foreach($groups['liability'] as $subType => $items)
-                                @if(!empty($items))
-                                    <tr class="bg-gray-50">
-                                        <td colspan="2" class="px-6 py-2 text-sm font-semibold text-gray-700">{{ ucwords(str_replace('_', ' ', $subType)) }}</td>
-                                    </tr>
-                                    @foreach($items as $item)
-                                        <tr class="hover:bg-gray-50">
-                                            <td><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-ink hover:text-gold underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                            <td class="numeric">{{ format_money($item['balance']) }}</td>
-                                        </tr>
-                                    @endforeach
-                                @endif
-                            @endforeach
-                            <tr class="bg-indigo-50">
-                                <td>Total Liabilities</td>
-                                <td class="numeric">{{ format_money($total_liabilities) }}</td>
-                            </tr>
-
-                            <tr class="bg-gray-50">
-                                <td colspan="2" class="px-6 py-2 text-sm font-semibold text-gray-700">Equity</td>
-                            </tr>
-                            @foreach($groups['equity'] as $subType => $items)
-                                @foreach($items as $item)
-                                    <tr class="hover:bg-gray-50">
-                                        <td><a href="{{ route('accounting.general-ledger.account', $item['account']->id) }}?date_to={{ $asOfDate }}{{ $branchId ? '&branch_id='.$branchId : '' }}" class="text-ink hover:text-gold underline">{{ $item['account']->code }} - {{ $item['account']->name }}</a></td>
-                                        <td class="numeric">{{ format_money($item['balance']) }}</td>
-                                    </tr>
-                                @endforeach
-                            @endforeach
-                            <tr class="hover:bg-gray-50">
-                                <td>Current Year Earnings</td>
-                                <td class="numeric">{{ format_money($current_year_earnings) }}</td>
-                            </tr>
-                            <tr class="bg-indigo-50">
-                                <td>Total Equity</td>
-                                <td class="numeric">{{ format_money($total_equity) }}</td>
-                            </tr>
-
-                            <tr class="bg-gray-900">
-                                <td>Total Liabilities & Equity</td>
-                                <td class="numeric">{{ format_money($total_liabilities + $total_equity) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                @if(!$balanced)
-                    <div class="px-6 py-3 bg-red-50 border-t border-red-200">
-                        <p class="text-sm font-semibold text-red-600">Warning: Balance sheet is out of balance by {{ format_money(abs($total_assets - ($total_liabilities + $total_equity))) }}</p>
-                    </div>
-                @endif
-            </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

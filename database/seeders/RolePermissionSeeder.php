@@ -12,107 +12,106 @@ class RolePermissionSeeder extends Seeder
     {
         app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $permissions = [
-            // Bills
-            'bills.create', 'bills.view', 'bills.edit', 'bills.delete',
-            'bills.post', 'bills.approve', 'bills.void',
-            // Invoices
-            'invoices.create', 'invoices.view', 'invoices.edit', 'invoices.delete',
-            'invoices.post', 'invoices.void',
-            // Journal Entries
-            'journal-entries.create', 'journal-entries.view', 'journal-entries.edit', 'journal-entries.delete',
-            'journal-entries.post', 'journal-entries.approve', 'journal-entries.reverse',
-            // Expenses
-            'expenses.create', 'expenses.view', 'expenses.edit', 'expenses.delete',
-            'expenses.post', 'expenses.approve',
-            // Budgets
-            'budgets.create', 'budgets.view', 'budgets.edit', 'budgets.delete', 'budgets.lock',
-            // Accounting Periods
-            'accounting-periods.view', 'accounting-periods.create', 'accounting-periods.close',
-            'accounting-periods.lock', 'accounting-periods.reopen',
-            // Reports
-            'reports.view', 'reports.export',
-            // Banking
-            'banking.reconcile', 'bank-accounts.manage',
-            // Tax
-            'tax-rates.manage', 'tax-returns.create', 'tax-returns.view', 'tax-returns.submit',
-            // Chart of Accounts
-            'chart-of-accounts.view', 'chart-of-accounts.manage',
-            // Admin
-            'company-settings.manage', 'users.manage',
-            'audit-log.view', 'audit-log.export', 'backups.manage',
-            // Banking-specific
-            'bank-accounts.view',
-            // System (global only)
-            'system.access', 'system.settings',
-        ];
+        $permConfig = config('permissions');
 
-        foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission, 'guard_name' => 'web']);
+        // ── 1. Create all module permissions ──
+        $allPermissions = [];
+        foreach ($permConfig['modules'] as $module => $actions) {
+            foreach ($actions as $action) {
+                $permName = "{$module}.{$action}";
+                $allPermissions[$permName] = Permission::firstOrCreate([
+                    'name' => $permName,
+                    'guard_name' => 'web',
+                ])->id;
+            }
         }
 
-        // --- system_admin (global, no company_id) ---
-        $systemAdmin = Role::create(['name' => 'system_admin', 'guard_name' => 'web', 'company_id' => null]);
-        $systemAdmin->givePermissionTo(Permission::all());
+        // ── 2. Create all report permissions ──
+        $reportKeys = [];
+        foreach ($permConfig['reports'] as $key => $label) {
+            $reportKeys[] = $key;
+            if (!isset($allPermissions["reports.{$key}.view"])) {
+                $perm = Permission::firstOrCreate([
+                    'name' => "reports.{$key}.view",
+                    'guard_name' => 'web',
+                ]);
+                $allPermissions["reports.{$key}.view"] = $perm->id;
+            }
+        }
 
-        // --- company_admin (per-company) ---
-        $companyAdmin = Role::create(['name' => 'company_admin', 'guard_name' => 'web']);
-        $companyAdmin->givePermissionTo(Permission::all());
+        // ── 3. Build a flat permission-name → ID lookup ──
+        $permNameToId = [];
+        foreach (Permission::all() as $p) {
+            $permNameToId[$p->name] = $p->id;
+        }
 
-        // --- accountant (per-company) ---
-        $accountant = Role::create(['name' => 'accountant', 'guard_name' => 'web']);
-        $accountant->givePermissionTo([
-            // View all
-            'bills.view', 'invoices.view', 'journal-entries.view', 'expenses.view',
-            'budgets.view', 'accounting-periods.view', 'reports.view',
-            'audit-log.view', 'tax-returns.view', 'chart-of-accounts.view',
-            'bank-accounts.view',
-            // Create + Edit
-            'bills.create', 'bills.edit',
-            'invoices.create', 'invoices.edit',
-            'journal-entries.create', 'journal-entries.edit',
-            'expenses.create', 'expenses.edit',
-            'budgets.create', 'budgets.edit',
-            'tax-returns.create',
-            // Post (but not approve/void/delete)
-            'bills.post',
-            'invoices.post',
-            'journal-entries.post',
-            'expenses.post',
-            // Reports
-            'reports.export',
-            // Banking
-            'banking.reconcile',
-        ]);
+        /**
+         * Resolve a permission pattern to a list of permission names.
+         * Supports:
+         *   '*'          → all permissions
+         *   'module.*'   → all actions for that module
+         *   'reports.*'  → all report permissions
+         *   'module.action' → that specific permission
+         */
+        $resolve = function (string $pattern) use ($permConfig, $reportKeys): array {
+            if ($pattern === '*') {
+                $names = [];
+                foreach ($permConfig['modules'] as $module => $actions) {
+                    foreach ($actions as $action) {
+                        $names[] = "{$module}.{$action}";
+                    }
+                }
+                foreach ($reportKeys as $key) {
+                    $names[] = "reports.{$key}.view";
+                }
+                return array_unique($names);
+            }
 
-        // --- approver (per-company) ---
-        $approver = Role::create(['name' => 'approver', 'guard_name' => 'web']);
-        $approver->givePermissionTo([
-            'bills.view', 'bills.approve',
-            'invoices.view',
-            'journal-entries.view', 'journal-entries.approve',
-            'expenses.view', 'expenses.approve',
-            'budgets.view',
-            'accounting-periods.view',
-            'reports.view',
-            'audit-log.view',
-            'chart-of-accounts.view',
-            'tax-returns.view',
-        ]);
+            if ($pattern === 'reports.*') {
+                return array_map(fn($k) => "reports.{$k}.view", $reportKeys);
+            }
 
-        // --- viewer (per-company) ---
-        $viewer = Role::create(['name' => 'viewer', 'guard_name' => 'web']);
-        $viewer->givePermissionTo([
-            'bills.view',
-            'invoices.view',
-            'journal-entries.view',
-            'expenses.view',
-            'budgets.view',
-            'accounting-periods.view',
-            'reports.view',
-            'audit-log.view',
-            'chart-of-accounts.view',
-            'tax-returns.view',
-        ]);
+            // Check if it's a "module.*" pattern
+            $parts = explode('.', $pattern);
+            if (count($parts) === 2 && $parts[1] === '*' && isset($permConfig['modules'][$parts[0]])) {
+                $module = $parts[0];
+                return array_map(fn($a) => "{$module}.{$a}", $permConfig['modules'][$module]);
+            }
+
+            return [$pattern];
+        };
+
+        // Cache resolved permission name lists for each role
+        $rolePermsCache = [];
+
+        // ── 4. Create roles and assign permissions ──
+        foreach ($permConfig['roles'] as $roleName => $roleDef) {
+            $roleData = ['name' => $roleName, 'guard_name' => 'web'];
+
+            // system_admin is global — explicitly set company_id to null
+            if (($roleDef['scope'] ?? 'company') === 'global') {
+                $roleData['company_id'] = null;
+            }
+
+            $role = Role::firstOrCreate($roleData);
+
+            // Resolve all permission patterns for this role
+            $resolvedNames = [];
+            foreach ($roleDef['permissions'] as $pattern) {
+                $resolvedNames = array_merge($resolvedNames, $resolve($pattern));
+            }
+            $resolvedNames = array_unique($resolvedNames);
+
+            // Filter to only permissions that actually exist
+            $validIds = [];
+            foreach ($resolvedNames as $name) {
+                if (isset($permNameToId[$name])) {
+                    $validIds[] = $permNameToId[$name];
+                }
+            }
+
+            $role->syncPermissions($validIds);
+            $rolePermsCache[$roleName] = $resolvedNames;
+        }
     }
 }

@@ -211,6 +211,7 @@ class InvoiceController extends Controller
 
     public function post(Invoice $invoice)
     {
+        $this->requirePermission('invoices.post');
         $companyId = session('current_company_id');
         abort_unless($invoice->company_id == $companyId, 403);
 
@@ -226,6 +227,7 @@ class InvoiceController extends Controller
 
     public function void(Invoice $invoice, Request $request)
     {
+        $this->requirePermission($request, 'invoices.void');
         $companyId = session('current_company_id');
         abort_unless($invoice->company_id == $companyId, 403);
 

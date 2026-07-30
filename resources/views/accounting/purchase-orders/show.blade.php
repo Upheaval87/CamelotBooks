@@ -6,10 +6,12 @@
             <x-record-toolbar>
                 <div class="tr-group">
                     @if($order->status === 'draft')
-                        <form method="POST" action="{{ route('accounting.purchase-orders.confirm', $order) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Confirm & Send') }}</button>
-                        </form>
+                        @can('purchase-orders.confirm')
+                            <form method="POST" action="{{ route('accounting.purchase-orders.confirm', $order) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Confirm & Send') }}</button>
+                            </form>
+                        @endcan
                         <a href="{{ route('accounting.purchase-orders.edit', $order) }}" class="tr-save">{{ __('Edit') }}</a>
                     @endif
                     @if(in_array($order->status, ['sent', 'partially_received']))
@@ -20,10 +22,12 @@
                 <div class="tr-spacer"></div>
 
                 @if(in_array($order->status, ['draft', 'sent']))
-                    <form method="POST" action="{{ route('accounting.purchase-orders.cancel', $order) }}" class="inline">
-                        @csrf
-                        <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure?') }}')">{{ __('Cancel') }}</button>
-                    </form>
+                    @can('purchase-orders.cancel')
+                        <form method="POST" action="{{ route('accounting.purchase-orders.cancel', $order) }}" class="inline">
+                            @csrf
+                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure?') }}')">{{ __('Cancel') }}</button>
+                        </form>
+                    @endcan
                 @endif
 
                 <a href="{{ route('accounting.purchase-orders.index') }}" class="tr-item">{{ __('Back') }}</a>

@@ -1,10 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('A/R Aging Detail') }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ar'])) }}">{{ __('Export CSV') }}</x-button>
-    </div>
-
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -36,45 +32,53 @@
                 <a href="{{ route('accounting.aging.ar-detail', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest shadow-sm">Detail</a>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">A/R Aging Detail as of {{ \Carbon\Carbon::parse($as_of_date)->format('M d, Y') }}</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Customer</th>
-                                <th>Invoice #</th>
-                                <th>Due Date</th>
-                                <th>Days Overdue</th>
-                                <th class="text-right">Amount Due</th>
+            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+
+            <x-report.card>
+                <x-report.header
+                    :company="$currentCompany->name ?? config('app.name')"
+                    title="A/R Aging Detail"
+                    :range="'As of ' . \Carbon\Carbon::parse($as_of_date)->format('M d, Y')"
+                />
+
+                <x-report.toolbar
+                    :csvRoute="route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ar']))"
+                />
+
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Invoice #</th>
+                            <th>Due Date</th>
+                            <th>Days Overdue</th>
+                            <th class="report-col-amt">Amount Due ({{ $cs }})</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($customers as $row)
+                            @php $zero = $row['total'] <= 0; @endphp
+                            <tr class="@if($zero) zero @endif">
+                                <td>{{ $row['customer_name'] }}</td>
+                                <td>{{ $row['invoice_number'] ?? '-' }}</td>
+                                <td>{{ $row['due_date'] ?? '-' }}</td>
+                                <td>{{ $row['days_overdue'] ?? 0 }}</td>
+                                <td class="report-cell-amt">{{ format_number($row['total']) }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($customers as $row)
-                                <tr class="hover:bg-gray-50">
-                                    <td>{{ $row['customer_name'] }}</td>
-                                    <td>{{ $row['invoice_number'] ?? '-' }}</td>
-                                    <td>{{ $row['due_date'] ?? '-' }}</td>
-                                    <td>{{ $row['days_overdue'] ?? 0 }}</td>
-                                    <td class="numeric">{{ format_money($row['total']) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-ink-soft">No outstanding invoices found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot class="bg-gray-50">
+                        @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-3 text-sm font-bold text-gray-900 text-right">Total</td>
-                                <td class="px-6 py-3 text-sm font-bold text-gray-900 text-right">{{ format_money($totals['total']) }}</td>
+                                <td colspan="5" class="text-center text-ink-soft" style="padding:20px 14px">No outstanding invoices found.</td>
                             </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        <tr class="report-total-row">
+                            <td colspan="4" style="text-align:right">Total</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($totals['total']) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </x-report.card>
         </div>
     </div>
 </x-app-layout>

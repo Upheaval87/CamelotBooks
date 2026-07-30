@@ -118,22 +118,28 @@
                                     </td>
                                     <td class="text-right">
                                         @if($je->status === 'draft')
-                                            <form method="POST" action="{{ route('accounting.journal-entries.submit-for-approval', $je) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-yellow-600 hover:text-yellow-900">Submit</button>
-                                            </form>
+                                            @can('journal-entries.submit')
+                                                <form method="POST" action="{{ route('accounting.journal-entries.submit-for-approval', $je) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-yellow-600 hover:text-yellow-900">Submit</button>
+                                                </form>
+                                            @endcan
                                         @endif
                                         @if($je->status === 'pending_approval')
-                                            <form method="POST" action="{{ route('accounting.journal-entries.approve', $je) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-green-600 hover:text-green-900">Approve</button>
-                                            </form>
+                                            @can('journal-entries.approve')
+                                                <form method="POST" action="{{ route('accounting.journal-entries.approve', $je) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-green-600 hover:text-green-900">Approve</button>
+                                                </form>
+                                            @endcan
                                         @endif
                                         @if($je->status === 'posted')
-                                            <form method="POST" action="{{ route('accounting.journal-entries.reverse', $je) }}" class="inline" onsubmit="return confirm('Are you sure you want to reverse this entry?');">
-                                                @csrf
-                                                <button type="submit" class="text-red-600 hover:text-red-900">Reverse</button>
-                                            </form>
+                                            @can('journal-entries.reverse')
+                                                <form method="POST" action="{{ route('accounting.journal-entries.reverse', $je) }}" class="inline" onsubmit="return confirm('Are you sure you want to reverse this entry?');">
+                                                    @csrf
+                                                    <button type="submit" class="text-red-600 hover:text-red-900">Reverse</button>
+                                                </form>
+                                            @endcan
                                         @endif
                                     </td>
                                 </tr>

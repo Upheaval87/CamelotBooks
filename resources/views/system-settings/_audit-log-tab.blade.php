@@ -89,9 +89,15 @@
                                 @foreach($log->new_values as $key => $newVal)
                                     <div class="text-xs">
                                         <span class="font-medium">{{ str_replace('_', ' ', ucfirst($key)) }}:</span>
-                                        <span class="text-red-600 line-through">{{ $log->old_values[$key] ?? '—' }}</span>
-                                        <span class="text-gray-400 mx-1">&rarr;</span>
-                                        <span class="text-green-600">{{ $newVal }}</span>
+                                        @if(is_array($newVal))
+                                            <span class="text-red-600 line-through">{{ is_array($log->old_values[$key] ?? '—') ? json_encode($log->old_values[$key]) : ($log->old_values[$key] ?? '—') }}</span>
+                                            <span class="text-gray-400 mx-1">&rarr;</span>
+                                            <span class="text-green-600">{{ json_encode($newVal) }}</span>
+                                        @else
+                                            <span class="text-red-600 line-through">{{ $log->old_values[$key] ?? '—' }}</span>
+                                            <span class="text-gray-400 mx-1">&rarr;</span>
+                                            <span class="text-green-600">{{ $newVal }}</span>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>

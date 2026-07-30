@@ -137,6 +137,7 @@ class JournalEntryController extends Controller
 
     public function submitForApproval(JournalEntry $journalEntry)
     {
+        $this->requirePermission('journal-entries.submit');
         try {
             $this->postingEngine->submitForApproval($journalEntry->id);
 
@@ -149,6 +150,7 @@ class JournalEntryController extends Controller
 
     public function approve(JournalEntry $journalEntry)
     {
+        $this->requirePermission('journal-entries.approve');
         try {
             $this->postingEngine->approve($journalEntry->id, auth()->id());
 
@@ -161,6 +163,7 @@ class JournalEntryController extends Controller
 
     public function reject(Request $request, JournalEntry $journalEntry)
     {
+        $this->requirePermission($request, 'journal-entries.reject');
         $request->validate([
             'rejection_reason' => 'required|string|max:1000',
         ]);
@@ -177,6 +180,7 @@ class JournalEntryController extends Controller
 
     public function reverse(Request $request, JournalEntry $journalEntry)
     {
+        $this->requirePermission($request, 'journal-entries.reverse');
         $request->validate([
             'reversal_date' => 'nullable|date',
         ]);

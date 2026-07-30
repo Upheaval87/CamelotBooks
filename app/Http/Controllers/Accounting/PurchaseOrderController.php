@@ -275,6 +275,7 @@ class PurchaseOrderController extends Controller
 
     public function confirm(PurchaseOrder $purchaseOrder)
     {
+        $this->requirePermission('purchase-orders.confirm');
         $companyId = session('current_company_id');
         abort_unless($purchaseOrder->company_id == $companyId, 403);
 
@@ -290,6 +291,7 @@ class PurchaseOrderController extends Controller
 
     public function cancel(PurchaseOrder $purchaseOrder)
     {
+        $this->requirePermission('purchase-orders.cancel');
         $companyId = session('current_company_id');
         abort_unless($purchaseOrder->company_id == $companyId, 403);
 

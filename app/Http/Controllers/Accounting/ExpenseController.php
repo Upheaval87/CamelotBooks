@@ -212,6 +212,7 @@ class ExpenseController extends Controller
 
     public function post(Expense $expense)
     {
+        $this->requirePermission('expenses.post');
         $companyId = session('current_company_id');
         abort_unless($expense->company_id == $companyId, 403);
 
@@ -227,6 +228,7 @@ class ExpenseController extends Controller
 
     public function void(Expense $expense, Request $request)
     {
+        $this->requirePermission($request, 'expenses.void');
         $companyId = session('current_company_id');
         abort_unless($expense->company_id == $companyId, 403);
 

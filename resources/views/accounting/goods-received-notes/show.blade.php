@@ -7,10 +7,12 @@
             <x-record-toolbar>
                 <div class="tr-group">
                     @if($grn->status === 'draft')
-                        <form method="POST" action="{{ route('accounting.goods-received-notes.post', $grn) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-save" onclick="return confirm('{{ __('Post this GRN? This will create inventory cost layers and a journal entry.') }}')">{{ __('Post') }}</button>
-                        </form>
+                        @can('goods-received-notes.post')
+                            <form method="POST" action="{{ route('accounting.goods-received-notes.post', $grn) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="tr-save" onclick="return confirm('{{ __('Post this GRN? This will create inventory cost layers and a journal entry.') }}')">{{ __('Post') }}</button>
+                            </form>
+                        @endcan
                     @endif
                 </div>
 

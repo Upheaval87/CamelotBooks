@@ -12,26 +12,32 @@
                         {{ __('New') }}
                     </a>
                     @if($journalEntry->status === 'draft')
-                        <form method="POST" action="{{ route('accounting.journal-entries.submit-for-approval', $journalEntry) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Submit for Approval') }}</button>
-                        </form>
+                        @can('journal-entries.submit')
+                            <form method="POST" action="{{ route('accounting.journal-entries.submit-for-approval', $journalEntry) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Submit for Approval') }}</button>
+                            </form>
+                        @endcan
                     @endif
                     @if($journalEntry->status === 'pending_approval')
-                        <form method="POST" action="{{ route('accounting.journal-entries.approve', $journalEntry) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Approve') }}</button>
-                        </form>
+                        @can('journal-entries.approve')
+                            <form method="POST" action="{{ route('accounting.journal-entries.approve', $journalEntry) }}" class="inline">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Approve') }}</button>
+                            </form>
+                        @endcan
                         <button type="button" onclick="document.getElementById('rejectModal').classList.remove('hidden')" class="tr-item">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             {{ __('Reject') }}
                         </button>
                     @endif
                     @if($journalEntry->status === 'posted')
-                        <form method="POST" action="{{ route('accounting.journal-entries.reverse', $journalEntry) }}" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to reverse this entry?') }}');">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Reverse') }}</button>
-                        </form>
+                        @can('journal-entries.reverse')
+                            <form method="POST" action="{{ route('accounting.journal-entries.reverse', $journalEntry) }}" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to reverse this entry?') }}');">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Reverse') }}</button>
+                            </form>
+                        @endcan
                     @endif
                 </div>
 
@@ -233,21 +239,23 @@
     <div id="rejectModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Reject Journal Entry') }}</h3>
-            <form method="POST" action="{{ route('accounting.journal-entries.reject', $journalEntry) }}">
-                @csrf
-                <div class="mb-4">
-                    <x-input-label for="rejection_reason" value="{{ __('Reason for Rejection') }}" />
-                    <textarea id="rejection_reason" name="rejection_reason" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required></textarea>
-                </div>
-                <div class="flex items-center justify-end space-x-3">
-                    <button type="button" onclick="document.getElementById('rejectModal').classList.add('hidden')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Cancel') }}
-                    </button>
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        {{ __('Reject') }}
-                    </button>
-                </div>
-            </form>
+            @can('journal-entries.reject')
+                <form method="POST" action="{{ route('accounting.journal-entries.reject', $journalEntry) }}">
+                    @csrf
+                    <div class="mb-4">
+                        <x-input-label for="rejection_reason" value="{{ __('Reason for Rejection') }}" />
+                        <textarea id="rejection_reason" name="rejection_reason" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required></textarea>
+                    </div>
+                    <div class="flex items-center justify-end space-x-3">
+                        <button type="button" onclick="document.getElementById('rejectModal').classList.add('hidden')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            {{ __('Cancel') }}
+                        </button>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            {{ __('Reject') }}
+                        </button>
+                    </div>
+                </form>
+            @endcan
         </div>
     </div>
 

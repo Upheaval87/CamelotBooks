@@ -1,13 +1,7 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Cash Flow Statement') }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.cash-flow.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
-        <x-button variant="ghost" href="{{ route('accounting.cash-flow.export-pdf', request()->query()) }}" target="_blank">{{ __('Export PDF') }}</x-button>
-    </div>
-    </x-slot>
-
-    <div class="py-12">
+    <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <form method="GET" action="{{ route('accounting.cash-flow.index') }}" class="flex items-end gap-4">
@@ -37,106 +31,58 @@
                 </form>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Cash Flow Statement: {{ \Carbon\Carbon::parse($dateFrom)->format('M d, Y') }} to {{ \Carbon\Carbon::parse($dateTo)->format('M d, Y') }}</h3>
+            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+
+            <x-report.card>
+                <x-report.header
+                    :company="$currentCompany->name ?? config('app.name')"
+                    title="Cash Flow Statement"
+                    :range="\Carbon\Carbon::parse($dateFrom)->format('M d, Y') . ' — ' . \Carbon\Carbon::parse($dateTo)->format('M d, Y')"
+                />
+
+                <x-report.toolbar
+                    :csvRoute="route('accounting.cash-flow.export-csv', request()->query())"
+                    :pdfRoute="route('accounting.cash-flow.export-pdf', request()->query())"
+                />
+
+                <x-report.col-bar left="Description" :right="'Amount ('.$cs.')'" />
+
+                <x-report.section-bar>Operating Activities</x-report.section-bar>
+                <x-report.line desc="Net Income" :amount="format_number($net_income)" />
+                @foreach($non_cash_expenses['items'] as $item)
+                    <x-report.line :desc="'Add: '.$item['account']->name" :amount="format_number($item['amount'])" :zero="abs($item['amount']) <= 0" />
+                @endforeach
+                @foreach($sections['operating'] as $item)
+                    <x-report.line :desc="($item['change'] > 0 ? 'Increase in' : 'Decrease in').' '.$item['account']->name" :amount="format_number($item['cash_effect'])" :zero="abs($item['cash_effect']) <= 0" />
+                @endforeach
+                <x-report.subtotal desc="Net Cash from Operating" :amount="format_number($operating_total)" />
+
+                <x-report.section-bar>Investing Activities</x-report.section-bar>
+                @forelse($sections['investing'] as $item)
+                    <x-report.line :desc="($item['change'] > 0 ? 'Increase in' : 'Decrease in').' '.$item['account']->name" :amount="format_number($item['cash_effect'])" :zero="abs($item['cash_effect']) <= 0" />
+                @empty
+                    <x-report.line desc="No investing activities" :amount="format_number(0)" :zero="true" />
+                @endforelse
+                <x-report.subtotal desc="Net Cash from Investing" :amount="format_number($investing_total)" />
+
+                <x-report.section-bar>Financing Activities</x-report.section-bar>
+                @forelse($sections['financing'] as $item)
+                    <x-report.line :desc="($item['change'] > 0 ? 'Increase in' : 'Decrease in').' '.$item['account']->name" :amount="format_number($item['cash_effect'])" :zero="abs($item['cash_effect']) <= 0" />
+                @empty
+                    <x-report.line desc="No financing activities" :amount="format_number(0)" :zero="true" />
+                @endforelse
+                <x-report.subtotal desc="Net Cash from Financing" :amount="format_number($financing_total)" />
+
+                <x-report.total desc="Net Change in Cash" :amount="format_number($net_change)" />
+                <x-report.line desc="Beginning Cash Balance" :amount="format_number($beginning_cash)" />
+                <x-report.subtotal desc="Ending Cash Balance" :amount="format_number($ending_cash)" />
+            </x-report.card>
+
+            @if($mismatch)
+                <div class="mt-4 px-6 py-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-sm font-semibold text-red-600">Warning: Ending cash does not match actual bank balances. Difference: {{ format_number($mismatch) }}</p>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th class="text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="bg-gray-50">
-                                <td colspan="2" class="px-6 py-2 text-sm font-semibold text-gray-700">Operating Activities</td>
-                            </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td>Net Income</td>
-                                <td class="numeric">{{ format_money($net_income) }}</td>
-                            </tr>
-                            @foreach($non_cash_expenses['items'] as $item)
-                                <tr class="hover:bg-gray-50">
-                                    <td>Add: {{ $item['account']->name }}</td>
-                                    <td class="numeric">{{ format_money($item['amount']) }}</td>
-                                </tr>
-                            @endforeach
-                            @foreach($sections['operating'] as $item)
-                                <tr class="hover:bg-gray-50">
-                                    <td>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
-                                    <td class="numeric">{{ format_money($item['cash_effect']) }}</td>
-                                </tr>
-                            @endforeach
-                            <tr class="bg-indigo-50">
-                                <td>Net Cash from Operating</td>
-                                <td class="numeric">{{ format_money($operating_total) }}</td>
-                            </tr>
-
-                            <tr class="bg-gray-50">
-                                <td colspan="2" class="px-6 py-2 text-sm font-semibold text-gray-700">Investing Activities</td>
-                            </tr>
-                            @forelse($sections['investing'] as $item)
-                                <tr class="hover:bg-gray-50">
-                                    <td>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
-                                    <td class="numeric">{{ format_money($item['cash_effect']) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td class="px-6 py-2 text-sm text-gray-500 pl-10">No investing activities</td>
-                                    <td class="px-6 py-2 text-right text-sm text-gray-500">{{ format_money(0) }}</td>
-                                </tr>
-                            @endforelse
-                            <tr class="bg-indigo-50">
-                                <td>Net Cash from Investing</td>
-                                <td class="numeric">{{ format_money($investing_total) }}</td>
-                            </tr>
-
-                            <tr class="bg-gray-50">
-                                <td colspan="2" class="px-6 py-2 text-sm font-semibold text-gray-700">Financing Activities</td>
-                            </tr>
-                            @forelse($sections['financing'] as $item)
-                                <tr class="hover:bg-gray-50">
-                                    <td>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</td>
-                                    <td class="numeric">{{ format_money($item['cash_effect']) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td class="px-6 py-2 text-sm text-gray-500 pl-10">No financing activities</td>
-                                    <td class="px-6 py-2 text-right text-sm text-gray-500">{{ format_money(0) }}</td>
-                                </tr>
-                            @endforelse
-                            <tr class="bg-indigo-50">
-                                <td>Net Cash from Financing</td>
-                                <td class="numeric">{{ format_money($financing_total) }}</td>
-                            </tr>
-
-                            <tr class="bg-gray-900">
-                                <td>Net Change in Cash</td>
-                                <td class="numeric">{{ format_money($net_change) }}</td>
-                            </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-2 text-sm text-gray-900">Beginning Cash Balance</td>
-                                <td class="px-6 py-2 text-right text-sm text-gray-900">{{ format_money($beginning_cash) }}</td>
-                            </tr>
-                            <tr class="bg-indigo-50">
-                                <td>Ending Cash Balance</td>
-                                <td class="numeric">{{ format_money($ending_cash) }}</td>
-                            </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-2 text-sm text-gray-500">Actual Ending Cash</td>
-                                <td class="px-6 py-2 text-right text-sm {{ $mismatch ? 'text-red-600 font-semibold' : 'text-gray-500' }}">{{ format_money($actual_ending_cash) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                @if($mismatch)
-                    <div class="px-6 py-3 bg-red-50 border-t border-red-200">
-                        <p class="text-sm font-semibold text-red-600">Warning: Ending cash does not match actual bank balances. Difference: {{ format_money($mismatch) }}</p>
-                    </div>
-                @endif
-            </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

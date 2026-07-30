@@ -61,6 +61,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        $this->requirePermission($request, 'products.create');
         $companyId = session('current_company_id');
 
         $validated = $request->validate([
@@ -120,6 +121,7 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
+        $this->requirePermission($request, 'products.edit');
         $companyId = session('current_company_id');
         abort_unless($product->company_id == $companyId, 403);
 
@@ -148,6 +150,7 @@ class ProductController extends Controller
 
     public function toggle(Product $product)
     {
+        $this->requirePermission('products.void');
         $companyId = session('current_company_id');
         abort_unless($product->company_id == $companyId, 403);
 

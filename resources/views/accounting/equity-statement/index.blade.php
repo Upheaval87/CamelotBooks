@@ -1,11 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Statement of Changes in Equity') }}</x-slot>
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.equity-statement.export-csv', request()->query()) }}">{{ __('Export CSV') }}</x-button>
-        <x-button variant="ghost" href="{{ route('accounting.equity-statement.export-pdf', request()->query()) }}" target="_blank">{{ __('Export PDF') }}</x-button>
-    </div>
-
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -36,68 +31,58 @@
                 </form>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">
-                        Statement of Changes in Equity<br>
-                        <span class="text-sm font-normal text-gray-600">
-                            {{ \Carbon\Carbon::parse($dateFrom)->format('M d, Y') }} — {{ \Carbon\Carbon::parse($dateTo)->format('M d, Y') }}
-                        </span>
-                    </h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
+            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+
+            <x-report.card>
+                <x-report.header
+                    :company="$currentCompany->name ?? config('app.name')"
+                    title="Statement of Changes in Equity"
+                    :range="\Carbon\Carbon::parse($dateFrom)->format('M d, Y') . ' — ' . \Carbon\Carbon::parse($dateTo)->format('M d, Y')"
+                />
+
+                <x-report.toolbar
+                    :csvRoute="route('accounting.equity-statement.export-csv', request()->query())"
+                    :pdfRoute="route('accounting.equity-statement.export-pdf', request()->query())"
+                />
+
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th class="report-col-amt">Opening ({{ $cs }})</th>
+                            <th class="report-col-amt">Movement ({{ $cs }})</th>
+                            <th class="report-col-amt">Closing ({{ $cs }})</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($movements as $item)
+                            @php $zero = abs($item['movement']) <= 0 && abs($item['opening']) <= 0 && abs($item['closing']) <= 0; @endphp
+                            <tr class="@if($zero) zero @endif">
+                                <td><span class="report-cell-code">{{ $item['account']->code }}</span>{{ $item['account']->name }}</td>
+                                <td class="report-cell-amt">{{ format_number($item['opening']) }}</td>
+                                <td class="report-cell-amt">{{ $item['movement'] >= 0 ? '+' : '' }}{{ format_number($item['movement']) }}</td>
+                                <td class="report-cell-amt">{{ format_number($item['closing']) }}</td>
+                            </tr>
+                        @empty
                             <tr>
-                                <th>Account</th>
-                                <th class="text-right">Opening Balance</th>
-                                <th class="text-right">Movement</th>
-                                <th class="text-right">Closing Balance</th>
+                                <td colspan="4" class="text-center text-ink-soft" style="padding:20px 14px">No equity accounts found.</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($movements as $item)
-                                <tr>
-                                    <td class="px-6 py-3 text-sm text-gray-900">
-                                        {{ $item['account']->code }} — {{ $item['account']->name }}
-                                    </td>
-                                    <td class="px-6 py-3 text-sm text-gray-900 text-right">
-                                        {{ format_money($item['opening']) }}
-                                    </td>
-                                    <td class="px-6 py-3 text-sm text-right {{ $item['movement'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $item['movement'] >= 0 ? '+' : '' }}{{ format_money($item['movement']) }}
-                                    </td>
-                                    <td class="px-6 py-3 text-sm text-gray-900 text-right font-medium">
-                                        {{ format_money($item['closing']) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-ink-soft">No equity accounts found.</td>
-                                </tr>
-                            @endforelse
-
-                            <tr class="bg-blue-50">
-                                <td class="px-6 py-3 text-sm font-semibold text-gray-900">Net Income for Period</td>
-                                <td class="px-6 py-3 text-sm text-gray-900 text-right"></td>
-                                <td class="px-6 py-3 text-sm text-right font-semibold {{ $net_income >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $net_income >= 0 ? '+' : '' }}{{ format_money($net_income) }}
-                                </td>
-                                <td class="px-6 py-3 text-sm text-gray-900 text-right"></td>
-                            </tr>
-
-                            <tr class="bg-gray-100 font-bold">
-                                <td class="px-6 py-3 text-sm text-gray-900">Total Equity</td>
-                                <td class="px-6 py-3 text-sm text-gray-900 text-right">{{ format_money($total_opening) }}</td>
-                                <td class="px-6 py-3 text-sm text-gray-900 text-right">
-                                    {{ ($total_closing - $total_opening) >= 0 ? '+' : '' }}{{ format_money($total_closing - $total_opening) }}
-                                </td>
-                                <td class="px-6 py-3 text-sm text-gray-900 text-right">{{ format_money($total_closing) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        @endforelse
+                        <tr class="report-subtotal-row">
+                            <td>Net Income for Period</td>
+                            <td class="report-cell-amt"></td>
+                            <td class="report-cell-amt">{{ $net_income >= 0 ? '+' : '' }}{{ format_number($net_income) }}</td>
+                            <td class="report-cell-amt"></td>
+                        </tr>
+                        <tr class="report-total-row">
+                            <td>Total Equity</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($total_opening) }}</td>
+                            <td class="report-cell-amt report-total-val">{{ ($total_closing - $total_opening) >= 0 ? '+' : '' }}{{ format_number($total_closing - $total_opening) }}</td>
+                            <td class="report-cell-amt report-total-val">{{ format_number($total_closing) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </x-report.card>
         </div>
     </div>
 </x-app-layout>

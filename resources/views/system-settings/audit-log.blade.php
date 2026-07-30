@@ -7,57 +7,119 @@
                 <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">{{ session('success') }}</div>
             @endif
 
-            {{-- Tab Navigation --}}
-            <div class="mb-6 border-b border-gray-200">
-                <nav class="flex space-x-8 overflow-x-auto" aria-label="Settings Tabs">
-                    <a href="{{ route('system-settings.index', 'company') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Company Profile
-                    </a>
-                    <a href="{{ route('system-settings.index', 'regional') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Regional Settings
-                    </a>
-                    <a href="{{ route('system-settings.index', 'currency') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Currency Settings
-                    </a>
-                    <a href="{{ route('system-settings.index', 'accounts') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Account Mappings
-                    </a>
-                    <a href="{{ route('system-settings.index', 'accounting') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Accounting Settings
-                    </a>
-                    <a href="{{ route('system-settings.index', 'approval') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Approval Settings
-                    </a>
-                    <a href="{{ route('system-settings.index', 'notifications') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Email
-                    </a>
-                    <a href="{{ route('system-settings.index', 'data-hub') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Data Hub
-                    </a>
-                    <a href="{{ route('system-settings.index', 'import-export') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Import/Export
-                    </a>
-                    <a href="{{ route('system-settings.index', 'backups') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Backups
-                    </a>
-                    <a href="{{ route('system-settings.audit-log') }}"
-                       class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-indigo-500 text-indigo-600">
-                        Audit Log
-                    </a>
-                </nav>
-            </div>
+            <div class="settings-layout">
+                <div class="settings-layout-sidebar">
+                    <x-settings.sidebar activeTab="audit-log" :groups="[['company','regional','currency','accounts','accounting','approval'],['notifications','data-hub','import-export','backups'],['audit-log']]" />
+                </div>
 
-            @include('system-settings._audit-log-tab')
+                <div class="settings-layout-content">
+                    <div class="settings-section-header">
+                        <div class="settings-section-eyebrow">SETTINGS CHANGE HISTORY</div>
+                        <div class="settings-section-title">Settings Change History</div>
+                        <p class="settings-section-desc">Track all changes made to system settings for this company.</p>
+                        <hr class="settings-section-divider">
+                    </div>
+
+                    {{-- Filters --}}
+                    <div class="settings-card">
+                        <form method="GET" action="{{ route('system-settings.audit-log') }}" class="settings-grid">
+                            <x-settings.field label="Settings Group" name="group" type="select" value="">
+                                <option value="">All Groups</option>
+                                @foreach($groups as $g)
+                                    <option value="{{ $g }}" {{ request('group') === $g ? 'selected' : '' }}>{{ $g }}</option>
+                                @endforeach
+                            </x-settings.field>
+                            <x-settings.field label="User" name="user_id" type="select" value="">
+                                <option value="">All Users</option>
+                                @foreach($users as $u)
+                                    <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                                @endforeach
+                            </x-settings.field>
+                            <x-settings.field label="From" name="from" type="date" value="{{ request('from') }}" />
+                            <x-settings.field label="To" name="to" type="date" value="{{ request('to') }}" />
+                            <div class="flex items-end gap-2">
+                                <button type="submit" class="btn-primary">Filter</button>
+                                @if(request()->hasAny(['group', 'user_id', 'from', 'to']))
+                                    <a href="{{ route('system-settings.audit-log') }}" class="settings-pill-btn">Clear</a>
+                                @endif
+                            </div>
+                        </form>
+                    </div>
+
+                    {{-- Log table --}}
+                    <div class="settings-card">
+                        <div class="settings-table-wrapper">
+                            <table class="settings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date/Time</th>
+                                        <th>User</th>
+                                        <th>Settings Group</th>
+                                        <th>Changes</th>
+                                        <th>IP Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($logs as $log)
+                                    <tr>
+                                        <td class="text-ink-soft">{{ $log->created_at?->format('M d, Y H:i:s') ?? '-' }}</td>
+                                        <td>{{ $log->user?->name ?? 'System' }}</td>
+                                        <td>
+                                            <span class="status-pill neutral">{{ $log->notes ?? 'Settings' }}</span>
+                                        </td>
+                                        <td class="max-w-lg">
+                                            @if($log->notes === 'Account Mappings' && is_array($log->new_values))
+                                                <div class="space-y-1">
+                                                    @foreach($log->new_values as $key => $change)
+                                                        <div class="text-xs">
+                                                            <span class="font-medium">{{ str_replace('_', ' ', ucfirst($key)) }}:</span>
+                                                            @if(is_array($change))
+                                                                <span class="settings-diff-old">{{ $change['from'] ?? '—' }}</span>
+                                                                <span class="settings-diff-arrow">&rarr;</span>
+                                                                <span class="settings-diff-new">{{ $change['to'] ?? '—' }}</span>
+                                                            @else
+                                                                <span>{{ $change }}</span>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @elseif(is_array($log->new_values))
+                                                <div class="space-y-1">
+                                                    @foreach($log->new_values as $key => $newVal)
+                                                        <div class="text-xs">
+                                                            <span class="font-medium">{{ str_replace('_', ' ', ucfirst($key)) }}:</span>
+                                                            @if(is_array($newVal))
+                                                                <span class="settings-diff-old">{{ is_array($log->old_values[$key] ?? '—') ? json_encode($log->old_values[$key]) : ($log->old_values[$key] ?? '—') }}</span>
+                                                                <span class="settings-diff-arrow">&rarr;</span>
+                                                                <span class="settings-diff-new">{{ json_encode($newVal) }}</span>
+                                                            @else
+                                                                <span class="settings-diff-old">{{ $log->old_values[$key] ?? '—' }}</span>
+                                                                <span class="settings-diff-arrow">&rarr;</span>
+                                                                <span class="settings-diff-new">{{ $newVal }}</span>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                {{ $log->notes ?? '-' }}
+                                            @endif
+                                        </td>
+                                        <td class="text-ink-soft">{{ $log->ip_address ?? '-' }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="settings-table-empty">No settings changes recorded yet.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        @if(method_exists($logs, 'links'))
+                        <div class="mt-4">{{ $logs->links() }}</div>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </x-app-layout>

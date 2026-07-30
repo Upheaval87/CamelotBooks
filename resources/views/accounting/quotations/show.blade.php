@@ -13,14 +13,18 @@
                                 <button type="submit" class="tr-item">{{ __('Email to Customer') }}</button>
                             </form>
                         @endif
-                        <form method="POST" action="{{ route('accounting.quotations.send', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-save">{{ __('Mark as Sent') }}</button></form>
+                        @can('quotations.send')
+                            <form method="POST" action="{{ route('accounting.quotations.send', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-save">{{ __('Mark as Sent') }}</button></form>
+                        @endcan
                     @endif
                     @if($quotation->status === 'sent')
                         <form method="POST" action="{{ route('accounting.quotations.accept', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-save">{{ __('Accept') }}</button></form>
                         <form method="POST" action="{{ route('accounting.quotations.decline', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-archive">{{ __('Decline') }}</button></form>
                     @endif
                     @if(in_array($quotation->status, ['sent', 'accepted']))
-                        <form method="POST" action="{{ route('accounting.quotations.convert-to-invoice', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-save">{{ __('Convert to Invoice') }}</button></form>
+                        @can('quotations.convert')
+                            <form method="POST" action="{{ route('accounting.quotations.convert-to-invoice', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-save">{{ __('Convert to Invoice') }}</button></form>
+                        @endcan
                     @endif
                 </div>
 
@@ -36,10 +40,12 @@
                 <div class="tr-spacer"></div>
 
                 @if(in_array($quotation->status, ['draft', 'sent', 'accepted']))
-                    <form method="POST" action="{{ route('accounting.quotations.void', $quotation) }}" class="inline" onsubmit="var r=prompt('{{ __('Enter void reason') }}:');if(!r)return false;this.void_reason.value=r;">
-                        @csrf<input type="hidden" name="void_reason" value="" />
-                        <button type="submit" class="tr-archive">{{ __('Void') }}</button>
-                    </form>
+                    @can('quotations.void')
+                        <form method="POST" action="{{ route('accounting.quotations.void', $quotation) }}" class="inline" onsubmit="var r=prompt('{{ __('Enter void reason') }}:');if(!r)return false;this.void_reason.value=r;">
+                            @csrf<input type="hidden" name="void_reason" value="" />
+                            <button type="submit" class="tr-archive">{{ __('Void') }}</button>
+                        </form>
+                    @endcan
                 @endif
 
                 <a href="{{ route('accounting.quotations.index') }}" class="tr-item">{{ __('Back to Quotations') }}</a>

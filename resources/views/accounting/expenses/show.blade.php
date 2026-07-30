@@ -13,10 +13,12 @@
                     </a>
                     @if($expense->status === 'draft')
                         <a href="{{ route('accounting.expenses.edit', $expense) }}" class="tr-save">{{ __('Save') }}</a>
-                        <form method="POST" action="{{ route('accounting.expenses.post', $expense) }}" class="inline" onsubmit="return confirm('{{ __('Post this expense?') }}')">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Save & Submit') }}</button>
-                        </form>
+                        @can('expenses.post')
+                            <form method="POST" action="{{ route('accounting.expenses.post', $expense) }}" class="inline" onsubmit="return confirm('{{ __('Post this expense?') }}')">
+                                @csrf
+                                <button type="submit" class="tr-save">{{ __('Save & Submit') }}</button>
+                            </form>
+                        @endcan
                     @endif
                 </div>
 
@@ -58,14 +60,16 @@
                 <div class="tr-spacer"></div>
 
                 @if($expense->status !== 'void' && $expense->status !== 'draft')
-                    <form method="POST" action="{{ route('accounting.expenses.void', $expense) }}" class="inline" id="void-form">
-                        @csrf
-                        <input type="hidden" name="reason" id="void-reason" value="" />
-                        <button type="button" class="tr-archive" onclick="askVoidReason()">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            {{ __('Withdraw Claim') }}
-                        </button>
-                    </form>
+                    @can('expenses.void')
+                        <form method="POST" action="{{ route('accounting.expenses.void', $expense) }}" class="inline" id="void-form">
+                            @csrf
+                            <input type="hidden" name="reason" id="void-reason" value="" />
+                            <button type="button" class="tr-archive" onclick="askVoidReason()">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                {{ __('Withdraw Claim') }}
+                            </button>
+                        </form>
+                    @endcan
                 @endif
 
                 <x-dropdown align="left" width="48">

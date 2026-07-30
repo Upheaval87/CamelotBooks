@@ -92,6 +92,7 @@ class ChequeController extends Controller
 
     public function voidCheque(int $chequeId)
     {
+        $this->requirePermission('cheques.void');
         $companyId = session('current_company_id');
 
         $cheque = Cheque::where('id', $chequeId)

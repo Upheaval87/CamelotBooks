@@ -123,6 +123,7 @@ class VendorCreditController extends Controller
 
     public function post(VendorCredit $vendorCredit)
     {
+        $this->requirePermission('vendor-credits.post');
         $companyId = session('current_company_id');
         abort_unless($vendorCredit->company_id == $companyId, 403);
 
@@ -180,6 +181,7 @@ class VendorCreditController extends Controller
 
     public function void(VendorCredit $vendorCredit, Request $request)
     {
+        $this->requirePermission($request, 'vendor-credits.void');
         $companyId = session('current_company_id');
         abort_unless($vendorCredit->company_id == $companyId, 403);
 

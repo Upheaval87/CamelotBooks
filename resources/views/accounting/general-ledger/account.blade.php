@@ -56,7 +56,7 @@
 
             <div class="mb-4 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="text-sm font-semibold text-gray-700">
-                    Opening Balance: <span class="text-gray-900">{{ format_money($openingBalance) }}</span>
+                    Opening Balance: <span class="text-gray-900">{{ format_number($openingBalance) }}</span>
                 </div>
             </div>
 
@@ -98,7 +98,7 @@
                                         {{ (float) $txn['line']->credit > 0 ? format_number((float) $txn['line']->credit) : '' }}
                                     </td>
                                     <td class="numeric">
-                                        {{ format_money($txn['running_balance']) }}
+                                        {{ format_number($txn['running_balance']) }}
                                     </td>
                                 </tr>
                             @empty
@@ -118,7 +118,7 @@
 
             <div class="mt-4 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="text-sm font-semibold text-gray-700">
-                    Closing Balance: <span class="text-gray-900">{{ format_money($closingBalance) }}</span>
+                    Closing Balance: <span class="text-gray-900">{{ format_number($closingBalance) }}</span>
                 </div>
             </div>
         </div>

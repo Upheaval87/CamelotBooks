@@ -93,7 +93,9 @@
                                             <form method="POST" action="{{ route('accounting.quotations.send', $q) }}" class="inline">@csrf<button type="submit" class="text-blue-600 hover:text-blue-900">Send</button></form>
                                         @endif
                                         @if(in_array($q->status, ['draft', 'sent', 'accepted']))
-                                            <form method="POST" action="{{ route('accounting.quotations.void', $q) }}" class="inline">@csrf<button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Void this quotation?')">Void</button></form>
+                                            @can('quotations.void')
+                                                <form method="POST" action="{{ route('accounting.quotations.void', $q) }}" class="inline">@csrf<button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Void this quotation?')">Void</button></form>
+                                            @endcan
                                         @endif
                                     </td>
                                 </tr>

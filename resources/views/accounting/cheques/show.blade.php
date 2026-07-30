@@ -6,10 +6,12 @@
             <x-record-toolbar>
                 <div class="tr-spacer"></div>
                 @if($cheque->status === 'outstanding')
-                    <form method="POST" action="{{ route('accounting.cheques.void', $cheque->id) }}" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to void this cheque?') }}')">
-                        @csrf
-                        <button type="submit" class="tr-archive">{{ __('Void Cheque') }}</button>
-                    </form>
+                    @can('cheques.void')
+                        <form method="POST" action="{{ route('accounting.cheques.void', $cheque->id) }}" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to void this cheque?') }}')">
+                            @csrf
+                            <button type="submit" class="tr-archive">{{ __('Void Cheque') }}</button>
+                        </form>
+                    @endcan
                 @endif
                 <a href="{{ route('accounting.cheques.index') }}" class="tr-item">{{ __('Back') }}</a>
             </x-record-toolbar>

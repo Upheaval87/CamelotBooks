@@ -246,6 +246,7 @@ class PurchaseRequisitionController extends Controller
 
     public function submit(PurchaseRequisition $purchaseRequisition)
     {
+        $this->requirePermission('purchase-requisitions.submit');
         $companyId = session('current_company_id');
         abort_unless($purchaseRequisition->company_id == $companyId, 403);
 
@@ -261,6 +262,7 @@ class PurchaseRequisitionController extends Controller
 
     public function approve(PurchaseRequisition $purchaseRequisition)
     {
+        $this->requirePermission('purchase-requisitions.approve');
         $companyId = session('current_company_id');
         abort_unless($purchaseRequisition->company_id == $companyId, 403);
 
@@ -280,6 +282,7 @@ class PurchaseRequisitionController extends Controller
 
     public function reject(PurchaseRequisition $purchaseRequisition)
     {
+        $this->requirePermission('purchase-requisitions.reject');
         $companyId = session('current_company_id');
         abort_unless($purchaseRequisition->company_id == $companyId, 403);
 

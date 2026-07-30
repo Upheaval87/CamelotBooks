@@ -145,6 +145,7 @@ class QuotationController extends Controller
 
     public function accept(Quotation $quotation)
     {
+        $this->requirePermission('quotations.approve');
         $quotationService = app(QuotationService::class);
         $quotationService->accept($quotation);
         return redirect()->route('accounting.quotations.show', $quotation)
@@ -153,6 +154,7 @@ class QuotationController extends Controller
 
     public function decline(Quotation $quotation)
     {
+        $this->requirePermission('quotations.approve');
         $quotationService = app(QuotationService::class);
         $quotationService->decline($quotation);
         return redirect()->route('accounting.quotations.show', $quotation)
@@ -161,6 +163,7 @@ class QuotationController extends Controller
 
     public function convertToInvoice(Quotation $quotation)
     {
+        $this->requirePermission('quotations.convert');
         $quotationService = app(QuotationService::class);
         $invoice = $quotationService->convertToInvoice($quotation, auth()->id());
         return redirect()->route('accounting.invoices.show', $invoice)
@@ -169,6 +172,7 @@ class QuotationController extends Controller
 
     public function convertToSalesReceipt(Quotation $quotation, Request $request)
     {
+        $this->requirePermission($request, 'quotations.convert');
         $request->validate([
             'payments' => 'required|array|min:1',
             'payments.*.payment_method_id' => 'required|exists:pos_payment_methods,id',
@@ -186,6 +190,7 @@ class QuotationController extends Controller
 
     public function void(Quotation $quotation, Request $request)
     {
+        $this->requirePermission($request, 'quotations.void');
         $request->validate(['void_reason' => 'required|string']);
         $quotationService = app(QuotationService::class);
         $quotationService->void($quotation, $request->void_reason, auth()->id());
