@@ -50,9 +50,10 @@ class ExpenseController extends Controller
         return view('accounting.expenses.index', compact('expenses', 'vendors'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $companyId = session('current_company_id');
+        $selectedVendorId = $request->input('vendor_id');
 
         $vendors = Vendor::where('company_id', $companyId)
             ->where('is_active', true)
@@ -82,7 +83,7 @@ class ExpenseController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.expenses.create', compact('vendors', 'products', 'expenseAccounts', 'bankAccounts', 'costCenters'));
+        return view('accounting.expenses.create', compact('vendors', 'products', 'expenseAccounts', 'bankAccounts', 'costCenters', 'selectedVendorId'));
     }
 
     public function store(Request $request)

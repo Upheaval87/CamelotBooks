@@ -539,21 +539,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/quotation-status', [\App\Http\Controllers\Accounting\ReportControllers\QuotationStatusController::class, 'index'])->name('reports.quotation-status');
 
             // Purchasing
-            Route::get('reports/purchase-register', [\App\Http\Controllers\Accounting\ReportControllers\PurchaseRegisterController::class, 'index'])->name('reports.purchase-register');
-            Route::get('reports/purchases-by-vendor', [\App\Http\Controllers\Accounting\ReportControllers\PurchasesByVendorController::class, 'index'])->name('reports.purchases-by-vendor');
-            Route::get('reports/purchases-by-item', [\App\Http\Controllers\Accounting\ReportControllers\PurchasesByItemController::class, 'index'])->name('reports.purchases-by-item');
-            Route::get('reports/unbilled-receipts', [\App\Http\Controllers\Accounting\ReportControllers\UnbilledReceiptsController::class, 'index'])->name('reports.unbilled-receipts');
-            Route::get('reports/po-status', [\App\Http\Controllers\Accounting\ReportControllers\PurchaseOrderStatusController::class, 'index'])->name('reports.po-status');
-            Route::get('reports/vendor-credit-balance', [\App\Http\Controllers\Accounting\ReportControllers\VendorCreditBalanceController::class, 'index'])->name('reports.vendor-credit-balance');
+            Route::middleware('feature:purchasing')->group(function () {
+                Route::get('reports/purchase-register', [\App\Http\Controllers\Accounting\ReportControllers\PurchaseRegisterController::class, 'index'])->name('reports.purchase-register');
+                Route::get('reports/purchases-by-vendor', [\App\Http\Controllers\Accounting\ReportControllers\PurchasesByVendorController::class, 'index'])->name('reports.purchases-by-vendor');
+                Route::get('reports/purchases-by-item', [\App\Http\Controllers\Accounting\ReportControllers\PurchasesByItemController::class, 'index'])->name('reports.purchases-by-item');
+                Route::get('reports/unbilled-receipts', [\App\Http\Controllers\Accounting\ReportControllers\UnbilledReceiptsController::class, 'index'])->name('reports.unbilled-receipts');
+                Route::get('reports/po-status', [\App\Http\Controllers\Accounting\ReportControllers\PurchaseOrderStatusController::class, 'index'])->name('reports.po-status');
+                Route::get('reports/vendor-credit-balance', [\App\Http\Controllers\Accounting\ReportControllers\VendorCreditBalanceController::class, 'index'])->name('reports.vendor-credit-balance');
+            });
 
             // Inventory
-            Route::get('reports/stock-movement', [\App\Http\Controllers\Accounting\ReportControllers\StockMovementController::class, 'index'])->name('reports.stock-movement');
-            Route::get('reports/stock-count-variance', [\App\Http\Controllers\Accounting\ReportControllers\StockCountVarianceController::class, 'index'])->name('reports.stock-count-variance');
-            Route::get('reports/item-profitability', [\App\Http\Controllers\Accounting\ReportControllers\ItemProfitabilityController::class, 'index'])->name('reports.item-profitability');
+            Route::middleware('feature:inventory')->group(function () {
+                Route::get('reports/stock-movement', [\App\Http\Controllers\Accounting\ReportControllers\StockMovementController::class, 'index'])->name('reports.stock-movement');
+                Route::get('reports/stock-count-variance', [\App\Http\Controllers\Accounting\ReportControllers\StockCountVarianceController::class, 'index'])->name('reports.stock-count-variance');
+                Route::get('reports/item-profitability', [\App\Http\Controllers\Accounting\ReportControllers\ItemProfitabilityController::class, 'index'])->name('reports.item-profitability');
+            });
 
             // Banking
-            Route::get('reports/bank-balances', [\App\Http\Controllers\Accounting\ReportControllers\BankBalancesController::class, 'index'])->name('reports.bank-balances');
-            Route::get('reports/deposits-in-transit', [\App\Http\Controllers\Accounting\ReportControllers\DepositsInTransitController::class, 'index'])->name('reports.deposits-in-transit');
+            Route::middleware('feature:banking')->group(function () {
+                Route::get('reports/bank-balances', [\App\Http\Controllers\Accounting\ReportControllers\BankBalancesController::class, 'index'])->name('reports.bank-balances');
+                Route::get('reports/deposits-in-transit', [\App\Http\Controllers\Accounting\ReportControllers\DepositsInTransitController::class, 'index'])->name('reports.deposits-in-transit');
+            });
 
             Route::middleware('feature:fixed_assets')->group(function () {
             // Fixed Assets
@@ -562,9 +568,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
 
             // Payroll
-            Route::get('reports/payroll-register', [\App\Http\Controllers\Accounting\ReportControllers\PayrollRegisterController::class, 'index'])->name('reports.payroll-register');
-            Route::get('reports/payroll-summary', [\App\Http\Controllers\Accounting\ReportControllers\PayrollSummaryController::class, 'index'])->name('reports.payroll-summary');
-            Route::get('reports/employee-cost-by-branch', [\App\Http\Controllers\Accounting\ReportControllers\EmployeeCostByBranchController::class, 'index'])->name('reports.employee-cost-by-branch');
+            Route::middleware('feature:payroll')->group(function () {
+                Route::get('reports/payroll-register', [\App\Http\Controllers\Accounting\ReportControllers\PayrollRegisterController::class, 'index'])->name('reports.payroll-register');
+                Route::get('reports/payroll-summary', [\App\Http\Controllers\Accounting\ReportControllers\PayrollSummaryController::class, 'index'])->name('reports.payroll-summary');
+                Route::get('reports/employee-cost-by-branch', [\App\Http\Controllers\Accounting\ReportControllers\EmployeeCostByBranchController::class, 'index'])->name('reports.employee-cost-by-branch');
+            });
 
             // Compliance
             Route::get('reports/period-lock-status', [\App\Http\Controllers\Accounting\ReportControllers\PeriodLockStatusController::class, 'index'])->name('reports.period-lock-status');
@@ -584,9 +592,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
 
             // Payroll
-            Route::get('reports/paye-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PayeRemittanceReportController::class, 'index'])->name('reports.paye-remittance-report');
-            Route::get('reports/pension-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PensionRemittanceReportController::class, 'index'])->name('reports.pension-remittance-report');
-            Route::get('reports/payslip-report', [\App\Http\Controllers\Accounting\ReportControllers\PayslipReportController::class, 'index'])->name('reports.payslip-report');
+            Route::middleware('feature:payroll')->group(function () {
+                Route::get('reports/paye-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PayeRemittanceReportController::class, 'index'])->name('reports.paye-remittance-report');
+                Route::get('reports/pension-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PensionRemittanceReportController::class, 'index'])->name('reports.pension-remittance-report');
+                Route::get('reports/payslip-report', [\App\Http\Controllers\Accounting\ReportControllers\PayslipReportController::class, 'index'])->name('reports.payslip-report');
+            });
 
             // Consolidated
             Route::get('reports/consolidated-balance-sheet', [\App\Http\Controllers\Accounting\ReportControllers\ConsolidatedBalanceSheetController::class, 'index'])->name('reports.consolidated-balance-sheet');

@@ -67,8 +67,8 @@
 
                 <x-form.quick-actions :title="__('Quick Actions')" :groups="[
                     ['label' => __('View'), 'links' => [
-                        ['title' => __('Fixed Assets'), 'route' => route('accounting.fixed-assets.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.25 21h19.5m-18-18v18m10.5-18v18m6-18v18M3 3h7.5M3 21h7.5\"/></svg>'],
-                        ['title' => __('Asset Revaluations List'), 'route' => route('accounting.asset-revaluations.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z\"/></svg>'],
+                        ['title' => __('Fixed Assets'), 'route' => route('accounting.fixed-assets.index'), 'icon' => 'table'],
+                        ['title' => __('Asset Revaluations List'), 'route' => route('accounting.asset-revaluations.index'), 'icon' => 'table-list'],
                     ]],
                 ]" />
             </div>

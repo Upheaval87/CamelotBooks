@@ -20,6 +20,8 @@ class VendorCreditController extends Controller
     public function index(Request $request)
     {
         $companyId = session('current_company_id');
+    {
+        $companyId = session('current_company_id');
 
         $query = VendorCredit::where('company_id', $companyId)
             ->with(['vendor', 'bill']);
@@ -41,9 +43,10 @@ class VendorCreditController extends Controller
         return view('accounting.vendor-credits.index', compact('vendorCredits'));
     }
 
-    public function create(?int $billId = null)
+    public function create(Request $request, ?int $billId = null)
     {
         $companyId = session('current_company_id');
+        $selectedVendorId = $billId ? null : $request->input('vendor_id');
 
         $vendors = Vendor::where('company_id', $companyId)
             ->where('is_active', true)
@@ -74,7 +77,7 @@ class VendorCreditController extends Controller
             ->orderByDesc('bill_date')
             ->get();
 
-        return view('accounting.vendor-credits.create', compact('vendors', 'products', 'expenseAccounts', 'bill', 'bills', 'billId'));
+        return view('accounting.vendor-credits.create', compact('vendors', 'products', 'expenseAccounts', 'bill', 'bills', 'billId', 'selectedVendorId'));
     }
 
     public function store(Request $request)

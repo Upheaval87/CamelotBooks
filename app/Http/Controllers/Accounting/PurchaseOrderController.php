@@ -67,6 +67,8 @@ class PurchaseOrderController extends Controller
             ->orderBy('name')
             ->get();
 
+        $selectedVendorId = $request->input('vendor_id');
+
         $requisition = null;
         if ($request->filled('requisition_id')) {
             $requisition = PurchaseRequisition::where('company_id', $companyId)
@@ -75,7 +77,7 @@ class PurchaseOrderController extends Controller
                 ->find($request->requisition_id);
         }
 
-        return view('accounting.purchase-orders.create', compact('vendors', 'products', 'accounts', 'costCenters', 'branches', 'requisition', 'itemCategories'));
+        return view('accounting.purchase-orders.create', compact('vendors', 'products', 'accounts', 'costCenters', 'branches', 'requisition', 'itemCategories', 'selectedVendorId'));
     }
 
     public function store(Request $request)

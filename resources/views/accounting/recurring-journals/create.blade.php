@@ -139,8 +139,8 @@
 
                 <x-form.quick-actions :title="__('Quick Actions')" :groups="[
                     ['label' => __('View'), 'links' => [
-                        ['title' => __('Chart of Accounts'), 'route' => route('accounting.accounts.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.25 18.75a6 6 0 016-6m0 0a6 6 0 016 6M8.25 6.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM17.25 18.75a6 6 0 00-3-5.25m3 5.25a6 6 0 01-3-5.25m3 5.25h5.25m-5.25 0v-5.25M12 8.25a4.5 4.5 0 100-9 4.5 4.5 0 000 9z\"/></svg>'],
-                        ['title' => __('Recurring Journals List'), 'route' => route('accounting.recurring-journals.index'), 'icon' => '<svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3.75 6h16.5M3.75 12h16.5m-16.5 6h16.5\"/></svg>'],
+                        ['title' => __('Chart of Accounts'), 'route' => route('accounting.accounts.index'), 'icon' => 'users'],
+                        ['title' => __('Recurring Journals List'), 'route' => route('accounting.recurring-journals.index'), 'icon' => 'bars3'],
                     ]],
                 ]" />
             </div>

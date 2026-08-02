@@ -16,8 +16,9 @@ class VendorPaymentController extends Controller
     {
     }
 
-    public function create(?int $vendorId = null)
+    public function create(Request $request, ?int $vendorId = null)
     {
+        $vendorId = $vendorId ?? $request->input('vendor_id');
         $companyId = session('current_company_id');
 
         $vendors = Vendor::where('company_id', $companyId)
