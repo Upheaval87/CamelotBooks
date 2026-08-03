@@ -7,7 +7,7 @@ use App\Models\Asset;
 use App\Models\AssetTransfer;
 use App\Models\Branch;
 use App\Models\CostCenter;
-use App\Services\FixedAssetService;
+use App\Services\Accounting\FixedAssetService;
 use Illuminate\Http\Request;
 
 class AssetTransferController extends Controller
@@ -39,7 +39,7 @@ class AssetTransferController extends Controller
             ->get();
 
         $branches = Branch::where('company_id', $companyId)
-            ->active()
+            ->where('is_active', true)
             ->orderBy('name')
             ->get();
 

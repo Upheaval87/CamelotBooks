@@ -11,6 +11,11 @@ class PayslipReportController extends Controller
         $companyId = session('current_company_id');
         $payrollRunId = $request->input('payroll_run_id');
         $data = app(PayslipReportService::class)->generate($companyId, $payrollRunId);
-        return view('accounting.reports.payslip-report', array_merge($data, compact('payrollRunId')));
+        $runsList = \App\Models\PayrollRun::where('company_id', $companyId)
+            ->whereIn('status', ['posted', 'partially_paid', 'fully_paid'])
+            ->orderByDesc('period_start')
+            ->get();
+        $employeesList = \App\Models\Employee::where('company_id', $companyId)->get();
+        return view('accounting.reports.payslip-report', array_merge($data, compact('payrollRunId', 'runsList', 'employeesList')));
     }
 }

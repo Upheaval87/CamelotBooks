@@ -38,6 +38,7 @@ class StockCountTest extends TestCase
         setPermissionsTeamId($this->company->id);
         $this->user->assignRole('company_admin');
         session(['current_company_id' => $this->company->id]);
+        \App\Services\FeatureManagement::enable($this->company->id, 'inventory');
         $this->actingAs($this->user);
 
         AccountingPeriod::create([

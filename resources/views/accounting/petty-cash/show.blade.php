@@ -47,12 +47,15 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <x-input-label for="bank_account_id" value="{{ __('From Bank Account') }}" />
-                                        <select id="bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" required>
-                                            <option value="">Select Bank Account</option>
-                                            @foreach($bankAccounts as $account)
-                                                <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <x-scoped-search-field
+                                            name="bank_account_id"
+                                            entity="bank-account"
+                                            search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                            :value="old('bank_account_id')"
+                                            :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                            placeholder="{{ __('Search bank accounts...') }}"
+                                            required
+                                        />
                                     </div>
                                     <div>
                                         <x-input-label for="est_amount" value="{{ __('Amount') }}" />
@@ -113,12 +116,15 @@
                                 <div class="space-y-4">
                                     <div>
                                         <x-input-label for="rep_bank" value="{{ __('From Bank Account') }}" />
-                                        <select id="rep_bank" name="bank_account_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" required>
-                                            <option value="">{{ __('Select Bank Account') }}</option>
-                                            @foreach($bankAccounts as $account)
-                                                <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <x-scoped-search-field
+                                            name="bank_account_id"
+                                            entity="bank-account"
+                                            search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                            :value="old('bank_account_id')"
+                                            :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                            placeholder="{{ __('Search bank accounts...') }}"
+                                            required
+                                        />
                                     </div>
                                     <div>
                                         <x-input-label for="rep_amount" value="{{ __('Amount') }}" />
@@ -169,9 +175,6 @@
                     </div>
                 </div>
                 <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => [
-                        ['route' => route('accounting.petty-cash.print', $fund), 'icon' => 'print', 'title' => __('Print')],
-                    ]],
                     ['label' => __('Navigation'), 'links' => [
                         ['route' => route('accounting.petty-cash.index'), 'icon' => 'back', 'title' => __('Back')],
                     ]],

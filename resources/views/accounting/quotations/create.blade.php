@@ -18,13 +18,14 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="customer_id" value="{{ __('Customer') }}" />
-                            <div x-data="customerSearch('{{ old('customer_id') }}', '{{ old('customer_name', '') }}')" class="relative">
-                                <input type="hidden" name="customer_id" :value="selectedId" />
-                                <input type="text" x-model="query" @input.debounce.300ms="search()" @focus="if(query) open=true" @click.away="open=false" placeholder="Search customers..." autocomplete="off" class="input mt-1" />
-                                <div x-show="open && results.length > 0" x-cloak class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                                    <template x-for="c in results" :key="c.id"><div @click="select(c)" class="px-3 py-2 cursor-pointer hover:bg-indigo-50 text-sm" x-text="c.name"></div></template>
-                                </div>
-                            </div>
+                            <x-scoped-search-field
+                                name="customer_id"
+                                entity="customer"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
+                                :value="old('customer_id')"
+                                :label="old('customer_name')"
+                                placeholder="Search customers..."
+                            />
                             <x-input-error :messages="$errors->get('customer_id')" class="mt-2" />
                         </div>
                         <div>
@@ -109,8 +110,6 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product_sale" :items="$products" labelKey="name" :showFields="['sku', 'sales_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
-
     @php
         $productsJson = $products->map(function($p) {
             return [
@@ -124,19 +123,12 @@
     @endphp
 
     <script>
-        function customerSearch(selectedId, selectedName) {
-            return {
-                query: selectedName || '', selectedId: selectedId || '', results: [], open: false,
-                async search() { if (this.query.length < 1) { this.results = []; this.open = false; return; } const r = await fetch('{{ route("accounting.customers.search") }}?q=' + encodeURIComponent(this.query)); this.results = await r.json(); this.open = true; },
-                select(c) { this.selectedId = c.id; this.query = c.name; this.open = false; }
-            }
-        }
         const products = @json($productsJson);
         const incomeAccounts = @json($incomeAccounts);
         const costCenters = @json($costCenters);
+        const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
         let lineIndex = 0;
 
-        function escapeHtml(str) { return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
         function updateTotals() {
             var subtotal = 0, totalTax = 0;
             document.querySelectorAll('#lines-body tr').forEach(function(row) {
@@ -158,23 +150,18 @@
             var idx = lineIndex++;
             var selectedId = data ? String(data.product_id || '') : '';
             var selectedName = data && data.product_id ? (products.find(function(p) { return p.id == data.product_id; }) || {}).name || '' : '';
-            var xDataAttr = 'searchableSelect({' +
-                'name: \'lines[' + idx + '][product_id]\',' +
-                'items: products,' +
-                'valueKey: \'id\',' +
-                'labelKey: \'name\',' +
-                'searchKeys: [\'name\', \'sku\', \'barcode\'],' +
-                'showFields: [\'sku\', \'sales_price\'],' +
-                'preload: \'' + selectedId + '\',' +
-                'preloadLabel: \'' + selectedName + '\',' +
-                'onSelectCallback: null,' +
-                'enableAdvancedSearch: true,' +
-                'advancedSearchName: \'product_sale\',' +
-            '})';
+            var picker = scopedSearchFieldHtml({
+                name: 'lines[' + idx + '][product_id]',
+                entity: 'product',
+                searchUrl: PRODUCT_SEARCH_URL,
+                value: selectedId,
+                label: selectedName,
+                placeholder: 'Search products...',
+            });
             var accountOptions = incomeAccounts.map(function(a) { return '<option value="' + a.id + '" ' + (data && data.income_account_id == a.id ? 'selected' : '') + '>' + a.code + ' - ' + a.name + '</option>'; }).join('');
             var tr = document.createElement('tr');
             tr.setAttribute('data-line-idx', idx);
-            tr.innerHTML = '<td class="px-4 py-2" style="min-width:220px;"><div x-data="' + escapeHtml(xDataAttr) + '" class="relative"><input type="hidden" name="lines[' + idx + '][product_id]" :value="selectedId" /><div class="flex"><input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if(query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="Search products..." autocomplete="off" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" /><button type="button" @click="openAdvancedSearch()" class="px-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none" title="Advanced Search"><svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button></div></div></td>' +
+            tr.innerHTML = '<td class="px-4 py-2" style="min-width:220px;">' + picker + '</td>' +
                 '<td class="px-4 py-2"><input type="text" name="lines[' + idx + '][description]" value="' + (data ? (data.description || '') : '') + '" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" /></td>' +
                 '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="' + (data ? data.quantity : 1) + '" min="0" step="any" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" /></td>' +
                 '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][unit_price]" value="' + (data ? (data.unit_price || 0) : 0) + '" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" onchange="updateTotals()" oninput="updateTotals()" /></td>' +

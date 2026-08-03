@@ -32,15 +32,14 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="customer_id" value="{{ __('Customer') }}" />
-                            <div x-data="customerSearch('{{ old('customer_id') }}', '{{ old('customer_name', '') }}')" class="relative">
-                                <input type="hidden" name="customer_id" :value="selectedId" />
-                                <input type="text" x-model="query" @input.debounce.300ms="search()" @focus="if(query) open=true" @click.away="open=false" placeholder="Search customers..." autocomplete="off" class="input mt-1" />
-                                <div x-show="open && results.length > 0" x-cloak class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                                    <template x-for="c in results" :key="c.id">
-                                        <div @click="select(c)" class="px-3 py-2 cursor-pointer hover:bg-indigo-50 text-sm" x-text="c.name + (c.email ? ' (' + c.email + ')' : '')"></div>
-                                    </template>
-                                </div>
-                            </div>
+                            <x-scoped-search-field
+                                name="customer_id"
+                                entity="customer"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
+                                :value="old('customer_id')"
+                                :label="old('customer_name')"
+                                placeholder="Search customers..."
+                            />
                             <x-input-error :messages="$errors->get('customer_id')" class="mt-2" />
                         </div>
                         <div>
@@ -130,35 +129,7 @@
     </div>
 
 <script>
-        function customerSearch(selectedId, selectedName) {
-            return {
-                query: selectedName || '', selectedId: selectedId || '', results: [], open: false,
-                async search() {
-                    if (this.query.length < 1) { this.results = []; this.open = false; return; }
-                    const r = await fetch('{{ route("accounting.customers.search") }}?q=' + encodeURIComponent(this.query));
-                    this.results = await r.json(); this.open = true;
-                },
-                select(c) { this.selectedId = c.id; this.query = c.name; this.open = false; }
-            }
-        }
-
-        @php
-            $productsJson = $products->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'sku' => $p->sku,
-                'barcode' => $p->barcode,
-                'sales_price' => $p->sales_price,
-                'purchase_price' => $p->purchase_price,
-                'type' => $p->type,
-                'description' => $p->description,
-                'tracked_as_inventory' => $p->tracked_as_inventory,
-                'unit_price' => $p->sales_price,
-                'tax_rate' => $p->tax_rate,
-                'income_account_id' => $p->income_account_id,
-            ]);
-        @endphp
-        const products = @json($productsJson);
+        const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
         const incomeAccounts = @json($incomeAccounts);
         const costCenters = @json($costCenters);
         let lineIndex = 0;
@@ -204,53 +175,14 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="px-4 py-2" style="min-width: 220px;">
-                    <div x-data="searchableSelect({
+                    ${scopedSearchFieldHtml({
                         name: 'lines[${idx}][product_id]',
-                        items: products,
-                        valueKey: 'id',
-                        labelKey: 'name',
-                        searchKeys: ['name', 'sku', 'barcode'],
-                        showFields: ['sku', 'sales_price'],
-                        preload: '',
-                        preloadLabel: '',
-                        onSelectCallback: null,
-                        enableAdvancedSearch: true,
-                        advancedSearchName: 'product_invoice',
-                    })" class="relative">
-                        <input type="hidden" name="lines[${idx}][product_id]" :value="selectedId" />
-                        <div class="flex">
-                            <input type="text" x-model="query"
-                                @input.debounce.200ms="filter()"
-                                @focus="if(query.length > 0) open = true"
-                                @keydown.down.prevent="moveHighlight(1)"
-                                @keydown.up.prevent="moveHighlight(-1)"
-                                @keydown.enter.prevent="confirmHighlight()"
-                                @keydown.escape="open = false"
-                                @keydown.tab="open = false"
-                                placeholder="Search products..." autocomplete="off"
-                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />
-                            <button type="button" @click="openAdvancedSearch()"
-                                class="px-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none" title="Advanced Search">
-                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            </button>
-                        </div>
-                        <div x-show="open && results.length > 0" x-cloak
-                            class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                            <template x-for="(item, idx2) in results" :key="item[valueKey]">
-                                <div @click="select(item)" @mouseenter="highlightIndex = parseInt(idx2)"
-                                    class="px-3 py-2 cursor-pointer flex justify-between items-center text-sm border-b border-gray-100 last:border-0"
-                                    :style="parseInt(idx2) === highlightIndex ? 'background-color: #4f46e5; color: white;' : ''">
-                                    <div class="flex flex-col min-w-0">
-                                        <span class="font-medium truncate" x-text="item[labelKey]"></span>
-                                        <div class="flex gap-2 text-xs" :style="parseInt(idx2) === highlightIndex ? 'color: #c7d2fe;' : 'color: #6b7280;'">
-                                            <span x-show="item.sku" x-text="item.sku"></span>
-                                            <span x-show="item.sales_price" x-text="formatNumber(parseFloat(item.sales_price))"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
+                        entity: 'product',
+                        searchUrl: PRODUCT_SEARCH_URL,
+                        value: '',
+                        label: '',
+                        placeholder: 'Search products...',
+                    })}
                 </td>
                 <td class="px-4 py-2">
                     <input type="text" name="lines[${idx}][description]" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" />
@@ -317,6 +249,4 @@
 
         addLine();
     </script>
-
-    <x-advanced-search-modal name="product_invoice" :items="$products" labelKey="name" :showFields="['sku', 'sales_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
 </x-app-layout>

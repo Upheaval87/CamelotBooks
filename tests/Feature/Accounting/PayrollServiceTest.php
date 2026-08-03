@@ -116,7 +116,7 @@ class PayrollServiceTest extends TestCase
         $this->payeTable = PayeTable::create([
             'company_id' => $this->company->id,
             'version_name' => '2026 PAYE',
-            'effective_from' => now()->subMonth(),
+            'effective_from' => '2026-01-01',
             'is_current' => true,
         ]);
 
@@ -608,7 +608,7 @@ class PayrollServiceTest extends TestCase
 
         Artisan::call('payroll:send-payslips', ['runId' => $run->id]);
 
-        Mail::assertSent(\App\Mail\PayslipMail::class, function ($mail) {
+        Mail::assertQueued(\App\Mail\PayslipMail::class, function ($mail) {
             $reflection = new \ReflectionClass($mail);
             $method = $reflection->getMethod('buildBody');
             $method->setAccessible(true);

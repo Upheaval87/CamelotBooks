@@ -18,14 +18,15 @@
                             <div class="space-y-6">
                                 <div>
                                     <x-input-label for="bank_account_id" value="{{ __('Bank Account') }}" />
-                                    <select id="bank_account_id" name="bank_account_id" class="input mt-1" required>
-                                        <option value="">Select Bank Account</option>
-                                        @foreach($bankAccounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('bank_account_id') == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }} (Balance: {{ format_money($account->current_balance) }})
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="bank_account_id"
+                                        entity="bank-account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                        :value="old('bank_account_id')"
+                                        :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                        placeholder="{{ __('Search bank accounts...') }}"
+                                        required
+                                    />
                                     <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
                                 </div>
 

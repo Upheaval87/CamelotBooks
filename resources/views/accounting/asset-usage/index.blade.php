@@ -9,14 +9,15 @@
                     @csrf
                     <div class="flex-1">
                         <x-input-label for="asset_id" value="{{ __('Asset') }}" />
-                        <select id="asset_id" name="asset_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                            <option value="">Select Asset</option>
-                            @foreach($assets as $asset)
-                                <option value="{{ $asset->id }}" {{ old('asset_id') == $asset->id ? 'selected' : '' }}>
-                                    {{ $asset->asset_code }} - {{ $asset->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-scoped-search-field
+                            name="asset_id"
+                            entity="asset"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'asset']) }}"
+                            :value="old('asset_id')"
+                            :label="old('asset_name', ($assets->firstWhere('id', (int) old('asset_id'))?->name ?? ''))"
+                            placeholder="{{ __('Search assets...') }}"
+                            required
+                        />
                     </div>
                     <div>
                         <x-input-label for="usage_date" value="{{ __('Date') }}" />
@@ -59,16 +60,16 @@
                                         </a>
                                     </td>
                                     <td class="text-ink-soft">
-                                        {{ $log->usage_date?->format('M d, Y') ?? '—' }}
+                                        {{ $log->period_start_date?->format('M d, Y') ?? '—' }}
                                     </td>
                                     <td class="numeric">
                                         {{ format_money($log->units_used) }}
                                     </td>
                                     <td class="numeric">
-                                        {{ format_money($log->total_units_used ?? 0) }}
+                                        {{ format_money($log->cumulative_units ?? 0) }}
                                     </td>
                                     <td class="text-ink-soft">
-                                        {{ $log->user->name ?? '—' }}
+                                        {{ $log->createdBy?->name ?? '—' }}
                                     </td>
                                 </tr>
                             @empty

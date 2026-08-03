@@ -14,14 +14,15 @@
                             <div class="space-y-6">
                                 <div>
                                     <x-input-label for="asset_id" value="{{ __('Fixed Asset') }}" />
-                                    <select id="asset_id" name="asset_id" class="input mt-1" required>
-                                        <option value="">Select Asset</option>
-                                        @foreach($assets as $asset)
-                                            <option value="{{ $asset->id }}" {{ old('asset_id', request('asset_id')) == $asset->id ? 'selected' : '' }}>
-                                                {{ $asset->asset_code }} - {{ $asset->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="asset_id"
+                                        entity="asset"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'asset']) }}"
+                                        :value="old('asset_id', request('asset_id'))"
+                                        :label="old('asset_name', ($assets->firstWhere('id', (int) old('asset_id', request('asset_id')))?->name ?? ''))"
+                                        placeholder="{{ __('Search assets...') }}"
+                                        required
+                                    />
                                     <x-input-error :messages="$errors->get('asset_id')" class="mt-2" />
                                 </div>
 

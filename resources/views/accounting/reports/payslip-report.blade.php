@@ -6,21 +6,25 @@
         <form method="GET" class="flex items-end gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Payroll Run</label>
-                <select name="payroll_run_id" class="mt-1 block border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <option value="">All Runs</option>
-                    @foreach($runsList as $r)
-                        <option value="{{ $r->id }}" {{ request('payroll_run_id') == $r->id ? 'selected' : '' }}>{{ $r->run_number }} — {{ $r->period_label }}</option>
-                    @endforeach
-                </select>
+                <x-scoped-search-field
+                    name="payroll_run_id"
+                    entity="payroll-run"
+                    search-url="{{ route('accounting.search.entity', ['entity' => 'payroll-run']) }}"
+                    :value="$payrollRunId"
+                    :label="request('payroll_run_id') ? ($runsList->firstWhere('id', (int) request('payroll_run_id'))?->run_number ?? '') : ''"
+                    placeholder="Search payroll runs..."
+                />
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Employee</label>
-                <select name="employee_id" class="mt-1 block border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <option value="">All Employees</option>
-                    @foreach($employeesList as $e)
-                        <option value="{{ $e->id }}" {{ request('employee_id') == $e->id ? 'selected' : '' }}>{{ $e->first_name }} {{ $e->last_name }}</option>
-                    @endforeach
-                </select>
+                <x-scoped-search-field
+                    name="employee_id"
+                    entity="employee"
+                    search-url="{{ route('accounting.search.entity', ['entity' => 'employee']) }}"
+                    :value="request('employee_id')"
+                    :label="request('employee_id') ? ($employeesList->firstWhere('id', (int) request('employee_id'))?->full_name ?? '') : ''"
+                    placeholder="Search employees..."
+                />
             </div>
             <x-primary-button type="submit">Filter</x-primary-button>
         </form>
@@ -55,8 +59,9 @@
             </tbody>
         </table>
     </div>
+@php $totalNetPay = collect($items)->sum('net_pay'); @endphp
     <div class="mt-4 bg-white shadow-sm sm:rounded-lg p-4">
-        <p class="text-sm font-medium text-gray-700">Total Net Pay: <span class="text-lg font-bold text-green-700">{{ $cs }} {{ format_number($total_net_pay) }}</span></p>
+        <p class="text-sm font-medium text-gray-700">Total Net Pay: <span class="text-lg font-bold text-green-700">{{ $cs }} {{ format_number($totalNetPay) }}</span></p>
     </div>
 </div>
 </x-app-layout>

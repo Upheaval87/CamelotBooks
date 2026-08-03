@@ -31,15 +31,14 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="customer_id" value="{{ __('Customer') }}" />
-                            <div x-data="customerSearch('{{ old('customer_id') }}', '{{ old('customer_name', '') }}', true)" class="relative">
-                                <input type="hidden" id="customer_id" name="customer_id" :value="selectedId" />
-                                <input type="text" x-model="query" @input.debounce.300ms="search()" @focus="if(query) open=true" @click.away="open=false" placeholder="Search customers..." autocomplete="off" class="input mt-1" />
-                                <div x-show="open && results.length > 0" x-cloak class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                                    <template x-for="c in results" :key="c.id">
-                                        <div @click="select(c)" class="px-3 py-2 cursor-pointer hover:bg-indigo-50 text-sm" x-text="c.name + (c.email ? ' (' + c.email + ')' : '')"></div>
-                                    </template>
-                                </div>
-                            </div>
+                            <x-scoped-search-field
+                                name="customer_id"
+                                entity="customer"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
+                                :value="old('customer_id')"
+                                :label="old('customer_name')"
+                                placeholder="Search customers..."
+                            />
                             <x-input-error :messages="$errors->get('customer_id')" class="mt-2" />
                         </div>
                         <div>
@@ -65,14 +64,15 @@
                         </div>
                         <div>
                             <x-input-label for="bank_account_id" value="{{ __('Deposit To') }}" />
-                            <select id="bank_account_id" name="bank_account_id" class="input mt-1" required>
-                                <option value="">Select Bank Account</option>
-                                @foreach($bankAccounts as $bankAccount)
-                                    <option value="{{ $bankAccount->id }}" {{ old('bank_account_id') == $bankAccount->id ? 'selected' : '' }}>
-                                        {{ $bankAccount->name }} ({{ format_money($bankAccount->current_balance) }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="bank_account_id"
+                                entity="bank-account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                :value="old('bank_account_id')"
+                                :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                placeholder="{{ __('Search bank accounts...') }}"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
                         </div>
                         <div>
@@ -143,7 +143,6 @@
                         ['title' => __('New Customer'), 'route' => route('accounting.customers.create'), 'icon' => 'person'],
                     ]],
                     ['label' => __('View'), 'links' => [
-                        ['title' => __('Payments List'), 'route' => route('accounting.customer-payments.index'), 'icon' => 'document'],
                     ]],
                 ]" />
             </div>
@@ -151,27 +150,12 @@
     </div>
 
     <script>
-        function customerSearch(selectedId, selectedName, triggerLoadInvoices) {
-            return {
-                query: selectedName || '', selectedId: selectedId || '', results: [], open: false,
-                async search() {
-                    if (this.query.length < 1) { this.results = []; this.open = false; return; }
-                    const r = await fetch('{{ route("accounting.customers.search") }}?q=' + encodeURIComponent(this.query));
-                    this.results = await r.json(); this.open = true;
-                },
-                select(c) {
-                    this.selectedId = c.id; this.query = c.name; this.open = false;
-                    if (triggerLoadInvoices) loadInvoices();
-                }
-            }
-        }
-
         const openInvoicesByCustomer = @json($openInvoicesByCustomer ?? []);
 
-        function loadInvoices() {
-            const customerId = document.getElementById('customer_id').value;
+        function loadInvoices(customerId) {
+            const id = customerId || document.querySelector('input[name="customer_id"]')?.value;
             const tbody = document.getElementById('invoices-body');
-            const invoices = openInvoicesByCustomer[customerId] || [];
+            const invoices = openInvoicesByCustomer[id] || [];
             if (!invoices.length) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center text-ink-soft">No open invoices for this customer.</td></tr>';
                 return;
@@ -216,5 +200,11 @@
         }
 
         document.getElementById('amount').addEventListener('input', updateAllocationTotals);
+
+        document.addEventListener('item-selected', function(e) {
+            const root = e.target.closest('[x-data]');
+            const hidden = root && root.querySelector('input[name="customer_id"]');
+            if (hidden) loadInvoices(e.detail.id);
+        });
     </script>
 </x-app-layout>

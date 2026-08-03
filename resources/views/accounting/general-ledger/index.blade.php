@@ -12,12 +12,14 @@
                 <form method="GET" action="{{ route('accounting.general-ledger.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
                         <x-input-label for="account_id" value="{{ __('Account') }}" />
-                        <select id="account_id" name="account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">All Accounts</option>
-                            @foreach($accounts as $account)
-                                <option value="{{ $account->id }}" {{ request('account_id') == $account->id ? 'selected' : '' }}>{{ $account->code }} - {{ $account->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-scoped-search-field
+                            name="account_id"
+                            entity="account"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                            :value="request('account_id')"
+                            :label="request('account_id') ? ($accounts->firstWhere('id', (int) request('account_id'))?->name ?? '') : ''"
+                            placeholder="{{ __('Search accounts...') }}"
+                        />
                     </div>
                     <div class="flex-1">
                         <x-input-label for="date_from" value="{{ __('Date From') }}" />

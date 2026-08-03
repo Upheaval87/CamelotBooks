@@ -16,14 +16,14 @@
                 <form method="GET" action="{{ route('accounting.cheques.index') }}" class="flex items-end gap-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase">Bank Account</label>
-                        <select name="bank_account_id" class="mt-1 block w-48 border-gray-300 rounded-md shadow-sm text-sm">
-                            <option value="">All Accounts</option>
-                            @foreach($bankAccounts as $account)
-                                <option value="{{ $account->id }}" {{ ($bankAccountId ?? '') == $account->id ? 'selected' : '' }}>
-                                    {{ $account->code }} - {{ $account->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-scoped-search-field
+                            name="bank_account_id"
+                            entity="bank-account"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                            :value="$bankAccountId ?? ''"
+                            :label="($bankAccountId ?? '') ? ($bankAccounts->firstWhere('id', (int) $bankAccountId)?->name ?? '') : ''"
+                            placeholder="{{ __('Search bank accounts...') }}"
+                        />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase">From</label>

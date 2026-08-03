@@ -123,8 +123,6 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product_purchase" :items="$products" labelKey="name" :showFields="['sku', 'sales_price', 'stock_qty']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
-
     <script>
         @php
             $productsJson = $products->map(fn($p) => [
@@ -140,9 +138,8 @@
             ]);
         @endphp
         const products = @json($productsJson);
+        const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
         let lineIndex = 0;
-
-
 
         function updateTotals() {
             let subtotal = 0;
@@ -165,58 +162,19 @@
             const selectedName = data && data.product_id
                 ? (products.find(p => p.id == data.product_id)?.name || '')
                 : '';
-            const xDataAttr = 'searchableSelect({' +
-                'name: \'lines[' + idx + '][product_id]\',' +
-                'items: products,' +
-                'valueKey: \'id\',' +
-                'labelKey: \'name\',' +
-                'searchKeys: [\'name\', \'sku\', \'barcode\'],' +
-                'showFields: [\'sku\', \'purchase_price\'],' +
-                'preload: \'' + selectedId + '\',' +
-                'preloadLabel: \'' + selectedName + '\',' +
-                'onSelectCallback: null,' +
-                'enableAdvancedSearch: true,' +
-                'advancedSearchName: \'product_purchase\',' +
-            '})';
+            const picker = scopedSearchFieldHtml({
+                name: `lines[${idx}][product_id]`,
+                entity: 'product',
+                searchUrl: PRODUCT_SEARCH_URL,
+                value: selectedId,
+                label: selectedName,
+                placeholder: 'Search products...',
+            });
             const tr = document.createElement('tr');
             tr.setAttribute('data-line-idx', idx);
             tr.innerHTML = `
                 <td class="px-4 py-2" style="min-width: 220px;">
-                    <div x-data="${escapeHtml(xDataAttr)}" class="relative">
-                        <input type="hidden" name="lines[${idx}][product_id]" :value="selectedId" />
-                        <div class="flex">
-                            <input type="text" x-model="query"
-                                @input.debounce.200ms="filter()"
-                                @focus="if(query.length > 0) open = true"
-                                @keydown.down.prevent="moveHighlight(1)"
-                                @keydown.up.prevent="moveHighlight(-1)"
-                                @keydown.enter.prevent="confirmHighlight()"
-                                @keydown.escape="open = false"
-                                @keydown.tab="open = false"
-                                placeholder="Search products..." autocomplete="off"
-                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />
-                            <button type="button" @click="openAdvancedSearch()"
-                                class="px-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none" title="Advanced Search">
-                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            </button>
-                        </div>
-                        <div x-show="open && results.length > 0" x-cloak
-                            class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                            <template x-for="(item, idx2) in results" :key="item[valueKey]">
-                                <div @click="select(item)" @mouseenter="highlightIndex = parseInt(idx2)"
-                                    class="px-3 py-2 cursor-pointer flex justify-between items-center text-sm border-b border-gray-100 last:border-0"
-                                    :style="parseInt(idx2) === highlightIndex ? 'background-color: #4f46e5; color: white;' : ''">
-                                    <div class="flex flex-col min-w-0">
-                                        <span class="font-medium truncate" x-text="item[labelKey]"></span>
-                                        <div class="flex gap-2 text-xs" :style="parseInt(idx2) === highlightIndex ? 'color: #c7d2fe;' : 'color: #6b7280;'">
-                                            <span x-show="item.sku" x-text="item.sku"></span>
-                                            <span x-show="item.sales_price" x-text="formatNumber(parseFloat(item.sales_price))"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
+                    ${picker}
                 </td>
                 <td class="px-4 py-2">
                     <input type="text" name="lines[${idx}][description]" value="${data ? (data.description || '') : ''}" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required />
@@ -233,10 +191,6 @@
                 </td>
             `;
             tbody.appendChild(tr);
-        }
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
         function removeLine(btn) {

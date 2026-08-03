@@ -254,6 +254,17 @@
             <div class="flex-1 min-w-0"></div>
 
             <div class="flex items-center gap-3 shrink-0">
+                <button type="button"
+                        class="topbar-search-btn"
+                        title="{{ __('Global Search (Ctrl+K)') }}"
+                        onclick="window.dispatchEvent(new CustomEvent('open-global-search'))">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <span class="hidden lg:inline">{{ __('Search') }}</span>
+                    <kbd>Ctrl K</kbd>
+                </button>
+
                 <div class="topbar-user-avatar">
                     <span>{{ strtoupper(substr($user?->name ?? 'U', 0, 1)) }}</span>
                 </div>

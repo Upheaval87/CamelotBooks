@@ -13,14 +13,14 @@
                 <form method="GET" action="{{ route('accounting.expenses.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
                         <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
-                        <select id="vendor_id" name="vendor_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">All Vendors</option>
-                            @foreach($vendors as $vendor)
-                                <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
-                                    {{ $vendor->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-scoped-search-field
+                            name="vendor_id"
+                            entity="vendor"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'vendor']) }}"
+                            :value="request('vendor_id')"
+                            :label="request('vendor_id') ? ($vendors->firstWhere('id', (int) request('vendor_id'))?->name ?? '') : ''"
+                            placeholder="{{ __('Search vendors...') }}"
+                        />
                     </div>
                     <div class="flex-1">
                         <x-input-label for="status" value="{{ __('Status') }}" />

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\AssetDepreciationBook;
 use App\Models\UnitsOfProductionUsageEntry;
-use App\Services\DepreciationEngine;
+use App\Services\Accounting\FixedAssets\DepreciationEngine;
 use Illuminate\Http\Request;
 
 class AssetDepreciationController extends Controller
@@ -61,9 +61,9 @@ class AssetDepreciationController extends Controller
     {
         $companyId = session('current_company_id');
 
-        $entries = UnitsOfProductionUsageEntry::where('company_id', $companyId)
-            ->with('asset')
-            ->orderByDesc('period_start')
+        $usageLogs = UnitsOfProductionUsageEntry::where('company_id', $companyId)
+            ->with(['asset', 'createdBy'])
+            ->orderByDesc('period_start_date')
             ->get();
 
         $assets = Asset::where('company_id', $companyId)
@@ -73,6 +73,6 @@ class AssetDepreciationController extends Controller
             ->orderBy('asset_code')
             ->get();
 
-        return view('accounting.asset-depreciation.usage-log', compact('entries', 'assets'));
+        return view('accounting.asset-usage.index', compact('usageLogs', 'assets'));
     }
 }

@@ -109,9 +109,6 @@
                     @endif
                 </div>
                 <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => [
-                        ['route' => route('pos.till-sessions.print', $session), 'icon' => 'print', 'title' => __('Print')],
-                    ]],
                     ['label' => __('Navigation'), 'links' => [
                         ['route' => route('pos.till-sessions.index'), 'icon' => 'back', 'title' => __('Back')],
                     ]],

@@ -6,11 +6,15 @@
         <form method="GET" class="flex items-end gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Vendor</label>
-                <select name="vendor_id" required class="mt-1 block border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    @foreach(\App\Models\Vendor::where('company_id', session('current_company_id'))->where('is_active', true)->orderBy('name')->get() as $v)
-                        <option value="{{ $v->id }}" {{ ($vendorId ?? request('vendor_id')) == $v->id ? 'selected' : '' }}>{{ $v->name }}</option>
-                    @endforeach
-                </select>
+                <x-scoped-search-field
+                    name="vendor_id"
+                    entity="vendor"
+                    search-url="{{ route('accounting.search.entity', ['entity' => 'vendor']) }}"
+                    :value="$vendorId ?? request('vendor_id')"
+                    :label="isset($vendor) ? $vendor->name : ''"
+                    placeholder="Search vendors..."
+                    required
+                />
             </div>
             <div><label class="block text-sm font-medium text-gray-700">From</label><input type="date" name="date_from" value="{{ $dateFrom ?? '' }}" class="mt-1 block border-gray-300 rounded-md shadow-sm sm:text-sm"></div>
             <div><label class="block text-sm font-medium text-gray-700">To</label><input type="date" name="date_to" value="{{ $dateTo ?? '' }}" class="mt-1 block border-gray-300 rounded-md shadow-sm sm:text-sm"></div>

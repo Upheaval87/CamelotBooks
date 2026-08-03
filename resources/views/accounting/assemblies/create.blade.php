@@ -28,17 +28,12 @@
                             <div class="space-y-6">
                                 <div>
                                     <x-input-label for="assembly_product_id" value="{{ __('Assembly Product') }}" />
-                                    <x-searchable-select
+                                    <x-scoped-search-field
                                         name="assembly_product_id"
-                                        :items="$products"
-                                        valueKey="id"
-                                        labelKey="name"
-                                        :searchKeys="['name', 'sku', 'barcode']"
-                                        :showFields="['sku']"
-                                        :preload="old('assembly_product_id')"
+                                        entity="product"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'product']) }}"
+                                        :value="old('assembly_product_id')"
                                         placeholder="Search assembly products..."
-                                        :enableAdvancedSearch="true"
-                                        advancedSearchName="product"
                                         :required="true"
                                     />
                                     <x-input-error :messages="$errors->get('assembly_product_id')" class="mt-2" />
@@ -85,5 +80,4 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku']" :types="['inventory']" />
 </x-app-layout>

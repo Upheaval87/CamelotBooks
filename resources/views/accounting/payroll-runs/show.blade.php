@@ -26,6 +26,16 @@
                             <x-detail-field :label="__('Period End')" :value="$run->period_end?->format('M d, Y') ?? '—'" />
                             <x-detail-field :label="__('Pay Date')" :value="$run->pay_date?->format('M d, Y') ?? '—'" />
                             <x-detail-field :label="__('Status')" noBorder>
+                                @php
+                                    $statusColors = [
+                                        'draft' => 'neutral',
+                                        'calculated' => 'info',
+                                        'posted' => 'positive',
+                                        'partially_paid' => 'warning',
+                                        'fully_paid' => 'positive',
+                                    ];
+                                    $color = $statusColors[$run->status] ?? 'neutral';
+                                @endphp
                                 <span class="status-pill {{ $color }}">{{ str_replace('_', ' ', ucfirst($run->status)) }}</span>
                             </x-detail-field>
                             <x-detail-field :label="__('Employees')" :value="$run->items->count()" />
@@ -63,7 +73,7 @@
                                 </form>
                             @endif
 
-                            <a href="{{ route('accounting.payroll-runs.print-payslips', $run) }}" class="x-button x-button-ghost" target="_blank">
+                            <a href="{{ route('accounting.payroll-runs.payslips', $run) }}" class="x-button x-button-ghost" target="_blank">
                                 {{ __('Print Payslips') }}
                             </a>
                             <a href="{{ route('accounting.payroll-runs.paye-schedule', $run) }}" class="x-button x-button-ghost" target="_blank">
@@ -128,11 +138,11 @@
                                             <td class="text-forest text-right font-bold">{{ format_money($item->net_pay) }}</td>
                                             <td class="text-right">
                                                 @if(in_array($run->status, ['posted', 'partially_paid', 'fully_paid']) && !$item->is_paid)
-                                                    <button type="button" @click="openPaymentModal({{ $item->id }}, '{{ addslashes($item->employee->name ?? '') }}', {{ $item->net_pay }})" class="text-forest hover:text-forest/80">
+                                                    <button type="button" @click="openPaymentModal({{ $item->employee_id }}, '{{ addslashes($item->employee->name ?? '') }}', {{ $item->net_pay }})" class="text-forest hover:text-forest/80">
                                                         {{ __('Pay') }}
                                                     </button>
                                                 @endif
-                                                <a href="{{ route('accounting.payroll-runs.print-payslips', $run) }}?employee={{ $item->employee_id }}" class="text-ink-soft hover:text-ink" target="_blank">
+                                                <a href="{{ route('accounting.payroll-runs.payslips', $run) }}?employee={{ $item->employee_id }}" class="text-ink-soft hover:text-ink" target="_blank">
                                                     {{ __('Payslip') }}
                                                 </a>
                                             </td>
@@ -180,14 +190,15 @@
                                             </div>
                                             <div>
                                                 <label for="paye_bank_account_id" class="form-section-label">{{ __('Bank Account') }}</label>
-                                                <select id="paye_bank_account_id" name="bank_account_id" class="input mt-1" required>
-                                                    <option value="">{{ __('Select Bank Account') }}</option>
-                                                    @foreach($bankAccounts as $bankAccount)
-                                                        <option value="{{ $bankAccount->id }}" {{ old('bank_account_id') == $bankAccount->id ? 'selected' : '' }}>
-                                                            {{ $bankAccount->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                                <x-scoped-search-field
+                                                    name="bank_account_id"
+                                                    entity="bank-account"
+                                                    search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                                    :value="old('bank_account_id')"
+                                                    :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                                    placeholder="{{ __('Search bank accounts...') }}"
+                                                    required
+                                                />
                                                 <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
                                             </div>
                                         </div>
@@ -225,14 +236,15 @@
                                             </div>
                                             <div>
                                                 <label for="pension_bank_account_id" class="form-section-label">{{ __('Bank Account') }}</label>
-                                                <select id="pension_bank_account_id" name="bank_account_id" class="input mt-1" required>
-                                                    <option value="">{{ __('Select Bank Account') }}</option>
-                                                    @foreach($bankAccounts as $bankAccount)
-                                                        <option value="{{ $bankAccount->id }}" {{ old('bank_account_id') == $bankAccount->id ? 'selected' : '' }}>
-                                                            {{ $bankAccount->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                                <x-scoped-search-field
+                                                    name="bank_account_id"
+                                                    entity="bank-account"
+                                                    search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                                    :value="old('bank_account_id')"
+                                                    :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                                    placeholder="{{ __('Search bank accounts...') }}"
+                                                    required
+                                                />
                                                 <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
                                             </div>
                                         </div>
@@ -325,8 +337,8 @@
                 </div>
                 <x-detail-quick-actions :groups="[
                     ['label' => __('Insights'), 'links' => [
-                        ['route' => route('accounting.payroll-runs.print', $run), 'icon' => 'print', 'title' => __('Print')],
-                        ['route' => route('accounting.payroll-runs.print-payslips', $run), 'icon' => 'payslip', 'title' => __('Payslips')],
+                        ['route' => route('accounting.payroll-runs.payslips', $run), 'icon' => 'print', 'title' => __('Print')],
+                        ['route' => route('accounting.payroll-runs.payslips', $run), 'icon' => 'payslip', 'title' => __('Payslips')],
                     ]],
                     ['label' => __('Navigation'), 'links' => [
                         ['route' => route('accounting.payroll-runs.index'), 'icon' => 'back', 'title' => __('Back')],
@@ -344,9 +356,8 @@
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">
                         {{ __('Pay Employee') }} — <span x-text="employeeName"></span>
                     </h3>
-                    <form method="POST" action="{{ route('accounting.payroll-runs.pay-employee', $run) }}">
+                    <form method="POST" :action="'{{ url('accounting/payroll-runs/' . $run->id . '/pay-employee') }}/' + employeeId">
                         @csrf
-                        <input type="hidden" name="payroll_run_item_id" :value="itemId" />
                         <div class="space-y-4">
                             <div>
                                 <label for="payment_amount" class="form-section-label">{{ __('Amount') }}</label>
@@ -360,12 +371,15 @@
                             </div>
                             <div>
                                 <label for="payment_bank_account_id" class="form-section-label">{{ __('Bank Account') }}</label>
-                                <select id="payment_bank_account_id" name="bank_account_id" class="input mt-1" required>
-                                    <option value="">{{ __('Select Bank Account') }}</option>
-                                    @foreach($bankAccounts as $bankAccount)
-                                        <option value="{{ $bankAccount->id }}">{{ $bankAccount->name }}</option>
-                                    @endforeach
-                                </select>
+                                <x-scoped-search-field
+                                    name="bank_account_id"
+                                    entity="bank-account"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                    :value="old('bank_account_id')"
+                                    :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                    placeholder="{{ __('Search bank accounts...') }}"
+                                    required
+                                />
                                 <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
                             </div>
                         </div>
@@ -384,11 +398,11 @@
     function paymentModal() {
         return {
             open: false,
-            itemId: null,
+            employeeId: null,
             employeeName: '',
             amount: 0,
-            openPaymentModal(id, name, netPay) {
-                this.itemId = id;
+            openPaymentModal(employeeId, name, netPay) {
+                this.employeeId = employeeId;
                 this.employeeName = name;
                 this.amount = netPay;
                 this.open = true;

@@ -5,12 +5,14 @@
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-toolbar class="mb-6">
                 <form method="GET" action="{{ route('admin.audit-log.index') }}" class="flex items-center gap-2 w-full">
-                    <select name="user_id" class="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-atlas-navy focus:outline-none focus:ring-2 focus:ring-atlas-blue focus:border-transparent">
-                        <option value="">All Users</option>
-                        @foreach($users as $u)
-                            <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                        @endforeach
-                    </select>
+                    <x-scoped-search-field
+                        name="user_id"
+                        entity="user"
+                        search-url="{{ route('accounting.search.entity', ['entity' => 'user']) }}"
+                        :value="request('user_id')"
+                        :label="request('user_id') ? ($users->firstWhere('id', (int) request('user_id'))?->name ?? '') : ''"
+                        placeholder="{{ __('Search users...') }}"
+                    />
                     <input type="date" name="from" value="{{ request('from') }}" class="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-atlas-navy focus:outline-none focus:ring-2 focus:ring-atlas-blue focus:border-transparent w-36" placeholder="From" />
                     <span class="text-atlas-navy/40 text-sm">to</span>
                     <input type="date" name="to" value="{{ request('to') }}" class="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-atlas-navy focus:outline-none focus:ring-2 focus:ring-atlas-blue focus:border-transparent w-36" placeholder="To" />

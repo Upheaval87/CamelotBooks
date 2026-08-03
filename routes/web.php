@@ -17,6 +17,7 @@ use App\Http\Controllers\Accounting\CustomerPaymentController;
 use App\Http\Controllers\Accounting\EmployeeController;
 use App\Http\Controllers\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Accounting\FiscalYearController;
+use App\Http\Controllers\Accounting\GlobalSearchController;
 use App\Http\Controllers\Accounting\ExchangeRateController;
 use App\Http\Controllers\Accounting\IncomeStatementController;
 use App\Http\Controllers\Accounting\InventoryItemsController;
@@ -91,6 +92,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::prefix('accounting')->name('accounting.')
             ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer')
             ->group(function () {
+            // Scoped search (Mode 1) — per entity type
+            Route::get('search/{entity}', [GlobalSearchController::class, 'entity'])
+                ->name('search.entity')
+                ->where('entity', 'product|account|customer|vendor|branch|cost-center|employee|user|bank-account|asset|asset-category|payroll-run|fiscal-year');
+
             // Chart of Accounts
             Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
             Route::get('accounts/create', [AccountController::class, 'create'])->name('accounts.create');
@@ -607,6 +613,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/eis-submission-status', [\App\Http\Controllers\Accounting\ReportControllers\EisSubmissionStatusController::class, 'index'])->name('reports.eis-submission-status');
             Route::get('reports/assembly-build-history', [\App\Http\Controllers\Accounting\ReportControllers\AssemblyBuildHistoryController::class, 'index'])->name('reports.assembly-build-history');
         });
+
+        // Global search (Mode 2) — expanded role gate so bookkeepers,
+        // cashiers and auditors can find records they are permitted to view.
+        Route::prefix('accounting/search')->name('accounting.search.')
+            ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer|bookkeeper|cashier|auditor')
+            ->group(function () {
+                Route::get('global', [GlobalSearchController::class, 'global'])->name('global');
+            });
 
         // Administration
         Route::prefix('admin')->name('admin.')->group(function () {

@@ -25,17 +25,12 @@
                                 <div x-data="{ adjustmentType: '{{ old('type', 'increase') }}' }">
                                     <div>
                                         <x-input-label for="product_id" value="{{ __('Product') }}" />
-                                        <x-searchable-select
+                                        <x-scoped-search-field
                                             name="product_id"
-                                            :items="$products"
-                                            valueKey="id"
-                                            labelKey="name"
-                                            :searchKeys="['name', 'sku', 'barcode']"
-                                            :showFields="['sku']"
-                                            :preload="old('product_id')"
+                                            entity="product"
+                                            search-url="{{ route('accounting.search.entity', ['entity' => 'product']) }}"
+                                            :value="old('product_id')"
                                             placeholder="Search products..."
-                                            :enableAdvancedSearch="true"
-                                            advancedSearchName="product"
                                             :required="true"
                                         />
                                         <x-input-error :messages="$errors->get('product_id')" class="mt-2" />
@@ -115,5 +110,4 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product" :items="$products" labelKey="name" :showFields="['sku']" :types="['inventory']" />
 </x-app-layout>

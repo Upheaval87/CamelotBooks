@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">{{ __('Record Expense') }}</x-slot>
 
     <div class="pb-12">
@@ -31,14 +32,14 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="vendor_id" value="{{ __('Vendor (optional)') }}" />
-                            <select id="vendor_id" name="vendor_id" class="input mt-1">
-                                <option value="">No Vendor</option>
-                                @foreach($vendors as $vendor)
-                                    <option value="{{ $vendor->id }}" {{ old('vendor_id', $selectedVendorId ?? '') == $vendor->id ? 'selected' : '' }}>
-                                        {{ $vendor->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="vendor_id"
+                                entity="vendor"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'vendor']) }}"
+                                :value="old('vendor_id', $selectedVendorId ?? '')"
+                                :label="old('vendor_name', ($vendors->firstWhere('id', (int) old('vendor_id', $selectedVendorId ?? ''))?->name ?? ''))"
+                                placeholder="{{ __('Search vendors...') }}"
+                            />
                             <x-input-error :messages="$errors->get('vendor_id')" class="mt-2" />
                         </div>
                         <div>
@@ -48,14 +49,14 @@
                         </div>
                         <div>
                             <x-input-label for="bank_account_id" value="{{ __('Paid From Account') }}" />
-                            <select id="bank_account_id" name="bank_account_id" class="input mt-1">
-                                <option value="">Default Cash (1000)</option>
-                                @foreach($bankAccounts as $account)
-                                    <option value="{{ $account->id }}" {{ old('bank_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->code }} - {{ $account->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="bank_account_id"
+                                entity="bank-account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                :value="old('bank_account_id')"
+                                :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                placeholder="{{ __('Search bank accounts...') }}"
+                            />
                             <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
                         </div>
                         <div>

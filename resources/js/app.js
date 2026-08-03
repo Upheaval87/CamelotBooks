@@ -1,6 +1,7 @@
 import './bootstrap';
 import './analytics';
-import './searchable-select';
+import './scoped-search-field';
+import './global-search-modal';
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 

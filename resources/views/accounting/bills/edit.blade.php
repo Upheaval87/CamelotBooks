@@ -33,14 +33,15 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
-                            <select id="vendor_id" name="vendor_id" class="input mt-1" required>
-                                <option value="">Select Vendor</option>
-                                @foreach($vendors as $vendor)
-                                    <option value="{{ $vendor->id }}" {{ old('vendor_id', $bill->vendor_id) == $vendor->id ? 'selected' : '' }}>
-                                        {{ $vendor->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="vendor_id"
+                                entity="vendor"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'vendor']) }}"
+                                :value="old('vendor_id', $bill->vendor_id)"
+                                :label="old('vendor_name', $bill->vendor?->name ?? '')"
+                                placeholder="{{ __('Search vendors...') }}"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('vendor_id')" class="mt-2" />
                         </div>
                         <div>

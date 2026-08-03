@@ -44,6 +44,9 @@
         {{-- Toast container --}}
         <div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
 
+        {{-- Global search modal --}}
+        <x-global-search-modal :search-url="route('accounting.search.global')" />
+
         <script>
             window.currencySymbol = document.querySelector('meta[name="currency-symbol"]')?.getAttribute('content') || '$';
             window.formatMoney = function(amount) {

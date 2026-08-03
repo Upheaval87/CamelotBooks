@@ -20,8 +20,6 @@ class VendorCreditController extends Controller
     public function index(Request $request)
     {
         $companyId = session('current_company_id');
-    {
-        $companyId = session('current_company_id');
 
         $query = VendorCredit::where('company_id', $companyId)
             ->with(['vendor', 'bill']);

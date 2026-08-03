@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Asset;
 use App\Models\AssetDisposal;
-use App\Services\FixedAssetService;
+use App\Services\Accounting\FixedAssetService;
 use Illuminate\Http\Request;
 
 class AssetDisposalController extends Controller

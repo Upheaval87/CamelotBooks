@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\AssetImpairment;
-use App\Services\FixedAssetService;
+use App\Services\Accounting\FixedAssetService;
 use Illuminate\Http\Request;
 
 class AssetImpairmentController extends Controller

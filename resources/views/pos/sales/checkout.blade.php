@@ -40,14 +40,22 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
                         <div class="relative">
-                            <input type="text" x-model="searchQuery"
-                                @focus="dropdownOpen = searchQuery.length > 0"
-                                @keydown.down.prevent="moveHighlight(1)"
-                                @keydown.up.prevent="moveHighlight(-1)"
-                                @keydown.enter.prevent="confirmHighlight()"
-                                @keydown.escape="dropdownOpen = false"
-                                placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off"
-                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                            <div class="scoped-search-field">
+                                <svg class="scoped-search-filter" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                                </svg>
+                                <input type="text" x-model="searchQuery"
+                                    @focus="dropdownOpen = searchQuery.length > 0"
+                                    @keydown.down.prevent="moveHighlight(1)"
+                                    @keydown.up.prevent="moveHighlight(-1)"
+                                    @keydown.enter.prevent="confirmHighlight()"
+                                    @keydown.escape="dropdownOpen = false"
+                                    placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off" />
+                                <span class="scoped-search-divider" aria-hidden="true"></span>
+                                <button type="button" class="scoped-search-open" title="Search across all records" @click="openGlobalSearch()">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </button>
+                            </div>
                             <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
                                 class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                                 <template x-for="(p, pi) in filteredProducts" :key="p.id">
@@ -603,6 +611,7 @@
                 dropdownOpen: false,
                 highlightIndex: -1,
                 _lastQuery: '',
+                fieldId: null,
                 paymentTypes: @json($paymentMethods->pluck('type', 'id')),
                 paymentNames: @json($paymentMethods->pluck('name', 'id')),
                 showModal: false,
@@ -633,9 +642,24 @@
 
                 init() {
                     this.filteredProducts = [];
+                    this.fieldId = 'pos-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now().toString(36);
+                    if (this.$el) {
+                        this.$el.setAttribute('data-scoped-search-field', this.fieldId);
+                    }
                     document.addEventListener('click', (e) => {
                         if (!this.$el.contains(e.target)) {
                             this.dropdownOpen = false;
+                        }
+                    });
+                    window.addEventListener('global-search-selected', (e) => {
+                        const detail = (e && e.detail) || {};
+                        if (!detail.entity || detail.entity !== 'product') return;
+                        const idMatches = detail.fieldId != null && detail.fieldId === this.fieldId;
+                        const elMatches = detail.field != null && detail.field === this.$el;
+                        if (!idMatches && !elMatches) return;
+                        if (detail.item && detail.item.id) {
+                            const product = this.products.find((p) => String(p.id) === String(detail.item.id));
+                            if (product) this.selectProduct(product);
                         }
                     });
                     window.addEventListener('online', () => {
@@ -674,9 +698,24 @@
                         return;
                     }
                     this.filteredProducts = this.products.filter(p =>
-                        p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
+                        p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)) || (p.barcode && String(p.barcode).toLowerCase().includes(q))
                     );
+                    if (this.filteredProducts.length === 1) {
+                        const p = this.filteredProducts[0];
+                        const barcode = p.barcode ? String(p.barcode).toLowerCase() : '';
+                        const sku = p.sku ? String(p.sku).toLowerCase() : '';
+                        if (q === barcode || q === sku) {
+                            this.selectProduct(p);
+                            return;
+                        }
+                    }
                     this.dropdownOpen = true;
+                },
+
+                openGlobalSearch() {
+                    window.dispatchEvent(new CustomEvent('open-global-search', {
+                        detail: { query: this.searchQuery, entity: 'product', field: this.$el, fieldId: this.fieldId },
+                    }));
                 },
 
                 moveHighlight(dir) {

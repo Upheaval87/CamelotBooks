@@ -12,7 +12,17 @@ class VendorStatementController extends Controller
         $vendorId = $request->input('vendor_id');
         $dateFrom = $request->input('date_from', now()->startOfMonth()->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->endOfMonth()->format('Y-m-d'));
-        $data = app(VendorStatementService::class)->generate($companyId, $dateFrom, $dateTo, $vendorId);
-        return view('accounting.reports.vendor-statement', array_merge($data, compact('dateFrom', 'dateTo', 'vendorId')));
+
+        $vendor = $vendorId
+            ? \App\Models\Vendor::where('company_id', $companyId)->find((int) $vendorId)
+            : null;
+
+        if ($vendor) {
+            $data = app(VendorStatementService::class)->generate($companyId, $vendor->id, $dateFrom, $dateTo);
+        } else {
+            $data = ['transactions' => [], 'opening_balance' => 0, 'closing_balance' => 0, 'total_debit' => 0, 'total_credit' => 0];
+        }
+
+        return view('accounting.reports.vendor-statement', array_merge($data, compact('dateFrom', 'dateTo', 'vendorId', 'vendor')));
     }
 }

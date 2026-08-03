@@ -1,10 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Bank Reconciliation') }} — {{ $bankAccount->name ?? '' }}</x-slot>
-
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id ?? '') }}">{{ __('Import Statement') }}</x-button>
-        <x-button variant="ghost" href="{{ route('accounting.bank-accounts.index') }}">{{ __('Back to Accounts') }}</x-button>
-    </div>
+    <x-slot name="header">
+        <div class="flex items-center justify-between gap-2">
+            <span>{{ __('Bank Reconciliation') }} — {{ $bankAccount->name ?? '' }}</span>
+            <div class="flex items-center gap-2">
+                <x-button variant="ghost" href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id ?? '') }}">{{ __('Import Statement') }}</x-button>
+                <x-button variant="ghost" href="{{ route('accounting.bank-accounts.index') }}">{{ __('Back to Accounts') }}</x-button>
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-12">
@@ -23,17 +25,18 @@
 
             @if(!isset($bankAccount) || !$bankAccount)
                 <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <form method="GET" onsubmit="event.preventDefault(); var v = document.getElementById('bank_account_id').value; if(v) window.location.href = '{{ url('accounting/bank-reconciliation') }}/' + v;" class="flex items-end gap-4">
+                    <form method="GET" onsubmit="event.preventDefault(); var v = document.querySelector('input[name=&quot;bank_account_id&quot;]').value; if(v) window.location.href = '{{ url('accounting/bank-reconciliation') }}/' + v;" class="flex items-end gap-4">
                         <div class="flex-1">
                             <x-input-label for="bank_account_id" value="{{ __('Bank Account') }}" />
-                            <select id="bank_account_id" name="bank_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="">Select Bank Account</option>
-                                @foreach($bankAccounts as $account)
-                                    <option value="{{ $account->id }}" {{ request('bank_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="bank_account_id"
+                                entity="bank-account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                :value="request('bank_account_id')"
+                                :label="request('bank_account_id') ? ($bankAccounts->firstWhere('id', (int) request('bank_account_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('Search bank accounts...') }}"
+                                required
+                            />
                         </div>
                         <x-primary-button type="submit">{{ __('Select') }}</x-primary-button>
                     </form>

@@ -27,15 +27,14 @@
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="assembly_product_id" value="{{ __('Assembly Product') }}" />
-                            <div x-data="buildAssemblySearchable('{{ old('assembly_product_id') }}', '')" class="relative">
-                                <input type="hidden" name="assembly_product_id" :value="selectedId" />
-                                <div class="flex">
-                                    <input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if(query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="Search assembly products..." autocomplete="off" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />
-                                    <button type="button" @click="openAdvancedSearch()" class="mt-1 px-2.5 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-colors" title="Advanced Search">
-                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                    </button>
-                                </div>
-                            </div>
+                            <x-scoped-search-field
+                                name="assembly_product_id"
+                                entity="product"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'product']) }}"
+                                :value="old('assembly_product_id')"
+                                placeholder="Search assembly products..."
+                                :required="true"
+                            />
                             <x-input-error :messages="$errors->get('assembly_product_id')" class="mt-2" />
                         </div>
 
@@ -89,8 +88,6 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product" :items="$assemblyProducts->merge($componentProducts)" labelKey="name" :showFields="['sku']" :types="['service', 'inventory', 'non_inventory']" />
-
     @php
         $assemblyProductsJson = $assemblyProducts->map(function($p) {
             return [
@@ -109,47 +106,18 @@
     <script>
         const assemblyProducts = @json($assemblyProductsJson);
         const componentProducts = @json($componentProductsJson);
+        const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
         let lineIndex = 0;
 
-        function buildAssemblySearchable(selectedId, selectedName) {
-            var config = {
-                name: 'assembly_product_id',
-                items: assemblyProducts,
-                valueKey: 'id',
-                labelKey: 'name',
-                searchKeys: ['name', 'sku'],
-                showFields: ['sku'],
-                preload: selectedId || '',
-                preloadLabel: selectedName || '',
-                onSelectCallback: 'onAssemblyProductSelected',
-                enableAdvancedSearch: true,
-                advancedSearchName: 'product',
-            };
-            return 'searchableSelect(' + JSON.stringify(config) + ')';
-        }
-
-        function onAssemblyProductSelected(id, item) {}
-
         function buildComponentSearchable(idx, selectedId, selectedName) {
-            var config = {
+            return scopedSearchFieldHtml({
                 name: 'lines[' + idx + '][component_product_id]',
-                items: componentProducts,
-                valueKey: 'id',
-                labelKey: 'name',
-                searchKeys: ['name', 'sku', 'barcode'],
-                showFields: ['sku'],
-                preload: selectedId || '',
-                preloadLabel: selectedName || '',
-                onSelectCallback: 'onComponentSelect_' + idx,
-                enableAdvancedSearch: true,
-                advancedSearchName: 'product',
-            };
-            window['onComponentSelect_' + idx] = function(id, item) {};
-            return 'searchableSelect(' + JSON.stringify(config) + ')';
-        }
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                entity: 'product',
+                searchUrl: PRODUCT_SEARCH_URL,
+                value: selectedId || '',
+                label: selectedName || '',
+                placeholder: 'Search components...',
+            });
         }
 
         function addComponentLine(data) {
@@ -162,20 +130,10 @@
                 var found = allProducts.find(function(p) { return p.id == selectedId; });
                 if (found) selectedName = found.name;
             }
-            var xDataAttr = buildComponentSearchable(idx, selectedId, selectedName);
+            var picker = buildComponentSearchable(idx, selectedId, selectedName);
             var tr = document.createElement('tr');
             tr.innerHTML =
-                '<td class="px-4 py-2" style="min-width: 220px;">' +
-                    '<div x-data="' + escapeHtml(xDataAttr) + '" class="relative">' +
-                        '<input type="hidden" name="lines[' + idx + '][component_product_id]" :value="selectedId" />' +
-                        '<div class="flex">' +
-                            '<input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if(query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="Search components..." autocomplete="off" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />' +
-                            '<button type="button" @click="openAdvancedSearch()" class="px-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none" title="Advanced Search">' +
-                                '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>' +
-                            '</button>' +
-                        '</div>' +
-                    '</div>' +
-                '</td>' +
+                '<td class="px-4 py-2" style="min-width: 220px;">' + picker + '</td>' +
                 '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="' + (data ? data.quantity : 1) + '" step="0.0001" min="0.0001" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" required /></td>' +
                 '<td class="px-4 py-2"><input type="text" name="lines[' + idx + '][unit_of_measure]" value="' + (data ? (data.unit_of_measure || data.uom || 'Each') : 'Each') + '" class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Each" /></td>' +
                 '<td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></td>';

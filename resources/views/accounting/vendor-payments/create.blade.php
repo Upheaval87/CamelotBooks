@@ -31,14 +31,16 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
-                            <select id="vendor_id" name="vendor_id" class="input mt-1" required onchange="loadBills()">
-                                <option value="">Select Vendor</option>
-                                @foreach($vendors as $vendor)
-                                    <option value="{{ $vendor->id }}" {{ old('vendor_id', $vendorId ?? '') == $vendor->id ? 'selected' : '' }}>
-                                        {{ $vendor->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="vendor_id"
+                                entity="vendor"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'vendor']) }}"
+                                :value="old('vendor_id', $vendorId ?? '')"
+                                :label="old('vendor_name', ($vendors->firstWhere('id', (int) old('vendor_id', $vendorId ?? ''))?->name ?? ''))"
+                                placeholder="{{ __('Search vendors...') }}"
+                                on-select="onVendorSelected"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('vendor_id')" class="mt-2" />
                         </div>
                         <div>
@@ -64,14 +66,15 @@
                         </div>
                         <div>
                             <x-input-label for="bank_account_id" value="{{ __('Pay From') }}" />
-                            <select id="bank_account_id" name="bank_account_id" class="input mt-1" required>
-                                <option value="">Select Bank Account</option>
-                                @foreach($bankAccounts as $bankAccount)
-                                    <option value="{{ $bankAccount->id }}" {{ old('bank_account_id') == $bankAccount->id ? 'selected' : '' }}>
-                                        {{ $bankAccount->name }} ({{ format_money($bankAccount->current_balance) }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="bank_account_id"
+                                entity="bank-account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                :value="old('bank_account_id')"
+                                :label="old('bank_account_name', ($bankAccounts->firstWhere('id', (int) old('bank_account_id'))?->name ?? ''))"
+                                placeholder="{{ __('Search bank accounts...') }}"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('bank_account_id')" class="mt-2" />
                         </div>
                         <div>
@@ -142,7 +145,6 @@
                         ['title' => __('New Vendor'), 'route' => route('accounting.vendors.create'), 'icon' => 'person'],
                     ]],
                     ['label' => __('View'), 'links' => [
-                        ['title' => __('Payments List'), 'route' => route('accounting.vendor-payments.index'), 'icon' => 'document'],
                     ]],
                 ]" />
             </div>
@@ -153,7 +155,7 @@
         const openBillsByVendor = @json($openBillsByVendor ?? []);
 
         function loadBills() {
-            const vendorId = document.getElementById('vendor_id').value;
+            const vendorId = document.querySelector('input[name="vendor_id"]').value;
             const tbody = document.getElementById('bills-body');
             const bills = openBillsByVendor[vendorId] || [];
             if (!bills.length) {
@@ -172,6 +174,10 @@
                 </tr>
             `).join('');
             autoAllocate();
+        }
+
+        function onVendorSelected() {
+            loadBills();
         }
 
         function autoAllocate() {

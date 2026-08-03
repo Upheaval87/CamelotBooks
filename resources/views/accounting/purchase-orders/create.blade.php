@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-slot name="header">{{ __('Create Purchase Order') }}</x-slot>
 
     <div class="pb-12">
@@ -23,12 +24,15 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="vendor_id" value="{{ __('Vendor') }}" />
-                            <select id="vendor_id" name="vendor_id" class="input mt-1" required>
-                                <option value="">Select Vendor</option>
-                                @foreach($vendors as $vendor)
-                                    <option value="{{ $vendor->id }}" {{ old('vendor_id', $selectedVendorId ?? '') == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="vendor_id"
+                                entity="vendor"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'vendor']) }}"
+                                :value="old('vendor_id', $selectedVendorId ?? '')"
+                                :label="old('vendor_name', ($vendors->firstWhere('id', (int) old('vendor_id', $selectedVendorId ?? ''))?->name ?? ''))"
+                                placeholder="{{ __('Search vendors...') }}"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('vendor_id')" class="mt-2" />
                         </div>
                         <div>
@@ -120,8 +124,6 @@
         </div>
     </div>
 
-    <x-advanced-search-modal name="product_purchase" :items="$products" labelKey="name" :showFields="['sku', 'purchase_price']" :categories="$itemCategories ?? []" :types="['service', 'inventory', 'non_inventory']" />
-
     @php
         $productsJson = $products->map(function($p) {
             return [
@@ -144,13 +146,8 @@
     <script>
         const products = @json($productsJson);
         const expenseAccounts = @json($accounts);
+        const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
         let lineIndex = 0;
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
-
-
 
         function updateTotals() {
             let total = 0;
@@ -171,36 +168,21 @@
             var selectedName = data && data.product_id
                 ? (products.find(function(p) { return p.id == data.product_id; }) || {}).name || ''
                 : '';
-            var xDataAttr = 'searchableSelect({' +
-                'name: \'lines[' + idx + '][product_id]\',' +
-                'items: products,' +
-                'valueKey: \'id\',' +
-                'labelKey: \'name\',' +
-                'searchKeys: [\'name\', \'sku\', \'barcode\'],' +
-                'showFields: [\'sku\', \'purchase_price\'],' +
-                'preload: \'' + selectedId + '\',' +
-                'preloadLabel: \'' + selectedName + '\',' +
-                'onSelectCallback: null,' +
-                'enableAdvancedSearch: true,' +
-                'advancedSearchName: \'product_purchase\',' +
-            '})';
+            var picker = scopedSearchFieldHtml({
+                name: 'lines[' + idx + '][product_id]',
+                entity: 'product',
+                searchUrl: PRODUCT_SEARCH_URL,
+                value: selectedId,
+                label: selectedName,
+                placeholder: 'Search products...',
+            });
             var accountOptions = expenseAccounts.map(function(a) {
                 return '<option value="' + a.id + '" ' + (data && data.expense_account_id == a.id ? 'selected' : '') + '>' + a.code + ' - ' + a.name + '</option>';
             }).join('');
             var tr = document.createElement('tr');
             tr.setAttribute('data-line-idx', idx);
             tr.innerHTML =
-                '<td class="px-4 py-2" style="min-width: 220px;">' +
-                    '<div x-data="' + escapeHtml(xDataAttr) + '" class="relative">' +
-                        '<input type="hidden" name="lines[' + idx + '][product_id]" :value="selectedId" />' +
-                        '<div class="flex">' +
-                            '<input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if(query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="Search products..." autocomplete="off" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-l-md shadow-sm text-sm" />' +
-                            '<button type="button" @click="openAdvancedSearch()" class="px-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-100 focus:outline-none" title="Advanced Search">' +
-                                '<svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>' +
-                            '</button>' +
-                        '</div>' +
-                    '</div>' +
-                '</td>' +
+                '<td class="px-4 py-2" style="min-width: 220px;">' + picker + '</td>' +
                 '<td class="px-4 py-2">' +
                     '<input type="text" name="lines[' + idx + '][description]" value="' + (data ? (data.description || '') : '') + '" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" />' +
                 '</td>' +
