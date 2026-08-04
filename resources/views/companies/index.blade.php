@@ -1,14 +1,15 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            {{ __('Companies') }}
-            <button onclick="document.getElementById('create-company-modal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                {{ __('Create Company') }}
-            </button>
+    <div class="list-header">
+        <div>
+            <h1 class="font-sans italic font-semibold tracking-tight text-ink text-[1.125rem] lg:text-[1.375rem]">{{ __('Companies') }}</h1>
         </div>
-    </x-slot>
+        <button onclick="document.getElementById('create-company-modal').classList.remove('hidden')" class="list-header-create">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            {{ __('Create Company') }}
+        </button>
+    </div>
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">

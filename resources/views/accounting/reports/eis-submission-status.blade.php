@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">EIS Submission Status</h1>
+    <x-list-header title="EIS Submission Status" />
     <div class="mb-4 bg-white shadow-sm sm:rounded-lg p-4">
         <form method="GET" class="flex items-end gap-4">
             <div>
@@ -41,7 +41,7 @@
                     };
                 @endphp
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm font-mono">{{ $s['receipt_number'] }}</td>
+                    <td class="px-4 py-2 text-sm font-sans">{{ $s['receipt_number'] }}</td>
                     <td>{{ strtoupper($s['invoice_type']) }}</td>
                     <td class="text-ink-soft">{{ $s['terminal_id'] ?? '—' }}</td>
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusColor }}">{{ ucfirst($s['status']) }}</span></td>

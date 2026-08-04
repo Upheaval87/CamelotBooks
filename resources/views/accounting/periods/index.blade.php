@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Accounting Periods') }}</x-slot>
+    <x-list-header title="{{ __('Accounting Periods') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="primary" onclick="document.getElementById('create-period-modal').classList.remove('hidden')">{{ __('Create Period') }}</x-button>

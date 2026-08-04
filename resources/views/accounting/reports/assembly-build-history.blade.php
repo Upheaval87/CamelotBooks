@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Assembly Build History</h1>
+    <x-list-header title="Assembly Build History" />
     <div class="mb-4 bg-white shadow-sm sm:rounded-lg p-4">
         <form method="GET" class="flex items-end gap-4">
             <div>
@@ -34,7 +34,7 @@
             <tbody class="divide-y divide-gray-200">
                 @forelse($builds as $b)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm font-mono">{{ $b['build_number'] }}</td>
+                    <td class="px-4 py-2 text-sm font-sans">{{ $b['build_number'] }}</td>
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $b['type'] === 'build' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800' }}">{{ ucfirst($b['type']) }}</span></td>
                     <td>{{ $b['assembly_product'] }}</td>
                     <td class="text-ink-soft">{{ $b['bom_name'] ?? '—' }}</td>

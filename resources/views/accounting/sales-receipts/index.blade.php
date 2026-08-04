@@ -1,6 +1,6 @@
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <x-app-layout>
-    <x-slot name="header">{{ __('Sales Receipts') }}</x-slot>
+    
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Depreciation Schedule') }}: {{ $asset->asset_code }} - {{ $asset->name }}</x-slot>
+    <x-list-header title="{{ __('Depreciation Schedule') }}: {{ $asset->asset_code }} - {{ $asset->name }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.fixed-assets.show', $asset) }}">{{ __('Back to Asset') }}</x-button>

@@ -1,6 +1,6 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">{{ __('New Recurring Journal Template') }}</x-slot>
+    <x-list-header title="{{ __('New Recurring Journal Template') }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Vendor Statement</h1>
+    <x-list-header title="Vendor Statement" />
     <div class="mb-4 bg-white shadow-sm sm:rounded-lg p-4">
         <form method="GET" class="flex items-end gap-4">
             <div>
@@ -46,7 +46,7 @@
                 <tr class="hover:bg-gray-50">
                     <td>{{ $t['date'] }}</td>
                     <td>{{ $t['type'] }}</td>
-                    <td class="px-4 py-2 text-sm font-mono">{{ $t['reference'] }}</td>
+                    <td class="px-4 py-2 text-sm font-sans">{{ $t['reference'] }}</td>
                     <td class="numeric">{{ $t['debit'] > 0 ? format_number($t['debit']) : '' }}</td>
                     <td class="numeric">{{ $t['credit'] > 0 ? format_number($t['credit']) : '' }}</td>
                     <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($t['balance']) }}</td>

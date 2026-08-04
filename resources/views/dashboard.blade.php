@@ -1,7 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        {{ __('Dashboard') }}
-    </x-slot>
+    <x-list-header title="{{ __('Dashboard') }}" />
 
     <div class="space-y-6">
         {{-- KPI Cards --}}

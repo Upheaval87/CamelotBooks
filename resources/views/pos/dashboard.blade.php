@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('POS Terminal') }} — {{ session('pos_terminal_identifier') }}</x-slot>
+    <x-list-header title="{{ __('POS Terminal') }} — {{ session('pos_terminal_identifier') }}" />
 
     <div class="flex justify-end mb-4 px-4 sm:px-0 gap-3">
         <span class="text-sm text-gray-600 self-center">Cashier: <strong>{{ session('pos_cashier_name') }}</strong></span>

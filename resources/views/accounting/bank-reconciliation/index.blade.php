@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between gap-2">
-            <span>{{ __('Bank Reconciliation') }} — {{ $bankAccount->name ?? '' }}</span>
-            <div class="flex items-center gap-2">
-                <x-button variant="ghost" href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id ?? '') }}">{{ __('Import Statement') }}</x-button>
-                <x-button variant="ghost" href="{{ route('accounting.bank-accounts.index') }}">{{ __('Back to Accounts') }}</x-button>
-            </div>
+    <div class="list-header">
+        <div>
+            <h1 class="font-sans italic font-semibold tracking-tight text-ink text-[1.125rem] lg:text-[1.375rem]">{{ __('Bank Reconciliation') }} — {{ $bankAccount->name ?? '' }}</h1>
         </div>
-    </x-slot>
+        <div class="flex items-center gap-2">
+            <x-button variant="ghost" href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id ?? '') }}">{{ __('Import Statement') }}</x-button>
+            <x-button variant="ghost" href="{{ route('accounting.bank-accounts.index') }}">{{ __('Back to Accounts') }}</x-button>
+        </div>
+    </div>
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Edit PAYE Tax Table') }}</x-slot>
+    <x-list-header title="{{ __('Edit PAYE Tax Table') }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

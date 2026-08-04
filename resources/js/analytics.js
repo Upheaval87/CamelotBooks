@@ -17,7 +17,7 @@ Chart.register(
     BarElement, ArcElement, Title, Tooltip, Legend, Filler
 );
 
-Chart.defaults.font.family = "'Figtree', sans-serif";
+Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.font.size = 12;
 Chart.defaults.color = '#6b7280';
 

@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Stock Movement</h1>
+    <x-list-header title="Stock Movement" />
     <form method="GET" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6 flex gap-4 items-end flex-wrap">
         @csrf
         <div><label class="block text-sm font-medium text-gray-700">Product</label>

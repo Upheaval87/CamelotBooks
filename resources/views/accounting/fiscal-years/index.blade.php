@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Fiscal Years') }}</x-slot>
+    <x-list-header title="{{ __('Fiscal Years') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="primary" onclick="document.getElementById('create-fy-modal').classList.remove('hidden')">{{ __('Create Fiscal Year') }}</x-button>

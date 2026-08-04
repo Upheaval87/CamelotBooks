@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Payment Settlements') }}</x-slot>
+    <x-list-header title="{{ __('Payment Settlements') }}" />
 
     <div class="flex justify-end mb-4 px-4 sm:px-0">
         <x-button variant="primary" href="{{ route('pos.settlements.create') }}">{{ __('Record Settlement') }}</x-button>

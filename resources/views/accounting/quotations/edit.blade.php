@@ -1,6 +1,6 @@
-﻿<x-app-layout>
+<x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">Edit Quotation {{ $quotation->quotation_number }}</x-slot>
+    <x-list-header title="Edit Quotation {{ $quotation->quotation_number }}" />
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-4">

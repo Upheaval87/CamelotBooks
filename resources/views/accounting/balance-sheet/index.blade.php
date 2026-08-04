@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Balance Sheet') }}</x-slot>
+    <x-list-header title="{{ __('Balance Sheet') }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

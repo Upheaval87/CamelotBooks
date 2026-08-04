@@ -1,8 +1,8 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">{{ __('Create Employee') }}</x-slot>
+    <x-list-header title="{{ __('Create Employee') }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="form-page">
                 <div class="form-page-main">

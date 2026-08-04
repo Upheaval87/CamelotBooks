@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Low Stock Report') }}</x-slot>
+    <x-list-header title="{{ __('Low Stock Report') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.low-stock.export-csv') }}">{{ __('Export CSV') }}</x-button>

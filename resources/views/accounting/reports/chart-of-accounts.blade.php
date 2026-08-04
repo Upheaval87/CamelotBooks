@@ -1,8 +1,8 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">{{ __('Chart of Accounts') }}</x-slot>
+    <x-list-header title="{{ __('Chart of Accounts') }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-toolbar class="mb-6">
                 <span class="text-xs font-medium text-gray-500 uppercase tracking-wider mr-1">Record</span>
@@ -101,7 +101,7 @@
                     <tbody class="divide-y divide-gray-200">
                         @forelse($group['accounts'] as $a)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-2 text-sm font-mono">{{ $a['code'] }}</td>
+                            <td class="px-4 py-2 text-sm font-sans">{{ $a['code'] }}</td>
                             <td>{{ $a['name'] }}</td>
                             <td class="text-ink-soft">{{ $a['sub_type'] ?? '—' }}</td>
                             <td class="text-ink-soft">{{ $a['description'] ?? '—' }}</td>

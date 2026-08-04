@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">Customer Lifetime Value</x-slot>
+    <x-list-header title="Customer Lifetime Value" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @include('bi._staleness')
 

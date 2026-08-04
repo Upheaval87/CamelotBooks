@@ -1,7 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        {{ __('My Tasks') }}
-    </x-slot>
+    <x-list-header title="{{ __('My Tasks') }}" />
 
     <script>
         window.TODO_LINKABLE_CLASS_MAP = @json(\App\Models\TodoTask::LINKABLE_CLASS_MAP);
@@ -17,7 +15,7 @@
         ];
     @endphp
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="space-y-6">
 

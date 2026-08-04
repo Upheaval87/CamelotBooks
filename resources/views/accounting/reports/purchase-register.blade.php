@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Purchase Register</h1>
+    <x-list-header title="Purchase Register" />
     <form method="GET" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6 flex gap-4 items-end">
         @csrf
         <div><label class="block text-sm font-medium text-gray-700">From</label><input type="date" name="date_from" value="{{ $dateFrom }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm"></div>
@@ -23,7 +23,7 @@
                 @forelse($bills as $row)
                 <tr class="hover:bg-gray-50">
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $row['type'] === 'Bill' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800' }}">{{ $row['type'] }}</span></td>
-                    <td class="px-4 py-2 text-sm font-mono">{{ $row['reference'] }}</td>
+                    <td class="px-4 py-2 text-sm font-sans">{{ $row['reference'] }}</td>
                     <td>{{ $row['date'] }}</td>
                     <td>{{ $row['vendor_name'] }}</td>
                     <td class="numeric">{{ format_number($row['amount']) }}</td>

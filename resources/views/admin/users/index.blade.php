@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('User Management') }}</x-slot>
+    <x-list-header title="{{ __('User Management') }}" />
 
-<div class="py-12">
+<div class="py-6">
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         <h1 class="text-2xl font-semibold text-gray-900 mb-6">User Management</h1>
 

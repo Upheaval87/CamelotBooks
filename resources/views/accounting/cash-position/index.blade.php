@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Cash Position') }}</x-slot>
+    <x-list-header title="{{ __('Cash Position') }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('Total Cash Position') }}</h3>

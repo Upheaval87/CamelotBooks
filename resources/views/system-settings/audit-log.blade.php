@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">System Settings</x-slot>
+    <x-list-header title="System Settings" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

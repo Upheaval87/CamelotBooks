@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Sales Receipt') }} {{ $salesReceipt->receipt_number }}</x-slot>
+    <x-list-header title="{{ __('Sales Receipt') }} {{ $salesReceipt->receipt_number }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">

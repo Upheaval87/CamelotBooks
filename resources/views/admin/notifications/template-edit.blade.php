@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Edit Email Template') }}</x-slot>
+    <x-list-header title="{{ __('Edit Email Template') }}" />
 
-<div class="py-12">
+<div class="py-6">
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-semibold text-gray-900">Edit Template: {{ $eventLabels[$emailTemplate->event_type] ?? $emailTemplate->event_type }}</h1>
@@ -32,7 +32,7 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700">Body</label>
-                    <textarea name="body" rows="12" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono text-sm" required>{{ old('body', $emailTemplate->body) }}</textarea>
+                    <textarea name="body" rows="12" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-sans text-sm" required>{{ old('body', $emailTemplate->body) }}</textarea>
                 </div>
 
                 <p class="text-xs text-gray-500">Use @{{curly braces}} for variables. Common variables: company_name, customer_name, invoice_number, amount, due_date, document_type, document_number.</p>

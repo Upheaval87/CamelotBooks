@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '; @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Purchase Order Status</h1>
+    <x-list-header title="Purchase Order Status" />
     @forelse($purchaseOrders as $po)
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden mb-6">
         <div class="bg-gray-50 px-4 py-3 flex items-center justify-between">
@@ -49,7 +49,7 @@
 </div>
 </x-app-layout>); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Purchase Order Status</h1>
+    <x-list-header title="Purchase Order Status" />
     @forelse($purchaseOrders as $po)
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden mb-6">
         <div class="bg-gray-50 px-4 py-3 flex items-center justify-between">

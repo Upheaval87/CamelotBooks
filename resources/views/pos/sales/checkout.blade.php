@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('POS Checkout') }} – {{ session('pos_terminal_identifier') ?? '' }}</x-slot>
+    <x-list-header title="{{ __('POS Checkout') }} – {{ session('pos_terminal_identifier') ?? '' }}" />
 
     <div class="pb-12" x-data="posCheckout()" x-effect="reactiveFilter()">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

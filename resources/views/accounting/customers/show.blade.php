@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Customer Detail') }} - {{ $customer->name }}</x-slot>
+    <x-list-header title="{{ __('Customer Detail') }} - {{ $customer->name }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             <x-record-toolbar>

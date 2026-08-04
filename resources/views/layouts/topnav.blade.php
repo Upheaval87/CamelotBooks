@@ -6,9 +6,6 @@
                     x-on:click="$dispatch('open-mobile-sidebar')">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-            @isset($header)
-                <h1 class="page-title truncate">{{ $header }}</h1>
-            @endisset
         </div>
 
         <div class="flex items-center gap-2 shrink-0">

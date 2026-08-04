@@ -1,6 +1,6 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">{{ __('Bank Register') }} — {{ $bankAccount->name }}</x-slot>
+    <x-list-header title="{{ __('Bank Register') }} — {{ $bankAccount->name }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.bank-accounts.manual-form', $bankAccount->id) }}">{{ __('Manual Transaction') }}</x-button>

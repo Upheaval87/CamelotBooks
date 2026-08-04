@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Transfer Between Accounts') }}</x-slot>
+    <x-list-header title="{{ __('Transfer Between Accounts') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.bank-accounts.index') }}">{{ __('Back to Accounts') }}</x-button>

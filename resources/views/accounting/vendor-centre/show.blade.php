@@ -4,7 +4,7 @@
         $companyId = session('current_company_id');
         $featPurchasing = \App\Services\FeatureManagement::isEnabled($companyId, 'purchasing');
     @endphp
-    <x-slot name="header">{{ __('Vendor Centre') }} — {{ $vendor->name }}</x-slot>
+    <x-list-header title="{{ __('Vendor Centre') }} — {{ $vendor->name }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">

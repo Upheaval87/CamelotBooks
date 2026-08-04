@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Import Bank Statement') }}</x-slot>
+    <x-list-header title="{{ __('Import Bank Statement') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.bank-reconciliation.index', $bankAccount->id) }}">{{ __('Back to Reconciliation') }}</x-button>

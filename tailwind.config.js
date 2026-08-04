@@ -118,8 +118,8 @@ export default {
             fontFamily: {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans],
                 display: ['Inter', ...defaultTheme.fontFamily.sans],
-                serif: ['"Source Serif 4"', 'Georgia', 'serif'],
-                mono: ['"IBM Plex Mono"', ...defaultTheme.fontFamily.mono],
+                serif: ['Inter', ...defaultTheme.fontFamily.sans],
+                mono: ['Inter', ...defaultTheme.fontFamily.sans],
             },
             fontSize: {
                 'xs': ['0.75rem', { lineHeight: '1rem' }],

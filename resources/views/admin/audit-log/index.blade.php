@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Audit Log') }}</x-slot>
+    <x-list-header title="{{ __('Audit Log') }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-toolbar class="mb-6">
                 <form method="GET" action="{{ route('admin.audit-log.index') }}" class="flex items-center gap-2 w-full">

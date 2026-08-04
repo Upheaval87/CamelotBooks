@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Pending Approvals Aging</h1>
+    <x-list-header title="Pending Approvals Aging" />
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
         <table class="datasheet">
             <thead><tr>
@@ -22,7 +22,7 @@
                 @endphp
                 <tr class="hover:bg-gray-50">
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ ucfirst($i['type']) }}</span></td>
-                    <td class="px-4 py-2 text-sm font-mono">{{ $i['reference'] }}</td>
+                    <td class="px-4 py-2 text-sm font-sans">{{ $i['reference'] }}</td>
                     <td class="px-4 py-2 text-sm text-gray-600">{{ $i['description'] ?? '—' }}</td>
                     <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($i['amount']) }}</td>
                     <td>{{ $i['requested_at'] }}</td>

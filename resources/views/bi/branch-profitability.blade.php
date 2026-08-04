@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">Fully-Loaded Branch Profitability</x-slot>
+    <x-list-header title="Fully-Loaded Branch Profitability" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @include('bi._staleness')
 

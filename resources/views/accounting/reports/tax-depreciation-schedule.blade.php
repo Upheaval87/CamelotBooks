@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Tax Depreciation Schedule</h1>
+    <x-list-header title="Tax Depreciation Schedule" />
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
         <table class="datasheet">
             <thead><tr>
@@ -17,7 +17,7 @@
             <tbody class="divide-y divide-gray-200">
                 @forelse($assets as $a)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2 text-sm font-mono">{{ $a['asset_code'] }}</td>
+                    <td class="px-4 py-2 text-sm font-sans">{{ $a['asset_code'] }}</td>
                     <td>{{ $a['asset_name'] }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $a['depreciation_method'])) }}</td>
                     <td class="numeric">{{ format_number($a['acquisition_cost']) }}</td>

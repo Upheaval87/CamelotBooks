@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Add Fixed Asset') }}</x-slot>
+    <x-list-header title="{{ __('Add Fixed Asset') }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="form-page">
                 <div class="form-page-main">

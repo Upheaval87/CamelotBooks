@@ -1,6 +1,6 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">{{ __('Journal Entry') }} - {{ $journalEntry->journal_number }}</x-slot>
+    <x-list-header title="{{ __('Journal Entry') }} - {{ $journalEntry->journal_number }}" />
 
     <div class="pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">

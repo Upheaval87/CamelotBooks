@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Employee Detail') }}: {{ $employee->full_name }}</x-slot>
+    <x-list-header title="{{ __('Employee Detail') }}: {{ $employee->full_name }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Fiscal Year: ') }} {{ $fiscalYear->label }}</x-slot>
+    <x-list-header title="{{ __('Fiscal Year: ') }} {{ $fiscalYear->label }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -57,7 +57,7 @@
                 </div>
                 @if($fiscalYear->closingEntry)
                     <div class="mt-4 pt-4 border-t border-gray-200">
-                        <div class="text-sm text-gray-500">{{ __('Closing Entry') }}: <span class="font-mono text-gray-900">{{ $fiscalYear->closingEntry->journal_number }}</span></div>
+                        <div class="text-sm text-gray-500">{{ __('Closing Entry') }}: <span class="font-sans text-gray-900">{{ $fiscalYear->closingEntry->journal_number }}</span></div>
                     </div>
                 @endif
                 @if($fiscalYear->reopened_at)

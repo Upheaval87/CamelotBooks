@@ -1,6 +1,6 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">{{ __('Landed Cost:') }} {{ $voucher->voucher_number }}</x-slot>
+    <x-list-header title="{{ __('Landed Cost:') }} {{ $voucher->voucher_number }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">

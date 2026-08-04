@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('POS Returns / Refunds') }}</x-slot>
+    <x-list-header title="{{ __('POS Returns / Refunds') }}" />
 
     <div class="flex justify-end mb-4 px-4 sm:px-0">
         <x-button variant="primary" href="{{ route('pos.returns.create') }}">{{ __('New Return') }}</x-button>

@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Numbering Sequence Details') }}</x-slot>
+    <x-list-header title="{{ __('Numbering Sequence Details') }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <x-record-toolbar>
                 <div class="tr-spacer"></div>
@@ -41,7 +41,7 @@
                                 <span class="status-pill neutral">{{ ucfirst($numberingSequence->reset_policy) }}</span>
                             </x-detail-field>
                             <x-detail-field :label="__('Next Document Number Preview')">
-                                <code class="font-mono">{{ $nextPreview ?? 'N/A' }}</code>
+                                <code class="font-sans">{{ $nextPreview ?? 'N/A' }}</code>
                             </x-detail-field>
                             <x-detail-field :label="__('Created')" :value="$numberingSequence->created_at->format('M d, Y H:i')" />
                         </div>

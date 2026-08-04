@@ -16,7 +16,7 @@
         <meta name="theme-color" content="#6366f1">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|source-serif-4:400,400i,500,500i,600,600i|ibm-plex-mono:400,500,600,700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
         <script>
             window.favouritesIndexUrl = "{{ route('favourites.index') }}";
@@ -46,22 +46,9 @@
                 <x-favourites.sidebar :favourite-meta="$favouriteMeta" :favourite-override="isset($favourite) ? true : false" />
                 <main class="flex-1 min-w-0 p-6 lg:p-8 max-w-8xl mx-auto w-full">
                     <div class="animate-fade-in-up">
-                        @isset($header)
-                            @php
-                                $headerEyebrow = $headerEyebrow ?? $favouriteMeta['eyebrow'] ?? null;
-                            @endphp
-                            <div class="mb-6 flex items-start justify-between gap-4">
-                                <div>
-                                    <h1 class="text-xl font-serif italic font-medium tracking-tight text-ink">{{ $header }}</h1>
-                                    @if($headerEyebrow)
-                                        <p class="text-[10px] uppercase tracking-[0.15em] text-ink-faint font-sans font-medium mt-0.5">{{ $headerEyebrow }}</p>
-                                    @endif
-                                </div>
-                                @isset($favourite)
-                                    <div class="shrink-0">
-                                        {{ $favourite }}
-                                    </div>
-                                @endisset
+                        @isset($favourite)
+                            <div class="shrink-0">
+                                {{ $favourite }}
                             </div>
                         @endisset
                         {{ $slot }}

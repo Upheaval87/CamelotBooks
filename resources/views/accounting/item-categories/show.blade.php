@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ $category->name }}</x-slot>
+    <x-list-header title="{{ $category->name }}" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">

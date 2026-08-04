@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Budget Variance Report') }}: {{ $budget->name }}</x-slot>
+    <x-list-header title="{{ __('Budget Variance Report') }}: {{ $budget->name }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.budgets.show', $budget) }}">{{ __('Back to Budget') }}</x-button>

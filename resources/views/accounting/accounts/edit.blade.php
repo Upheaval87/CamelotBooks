@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Edit Account') }}: {{ $account->code }} - {{ $account->name }}</x-slot>
+    <x-list-header title="{{ __('Edit Account') }}: {{ $account->code }} - {{ $account->name }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="form-page">
                 <div class="form-page-main">

@@ -15,7 +15,7 @@
     --brick-soft: #F5E9E7;
     --forest: #3E6B4E;
     --forest-soft: #E9F1EC;
-    --font-serif: "Source Serif 4", Georgia, serif;
+    --font-serif: "Inter", system-ui, sans-serif;
     --topbar-h: 106px;
 }
 
@@ -54,6 +54,12 @@
 }
 
 @layer components {
+    /* ═══════════════════════════════════════════
+       PAGE TITLE — italic serif h1 under topbar
+    ═══════════════════════════════════════════ */
+    .page-eyebrow {
+        @apply text-[10px] uppercase tracking-[0.15em] text-ink-faint font-sans font-medium mt-0.5;
+    }
     /* ═══════════════════════════════════════════
        TOPBAR — two-row horizontal navigation
     ═══════════════════════════════════════════ */
@@ -754,37 +760,6 @@
     }
 
     /* ═══════════════════════════════════════════
-       FORM SIDEBAR — quick actions
-    ═══════════════════════════════════════════ */
-    .form-sidebar-card {
-        @apply bg-white border border-line rounded shadow-card;
-    }
-    .form-sidebar-group-label {
-        @apply text-[10px] font-semibold uppercase tracking-[0.1em] text-ink;
-        padding: 16px 16px 8px;
-    }
-    .form-sidebar-link {
-        @apply flex items-center gap-2 px-4 py-1.5 text-sm cursor-pointer no-underline transition-colors duration-150;
-        color: rgba(28,37,48,1);
-    }
-    .form-sidebar-link:hover {
-        background: rgba(246,245,241,1);
-        color: rgba(28,37,48,1);
-    }
-    .form-sidebar-link svg {
-        @apply w-4 h-4 shrink-0;
-        color: rgba(91,101,114,1);
-    }
-    .form-sidebar-link:hover svg {
-        color: rgba(91,101,114,1);
-    }
-    .form-sidebar-divider {
-        height: 1px;
-        background: rgba(229,227,220,1);
-        margin: 4px 0;
-    }
-
-    /* ═══════════════════════════════════════════
        CARDS — white bg, line border, small radius, faint label
     ═══════════════════════════════════════════ */
     .card {
@@ -1032,37 +1007,6 @@
         top: 126px;
     }
 
-    /* Detail sidebar — quick actions */
-    .detail-sidebar-card {
-        @apply bg-white border border-line rounded shadow-card;
-    }
-    .detail-sidebar-group-label {
-        @apply text-[10px] font-semibold uppercase tracking-[0.1em];
-        color: #2C2C2A;
-        padding: 16px 16px 8px;
-    }
-    .detail-sidebar-link {
-        @apply flex items-center gap-2.5 px-4 py-1.5 text-sm no-underline transition-colors duration-150;
-        color: #5F5E5A;
-        cursor: pointer;
-    }
-    .detail-sidebar-link:hover {
-        color: #2C2C2A;
-        background: rgba(246,245,241,1);
-    }
-    .detail-sidebar-link svg {
-        @apply w-4 h-4 shrink-0;
-        color: #96958D;
-    }
-    .detail-sidebar-link:hover svg {
-        color: #5F5E5A;
-    }
-    .detail-sidebar-divider {
-        height: 1px;
-        background: #E6E4DC;
-        margin: 4px 0;
-    }
-
     /* Detail grid — 3-column */
     .detail-grid {
         @apply grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-5;
@@ -1261,47 +1205,6 @@
 }
 .dark .card-label {
     @apply text-neutral-400;
-}
-.dark .form-sidebar-group-label {
-    @apply text-neutral-400;
-}
-.dark .form-sidebar-link {
-    color: rgba(200,205,214,1);
-}
-.dark .form-sidebar-link:hover {
-    background: rgba(38,45,61,1);
-    color: rgba(241,243,248,1);
-}
-.dark .form-sidebar-link svg {
-    color: rgba(150,158,175,1);
-}
-.dark .form-sidebar-link:hover svg {
-    color: rgba(200,205,214,1);
-}
-.dark .form-sidebar-divider {
-    background: rgba(57,64,81,1);
-}
-.dark .detail-sidebar-card {
-    @apply bg-neutral-900 border-neutral-800 rounded;
-}
-.dark .detail-sidebar-group-label {
-    color: rgba(200,205,214,1);
-}
-.dark .detail-sidebar-link {
-    color: rgba(160,168,186,1);
-}
-.dark .detail-sidebar-link:hover {
-    background: rgba(38,45,61,1);
-    color: rgba(241,243,248,1);
-}
-.dark .detail-sidebar-link svg {
-    color: rgba(120,130,155,1);
-}
-.dark .detail-sidebar-link:hover svg {
-    color: rgba(160,168,186,1);
-}
-.dark .detail-sidebar-divider {
-    background: rgba(57,64,81,1);
 }
 .dark .detail-lbl {
     color: rgba(150,158,175,1);
@@ -1770,7 +1673,7 @@ textarea.settings-field-input {
 
 /* --- Failed backup exit code --- */
 .settings-exit-code {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Inter', system-ui, sans-serif;
     font-size: 0.6875rem;
     color: rgba(220,38,38,1);
     margin-top: 0.125rem;
@@ -1816,13 +1719,6 @@ textarea.settings-field-input {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1.5rem;
-}
-.list-header-title {
-    font-family: 'IBM Plex Serif', Georgia, serif;
-    font-style: italic;
-    font-size: 1.375rem;
-    font-weight: 600;
-    color: rgba(28,37,48,1);
 }
 .list-header-create {
     display: inline-flex;
@@ -2114,7 +2010,7 @@ textarea.settings-field-input {
 }
 .global-search-title {
     margin-top: 2px;
-    font-family: 'Source Serif 4', serif;
+    font-family: 'Inter', system-ui, sans-serif;
     font-style: italic;
     font-weight: 500;
     font-size: 1.125rem;
@@ -2177,7 +2073,7 @@ textarea.settings-field-input {
 }
 .global-search-kbd {
     flex-shrink: 0;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Inter', system-ui, sans-serif;
     font-size: 0.625rem;
     padding: 2px 6px;
     border: 1px solid rgba(229,227,220,1);
@@ -2313,7 +2209,7 @@ textarea.settings-field-input {
     color: rgba(91,101,114,1);
 }
 .global-search-footer kbd {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Inter', system-ui, sans-serif;
     font-size: 0.625rem;
     margin-right: 2px;
     padding: 1px 5px;
@@ -2446,7 +2342,7 @@ textarea.settings-field-input {
     justify-content: center;
     border-radius: 50%;
     font-weight: 600;
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     color: rgba(91,101,114,1);
     flex-shrink: 0;
 }
@@ -2492,7 +2388,7 @@ textarea.settings-field-input {
 /* --- Right-aligned numeric --- */
 .list-numeric {
     text-align: right;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Inter', system-ui, sans-serif;
     font-size: 0.8125rem;
     font-weight: 500;
 }
@@ -2657,9 +2553,6 @@ textarea.settings-field-input {
     .list-sidebar-mobile-dropdown {
         display: block;
     }
-    .list-header-title {
-        font-size: 1.125rem;
-    }
 }
 
 @media (max-width: 719px) {
@@ -2712,7 +2605,7 @@ textarea.settings-field-input {
 /* --- Head --- */
 .report-head { text-align: center; margin-bottom: 26px; }
 .report-head .company { font-size: 15px; font-weight: 600; letter-spacing: .02em; margin: 0 0 4px; }
-.report-head .report-title { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 22px; margin: 0 0 6px; color: var(--ink); }
+.report-head .report-title { font-family: 'Inter', system-ui, sans-serif; font-style: italic; font-size: 22px; margin: 0 0 6px; color: var(--ink); }
 .report-head .report-range { font-size: 13px; color: var(--ink-soft); margin: 0; }
 
 /* --- Toolbar --- */
@@ -2759,7 +2652,7 @@ textarea.settings-field-input {
     padding: 9px 0; border-bottom: 1px solid #E6E4DC; font-size: 13.5px;
 }
 .report-line .code {
-    color: var(--ink-soft); font-family: "SFMono-Regular", Consolas, monospace;
+    color: var(--ink-soft); font-family: 'Inter', system-ui, sans-serif;
     font-size: 12px; margin-right: 8px; font-weight: 600;
 }
 .report-line .desc { color: var(--ink); }
@@ -2828,7 +2721,7 @@ textarea.settings-field-input {
     text-align: right; font-variant-numeric: tabular-nums;
 }
 .report-table tbody td.report-cell-code {
-    color: var(--ink-soft); font-family: "SFMono-Regular", Consolas, monospace;
+    color: var(--ink-soft); font-family: 'Inter', system-ui, sans-serif;
     font-size: 12px; font-weight: 600;
 }
 .report-table tbody tr.zero td {

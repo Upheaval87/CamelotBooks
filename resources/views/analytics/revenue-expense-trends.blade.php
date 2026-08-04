@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">Revenue & Expense Trends</x-slot>
+    <x-list-header title="Revenue & Expense Trends" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">Budget vs Actual Trend</x-slot>
+    <x-list-header title="Budget vs Actual Trend" />
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

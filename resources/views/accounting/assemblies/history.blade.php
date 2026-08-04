@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Assembly Build History') }}</x-slot>
+    <x-list-header title="{{ __('Assembly Build History') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.assemblies.index') }}">{{ __('Builds') }}</x-button>

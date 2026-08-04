@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Favourites — sidebar + pin control</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+  :root{
+    --ink: #2C2C2A;
+    --ink-soft: #5F5E5A;
+    --ink-muted: #96958D;
+    --page: #FAF9F5;
+    --card: #FFFFFF;
+    --border: #E6E4DC;
+    --border-strong: #B4B2A9;
+    --accent: #B8790C;
+    --accent-bg: #FAEEDA;
+    --accent-on: #FFFFFF;
+    --gold: #C9971E;
+    --nav-bg: #23262E;
+    --nav-bg-hover: #2E313B;
+    --nav-text: #9A9DA8;
+    --radius: 12px;
+    --topbar-h: 53px;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  }
+
+  .app-shell{ display: flex; flex-direction: column; min-height: 100vh; }
+  .body-row{ display: flex; flex: 1; min-height: 0; }
+
+  /* ============ sidebar (hidden until pinned) ============ */
+  .sidebar{
+    width: 0; flex-shrink: 0; background: var(--nav-bg); display: flex; flex-direction: column;
+    align-items: center; padding: 0; position: sticky; top: var(--topbar-h);
+    height: calc(100vh - var(--topbar-h)); overflow: hidden;
+    transition: width .2s ease, padding .2s ease;
+  }
+  .sidebar.visible{ width: 96px; padding: 16px 0; }
+  .sidebar.collapsed.visible{ width: 56px; }
+
+  .sidebar-head{ width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0 6px; margin-bottom: 12px; white-space: nowrap; }
+  .sidebar-head-row{ display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .fav-label{ font-size: 10px; font-weight: 600; letter-spacing: .1em; color: rgba(255,255,255,.4); text-transform: uppercase; }
+  .sidebar.collapsed .fav-label{ display: none; }
+  .unpin-btn{
+    width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.4); cursor: pointer; flex-shrink: 0;
+  }
+  .unpin-btn:hover{ background: var(--nav-bg-hover); color: #fff; }
+  .unpin-btn i{ font-size: 13px; }
+  .sidebar.collapsed .unpin-btn{ display: none; }
+
+  .nav-scroll{ width: 100%; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; flex: 1; gap: 4px; }
+
+  .fav-item{
+    position: relative; width: 76px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 4px 10px; border-radius: 12px; cursor: grab; color: var(--nav-text);
+    transition: background .15s ease, color .15s ease;
+  }
+  .sidebar.collapsed .fav-item{ width: 44px; padding: 8px 2px; }
+  .fav-item.pinned-item{ cursor: pointer; }
+  .fav-item.dragging{ opacity: .35; }
+  .fav-item.drop-before{ box-shadow: inset 0 2px 0 var(--gold); }
+  .fav-item.drop-after{ box-shadow: inset 0 -2px 0 var(--gold); }
+  .fav-item:hover{ background: var(--nav-bg-hover); color: #fff; }
+  .fav-item.current{ background: var(--gold); color: #2C1D00; }
+  .fav-item.current:hover{ background: var(--gold); color: #2C1D00; }
+  .fav-item i.page-icon{ font-size: 26px; }
+  .sidebar.collapsed .fav-item i.page-icon{ font-size: 21px; }
+  .fav-item .label{ font-size: 10.5px; font-weight: 500; text-align: center; line-height: 1.15; }
+  .sidebar.collapsed .fav-item .label{ display: none; }
+
+  .fav-remove{
+    position: absolute; top: 2px; right: 6px; width: 15px; height: 15px; border-radius: 50%;
+    background: rgba(0,0,0,.25); color: #fff; display: none; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .fav-item.current .fav-remove{ background: rgba(0,0,0,.2); }
+  .fav-remove i{ font-size: 9px; }
+  .fav-item:hover .fav-remove{ display: flex; }
+  .sidebar.collapsed .fav-remove{ display: none !important; }
+
+  .fav-divider{ width: 56px; height: 1px; background: rgba(255,255,255,.1); margin: 6px 0 8px; }
+
+  .collapse-btn{
+    width: 26px; height: 26px; border-radius: 50%; background: var(--nav-bg-hover); color: var(--nav-text);
+    display: flex; align-items: center; justify-content: center; cursor: pointer; margin-top: 10px; flex-shrink: 0;
+  }
+  .collapse-btn:hover{ background: #3A3D48; color: #fff; }
+  .collapse-btn.flipped i{ transform: rotate(180deg); }
+  .collapse-btn i{ font-size: 14px; transition: transform .15s ease; }
+
+  /* ============ main + top bar ============ */
+  .main{ flex: 1; min-width: 0; }
+  .content{ padding: 32px 24px 100px; max-width: 860px; margin: 0 auto; }
+
+  .topbar{
+    display: flex; align-items: center; justify-content: space-between; background: var(--card);
+    border-bottom: 1px solid var(--border); padding: 12px 24px; position: sticky; top: 0; z-index: 15;
+    height: var(--topbar-h);
+  }
+  .topbar-left{ font-size: 13px; color: var(--ink-soft); display: flex; align-items: center; gap: 18px; }
+  .topbar-crumb{ font-weight: 500; color: var(--ink); }
+
+  .star-trigger-wrap{ position: relative; }
+  .star-trigger{
+    display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-strong); background: var(--card);
+    border-radius: 8px; padding: 7px 12px; cursor: pointer; font-size: 12.5px; color: var(--ink-soft);
+  }
+  .star-trigger:hover{ border-color: var(--gold); }
+  .star-trigger i{ font-size: 15px; color: var(--gold); }
+  .star-trigger .count{ background: var(--accent-bg); color: var(--accent); font-size: 10.5px; font-weight: 600; border-radius: 999px; padding: 1px 6px; }
+
+  .star-dropdown{
+    display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 300px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.14); padding: 16px; z-index: 10;
+  }
+  .star-dropdown.open{ display: block; }
+  .star-dropdown-head{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .star-dropdown-head span{ font-size: 12.5px; font-weight: 600; color: var(--ink); }
+  .star-dropdown-actions{ display: flex; align-items: center; gap: 12px; }
+  .pin-toggle{
+    display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--ink-muted); cursor: pointer;
+    border-radius: 6px; padding: 4px 7px;
+  }
+  .pin-toggle:hover{ background: #F1EFE8; color: var(--ink); }
+  .pin-toggle.pinned{ color: var(--accent); }
+  .pin-toggle i{ font-size: 14px; }
+  .manage-link{ font-size: 11.5px; color: var(--ink-muted); cursor: pointer; }
+  .manage-link:hover{ color: var(--accent); }
+  .star-dropdown-sub{ font-size: 11px; color: var(--ink-muted); margin: 2px 0 12px; }
+  .star-dropdown-grid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .star-tile{
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; border-radius: 9px;
+    cursor: pointer; transition: background .15s ease;
+  }
+  .star-tile:hover{ background: var(--accent-bg); }
+  .star-tile .ic{ width: 36px; height: 36px; border-radius: 9px; background: #F3EFE6; color: var(--ink-soft); display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .star-tile:hover .ic{ background: var(--accent); color: var(--accent-on); }
+  .star-tile .lbl{ font-size: 11px; font-weight: 500; text-align: center; line-height: 1.15; }
+  .star-tile.add .ic{ background: transparent; border: 1.5px dashed var(--border-strong); color: var(--ink-muted); }
+  .star-tile.add:hover{ background: transparent; }
+  .star-tile.add:hover .ic{ border-color: var(--accent); color: var(--accent); }
+
+  .page-title{ font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 22px; margin: 0 0 18px; }
+  .placeholder-block{ background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 26px; color: var(--ink-muted); font-size: 13px; }
+
+  .status-note{
+    display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-muted); margin-bottom: 20px;
+    background: #F1EFE8; border-radius: 8px; padding: 9px 13px;
+  }
+  .status-note i{ font-size: 15px; color: var(--accent); }
+  .status-note b{ color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <span>CamelotBooks</span>
+      <span class="topbar-crumb" id="crumb">Dashboard</span>
+    </div>
+    <div class="star-trigger-wrap">
+      <div class="star-trigger" onclick="toggleStarDropdown()">
+        <i class="ti ti-star-filled"></i>
+        <span>Favourites</span>
+        <span class="count" id="favCount">2</span>
+      </div>
+      <div class="star-dropdown" id="starDropdown">
+        <div class="star-dropdown-head">
+          <span>Favourites</span>
+          <div class="star-dropdown-actions">
+            <div class="pin-toggle" id="pinToggle" onclick="togglePinned()">
+              <i class="ti ti-pin" id="pinIcon"></i>
+              <span id="pinText">Pin to sidebar</span>
+            </div>
+            <span class="manage-link">Manage</span>
+          </div>
+        </div>
+        <p class="star-dropdown-sub" id="pinHint">Not shown in sidebar — pin to keep it visible while you work.</p>
+        <div class="star-dropdown-grid" id="starGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-row">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-head-row">
+          <span class="fav-label">Favourites</span>
+          <div class="unpin-btn" onclick="setPinned(false)" title="Unpin from sidebar">
+            <i class="ti ti-pin-filled" style="transform:rotate(45deg)"></i>
+          </div>
+        </div>
+      </div>
+      <div class="nav-scroll" id="favList"></div>
+      <div class="collapse-btn" id="collapseBtn" onclick="toggleCollapse()" title="Collapse sidebar">
+        <i class="ti ti-chevron-left"></i>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="content">
+        <div class="status-note" id="statusNote">
+          <i class="ti ti-info-circle"></i>
+          <span>On login, the sidebar starts <b>hidden</b> for every user until they choose to pin it — try clicking the "Favourites" pill above.</span>
+        </div>
+
+        <h1 class="page-title">Dashboard</h1>
+        <div class="placeholder-block">Page content goes here — this demo only shows the favourites mechanism.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const pages = [
+    { id: 'my-tasks', label: 'My Tasks', icon: 'ti-list-check', pinnedItem: true },
+    { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
+    { id: 'reports', label: 'Reports', icon: 'ti-chart-line' },
+    { id: 'vendor-ahl', label: 'AHL Group', icon: 'ti-truck' },
+    { id: 'customer-elvis', label: 'Elvis Seyama', icon: 'ti-user' },
+  ];
+
+  // Simulates what would come back from the server for this user on login.
+  let favourites = ['invoices', 'reports'];
+  let currentPage = 'dashboard';
+  let sidebarPinned = false; // this is the per-user, persisted preference
+  let dragId = null;
+
+  function setPinned(value){
+    sidebarPinned = value;
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('visible', sidebarPinned);
+
+    const pinToggle = document.getElementById('pinToggle');
+    const pinIcon = document.getElementById('pinIcon');
+    const pinText = document.getElementById('pinText');
+    const pinHint = document.getElementById('pinHint');
+
+    pinToggle.classList.toggle('pinned', sidebarPinned);
+    pinIcon.className = sidebarPinned ? 'ti ti-pin-filled' : 'ti ti-pin';
+    pinText.textContent = sidebarPinned ? 'Unpin from sidebar' : 'Pin to sidebar';
+    pinHint.textContent = sidebarPinned
+      ? 'Shown in your sidebar. This choice is saved to your account.'
+      : 'Not shown in sidebar — pin to keep it visible while you work.';
+
+    // In a real app: PATCH /api/me/preferences { sidebarPinned }
+    console.log('Persist to DB for this user → sidebar_pinned =', sidebarPinned);
+  }
+
+  function togglePinned(){
+    setPinned(!sidebarPinned);
+    if (sidebarPinned) renderFavSidebar();
+  }
+
+  function toggleStarDropdown(){
+    document.getElementById('starDropdown').classList.toggle('open');
+  }
+  document.addEventListener('click', (e) => {
+    const wrap = document.querySelector('.star-trigger-wrap');
+    if (wrap && !wrap.contains(e.target)) document.getElementById('starDropdown').classList.remove('open');
+  });
+
+  function renderStarGrid(){
+    const gridEl = document.getElementById('starGrid');
+    const pinnedItemPages = pages.filter(p => p.pinnedItem);
+    const favPages = favourites.map(id => pages.find(p => p.id === id));
+    const all = [...pinnedItemPages, ...favPages];
+
+    document.getElementById('favCount').textContent = all.length;
+
+    gridEl.innerHTML = all.map(p => `
+      <div class="star-tile" onclick="goToPage('${p.id}')">
+        <div class="ic"><i class="ti ${p.icon}"></i></div>
+        <span class="lbl">${p.label}</span>
+      </div>
+    `).join('') + `
+      <div class="star-tile add" onclick="alert('Would open the page picker to favourite something new')">
+        <div class="ic"><i class="ti ti-plus"></i></div>
+        <span class="lbl">Add</span>
+      </div>`;
+  }
+
+  function goToPage(id){
+    currentPage = id;
+    const p = pages.find(pg => pg.id === id);
+    document.getElementById('crumb').textContent = p.label;
+    document.getElementById('starDropdown').classList.remove('open');
+    renderFavSidebar();
+  }
+
+  function renderFavSidebar(){
+    const listEl = document.getElementById('favList');
+    const pinnedItemPages = pages.filter(p => p.pinnedItem);
+
+    const pinnedHtml = pinnedItemPages.map(p => `
+      <div class="fav-item pinned-item ${p.id === currentPage ? 'current' : ''}" title="${p.label} (always pinned)" onclick="goToPage('${p.id}')">
+        <i class="ti ${p.icon} page-icon"></i>
+        <span class="label">${p.label}</span>
+      </div>
+    `).join('');
+
+    const favHtml = favourites.map(id => {
+      const p = pages.find(pg => pg.id === id);
+      const isCurrent = id === currentPage;
+      return `
+        <div class="fav-item ${isCurrent ? 'current' : ''}" draggable="true" data-id="${p.id}" title="${p.label}" onclick="goToPage('${p.id}')">
+          <div class="fav-remove" onclick="removeFav('${p.id}', event)"><i class="ti ti-x"></i></div>
+          <i class="ti ${p.icon} page-icon"></i>
+          <span class="label">${p.label}</span>
+        </div>`;
+    }).join('');
+
+    listEl.innerHTML = pinnedHtml + '<div class="fav-divider"></div>' + favHtml;
+    attachDragHandlers();
+    renderStarGrid();
+  }
+
+  function removeFav(id, e){
+    e.stopPropagation();
+    const idx = favourites.indexOf(id);
+    if (idx > -1) favourites.splice(idx, 1);
+    renderFavSidebar();
+  }
+
+  function attachDragHandlers(){
+    const items = document.querySelectorAll('.fav-item[draggable="true"]');
+    items.forEach(item => {
+      item.addEventListener('dragstart', () => { dragId = item.dataset.id; item.classList.add('dragging'); });
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        items.forEach(i => i.classList.remove('drop-before', 'drop-after'));
+      });
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (item.dataset.id === dragId) return;
+        const rect = item.getBoundingClientRect();
+        const before = (e.clientY - rect.top) < rect.height / 2;
+        items.forEach(i => i.classList.remove('drop-before', 'drop-after'));
+        item.classList.add(before ? 'drop-before' : 'drop-after');
+      });
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const targetId = item.dataset.id;
+        if (targetId === dragId) return;
+        const rect = item.getBoundingClientRect();
+        const before = (e.clientY - rect.top) < rect.height / 2;
+        const fromIdx = favourites.indexOf(dragId);
+        favourites.splice(fromIdx, 1);
+        let toIdx = favourites.indexOf(targetId);
+        if (!before) toIdx += 1;
+        favourites.splice(toIdx, 0, dragId);
+        dragId = null;
+        renderFavSidebar();
+      });
+    });
+  }
+
+  function toggleCollapse(){
+    const sidebar = document.getElementById('sidebar');
+    const btn = document.getElementById('collapseBtn');
+    sidebar.classList.toggle('collapsed');
+    btn.classList.toggle('flipped');
+  }
+
+  renderFavSidebar();
+</script>
+</body>
+</html>

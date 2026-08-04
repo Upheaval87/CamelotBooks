@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">Employee Productivity vs Revenue</x-slot>
+    <x-list-header title="Employee Productivity vs Revenue" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @include('bi._staleness')
 

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('VAT / Tax Return') }}</x-slot>
+    <x-list-header title="{{ __('VAT / Tax Return') }}" />
 
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 mt-6">
         <x-toolbar class="mb-6">

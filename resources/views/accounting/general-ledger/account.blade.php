@@ -1,6 +1,6 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-slot name="header">{{ __('Account Statement') }}</x-slot>
+    <x-list-header title="{{ __('Account Statement') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.general-ledger.account-export-csv', array_merge(['accountId' => $account->id], request()->query())) }}">{{ __('Export CSV') }}</x-button>

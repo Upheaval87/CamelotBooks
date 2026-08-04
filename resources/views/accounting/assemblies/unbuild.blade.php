@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Unbuild Assembly') }}</x-slot>
+    <x-list-header title="{{ __('Unbuild Assembly') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.assemblies.index') }}">{{ __('Back') }}</x-button>

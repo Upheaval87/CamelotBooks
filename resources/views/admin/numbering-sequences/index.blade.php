@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Document Numbering Sequences') }}</x-slot>
+    <x-list-header title="{{ __('Document Numbering Sequences') }}" />
 
-<div class="py-12">
+<div class="py-6">
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-semibold text-gray-900">Document Numbering Sequences</h1>

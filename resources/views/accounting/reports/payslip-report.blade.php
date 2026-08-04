@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Payslip Report</h1>
+    <x-list-header title="Payslip Report" />
     <div class="mb-4 bg-white shadow-sm sm:rounded-lg p-4">
         <form method="GET" class="flex items-end gap-4">
             <div>

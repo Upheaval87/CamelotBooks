@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Cheque Register') }}</x-slot>
+    <x-list-header title="{{ __('Cheque Register') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.cheques.index') }}">{{ __('Back to Cheques') }}</x-button>

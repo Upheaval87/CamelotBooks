@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Bills of Materials') }}</x-slot>
+    <x-list-header title="{{ __('Bills of Materials') }}" />
 
     <div class="flex items-center justify-end gap-2 mb-4">
         <x-button variant="ghost" href="{{ route('accounting.assemblies.index') }}">{{ __('Builds') }}</x-button>

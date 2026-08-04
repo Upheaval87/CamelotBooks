@@ -169,6 +169,9 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'report-center.index' => route('accounting.report-center.index'),
             'payroll-runs.show' => route('accounting.payroll-runs.show', $run),
             'petty-cash.show' => route('accounting.petty-cash.show', $pettyCash->id),
+            'customers.create' => route('accounting.customers.create'),
+            'customers.edit' => route('accounting.customers.edit', $customer),
+            'customers.show' => route('accounting.customers.show', $customer),
         ];
 
         foreach ($routes as $name => $url) {

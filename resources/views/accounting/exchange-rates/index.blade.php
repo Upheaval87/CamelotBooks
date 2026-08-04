@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Exchange Rates') }}</x-slot>
+    <x-list-header title="{{ __('Exchange Rates') }}" />
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
@@ -44,7 +44,7 @@
                     @csrf
                     <p class="text-sm text-gray-500">Format: <code>FROM,TO,RATE,DATE</code> (one per line). Example: <code>EUR,USD,1.0850,2026-07-01</code></p>
                     <x-input-label for="csv_data" value="{{ __('CSV Data') }}" />
-                    <textarea id="csv_data" name="csv_data" rows="5" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm font-mono text-sm">{{ old('csv_data') }}</textarea>
+                    <textarea id="csv_data" name="csv_data" rows="5" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm font-sans text-sm">{{ old('csv_data') }}</textarea>
                     <x-primary-button type="submit">{{ __('Import') }}</x-primary-button>
                 </form>
             </div>

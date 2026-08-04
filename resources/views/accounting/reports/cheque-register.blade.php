@@ -1,7 +1,7 @@
 <x-app-layout>
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">Cheque Register</h1>
+    <x-list-header title="Cheque Register" />
     <div class="mb-4 bg-white shadow-sm sm:rounded-lg p-4">
         <form method="GET" class="flex items-end gap-4">
             <div><label class="block text-sm font-medium text-gray-700">From</label><input type="date" name="date_from" value="{{ $dateFrom ?? '' }}" class="mt-1 block border-gray-300 rounded-md shadow-sm sm:text-sm"></div>
@@ -25,7 +25,7 @@
                 @forelse($cheques as $ch)
                 <tr class="hover:bg-gray-50">
                     <td>{{ $ch['date'] }}</td>
-                    <td class="px-4 py-2 text-sm font-mono">{{ $ch['cheque_number'] }}</td>
+                    <td class="px-4 py-2 text-sm font-sans">{{ $ch['cheque_number'] }}</td>
                     <td>{{ $ch['payee'] }}</td>
                     <td>{{ $ch['bank_account'] }}</td>
                     <td class="px-4 py-2 text-sm text-right {{ $ch['type'] === 'payment' ? 'text-red-600' : 'text-green-600' }}">{{ format_number($ch['amount']) }}</td>
