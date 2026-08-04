@@ -45,14 +45,18 @@
 
                 <div class="fav-star-grid" x-show="store.visibleItems.length">
                     <template x-for="item in store.visibleItems" :key="item.page_key">
-                        <button type="button"
-                                class="fav-star-tile"
-                                :class="{ 'current': item.page_key === store.currentKey }"
-                                @click="store.go(item)"
-                                @click.right.prevent="store.remove(item.page_key)">
-                            <span class="fav-star-tile-ic" x-html="store.icon(item.icon)"></span>
-                            <span class="fav-star-tile-lbl" x-text="item.label"></span>
-                        </button>
+                        <div class="fav-star-tile"
+                             :class="{ 'current': item.page_key === store.currentKey }">
+                            <button type="button" class="fav-star-tile-main" @click="store.go(item)" @click.right.prevent="store.remove(item.page_key)">
+                                <span class="fav-star-tile-ic" x-html="store.icon(item.icon)"></span>
+                                <span class="fav-star-tile-lbl" x-text="item.label"></span>
+                            </button>
+                            <button type="button" class="fav-star-tile-remove" :title="'{{ __('Remove') }}: ' + item.label" @click.stop="store.remove(item.page_key)">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
                     </template>
                 </div>
 

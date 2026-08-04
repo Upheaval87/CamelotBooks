@@ -155,7 +155,7 @@ function buildStore() {
             return this.items.length + 1;
         },
 
-        visibleItems() {
+        get visibleItems() {
             var tasks = Object.assign({}, MY_TASKS);
             tasks.url = window.todoIndexUrl || '/todo';
             return [tasks].concat(this.items);
@@ -229,9 +229,6 @@ function buildStore() {
         handleItemClick(item, e) {
             if (this.dragArmed) {
                 this.dragArmed = null;
-                return;
-            }
-            if (this.collapsed) {
                 return;
             }
             this.go(item);

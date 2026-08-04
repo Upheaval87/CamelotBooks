@@ -325,7 +325,7 @@ class ReportRegistry
                 'name' => 'Depreciation Schedule',
                 'description' => 'Per-asset depreciation schedule with accumulated totals.',
                 'category' => 'fixed_assets',
-                'route' => 'accounting.fixed-assets.schedule',
+                'route' => 'accounting.fixed-assets.index',
                 'permission' => 'view_reports',
                 'feature_flag' => ['fixed_assets'],
             ],

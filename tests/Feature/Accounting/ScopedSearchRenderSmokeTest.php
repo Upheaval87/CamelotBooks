@@ -166,6 +166,7 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'vendor-credits.index' => route('accounting.vendor-credits.index'),
             'bank-reconciliation.index' => route('accounting.bank-reconciliation.index', $bank->id),
             'audit-log.index' => route('admin.audit-log.index'),
+            'report-center.index' => route('accounting.report-center.index'),
             'payroll-runs.show' => route('accounting.payroll-runs.show', $run),
             'petty-cash.show' => route('accounting.petty-cash.show', $pettyCash->id),
         ];

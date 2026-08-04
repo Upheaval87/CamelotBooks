@@ -236,27 +236,30 @@
        FAVOURITES — star dropdown + pinnable sidebar
     ═══════════════════════════════════════════ */
 
-    /* Per-page star toggle (header) */
+    /* Per-page star toggle (lives at the bottom of the favourites sidebar) */
     .favourite-toggle {
-        @apply inline-flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 shrink-0;
-        color: var(--ink-muted);
-        border: 1px solid var(--gold-line);
-        background: var(--gold-soft);
+        @apply inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-150 shrink-0;
+        color: rgba(255,255,255,0.55);
+        border: 1px solid rgba(255,255,255,0.18);
+        background: transparent;
+    }
+    .favourite-toggle svg {
+        @apply w-3.5 h-3.5;
     }
     .favourite-toggle:hover {
         border-color: var(--gold);
         color: var(--gold);
-        transform: translateY(-1px);
+        background: #2E313B;
     }
     .favourite-toggle.active {
-        color: var(--gold);
-        background: #F1E5C8;
+        color: #2C1D00;
+        background: var(--gold);
         border-color: var(--gold);
     }
     .favourite-toggle.active:hover {
-        color: var(--brick);
-        border-color: var(--brick);
-        background: var(--brick-soft);
+        color: #2C1D00;
+        background: var(--gold);
+        border-color: var(--gold);
     }
     .favourite-toggle.locked {
         cursor: default;
@@ -342,13 +345,31 @@
         @apply grid grid-cols-3 gap-2 max-h-[240px] overflow-y-auto;
     }
     .fav-star-tile {
-        @apply flex flex-col items-center gap-1.5 rounded-lg p-2.5 transition-colors;
+        @apply relative flex flex-col items-center rounded-lg p-1.5 transition-colors;
     }
     .fav-star-tile:hover {
         background: var(--gold-soft);
     }
     .fav-star-tile.current {
         background: #F1E5C8;
+    }
+    .fav-star-tile-main {
+        @apply w-full flex flex-col items-center gap-1.5 rounded-md p-1.5 transition-colors;
+    }
+    .fav-star-tile-remove {
+        @apply absolute -top-1 -right-1 w-[16px] h-[16px] rounded-full hidden items-center justify-center;
+        background: rgba(0,0,0,0.55);
+        color: #fff;
+    }
+    .fav-star-tile:hover .fav-star-tile-remove,
+    .fav-star-tile.current .fav-star-tile-remove {
+        display: flex;
+    }
+    .fav-star-tile-remove:hover {
+        background: var(--brick);
+    }
+    .fav-star-tile-remove svg {
+        @apply w-2 h-2;
     }
     .fav-star-tile-ic {
         @apply w-9 h-9 rounded-lg flex items-center justify-center;
@@ -435,6 +456,7 @@
     .fav-sidebar {
         @apply flex-shrink-0 flex flex-col items-center overflow-hidden;
         width: 0;
+        padding: 12px 0;
         background: #212B37;
         position: sticky;
         top: var(--topbar-h);
@@ -442,12 +464,10 @@
         transition: width 0.2s ease, padding 0.2s ease;
     }
     .fav-sidebar.visible {
-        width: 76px;
-        padding: 12px 0;
+        width: 64px;
     }
     .fav-sidebar.visible.collapsed {
         width: 40px;
-        padding: 12px 0;
     }
     .fav-sidebar-head {
         @apply w-full flex flex-col items-center px-1.5 mb-2 whitespace-nowrap;
@@ -529,24 +549,6 @@
     .fav-sidebar.collapsed .fav-item-label {
         display: none;
     }
-    .fav-remove {
-        @apply absolute top-0.5 right-1 w-[15px] h-[15px] rounded-full hidden items-center justify-center;
-        background: rgba(0,0,0,0.25);
-        color: #fff;
-    }
-    .fav-item.current .fav-remove {
-        background: rgba(0,0,0,0.2);
-    }
-    .fav-remove svg {
-        @apply w-2 h-2;
-    }
-    .fav-item:hover .fav-remove,
-    .fav-item.armed .fav-remove {
-        display: flex;
-    }
-    .fav-sidebar.collapsed .fav-remove {
-        display: none !important;
-    }
     .fav-divider {
         width: 44px;
         height: 1px;
@@ -554,7 +556,7 @@
         margin: 5px 0 7px;
     }
     .fav-collapse-btn {
-        @apply w-[22px] h-[22px] rounded-md flex items-center justify-center cursor-pointer mt-2.5 shrink-0 transition-colors;
+        @apply w-[18px] h-[18px] rounded-md flex items-center justify-center cursor-pointer mt-2.5 shrink-0 transition-colors;
         background: transparent;
         color: rgba(255,255,255,0.45);
     }
@@ -563,11 +565,44 @@
         color: #fff;
     }
     .fav-collapse-btn svg {
-        @apply w-3.5 h-3.5;
+        @apply w-3 h-3;
         transition: transform 0.15s ease;
     }
     .fav-collapse-btn.flipped svg {
         transform: rotate(180deg);
+    }
+    .fav-sidebar-toggle {
+        @apply flex items-center justify-center mt-auto pt-2 w-full shrink-0;
+    }
+    .fav-sidebar-toggle .favourite-toggle {
+        box-shadow: none;
+    }
+    .fav-float-toggle {
+        position: fixed;
+        left: 14px;
+        bottom: 14px;
+        z-index: 30;
+    }
+    .fav-float-toggle .favourite-toggle {
+        color: var(--ink-muted);
+        border: 1px solid var(--gold-line);
+        background: var(--gold-soft);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    }
+    .fav-float-toggle .favourite-toggle:hover {
+        border-color: var(--gold);
+        color: var(--gold);
+        background: #F1E5C8;
+    }
+    .fav-float-toggle .favourite-toggle.active {
+        color: var(--gold);
+        background: #F1E5C8;
+        border-color: var(--gold);
+    }
+    .fav-float-toggle .favourite-toggle.active:hover {
+        color: var(--brick);
+        border-color: var(--brick);
+        background: var(--brick-soft);
     }
 
     /* ═══════════════════════════════════════════

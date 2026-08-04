@@ -36,37 +36,45 @@
 
         <div class="flex flex-col min-h-screen">
             <div class="flex flex-1 min-h-0">
-                <x-favourites.sidebar />
+                @php
+                    $routeName = request()->route()?->getName() ?? '';
+                    $favouriteMeta = \App\Services\FavouritesService::metaForRoute($routeName);
+                    if ($favouriteMeta === null) {
+                        $favouriteMeta = \App\Services\FavouritesService::metaForRecord($routeName, $header ?? '');
+                    }
+                @endphp
+                <x-favourites.sidebar :favourite-meta="$favouriteMeta" :favourite-override="isset($favourite) ? true : false" />
                 <main class="flex-1 min-w-0 p-6 lg:p-8 max-w-8xl mx-auto w-full">
                     <div class="animate-fade-in-up">
                         @isset($header)
                             @php
-                                $routeName = request()->route()?->getName() ?? '';
-                                $favouriteMeta = \App\Services\FavouritesService::metaForRoute($routeName);
-                                if ($favouriteMeta === null) {
-                                    $favouriteMeta = \App\Services\FavouritesService::metaForRecord($routeName, $header);
-                                }
+                                $headerEyebrow = $headerEyebrow ?? $favouriteMeta['eyebrow'] ?? null;
                             @endphp
                             <div class="mb-6 flex items-start justify-between gap-4">
                                 <div>
                                     <h1 class="text-xl font-serif italic font-medium tracking-tight text-ink">{{ $header }}</h1>
-                                    @php($headerEyebrow = $headerEyebrow ?? $favouriteMeta['eyebrow'] ?? null)
                                     @if($headerEyebrow)
                                         <p class="text-[10px] uppercase tracking-[0.15em] text-ink-faint font-sans font-medium mt-0.5">{{ $headerEyebrow }}</p>
                                     @endif
                                 </div>
-                                <div class="shrink-0">
-                                    @isset($favourite)
+                                @isset($favourite)
+                                    <div class="shrink-0">
                                         {{ $favourite }}
-                                    @elseif($favouriteMeta)
-                                        <x-favourite-toggle :page-key="$favouriteMeta['key']" :label="$favouriteMeta['label']" :icon="$favouriteMeta['icon']" :url="$favouriteMeta['url']" />
-                                    @endisset
-                                </div>
+                                    </div>
+                                @endisset
                             </div>
                         @endisset
                         {{ $slot }}
                     </div>
                 </main>
+                @if(isset($favouriteMeta) && !isset($favourite))
+                    <div class="fav-float-toggle"
+                         x-data="{ store: $store.favourites }"
+                         x-show="!store.pinned"
+                         x-cloak>
+                        <x-favourite-toggle :page-key="$favouriteMeta['key']" :label="$favouriteMeta['label']" :icon="$favouriteMeta['icon']" :url="$favouriteMeta['url']" />
+                    </div>
+                @endif
             </div>
         </div>
 

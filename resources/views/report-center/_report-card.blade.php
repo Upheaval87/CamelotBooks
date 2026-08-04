@@ -1,11 +1,24 @@
 @props(['report', 'isFavorite' => false])
 
+@php
+    $reportRoute = $report['route'] ?? null;
+    $reportLinkable = false;
+    $reportUrl = '#';
+    if ($reportRoute && Route::has($reportRoute)) {
+        $reportRouteObj = Route::getRoutes()->getByName($reportRoute);
+        if ($reportRouteObj && count($reportRouteObj->parameterNames()) === 0) {
+            $reportLinkable = true;
+            $reportUrl = route($reportRoute);
+        }
+    }
+@endphp
+
 <div class="bg-white shadow-sm sm:rounded-lg p-4 hover:shadow-md transition-shadow duration-200 relative"
      x-data="reportFavorite" data-key="{{ $report['key'] }}" data-favorited="{{ $isFavorite ? 'true' : 'false' }}">
     <div class="flex items-start justify-between">
         <div class="flex-1 min-w-0">
-            <a href="{{ Route::has($report['route']) ? route($report['route']) : '#' }}"
-               class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 {{ Route::has($report['route']) ? '' : 'opacity-50 pointer-events-none' }}">
+            <a href="{{ $reportUrl }}"
+               class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 {{ $reportLinkable ? '' : 'opacity-50 pointer-events-none' }}">
                 {{ $report['name'] }}
             </a>
             <p class="mt-1 text-xs text-gray-500 line-clamp-2">{{ $report['description'] }}</p>

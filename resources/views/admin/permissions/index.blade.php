@@ -39,10 +39,10 @@
 
                     <div x-data="{ tab: 'modules' }">
                         <div class="flex gap-0 mb-6 border-b border-line">
-                            <button @click="tab = 'modules'" :class="tab === 'modules' ? 'border-gold text-ink' : 'border-transparent text-ink-faint hover:text-ink'" class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors">
+                            <button type="button" @click="tab = 'modules'" :class="tab === 'modules' ? 'border-gold text-ink' : 'border-transparent text-ink-faint hover:text-ink'" class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors">
                                 {{ __('Module Permissions') }}
                             </button>
-                            <button @click="tab = 'reports'" :class="tab === 'reports' ? 'border-gold text-ink' : 'border-transparent text-ink-faint hover:text-ink'" class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors">
+                            <button type="button" @click="tab = 'reports'" :class="tab === 'reports' ? 'border-gold text-ink' : 'border-transparent text-ink-faint hover:text-ink'" class="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors">
                                 {{ __('Report Permissions') }}
                             </button>
                         </div>
