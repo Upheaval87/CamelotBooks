@@ -18,6 +18,16 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|source-serif-4:400,400i,500,500i,600,600i|ibm-plex-mono:400,500,600,700&display=swap" rel="stylesheet" />
 
+        <script>
+            window.favouritesIndexUrl = "{{ route('favourites.index') }}";
+            window.favouritesStoreUrl = "{{ route('favourites.store') }}";
+            window.favouritesDestroyUrl = "{{ route('favourites.destroy', ['pageKey' => ':pageKey']) }}";
+            window.favouritesReorderUrl = "{{ route('favourites.reorder') }}";
+            window.favouritesPreferencesUrl = "{{ route('favourites.preferences') }}";
+            window.favouritesPagesUrl = "{{ route('favourites.pages') }}";
+            window.todoIndexUrl = "{{ route('todo.index') }}";
+        </script>
+
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="h-full font-sans antialiased bg-neutral-50 dark:bg-neutral-950">
@@ -25,19 +35,39 @@
         @include('layouts.topbar-two-row')
 
         <div class="flex flex-col min-h-screen">
-            <main class="flex-1 p-6 lg:p-8 max-w-8xl mx-auto w-full">
-                <div class="animate-fade-in-up">
-                    @isset($header)
-                        <div class="mb-6">
-                            <h1 class="text-xl font-serif italic font-medium tracking-tight text-ink">{{ $header }}</h1>
-                            @isset($headerEyebrow)
-                                <p class="text-[10px] uppercase tracking-[0.15em] text-ink-faint font-sans font-medium mt-0.5">{{ $headerEyebrow }}</p>
-                            @endisset
-                        </div>
-                    @endisset
-                    {{ $slot }}
-                </div>
-            </main>
+            <div class="flex flex-1 min-h-0">
+                <x-favourites.sidebar />
+                <main class="flex-1 min-w-0 p-6 lg:p-8 max-w-8xl mx-auto w-full">
+                    <div class="animate-fade-in-up">
+                        @isset($header)
+                            @php
+                                $routeName = request()->route()?->getName() ?? '';
+                                $favouriteMeta = \App\Services\FavouritesService::metaForRoute($routeName);
+                                if ($favouriteMeta === null) {
+                                    $favouriteMeta = \App\Services\FavouritesService::metaForRecord($routeName, $header);
+                                }
+                            @endphp
+                            <div class="mb-6 flex items-start justify-between gap-4">
+                                <div>
+                                    <h1 class="text-xl font-serif italic font-medium tracking-tight text-ink">{{ $header }}</h1>
+                                    @php($headerEyebrow = $headerEyebrow ?? $favouriteMeta['eyebrow'] ?? null)
+                                    @if($headerEyebrow)
+                                        <p class="text-[10px] uppercase tracking-[0.15em] text-ink-faint font-sans font-medium mt-0.5">{{ $headerEyebrow }}</p>
+                                    @endif
+                                </div>
+                                <div class="shrink-0">
+                                    @isset($favourite)
+                                        {{ $favourite }}
+                                    @elseif($favouriteMeta)
+                                        <x-favourite-toggle :page-key="$favouriteMeta['key']" :label="$favouriteMeta['label']" :icon="$favouriteMeta['icon']" :url="$favouriteMeta['url']" />
+                                    @endisset
+                                </div>
+                            </div>
+                        @endisset
+                        {{ $slot }}
+                    </div>
+                </main>
+            </div>
         </div>
 
 

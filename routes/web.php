@@ -53,6 +53,7 @@ use App\Http\Controllers\Accounting\CashPositionController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FavouritesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TodoTaskController;
 use Illuminate\Support\Facades\Route;
@@ -787,6 +788,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/{task}/complete', [TodoTaskController::class, 'complete'])->name('complete');
                 Route::post('/{task}/reopen', [TodoTaskController::class, 'reopen'])->name('reopen');
                 Route::delete('/{task}', [TodoTaskController::class, 'destroy'])->name('destroy');
+            });
+
+        // Personal favourites — star dropdown + pinnable sidebar, per user.
+        Route::prefix('favourites')->name('favourites.')
+            ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer|bookkeeper|cashier|auditor')
+            ->group(function () {
+                Route::get('/', [FavouritesController::class, 'index'])->name('index');
+                Route::get('/pages', [FavouritesController::class, 'pages'])->name('pages');
+                Route::post('/', [FavouritesController::class, 'store'])->name('store');
+                Route::delete('/{pageKey}', [FavouritesController::class, 'destroy'])->name('destroy');
+                Route::patch('/reorder', [FavouritesController::class, 'reorder'])->name('reorder');
+                Route::patch('/preferences', [FavouritesController::class, 'preferences'])->name('preferences');
             });
     });
 

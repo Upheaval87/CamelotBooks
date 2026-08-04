@@ -254,6 +254,8 @@
             <div class="flex-1 min-w-0"></div>
 
             <div class="flex items-center gap-3 shrink-0">
+                <x-favourites.dropdown />
+
                 <button type="button"
                         class="topbar-search-btn"
                         title="{{ __('Global Search (Ctrl+K)') }}"
