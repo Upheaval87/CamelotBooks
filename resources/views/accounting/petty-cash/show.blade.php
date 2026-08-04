@@ -82,12 +82,15 @@
                                 <div class="space-y-4">
                                     <div>
                                         <x-input-label for="exp_account" value="{{ __('Expense Account') }}" />
-                                        <select id="exp_account" name="debit_account_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm" required>
-                                            <option value="">{{ __('Select Account') }}</option>
-                                            @foreach($expenseAccounts as $account)
-                                                <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <x-scoped-search-field
+                                            name="debit_account_id"
+                                            entity="account"
+                                            search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                            :value="old('debit_account_id')"
+                                            :label="old('debit_account_id') ? (($expenseAccounts->firstWhere('id', (int) old('debit_account_id'))) ? $expenseAccounts->firstWhere('id', (int) old('debit_account_id'))->code . ' - ' . $expenseAccounts->firstWhere('id', (int) old('debit_account_id'))->name : '') : ''"
+                                            placeholder="{{ __('Select Account') }}"
+                                            required
+                                        />
                                     </div>
                                     <div>
                                         <x-input-label for="exp_amount" value="{{ __('Amount') }}" />

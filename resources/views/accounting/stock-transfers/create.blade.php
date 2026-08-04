@@ -38,26 +38,28 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <x-input-label for="from_branch_id" value="{{ __('From Branch') }}" />
-                                        <select id="from_branch_id" name="from_branch_id" class="input mt-1" required>
-                                            <option value="">Select Source</option>
-                                            @foreach($branches as $branch)
-                                                <option value="{{ $branch->id }}" {{ old('from_branch_id') == $branch->id ? 'selected' : '' }}>
-                                                    {{ $branch->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <x-scoped-search-field
+                                            name="from_branch_id"
+                                            entity="branch"
+                                            search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                            :value="old('from_branch_id')"
+                                            :label="old('from_branch_id') ? ($branches->firstWhere('id', (int) old('from_branch_id'))?->name ?? '') : ''"
+                                            placeholder="{{ __('Select Source') }}"
+                                            required
+                                        />
                                         <x-input-error :messages="$errors->get('from_branch_id')" class="mt-2" />
                                     </div>
                                     <div>
                                         <x-input-label for="to_branch_id" value="{{ __('To Branch') }}" />
-                                        <select id="to_branch_id" name="to_branch_id" class="input mt-1" required>
-                                            <option value="">Select Destination</option>
-                                            @foreach($branches as $branch)
-                                                <option value="{{ $branch->id }}" {{ old('to_branch_id') == $branch->id ? 'selected' : '' }}>
-                                                    {{ $branch->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <x-scoped-search-field
+                                            name="to_branch_id"
+                                            entity="branch"
+                                            search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                            :value="old('to_branch_id')"
+                                            :label="old('to_branch_id') ? ($branches->firstWhere('id', (int) old('to_branch_id'))?->name ?? '') : ''"
+                                            placeholder="{{ __('Select Destination') }}"
+                                            required
+                                        />
                                         <x-input-error :messages="$errors->get('to_branch_id')" class="mt-2" />
                                     </div>
                                 </div>

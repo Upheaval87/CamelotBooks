@@ -8,7 +8,7 @@
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.invoices.index') }}" searchPlaceholder="Customer name...">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.invoices.index') }}" searchPlaceholder="Customer name..." entity="invoice">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>

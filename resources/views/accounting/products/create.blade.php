@@ -68,27 +68,27 @@
                             <div class="grid grid-cols-2 gap-6 mt-6">
                                 <div>
                                     <x-input-label for="income_account_id" value="{{ __('Income Account') }}" />
-                                    <select id="income_account_id" name="income_account_id" class="input mt-1">
-                                        <option value="">None</option>
-                                        @foreach($incomeAccounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('income_account_id') == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="income_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('income_account_id')"
+                                        :label="old('income_account_id') ? (($incomeAccounts->firstWhere('id', (int) old('income_account_id'))) ? $incomeAccounts->firstWhere('id', (int) old('income_account_id'))->code . ' - ' . $incomeAccounts->firstWhere('id', (int) old('income_account_id'))->name : '') : ''"
+                                        placeholder="{{ __('None') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('income_account_id')" class="mt-2" />
                                 </div>
 
                                 <div>
                                     <x-input-label for="expense_account_id" value="{{ __('Expense Account') }}" />
-                                    <select id="expense_account_id" name="expense_account_id" class="input mt-1">
-                                        <option value="">None</option>
-                                        @foreach($expenseAccounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('expense_account_id') == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="expense_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('expense_account_id')"
+                                        :label="old('expense_account_id') ? (($expenseAccounts->firstWhere('id', (int) old('expense_account_id'))) ? $expenseAccounts->firstWhere('id', (int) old('expense_account_id'))->code . ' - ' . $expenseAccounts->firstWhere('id', (int) old('expense_account_id'))->name : '') : ''"
+                                        placeholder="{{ __('None') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('expense_account_id')" class="mt-2" />
                                 </div>
                             </div>

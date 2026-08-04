@@ -66,6 +66,49 @@
             </div>
         </div>
 
+        {{-- My Tasks --}}
+        <div class="card animate-fade-in-up" style="animation-delay: 250ms">
+            <div class="card-header flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-neutral-800 dark:text-neutral-200">My Tasks</h3>
+                <a href="{{ route('todo.index') }}" class="text-xs font-medium text-accent hover:text-accent-hover transition-colors">Open tasks</a>
+            </div>
+            <div class="card-body">
+                @if($todoOverdue === 0 && $todoToday === 0 && $myTasks->isEmpty())
+                    <div class="empty-state">
+                        <svg class="empty-state-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                        <p class="empty-state-title">No active tasks</p>
+                        <p class="empty-state-text">Add a task to keep track of what needs doing.</p>
+                    </div>
+                @else
+                    <div class="flex flex-wrap items-center gap-6">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-danger tabular-nums">{{ $todoOverdue }}</p>
+                            <p class="text-xs text-neutral-400 mt-0.5">Overdue</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-warning tabular-nums">{{ $todoToday }}</p>
+                            <p class="text-xs text-neutral-400 mt-0.5">Due today</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-neutral-800 tabular-nums">{{ $myTasks->count() }}</p>
+                            <p class="text-xs text-neutral-400 mt-0.5">Active</p>
+                        </div>
+                        <div class="flex-1 min-w-[220px]">
+                            <ul class="space-y-2">
+                                @foreach($myTasks->take(4) as $task)
+                                    <li class="flex items-center gap-2 text-sm">
+                                        <span class="w-2 h-2 rounded-full shrink-0 {{ $task->priority === 'high' ? 'bg-danger' : ($task->priority === 'medium' ? 'bg-warning' : 'bg-neutral-300') }}"></span>
+                                        <span class="flex-1 truncate {{ $task->isOverdue() ? 'text-danger' : 'text-neutral-800' }}">{{ $task->title }}</span>
+                                        <span class="text-xs text-neutral-400 shrink-0">{{ $task->deadlineLabel() }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+
         {{-- Recent Activity --}}
         <div class="card animate-fade-in-up" style="animation-delay: 300ms">
             <div class="card-header flex items-center justify-between">

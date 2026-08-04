@@ -8,7 +8,7 @@
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.customers.index') }}" searchPlaceholder="Name or email...">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.customers.index') }}" searchPlaceholder="Name or email..." entity="customer">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>

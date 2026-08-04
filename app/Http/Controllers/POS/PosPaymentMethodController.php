@@ -21,8 +21,12 @@ class PosPaymentMethodController extends Controller
             ->where('is_active', true)
             ->orderBy('code')
             ->get();
+        $accounts = Account::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
 
-        return view('pos.payment-methods.index', compact('paymentMethods', 'clearingAccounts'));
+        return view('pos.payment-methods.index', compact('paymentMethods', 'clearingAccounts', 'accounts'));
     }
 
     public function store(Request $request)

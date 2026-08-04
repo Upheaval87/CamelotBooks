@@ -77,12 +77,14 @@
                         </div>
                         <div>
                             <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <select id="branch_id" name="branch_id" class="input mt-1">
-                                <option value="">No Branch</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="branch_id"
+                                entity="branch"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                :value="old('branch_id')"
+                                :label="old('branch_id') ? ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('Search branches...') }}"
+                            />
                             <x-input-error :messages="$errors->get('branch_id')" class="mt-2" />
                         </div>
                         <div class="flex items-end pb-1">
@@ -149,25 +151,9 @@
     </div>
 
     <script>
-        const accounts = @json($accounts);
-        const branches = @json($branches);
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+        const BRANCH_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'branch']));
         let lineIndex = 0;
-
-        function buildAccountOptions() {
-            let html = '<option value="">Select Account</option>';
-            accounts.forEach(function(account) {
-                html += '<option value="' + account.id + '">' + account.code + ' - ' + account.name + '</option>';
-            });
-            return html;
-        }
-
-        function buildBranchOptions() {
-            let html = '<option value="">Use Header Branch</option>';
-            branches.forEach(function(branch) {
-                html += '<option value="' + branch.id + '">' + branch.name + '</option>';
-            });
-            return html;
-        }
 
         function addLine() {
             const tbody = document.getElementById('linesBody');
@@ -176,9 +162,15 @@
             tr.innerHTML =
                 '<td class="text-ink-soft">' + (tbody.rows.length + 1) + '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<select name="lines[' + lineIndex + '][account_id]" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required>' +
-                        buildAccountOptions() +
-                    '</select>' +
+                    scopedSearchFieldHtml({
+                        name: 'lines[' + lineIndex + '][account_id]',
+                        entity: 'account',
+                        searchUrl: ACCOUNT_SEARCH_URL,
+                        value: '',
+                        label: '',
+                        placeholder: 'Search accounts...',
+                        required: true,
+                    }) +
                 '</td>' +
                 '<td class="px-4 py-2">' +
                     '<input type="number" name="lines[' + lineIndex + '][debit]" step="0.01" min="0" value="0" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right debit-input" />' +
@@ -190,9 +182,14 @@
                     '<input type="text" name="lines[' + lineIndex + '][memo]" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<select name="lines[' + lineIndex + '][branch_id]" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">' +
-                        buildBranchOptions() +
-                    '</select>' +
+                    scopedSearchFieldHtml({
+                        name: 'lines[' + lineIndex + '][branch_id]',
+                        entity: 'branch',
+                        searchUrl: BRANCH_SEARCH_URL,
+                        value: '',
+                        label: '',
+                        placeholder: 'Use header branch',
+                    }) +
                 '</td>' +
                 '<td class="px-4 py-2 text-center">' +
                     '<button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">&times;</button>' +

@@ -44,14 +44,16 @@
                         </div>
                         <div>
                             <x-input-label for="invoice_id" value="{{ __('Reference Invoice (Optional)') }}" />
-                            <select id="invoice_id" name="invoice_id" class="input mt-1">
-                                <option value="">No Invoice</option>
-                                @foreach($invoices as $invoice)
-                                    <option value="{{ $invoice->id }}" {{ old('invoice_id') == $invoice->id ? 'selected' : '' }}>
-                                        {{ $invoice->invoice_number }} — {{ $invoice->customer->name }} — {{ format_money($invoice->total) }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            @php $invoiceItems = collect($invoices)->map(fn($i) => ['id' => $i->id, 'label' => $i->invoice_number, 'subtitle' => ($i->customer?->name ?? '') . ' — ' . format_money($i->total)]); @endphp
+                            @php $selectedInvoice = old('invoice_id') ? $invoices->firstWhere('id', (int) old('invoice_id')) : null; @endphp
+                            <x-scoped-search-field
+                                name="invoice_id"
+                                mode="client"
+                                :items="$invoiceItems"
+                                :value="old('invoice_id')"
+                                :label="$selectedInvoice ? ($selectedInvoice->invoice_number . ' — ' . ($selectedInvoice->customer?->name ?? '') . ' — ' . format_money($selectedInvoice->total)) : ''"
+                                placeholder="{{ __('No Invoice') }}"
+                            />
                             <x-input-error :messages="$errors->get('invoice_id')" class="mt-2" />
                         </div>
                         <div>
@@ -160,7 +162,13 @@
         const products = @json($productsJson);
         const incomeAccounts = @json($incomeAccounts);
         const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
         let lineIndex = 0;
+
+        function incomeAccountLabel(id) {
+            const a = incomeAccounts.find(x => x.id == id);
+            return a ? a.code + ' - ' + a.name : '';
+        }
 
         function updateTotals() {
             let subtotal = 0;
@@ -183,9 +191,14 @@
         function addLine() {
             const tbody = document.getElementById('lines-body');
             const idx = lineIndex++;
-            const accountOptions = incomeAccounts.map(a =>
-                `<option value="${a.id}">${a.code} - ${a.name}</option>`
-            ).join('');
+            const incomeAccountField = scopedSearchFieldHtml({
+                name: `lines[${idx}][income_account_id]`,
+                entity: 'account',
+                searchUrl: ACCOUNT_SEARCH_URL,
+                value: '',
+                label: '',
+                placeholder: 'Select Account',
+            });
             const picker = scopedSearchFieldHtml({
                 name: `lines[${idx}][product_id]`,
                 entity: 'product',
@@ -210,10 +223,7 @@
                     <input type="number" name="lines[${idx}][unit_price]" value="0" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" onchange="updateTotals()" oninput="updateTotals()" />
                 </td>
                 <td class="px-4 py-2"><input type="hidden" name="lines[${idx}][tax_rate]" value="0" />
-                    <select name="lines[${idx}][income_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                        <option value="">Select Account</option>
-                        ${accountOptions}
-                    </select>
+                    ${incomeAccountField}
                 </td>
                 <td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>
                 <td class="px-4 py-2 text-center">
@@ -243,7 +253,13 @@
             }
             if (item.income_account_id) {
                 const acctInput = row.querySelector('[name*="[income_account_id]"]');
-                if (acctInput) acctInput.value = item.income_account_id;
+                if (acctInput) {
+                    const accountItem = incomeAccounts.find(a => a.id == item.income_account_id);
+                    scopedSearchFieldSet(acctInput, 'account', {
+                        id: item.income_account_id,
+                        label: accountItem ? accountItem.code + ' - ' + accountItem.name : ''
+                    });
+                }
             }
             updateTotals();
         });

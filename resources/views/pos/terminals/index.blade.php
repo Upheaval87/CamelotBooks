@@ -25,14 +25,14 @@
                     </div>
                     <div class="flex-1 min-w-[180px]">
                         <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                        <select id="branch_id" name="branch_id" class="input mt-1">
-                            <option value="">No branch</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
-                                    {{ $branch->code }} - {{ $branch->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-scoped-search-field
+                            name="branch_id"
+                            entity="branch"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                            :value="old('branch_id')"
+                            :label="old('branch_id') ? (($branches->firstWhere('id', (int) old('branch_id'))?->code ?? '') . ' - ' . ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '')) : ''"
+                            placeholder="{{ __('No branch') }}"
+                        />
                         <x-input-error :messages="$errors->get('branch_id')" class="mt-2" />
                     </div>
                     <div class="w-[200px]">

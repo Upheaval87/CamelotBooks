@@ -42,36 +42,36 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <x-input-label for="default_income_account_id" value="{{ __('Income Account') }}" />
-                                            <select id="default_income_account_id" name="default_income_account_id" class="input mt-1">
-                                            <option value="">None</option>
-                                            @foreach($accounts->where('type', 'income') as $account)
-                                                <option value="{{ $account->id }}" {{ old('default_income_account_id', $category->default_income_account_id) == $account->id ? 'selected' : '' }}>
-                                                    {{ $account->code }} - {{ $account->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                            <x-scoped-search-field
+                                                name="default_income_account_id"
+                                                entity="account"
+                                                search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                                :value="old('default_income_account_id', $category->default_income_account_id)"
+                                                :label="old('default_income_account_id', $category->default_income_account_id) ? (($accounts->firstWhere('id', (int) old('default_income_account_id', $category->default_income_account_id))) ? $accounts->firstWhere('id', (int) old('default_income_account_id', $category->default_income_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('default_income_account_id', $category->default_income_account_id))->name : '') : ''"
+                                                placeholder="{{ __('None') }}"
+                                            />
                                     </div>
                                     <div>
                                         <x-input-label for="default_cogs_account_id" value="{{ __('COGS Account') }}" />
-                                            <select id="default_cogs_account_id" name="default_cogs_account_id" class="input mt-1">
-                                            <option value="">None</option>
-                                            @foreach($accounts->where('type', 'expense') as $account)
-                                                <option value="{{ $account->id }}" {{ old('default_cogs_account_id', $category->default_cogs_account_id) == $account->id ? 'selected' : '' }}>
-                                                    {{ $account->code }} - {{ $account->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                            <x-scoped-search-field
+                                                name="default_cogs_account_id"
+                                                entity="account"
+                                                search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                                :value="old('default_cogs_account_id', $category->default_cogs_account_id)"
+                                                :label="old('default_cogs_account_id', $category->default_cogs_account_id) ? (($accounts->firstWhere('id', (int) old('default_cogs_account_id', $category->default_cogs_account_id))) ? $accounts->firstWhere('id', (int) old('default_cogs_account_id', $category->default_cogs_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('default_cogs_account_id', $category->default_cogs_account_id))->name : '') : ''"
+                                                placeholder="{{ __('None') }}"
+                                            />
                                     </div>
                                     <div>
                                         <x-input-label for="default_inventory_asset_account_id" value="{{ __('Inventory Asset Account') }}" />
-                                            <select id="default_inventory_asset_account_id" name="default_inventory_asset_account_id" class="input mt-1">
-                                            <option value="">None</option>
-                                            @foreach($accounts->where('type', 'asset') as $account)
-                                                <option value="{{ $account->id }}" {{ old('default_inventory_asset_account_id', $category->default_inventory_asset_account_id) == $account->id ? 'selected' : '' }}>
-                                                    {{ $account->code }} - {{ $account->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                            <x-scoped-search-field
+                                                name="default_inventory_asset_account_id"
+                                                entity="account"
+                                                search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                                :value="old('default_inventory_asset_account_id', $category->default_inventory_asset_account_id)"
+                                                :label="old('default_inventory_asset_account_id', $category->default_inventory_asset_account_id) ? (($accounts->firstWhere('id', (int) old('default_inventory_asset_account_id', $category->default_inventory_asset_account_id))) ? $accounts->firstWhere('id', (int) old('default_inventory_asset_account_id', $category->default_inventory_asset_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('default_inventory_asset_account_id', $category->default_inventory_asset_account_id))->name : '') : ''"
+                                                placeholder="{{ __('None') }}"
+                                            />
                                     </div>
                                     <div>
                                         <x-input-label for="default_base_uom" value="{{ __('Default Base UOM') }}" />

@@ -30,26 +30,26 @@
                         </div>
                         <div>
                             <x-input-label for="clearing_account_id" value="{{ __('Clearing Account') }}" />
-                            <select id="clearing_account_id" name="clearing_account_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($clearingAccounts as $account)
-                                    <option value="{{ $account->id }}" {{ old('clearing_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->code }} - {{ $account->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="clearing_account_id"
+                                entity="account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                :value="old('clearing_account_id')"
+                                :label="old('clearing_account_id') ? (($clearingAccounts->firstWhere('id', (int) old('clearing_account_id')) ? $clearingAccounts->firstWhere('id', (int) old('clearing_account_id'))->code . ' - ' . $clearingAccounts->firstWhere('id', (int) old('clearing_account_id'))->name : '')) : ''"
+                                placeholder="{{ __('None') }}"
+                            />
                             <x-input-error :messages="$errors->get('clearing_account_id')" class="mt-2" />
                         </div>
                         <div>
                             <x-input-label for="settlement_bank_account_id" value="{{ __('Settlement Bank Account') }}" />
-                            <select id="settlement_bank_account_id" name="settlement_bank_account_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($clearingAccounts as $account)
-                                    <option value="{{ $account->id }}" {{ old('settlement_bank_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->code }} - {{ $account->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="settlement_bank_account_id"
+                                entity="account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                :value="old('settlement_bank_account_id')"
+                                :label="old('settlement_bank_account_id') ? (($accounts->firstWhere('id', (int) old('settlement_bank_account_id')) ? $accounts->firstWhere('id', (int) old('settlement_bank_account_id'))->code . ' - ' . $accounts->firstWhere('id', (int) old('settlement_bank_account_id'))->name : '')) : ''"
+                                placeholder="{{ __('None') }}"
+                            />
                             <x-input-error :messages="$errors->get('settlement_bank_account_id')" class="mt-2" />
                         </div>
                         <div class="flex items-center gap-2 mt-6">

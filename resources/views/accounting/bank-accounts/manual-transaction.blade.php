@@ -55,28 +55,30 @@
                             <div class="mt-4" x-show="type === 'fee' || type === 'withdrawal'">
                                 <x-input-label for="debit_account_id" value="{{ __('Expense Account (Debit)') }}" />
                                 <p class="text-xs text-gray-500 mb-1">The expense/asset account to charge this transaction to.</p>
-                                <select id="debit_account_id" name="debit_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                    <option value="">Select Account</option>
-                                    @foreach($accounts as $account)
-                                        <option value="{{ $account->id }}" {{ old('debit_account_id') == $account->id ? 'selected' : '' }}>
-                                            {{ $account->code }} - {{ $account->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-scoped-search-field
+                                    name="debit_account_id"
+                                    entity="account"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                    :value="old('debit_account_id')"
+                                    :label="old('debit_account_id') ? (($accounts->firstWhere('id', (int) old('debit_account_id'))) ? $accounts->firstWhere('id', (int) old('debit_account_id'))->code . ' - ' . $accounts->firstWhere('id', (int) old('debit_account_id'))->name : '') : ''"
+                                    placeholder="{{ __('Select Account') }}"
+                                    required
+                                />
                                 <x-input-error :messages="$errors->get('debit_account_id')" class="mt-2" />
                             </div>
 
                             <div class="mt-4" x-show="type === 'deposit' || type === 'interest'">
                                 <x-input-label for="credit_account_id" value="{{ __('Income/Credit Account') }}" />
                                 <p class="text-xs text-gray-500 mb-1">The income/equity account to credit for this deposit.</p>
-                                <select id="credit_account_id" name="credit_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                    <option value="">Select Account</option>
-                                    @foreach($accounts as $account)
-                                        <option value="{{ $account->id }}" {{ old('credit_account_id') == $account->id ? 'selected' : '' }}>
-                                            {{ $account->code }} - {{ $account->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-scoped-search-field
+                                    name="credit_account_id"
+                                    entity="account"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                    :value="old('credit_account_id')"
+                                    :label="old('credit_account_id') ? (($accounts->firstWhere('id', (int) old('credit_account_id'))) ? $accounts->firstWhere('id', (int) old('credit_account_id'))->code . ' - ' . $accounts->firstWhere('id', (int) old('credit_account_id'))->name : '') : ''"
+                                    placeholder="{{ __('Select Account') }}"
+                                    required
+                                />
                                 <x-input-error :messages="$errors->get('credit_account_id')" class="mt-2" />
                             </div>
                         </div>

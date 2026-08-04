@@ -26,27 +26,29 @@
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="from_account_id" value="{{ __('Transfer From') }}" />
-                            <select id="from_account_id" name="from_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="">Select Source Account</option>
-                                @foreach($bankAccounts as $account)
-                                    <option value="{{ $account->id }}" {{ old('from_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->name }} ({{ format_money($account->current_balance) }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="from_account_id"
+                                entity="bank-account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                :value="old('from_account_id')"
+                                :label="old('from_account_id') ? ($bankAccounts->firstWhere('id', (int) old('from_account_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('Select Source Account') }}"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('from_account_id')" class="mt-2" />
                         </div>
 
                         <div>
                             <x-input-label for="to_account_id" value="{{ __('Transfer To') }}" />
-                            <select id="to_account_id" name="to_account_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                <option value="">Select Destination Account</option>
-                                @foreach($bankAccounts as $account)
-                                    <option value="{{ $account->id }}" {{ old('to_account_id') == $account->id ? 'selected' : '' }}>
-                                        {{ $account->name }} ({{ format_money($account->current_balance) }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="to_account_id"
+                                entity="bank-account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
+                                :value="old('to_account_id')"
+                                :label="old('to_account_id') ? ($bankAccounts->firstWhere('id', (int) old('to_account_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('Select Destination Account') }}"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('to_account_id')" class="mt-2" />
                         </div>
 

@@ -8,7 +8,7 @@
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.sales-receipts.index') }}" searchPlaceholder="Customer, number...">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.sales-receipts.index') }}" searchPlaceholder="Customer, number..." entity="sales-receipt">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>

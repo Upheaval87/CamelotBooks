@@ -410,4 +410,53 @@ class GlobalSearchTest extends TestCase
 
         $response->assertUnauthorized();
     }
+
+    // ──────────────────────────────────────────────
+    // Flat "any" search (record-link wildcard pickers)
+    // ──────────────────────────────────────────────
+
+    public function test_any_search_returns_flat_rows_with_entity_key(): void
+    {
+        $this->createProduct([
+            'company_id' => $this->company->id,
+            'name' => 'Widget',
+            'sku' => 'W-1',
+            'type' => 'inventory',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('accounting.search.any', ['q' => 'widget']));
+
+        $response->assertOk();
+        $rows = $response->json();
+
+        // Contract for todoResolveLinkFromEvent(): every row must carry the
+        // catalog entity key so the client can resolve the linkable class.
+        $this->assertNotEmpty($rows);
+        $this->assertEquals('product', $rows[0]['entity']);
+        $this->assertArrayHasKey('id', $rows[0]);
+        $this->assertArrayHasKey('label', $rows[0]);
+        $this->assertArrayHasKey('url', $rows[0]);
+    }
+
+    public function test_any_search_excludes_entities_user_cannot_view(): void
+    {
+        $bookkeeper = $this->makeUser('bookkeeper');
+        $this->createProduct([
+            'company_id' => $this->company->id,
+            'name' => 'Widget',
+            'sku' => 'W-1',
+            'type' => 'inventory',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($bookkeeper)
+            ->getJson(route('accounting.search.any', ['q' => '']));
+
+        $response->assertOk();
+        $entities = array_unique(array_column($response->json(), 'entity'));
+        $this->assertContains('product', $entities);
+        $this->assertNotContains('user', $entities);
+    }
 }

@@ -7,7 +7,7 @@
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.employees.index') }}" searchPlaceholder="Name, number, or email...">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.employees.index') }}" searchPlaceholder="Name, number, or email..." entity="employee">
                         <input type="text" name="department" value="{{ request('department') }}" placeholder="Department..." class="list-filter-input" style="max-width:160px">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>

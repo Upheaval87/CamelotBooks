@@ -110,7 +110,19 @@
         const expenseAccounts = @json($expenseAccounts);
         const costCenters = @json($costCenters);
         const existingLines = @json($expense->lines);
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+        const COST_CENTER_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'cost-center']));
         let lineIndex = 0;
+
+        function expenseAccountLabel(id) {
+            const a = expenseAccounts.find(x => x.id == id);
+            return a ? a.code + ' - ' + a.name : '';
+        }
+
+        function costCenterLabel(id) {
+            const c = costCenters.find(x => x.id == id);
+            return c ? c.code + ' - ' + c.name : '';
+        }
 
         function updateTotals() {
             let subtotal = 0;
@@ -133,19 +145,20 @@
         function addLine(data) {
             const tbody = document.getElementById('lines-body');
             const idx = lineIndex++;
-            const accountOptions = expenseAccounts.map(a =>
-                `<option value="${a.id}" ${data && data.expense_account_id == a.id ? 'selected' : ''}>${a.code} - ${a.name}</option>`
-            ).join('');
-            const costCenterOptions = costCenters.map(c =>
-                `<option value="${c.id}" ${data && data.cost_center_id == c.id ? 'selected' : ''}>${c.code} - ${c.name}</option>`
-            ).join('');
+            const accountId = data ? data.expense_account_id : '';
+            const costCenterId = data ? data.cost_center_id : '';
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="px-4 py-2">
-                    <select name="lines[${idx}][expense_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required>
-                        <option value="">Select Account</option>
-                        ${accountOptions}
-                    </select>
+                    ${scopedSearchFieldHtml({
+                        name: 'lines[${idx}][expense_account_id]',
+                        entity: 'account',
+                        searchUrl: ACCOUNT_SEARCH_URL,
+                        value: accountId,
+                        label: accountId ? expenseAccountLabel(accountId) : '',
+                        placeholder: 'Search accounts...',
+                        required: true,
+                    })}
                 </td>
                 <td class="px-4 py-2">
                     <input type="text" name="lines[${idx}][description]" value="${data ? data.description : ''}" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" />
@@ -157,10 +170,14 @@
                     <input type="number" name="lines[${idx}][unit_price]" value="${data ? data.unit_price : 0}" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" />
                 </td>
                 <td class="px-4 py-2"><input type="hidden" name="lines[${idx}][tax_rate]" value="${data ? data.tax_rate : 0}" />
-                    <select name="lines[${idx}][cost_center_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                        <option value="">None</option>
-                        ${costCenterOptions}
-                    </select>
+                    ${scopedSearchFieldHtml({
+                        name: 'lines[${idx}][cost_center_id]',
+                        entity: 'cost-center',
+                        searchUrl: COST_CENTER_SEARCH_URL,
+                        value: costCenterId,
+                        label: costCenterId ? costCenterLabel(costCenterId) : '',
+                        placeholder: 'None',
+                    })}
                 </td>
                 <td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>
                 <td class="px-4 py-2 text-center">

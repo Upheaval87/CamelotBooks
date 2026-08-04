@@ -209,12 +209,14 @@
                         </div>
                     @endif
                 </div>
+                @php
+                    $billInsightLinks = [];
+                    if ($bill->vendor && $bill->vendor->email) {
+                        $billInsightLinks[] = ['route' => 'mailto:' . $bill->vendor->email, 'icon' => 'email', 'title' => __('Email Vendor')];
+                    }
+                @endphp
                 <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => [
-                        @if($bill->vendor && $bill->vendor->email)
-                            ['route' => 'mailto:' . $bill->vendor->email, 'icon' => 'email', 'title' => __('Email Vendor')],
-                        @endif
-                    ]],
+                    ['label' => __('Insights'), 'links' => $billInsightLinks],
                     ['label' => __('Navigation'), 'links' => [
                         ['route' => route('accounting.bills.index'), 'icon' => 'back', 'title' => __('Back to Bills')],
                     ]],

@@ -29,12 +29,17 @@
                                     <option value="{{ $g }}" {{ request('group') === $g ? 'selected' : '' }}>{{ $g }}</option>
                                 @endforeach
                             </x-settings.field>
-                            <x-settings.field label="User" name="user_id" type="select" value="">
-                                <option value="">All Users</option>
-                                @foreach($users as $u)
-                                    <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                                @endforeach
-                            </x-settings.field>
+                            <div class="settings-field">
+                                <label for="user_id" class="settings-field-label">User</label>
+                                <x-scoped-search-field
+                                    name="user_id"
+                                    entity="user"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'user']) }}"
+                                    :value="request('user_id')"
+                                    :label="request('user_id') ? ($users->firstWhere('id', (int) request('user_id'))?->name ?? '') : ''"
+                                    placeholder="{{ __('All Users') }}"
+                                />
+                            </div>
                             <x-settings.field label="From" name="from" type="date" value="{{ request('from') }}" />
                             <x-settings.field label="To" name="to" type="date" value="{{ request('to') }}" />
                             <div class="flex items-end gap-2">

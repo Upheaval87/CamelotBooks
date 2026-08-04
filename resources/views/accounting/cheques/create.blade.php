@@ -48,14 +48,15 @@
                                 <div>
                                     <x-input-label for="debit_account_id" value="{{ __('Expense/Asset Account') }}" />
                                     <p class="text-xs text-gray-500 mb-1">The account to debit (expense or asset).</p>
-                                    <select id="debit_account_id" name="debit_account_id" class="input mt-1" required>
-                                        <option value="">Select Account</option>
-                                        @foreach($expenseAccounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('debit_account_id') == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="debit_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('debit_account_id')"
+                                        :label="old('debit_account_id') ? (($expenseAccounts->firstWhere('id', (int) old('debit_account_id'))) ? $expenseAccounts->firstWhere('id', (int) old('debit_account_id'))->code . ' - ' . $expenseAccounts->firstWhere('id', (int) old('debit_account_id'))->name : '') : ''"
+                                        placeholder="{{ __('Select Account') }}"
+                                        required
+                                    />
                                     <x-input-error :messages="$errors->get('debit_account_id')" class="mt-2" />
                                 </div>
 

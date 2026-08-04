@@ -26,13 +26,15 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="fiscal_year_id" value="{{ __('Fiscal Year') }}" />
-                            <select id="fiscal_year_id" name="fiscal_year_id" class="input mt-1 bg-gray-100" disabled>
-                                @foreach($fiscalYears as $fy)
-                                    <option value="{{ $fy->id }}" data-start="{{ $fy->start_date->format('Y-m-d') }}" data-end="{{ $fy->end_date->format('Y-m-d') }}" {{ $budget->fiscal_year_id == $fy->id ? 'selected' : '' }}>
-                                        {{ $fy->label }} ({{ $fy->start_date->format('M Y') }} - {{ $fy->end_date->format('M Y') }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="fiscal_year_id"
+                                entity="fiscal-year"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'fiscal-year']) }}"
+                                :value="old('fiscal_year_id', $budget->fiscal_year_id)"
+                                :label="old('fiscal_year_id', $budget->fiscal_year_id) ? ($fiscalYears->firstWhere('id', (int) old('fiscal_year_id', $budget->fiscal_year_id))?->label ?? '') : ''"
+                                placeholder="{{ __('Search fiscal years...') }}"
+                                disabled
+                            />
                         </div>
                         <div>
                             <x-input-label for="name" value="{{ __('Budget Name') }}" />
@@ -92,6 +94,13 @@
 
     <script>
         const accounts = @json($accounts);
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+        const fiscalYears = @json($fiscalYears->map(fn ($fy) => [
+            'id' => $fy->id,
+            'label' => $fy->label,
+            'start' => $fy->start_date->format('Y-m-d'),
+            'end' => $fy->end_date->format('Y-m-d'),
+        ]));
         @php
             $existingLinesJson = $budget->lines->map(fn($l) => ['account_id' => $l->account_id, 'period_label' => $l->period_label, 'amount' => $l->amount, 'notes' => $l->notes])->values();
         @endphp
@@ -103,13 +112,18 @@
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
 
-        function getPeriodLabels() {
-            const fySelect = document.getElementById('fiscal_year_id');
-            const option = fySelect.options[fySelect.selectedIndex];
-            if (!option || !option.value) return [];
+        function accountLabel(id) {
+            const account = accounts.find(a => a.id == id);
+            return account ? account.code + ' - ' + account.name : '';
+        }
 
-            const start = new Date(option.dataset.start);
-            const end = new Date(option.dataset.end);
+        function getPeriodLabels() {
+            const fyId = document.querySelector('input[name="fiscal_year_id"]').value;
+            const fy = fiscalYears.find(f => f.id == fyId);
+            if (!fy) return [];
+
+            const start = new Date(fy.start);
+            const end = new Date(fy.end);
             const labels = [];
             let d = new Date(start);
 
@@ -119,15 +133,6 @@
             }
 
             return labels;
-        }
-
-        function buildAccountOptions(selectedId) {
-            let html = '<option value="">Select Account</option>';
-            accounts.forEach(function(account) {
-                const sel = account.id == selectedId ? ' selected' : '';
-                html += '<option value="' + account.id + '"' + sel + '>' + account.code + ' - ' + account.name + '</option>';
-            });
-            return html;
         }
 
         function buildPeriodOptions(selectedPeriod) {
@@ -149,9 +154,14 @@
             const notes = data ? (data.notes || '') : '';
             tr.innerHTML =
                 '<td class="px-4 py-2">' +
-                    '<select name="lines[' + lineIndex + '][account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">' +
-                        buildAccountOptions(accountId) +
-                    '</select>' +
+                    scopedSearchFieldHtml({
+                        name: 'lines[' + lineIndex + '][account_id]',
+                        entity: 'account',
+                        searchUrl: ACCOUNT_SEARCH_URL,
+                        value: accountId,
+                        label: accountId ? accountLabel(accountId) : '',
+                        placeholder: 'Search accounts...',
+                    }) +
                 '</td>' +
                 '<td class="px-4 py-2">' +
                     '<select name="lines[' + lineIndex + '][period_label]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">' +

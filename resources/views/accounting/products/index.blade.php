@@ -8,7 +8,7 @@
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.products.index') }}" searchPlaceholder="Name or SKU...">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.products.index') }}" searchPlaceholder="Name or SKU..." entity="product">
                         <select name="type" class="list-filter-select">
                             <option value="">All Types</option>
                             <option value="service" {{ request('type') === 'service' ? 'selected' : '' }}>Service</option>

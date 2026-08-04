@@ -5,16 +5,22 @@ namespace App\Services\Search;
 use App\Models\Account;
 use App\Models\Asset;
 use App\Models\AssetCategory;
+use App\Models\Bill;
 use App\Models\Branch;
 use App\Models\CostCenter;
+use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\FiscalYear;
 use App\Models\InventoryStock;
+use App\Models\Invoice;
 use App\Models\PayrollRun;
 use App\Models\Product;
+use App\Models\Quotation;
+use App\Models\SalesReceipt;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\VendorCredit;
 use App\Services\FeatureManagement;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -44,6 +50,12 @@ class SearchCatalog
             $this->assetCategory(),
             $this->payrollRun(),
             $this->fiscalYear(),
+            $this->invoice(),
+            $this->bill(),
+            $this->salesReceipt(),
+            $this->quotation(),
+            $this->creditNote(),
+            $this->vendorCredit(),
         ];
     }
 
@@ -447,6 +459,198 @@ class SearchCatalog
                         'label' => $f->label,
                         'subtitle' => $f->status,
                         'url' => route('accounting.fiscal-years.show', $f->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function invoice(): array
+    {
+        return [
+            'key' => 'invoice',
+            'label' => 'Invoices',
+            'permission' => 'invoices.view',
+            'feature' => null,
+            'icon' => 'currency',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return Invoice::forCompany($companyId)
+                    ->with('customer:id,name')
+                    ->select(['id', 'invoice_number', 'invoice_date', 'status', 'customer_id', 'reference'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('invoice_number', 'like', "%{$q}%")
+                                ->orWhere('reference', 'like', "%{$q}%")
+                                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$q}%"));
+                        });
+                    })
+                    ->orderByDesc('invoice_date')->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (Invoice $i) => [
+                        'id' => $i->id,
+                        'label' => $i->invoice_number,
+                        'subtitle' => collect([$i->customer?->name, $i->invoice_date?->format('M d, Y'), $i->status])->filter()->implode(' · '),
+                        'url' => route('accounting.invoices.show', $i->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function bill(): array
+    {
+        return [
+            'key' => 'bill',
+            'label' => 'Bills',
+            'permission' => 'bills.view',
+            'feature' => null,
+            'icon' => 'bank',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return Bill::forCompany($companyId)
+                    ->with('vendor:id,name')
+                    ->select(['id', 'bill_number', 'bill_date', 'status', 'vendor_id', 'reference'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('bill_number', 'like', "%{$q}%")
+                                ->orWhere('reference', 'like', "%{$q}%")
+                                ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$q}%"));
+                        });
+                    })
+                    ->orderByDesc('bill_date')->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (Bill $b) => [
+                        'id' => $b->id,
+                        'label' => $b->bill_number,
+                        'subtitle' => collect([$b->vendor?->name, $b->bill_date?->format('M d, Y'), $b->status])->filter()->implode(' · '),
+                        'url' => route('accounting.bills.show', $b->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function salesReceipt(): array
+    {
+        return [
+            'key' => 'sales-receipt',
+            'label' => 'Sales Receipts',
+            'permission' => 'sales-receipts.view',
+            'feature' => null,
+            'icon' => 'archive',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return SalesReceipt::forCompany($companyId)
+                    ->with('customer:id,name')
+                    ->select(['id', 'receipt_number', 'receipt_date', 'status', 'customer_id', 'reference'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('receipt_number', 'like', "%{$q}%")
+                                ->orWhere('reference', 'like', "%{$q}%")
+                                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$q}%"));
+                        });
+                    })
+                    ->orderByDesc('receipt_date')->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (SalesReceipt $r) => [
+                        'id' => $r->id,
+                        'label' => $r->receipt_number,
+                        'subtitle' => collect([$r->customer?->name, $r->receipt_date?->format('M d, Y'), $r->status])->filter()->implode(' · '),
+                        'url' => route('accounting.sales-receipts.show', $r->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function quotation(): array
+    {
+        return [
+            'key' => 'quotation',
+            'label' => 'Quotations',
+            'permission' => 'quotations.view',
+            'feature' => null,
+            'icon' => 'tag',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return Quotation::forCompany($companyId)
+                    ->with('customer:id,name')
+                    ->select(['id', 'quotation_number', 'quotation_date', 'status', 'customer_id', 'reference'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('quotation_number', 'like', "%{$q}%")
+                                ->orWhere('reference', 'like', "%{$q}%")
+                                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$q}%"));
+                        });
+                    })
+                    ->orderByDesc('quotation_date')->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (Quotation $qo) => [
+                        'id' => $qo->id,
+                        'label' => $qo->quotation_number,
+                        'subtitle' => collect([$qo->customer?->name, $qo->quotation_date?->format('M d, Y'), $qo->status])->filter()->implode(' · '),
+                        'url' => route('accounting.quotations.show', $qo->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function creditNote(): array
+    {
+        return [
+            'key' => 'credit-note',
+            'label' => 'Credit Notes',
+            'permission' => 'credit-notes.view',
+            'feature' => null,
+            'icon' => 'user',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return CreditNote::forCompany($companyId)
+                    ->with('customer:id,name')
+                    ->select(['id', 'credit_note_number', 'credit_note_date', 'status', 'customer_id', 'reference'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('credit_note_number', 'like', "%{$q}%")
+                                ->orWhere('reference', 'like', "%{$q}%")
+                                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$q}%"));
+                        });
+                    })
+                    ->orderByDesc('credit_note_date')->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (CreditNote $c) => [
+                        'id' => $c->id,
+                        'label' => $c->credit_note_number,
+                        'subtitle' => collect([$c->customer?->name, $c->credit_note_date?->format('M d, Y'), $c->status])->filter()->implode(' · '),
+                        'url' => route('accounting.credit-notes.show', $c->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function vendorCredit(): array
+    {
+        return [
+            'key' => 'vendor-credit',
+            'label' => 'Vendor Credits',
+            'permission' => 'vendor-credits.view',
+            'feature' => null,
+            'icon' => 'truck',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return VendorCredit::forCompany($companyId)
+                    ->with('vendor:id,name')
+                    ->select(['id', 'credit_note_number', 'credit_note_date', 'status', 'vendor_id', 'reference'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('credit_note_number', 'like', "%{$q}%")
+                                ->orWhere('reference', 'like', "%{$q}%")
+                                ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$q}%"));
+                        });
+                    })
+                    ->orderByDesc('credit_note_date')->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (VendorCredit $vc) => [
+                        'id' => $vc->id,
+                        'label' => $vc->credit_note_number,
+                        'subtitle' => collect([$vc->vendor?->name, $vc->credit_note_date?->format('M d, Y'), $vc->status])->filter()->implode(' · '),
+                        'url' => route('accounting.vendor-credits.show', $vc->id),
                     ])->values();
             },
         ];

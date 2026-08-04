@@ -49,14 +49,14 @@
 
                         <div>
                             <x-input-label for="parent_id" value="{{ __('Parent Account (Optional)') }}" />
-                            <select id="parent_id" name="parent_id" class="input mt-1">
-                                <option value="">None (Top Level)</option>
-                                @foreach($parentAccounts as $parent)
-                                    <option value="{{ $parent->id }}" data-type="{{ $parent->type }}" {{ old('parent_id') == $parent->id ? 'selected' : '' }}>
-                                        {{ $parent->code }} - {{ $parent->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="parent_id"
+                                entity="account"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                :value="old('parent_id')"
+                                :label="old('parent_id') ? (($parentAccounts->firstWhere('id', (int) old('parent_id'))) ? $parentAccounts->firstWhere('id', (int) old('parent_id'))->code . ' - ' . $parentAccounts->firstWhere('id', (int) old('parent_id'))->name : '') : ''"
+                                placeholder="{{ __('None (Top Level)') }}"
+                            />
                             <x-input-error :messages="$errors->get('parent_id')" class="mt-2" />
                         </div>
 
@@ -118,7 +118,6 @@
 
         const typeSelect = document.getElementById('type');
         const subTypeSelect = document.getElementById('sub_type');
-        const parentSelect = document.getElementById('parent_id');
         const oldType = '{{ old("type") }}';
         const oldSubType = '{{ old("sub_type") }}';
 
@@ -135,22 +134,6 @@
                     subTypeSelect.appendChild(option);
                 });
             }
-
-            filterParentAccounts();
-        }
-
-        function filterParentAccounts() {
-            const type = typeSelect.value;
-            const options = parentSelect.querySelectorAll('option[data-type]');
-
-            options.forEach(function(option) {
-                if (!type || option.dataset.type === type) {
-                    option.style.display = '';
-                } else {
-                    option.style.display = 'none';
-                    if (option.selected) parentSelect.value = '';
-                }
-            });
         }
 
         typeSelect.addEventListener('change', updateSubTypes);

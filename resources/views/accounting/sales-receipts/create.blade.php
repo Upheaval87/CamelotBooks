@@ -40,12 +40,14 @@
                         </div>
                         <div>
                             <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <select id="branch_id" name="branch_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="branch_id"
+                                entity="branch"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                :value="old('branch_id')"
+                                :label="old('branch_id') ? ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('None') }}"
+                            />
                         </div>
                         <div class="col-span-4">
                             <x-input-label for="memo" value="{{ __('Description') }}" />
@@ -179,7 +181,13 @@
         const products = @json($productsJson);
         const incomeAccounts = @json($incomeAccounts);
         const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
         let lineIndex = 0;
+
+        function incomeAccountLabel(id) {
+            const a = incomeAccounts.find(function(x) { return x.id == id; });
+            return a ? a.code + ' - ' + a.name : '';
+        }
 
         function updateTotals() {
             let subtotal = 0;
@@ -203,9 +211,14 @@
         function addLine() {
             var tbody = document.getElementById('lines-body');
             var idx = lineIndex++;
-            var accountOptions = incomeAccounts.map(function(a) {
-                return '<option value="' + a.id + '">' + a.code + ' - ' + a.name + '</option>';
-            }).join('');
+            var incomeAccountField = scopedSearchFieldHtml({
+                name: 'lines[' + idx + '][income_account_id]',
+                entity: 'account',
+                searchUrl: ACCOUNT_SEARCH_URL,
+                value: '',
+                label: '',
+                placeholder: 'Select Account',
+            });
             var tr = document.createElement('tr');
             var picker = scopedSearchFieldHtml({
                 name: 'lines[' + idx + '][product_id]',
@@ -221,7 +234,7 @@
                 '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="1" min="0" step="any" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" oninput="updateTotals()" /></td>' +
                 '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][unit_price]" value="0" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" oninput="updateTotals()" /></td>' +
                 '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][discount]" value="0" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" oninput="updateTotals()" /></td>' +
-                '<td class="px-4 py-2"><input type="hidden" name="lines[' + idx + '][tax_rate]" value="0" /><select name="lines[' + idx + '][income_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"><option value="">Select Account</option>' + accountOptions + '</select></td>' +
+                '<td class="px-4 py-2"><input type="hidden" name="lines[' + idx + '][tax_rate]" value="0" />' + incomeAccountField + '</td>' +
                 '<td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>' +
                 '<td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td>';
             tbody.appendChild(tr);
@@ -246,7 +259,13 @@
             }
             if (item.income_account_id) {
                 var acctInput = row.querySelector('[name*="[income_account_id]"]');
-                if (acctInput) acctInput.value = item.income_account_id;
+                if (acctInput) {
+                    var accountItem = incomeAccounts.find(function(a) { return a.id == item.income_account_id; });
+                    scopedSearchFieldSet(acctInput, 'account', {
+                        id: item.income_account_id,
+                        label: accountItem ? accountItem.code + ' - ' + accountItem.name : ''
+                    });
+                }
             }
             updateTotals();
         });

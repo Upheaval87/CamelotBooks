@@ -7,22 +7,28 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <x-input-label for="fiscal_year_id" value="Fiscal Year" />
-                        <select id="fiscal_year_id" name="fiscal_year_id" class="input mt-1">
-                            @foreach($fiscalYears as $fy)
-                                <option value="{{ $fy->id }}" {{ $fy->id == $fiscalYearId ? 'selected' : '' }}>{{ $fy->name ?? $fy->start_date . ' - ' . $fy->end_date }}</option>
-                            @endforeach
-                        </select>
+                        @php $selectedFy = request('fiscal_year_id') ? $fiscalYears->firstWhere('id', (int) request('fiscal_year_id')) : null; @endphp
+                        <x-scoped-search-field
+                            name="fiscal_year_id"
+                            entity="fiscal-year"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'fiscal-year']) }}"
+                            :value="request('fiscal_year_id')"
+                            :label="$selectedFy ? ($selectedFy->name ?? $selectedFy->start_date . ' - ' . $selectedFy->end_date) : ''"
+                            placeholder="{{ __('All Fiscal Years') }}"
+                        />
                     </div>
                     <div>
                         <x-input-label for="branch_id" value="Branch" />
-                        <select id="branch_id" name="branch_id" class="input mt-1">
-                            <option value="">All Branches</option>
-                            @if(isset($currentBranches))
-                                @foreach($currentBranches as $branch)
-                                    <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                @endforeach
-                            @endif
-                        </select>
+                        @if(isset($currentBranches))
+                            <x-scoped-search-field
+                                name="branch_id"
+                                entity="branch"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                :value="request('branch_id')"
+                                :label="request('branch_id') ? ($currentBranches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('All Branches') }}"
+                            />
+                        @endif
                     </div>
                     <div class="flex items-end">
                         <x-primary-button>Apply</x-primary-button>

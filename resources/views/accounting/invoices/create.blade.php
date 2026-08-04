@@ -130,6 +130,8 @@
 
 <script>
         const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+        const COST_CENTER_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'cost-center']));
         const incomeAccounts = @json($incomeAccounts);
         const costCenters = @json($costCenters);
         let lineIndex = 0;
@@ -166,12 +168,6 @@
         function addLine() {
             const tbody = document.getElementById('lines-body');
             const idx = lineIndex++;
-            const accountOptions = incomeAccounts.map(a =>
-                `<option value="${a.id}">${a.code} - ${a.name}</option>`
-            ).join('');
-            const costCenterOptions = costCenters.map(c =>
-                `<option value="${c.id}">${c.code} - ${c.name}</option>`
-            ).join('');
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="px-4 py-2" style="min-width: 220px;">
@@ -198,16 +194,24 @@
                 </td>
                 <input type="hidden" name="lines[${idx}][tax_rate]" value="0" />
                 <td class="px-4 py-2">
-                    <select name="lines[${idx}][income_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                        <option value="">Select Account</option>
-                        ${accountOptions}
-                    </select>
+                    ${scopedSearchFieldHtml({
+                        name: 'lines[${idx}][income_account_id]',
+                        entity: 'account',
+                        searchUrl: ACCOUNT_SEARCH_URL,
+                        value: '',
+                        label: '',
+                        placeholder: 'Select Account',
+                    })}
                 </td>
                 <td class="px-4 py-2">
-                    <select name="lines[${idx}][cost_center_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                        <option value="">None</option>
-                        ${costCenterOptions}
-                    </select>
+                    ${scopedSearchFieldHtml({
+                        name: 'lines[${idx}][cost_center_id]',
+                        entity: 'cost-center',
+                        searchUrl: COST_CENTER_SEARCH_URL,
+                        value: '',
+                        label: '',
+                        placeholder: 'None',
+                    })}
                 </td>
                 <td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>
                 <td class="px-4 py-2 text-center">
@@ -237,7 +241,13 @@
             }
             if (item.income_account_id) {
                 const acctInput = row.querySelector('[name*="[income_account_id]"]');
-                if (acctInput) acctInput.value = item.income_account_id;
+                if (acctInput) {
+                    const accountItem = incomeAccounts.find(function(a) { return a.id == item.income_account_id; });
+                    scopedSearchFieldSet(acctInput, 'account', {
+                        id: item.income_account_id,
+                        label: accountItem ? accountItem.code + ' - ' + accountItem.name : ''
+                    });
+                }
             }
             updateTotals();
         });

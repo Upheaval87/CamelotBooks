@@ -11,6 +11,7 @@ document.addEventListener('alpine:init', () => {
         onSelectCallback: config.onSelect || null,
         required: config.required || false,
         disabled: config.disabled || false,
+        allowGlobalSearch: config.allowGlobalSearch || false,
 
         query: config.label || '',
         selectedId: config.value || '',
@@ -34,10 +35,15 @@ document.addEventListener('alpine:init', () => {
 
             window.addEventListener('global-search-selected', (e) => {
                 const detail = (e && e.detail) || {};
-                if (!detail.entity || detail.entity !== this.entity) return;
                 const idMatches = detail.fieldId != null && detail.fieldId === this.fieldId;
                 const elMatches = detail.field != null && detail.field === this.$el;
                 if (!idMatches && !elMatches) return;
+
+                // Wildcard fields (allowGlobalSearch, entity-less) accept a
+                // selection from ANY entity — used for record-link pickers.
+                // Typed fields keep the strict entity match.
+                if (!this.allowGlobalSearch && (!detail.entity || detail.entity !== this.entity)) return;
+
                 const item = detail.item || {};
                 if (item.id === undefined || item.id === null || item.id === '') return;
                 this.select(item);
@@ -175,8 +181,21 @@ document.addEventListener('alpine:init', () => {
      * picker must be injected into the DOM dynamically (e.g. line-item rows).
      * Mirrors the <x-scoped-search-field> Blade component.
      */
-    window.scopedSearchFieldHtml = function (config) {
-        const cfg = Object.assign({ mode: 'server', valueKey: 'id', labelKey: 'label', secondary: [], required: false }, config || {});
+    /**
+     * Programmatically set a scoped search field (found by its hidden input)
+     * to a given entity item. Used to autofill pickers (e.g. line-item
+     * account fields) when a parent row selection is made.
+     */
+    window.scopedSearchFieldSet = function (hiddenInput, entity, item) {
+        if (!hiddenInput || !item || item.id === undefined || item.id === null || item.id === '') return;
+        const el = hiddenInput.closest('[data-scoped-search-field]');
+        if (!el) return;
+        window.dispatchEvent(new CustomEvent('global-search-selected', {
+            detail: { entity: entity, field: el, item: item },
+        }));
+    };
+
+    window.scopedSearchFieldHtml = function (config) {        const cfg = Object.assign({ mode: 'server', valueKey: 'id', labelKey: 'label', secondary: [], required: false, allowGlobalSearch: false }, config || {});
         const xData = 'scopedSearchField(' + JSON.stringify(cfg) + ')';
         const placeholder = escapeAttr(cfg.placeholder || 'Search...');
         const required = cfg.required ? 'required' : '';

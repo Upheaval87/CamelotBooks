@@ -97,22 +97,26 @@
                             <div class="grid grid-cols-2 gap-6 mt-6">
                                 <div>
                                     <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                                    <select id="branch_id" name="branch_id" class="input mt-1">
-                                        <option value="">Select Branch</option>
-                                        @foreach($branches as $branch)
-                                            <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="branch_id"
+                                        entity="branch"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                        :value="old('branch_id')"
+                                        :label="old('branch_id') ? ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '') : ''"
+                                        placeholder="{{ __('Select Branch') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('branch_id')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" />
-                                    <select id="cost_center_id" name="cost_center_id" class="input mt-1">
-                                        <option value="">Select Cost Center</option>
-                                        @foreach($costCenters as $costCenter)
-                                            <option value="{{ $costCenter->id }}" {{ old('cost_center_id') == $costCenter->id ? 'selected' : '' }}>{{ $costCenter->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="cost_center_id"
+                                        entity="cost-center"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
+                                        :value="old('cost_center_id')"
+                                        :label="old('cost_center_id') ? ($costCenters->firstWhere('id', (int) old('cost_center_id'))?->name ?? '') : ''"
+                                        placeholder="{{ __('Select Cost Center') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('cost_center_id')" class="mt-2" />
                                 </div>
                             </div>

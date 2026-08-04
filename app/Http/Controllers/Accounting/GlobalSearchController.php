@@ -77,4 +77,28 @@ class GlobalSearchController extends Controller
 
         return response()->json($groups);
     }
+
+    /**
+     * Flat search across every permitted entity type, used by record-link
+     * pickers that may point at any record in the system (e.g. to-do task
+     * links). Each row carries its entity key so the caller can resolve
+     * the polymorphic target class.
+     */
+    public function any(Request $request)
+    {
+        $user = $request->user();
+        $companyId = session('current_company_id');
+        $q = (string) $request->input('q', '');
+        $limit = min((int) $request->input('limit', 4), 20);
+
+        $rows = collect();
+
+        foreach ($this->catalog->permittedFor($user, $companyId) as $entry) {
+            foreach ($entry['search']($q, $companyId, $limit, null) as $row) {
+                $rows->push(array_merge($row, ['entity' => $entry['key']]));
+            }
+        }
+
+        return response()->json($rows->sortBy('label')->values());
+    }
 }

@@ -34,12 +34,14 @@
                                 <div>
                                     <x-input-label for="branch_id" value="{{ __('Branch (optional)') }}" />
                                     <p class="text-xs text-gray-500 mb-1">Leave blank to count across all locations.</p>
-                                    <select id="branch_id" name="branch_id" class="input mt-1">
-                                        <option value="">All Locations</option>
-                                        @foreach($branches as $branch)
-                                            <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="branch_id"
+                                        entity="branch"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                        :value="old('branch_id')"
+                                        :label="old('branch_id') ? ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '') : ''"
+                                        placeholder="{{ __('All Locations') }}"
+                                    />
                                 </div>
 
                                 <div>

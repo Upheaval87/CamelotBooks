@@ -19,12 +19,14 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">User</label>
-                <select name="user_id" class="input mt-1">
-                    <option value="">All Users</option>
-                    @foreach($users as $u)
-                        <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                    @endforeach
-                </select>
+                <x-scoped-search-field
+                    name="user_id"
+                    entity="user"
+                    search-url="{{ route('accounting.search.entity', ['entity' => 'user']) }}"
+                    :value="request('user_id')"
+                    :label="request('user_id') ? ($users->firstWhere('id', (int) request('user_id'))?->name ?? '') : ''"
+                    placeholder="{{ __('All Users') }}"
+                />
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">From</label>

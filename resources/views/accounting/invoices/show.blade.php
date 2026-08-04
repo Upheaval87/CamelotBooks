@@ -237,13 +237,16 @@
                         </div>
                     @endif
                 </div>
-                <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => [
+                @php
+                    $invoiceInsightLinks = [
                         ['route' => route('accounting.invoices.print', $invoice), 'icon' => 'print', 'title' => __('Print')],
-                        @if($invoice->customer && $invoice->customer->email)
-                            ['route' => 'mailto:' . $invoice->customer->email . '?subject=Invoice ' . $invoice->invoice_number, 'icon' => 'email', 'title' => __('Email Invoice')],
-                        @endif
-                    ]],
+                    ];
+                    if ($invoice->customer && $invoice->customer->email) {
+                        $invoiceInsightLinks[] = ['route' => 'mailto:' . $invoice->customer->email . '?subject=Invoice ' . $invoice->invoice_number, 'icon' => 'email', 'title' => __('Email Invoice')];
+                    }
+                @endphp
+                <x-detail-quick-actions :groups="[
+                    ['label' => __('Insights'), 'links' => $invoiceInsightLinks],
                     ['label' => __('Navigation'), 'links' => [
                         ['route' => route('accounting.invoices.index'), 'icon' => 'back', 'title' => __('Back to Invoices')],
                     ]],

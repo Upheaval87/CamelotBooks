@@ -1,6 +1,6 @@
 @props([
     'name',
-    'entity',
+    'entity' => '',
     'searchUrl' => null,
     'value' => '',
     'label' => '',
@@ -13,6 +13,7 @@
     'valueKey' => 'id',
     'labelKey' => 'label',
     'onSelect' => null,
+    'allowGlobalSearch' => false,
 ])
 
 <div
@@ -30,6 +31,7 @@
         required: @js($required),
         disabled: @js($disabled),
         onSelect: @js($onSelect),
+        allowGlobalSearch: @js($allowGlobalSearch),
     })"
     class="relative"
 >
@@ -60,7 +62,7 @@
         <button
             type="button"
             class="scoped-search-open"
-            :disabled="disabled || !entity"
+            :disabled="disabled || (!entity && !allowGlobalSearch)"
             title="Search"
             @click="openGlobalSearch()"
         >

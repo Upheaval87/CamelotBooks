@@ -11,14 +11,15 @@
                 <form method="GET" action="{{ route('accounting.assemblies.history') }}" class="flex items-end gap-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase">Assembly Product</label>
-                        <select name="assembly_product_id" class="mt-1 block w-56 border-gray-300 rounded-md shadow-sm text-sm">
-                            <option value="">All Products</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->id }}" {{ request('assembly_product_id') == $product->id ? 'selected' : '' }}>
-                                    {{ $product->sku ? $product->sku . ' - ' : '' }}{{ $product->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @php $selectedProduct = request('assembly_product_id') ? $products->firstWhere('id', (int) request('assembly_product_id')) : null; @endphp
+                        <x-scoped-search-field
+                            name="assembly_product_id"
+                            entity="product"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'product']) }}"
+                            :value="request('assembly_product_id')"
+                            :label="$selectedProduct ? (($selectedProduct->sku ? $selectedProduct->sku . ' - ' : '') . $selectedProduct->name) : ''"
+                            placeholder="{{ __('All Products') }}"
+                        />
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase">Type</label>

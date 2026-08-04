@@ -11,12 +11,14 @@
                     </div>
                     <div class="flex-1">
                         <x-input-label for="branch_id" value="{{ __('Branch (Optional)') }}" />
-                        <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">All Branches</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}" {{ $branchId == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-scoped-search-field
+                            name="branch_id"
+                            entity="branch"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                            :value="request('branch_id')"
+                            :label="request('branch_id') ? ($branches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
+                            placeholder="{{ __('All Branches') }}"
+                        />
                     </div>
                     <div class="flex gap-2">
                         <x-primary-button type="submit">{{ __('Generate') }}</x-primary-button>

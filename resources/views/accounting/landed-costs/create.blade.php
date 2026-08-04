@@ -68,40 +68,48 @@
                             <x-input-error :messages="$errors->get('grn_ids')" class="mt-2" />
                         </div>
 
-                        <div class="card p-6 mb-6" x-data="{
-                            components: {{ Js::from(old('components', [['component_type' => 'freight', 'description' => '', 'amount' => '', 'payee_account_id' => '']])) }}
-                        }">
+                        <div class="card p-6 mb-6" id="components-card">
                             <div class="flex items-center justify-between mb-4">
                                 <x-form.section number="03" :title="__('Cost Components')" />
-                                <button type="button" @click="components.push({ component_type: 'freight', description: '', amount: '', payee_account_id: '' })" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Component</button>
+                                <button type="button" onclick="addComponent()" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Component</button>
                             </div>
-                            <template x-for="(comp, index) in components" :key="index">
-                                <div class="grid grid-cols-4 gap-3 mb-3 p-3 border rounded bg-gray-50">
-                                    <div>
-                                        <label class="block text-xs text-gray-500">Type</label>
-                                        <select :name="'components['+index+'][component_type]'" x-model="comp.component_type" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm">
-                                            <option value="freight">Freight</option><option value="customs">Customs</option><option value="insurance">Insurance</option><option value="handling">Handling</option><option value="other">Other</option>
-                                        </select>
+                            <div id="components-wrap" class="space-y-3">
+                                @php $oldComponents = old('components', [['component_type' => 'freight', 'description' => '', 'amount' => '', 'payee_account_id' => '']]); @endphp
+                                @foreach($oldComponents as $compIdx => $comp)
+                                    <div class="component-row grid grid-cols-4 gap-3 p-3 border rounded bg-gray-50">
+                                        <div>
+                                            <label class="block text-xs text-gray-500">Type</label>
+                                            <select name="components[{{ $compIdx }}][component_type]" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm">
+                                                <option value="freight" {{ ($comp['component_type'] ?? '') === 'freight' ? 'selected' : '' }}>Freight</option>
+                                                <option value="customs" {{ ($comp['component_type'] ?? '') === 'customs' ? 'selected' : '' }}>Customs</option>
+                                                <option value="insurance" {{ ($comp['component_type'] ?? '') === 'insurance' ? 'selected' : '' }}>Insurance</option>
+                                                <option value="handling" {{ ($comp['component_type'] ?? '') === 'handling' ? 'selected' : '' }}>Handling</option>
+                                                <option value="other" {{ ($comp['component_type'] ?? '') === 'other' ? 'selected' : '' }}>Other</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500">Description</label>
+                                            <input name="components[{{ $compIdx }}][description]" value="{{ $comp['description'] ?? '' }}" type="text" required class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm" placeholder="e.g. Ocean freight">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500">Amount</label>
+                                            <input name="components[{{ $compIdx }}][amount]" value="{{ $comp['amount'] ?? '' }}" type="number" step="0.01" min="0.01" required class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500">Payee Account</label>
+                                            <x-scoped-search-field
+                                                name="components[{{ $compIdx }}][payee_account_id]"
+                                                entity="account"
+                                                search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                                :value="$comp['payee_account_id'] ?? ''"
+                                                :label="($comp['payee_account_id'] ?? '') ? (($accounts->firstWhere('id', (int) $comp['payee_account_id'])) ? $accounts->firstWhere('id', (int) $comp['payee_account_id'])->code . ' - ' . $accounts->firstWhere('id', (int) $comp['payee_account_id'])->name : '') : ''"
+                                                placeholder="Select"
+                                                required
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500">Description</label>
-                                        <input :name="'components['+index+'][description]'" x-model="comp.description" type="text" required class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm" placeholder="e.g. Ocean freight">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500">Amount</label>
-                                        <input :name="'components['+index+'][amount]'" x-model.number="comp.amount" type="number" step="0.01" min="0.01" required class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500">Payee Account</label>
-                                        <select :name="'components['+index+'][payee_account_id]'" x-model="comp.payee_account_id" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm">
-                                            <option value="">Select</option>
-                                            @foreach($accounts as $acc)
-                                                <option value="{{ $acc->id }}">{{ $acc->code }} - {{ $acc->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                            </template>
+                                @endforeach
+                            </div>
                             <x-input-error :messages="$errors->get('components')" class="mt-2" />
                         </div>
 
@@ -114,4 +122,49 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+        let componentIndex = {{ count($oldComponents) }};
+
+        function componentRowHtml(idx) {
+            return `
+                <div class="component-row grid grid-cols-4 gap-3 p-3 border rounded bg-gray-50">
+                    <div>
+                        <label class="block text-xs text-gray-500">Type</label>
+                        <select name="components[${idx}][component_type]" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm">
+                            <option value="freight">Freight</option>
+                            <option value="customs">Customs</option>
+                            <option value="insurance">Insurance</option>
+                            <option value="handling">Handling</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Description</label>
+                        <input name="components[${idx}][description]" type="text" required class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm" placeholder="e.g. Ocean freight">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Amount</label>
+                        <input name="components[${idx}][amount]" type="number" step="0.01" min="0.01" required class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Payee Account</label>
+                        ${scopedSearchFieldHtml({
+                            name: 'components[${idx}][payee_account_id]',
+                            entity: 'account',
+                            searchUrl: ACCOUNT_SEARCH_URL,
+                            value: '',
+                            label: '',
+                            placeholder: 'Select',
+                            required: true,
+                        })}
+                    </div>
+                </div>`;
+        }
+
+        function addComponent() {
+            document.getElementById('components-wrap').insertAdjacentHTML('beforeend', componentRowHtml(componentIndex++));
+        }
+    </script>
 </x-app-layout>

@@ -54,6 +54,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TodoTaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -620,6 +621,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer|bookkeeper|cashier|auditor')
             ->group(function () {
                 Route::get('global', [GlobalSearchController::class, 'global'])->name('global');
+                Route::get('any', [GlobalSearchController::class, 'any'])->name('any');
             });
 
         // Administration
@@ -773,6 +775,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 return view('pos.dashboard');
             })->name('dashboard');
         });
+
+        // Personal to-do list — tasks are strictly personal (scoped to the
+        // current user at query level); available to every company user.
+        Route::prefix('todo')->name('todo.')
+            ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer|bookkeeper|cashier|auditor')
+            ->group(function () {
+                Route::get('/', [TodoTaskController::class, 'index'])->name('index');
+                Route::post('/', [TodoTaskController::class, 'store'])->name('store');
+                Route::put('/{task}', [TodoTaskController::class, 'update'])->name('update');
+                Route::post('/{task}/complete', [TodoTaskController::class, 'complete'])->name('complete');
+                Route::post('/{task}/reopen', [TodoTaskController::class, 'reopen'])->name('reopen');
+                Route::delete('/{task}', [TodoTaskController::class, 'destroy'])->name('destroy');
+            });
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

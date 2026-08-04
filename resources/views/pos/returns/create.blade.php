@@ -27,15 +27,24 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <x-input-label for="sale_id" value="{{ __('Original Sale') }}" />
-                                    <select id="sale_id" name="pos_sale_id" x-model="selectedSaleId" @change="loadSale()"
-                                        class="input mt-1" required>
-                                        <option value="">-- Select Sale --</option>
-                                        @foreach($sales as $s)
-                                            <option value="{{ $s->id }}" {{ old('pos_sale_id', request('sale_id')) == $s->id ? 'selected' : '' }}>
-                                                {{ $s->sale_number }} – @money($s->total) – {{ optional($s->created_at)->format('M d, Y') ?? '—' }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @php
+                                        $saleItems = collect($sales)->map(fn($s) => [
+                                            'id' => $s->id,
+                                            'label' => $s->sale_number,
+                                            'subtitle' => ($s->created_at?->format('M d, Y') ?? '—'),
+                                        ]);
+                                        $selectedSale = old('pos_sale_id', request('sale_id')) ? $sales->firstWhere('id', (int) old('pos_sale_id', request('sale_id'))) : null;
+                                    @endphp
+                                    <x-scoped-search-field
+                                        name="pos_sale_id"
+                                        mode="client"
+                                        :items="$saleItems"
+                                        :value="old('pos_sale_id', request('sale_id'))"
+                                        :label="$selectedSale ? ($selectedSale->sale_number . ' – ' . ($selectedSale->created_at?->format('M d, Y') ?? '—')) : ''"
+                                        placeholder="{{ __('-- Select Sale --') }}"
+                                        on-select="posReturnSaleSelected"
+                                        required
+                                    />
                                     <x-input-error :messages="$errors->get('pos_sale_id')" class="mt-2" />
                                 </div>
                                 <div>
@@ -113,6 +122,10 @@
     </div>
 
     <script>
+        window.posReturnSaleSelected = function(id, item) {
+            window.dispatchEvent(new CustomEvent('pos-return-sale-selected', { detail: { id: id } }));
+        };
+
         function returnForm() {
             return {
                 selectedSaleId: '{{ old("pos_sale_id", request("sale_id")) }}',
@@ -151,6 +164,10 @@
                 },
 
                 init() {
+                    window.addEventListener('pos-return-sale-selected', (e) => {
+                        this.selectedSaleId = e.detail.id;
+                        this.loadSale();
+                    });
                     if (this.selectedSaleId) {
                         this.loadSale();
                     }

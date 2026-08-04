@@ -37,14 +37,16 @@
                         </div>
                         <div>
                             <x-input-label for="purchase_order_id" value="{{ __('Purchase Order (Optional)') }}" />
-                            <select id="purchase_order_id" name="purchase_order_id" class="input mt-1">
-                                <option value="">None (Standalone)</option>
-                                @foreach($purchaseOrders as $po)
-                                    <option value="{{ $po->id }}" data-po='@json($po)' {{ old('purchase_order_id') == $po->id ? 'selected' : '' }}>
-                                        {{ $po->po_number }} - {{ $po->vendor->name }} ({{ $po->status }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            @php $poItems = collect($purchaseOrders)->map(fn($po) => ['id' => $po->id, 'label' => $po->po_number, 'subtitle' => ($po->vendor?->name ?? '') . ' (' . $po->status . ')']); @endphp
+                            @php $selectedPo = old('purchase_order_id') ? $purchaseOrders->firstWhere('id', (int) old('purchase_order_id')) : null; @endphp
+                            <x-scoped-search-field
+                                name="purchase_order_id"
+                                mode="client"
+                                :items="$poItems"
+                                :value="old('purchase_order_id')"
+                                :label="$selectedPo ? ($selectedPo->po_number . ' - ' . ($selectedPo->vendor?->name ?? '') . ' (' . $selectedPo->status . ')') : ''"
+                                placeholder="{{ __('None (Standalone)') }}"
+                            />
                         </div>
                         <div>
                             <x-input-label for="date" value="{{ __('Date') }}" />
@@ -52,12 +54,14 @@
                         </div>
                         <div>
                             <x-input-label for="branch_id" value="{{ __('Branch (Optional)') }}" />
-                            <select id="branch_id" name="branch_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="branch_id"
+                                entity="branch"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                :value="old('branch_id')"
+                                :label="old('branch_id') ? ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('None') }}"
+                            />
                         </div>
                         <div class="col-span-4">
                             <x-input-label for="memo" value="{{ __('Description') }}" />
@@ -146,7 +150,13 @@
         const expenseAccounts = @json($accounts);
         const selectedPo = @json($selectedPo);
         const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
         let lineIndex = 0;
+
+        function expenseAccountLabel(id) {
+            const a = expenseAccounts.find(function(x) { return x.id == id; });
+            return a ? a.code + ' - ' + a.name : '';
+        }
 
         function updateTotals() {
             let total = 0;
@@ -175,9 +185,16 @@
                 label: selectedName,
                 placeholder: 'Search products...',
             });
-            var accountOptions = expenseAccounts.map(function(a) {
-                return '<option value="' + a.id + '" ' + (data && data.expense_account_id == a.id ? 'selected' : '') + '>' + a.code + ' - ' + a.name + '</option>';
-            }).join('');
+            var accountOptions = '';
+            var expenseAccountId = data ? (data.expense_account_id || '') : '';
+            var expenseAccountField = scopedSearchFieldHtml({
+                name: 'lines[' + idx + '][expense_account_id]',
+                entity: 'account',
+                searchUrl: ACCOUNT_SEARCH_URL,
+                value: expenseAccountId,
+                label: expenseAccountId ? expenseAccountLabel(expenseAccountId) : '',
+                placeholder: 'Select',
+            });
             var tr = document.createElement('tr');
             tr.setAttribute('data-line-idx', idx);
             tr.innerHTML =
@@ -191,12 +208,7 @@
                 '<td class="px-4 py-2">' +
                     '<input type="number" name="lines[' + idx + '][unit_cost]" value="' + (data ? (data.unit_cost || 0) : 0) + '" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" onchange="updateTotals()" oninput="updateTotals()" required />' +
                 '</td>' +
-                '<td class="px-4 py-2">' +
-                    '<select name="lines[' + idx + '][expense_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">' +
-                        '<option value="">Select</option>' +
-                        accountOptions +
-                    '</select>' +
-                '</td>' +
+                '<td class="px-4 py-2" style="min-width: 200px;">' + expenseAccountField + '</td>' +
                 '<td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>' +
                 '<td class="px-4 py-2 text-center">' +
                     '<button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>' +
@@ -251,7 +263,13 @@
             }
             if (item.expense_account_id) {
                 var acctInput = row.querySelector('[name*="[expense_account_id]"]');
-                if (acctInput) acctInput.value = item.expense_account_id;
+                if (acctInput) {
+                    var accountItem = expenseAccounts.find(function(a) { return a.id == item.expense_account_id; });
+                    scopedSearchFieldSet(acctInput, 'account', {
+                        id: item.expense_account_id,
+                        label: accountItem ? accountItem.code + ' - ' + accountItem.name : ''
+                    });
+                }
             }
             updateTotals();
         });

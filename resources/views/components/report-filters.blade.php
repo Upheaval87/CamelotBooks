@@ -30,27 +30,31 @@
         @if($showBranch && isset($currentBranches) && $currentBranches->count() > 0)
             <div>
                 <x-input-label for="branch_id" value="Branch" />
-                <select id="branch_id" name="branch_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <option value="">All Branches</option>
-                    @foreach($currentBranches as $branch)
-                        <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                    @endforeach
-                </select>
+                <x-scoped-search-field
+                    name="branch_id"
+                    entity="branch"
+                    search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                    :value="request('branch_id')"
+                    :label="request('branch_id') ? ($currentBranches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
+                    placeholder="{{ __('All Branches') }}"
+                />
             </div>
         @endif
 
         @if($showCostCenter)
             <div>
                 <x-input-label for="cost_center_id" value="Cost Center" />
-                <select id="cost_center_id" name="cost_center_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <option value="">All Cost Centers</option>
-                    @php
-                        $costCenters = \App\Models\CostCenter::where('company_id', session('current_company_id'))->where('is_active', true)->get();
-                    @endphp
-                    @foreach($costCenters as $cc)
-                        <option value="{{ $cc->id }}" {{ request('cost_center_id') == $cc->id ? 'selected' : '' }}>{{ $cc->name }}</option>
-                    @endforeach
-                </select>
+                @php
+                    $costCenters = \App\Models\CostCenter::where('company_id', session('current_company_id'))->where('is_active', true)->get();
+                @endphp
+                <x-scoped-search-field
+                    name="cost_center_id"
+                    entity="cost-center"
+                    search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
+                    :value="request('cost_center_id')"
+                    :label="request('cost_center_id') ? ($costCenters->firstWhere('id', (int) request('cost_center_id'))?->name ?? '') : ''"
+                    placeholder="{{ __('All Cost Centers') }}"
+                />
             </div>
         @endif
 

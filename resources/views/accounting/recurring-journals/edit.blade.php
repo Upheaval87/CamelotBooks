@@ -43,12 +43,14 @@
                         </div>
                         <div>
                             <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <select id="branch_id" name="branch_id" class="input mt-1">
-                                <option value="">No Branch</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id', $template->branch_id) == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="branch_id"
+                                entity="branch"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                :value="old('branch_id', $template->branch_id)"
+                                :label="old('branch_id', $template->branch_id) ? ($branches->firstWhere('id', (int) old('branch_id', $template->branch_id))?->name ?? '') : ''"
+                                placeholder="{{ __('Search branches...') }}"
+                            />
                             <x-input-error :messages="$errors->get('branch_id')" class="mt-2" />
                         </div>
                         <div>
@@ -151,25 +153,19 @@
     <script>
         const accounts = @json($accounts);
         const branches = @json($branches);
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+        const BRANCH_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'branch']));
         const existingLines = @json($template->templateLines);
         let lineIndex = 0;
 
-        function buildAccountOptions(selectedId) {
-            let html = '<option value="">Select Account</option>';
-            accounts.forEach(function(account) {
-                const selected = account.id == selectedId ? ' selected' : '';
-                html += '<option value="' + account.id + '"' + selected + '>' + account.code + ' - ' + account.name + '</option>';
-            });
-            return html;
+        function accountLabel(id) {
+            const a = accounts.find(a => a.id == id);
+            return a ? (a.code + ' - ' + a.name) : '';
         }
 
-        function buildBranchOptions(selectedId) {
-            let html = '<option value="">Use Header Branch</option>';
-            branches.forEach(function(branch) {
-                const selected = branch.id == selectedId ? ' selected' : '';
-                html += '<option value="' + branch.id + '"' + selected + '>' + branch.name + '</option>';
-            });
-            return html;
+        function branchLabel(id) {
+            const b = branches.find(b => b.id == id);
+            return b ? b.name : '';
         }
 
         function addLine(preselectedAccountId, preselectedBranchId, preselectedDebit, preselectedCredit, preselectedMemo) {
@@ -179,9 +175,15 @@
             tr.innerHTML =
                 '<td class="text-ink-soft">' + (tbody.rows.length + 1) + '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<select name="lines[' + lineIndex + '][account_id]" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required>' +
-                        buildAccountOptions(preselectedAccountId) +
-                    '</select>' +
+                    scopedSearchFieldHtml({
+                        name: 'lines[' + lineIndex + '][account_id]',
+                        entity: 'account',
+                        searchUrl: ACCOUNT_SEARCH_URL,
+                        value: preselectedAccountId || '',
+                        label: accountLabel(preselectedAccountId),
+                        placeholder: 'Search accounts...',
+                        required: true,
+                    }) +
                 '</td>' +
                 '<td class="px-4 py-2">' +
                     '<input type="number" name="lines[' + lineIndex + '][debit]" step="0.01" min="0" value="' + (preselectedDebit || '0') + '" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right debit-input" />' +
@@ -193,9 +195,14 @@
                     '<input type="text" name="lines[' + lineIndex + '][memo]" value="' + (preselectedMemo || '') + '" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<select name="lines[' + lineIndex + '][branch_id]" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">' +
-                        buildBranchOptions(preselectedBranchId) +
-                    '</select>' +
+                    scopedSearchFieldHtml({
+                        name: 'lines[' + lineIndex + '][branch_id]',
+                        entity: 'branch',
+                        searchUrl: BRANCH_SEARCH_URL,
+                        value: preselectedBranchId || '',
+                        label: branchLabel(preselectedBranchId),
+                        placeholder: 'Use header branch',
+                    }) +
                 '</td>' +
                 '<td class="px-4 py-2 text-center">' +
                     '<button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">&times;</button>' +

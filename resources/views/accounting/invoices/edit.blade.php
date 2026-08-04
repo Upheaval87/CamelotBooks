@@ -130,8 +130,6 @@
     </div>
 
     <script>
-        const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
-
         @php
             $productsJson = $products->map(fn($p) => [
                 'id' => $p->id,
@@ -152,7 +150,20 @@
         const incomeAccounts = @json($incomeAccounts);
         const costCenters = @json($costCenters);
         const existingLines = @json($invoice->lines);
+        const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+        const COST_CENTER_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'cost-center']));
         let lineIndex = 0;
+
+        function incomeAccountLabel(id) {
+            const a = incomeAccounts.find(x => x.id == id);
+            return a ? a.code + ' - ' + a.name : '';
+        }
+
+        function costCenterLabel(id) {
+            const c = costCenters.find(x => x.id == id);
+            return c ? c.code + ' - ' + c.name : '';
+        }
 
         function updateTotals() {
             let subtotal = 0;
@@ -180,12 +191,24 @@
             const selectedName = data && data.product_id
                 ? (products.find(p => p.id == data.product_id)?.name || '')
                 : '';
-            const accountOptions = incomeAccounts.map(a =>
-                `<option value="${a.id}" ${data && data.income_account_id == a.id ? 'selected' : ''}>${a.code} - ${a.name}</option>`
-            ).join('');
-            const costCenterOptions = costCenters.map(c =>
-                `<option value="${c.id}" ${data && data.cost_center_id == c.id ? 'selected' : ''}>${c.code} - ${c.name}</option>`
-            ).join('');
+            const incomeAccountId = data ? (data.income_account_id || '') : '';
+            const costCenterId = data ? (data.cost_center_id || '') : '';
+            const incomeAccountField = scopedSearchFieldHtml({
+                name: 'lines[${idx}][income_account_id]',
+                entity: 'account',
+                searchUrl: ACCOUNT_SEARCH_URL,
+                value: incomeAccountId,
+                label: incomeAccountId ? incomeAccountLabel(incomeAccountId) : '',
+                placeholder: 'Select Account',
+            });
+            const costCenterField = scopedSearchFieldHtml({
+                name: 'lines[${idx}][cost_center_id]',
+                entity: 'cost-center',
+                searchUrl: COST_CENTER_SEARCH_URL,
+                value: costCenterId,
+                label: costCenterId ? costCenterLabel(costCenterId) : '',
+                placeholder: 'None',
+            });
             const tr = document.createElement('tr');
             tr.setAttribute('data-line-idx', idx);
             tr.innerHTML = `
@@ -212,16 +235,10 @@
                     <input type="number" name="lines[${idx}][discount]" value="${data ? data.discount : 0}" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" />
                 </td>
                 <td class="px-4 py-2"><input type="hidden" name="lines[${idx}][tax_rate]" value="0" />
-                    <select name="lines[${idx}][income_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                        <option value="">Select Account</option>
-                        ${accountOptions}
-                    </select>
+                    ${incomeAccountField}
                 </td>
                 <td class="px-4 py-2">
-                    <select name="lines[${idx}][cost_center_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                        <option value="">None</option>
-                        ${costCenterOptions}
-                    </select>
+                    ${costCenterField}
                 </td>
                 <td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>
                 <td class="px-4 py-2 text-center">
@@ -251,7 +268,13 @@
             }
             if (item.income_account_id) {
                 const acctInput = row.querySelector('[name*="[income_account_id]"]');
-                if (acctInput) acctInput.value = item.income_account_id;
+                if (acctInput) {
+                    const accountItem = incomeAccounts.find(a => a.id == item.income_account_id);
+                    scopedSearchFieldSet(acctInput, 'account', {
+                        id: item.income_account_id,
+                        label: accountItem ? accountItem.code + ' - ' + accountItem.name : ''
+                    });
+                }
             }
             updateTotals();
         });

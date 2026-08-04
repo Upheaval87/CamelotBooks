@@ -31,25 +31,25 @@
                         </div>
                         <div>
                             <x-input-label for="branch_id" value="{{ __('Branch (Optional)') }}" />
-                            <select id="branch_id" name="branch_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
-                                        {{ $branch->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="branch_id"
+                                entity="branch"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                :value="old('branch_id')"
+                                :label="old('branch_id') ? ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('None') }}"
+                            />
                         </div>
                         <div>
                             <x-input-label for="cost_center_id" value="{{ __('Cost Center (Optional)') }}" />
-                            <select id="cost_center_id" name="cost_center_id" class="input mt-1">
-                                <option value="">None</option>
-                                @foreach($costCenters as $cc)
-                                    <option value="{{ $cc->id }}" {{ old('cost_center_id') == $cc->id ? 'selected' : '' }}>
-                                        {{ $cc->code }} - {{ $cc->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="cost_center_id"
+                                entity="cost-center"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
+                                :value="old('cost_center_id')"
+                                :label="old('cost_center_id') ? ($costCenters->firstWhere('id', (int) old('cost_center_id'))?->name ?? '') : ''"
+                                placeholder="{{ __('None') }}"
+                            />
                         </div>
                         <div class="col-span-4">
                             <x-input-label for="memo" value="{{ __('Description') }}" />

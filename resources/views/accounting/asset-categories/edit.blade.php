@@ -123,86 +123,86 @@
                             <div class="space-y-4">
                                 <div>
                                     <x-input-label for="asset_account_id" value="{{ __('Asset Account') }}" />
-                                    <select id="asset_account_id" name="asset_account_id" class="input mt-1">
-                                        <option value="">Select Account</option>
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('asset_account_id', $category->asset_account_id) == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="asset_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('asset_account_id', $category->asset_account_id)"
+                                        :label="old('asset_account_id', $category->asset_account_id) ? (($accounts->firstWhere('id', (int) old('asset_account_id', $category->asset_account_id))) ? $accounts->firstWhere('id', (int) old('asset_account_id', $category->asset_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('asset_account_id', $category->asset_account_id))->name : '') : ''"
+                                        placeholder="{{ __('Select Account') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('asset_account_id')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="accumulated_depreciation_account_id" value="{{ __('Accumulated Depreciation Account') }}" />
-                                    <select id="accumulated_depreciation_account_id" name="accumulated_depreciation_account_id" class="input mt-1">
-                                        <option value="">Select Account</option>
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('accumulated_depreciation_account_id', $category->accumulated_depreciation_account_id) == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="accumulated_depreciation_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('accumulated_depreciation_account_id', $category->accumulated_depreciation_account_id)"
+                                        :label="old('accumulated_depreciation_account_id', $category->accumulated_depreciation_account_id) ? (($accounts->firstWhere('id', (int) old('accumulated_depreciation_account_id', $category->accumulated_depreciation_account_id))) ? $accounts->firstWhere('id', (int) old('accumulated_depreciation_account_id', $category->accumulated_depreciation_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('accumulated_depreciation_account_id', $category->accumulated_depreciation_account_id))->name : '') : ''"
+                                        placeholder="{{ __('Select Account') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('accumulated_depreciation_account_id')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="depreciation_expense_account_id" value="{{ __('Depreciation Expense Account') }}" />
-                                    <select id="depreciation_expense_account_id" name="depreciation_expense_account_id" class="input mt-1">
-                                        <option value="">Select Account</option>
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('depreciation_expense_account_id', $category->depreciation_expense_account_id) == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="depreciation_expense_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('depreciation_expense_account_id', $category->depreciation_expense_account_id)"
+                                        :label="old('depreciation_expense_account_id', $category->depreciation_expense_account_id) ? (($accounts->firstWhere('id', (int) old('depreciation_expense_account_id', $category->depreciation_expense_account_id))) ? $accounts->firstWhere('id', (int) old('depreciation_expense_account_id', $category->depreciation_expense_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('depreciation_expense_account_id', $category->depreciation_expense_account_id))->name : '') : ''"
+                                        placeholder="{{ __('Select Account') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('depreciation_expense_account_id')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="accumulated_impairment_account_id" value="{{ __('Accumulated Impairment Account') }}" />
-                                    <select id="accumulated_impairment_account_id" name="accumulated_impairment_account_id" class="input mt-1">
-                                        <option value="">Select Account</option>
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('accumulated_impairment_account_id', $category->accumulated_impairment_account_id) == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="accumulated_impairment_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('accumulated_impairment_account_id', $category->accumulated_impairment_account_id)"
+                                        :label="old('accumulated_impairment_account_id', $category->accumulated_impairment_account_id) ? (($accounts->firstWhere('id', (int) old('accumulated_impairment_account_id', $category->accumulated_impairment_account_id))) ? $accounts->firstWhere('id', (int) old('accumulated_impairment_account_id', $category->accumulated_impairment_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('accumulated_impairment_account_id', $category->accumulated_impairment_account_id))->name : '') : ''"
+                                        placeholder="{{ __('Select Account') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('accumulated_impairment_account_id')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="impairment_loss_account_id" value="{{ __('Impairment Loss Account') }}" />
-                                    <select id="impairment_loss_account_id" name="impairment_loss_account_id" class="input mt-1">
-                                        <option value="">Select Account</option>
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('impairment_loss_account_id', $category->impairment_loss_account_id) == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="impairment_loss_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('impairment_loss_account_id', $category->impairment_loss_account_id)"
+                                        :label="old('impairment_loss_account_id', $category->impairment_loss_account_id) ? (($accounts->firstWhere('id', (int) old('impairment_loss_account_id', $category->impairment_loss_account_id))) ? $accounts->firstWhere('id', (int) old('impairment_loss_account_id', $category->impairment_loss_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('impairment_loss_account_id', $category->impairment_loss_account_id))->name : '') : ''"
+                                        placeholder="{{ __('Select Account') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('impairment_loss_account_id')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="disposal_gain_loss_account_id" value="{{ __('Disposal Gain/Loss Account') }}" />
-                                    <select id="disposal_gain_loss_account_id" name="disposal_gain_loss_account_id" class="input mt-1">
-                                        <option value="">Select Account</option>
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('disposal_gain_loss_account_id', $category->disposal_gain_loss_account_id) == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="disposal_gain_loss_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('disposal_gain_loss_account_id', $category->disposal_gain_loss_account_id)"
+                                        :label="old('disposal_gain_loss_account_id', $category->disposal_gain_loss_account_id) ? (($accounts->firstWhere('id', (int) old('disposal_gain_loss_account_id', $category->disposal_gain_loss_account_id))) ? $accounts->firstWhere('id', (int) old('disposal_gain_loss_account_id', $category->disposal_gain_loss_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('disposal_gain_loss_account_id', $category->disposal_gain_loss_account_id))->name : '') : ''"
+                                        placeholder="{{ __('Select Account') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('disposal_gain_loss_account_id')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="revaluation_surplus_account_id" value="{{ __('Revaluation Surplus Account') }}" />
-                                    <select id="revaluation_surplus_account_id" name="revaluation_surplus_account_id" class="input mt-1">
-                                        <option value="">Select Account</option>
-                                        @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('revaluation_surplus_account_id', $category->revaluation_surplus_account_id) == $account->id ? 'selected' : '' }}>
-                                                {{ $account->code }} - {{ $account->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="revaluation_surplus_account_id"
+                                        entity="account"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                        :value="old('revaluation_surplus_account_id', $category->revaluation_surplus_account_id)"
+                                        :label="old('revaluation_surplus_account_id', $category->revaluation_surplus_account_id) ? (($accounts->firstWhere('id', (int) old('revaluation_surplus_account_id', $category->revaluation_surplus_account_id))) ? $accounts->firstWhere('id', (int) old('revaluation_surplus_account_id', $category->revaluation_surplus_account_id))->code . ' - ' . $accounts->firstWhere('id', (int) old('revaluation_surplus_account_id', $category->revaluation_surplus_account_id))->name : '') : ''"
+                                        placeholder="{{ __('Select Account') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('revaluation_surplus_account_id')" class="mt-2" />
                                 </div>
                             </div>

@@ -358,6 +358,7 @@
                      class="topbar-overflow-dropdown"
                      x-cloak>
                     <a href="{{ route('dashboard') }}" class="topbar-overflow-item">{{ __('Dashboard') }}</a>
+                    <a href="{{ route('todo.index') }}" class="topbar-overflow-item">{{ __('My Tasks') }}</a>
                     @if($isAdmin)
                         <div class="mx-3 my-1 border-t border-white/10"></div>
                         <a href="{{ route('admin.users.index') }}" class="topbar-overflow-item">{{ __('User Management') }}</a>

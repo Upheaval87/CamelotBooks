@@ -2,6 +2,7 @@ import './bootstrap';
 import './analytics';
 import './scoped-search-field';
 import './global-search-modal';
+import './todo';
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 

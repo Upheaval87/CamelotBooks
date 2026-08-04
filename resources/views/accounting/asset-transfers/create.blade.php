@@ -29,26 +29,26 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="from_branch_id" value="{{ __('From Branch') }}" />
-                                <select id="from_branch_id" name="from_branch_id" class="input mt-1">
-                                    <option value="">None</option>
-                                    @foreach($branches ?? [] as $branch)
-                                        <option value="{{ $branch->id }}" {{ old('from_branch_id') == $branch->id ? 'selected' : '' }}>
-                                            {{ $branch->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-scoped-search-field
+                                    name="from_branch_id"
+                                    entity="branch"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                    :value="old('from_branch_id')"
+                                    :label="old('from_branch_id') ? ($branches->firstWhere('id', (int) old('from_branch_id'))?->name ?? '') : ''"
+                                    placeholder="{{ __('None') }}"
+                                />
                                 <x-input-error :messages="$errors->get('from_branch_id')" class="mt-2" />
                             </div>
                             <div>
                                 <x-input-label for="to_branch_id" value="{{ __('To Branch') }}" />
-                                <select id="to_branch_id" name="to_branch_id" class="input mt-1">
-                                    <option value="">None</option>
-                                    @foreach($branches ?? [] as $branch)
-                                        <option value="{{ $branch->id }}" {{ old('to_branch_id') == $branch->id ? 'selected' : '' }}>
-                                            {{ $branch->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-scoped-search-field
+                                    name="to_branch_id"
+                                    entity="branch"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                    :value="old('to_branch_id')"
+                                    :label="old('to_branch_id') ? ($branches->firstWhere('id', (int) old('to_branch_id'))?->name ?? '') : ''"
+                                    placeholder="{{ __('None') }}"
+                                />
                                 <x-input-error :messages="$errors->get('to_branch_id')" class="mt-2" />
                             </div>
                         </div>
@@ -56,26 +56,26 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <x-input-label for="from_cost_center_id" value="{{ __('From Cost Center') }}" />
-                                <select id="from_cost_center_id" name="from_cost_center_id" class="input mt-1">
-                                    <option value="">None</option>
-                                    @foreach($costCenters ?? [] as $cc)
-                                        <option value="{{ $cc->id }}" {{ old('from_cost_center_id') == $cc->id ? 'selected' : '' }}>
-                                            {{ $cc->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-scoped-search-field
+                                    name="from_cost_center_id"
+                                    entity="cost-center"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
+                                    :value="old('from_cost_center_id')"
+                                    :label="old('from_cost_center_id') ? (($costCenters ?? collect())->firstWhere('id', (int) old('from_cost_center_id'))?->name ?? '') : ''"
+                                    placeholder="{{ __('None') }}"
+                                />
                                 <x-input-error :messages="$errors->get('from_cost_center_id')" class="mt-2" />
                             </div>
                             <div>
                                 <x-input-label for="to_cost_center_id" value="{{ __('To Cost Center') }}" />
-                                <select id="to_cost_center_id" name="to_cost_center_id" class="input mt-1">
-                                    <option value="">None</option>
-                                    @foreach($costCenters ?? [] as $cc)
-                                        <option value="{{ $cc->id }}" {{ old('to_cost_center_id') == $cc->id ? 'selected' : '' }}>
-                                            {{ $cc->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <x-scoped-search-field
+                                    name="to_cost_center_id"
+                                    entity="cost-center"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
+                                    :value="old('to_cost_center_id')"
+                                    :label="old('to_cost_center_id') ? (($costCenters ?? collect())->firstWhere('id', (int) old('to_cost_center_id'))?->name ?? '') : ''"
+                                    placeholder="{{ __('None') }}"
+                                />
                                 <x-input-error :messages="$errors->get('to_cost_center_id')" class="mt-2" />
                             </div>
                         </div>

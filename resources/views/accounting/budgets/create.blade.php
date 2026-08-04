@@ -25,14 +25,15 @@
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <x-input-label for="fiscal_year_id" value="{{ __('Fiscal Year') }}" />
-                            <select id="fiscal_year_id" name="fiscal_year_id" class="input mt-1" required>
-                                <option value="">Select Fiscal Year</option>
-                                @foreach($fiscalYears as $fy)
-                                    <option value="{{ $fy->id }}" data-start="{{ $fy->start_date->format('Y-m-d') }}" data-end="{{ $fy->end_date->format('Y-m-d') }}" {{ old('fiscal_year_id') == $fy->id ? 'selected' : '' }}>
-                                        {{ $fy->label }} ({{ $fy->start_date->format('M Y') }} - {{ $fy->end_date->format('M Y') }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="fiscal_year_id"
+                                entity="fiscal-year"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'fiscal-year']) }}"
+                                :value="old('fiscal_year_id')"
+                                :label="old('fiscal_year_id') ? ($fiscalYears->firstWhere('id', (int) old('fiscal_year_id'))?->label ?? '') : ''"
+                                placeholder="{{ __('Search fiscal years...') }}"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('fiscal_year_id')" class="mt-2" />
                         </div>
                         <div>
@@ -92,7 +93,13 @@
     </div>
 
     <script>
-        const accounts = @json($accounts);
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+        const fiscalYears = @json($fiscalYears->map(fn ($fy) => [
+            'id' => $fy->id,
+            'label' => $fy->label,
+            'start' => $fy->start_date->format('Y-m-d'),
+            'end' => $fy->end_date->format('Y-m-d'),
+        ]));
         let lineIndex = 0;
 
         const months = [
@@ -101,12 +108,12 @@
         ];
 
         function getPeriodLabels() {
-            const fySelect = document.getElementById('fiscal_year_id');
-            const option = fySelect.options[fySelect.selectedIndex];
-            if (!option || !option.value) return [];
+            const fyId = document.querySelector('input[name="fiscal_year_id"]').value;
+            const fy = fiscalYears.find(f => f.id == fyId);
+            if (!fy) return [];
 
-            const start = new Date(option.dataset.start);
-            const end = new Date(option.dataset.end);
+            const start = new Date(fy.start);
+            const end = new Date(fy.end);
             const labels = [];
             let d = new Date(start);
 
@@ -116,14 +123,6 @@
             }
 
             return labels;
-        }
-
-        function buildAccountOptions() {
-            let html = '<option value="">Select Account</option>';
-            accounts.forEach(function(account) {
-                html += '<option value="' + account.id + '">' + account.code + ' - ' + account.name + '</option>';
-            });
-            return html;
         }
 
         function buildPeriodOptions() {
@@ -140,9 +139,14 @@
             const tr = document.createElement('tr');
             tr.innerHTML =
                 '<td class="px-4 py-2">' +
-                    '<select name="lines[' + lineIndex + '][account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">' +
-                        buildAccountOptions() +
-                    '</select>' +
+                    scopedSearchFieldHtml({
+                        name: 'lines[' + lineIndex + '][account_id]',
+                        entity: 'account',
+                        searchUrl: ACCOUNT_SEARCH_URL,
+                        value: '',
+                        label: '',
+                        placeholder: 'Search accounts...',
+                    }) +
                 '</td>' +
                 '<td class="px-4 py-2">' +
                     '<select name="lines[' + lineIndex + '][period_label]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">' +

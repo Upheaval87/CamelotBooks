@@ -26,6 +26,12 @@ const GLOBAL_SEARCH_ENTITY_LABELS = {
     'asset-category': 'Asset Categories',
     'payroll-run': 'Payroll Runs',
     'fiscal-year': 'Fiscal Years',
+    invoice: 'Invoices',
+    bill: 'Bills',
+    'sales-receipt': 'Sales Receipts',
+    quotation: 'Quotations',
+    'credit-note': 'Credit Notes',
+    'vendor-credit': 'Vendor Credits',
 };
 
 document.addEventListener('alpine:init', () => {
@@ -175,7 +181,7 @@ document.addEventListener('alpine:init', () => {
             if (!row) return;
 
             // Opened from a scoped picker field → fill the field, don't navigate.
-            if (this.entity) {
+            if (this._fieldRef) {
                 window.dispatchEvent(new CustomEvent('global-search-selected', {
                     detail: {
                         entity: this.entity,
@@ -188,7 +194,7 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            // Pure navigation context (topbar / Ctrl+K) → jump to the record.
+            // List-page scope or topbar / Ctrl+K → jump to the record.
             if (row.url) {
                 window.location.href = row.url;
             }

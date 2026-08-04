@@ -11,7 +11,6 @@
 
     <div class="settings-card">
         @php
-            $accountOptions = $accounts->mapWithKeys(fn($a) => [$a->id => "{$a->code} — {$a->name}"])->toArray();
             $requiredKeys = ['sales_revenue', 'accounts_receivable', 'inventory', 'cost_of_goods_sold', 'accounts_payable', 'cash_on_hand'];
         @endphp
         @foreach(\App\Models\DefaultAccountMapping::availableKeys() as $key => $label)
@@ -19,6 +18,7 @@
                 $currentVal = $mappings[$key] ?? null;
                 $isRequired = in_array($key, $requiredKeys);
                 $isMapped = !is_null($currentVal);
+                $mappedAccount = $currentVal ? $accounts->firstWhere('id', (int) $currentVal) : null;
             @endphp
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start py-3 border-b border-line last:border-0">
                 <div class="md:col-span-1">
@@ -26,12 +26,14 @@
                     <span class="text-xs text-ink-faint">{{ $key }}</span>
                 </div>
                 <div class="md:col-span-2">
-                    <select name="{{ $key }}" class="settings-field-input">
-                        <option value="">— Not mapped —</option>
-                        @foreach($accountOptions as $id => $optLabel)
-                            <option value="{{ $id }}" {{ $currentVal == $id ? 'selected' : '' }}>{{ $optLabel }}</option>
-                        @endforeach
-                    </select>
+                    <x-scoped-search-field
+                        name="{{ $key }}"
+                        entity="account"
+                        search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                        :value="$currentVal"
+                        :label="$mappedAccount ? ($mappedAccount->code . ' - ' . $mappedAccount->name) : ''"
+                        placeholder="{{ __('— Not mapped —') }}"
+                    />
                     @if($isMapped)
                         <p class="settings-mapping-ok">✓ Mapped</p>
                     @elseif($isRequired)

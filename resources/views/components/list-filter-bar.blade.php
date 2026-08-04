@@ -1,4 +1,4 @@
-@props(['searchRoute' => '', 'searchPlaceholder' => ''])
+@props(['searchRoute' => '', 'searchPlaceholder' => '', 'entity' => ''])
 
 <form action="{{ $searchRoute }}" method="GET" class="list-filter-bar">
     @if($searchRoute)
@@ -11,8 +11,8 @@
             <span class="scoped-search-divider" aria-hidden="true"></span>
             <button type="button"
                     class="scoped-search-open"
-                    title="{{ __('Search across all records') }}"
-                    onclick="window.dispatchEvent(new CustomEvent('open-global-search'))">
+                    title="{{ $entity ? __('Search this list') : __('Search across all records') }}"
+                    onclick="window.dispatchEvent(new CustomEvent('open-global-search', { detail: { entity: '{{ $entity }}' } }))">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>

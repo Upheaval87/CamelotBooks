@@ -169,12 +169,18 @@
 
                         <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700">Customer</label>
-                            <select x-model="customerId" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">Walk-in Customer</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                                @endforeach
-                            </select>
+                            <div class="pos-customer-picker">
+                                <x-scoped-search-field
+                                    name="customer_id"
+                                    entity="customer"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
+                                    value=""
+                                    label=""
+                                    on-select="posCustomerSelected"
+                                    placeholder="{{ __('Search customers...') }}"
+                                />
+                            </div>
+                            <button type="button" @click="clearPosCustomer()" class="mt-1 text-xs text-gray-500 hover:text-indigo-600">Walk-in Customer</button>
                         </div>
 
                         <div class="mb-4">
@@ -591,6 +597,23 @@
     </div>
 
     <script>
+        window.posCustomerSelected = function(id, item) {
+            window.dispatchEvent(new CustomEvent('pos-customer-selected', {
+                detail: { id: id, label: item ? item.label : '' },
+            }));
+        };
+
+        window.clearPosCustomer = function() {
+            window.dispatchEvent(new CustomEvent('pos-customer-selected', {
+                detail: { id: '', label: '' },
+            }));
+            const host = document.querySelector('.pos-customer-picker [data-scoped-search-field]');
+            if (host && window.Alpine) {
+                const comp = Alpine.$data(host);
+                if (comp && typeof comp.clear === 'function') comp.clear();
+            }
+        };
+
         function posCheckout() {
             return {
                 products: @json($products),
@@ -661,6 +684,9 @@
                             const product = this.products.find((p) => String(p.id) === String(detail.item.id));
                             if (product) this.selectProduct(product);
                         }
+                    });
+                    window.addEventListener('pos-customer-selected', (e) => {
+                        this.customerId = (e.detail && e.detail.id) || '';
                     });
                     window.addEventListener('online', () => {
                         this.isOnline = true;

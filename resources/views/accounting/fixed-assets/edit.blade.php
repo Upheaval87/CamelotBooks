@@ -15,14 +15,15 @@
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="category_id" value="{{ __('Asset Category') }}" />
-                            <select id="category_id" name="category_id" class="input mt-1" required>
-                                <option value="">Select Category</option>
-                                @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}" {{ old('category_id', $asset->category_id) == $cat->id ? 'selected' : '' }}>
-                                        {{ $cat->code }} - {{ $cat->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-scoped-search-field
+                                name="category_id"
+                                entity="asset-category"
+                                search-url="{{ route('accounting.search.entity', ['entity' => 'asset-category']) }}"
+                                :value="old('category_id', $asset->category_id)"
+                                :label="old('category_id', $asset->category_id) ? (($categories->firstWhere('id', (int) old('category_id', $asset->category_id)) ? $categories->firstWhere('id', (int) old('category_id', $asset->category_id))->code . ' - ' . $categories->firstWhere('id', (int) old('category_id', $asset->category_id))->name : '')) : ''"
+                                placeholder="{{ __('Select Category') }}"
+                                required
+                            />
                             <x-input-error :messages="$errors->get('category_id')" class="mt-2" />
                         </div>
 
@@ -126,26 +127,26 @@
                             <div class="space-y-4">
                                 <div>
                                     <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                                    <select id="branch_id" name="branch_id" class="input mt-1">
-                                        <option value="">None</option>
-                                        @foreach($branches ?? [] as $branch)
-                                            <option value="{{ $branch->id }}" {{ old('branch_id', $asset->branch_id) == $branch->id ? 'selected' : '' }}>
-                                                {{ $branch->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="branch_id"
+                                        entity="branch"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                        :value="old('branch_id', $asset->branch_id)"
+                                        :label="old('branch_id', $asset->branch_id) ? (($branches ?? collect())->firstWhere('id', (int) old('branch_id', $asset->branch_id))?->name ?? '') : ''"
+                                        placeholder="{{ __('None') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('branch_id')" class="mt-2" />
                                 </div>
                                 <div>
                                     <x-input-label for="cost_center_id" value="{{ __('Cost Center') }}" />
-                                    <select id="cost_center_id" name="cost_center_id" class="input mt-1">
-                                        <option value="">None</option>
-                                        @foreach($costCenters ?? [] as $cc)
-                                            <option value="{{ $cc->id }}" {{ old('cost_center_id', $asset->cost_center_id) == $cc->id ? 'selected' : '' }}>
-                                                {{ $cc->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-scoped-search-field
+                                        name="cost_center_id"
+                                        entity="cost-center"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
+                                        :value="old('cost_center_id', $asset->cost_center_id)"
+                                        :label="old('cost_center_id', $asset->cost_center_id) ? (($costCenters ?? collect())->firstWhere('id', (int) old('cost_center_id', $asset->cost_center_id))?->name ?? '') : ''"
+                                        placeholder="{{ __('None') }}"
+                                    />
                                     <x-input-error :messages="$errors->get('cost_center_id')" class="mt-2" />
                                 </div>
                                 <div>

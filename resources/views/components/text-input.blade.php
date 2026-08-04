@@ -1,4 +1,4 @@
-@props(['value', 'type' => 'text', 'disabled' => false, 'leadingIcon' => null])
+@props(['value' => null, 'type' => 'text', 'disabled' => false, 'leadingIcon' => null])
 
 <div class="relative" x-data="{ show: '{{ $type }}' === 'password' ? false : null }">
     @if($leadingIcon)
@@ -8,6 +8,7 @@
     @endif
     <input
         :type="show !== null ? (show ? 'text' : 'password') : '{{ $type }}'"
+        value="{{ $value }}"
         {{ $disabled ? 'disabled' : '' }}
         {!! $attributes->merge([
             'class' => 'input ' . ($leadingIcon ? 'pl-9 ' : '') . ($type === 'password' ? 'pr-9 ' : '')

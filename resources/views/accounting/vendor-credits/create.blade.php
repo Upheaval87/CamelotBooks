@@ -45,14 +45,16 @@
                         </div>
                         <div>
                             <x-input-label for="bill_id" value="{{ __('Reference Bill (Optional)') }}" />
-                            <select id="bill_id" name="bill_id" class="input mt-1">
-                                <option value="">No Bill</option>
-                                @foreach($bills as $bill)
-                                    <option value="{{ $bill->id }}" {{ old('bill_id') == $bill->id ? 'selected' : '' }}>
-                                        {{ $bill->bill_number }} — {{ $bill->vendor->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            @php $billItems = collect($bills)->map(fn($b) => ['id' => $b->id, 'label' => $b->bill_number, 'subtitle' => $b->vendor?->name ?? '']); @endphp
+                            @php $selectedBill = old('bill_id') ? $bills->firstWhere('id', (int) old('bill_id')) : null; @endphp
+                            <x-scoped-search-field
+                                name="bill_id"
+                                mode="client"
+                                :items="$billItems"
+                                :value="old('bill_id')"
+                                :label="$selectedBill ? ($selectedBill->bill_number . ' — ' . ($selectedBill->vendor?->name ?? '')) : ''"
+                                placeholder="{{ __('No Bill') }}"
+                            />
                             <x-input-error :messages="$errors->get('bill_id')" class="mt-2" />
                         </div>
                         <div>
@@ -141,6 +143,7 @@
 
     <script>
         const expenseAccounts = @json($expenseAccounts);
+        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
         let lineIndex = 0;
 
         function updateTotals() {
@@ -164,16 +167,18 @@
         function addLine() {
             const tbody = document.getElementById('lines-body');
             const idx = lineIndex++;
-            const accountOptions = expenseAccounts.map(a =>
-                `<option value="${a.id}">${a.code} - ${a.name}</option>`
-            ).join('');
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="px-4 py-2">
-                    <select name="lines[${idx}][expense_account_id]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required>
-                        <option value="">Select Account</option>
-                        ${accountOptions}
-                    </select>
+                    ${scopedSearchFieldHtml({
+                        name: 'lines[${idx}][expense_account_id]',
+                        entity: 'account',
+                        searchUrl: ACCOUNT_SEARCH_URL,
+                        value: '',
+                        label: '',
+                        placeholder: 'Search accounts...',
+                        required: true,
+                    })}
                 </td>
                 <td class="px-4 py-2">
                     <input type="text" name="lines[${idx}][description]" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" />

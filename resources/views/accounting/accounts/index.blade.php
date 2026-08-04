@@ -18,7 +18,7 @@
                             </svg>
                             <input type="text" name="search" value="{{ request('search') }}" placeholder="Code or name..." autocomplete="off" />
                             <span class="scoped-search-divider" aria-hidden="true"></span>
-                            <button type="button" class="scoped-search-open" title="{{ __('Search across all records') }}" onclick="window.dispatchEvent(new CustomEvent('open-global-search'))">
+                            <button type="button" class="scoped-search-open" title="{{ __('Search this list') }}" onclick="window.dispatchEvent(new CustomEvent('open-global-search', { detail: { entity: 'account' } }))">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
