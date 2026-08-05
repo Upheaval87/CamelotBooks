@@ -207,7 +207,7 @@ class RbacTest extends TestCase
     {
         setPermissionsTeamId($this->company->id);
 
-        \App\Models\SystemSetting::setValue('features', 'inventory', 'false', $this->company->id);
+        \App\Services\FeatureManagement::disable($this->company->id, 'inventory');
 
         $this->get(route('accounting.inventory-items.index'))
             ->assertStatus(404);
@@ -217,7 +217,7 @@ class RbacTest extends TestCase
     {
         setPermissionsTeamId($this->company->id);
 
-        \App\Models\SystemSetting::setValue('features', 'inventory', 'true', $this->company->id);
+        \App\Services\FeatureManagement::enable($this->company->id, 'inventory');
 
         $this->get(route('accounting.inventory-items.index'))
             ->assertOk();

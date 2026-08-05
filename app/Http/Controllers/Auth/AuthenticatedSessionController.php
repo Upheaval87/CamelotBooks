@@ -33,6 +33,16 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        $attemptingUser = User::query()->where('email', $request->string('email'))->first();
+
+        if ($attemptingUser && !$attemptingUser->is_active) {
+            return back()
+                ->withErrors([
+                    'email' => __('This account has been deactivated. Please contact your system administrator.'),
+                ])
+                ->onlyInput('email');
+        }
+
         $request->authenticate();
 
         $request->session()->regenerate();
@@ -40,7 +50,7 @@ class AuthenticatedSessionController extends Controller
         $user = $request->user();
 
         if ($user->isSuperAdmin()) {
-            return redirect(route('panel.dashboard', absolute: false));
+            return redirect(route('superadmin.dashboard', absolute: false));
         }
 
         $company = $this->resolveCompanyForLogin($user);

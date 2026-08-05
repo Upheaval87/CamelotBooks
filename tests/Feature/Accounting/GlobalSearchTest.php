@@ -8,7 +8,6 @@ use App\Models\AssetCategory;
 use App\Models\Branch;
 use App\Models\Company;
 use App\Models\Product;
-use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -249,7 +248,7 @@ class GlobalSearchTest extends TestCase
     {
         // viewer passes the accounting role gate but lacks fixed-assets.view
         $viewer = $this->makeUser('viewer');
-        SystemSetting::setValue('features', 'fixed_assets', 'true', $this->company->id);
+        \App\Services\FeatureManagement::enable($this->company->id, 'fixed_assets');
 
         $response = $this->actingAs($viewer)
             ->getJson(route('accounting.search.entity', ['entity' => 'asset', 'q' => 'x']));
@@ -324,7 +323,7 @@ class GlobalSearchTest extends TestCase
         $this->assertNull(collect($response->json())->firstWhere('key', 'asset'));
 
         // enable fixed_assets → asset group present
-        SystemSetting::setValue('features', 'fixed_assets', 'true', $this->company->id);
+        \App\Services\FeatureManagement::enable($this->company->id, 'fixed_assets');
         $response = $this->actingAs($this->user)
             ->getJson(route('accounting.search.global', ['q' => 'Van']));
         $response->assertOk();

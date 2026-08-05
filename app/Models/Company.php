@@ -72,6 +72,16 @@ class Company extends Model
             ->withTimestamps();
     }
 
+    public function companyModules(): HasMany
+    {
+        return $this->hasMany(CompanyModule::class);
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(UserCompanyAssignment::class);
+    }
+
     public function branches(): HasMany
     {
         return $this->hasMany(Branch::class);

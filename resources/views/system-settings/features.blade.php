@@ -1,15 +1,22 @@
 <div class="card">
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="form-section-label">1 · Feature Management</div>
-        <p class="mt-1 text-sm text-ink-soft">Toggle modules on or off for this company. Disabled features are hidden from navigation and inaccessible to users.</p>
+        <p class="mt-1 text-sm text-ink-soft">Module activation is controlled by your system administrator.</p>
     </div>
+
+    <div class="px-6 py-4">
+        <div class="rounded-md border border-gold-line bg-gold-soft/40 px-4 py-3 text-sm text-ink-soft">
+            Feature activation is managed centrally from the Super Admin panel. Disabled features are hidden from
+            navigation and inaccessible to users. To request a change, contact your system administrator.
+        </div>
+    </div>
+
     <div class="overflow-x-auto">
         <table class="datasheet">
             <thead>
                 <tr>
                     <th>Feature</th>
                     <th>Status</th>
-                    <th class="text-right">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -26,16 +33,6 @@
                             @else
                                 <span class="status-pill negative">Disabled</span>
                             @endif
-                        </td>
-                        <td class="text-right">
-                            <form method="POST" action="{{ route('system-settings.features.toggle', $key) }}" class="inline">
-                                @csrf
-                                @if($isOn)
-                                    <button type="submit" class="text-sm text-red-600 hover:text-red-900 font-medium">Disable</button>
-                                @else
-                                    <button type="submit" class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">Enable</button>
-                                @endif
-                            </form>
                         </td>
                     </tr>
                 @endforeach

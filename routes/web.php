@@ -55,6 +55,11 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavouritesController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SuperAdmin\AssignmentsController;
+use App\Http\Controllers\SuperAdmin\AuditLogController;
+use App\Http\Controllers\SuperAdmin\CompaniesController;
+use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\UsersController;
 use App\Http\Controllers\TodoTaskController;
 use Illuminate\Support\Facades\Route;
 
@@ -77,6 +82,71 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // enter a company (logged as support access).
     Route::get('/panel', [\App\Http\Controllers\PanelController::class, 'index'])
         ->name('panel.dashboard');
+
+    // Super Admin panel (Phase 4). Guarded by the central is_super_admin flag via
+    // the 'superadmin' middleware. Outside the tenant group: no tenant connection
+    // is ever bound while browsing here.
+    Route::middleware(['superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+        Route::get('/', [SuperAdminDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/companies', [CompaniesController::class, 'index'])
+            ->name('companies.index');
+        Route::get('/companies/create', [CompaniesController::class, 'create'])
+            ->name('companies.create');
+        Route::post('/companies', [CompaniesController::class, 'store'])
+            ->name('companies.store');
+        Route::get('/companies/{company}', [CompaniesController::class, 'show'])
+            ->name('companies.show');
+        Route::post('/companies/{company}/suspend', [CompaniesController::class, 'suspend'])
+            ->name('companies.suspend');
+        Route::post('/companies/{company}/reactivate', [CompaniesController::class, 'reactivate'])
+            ->name('companies.reactivate');
+        Route::get('/companies/{company}/modules', [CompaniesController::class, 'modules'])
+            ->name('companies.modules');
+        Route::post('/companies/{company}/modules/{module}/toggle', [CompaniesController::class, 'toggleModule'])
+            ->name('companies.modules.toggle');
+        Route::get('/companies/{company}/branches', [CompaniesController::class, 'branches'])
+            ->name('companies.branches');
+
+        Route::get('/users', [UsersController::class, 'index'])
+            ->name('users.index');
+        Route::get('/users/create', [UsersController::class, 'create'])
+            ->name('users.create');
+        Route::post('/users', [UsersController::class, 'store'])
+            ->name('users.store');
+        Route::get('/users/{user}', [UsersController::class, 'show'])
+            ->name('users.show');
+        Route::get('/users/{user}/edit', [UsersController::class, 'edit'])
+            ->name('users.edit');
+        Route::patch('/users/{user}', [UsersController::class, 'update'])
+            ->name('users.update');
+        Route::post('/users/{user}/deactivate', [UsersController::class, 'deactivate'])
+            ->name('users.deactivate');
+        Route::post('/users/{user}/reactivate', [UsersController::class, 'reactivate'])
+            ->name('users.reactivate');
+        Route::post('/users/{user}/reset-password', [UsersController::class, 'resetPassword'])
+            ->name('users.reset-password');
+
+        Route::get('/assignments', [AssignmentsController::class, 'index'])
+            ->name('assignments.index');
+        Route::get('/assignments/create', [AssignmentsController::class, 'create'])
+            ->name('assignments.create');
+        Route::post('/assignments', [AssignmentsController::class, 'store'])
+            ->name('assignments.store');
+        Route::get('/assignments/{assignment}/edit', [AssignmentsController::class, 'edit'])
+            ->name('assignments.edit');
+        Route::patch('/assignments/{assignment}', [AssignmentsController::class, 'update'])
+            ->name('assignments.update');
+        Route::delete('/assignments/{assignment}', [AssignmentsController::class, 'destroy'])
+            ->name('assignments.destroy');
+
+        Route::get('/audit-log', [AuditLogController::class, 'index'])
+            ->name('audit.index');
+
+        Route::get('/db-preview', [CompaniesController::class, 'dbPreview'])
+            ->name('db-preview');
+    });
 
     Route::middleware(['tenant.bind', 'company.context', 'company.active'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -695,7 +765,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/export', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'exportSettings'])->name('export-settings');
             Route::post('/import', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'importSettings'])->name('import-settings');
             Route::get('/features', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'featuresIndex'])->name('features');
-            Route::post('/features/{feature}/toggle', [\App\Http\Controllers\SystemSettings\SettingsController::class, 'featuresToggle'])->name('features.toggle');
         });
 
         // Analytics

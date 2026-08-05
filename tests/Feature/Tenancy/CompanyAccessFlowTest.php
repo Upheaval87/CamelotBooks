@@ -103,7 +103,7 @@ class CompanyAccessFlowTest extends TestCase
         $response = $this->login($user);
 
         $this->assertAuthenticatedAs($user);
-        $response->assertRedirect(route('panel.dashboard', absolute: false));
+        $response->assertRedirect(route('superadmin.dashboard', absolute: false));
         $this->assertNull(session('current_company_id'));
         $this->assertFalse($this->resolver()->isBound());
         $this->assertDatabaseCount('company_access_logs', 0);

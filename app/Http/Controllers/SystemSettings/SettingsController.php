@@ -488,28 +488,4 @@ class SettingsController extends Controller
 
         return view('system-settings.features', compact('features', 'enabled'));
     }
-
-    public function featuresToggle(Request $request, string $feature)
-    {
-        $companyId = session('current_company_id');
-
-        abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
-
-        $available = FeatureManagement::getAvailableFeatures();
-
-        if (!array_key_exists($feature, $available)) {
-            abort(404);
-        }
-
-        if (FeatureManagement::isEnabled($companyId, $feature)) {
-            FeatureManagement::disable($companyId, $feature);
-            $status = 'disabled';
-        } else {
-            FeatureManagement::enable($companyId, $feature);
-            $status = 'enabled';
-        }
-
-        return redirect()->route('system-settings.features')
-            ->with('success', "{$available[$feature]} has been {$status}.");
-    }
 }

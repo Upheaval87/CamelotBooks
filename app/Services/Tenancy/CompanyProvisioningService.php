@@ -115,6 +115,20 @@ class CompanyProvisioningService
         return $name;
     }
 
+    /**
+     * Live preview of the tenant database name that will be assigned at
+     * provisioning. Same deterministic slugging as generateDatabaseName(), but
+     * no DB uniqueness round-trip — the real 8-hex suffix is generated when
+     * provisioning actually runs.
+     */
+    public function previewDatabaseName(string $seed): string
+    {
+        $slug = preg_replace('/[^a-z0-9_]/', '', Str::lower(Str::slug($seed, '_')));
+        $slug = substr($slug, 0, self::MAX_DB_NAME_LENGTH - strlen(self::DB_NAME_PREFIX) - 1 - self::DB_NAME_SUFFIX_LENGTH);
+
+        return self::DB_NAME_PREFIX . $slug . '_' . str_repeat('x', self::DB_NAME_SUFFIX_LENGTH);
+    }
+
     private function createDatabase(string $name): void
     {
         if (!preg_match('/^[a-z0-9_]+$/', $name)) {
