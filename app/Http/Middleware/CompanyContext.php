@@ -32,7 +32,7 @@ class CompanyContext
             }
         }
 
-        View::share('userCompanies', $request->user()?->companies ?? collect());
+        View::share('userCompanies', $request->user()?->accessibleCompanies() ?? collect());
 
         return $next($request);
     }

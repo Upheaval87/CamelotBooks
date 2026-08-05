@@ -60,6 +60,40 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function companyAssignments(): HasMany
+    {
+        return $this->hasMany(UserCompanyAssignment::class);
+    }
+
+    public function activeCompanyAssignments(): HasMany
+    {
+        return $this->companyAssignments()->where('is_active', true);
+    }
+
+    /**
+     * Server-side authorization: does this user hold an active assignment for the
+     * company (authoritative), or a legacy company_user row?
+     */
+    public function hasAccessToCompany(int $companyId): bool
+    {
+        return $this->activeCompanyAssignments()->where('company_id', $companyId)->exists()
+            || $this->companies()->whereKey($companyId)->exists();
+    }
+
+    /**
+     * Companies this user may enter/switch to (for pickers and the topbar).
+     */
+    public function accessibleCompanies(): \Illuminate\Support\Collection
+    {
+        $assignments = $this->activeCompanyAssignments()->with('company')->get();
+
+        if ($assignments->isNotEmpty()) {
+            return $assignments->map(fn ($assignment) => $assignment->company)->filter();
+        }
+
+        return $this->companies;
+    }
+
     public function currentCompany(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'current_company_id');

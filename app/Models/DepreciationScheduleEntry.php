@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantScoped;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DepreciationScheduleEntry extends Model
 {
+    use TenantScoped;
+
     protected $fillable = [
         'asset_id',
         'asset_depreciation_book_id',

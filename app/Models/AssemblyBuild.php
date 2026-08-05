@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantScoped;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssemblyBuild extends Model
 {
+    use TenantScoped;
+
     protected $fillable = [
         'company_id',
         'assembly_product_id',

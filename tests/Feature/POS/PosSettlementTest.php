@@ -338,6 +338,8 @@ class PosSettlementTest extends TestCase
             'is_active' => true,
         ]);
 
+        $this->user->companies()->attach($otherCompany->id, ['role' => 'company_admin']);
+
         FeatureManagement::enable($otherCompany->id, 'pos');
 
         $settlement = app(\App\Services\POS\PosSettlementService::class)->settle(

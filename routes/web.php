@@ -69,10 +69,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/companies', [CompanyController::class, 'store'])
         ->name('companies.store');
 
-    Route::get('/companies/{id}/select', [CompanyController::class, 'select'])
+    Route::post('/companies/{id}/select', [CompanyController::class, 'select'])
         ->name('companies.select');
 
-    Route::middleware(['company.context', 'company.active'])->group(function () {
+    // Super-admin panel (Phase 4 placeholder). Outside the tenant group: a super
+    // admin browsing here has NO tenant connection bound unless they explicitly
+    // enter a company (logged as support access).
+    Route::get('/panel', [\App\Http\Controllers\PanelController::class, 'index'])
+        ->name('panel.dashboard');
+
+    Route::middleware(['tenant.bind', 'company.context', 'company.active'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
 

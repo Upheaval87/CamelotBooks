@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantScoped;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +12,8 @@ use Illuminate\Support\Carbon;
 
 class TodoTask extends Model
 {
+    use TenantScoped;
+
     const PRIORITY_LOW = 'low';
     const PRIORITY_MEDIUM = 'medium';
     const PRIORITY_HIGH = 'high';

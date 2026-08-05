@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantScoped;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VendorPaymentAllocation extends Model
 {
+    use TenantScoped;
+
     protected $fillable = [
         'vendor_payment_id',
         'bill_id',

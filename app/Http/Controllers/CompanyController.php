@@ -6,27 +6,62 @@ use App\Models\Account;
 use App\Models\AccountingPeriod;
 use App\Models\ApprovalSetting;
 use App\Models\Company;
+use App\Models\CompanyAccessLog;
 use App\Models\DefaultAccountMapping;
 use App\Services\Admin\DefaultChartOfAccounts;
 use App\Services\Admin\NumberingSequenceService;
+use App\Services\Tenancy\CompanyAccessService;
+use App\Services\Tenancy\CompanyProvisioningService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 class CompanyController extends Controller
 {
     public function index()
     {
-        $companies = auth()->user()->companies;
+        $user = auth()->user();
+
+        $companies = $user->activeCompanyAssignments()->with('company')->get()
+            ->map(fn ($assignment) => [
+                'company' => $assignment->company,
+                'role' => $assignment->role,
+            ])
+            ->filter(fn ($item) => $item['company'] !== null)
+            ->values();
+
+        if ($companies->isEmpty()) {
+            $companies = $user->companies->map(fn ($company) => [
+                'company' => $company,
+                'role' => $company->pivot->role,
+            ]);
+        }
 
         return view('companies.index', compact('companies'));
     }
 
-    public function select(int $id)
+    public function select(Request $request, int $id)
     {
-        $company = auth()->user()->companies()->findOrFail($id);
+        $user = $request->user();
 
-        Session::put('current_company_id', $company->id);
+        $company = Company::query()->find($id);
+
+        if (!$company || !$user->hasAccessToCompany($id)) {
+            abort(404);
+        }
+
+        if (!$company->is_active) {
+            return redirect()
+                ->route('companies.index')
+                ->with('error', 'This company is no longer active.');
+        }
+
+        // Provisioned companies get the tenant connection bound on entry;
+        // unprovisioned companies are entered in legacy mode (shared DB).
+        $action = $user->isSuperAdmin() ? CompanyAccessLog::ACTION_SUPPORT : CompanyAccessLog::ACTION_SELECT;
+
+        app(CompanyAccessService::class)->enter($user, $company, $action);
 
         return redirect()->route('dashboard');
     }
@@ -83,9 +118,34 @@ class CompanyController extends Controller
             app(NumberingSequenceService::class)->seedDefaults($company->id);
         });
 
-        Session::put('current_company_id', $company->id);
+        if ($this->provisionCompany($company)) {
+            app(CompanyAccessService::class)->enter($user, $company, CompanyAccessLog::ACTION_SELECT);
 
-        return redirect()->route('dashboard')->with('success', 'Company created successfully.');
+            return redirect()->route('dashboard')->with('success', 'Company created successfully.');
+        }
+
+        return redirect()->route('companies.index')->with(
+            'success',
+            'Company created. Provisioning will complete shortly — you will be able to select it once it is ready.'
+        );
+    }
+
+    /**
+     * Provision the new company's tenant database. Non-fatal: a provisioning
+     * failure leaves the company in `pending` state so it can be retried later
+     * via the provisioning command.
+     */
+    private function provisionCompany(Company $company): bool
+    {
+        try {
+            app(CompanyProvisioningService::class)->provision($company);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error("Failed to provision company [{$company->id}] in the create-company flow: {$e->getMessage()}");
+
+            return false;
+        }
     }
 
     public function update(Request $request, Company $company)

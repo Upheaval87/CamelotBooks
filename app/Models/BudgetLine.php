@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantScoped;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BudgetLine extends Model
 {
+    use TenantScoped;
+
     protected $fillable = [
         'budget_id',
         'account_id',

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantScoped;
+
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Asset extends Model
 {
+    use TenantScoped;
+
     const STATUS_DRAFT = 'draft';
     const STATUS_ACTIVE = 'active';
     const STATUS_UNDER_MAINTENANCE = 'under_maintenance';

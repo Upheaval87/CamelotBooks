@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantScoped;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GrnLine extends Model
 {
+    use TenantScoped;
+
     protected $fillable = [
         'goods_received_note_id',
         'purchase_order_line_id',

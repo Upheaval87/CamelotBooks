@@ -406,7 +406,10 @@ class TillSessionTest extends TestCase
 
         FeatureManagement::enable($otherCompany->id, 'pos');
 
-        $this->actingAs(User::factory()->create());
+        $otherUser = User::factory()->create();
+        $otherUser->companies()->attach($otherCompany->id, ['role' => 'company_admin']);
+
+        $this->actingAs($otherUser);
         session(['current_company_id' => $otherCompany->id]);
 
         $this->post(route('pos.till-sessions.close', $session), [

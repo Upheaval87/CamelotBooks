@@ -24,7 +24,8 @@
             @endif
 
             <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                @forelse($companies as $company)
+                @forelse($companies as $entry)
+                    @php($company = $entry['company'])
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-800">{{ $company->name }}</h3>
@@ -40,13 +41,16 @@
                                 <p><span class="text-gray-500">Code:</span> {{ $company->company_code }}</p>
                             @endif
                             <p><span class="text-gray-500">Currency:</span> {{ $company->base_currency }}</p>
-                            <p><span class="text-gray-500">Role:</span> {{ $company->pivot->role ?? '—' }}</p>
+                            <p><span class="text-gray-500">Role:</span> {{ $entry['role'] ?? '—' }}</p>
                         </div>
                         <div class="flex items-center gap-2">
                             @if(session('current_company_id') != $company->id)
-                                <a href="{{ route('companies.select', $company->id) }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                    {{ __('Switch To') }}
-                                </a>
+                                <form method="POST" action="{{ route('companies.select', $company->id) }}">
+                                    @csrf
+                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                        {{ __('Switch To') }}
+                                    </button>
+                                </form>
                             @else
                                 <a href="{{ route('dashboard') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-100 border border-transparent rounded-md font-semibold text-xs text-indigo-700 uppercase tracking-widest transition ease-in-out duration-150">
                                     {{ __('Go to Dashboard') }}

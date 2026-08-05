@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TenantScoped;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CustomerPaymentAllocation extends Model
 {
+    use TenantScoped;
+
     public $timestamps = false;
 
     protected $fillable = [

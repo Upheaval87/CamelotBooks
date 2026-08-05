@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BindTenantConnection;
 use App\Http\Middleware\CashierPin;
 use App\Http\Middleware\CompanyContext;
 use App\Http\Middleware\EnsureCompanyIsActive;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'sod' => SegregationOfDuty::class,
+            'tenant.bind' => BindTenantConnection::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
