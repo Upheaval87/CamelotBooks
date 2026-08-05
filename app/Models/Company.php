@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_PROVISIONING = 'provisioning';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_SUSPENDED = 'suspended';
+    public const STATUS_FAILED = 'failed';
+
     protected $fillable = [
         'name',
         'legal_name',
@@ -27,13 +33,37 @@ class Company extends Model
         'website',
         'is_active',
         'allow_negative_stock',
+        'provisioning_status',
+        'db_name',
+        'db_host',
+        'db_port',
+        'db_username',
+        'db_password',
+        'provisioned_at',
+        'last_provisioning_error',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'allow_negative_stock' => 'boolean',
         'fiscal_year_start_month' => 'integer',
+        'provisioning_status' => 'string',
+        'db_port' => 'integer',
+        'db_password' => 'encrypted',
+        'provisioned_at' => 'datetime',
     ];
+
+    public function isProvisioned(): bool
+    {
+        return $this->provisioning_status === self::STATUS_ACTIVE;
+    }
+
+    public function modules(): BelongsToMany
+    {
+        return $this->belongsToMany(Module::class, 'company_modules')
+            ->withPivot('is_active', 'activated_at', 'activated_by')
+            ->withTimestamps();
+    }
 
     public function users(): BelongsToMany
     {
