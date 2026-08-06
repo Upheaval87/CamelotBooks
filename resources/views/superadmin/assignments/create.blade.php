@@ -1,7 +1,6 @@
 <x-app-layout>
-    @include('superadmin._nav', ['active' => 'assignments'])
 
-    <div class="sa-page py-6">
+    <div class="sa-page py-6" style="background: #F8F9FC;">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
 
             <div class="sa-breadcrumb">
@@ -45,6 +44,19 @@
 
                 <template x-for="(row, index) in rows">
                     <x-form-section icon="M3 7v2a2 2 0 002 2h14a2 2 0 002-2V7m0 0a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h4l-1 2h4l-1-2" title-bind="'Company Assignment ' + (index + 1)">
+                        <x-slot name="actions">
+                            <button type="button"
+                                class="sa-remove-row"
+                                x-show="index > 0"
+                                @click="removeRow(index)"
+                                :aria-label="'Remove Company Assignment ' + (index + 1)">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m-8 0v12a2 2 0 002 2h6a2 2 0 002-2V7"/>
+                                </svg>
+                                {{ __('Remove') }}
+                            </button>
+                        </x-slot>
+
                         <div class="form-section-grid" style="--sa-cols: 2;">
                             <div class="form-field">
                                 <label class="sa-label" :for="'company_' + index">{{ __('Company') }}</label>
@@ -101,20 +113,19 @@
                     </x-form-section>
                 </template>
 
-                <button type="button" class="sa-btn sa-btn--tint" x-data x-on:click="addRow()">
+                <button type="button" class="sa-btn sa-btn--tint" style="margin-top: 24px;" x-data x-on:click="addRow()">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
                     {{ __('Add Another Company Assignment') }}
                 </button>
+
+                {{-- Form actions --}}
+                <div class="sa-form-actions">
+                    <a href="{{ route('superadmin.assignments.index') }}" class="sa-btn sa-btn--ghost">{{ __('Cancel') }}</a>
+                    <button type="submit" class="sa-btn sa-btn--primary">{{ __('Save Assignments') }}</button>
+                </div>
             </form>
         </div>
     </div>
-
-    <x-glass-bar variant="bottom">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 flex items-center justify-end gap-3 py-4">
-            <a href="{{ route('superadmin.assignments.index') }}" class="sa-btn sa-btn--ghost">{{ __('Cancel') }}</a>
-            <button type="submit" form="company-create-form" class="sa-btn sa-btn--primary">{{ __('Save Assignments') }}</button>
-        </div>
-    </x-glass-bar>
 </x-app-layout>

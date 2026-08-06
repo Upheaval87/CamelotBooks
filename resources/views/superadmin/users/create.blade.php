@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('New User') }}</x-slot>
 
-    @include('superadmin._nav', ['active' => 'users'])
-
     <div class="py-6">
         <div class="max-w-xl mx-auto sm:px-6 lg:px-8">
             <div class="card p-6">

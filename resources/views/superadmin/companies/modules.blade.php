@@ -1,7 +1,6 @@
 <x-app-layout>
-    @include('superadmin._nav', ['active' => 'companies'])
 
-    <div class="sa-page py-6">
+    <div class="sa-page py-6" style="background: #F8F9FC;">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
 
             <div class="sa-page-head">
@@ -18,7 +17,7 @@
                         <thead>
                             <tr>
                                 <th>{{ __('Module') }}</th>
-                                <th>{{ __('Status') }}</th>
+                                <th class="sa-table-center">{{ __('Status') }}</th>
                                 <th>{{ __('Activated') }}</th>
                             </tr>
                         </thead>
@@ -39,11 +38,11 @@
                                             <span class="sa-table-sub">{{ $module->description }}</span>
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="sa-table-center">
                                         @if($module->is_core)
                                             <span class="sa-pill sa-pill--accent">{{ __('Always On') }}</span>
                                         @else
-                                            <form method="POST" action="{{ route('superadmin.companies.modules.toggle', [$company, $module]) }}">
+                                            <form method="POST" action="{{ route('superadmin.companies.modules.toggle', [$company, $module]) }}" style="display: inline-flex;">
                                                 @csrf
                                                 <x-toggle-switch :checked="$isActive" aria-label="{{ __('Toggle :module', ['module' => $module->name]) }}" />
                                             </form>

@@ -1,62 +1,65 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Users') }}</x-slot>
 
-    @include('superadmin._nav', ['active' => 'users'])
+    <div class="sa-page py-6" style="background: #F8F9FC;">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="list-header">
-                <h1 class="font-sans italic font-semibold tracking-tight text-ink text-[1.125rem] lg:text-[1.375rem]">{{ __('Platform Users') }}</h1>
-                <a href="{{ route('superadmin.users.create') }}" class="list-header-create">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <div class="sa-page-head">
+                <div>
+                    <h1 class="sa-page-title">{{ __('Platform Users') }}</h1>
+                    <p class="sa-page-subtitle">{{ __('Accounts that can sign in to the platform.') }}</p>
+                </div>
+                <a href="{{ route('superadmin.users.create') }}" class="sa-btn sa-btn--primary">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
                     {{ __('New User') }}
                 </a>
             </div>
 
-            <div class="card p-6">
-                <div class="list-table-wrap">
-                    <table class="list-table">
+            <x-elevated-card :flush="true">
+                <div class="sa-table-wrap">
+                    <table class="sa-table">
                         <thead>
                             <tr>
                                 <th>{{ __('Name') }}</th>
                                 <th>{{ __('Email') }}</th>
                                 <th>{{ __('Role') }}</th>
-                                <th>{{ __('Status') }}</th>
-                                <th class="text-right">{{ __('Companies') }}</th>
+                                <th class="sa-table-center">{{ __('Status') }}</th>
+                                <th class="sa-table-num">{{ __('Companies') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($users as $user)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('superadmin.users.show', $user) }}" class="font-medium text-ink">{{ $user->name }}</a>
+                                        <a href="{{ route('superadmin.users.show', $user) }}" class="sa-table-primary">{{ $user->name }}</a>
                                     </td>
-                                    <td class="text-gray-600">{{ $user->email }}</td>
+                                    <td><span style="color: var(--sa-muted);">{{ $user->email }}</span></td>
                                     <td>
                                         @if($user->is_super_admin)
-                                            <x-status-badge variant="accent">Super Admin</x-status-badge>
+                                            <span class="sa-pill sa-pill--accent">{{ __('Super Admin') }}</span>
                                         @else
-                                            <span class="text-gray-500">User</span>
+                                            <span style="color: var(--sa-muted);">{{ __('User') }}</span>
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="sa-table-center">
                                         @if($user->is_active)
-                                            <x-status-badge variant="success">Active</x-status-badge>
+                                            <span class="sa-pill sa-pill--accent">{{ __('Active') }}</span>
                                         @else
-                                            <x-status-badge variant="danger">Deactivated</x-status-badge>
+                                            <span class="sa-pill sa-pill--danger">{{ __('Deactivated') }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-right font-semibold text-ink">{{ $user->company_assignments_count }}</td>
+                                    <td class="sa-table-num" style="font-weight: 600;">{{ $user->company_assignments_count }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-gray-500">{{ __('No users yet.') }}</td>
+                                    <td colspan="5" class="sa-table-empty">{{ __('No users yet.') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </x-elevated-card>
         </div>
     </div>
 </x-app-layout>

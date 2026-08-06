@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('New Currency') }}</x-slot>
 
-    @include('superadmin._nav', ['active' => 'currencies'])
-
     <div class="py-6">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="card p-6">

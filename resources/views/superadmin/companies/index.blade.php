@@ -1,7 +1,6 @@
 <x-app-layout>
-    @include('superadmin._nav', ['active' => 'companies'])
 
-    <div class="sa-page py-6">
+    <div class="sa-page py-6" style="background: #F8F9FC;">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             <div class="sa-page-head">
@@ -24,7 +23,7 @@
                             <tr>
                                 <th>{{ __('Company') }}</th>
                                 <th>{{ __('Database') }}</th>
-                                <th>{{ __('Status') }}</th>
+                                <th class="sa-table-center">{{ __('Status') }}</th>
                                 <th>{{ __('Modules') }}</th>
                             </tr>
                         </thead>
@@ -50,7 +49,7 @@
                                             <span style="color: #c8ccd2;">—</span>
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="sa-table-center">
                                         <span class="sa-pill sa-pill--{{ $company->is_active ? $status['pill'] : 'danger' }}">
                                             {{ $company->is_active ? $status['label'] : 'Suspended' }}
                                         </span>

@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Company Detail') }} - {{ $company->name }}</x-slot>
 
-    @include('superadmin._nav', ['active' => 'companies'])
-
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="card p-6">

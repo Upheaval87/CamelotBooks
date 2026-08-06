@@ -1,19 +1,24 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Currencies') }}</x-slot>
 
-    @include('superadmin._nav', ['active' => 'currencies'])
+    <div class="sa-page py-6" style="background: #F8F9FC;">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-    <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="card p-6">
-                <h3 class="text-sm font-semibold text-ink mb-6">{{ __('Currency Catalog') }}</h3>
-                <div class="flex items-center justify-between mb-4">
-                    <p class="text-sm text-gray-500">{{ __('Base currency options shown in company setup and tenant Settings.') }}</p>
-                    <a href="{{ route('superadmin.currencies.create') }}" class="list-header-create">{{ __('New Currency') }}</a>
+            <div class="sa-page-head">
+                <div>
+                    <h1 class="sa-page-title">{{ __('Currencies') }}</h1>
+                    <p class="sa-page-subtitle">{{ __('Base currency options shown in company setup and tenant Settings.') }}</p>
                 </div>
+                <a href="{{ route('superadmin.currencies.create') }}" class="sa-btn sa-btn--primary">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {{ __('New Currency') }}
+                </a>
+            </div>
 
-                <div class="list-table-wrap">
-                    <table class="list-table">
+            <x-elevated-card :flush="true">
+                <div class="sa-table-wrap">
+                    <table class="sa-table">
                         <thead>
                             <tr>
                                 <th>{{ __('Code') }}</th>
@@ -21,31 +26,31 @@
                                 <th>{{ __('Symbol') }}</th>
                                 <th>{{ __('Position') }}</th>
                                 <th>{{ __('Sort') }}</th>
-                                <th>{{ __('Status') }}</th>
-                                <th class="text-right">{{ __('Actions') }}</th>
+                                <th class="sa-table-center">{{ __('Status') }}</th>
+                                <th class="sa-table-center">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($currencies as $currency)
                                 <tr>
-                                    <td class="font-medium text-ink">{{ $currency->code }}</td>
-                                    <td>{{ $currency->name }}</td>
-                                    <td class="font-mono">{{ $currency->symbol ?: '—' }}</td>
-                                    <td>{{ $currency->symbol_position }}</td>
-                                    <td>{{ $currency->sort_order }}</td>
-                                    <td>
+                                    <td><span class="sa-table-primary">{{ $currency->code }}</span></td>
+                                    <td><span style="color: var(--sa-muted);">{{ $currency->name }}</span></td>
+                                    <td><span class="sa-table-mono">{{ $currency->symbol ?: '—' }}</span></td>
+                                    <td><span style="color: var(--sa-muted);">{{ $currency->symbol_position }}</span></td>
+                                    <td><span style="color: var(--sa-muted);">{{ $currency->sort_order }}</span></td>
+                                    <td class="sa-table-center">
                                         @if($currency->is_active)
-                                            <x-status-badge variant="success">Active</x-status-badge>
+                                            <span class="sa-pill sa-pill--accent">{{ __('Active') }}</span>
                                         @else
-                                            <x-status-badge variant="default">Inactive</x-status-badge>
+                                            <span class="sa-pill sa-pill--muted">{{ __('Inactive') }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-right whitespace-nowrap">
-                                        <a href="{{ route('superadmin.currencies.edit', $currency) }}" class="text-sm text-accent hover:underline mr-3">{{ __('Edit') }}</a>
-                                        <form method="POST" action="{{ route('superadmin.currencies.toggle', $currency) }}" class="inline">
+                                    <td class="sa-table-center">
+                                        <a href="{{ route('superadmin.currencies.edit', $currency) }}" class="sa-btn sa-btn--tint">{{ __('Edit') }}</a>
+                                        <form method="POST" action="{{ route('superadmin.currencies.toggle', $currency) }}" class="inline" style="display: inline;">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" class="text-sm text-gray-500 hover:text-brick">
+                                            <button type="submit" class="sa-btn sa-btn--ghost sa-btn--sm" style="margin-left: 8px;">
                                                 {{ $currency->is_active ? __('Disable') : __('Enable') }}
                                             </button>
                                         </form>
@@ -53,13 +58,13 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-gray-500">{{ __('No currencies yet.') }}</td>
+                                    <td colspan="7" class="sa-table-empty">{{ __('No currencies yet.') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </x-elevated-card>
         </div>
     </div>
 </x-app-layout>

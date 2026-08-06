@@ -1,7 +1,9 @@
 @props(['icon' => null, 'title' => null, 'columns' => null, 'titleBind' => null])
 
+@php $hasActions = isset($actions) && $actions instanceof \Illuminate\View\ComponentSlot && $actions->isNotEmpty(); @endphp
+
 <section {{ $attributes->merge(['class' => 'elevated-card elevated-card--padded form-section']) }}>
-    @if($titleBind || $title || $icon)
+    @if($titleBind || $title || $icon || $hasActions)
         <div class="form-section-head">
             @if($icon)
                 <span class="form-section-icon">
@@ -14,6 +16,9 @@
                 <h3 class="form-section-title" x-text="{{ $titleBind }}"></h3>
             @else
                 <h3 class="form-section-title">{{ $title }}</h3>
+            @endif
+            @if($hasActions)
+                <div class="form-section-actions">{{ $actions }}</div>
             @endif
         </div>
     @endif

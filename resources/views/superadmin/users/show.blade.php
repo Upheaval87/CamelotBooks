@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('User Detail') }} - {{ $user->name }}</x-slot>
 
-    @include('superadmin._nav', ['active' => 'users'])
-
     <div class="py-6">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="card p-6">
@@ -58,8 +56,8 @@
                                 <th>{{ __('Company') }}</th>
                                 <th>{{ __('Role') }}</th>
                                 <th>{{ __('Branches') }}</th>
-                                <th>{{ __('Status') }}</th>
-                                <th class="text-right">{{ __('Actions') }}</th>
+                                <th class="text-center">{{ __('Status') }}</th>
+                                <th class="text-center">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -76,15 +74,15 @@
                                             <span class="text-gray-400">{{ __('All branches') }}</span>
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         @if($assignment->is_active)
                                             <x-status-badge variant="success">Active</x-status-badge>
                                         @else
                                             <x-status-badge variant="default">Inactive</x-status-badge>
                                         @endif
                                     </td>
-                                    <td class="text-right">
-                                        <div class="flex items-center justify-end gap-2">
+                                    <td class="text-center">
+                                        <div class="flex items-center justify-center gap-2">
                                             <a href="{{ route('superadmin.assignments.edit', $assignment) }}" class="text-sm text-accent hover:underline">{{ __('Edit') }}</a>
                                             <form method="POST" action="{{ route('superadmin.assignments.destroy', $assignment) }}" onsubmit="return confirm('{{ __('Remove this assignment? The user will lose access to this company.') }}')">
                                                 @csrf

@@ -20,8 +20,7 @@ class DashboardController extends Controller
         $recentAudit = SuperAdminAuditLog::query()
             ->with(['user', 'company'])
             ->latest('created_at')
-            ->limit(10)
-            ->get();
+            ->paginate(10);
 
         return view('superadmin.dashboard', compact('companyCount', 'activeCompanyCount', 'userCount', 'recentAudit'));
     }

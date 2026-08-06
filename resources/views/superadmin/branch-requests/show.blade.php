@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Branch Request') }} - {{ $request->branch_name }}</x-slot>
 
-    @include('superadmin._nav', ['active' => 'branch-requests'])
-
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if(session('success'))

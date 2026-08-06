@@ -1,7 +1,6 @@
 <x-app-layout>
-    @include('superadmin._nav', ['active' => 'companies'])
 
-    <div class="sa-page py-6">
+    <div class="sa-page py-6" style="background: #F8F9FC;">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
 
             <div class="sa-breadcrumb">
@@ -153,20 +152,18 @@
                         <span x-text="preview || '—'">—</span>
                     </div>
                 </div>
+
+                {{-- Form actions --}}
+                <div class="sa-form-actions">
+                    <a href="{{ route('superadmin.companies.index') }}" class="sa-btn sa-btn--ghost">{{ __('Cancel') }}</a>
+                    <button type="submit" class="sa-btn sa-btn--primary">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 1.657 3.582 3 8 3s8-1.343 8-3V7M4 7c0 1.657 3.582 3 8 3s8-1.343 8-3M4 7c0-1.657 3.582-3 8-3s8 1.343 8 3M20 15v-3m-3 3h-3"/>
+                        </svg>
+                        {{ __('Create & Provision') }}
+                    </button>
+                </div>
             </form>
         </div>
     </div>
-
-    {{-- Sticky glass action footer --}}
-    <x-glass-bar variant="bottom">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 flex items-center justify-end gap-3 py-4">
-            <a href="{{ route('superadmin.companies.index') }}" class="sa-btn sa-btn--ghost">{{ __('Cancel') }}</a>
-            <button type="submit" form="company-create-form" class="sa-btn sa-btn--primary">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 1.657 3.582 3 8 3s8-1.343 8-3V7M4 7c0 1.657 3.582 3 8 3s8-1.343 8-3M4 7c0-1.657 3.582-3 8-3s8 1.343 8 3M20 15v-3m-3 3h-3"/>
-                </svg>
-                {{ __('Create & Provision') }}
-            </button>
-        </div>
-    </x-glass-bar>
 </x-app-layout>

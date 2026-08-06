@@ -1,7 +1,6 @@
 <x-app-layout>
-    @include('superadmin._nav', ['active' => 'assignments'])
 
-    <div class="sa-page py-6">
+    <div class="sa-page py-6" style="background: #F8F9FC;">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             <div class="sa-page-head">
@@ -19,7 +18,7 @@
 
             <x-elevated-card :flush="true">
                 <div class="sa-table-wrap">
-                    <table class="sa-table">
+                    <table class="sa-table sa-table--warm">
                         <thead>
                             <tr>
                                 <th>{{ __('User') }}</th>
@@ -27,7 +26,7 @@
                                 <th>{{ __('Role') }}</th>
                                 <th>{{ __('Branches') }}</th>
                                 <th>{{ __('Status') }}</th>
-                                <th class="sa-table-num">{{ __('Actions') }}</th>
+                                <th>{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -40,12 +39,12 @@
                                     <td>
                                         <a href="{{ route('superadmin.companies.show', $assignment->company) }}" class="sa-table-primary">{{ $assignment->company->name }}</a>
                                     </td>
-                                    <td><span style="color: var(--sa-muted);">{{ $assignment->role }}</span></td>
+                                    <td><span style="color: var(--sa-ink);">{{ $assignment->role }}</span></td>
                                     <td>
                                         @if(count($assignment->branch_ids ?? []))
-                                            <span style="color: var(--sa-muted);">{{ count($assignment->branch_ids ?? []) }} {{ __('branches') }}</span>
+                                            <span style="color: var(--sa-ink);">{{ count($assignment->branch_ids ?? []) }} {{ __('branches') }}</span>
                                         @else
-                                            <span style="color: #9aa1ae;">{{ __('All branches') }}</span>
+                                            <span style="color: var(--sa-ink);">{{ __('All branches') }}</span>
                                         @endif
                                     </td>
                                     <td>
@@ -55,7 +54,7 @@
                                             <span class="sa-pill sa-pill--muted">Inactive</span>
                                         @endif
                                     </td>
-                                    <td class="sa-table-num">
+                                    <td>
                                         <a href="{{ route('superadmin.assignments.edit', $assignment) }}" class="sa-btn sa-btn--tint">{{ __('Edit') }}</a>
                                     </td>
                                 </tr>

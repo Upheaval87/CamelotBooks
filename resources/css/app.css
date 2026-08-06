@@ -3627,8 +3627,8 @@ a.todo-link-chip:hover { background: #EFE5CE; }
      --sa-ink #0f1420 � --sa-muted #6b7280 � --sa-border #eceef2
      --sa-accent #9C7A3C � --sa-accent-tint #f5efe3 � --sa-input #fbfbfd
    GLASS CONSTRAINT: translucency + backdrop blur appears ONLY on the
-   tab bar (.sa-glass--top) and the sticky action footer (.sa-glass--bottom).
-   Every data-entry card and every table below is fully opaque.
+   tab bar (.sa-glass--top). Every data-entry card and every table below is
+   fully opaque.
 ---------------------------------------------------------------- */
 :root {
     --sa-ink: #0f1420;
@@ -3684,27 +3684,14 @@ a.todo-link-chip:hover { background: #EFE5CE; }
 .sa-page-head .sa-page-title { margin-bottom: 4px; }
 .sa-page-head .sa-page-subtitle { margin-bottom: 0; }
 
-/* --- Glass bar (tab bar top / sticky footer bottom) --- */
+/* --- Glass bar (tab bar only — action buttons live inline below the form) --- */
 .sa-glass {
     background: rgba(255, 255, 255, 0.9);
     -webkit-backdrop-filter: blur(10px) saturate(150%);
     backdrop-filter: blur(10px) saturate(150%);
 }
 .sa-glass--top {
-    position: sticky;
-    top: var(--topbar-h, 106px);
-    z-index: 25;
-    margin-bottom: 24px;
     box-shadow: 0 1px 0 rgba(15, 20, 32, 0.04), 0 4px 14px -8px rgba(15, 20, 32, 0.06);
-}
-.sa-glass--bottom {
-    position: sticky;
-    bottom: 0;
-    z-index: 25;
-    background: rgba(255, 255, 255, 0.72);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-    box-shadow: 0 -1px 0 rgba(15, 20, 32, 0.05), 0 -12px 30px -16px rgba(15, 20, 32, 0.12);
 }
 
 /* --- Tab bar + tab items --- */
@@ -3746,7 +3733,24 @@ a.todo-link-chip:hover { background: #EFE5CE; }
 }
 .elevated-card--padded { padding: 26px 28px; }
 .elevated-card--flush { overflow: hidden; }
-.elevated-card + .elevated-card { margin-top: 20px; }
+.elevated-card + .elevated-card { margin-top: 24px; }
+.sa-kpi-grid .elevated-card + .elevated-card { margin-top: 0; }
+
+/* --- Card head (flush elevated card title row) --- */
+.sa-card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 22px 16px;
+}
+.sa-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--sa-ink);
+    margin: 0;
+}
+template + .form-section { margin-top: 24px; }
 
 /* --- Form section --- */
 .form-section-head {
@@ -3774,6 +3778,30 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     letter-spacing: -0.005em;
     margin: 0;
 }
+.form-section-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+.sa-remove-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #b45454;
+    background: rgba(244, 63, 94, 0.06);
+    border: 1px solid rgba(244, 63, 94, 0.18);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.sa-remove-row:hover {
+    background: rgba(244, 63, 94, 0.12);
+    border-color: rgba(244, 63, 94, 0.28);
+}
+.sa-remove-row svg { width: 13px; height: 13px; }
 .form-section-grid {
     display: grid;
     grid-template-columns: repeat(var(--sa-cols, 2), minmax(0, 1fr));
@@ -3797,9 +3825,9 @@ select.sa-input,
 textarea.sa-input {
     width: 100%;
     border: 1.5px solid var(--sa-border);
-    border-radius: 10px;
-    padding: 11px 14px;
-    font-size: 13.5px;
+    border-radius: 9px;
+    padding: 8px 12px;
+    font-size: 13px;
     color: var(--sa-ink);
     background: var(--sa-input-bg);
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -3862,6 +3890,26 @@ select.sa-input {
     white-space: nowrap;
     border-bottom: 1px solid var(--sa-border);
 }
+.sa-table--warm {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.sa-table--warm thead { background: #EEEEEF; }
+.sa-table--warm thead th {
+    color: #000;
+    background: #EEEEEF;
+    border-bottom: 1px solid rgba(15, 20, 32, 0.07);
+}
+.sa-table--warm thead th:first-child { border-top-left-radius: 10px; }
+.sa-table--warm thead th:last-child { border-top-right-radius: 10px; }
+.sa-table--warm tbody td:first-child { border-left: 1px solid rgba(15, 20, 32, 0.07); }
+.sa-table--warm tbody td:last-child { border-right: 1px solid rgba(15, 20, 32, 0.07); }
+.sa-table--warm tbody tr:last-child td { border-bottom: 1px solid rgba(15, 20, 32, 0.07); }
+.sa-table--warm tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+.sa-table--warm tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
+.sa-table--warm .sa-pill--accent { background: #EEEEEF; color: #000; }
+.sa-table--warm .sa-btn--tint { background: #EEEEEF; }
+.sa-table--warm .sa-btn--tint:hover { background: #e2e2e5; }
 .sa-table tbody tr { border-bottom: 1px solid #f6f7f9; transition: background 0.1s ease; }
 .sa-table tbody tr:last-child { border-bottom: none; }
 .sa-table tbody tr:hover { background: #fcfcfd; }
@@ -3875,6 +3923,7 @@ select.sa-input {
     color: var(--sa-muted);
 }
 .sa-table-num { text-align: right; }
+.sa-table-center { text-align: center; }
 .sa-table-pagination { padding: 16px 22px; border-top: 1px solid #f6f7f9; }
 .sa-table-empty { text-align: center; color: #9aa1ae; padding: 32px 22px !important; }
 
@@ -4019,9 +4068,17 @@ select.sa-input {
 .sa-btn--tint:hover { background: #efdec2; }
 .sa-btn--sm { padding: 8px 14px; font-size: 12.5px; }
 
+/* --- Inline form actions (below the last section, not a sticky footer) --- */
+.sa-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 28px;
+}
+
 /* --- Responsive: stack grids on small screens --- */
 @media (max-width: 720px) {
-    .sa-glass--top { top: 0; }
     .form-section-grid { grid-template-columns: 1fr !important; }
     .form-field--full { grid-column: auto; }
     .sa-tabbar { gap: 22px; padding: 0 18px; }
