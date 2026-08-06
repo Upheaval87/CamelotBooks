@@ -53,6 +53,13 @@ class Company extends Model
         'provisioned_at' => 'datetime',
     ];
 
+    /**
+     * The tenant DB credentials never leave the model (JSON/array serialization,
+     * log context, API payloads). Decryption happens lazily in the attribute
+     * cast, used only by the connection resolver / backup service.
+     */
+    protected $hidden = ['db_password'];
+
     public function isProvisioned(): bool
     {
         return $this->provisioning_status === self::STATUS_ACTIVE;

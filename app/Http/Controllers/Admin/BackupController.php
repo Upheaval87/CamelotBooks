@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\BackupLog;
 use App\Models\Company;
 use App\Models\SettingsBackup;
+use App\Services\Admin\DatabaseBackupService;
 use Illuminate\Http\Request;
 
 class BackupController extends Controller
@@ -35,65 +36,18 @@ class BackupController extends Controller
 
         abort_unless($request->user()->hasAnyRole(['system_admin', 'company_admin']), 403);
 
-        $filename = 'backup_' . now()->format('Y-m-d_His') . '.sql';
+        $company = Company::query()->find($companyId);
 
-        $log = BackupLog::create([
-            'company_id' => $companyId,
-            'user_id' => $request->user()->id,
-            'filename' => $filename,
-            'file_size_bytes' => 0,
-            'status' => 'running',
-            'triggered_by' => 'manual',
-        ]);
-
-        $backupPath = storage_path('app/backups');
-        if (!is_dir($backupPath)) {
-            mkdir($backupPath, 0755, true);
+        if (!$company) {
+            abort(404);
         }
 
-        $fullPath = $backupPath . DIRECTORY_SEPARATOR . $filename;
-
-        try {
-            $dbHost = config('database.connections.mysql.host', '127.0.0.1');
-            $dbPort = config('database.connections.mysql.port', '3306');
-            $dbName = config('database.connections.mysql.database');
-            $dbUser = config('database.connections.mysql.username');
-            $dbPass = config('database.connections.mysql.password');
-
-            $cmd = sprintf(
-                'mysqldump --host=%s --port=%s --user=%s --password=%s --routines --triggers %s > %s 2>&1',
-                escapeshellarg($dbHost),
-                escapeshellarg($dbPort),
-                escapeshellarg($dbUser),
-                escapeshellarg($dbPass),
-                escapeshellarg($dbName),
-                escapeshellarg($fullPath)
-            );
-
-            exec($cmd, $output, $exitCode);
-
-            if ($exitCode === 0 && file_exists($fullPath)) {
-                $log->update([
-                    'file_size_bytes' => filesize($fullPath),
-                    'status' => 'success',
-                ]);
-            } else {
-                $log->update([
-                    'status' => 'failed',
-                    'error_message' => implode("\n", $output) ?: "Exit code: {$exitCode}",
-                ]);
-            }
-        } catch (\Throwable $e) {
-            $log->update([
-                'status' => 'failed',
-                'error_message' => $e->getMessage(),
-            ]);
-        }
+        $log = app(DatabaseBackupService::class)->backup($company, $request->user()->id, 'manual');
 
         return redirect()->route('admin.backups.index')
             ->with($log->status === 'success' ? 'success' : 'error',
                 $log->status === 'success'
-                    ? "Backup completed successfully: {$filename} ({$log->file_size_human})"
+                    ? "Backup completed successfully: {$log->filename} ({$log->file_size_human})"
                     : "Backup failed: {$log->error_message}"
             );
     }

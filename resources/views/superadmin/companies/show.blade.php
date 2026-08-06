@@ -25,6 +25,14 @@
 
                     <div class="flex items-center gap-2">
                         <a href="{{ route('superadmin.companies.modules', $company) }}" class="btn-ghost">{{ __('Manage Modules') }}</a>
+                        @if($company->is_active && $company->db_name)
+                            <form method="POST" action="{{ route('companies.select', $company->id) }}">
+                                @csrf
+                                <x-button variant="primary" type="submit" title="{{ __('Enter this company as support access. Every entry is logged with a start/end time.') }}">
+                                    {{ __('Enter Company (Support)') }}
+                                </x-button>
+                            </form>
+                        @endif
                         @if($company->is_active)
                             <form method="POST" action="{{ route('superadmin.companies.suspend', $company) }}" onsubmit="return confirm('{{ __('Suspend this company? Users will lose access immediately.') }}')">
                                 @csrf
@@ -37,9 +45,7 @@
                             </form>
                         @endif
                     </div>
-                </div>
-
-                @if($company->last_provisioning_error)
+                    @if($company->last_provisioning_error)
                     <div class="mt-4 rounded-lg border border-brick bg-brick-soft px-4 py-3 text-sm text-brick">
                         <p class="font-semibold">{{ __('Last provisioning error') }}</p>
                         <p class="mt-1 font-mono text-xs break-all">{{ $company->last_provisioning_error }}</p>
@@ -115,6 +121,47 @@
                             <p class="text-sm text-gray-500">{{ __('No modules enabled.') }}</p>
                         @endforelse
                     </div>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="text-sm font-semibold text-ink mb-4">{{ __('Support Access Sessions') }}</h3>
+                <div class="list-table-wrap">
+                    <table class="list-table">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Admin') }}</th>
+                                <th>{{ __('Started') }}</th>
+                                <th>{{ __('Ended') }}</th>
+                                <th>{{ __('Duration') }}</th>
+                                <th>{{ __('End Reason') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($supportSessions as $session)
+                                <tr>
+                                    <td>
+                                        <span class="font-medium text-ink">{{ $session->user?->name ?? '—' }}</span>
+                                        <span class="block text-xs text-gray-500">{{ $session->user?->email }}</span>
+                                    </td>
+                                    <td class="text-gray-500">{{ $session->started_at->format('M j, Y g:i A') }}</td>
+                                    <td class="text-gray-500">{{ $session->ended_at?->format('M j, Y g:i A') ?? __('Ongoing') }}</td>
+                                    <td>{{ $session->duration }}</td>
+                                    <td>
+                                        @if($session->ended_reason)
+                                            <code class="font-sans text-xs text-ink">{{ $session->ended_reason }}</code>
+                                        @else
+                                            <x-status-badge variant="warning">Ongoing</x-status-badge>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-gray-500">{{ __('No support access recorded.') }}</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

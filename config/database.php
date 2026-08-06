@@ -201,4 +201,9 @@ return [
 
     ],
 
+    'backup' => [
+        'binary' => env('DB_MYSQLDUMP', 'mysqldump'),
+        'restore_binary' => env('DB_MYSQL', 'mysql'),
+    ],
+
 ];

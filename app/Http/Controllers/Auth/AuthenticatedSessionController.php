@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Company;
+use App\Models\LoginAttemptLog;
 use App\Models\User;
 use App\Services\Tenancy\CompanyAccessService;
 use Illuminate\Http\RedirectResponse;
@@ -36,6 +37,15 @@ class AuthenticatedSessionController extends Controller
         $attemptingUser = User::query()->where('email', $request->string('email'))->first();
 
         if ($attemptingUser && !$attemptingUser->is_active) {
+            LoginAttemptLog::record(
+                (string) $request->string('email'),
+                $request->ip(),
+                $request->userAgent(),
+                false,
+                $attemptingUser->id,
+                'deactivated',
+            );
+
             return back()
                 ->withErrors([
                     'email' => __('This account has been deactivated. Please contact your system administrator.'),
@@ -95,6 +105,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = $request->user();
+
+        if ($user) {
+            app(CompanyAccessService::class)->closeOpenSupportSessions($user, \App\Models\CompanySupportSession::ENDED_LOGOUT);
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

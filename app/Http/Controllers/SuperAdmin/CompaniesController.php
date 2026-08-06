@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyModule;
+use App\Models\CompanySupportSession;
 use App\Models\Module;
 use App\Models\SuperAdminAuditLog;
 use App\Services\SuperAdmin\TenantBranchReader;
@@ -105,8 +106,14 @@ class CompaniesController extends Controller
             ->latest('created_at')
             ->limit(10)
             ->get();
+        $supportSessions = CompanySupportSession::query()
+            ->where('company_id', $company->id)
+            ->with('user')
+            ->latest('started_at')
+            ->limit(10)
+            ->get();
 
-        return view('superadmin.companies.show', compact('company', 'modules', 'moduleStates', 'assignments', 'audit'));
+        return view('superadmin.companies.show', compact('company', 'modules', 'moduleStates', 'assignments', 'audit', 'supportSessions'));
     }
 
     public function suspend(Request $request, Company $company)

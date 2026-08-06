@@ -4,6 +4,7 @@ namespace App\Services\Tenancy;
 
 use App\Models\Company;
 use App\Models\CompanyAccessLog;
+use App\Models\CompanySupportSession;
 use App\Models\User;
 
 /**
@@ -12,7 +13,8 @@ use App\Models\User;
  * company, updates the user's last-company field and writes an audit row.
  *
  * Super admins go through the SAME explicit path (never bound silently at login);
- * their entries are recorded with action = 'support'.
+ * their entries are recorded with action = 'support' and tracked as an open
+ * CompanySupportSession (closed when they switch company or log out).
  */
 class CompanyAccessService
 {
@@ -22,6 +24,10 @@ class CompanyAccessService
 
     public function enter(User $user, Company $company, string $action = CompanyAccessLog::ACTION_LOGIN): void
     {
+        // Entering any new context ends every support session the user had open
+        // (a prior support row keeps its started_at/ended_at history).
+        $this->closeOpenSupportSessions($user, CompanySupportSession::ENDED_CONTEXT_CHANGED);
+
         // Provisioned companies get the tenant connection bound; unprovisioned
         // companies run in legacy mode (shared DB) with no binding.
         if ($company->isProvisioned() && $company->is_active) {
@@ -41,5 +47,28 @@ class CompanyAccessService
                 'action' => $action,
             ]);
         }
+
+        if ($action === CompanyAccessLog::ACTION_SUPPORT) {
+            CompanySupportSession::create([
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'started_at' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Close every open support session for a user (switching company, logging
+     * in somewhere else, or logging out).
+     */
+    public function closeOpenSupportSessions(User $user, string $reason): int
+    {
+        return CompanySupportSession::query()
+            ->where('user_id', $user->id)
+            ->whereNull('ended_at')
+            ->update([
+                'ended_at' => now(),
+                'ended_reason' => $reason,
+            ]);
     }
 }

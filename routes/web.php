@@ -72,9 +72,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('companies.index');
 
     Route::post('/companies', [CompanyController::class, 'store'])
+        ->middleware('throttle:5,1')
         ->name('companies.store');
 
     Route::post('/companies/{id}/select', [CompanyController::class, 'select'])
+        ->middleware('throttle:20,1')
         ->name('companies.select');
 
     // Super-admin panel (Phase 4 placeholder). Outside the tenant group: a super
