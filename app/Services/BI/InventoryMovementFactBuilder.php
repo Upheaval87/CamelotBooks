@@ -2,29 +2,33 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class InventoryMovementFactBuilder
 {
-    public function build(): int
+    use MartConnection;
+
+    public function build(?int $companyId = null): int
     {
         $now = now();
 
-        $this->buildReceipts($now);
-        $this->buildConsumptions($now);
-        $this->buildAdjustments($now);
-        $this->buildTransfers($now);
+        $this->buildReceipts($now, $companyId);
+        $this->buildConsumptions($now, $companyId);
+        $this->buildAdjustments($now, $companyId);
+        $this->buildTransfers($now, $companyId);
 
-        return DB::table('fact_inventory_movement')->count();
+        return $this->martTable('fact_inventory_movement')->count();
     }
 
-    protected function buildReceipts(string $now): void
+    protected function buildReceipts(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
-        DB::table('grn_lines AS gl')
+        $this->martTable('grn_lines AS gl')
             ->join('goods_received_notes AS grn', 'grn.id', '=', 'gl.goods_received_note_id')
             ->where('grn.status', 'posted')
+            ->when($companyId, fn ($q) => $q->where('grn.company_id', $companyId))
             ->select(
                 'grn.company_id',
                 'grn.date',
@@ -43,7 +47,7 @@ class InventoryMovementFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'      => $row->company_id,
-                        'date_key'         => (int) $row->date,
+                        'date_key'         => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'       => $row->branch_id,
                         'item_key'         => $row->product_id,
                         'movement_type'    => $row->movement_type,
@@ -57,24 +61,25 @@ class InventoryMovementFactBuilder
                     ];
                 }
 
-                DB::table('fact_inventory_movement')->insert($inserts);
+                $this->martTable('fact_inventory_movement')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_inventory_movement')->insert($inserts);
+            $this->martTable('fact_inventory_movement')->insert($inserts);
         }
     }
 
-    protected function buildConsumptions(string $now): void
+    protected function buildConsumptions(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
-        DB::table('invoice_lines AS il')
+        $this->martTable('invoice_lines AS il')
             ->join('invoices AS i', 'i.id', '=', 'il.invoice_id')
             ->join('products AS p', 'p.id', '=', 'il.product_id')
             ->where('i.status', '!=', 'void')
             ->where('p.tracked_as_inventory', true)
+            ->when($companyId, fn ($q) => $q->where('i.company_id', $companyId))
             ->select(
                 'i.company_id',
                 'i.invoice_date AS date',
@@ -93,7 +98,7 @@ class InventoryMovementFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'      => $row->company_id,
-                        'date_key'         => (int) $row->date,
+                        'date_key'         => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'       => $row->branch_id,
                         'item_key'         => $row->product_id,
                         'movement_type'    => $row->movement_type,
@@ -107,21 +112,22 @@ class InventoryMovementFactBuilder
                     ];
                 }
 
-                DB::table('fact_inventory_movement')->insert($inserts);
+                $this->martTable('fact_inventory_movement')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_inventory_movement')->insert($inserts);
+            $this->martTable('fact_inventory_movement')->insert($inserts);
         }
     }
 
-    protected function buildAdjustments(string $now): void
+    protected function buildAdjustments(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
-        DB::table('inventory_adjustments AS ia')
+        $this->martTable('inventory_adjustments AS ia')
             ->where('ia.status', 'posted')
+            ->when($companyId, fn ($q) => $q->where('ia.company_id', $companyId))
             ->select(
                 'ia.company_id',
                 'ia.date',
@@ -140,7 +146,7 @@ class InventoryMovementFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'      => $row->company_id,
-                        'date_key'         => (int) $row->date,
+                        'date_key'         => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'       => $row->branch_id,
                         'item_key'         => $row->product_id,
                         'movement_type'    => $row->movement_type,
@@ -154,22 +160,23 @@ class InventoryMovementFactBuilder
                     ];
                 }
 
-                DB::table('fact_inventory_movement')->insert($inserts);
+                $this->martTable('fact_inventory_movement')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_inventory_movement')->insert($inserts);
+            $this->martTable('fact_inventory_movement')->insert($inserts);
         }
     }
 
-    protected function buildTransfers(string $now): void
+    protected function buildTransfers(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
         // Transfer OUT (from source branch)
-        DB::table('inventory_transfers AS it')
+        $this->martTable('inventory_transfers AS it')
             ->where('it.status', 'completed')
+            ->when($companyId, fn ($q) => $q->where('it.company_id', $companyId))
             ->select(
                 'it.company_id',
                 'it.date',
@@ -188,7 +195,7 @@ class InventoryMovementFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'      => $row->company_id,
-                        'date_key'         => (int) $row->date,
+                        'date_key'         => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'       => $row->branch_key,
                         'item_key'         => $row->product_id,
                         'movement_type'    => $row->movement_type,
@@ -202,18 +209,19 @@ class InventoryMovementFactBuilder
                     ];
                 }
 
-                DB::table('fact_inventory_movement')->insert($inserts);
+                $this->martTable('fact_inventory_movement')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_inventory_movement')->insert($inserts);
+            $this->martTable('fact_inventory_movement')->insert($inserts);
             $inserts = [];
         }
 
         // Transfer IN (to destination branch)
-        DB::table('inventory_transfers AS it')
+        $this->martTable('inventory_transfers AS it')
             ->where('it.status', 'completed')
+            ->when($companyId, fn ($q) => $q->where('it.company_id', $companyId))
             ->select(
                 'it.company_id',
                 'it.date',
@@ -232,7 +240,7 @@ class InventoryMovementFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'      => $row->company_id,
-                        'date_key'         => (int) $row->date,
+                        'date_key'         => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'       => $row->branch_key,
                         'item_key'         => $row->product_id,
                         'movement_type'    => $row->movement_type,
@@ -246,12 +254,12 @@ class InventoryMovementFactBuilder
                     ];
                 }
 
-                DB::table('fact_inventory_movement')->insert($inserts);
+                $this->martTable('fact_inventory_movement')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_inventory_movement')->insert($inserts);
+            $this->martTable('fact_inventory_movement')->insert($inserts);
         }
     }
 }

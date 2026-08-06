@@ -3,10 +3,13 @@
 namespace App\Services\BI;
 
 use App\Models\BiDigestSchedule;
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class ExecutiveDigestService
 {
+    use MartConnection;
+
     public function collectForSchedule(BiDigestSchedule $schedule): array
     {
         $companyId = $schedule->company_id;
@@ -43,7 +46,7 @@ class ExecutiveDigestService
 
     protected function getRevenue(int $companyId, string $dateFrom, string $dateTo): float
     {
-        return (float) DB::table('fact_general_ledger AS fgl')
+        return (float) $this->martTable('fact_general_ledger AS fgl')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
             ->where('fgl.date_key', '>=', (int) \Carbon\Carbon::parse($dateFrom)->format('Ymd'))
@@ -54,7 +57,7 @@ class ExecutiveDigestService
 
     protected function getExpenses(int $companyId, string $dateFrom, string $dateTo): float
     {
-        return (float) DB::table('fact_general_ledger AS fgl')
+        return (float) $this->martTable('fact_general_ledger AS fgl')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
             ->where('fgl.date_key', '>=', (int) \Carbon\Carbon::parse($dateFrom)->format('Ymd'))
@@ -65,7 +68,7 @@ class ExecutiveDigestService
 
     protected function getTopCustomers(int $companyId, string $dateFrom, string $dateTo): array
     {
-        return DB::table('fact_sales AS fs')
+        return $this->martTable('fact_sales AS fs')
             ->leftJoin('dim_customer AS dc', 'dc.customer_key', '=', 'fs.customer_key')
             ->where('fs.company_key', $companyId)
             ->where('fs.date_key', '>=', (int) \Carbon\Carbon::parse($dateFrom)->format('Ymd'))
@@ -81,7 +84,7 @@ class ExecutiveDigestService
 
     protected function getBranchSummary(int $companyId, string $dateFrom, string $dateTo): array
     {
-        return DB::table('fact_general_ledger AS fgl')
+        return $this->martTable('fact_general_ledger AS fgl')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fgl.branch_key')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
@@ -99,7 +102,7 @@ class ExecutiveDigestService
 
     protected function getCashPosition(int $companyId): float
     {
-        return (float) DB::table('fact_general_ledger AS fgl')
+        return (float) $this->martTable('fact_general_ledger AS fgl')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
             ->where('da.account_type', 'asset')
@@ -111,7 +114,7 @@ class ExecutiveDigestService
     {
         $today = now()->format('Y-m-d');
 
-        return DB::table('invoices AS i')
+        return $this->martTable('invoices AS i')
             ->where('i.company_id', $companyId)
             ->whereNotIn('i.status', ['paid', 'void'])
             ->select(

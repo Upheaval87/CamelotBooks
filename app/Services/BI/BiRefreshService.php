@@ -2,13 +2,15 @@
 
 namespace App\Services\BI;
 
-use Illuminate\Support\Facades\DB;
+use App\Services\BI\Concerns\MartConnection;
 
 class BiRefreshService
 {
+    use MartConnection;
+
     public function getLastRefresh(): ?object
     {
-        return DB::table('bi_refresh_log')
+        return $this->martTable('bi_refresh_log')
             ->where('status', 'completed')
             ->orderByDesc('completed_at')
             ->first();

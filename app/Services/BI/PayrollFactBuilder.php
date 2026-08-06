@@ -2,20 +2,24 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class PayrollFactBuilder
 {
-    public function build(): int
+    use MartConnection;
+
+    public function build(?int $companyId = null): int
     {
         $now = now();
 
         $inserts = [];
 
-        DB::table('payroll_run_items AS pri')
+        $this->martTable('payroll_run_items AS pri')
             ->join('payroll_runs AS pr', 'pr.id', '=', 'pri.payroll_run_id')
             ->join('employees AS e', 'e.id', '=', 'pri.employee_id')
             ->where('pr.status', 'posted')
+            ->when($companyId, fn ($q) => $q->where('pr.company_id', $companyId))
             ->select(
                 'pr.company_id',
                 'pr.pay_date AS date',
@@ -40,7 +44,7 @@ class PayrollFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'                => $row->company_id,
-                        'date_key'                   => (int) $row->date,
+                        'date_key'                   => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'                 => $row->branch_id,
                         'cost_center_key'            => $row->cost_center_id,
                         'employee_key'               => $row->employee_id,
@@ -60,14 +64,14 @@ class PayrollFactBuilder
                     ];
                 }
 
-                DB::table('fact_payroll')->insert($inserts);
+                $this->martTable('fact_payroll')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_payroll')->insert($inserts);
+            $this->martTable('fact_payroll')->insert($inserts);
         }
 
-        return DB::table('fact_payroll')->count();
+        return $this->martTable('fact_payroll')->count();
     }
 }

@@ -2,27 +2,31 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class PurchasesFactBuilder
 {
-    public function build(): int
+    use MartConnection;
+
+    public function build(?int $companyId = null): int
     {
         $now = now();
 
-        $this->buildBillLines($now);
-        $this->buildExpenseLines($now);
+        $this->buildBillLines($now, $companyId);
+        $this->buildExpenseLines($now, $companyId);
 
-        return DB::table('fact_purchases')->count();
+        return $this->martTable('fact_purchases')->count();
     }
 
-    protected function buildBillLines(string $now): void
+    protected function buildBillLines(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
-        DB::table('bill_lines AS bl')
+        $this->martTable('bill_lines AS bl')
             ->join('bills AS b', 'b.id', '=', 'bl.bill_id')
             ->where('b.status', '!=', 'void')
+            ->when($companyId, fn ($q) => $q->where('b.company_id', $companyId))
             ->select(
                 'b.company_id',
                 'b.bill_date AS date',
@@ -48,7 +52,7 @@ class PurchasesFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'        => $row->company_id,
-                        'date_key'           => (int) $row->date,
+                        'date_key'           => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'         => $row->branch_id,
                         'cost_center_key'    => $row->cost_center_id,
                         'vendor_key'         => $row->vendor_id,
@@ -70,22 +74,23 @@ class PurchasesFactBuilder
                     ];
                 }
 
-                DB::table('fact_purchases')->insert($inserts);
+                $this->martTable('fact_purchases')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_purchases')->insert($inserts);
+            $this->martTable('fact_purchases')->insert($inserts);
         }
     }
 
-    protected function buildExpenseLines(string $now): void
+    protected function buildExpenseLines(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
-        DB::table('expense_lines AS el')
+        $this->martTable('expense_lines AS el')
             ->join('expenses AS e', 'e.id', '=', 'el.expense_id')
             ->where('e.status', '!=', 'void')
+            ->when($companyId, fn ($q) => $q->where('e.company_id', $companyId))
             ->select(
                 'e.company_id',
                 'e.expense_date AS date',
@@ -111,7 +116,7 @@ class PurchasesFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'        => $row->company_id,
-                        'date_key'           => (int) $row->date,
+                        'date_key'           => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'         => $row->branch_id,
                         'cost_center_key'    => $row->cost_center_id,
                         'vendor_key'         => $row->vendor_id,
@@ -133,12 +138,12 @@ class PurchasesFactBuilder
                     ];
                 }
 
-                DB::table('fact_purchases')->insert($inserts);
+                $this->martTable('fact_purchases')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_purchases')->insert($inserts);
+            $this->martTable('fact_purchases')->insert($inserts);
         }
     }
 }

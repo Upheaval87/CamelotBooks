@@ -2,10 +2,13 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class TrueTotalCostService
 {
+    use MartConnection;
+
     public function calculate(int $companyId, string $dateFrom, string $dateTo, ?int $branchId = null): array
     {
         $glCost = $this->getGlCostByBranch($companyId, $dateFrom, $dateTo, $branchId);
@@ -64,7 +67,7 @@ class TrueTotalCostService
 
     protected function getGlCostByBranch(int $companyId, string $dateFrom, string $dateTo, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('fact_general_ledger AS fgl')
+        return $this->martTable('fact_general_ledger AS fgl')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fgl.branch_key')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
@@ -85,7 +88,7 @@ class TrueTotalCostService
 
     protected function getPayrollCostByBranch(int $companyId, string $dateFrom, string $dateTo, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('fact_payroll AS fp')
+        return $this->martTable('fact_payroll AS fp')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fp.branch_key')
             ->where('fp.company_key', $companyId)
             ->where('fp.date_key', '>=', (int) \Carbon\Carbon::parse($dateFrom)->format('Ymd'))

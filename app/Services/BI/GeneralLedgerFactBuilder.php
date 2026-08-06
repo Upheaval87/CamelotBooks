@@ -2,19 +2,23 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class GeneralLedgerFactBuilder
 {
-    public function build(): int
+    use MartConnection;
+
+    public function build(?int $companyId = null): int
     {
         $now = now();
 
         $inserts = [];
 
-        DB::table('journal_entry_lines AS jel')
+        $this->martTable('journal_entry_lines AS jel')
             ->join('journal_entries AS je', 'je.id', '=', 'jel.journal_entry_id')
             ->where('je.status', 'posted')
+            ->when($companyId, fn ($q) => $q->where('je.company_id', $companyId))
             ->select(
                 'je.company_id',
                 'je.date',
@@ -38,7 +42,7 @@ class GeneralLedgerFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'      => $row->company_id,
-                        'date_key'         => (int) $row->date,
+                        'date_key'         => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'account_key'      => $row->account_id,
                         'branch_key'       => $row->branch_id,
                         'cost_center_key'  => $row->cost_center_id,
@@ -57,14 +61,14 @@ class GeneralLedgerFactBuilder
                     ];
                 }
 
-                DB::table('fact_general_ledger')->insert($inserts);
+                $this->martTable('fact_general_ledger')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_general_ledger')->insert($inserts);
+            $this->martTable('fact_general_ledger')->insert($inserts);
         }
 
-        return DB::table('fact_general_ledger')->count();
+        return $this->martTable('fact_general_ledger')->count();
     }
 }

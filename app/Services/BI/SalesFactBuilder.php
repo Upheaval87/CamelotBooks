@@ -2,28 +2,32 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class SalesFactBuilder
 {
-    public function build(): int
+    use MartConnection;
+
+    public function build(?int $companyId = null): int
     {
         $now = now();
 
-        $this->buildInvoiceLines($now);
-        $this->buildPosSaleLines($now);
-        $this->buildSalesReceiptLines($now);
+        $this->buildInvoiceLines($now, $companyId);
+        $this->buildPosSaleLines($now, $companyId);
+        $this->buildSalesReceiptLines($now, $companyId);
 
-        return DB::table('fact_sales')->count();
+        return $this->martTable('fact_sales')->count();
     }
 
-    protected function buildInvoiceLines(string $now): void
+    protected function buildInvoiceLines(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
-        DB::table('invoice_lines AS il')
+        $this->martTable('invoice_lines AS il')
             ->join('invoices AS i', 'i.id', '=', 'il.invoice_id')
             ->where('i.status', '!=', 'void')
+            ->when($companyId, fn ($q) => $q->where('i.company_id', $companyId))
             ->select(
                 'i.company_id',
                 'i.invoice_date AS date',
@@ -49,7 +53,7 @@ class SalesFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'       => $row->company_id,
-                        'date_key'          => (int) $row->date,
+                        'date_key'          => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'        => $row->branch_id,
                         'cost_center_key'   => $row->cost_center_id,
                         'customer_key'      => $row->customer_id,
@@ -73,25 +77,26 @@ class SalesFactBuilder
                     ];
                 }
 
-                DB::table('fact_sales')->insert($inserts);
+                $this->martTable('fact_sales')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_sales')->insert($inserts);
+            $this->martTable('fact_sales')->insert($inserts);
         }
     }
 
-    protected function buildPosSaleLines(string $now): void
+    protected function buildPosSaleLines(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
-        DB::table('pos_sale_lines AS psl')
+        $this->martTable('pos_sale_lines AS psl')
             ->join('pos_sales AS ps', 'ps.id', '=', 'psl.pos_sale_id')
             ->where('ps.status', '!=', 'voided')
+            ->when($companyId, fn ($q) => $q->where('ps.company_id', $companyId))
             ->select(
                 'ps.company_id',
-                DB::raw("CAST(strftime('%Y%m%d', ps.created_at) AS INTEGER) AS date"),
+                'ps.created_at AS date',
                 'ps.branch_id',
                 'ps.cost_center_id',
                 'ps.customer_id',
@@ -114,7 +119,7 @@ class SalesFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'       => $row->company_id,
-                        'date_key'          => $row->date,
+                        'date_key'          => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'        => $row->branch_id,
                         'cost_center_key'   => $row->cost_center_id,
                         'customer_key'      => $row->customer_id,
@@ -138,25 +143,26 @@ class SalesFactBuilder
                     ];
                 }
 
-                DB::table('fact_sales')->insert($inserts);
+                $this->martTable('fact_sales')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_sales')->insert($inserts);
+            $this->martTable('fact_sales')->insert($inserts);
         }
     }
 
-    protected function buildSalesReceiptLines(string $now): void
+    protected function buildSalesReceiptLines(string $now, ?int $companyId = null): void
     {
         $inserts = [];
 
-        DB::table('sales_receipt_lines AS srl')
+        $this->martTable('sales_receipt_lines AS srl')
             ->join('sales_receipts AS sr', 'sr.id', '=', 'srl.sales_receipt_id')
             ->where('sr.status', '!=', 'voided')
+            ->when($companyId, fn ($q) => $q->where('sr.company_id', $companyId))
             ->select(
                 'sr.company_id',
-                DB::raw("CAST(strftime('%Y%m%d', sr.receipt_date) AS INTEGER) AS date"),
+                'sr.receipt_date AS date',
                 'sr.branch_id',
                 'srl.cost_center_id',
                 'sr.customer_id',
@@ -179,7 +185,7 @@ class SalesFactBuilder
                 foreach ($rows as $row) {
                     $inserts[] = [
                         'company_key'       => $row->company_id,
-                        'date_key'          => $row->date,
+                        'date_key'          => (int) \Carbon\Carbon::parse($row->date)->format('Ymd'),
                         'branch_key'        => $row->branch_id,
                         'cost_center_key'   => $row->cost_center_id,
                         'customer_key'      => $row->customer_id,
@@ -203,12 +209,12 @@ class SalesFactBuilder
                     ];
                 }
 
-                DB::table('fact_sales')->insert($inserts);
+                $this->martTable('fact_sales')->insert($inserts);
                 $inserts = [];
             });
 
         if ($inserts) {
-            DB::table('fact_sales')->insert($inserts);
+            $this->martTable('fact_sales')->insert($inserts);
         }
     }
 }

@@ -3,13 +3,16 @@
 namespace App\Services\BI;
 
 use App\Models\Company;
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class DimSyncService
 {
-    public function syncAll(): void
+    use MartConnection;
+
+    public function syncAll(?Company $company = null): void
     {
-        $this->syncCompanies();
+        $this->syncCompanies($company);
         $this->syncBranches();
         $this->syncCostCenters();
         $this->syncAccounts();
@@ -19,9 +22,10 @@ class DimSyncService
         $this->syncEmployees();
     }
 
-    public function syncCompanies(): void
+    public function syncCompanies(?Company $company = null): void
     {
         $rows = Company::query()
+            ->when($company, fn ($q) => $q->whereKey($company->id))
             ->select('id', 'company_code', 'name', 'base_currency', 'fiscal_year_start_month', 'is_active')
             ->get()
             ->map(fn (Company $c) => [
@@ -35,15 +39,15 @@ class DimSyncService
             ])
             ->toArray();
 
-        DB::table('dim_company')->truncate();
+        $this->martTable('dim_company')->truncate();
         if ($rows) {
-            DB::table('dim_company')->insert($rows);
+            $this->martTable('dim_company')->insert($rows);
         }
     }
 
     public function syncBranches(): void
     {
-        $rows = DB::table('branches')
+        $rows = $this->martTable('branches')
             ->select('id as branch_key', 'company_id as company_key', 'code as branch_code', 'name as branch_name', 'is_active')
             ->get()
             ->map(fn ($r) => [
@@ -52,15 +56,15 @@ class DimSyncService
             ])
             ->toArray();
 
-        DB::table('dim_branch')->truncate();
+        $this->martTable('dim_branch')->truncate();
         if ($rows) {
-            DB::table('dim_branch')->insert($rows);
+            $this->martTable('dim_branch')->insert($rows);
         }
     }
 
     public function syncCostCenters(): void
     {
-        $rows = DB::table('cost_centers')
+        $rows = $this->martTable('cost_centers')
             ->select('id as cost_center_key', 'company_id as company_key', 'code as cost_center_code', 'name as cost_center_name', 'is_active')
             ->get()
             ->map(fn ($r) => [
@@ -69,15 +73,15 @@ class DimSyncService
             ])
             ->toArray();
 
-        DB::table('dim_cost_center')->truncate();
+        $this->martTable('dim_cost_center')->truncate();
         if ($rows) {
-            DB::table('dim_cost_center')->insert($rows);
+            $this->martTable('dim_cost_center')->insert($rows);
         }
     }
 
     public function syncAccounts(): void
     {
-        $rows = DB::table('accounts')
+        $rows = $this->martTable('accounts')
             ->select(
                 'id as account_key', 'company_id as company_key', 'code as account_code',
                 'name as account_name', 'type as account_type', 'sub_type as account_sub_type',
@@ -90,15 +94,15 @@ class DimSyncService
             ])
             ->toArray();
 
-        DB::table('dim_account')->truncate();
+        $this->martTable('dim_account')->truncate();
         if ($rows) {
-            DB::table('dim_account')->insert($rows);
+            $this->martTable('dim_account')->insert($rows);
         }
     }
 
     public function syncItems(): void
     {
-        $rows = DB::table('products')
+        $rows = $this->martTable('products')
             ->select(
                 'id as item_key', 'company_id as company_key', 'sku',
                 'name as item_name', 'type as item_type',
@@ -111,15 +115,15 @@ class DimSyncService
             ])
             ->toArray();
 
-        DB::table('dim_item')->truncate();
+        $this->martTable('dim_item')->truncate();
         if ($rows) {
-            DB::table('dim_item')->insert($rows);
+            $this->martTable('dim_item')->insert($rows);
         }
     }
 
     public function syncCustomers(): void
     {
-        $rows = DB::table('customers')
+        $rows = $this->martTable('customers')
             ->select('id as customer_key', 'company_id as company_key', 'name as customer_name', 'email', 'currency', 'payment_terms', 'is_active')
             ->get()
             ->map(fn ($r) => [
@@ -128,15 +132,15 @@ class DimSyncService
             ])
             ->toArray();
 
-        DB::table('dim_customer')->truncate();
+        $this->martTable('dim_customer')->truncate();
         if ($rows) {
-            DB::table('dim_customer')->insert($rows);
+            $this->martTable('dim_customer')->insert($rows);
         }
     }
 
     public function syncVendors(): void
     {
-        $rows = DB::table('vendors')
+        $rows = $this->martTable('vendors')
             ->select('id as vendor_key', 'company_id as company_key', 'name as vendor_name', 'email', 'currency', 'payment_terms', 'is_active')
             ->get()
             ->map(fn ($r) => [
@@ -145,15 +149,15 @@ class DimSyncService
             ])
             ->toArray();
 
-        DB::table('dim_vendor')->truncate();
+        $this->martTable('dim_vendor')->truncate();
         if ($rows) {
-            DB::table('dim_vendor')->insert($rows);
+            $this->martTable('dim_vendor')->insert($rows);
         }
     }
 
     public function syncEmployees(): void
     {
-        $rows = DB::table('employees')
+        $rows = $this->martTable('employees')
             ->select(
                 'id as employee_key', 'company_id as company_key',
                 'branch_id as branch_key', 'cost_center_id as cost_center_key',
@@ -169,23 +173,23 @@ class DimSyncService
             ->map(fn ($r) => collect($r)->except(['first_name', 'last_name'])->toArray())
             ->toArray();
 
-        DB::table('dim_employee')->truncate();
+        $this->martTable('dim_employee')->truncate();
         if ($rows) {
-            DB::table('dim_employee')->insert($rows);
+            $this->martTable('dim_employee')->insert($rows);
         }
     }
 
     public function getSyncCounts(): array
     {
         return [
-            'dim_company'      => DB::table('dim_company')->count(),
-            'dim_branch'       => DB::table('dim_branch')->count(),
-            'dim_cost_center'  => DB::table('dim_cost_center')->count(),
-            'dim_account'      => DB::table('dim_account')->count(),
-            'dim_item'         => DB::table('dim_item')->count(),
-            'dim_customer'     => DB::table('dim_customer')->count(),
-            'dim_vendor'       => DB::table('dim_vendor')->count(),
-            'dim_employee'     => DB::table('dim_employee')->count(),
+            'dim_company'      => $this->martTable('dim_company')->count(),
+            'dim_branch'       => $this->martTable('dim_branch')->count(),
+            'dim_cost_center'  => $this->martTable('dim_cost_center')->count(),
+            'dim_account'      => $this->martTable('dim_account')->count(),
+            'dim_item'         => $this->martTable('dim_item')->count(),
+            'dim_customer'     => $this->martTable('dim_customer')->count(),
+            'dim_vendor'       => $this->martTable('dim_vendor')->count(),
+            'dim_employee'     => $this->martTable('dim_employee')->count(),
         ];
     }
 }

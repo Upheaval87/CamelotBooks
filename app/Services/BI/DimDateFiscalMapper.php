@@ -2,14 +2,17 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DimDateFiscalMapper
 {
+    use MartConnection;
+
     public function mapFiscalYears(): int
     {
-        $fiscalYears = DB::table('fiscal_years')->get();
+        $fiscalYears = $this->martTable('fiscal_years')->get();
         $updated = 0;
 
         foreach ($fiscalYears as $fy) {
@@ -23,7 +26,7 @@ class DimDateFiscalMapper
                 $monthInFY = (int) $start->diffInMonths($current) + 1;
                 $fiscalQuarter = (int) ceil($monthInFY / 3);
 
-                DB::table('dim_date')
+                $this->martTable('dim_date')
                     ->where('date_key', $dateKey)
                     ->update([
                         'fiscal_year_label' => $year,

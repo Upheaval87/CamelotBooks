@@ -2,10 +2,13 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class EmployeeProductivityService
 {
+    use MartConnection;
+
     public function calculate(int $companyId, string $dateFrom, string $dateTo, ?int $branchId = null): array
     {
         $payrollByBranch = $this->getPayrollByBranch($companyId, $dateFrom, $dateTo, $branchId);
@@ -71,7 +74,7 @@ class EmployeeProductivityService
 
     protected function getPayrollByBranch(int $companyId, string $dateFrom, string $dateTo, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('fact_payroll AS fp')
+        return $this->martTable('fact_payroll AS fp')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fp.branch_key')
             ->where('fp.company_key', $companyId)
             ->where('fp.date_key', '>=', (int) \Carbon\Carbon::parse($dateFrom)->format('Ymd'))
@@ -88,7 +91,7 @@ class EmployeeProductivityService
 
     protected function getRevenueByBranch(int $companyId, string $dateFrom, string $dateTo, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('fact_general_ledger AS fgl')
+        return $this->martTable('fact_general_ledger AS fgl')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fgl.branch_key')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
@@ -107,7 +110,7 @@ class EmployeeProductivityService
 
     protected function getHeadcountByBranch(int $companyId, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('dim_employee AS de')
+        return $this->martTable('dim_employee AS de')
             ->where('de.company_key', $companyId)
             ->where('de.is_active', true)
             ->when($branchId, fn ($q) => $q->where('de.branch_key', $branchId))

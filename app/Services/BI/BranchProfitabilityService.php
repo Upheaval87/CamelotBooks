@@ -2,10 +2,12 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class BranchProfitabilityService
 {
+    use MartConnection;
     public function calculate(int $companyId, string $dateFrom, string $dateTo, ?int $branchId = null): array
     {
         $incomeByBranch = $this->getAmountByType($companyId, $dateFrom, $dateTo, $branchId, 'income');
@@ -68,7 +70,7 @@ class BranchProfitabilityService
 
     protected function getAmountByType(int $companyId, string $dateFrom, string $dateTo, ?int $branchId, string $accountType): \Illuminate\Support\Collection
     {
-        return DB::table('fact_general_ledger AS fgl')
+        return $this->martTable('fact_general_ledger AS fgl')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fgl.branch_key')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
@@ -86,7 +88,7 @@ class BranchProfitabilityService
 
     protected function getCogsByBranch(int $companyId, string $dateFrom, string $dateTo, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('fact_general_ledger AS fgl')
+        return $this->martTable('fact_general_ledger AS fgl')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fgl.branch_key')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
@@ -104,7 +106,7 @@ class BranchProfitabilityService
 
     protected function getOpexByBranch(int $companyId, string $dateFrom, string $dateTo, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('fact_general_ledger AS fgl')
+        return $this->martTable('fact_general_ledger AS fgl')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fgl.branch_key')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
@@ -123,7 +125,7 @@ class BranchProfitabilityService
 
     protected function getPayrollByBranch(int $companyId, string $dateFrom, string $dateTo, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('fact_payroll AS fp')
+        return $this->martTable('fact_payroll AS fp')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fp.branch_key')
             ->where('fp.company_key', $companyId)
             ->where('fp.date_key', '>=', (int) \Carbon\Carbon::parse($dateFrom)->format('Ymd'))
@@ -139,7 +141,7 @@ class BranchProfitabilityService
 
     protected function getDepreciationByBranch(int $companyId, string $dateFrom, string $dateTo, ?int $branchId): \Illuminate\Support\Collection
     {
-        return DB::table('fact_general_ledger AS fgl')
+        return $this->martTable('fact_general_ledger AS fgl')
             ->leftJoin('dim_branch AS db', 'db.branch_key', '=', 'fgl.branch_key')
             ->join('dim_account AS da', 'da.account_key', '=', 'fgl.account_key')
             ->where('fgl.company_key', $companyId)
@@ -161,7 +163,7 @@ class BranchProfitabilityService
             return 'Unallocated';
         }
 
-        $branch = DB::table('dim_branch')->where('branch_key', $branchId)->first();
+        $branch = $this->martTable('dim_branch')->where('branch_key', $branchId)->first();
         return $branch->branch_name ?? "Branch #{$branchId}";
     }
 }

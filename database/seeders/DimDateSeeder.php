@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class DimDateSeeder extends Seeder
 {
-    public function run(): void
+    public function run(?string $connection = null): void
     {
         $start = Carbon::create(2022, 1, 1);
         $end = Carbon::create(2027, 12, 31);
@@ -41,6 +41,8 @@ class DimDateSeeder extends Seeder
             $start->addDay();
         }
 
-        DB::table('dim_date')->insert($rows);
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::connection($connection)->table('dim_date')->insert($chunk);
+        }
     }
 }

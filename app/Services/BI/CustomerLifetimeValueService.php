@@ -2,13 +2,16 @@
 
 namespace App\Services\BI;
 
+use App\Services\BI\Concerns\MartConnection;
 use Illuminate\Support\Facades\DB;
 
 class CustomerLifetimeValueService
 {
+    use MartConnection;
+
     public function calculate(int $companyId, ?int $branchId = null): array
     {
-        $customers = DB::table('fact_sales AS fs')
+        $customers = $this->martTable('fact_sales AS fs')
             ->leftJoin('dim_customer AS dc', 'dc.customer_key', '=', 'fs.customer_key')
             ->where('fs.company_key', $companyId)
             ->when($branchId, fn ($q) => $q->where('fs.branch_key', $branchId))
