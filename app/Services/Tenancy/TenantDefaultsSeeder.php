@@ -92,6 +92,20 @@ class TenantDefaultsSeeder
                 'updated_at' => now(),
             ]);
         }
+
+        // Keep the CENTRAL cached active-branch count in sync so the limit
+        // enforcement (which reads companies.branch_count on the central row)
+        // matches what provisioning just seeded. The central DB is the only
+        // place with the branch_limit/branch_count columns.
+        $activeBranches = DB::table('branches')
+            ->where('company_id', $company->id)
+            ->where('is_active', true)
+            ->count();
+
+        DB::connection($centralConnection)
+            ->table('companies')
+            ->where('id', $company->id)
+            ->update(['branch_count' => $activeBranches]);
     }
 
     private function seedFiscalYear(Company $company): void

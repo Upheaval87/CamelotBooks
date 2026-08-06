@@ -106,6 +106,12 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div>
+                                <x-input-label for="branch_limit" value="{{ __('Initial Branch Limit') }}" />
+                                <x-text-input id="branch_limit" name="branch_limit" type="number" min="0" class="mt-1 block w-full" required :value="old('branch_limit', 1)" />
+                                <x-input-error :messages="$errors->get('branch_limit')" class="mt-2" />
+                                <p class="text-xs text-gray-500 mt-1">{{ __('Maximum branches this company can create (0 = none until raised).') }}</p>
+                            </div>
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">

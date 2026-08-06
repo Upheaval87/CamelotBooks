@@ -24,6 +24,7 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        <a href="{{ route('superadmin.companies.edit', $company) }}" class="btn-ghost">{{ __('Edit Details') }}</a>
                         <a href="{{ route('superadmin.companies.modules', $company) }}" class="btn-ghost">{{ __('Manage Modules') }}</a>
                         @if($company->is_active && $company->db_name)
                             <form method="POST" action="{{ route('companies.select', $company->id) }}">
@@ -72,6 +73,49 @@
                     </x-detail-field>
                     <x-detail-field label="Provisioned At">{{ $company->provisioned_at?->format('M j, Y g:i A') ?? '—' }}</x-detail-field>
                 </div>
+            </div>
+
+            <div class="card p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h3 class="text-sm font-semibold text-ink">{{ __('Branch Limit') }}</h3>
+                    <div class="flex items-center gap-2">
+                        @if($branchUsage['branch_limit'] === null)
+                            <x-status-badge variant="success">{{ __('Unlimited') }}</x-status-badge>
+                        @elseif($branchUsage['branch_count'] > $branchUsage['branch_limit'])
+                            <x-status-badge variant="danger">{{ __('Over limit') }}</x-status-badge>
+                        @else
+                            <x-status-badge variant="default">{{ $branchUsage['branch_count'] }} {{ __('of') }} {{ $branchUsage['branch_limit'] }} {{ __('used') }}</x-status-badge>
+                        @endif
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-600 mb-4">
+                    {{ __('The company can create up to its limit of active branches; creation beyond it is blocked (the Company Manager keeps the ability, the system enforces the count).') }}
+                    @if($branchUsage['branch_limit'] === null)
+                        {{ __('No limit is currently enforced.') }}
+                    @endif
+                </p>
+
+                <form method="POST" action="{{ route('superadmin.companies.branch-limit', $company) }}"
+                      class="flex flex-wrap items-end gap-3"
+                      x-data="{ unlimited: {{ $branchUsage['branch_limit'] === null ? 'true' : 'false' }} }">
+                    @csrf
+                    @method('PATCH')
+                    <div>
+                        <x-input-label for="branch_limit">{{ __('Limit') }}</x-input-label>
+                        <x-text-input id="branch_limit" name="branch_limit" type="number" min="0" class="mt-1 w-32"
+                            :value="$branchUsage['branch_limit']" x-bind:disabled="unlimited" />
+                        <x-input-error :messages="$errors->get('branch_limit')" class="mt-1" />
+                    </div>
+                    <label class="flex items-center gap-2 pb-2 text-sm text-gray-600">
+                        <input type="checkbox" x-model="unlimited" />
+                        {{ __('Unlimited') }}
+                    </label>
+                    <x-button variant="primary" type="submit">{{ __('Save Limit') }}</x-button>
+                </form>
+                <p class="mt-3 text-xs text-gray-500">
+                    {{ __('Raising a limit beyond the initial value normally goes through the branch request/billing process; this manual override is for exceptions (trials, corrections, negotiated deals).') }}
+                </p>
             </div>
 
             <div class="grid gap-6 lg:grid-cols-2">

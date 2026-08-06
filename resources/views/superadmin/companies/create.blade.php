@@ -105,6 +105,14 @@
                             </select>
                             <x-input-error :messages="$errors->get('fiscal_year_start_month')" class="mt-1" />
                         </div>
+
+                        <div>
+                            <x-input-label for="branch_limit">{{ __('Initial Branch Limit') }}</x-input-label>
+                            <x-text-input id="branch_limit" name="branch_limit" type="number" min="0" class="mt-1 block w-full" required
+                                :value="old('branch_limit', 1)" />
+                            <x-input-error :messages="$errors->get('branch_limit')" class="mt-1" />
+                            <p class="mt-1 text-xs text-gray-500">{{ __('The maximum number of branches this company can create. 0 = none until raised; a higher limit can be set later via the Branch Limit override.') }}</p>
+                        </div>
                     </div>
 
                     <div class="bg-panel border border-line rounded-lg p-4">

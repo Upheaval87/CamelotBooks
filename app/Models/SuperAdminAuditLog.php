@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SuperAdminAuditLog extends Model
 {
     public const ACTION_COMPANY_CREATED = 'company.created';
+    public const ACTION_COMPANY_UPDATED = 'company.updated';
+    public const ACTION_COMPANY_BRANCH_LIMIT_UPDATED = 'company.branch_limit_updated';
     public const ACTION_COMPANY_SUSPENDED = 'company.suspended';
     public const ACTION_COMPANY_REACTIVATED = 'company.reactivated';
     public const ACTION_COMPANY_PROVISION_FAILED = 'company.provision_failed';

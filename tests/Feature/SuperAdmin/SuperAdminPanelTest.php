@@ -118,10 +118,13 @@ class SuperAdminPanelTest extends TestCase
             'company_code' => 'ZULU',
             'base_currency' => 'USD',
             'fiscal_year_start_month' => 1,
+            'branch_limit' => 3,
         ]);
 
         $company = Company::where('company_code', 'ZULU')->firstOrFail();
         $response->assertRedirect(route('superadmin.companies.show', $company));
+
+        $this->assertSame(3, $company->branch_limit);
 
         $this->assertDatabaseHas('super_admin_audit_logs', [
             'company_id' => $company->id,
@@ -146,6 +149,7 @@ class SuperAdminPanelTest extends TestCase
             'company_code' => 'ZULU',
             'base_currency' => 'USD',
             'fiscal_year_start_month' => 1,
+            'branch_limit' => 3,
         ]);
 
         $company = Company::where('company_code', 'ZULU')->firstOrFail();
@@ -190,6 +194,204 @@ class SuperAdminPanelTest extends TestCase
 
         $response->assertOk();
         $this->assertSame('acct_zulu_trading_xxxxxxxx', $response->json('db_name'));
+    }
+
+    // ---------- Companies: edit / update ----------
+
+    public function test_company_edit_form_renders_prefilled_values(): void
+    {
+        $super = $this->makeSuperAdmin();
+        $company = $this->makeCompany('ACME');
+
+        $this->actingAs($super)
+            ->get(route('superadmin.companies.edit', $company))
+            ->assertOk()
+            ->assertSee('value="ACME Company"', false)
+            ->assertSee('value="ACME"', false)
+            ->assertSee('value="USD" selected', false)
+            ->assertSee('USD - US Dollar');
+    }
+
+    public function test_company_edit_page_is_forbidden_for_non_super_admins(): void
+    {
+        $company = $this->makeCompany('ACME');
+
+        $this->actingAs($this->makeUser())
+            ->get(route('superadmin.companies.edit', $company))
+            ->assertForbidden();
+    }
+
+    public function test_super_admin_can_update_company_details_with_audit(): void
+    {
+        $super = $this->makeSuperAdmin();
+        $company = $this->makeCompany('ACME');
+
+        $response = $this->actingAs($super)->patch(route('superadmin.companies.update', $company), [
+            'name' => 'ACME Holdings Ltd',
+            'legal_name' => 'ACME Holdings Limited',
+            'company_code' => 'ACME',
+            'tax_id' => 'MW-123456',
+            'address' => '1 Independence Drive',
+            'city' => 'Lilongwe',
+            'state' => null,
+            'country' => 'Malawi',
+            'postal_code' => null,
+            'phone' => '+265 1 234 567',
+            'email' => 'info@acme.example.com',
+            'base_currency' => 'MWK',
+            'fiscal_year_start_month' => 7,
+        ]);
+
+        $response->assertRedirect(route('superadmin.companies.show', $company));
+
+        $fresh = $company->fresh();
+        $this->assertSame('ACME Holdings Ltd', $fresh->name);
+        $this->assertSame('MWK', $fresh->base_currency);
+        $this->assertSame(7, $fresh->fiscal_year_start_month);
+        $this->assertSame('Lilongwe', $fresh->city);
+
+        $audit = SuperAdminAuditLog::query()
+            ->where('company_id', $company->id)
+            ->where('action', SuperAdminAuditLog::ACTION_COMPANY_UPDATED)
+            ->firstOrFail();
+        $this->assertSame($super->id, $audit->user_id);
+        $this->assertSame('MWK', $audit->after['base_currency']);
+        $this->assertSame('USD', $audit->before['base_currency']);
+        $this->assertSame(7, $audit->after['fiscal_year_start_month']);
+    }
+
+    public function test_company_update_keeps_its_own_code(): void
+    {
+        $super = $this->makeSuperAdmin();
+        $company = $this->makeCompany('ACME');
+
+        $this->actingAs($super)
+            ->patch(route('superadmin.companies.update', $company), [
+                'name' => 'ACME Company',
+                'company_code' => 'ACME',
+                'base_currency' => 'USD',
+                'fiscal_year_start_month' => 1,
+            ])
+            ->assertRedirect(route('superadmin.companies.show', $company));
+    }
+
+    public function test_company_update_rejects_a_duplicate_code(): void
+    {
+        $super = $this->makeSuperAdmin();
+        $this->makeCompany('ACME');
+        $other = $this->makeCompany('BETA');
+
+        $this->actingAs($super)
+            ->patch(route('superadmin.companies.update', $other), [
+                'name' => 'BETA Company',
+                'company_code' => 'ACME',
+                'base_currency' => 'USD',
+                'fiscal_year_start_month' => 1,
+            ])
+            ->assertSessionHasErrors('company_code');
+    }
+
+    // ---------- Companies: branch limit ----------
+
+    public function test_company_creation_requires_branch_limit(): void
+    {
+        $this->mock(\App\Services\Tenancy\CompanyProvisioningService::class, function ($mock) {
+            $mock->shouldReceive('provision')->never();
+        });
+
+        $this->actingAs($this->makeSuperAdmin())
+            ->post(route('superadmin.companies.store'), [
+                'name' => 'Zulu Trading',
+                'company_code' => 'ZULU',
+                'base_currency' => 'USD',
+                'fiscal_year_start_month' => 1,
+            ])
+            ->assertSessionHasErrors('branch_limit');
+
+        $this->assertDatabaseMissing('companies', ['company_code' => 'ZULU']);
+    }
+
+    public function test_company_creation_rejects_a_negative_branch_limit(): void
+    {
+        $this->actingAs($this->makeSuperAdmin())
+            ->post(route('superadmin.companies.store'), [
+                'name' => 'Zulu Trading',
+                'company_code' => 'ZULU',
+                'base_currency' => 'USD',
+                'fiscal_year_start_month' => 1,
+                'branch_limit' => -1,
+            ])
+            ->assertSessionHasErrors('branch_limit');
+
+        $this->assertDatabaseMissing('companies', ['company_code' => 'ZULU']);
+    }
+
+    public function test_super_admin_can_set_and_clear_the_branch_limit_with_audit(): void
+    {
+        $super = $this->makeSuperAdmin();
+        $company = $this->makeCompany('ACME');
+
+        $response = $this->actingAs($super)
+            ->patch(route('superadmin.companies.branch-limit', $company), ['branch_limit' => 4]);
+
+        $response->assertRedirect(route('superadmin.companies.show', $company));
+        $this->assertSame(4, $company->fresh()->branch_limit);
+
+        $audit = SuperAdminAuditLog::query()
+            ->where('company_id', $company->id)
+            ->where('action', SuperAdminAuditLog::ACTION_COMPANY_BRANCH_LIMIT_UPDATED)
+            ->firstOrFail();
+        $this->assertSame($super->id, $audit->user_id);
+        $this->assertNull($audit->before['branch_limit']);
+        $this->assertSame(4, $audit->after['branch_limit']);
+
+        // NULL (empty) clears back to unlimited.
+        $this->actingAs($super)
+            ->patch(route('superadmin.companies.branch-limit', $company), ['branch_limit' => ''])
+            ->assertRedirect(route('superadmin.companies.show', $company));
+
+        $this->assertNull($company->fresh()->branch_limit);
+    }
+
+    public function test_super_admin_can_set_a_zero_branch_limit(): void
+    {
+        $company = $this->makeCompany('ACME');
+
+        $this->actingAs($this->makeSuperAdmin())
+            ->patch(route('superadmin.companies.branch-limit', $company), ['branch_limit' => 0])
+            ->assertRedirect();
+
+        $this->assertSame(0, $company->fresh()->branch_limit);
+    }
+
+    public function test_branch_limit_update_rejects_negative_values(): void
+    {
+        $company = $this->makeCompany('ACME');
+
+        $this->actingAs($this->makeSuperAdmin())
+            ->patch(route('superadmin.companies.branch-limit', $company), ['branch_limit' => -2])
+            ->assertSessionHasErrors('branch_limit');
+    }
+
+    public function test_branch_limit_update_is_forbidden_for_non_super_admins(): void
+    {
+        $company = $this->makeCompany('ACME');
+
+        $this->actingAs($this->makeUser())
+            ->patch(route('superadmin.companies.branch-limit', $company), ['branch_limit' => 4])
+            ->assertForbidden();
+    }
+
+    public function test_company_show_renders_branch_usage(): void
+    {
+        $super = $this->makeSuperAdmin();
+        $company = $this->makeCompany('ACME');
+        $company->update(['branch_limit' => 5, 'branch_count' => 2]);
+
+        $this->actingAs($super)
+            ->get(route('superadmin.companies.show', $company))
+            ->assertOk()
+            ->assertSee('Branch Limit');
     }
 
     // ---------- Users ----------

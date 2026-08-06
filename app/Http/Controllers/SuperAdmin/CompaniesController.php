@@ -52,6 +52,7 @@ class CompaniesController extends Controller
             'email' => 'nullable|email|max:255',
             'base_currency' => 'required|string|max:10',
             'fiscal_year_start_month' => 'required|integer|min:1|max:12',
+            'branch_limit' => 'required|integer|min:0',
         ]);
 
         $company = Company::create($validated + [
@@ -115,7 +116,56 @@ class CompaniesController extends Controller
             ->limit(10)
             ->get();
 
-        return view('superadmin.companies.show', compact('company', 'modules', 'moduleStates', 'assignments', 'audit', 'supportSessions'));
+        $branchUsage = app(\App\Services\Accounting\BranchLimitService::class)->usage($company);
+
+        return view('superadmin.companies.show', compact('company', 'modules', 'moduleStates', 'assignments', 'audit', 'supportSessions', 'branchUsage'));
+    }
+
+    public function edit(Company $company)
+    {
+        $currencies = \App\Models\Currency::query()->active()->ordered()->get();
+
+        return view('superadmin.companies.edit', compact('company', 'currencies'));
+    }
+
+    public function update(Request $request, Company $company)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'legal_name' => 'nullable|string|max:255',
+            'company_code' => 'nullable|string|max:50|unique:companies,company_code,' . $company->id,
+            'tax_id' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
+            'base_currency' => 'required|string|max:10',
+            'fiscal_year_start_month' => 'required|integer|min:1|max:12',
+        ]);
+
+        $before = $company->only(array_keys($validated));
+        $company->update($validated);
+
+        $changed = collect($validated)
+            ->filter(fn ($value, $key) => ($before[$key] ?? null) != $value)
+            ->toArray();
+
+        SuperAdminAuditLog::log(
+            $request->user()->id,
+            SuperAdminAuditLog::ACTION_COMPANY_UPDATED,
+            $company->id,
+            'company',
+            $company->id,
+            $before,
+            $changed,
+            "Company '{$company->name}' details updated."
+        );
+
+        return redirect()->route('superadmin.companies.show', $company)
+            ->with('success', 'Company details updated.');
     }
 
     public function suspend(Request $request, Company $company)
@@ -160,6 +210,36 @@ class CompaniesController extends Controller
         );
 
         return redirect()->route('superadmin.companies.show', $company)->with('success', 'Company reactivated.');
+    }
+
+    /**
+     * Super Admin manual override path for a company's branch limit (trials,
+     * corrections, negotiated deals). Independent of any billing logic; a
+     * request to RAISE the limit goes through the branch request/quotation/
+     * payment feature. NULL = unlimited.
+     */
+    public function updateBranchLimit(Request $request, Company $company)
+    {
+        $validated = $request->validate([
+            'branch_limit' => 'nullable|integer|min:0',
+        ]);
+
+        $before = $company->branch_limit;
+        $company->update(['branch_limit' => $validated['branch_limit']]);
+
+        SuperAdminAuditLog::log(
+            $request->user()->id,
+            SuperAdminAuditLog::ACTION_COMPANY_BRANCH_LIMIT_UPDATED,
+            $company->id,
+            'company',
+            $company->id,
+            ['branch_limit' => $before],
+            ['branch_limit' => $validated['branch_limit']],
+            "Branch limit for '{$company->name}' updated to " . ($validated['branch_limit'] === null ? 'unlimited' : $validated['branch_limit']) . '.'
+        );
+
+        return redirect()->route('superadmin.companies.show', $company)
+            ->with('success', 'Branch limit updated.');
     }
 
     public function modules(Company $company)

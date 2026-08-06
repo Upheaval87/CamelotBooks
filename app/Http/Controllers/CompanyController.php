@@ -84,6 +84,7 @@ class CompanyController extends Controller
             'email' => 'nullable|email|max:255',
             'base_currency' => 'required|string|max:10',
             'fiscal_year_start_month' => 'required|integer|min:1|max:12',
+            'branch_limit' => 'required|integer|min:0',
         ]);
 
         $user = $request->user();

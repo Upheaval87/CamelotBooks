@@ -101,6 +101,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('companies.store');
         Route::get('/companies/{company}', [CompaniesController::class, 'show'])
             ->name('companies.show');
+        Route::get('/companies/{company}/edit', [CompaniesController::class, 'edit'])
+            ->name('companies.edit');
+        Route::patch('/companies/{company}', [CompaniesController::class, 'update'])
+            ->name('companies.update');
         Route::post('/companies/{company}/suspend', [CompaniesController::class, 'suspend'])
             ->name('companies.suspend');
         Route::post('/companies/{company}/reactivate', [CompaniesController::class, 'reactivate'])
@@ -111,6 +115,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('companies.modules.toggle');
         Route::get('/companies/{company}/branches', [CompaniesController::class, 'branches'])
             ->name('companies.branches');
+        Route::patch('/companies/{company}/branch-limit', [CompaniesController::class, 'updateBranchLimit'])
+            ->name('companies.branch-limit');
 
         Route::get('/users', [UsersController::class, 'index'])
             ->name('users.index');
@@ -174,13 +180,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/branches', [BranchController::class, 'index'])
             ->name('branches.index');
 
+        Route::get('/branches/usage', [BranchController::class, 'usage'])
+            ->name('branches.usage');
+
         Route::post('/branches', [BranchController::class, 'store'])
+            ->middleware('role_or_permission:system_admin|company_admin')
             ->name('branches.store');
 
         Route::patch('/branches/{branch}', [BranchController::class, 'update'])
+            ->middleware('role_or_permission:system_admin|company_admin')
             ->name('branches.update');
 
         Route::patch('/branches/{branch}/toggle', [BranchController::class, 'toggle'])
+            ->middleware('role_or_permission:system_admin|company_admin')
             ->name('branches.toggle');
 
         Route::prefix('accounting')->name('accounting.')
