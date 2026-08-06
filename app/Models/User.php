@@ -106,6 +106,11 @@ class User extends Authenticatable
         return $this->hasMany(UserFavourite::class)->orderBy('sort_order');
     }
 
+    public function verificationCodes(): HasMany
+    {
+        return $this->hasMany(VerificationCode::class);
+    }
+
     public function preference(): HasOne
     {
         return $this->hasOne(UserPreference::class);

@@ -33,6 +33,9 @@ class SuperAdminAuditLog extends Model
     public const ACTION_CURRENCY_CREATED = 'currency.created';
     public const ACTION_CURRENCY_UPDATED = 'currency.updated';
     public const ACTION_CURRENCY_TOGGLED = 'currency.toggled';
+    public const ACTION_BRANCH_REQUEST_APPROVED = 'branch_request.approved';
+    public const ACTION_BRANCH_REQUEST_REJECTED = 'branch_request.rejected';
+    public const ACTION_BRANCH_PAYMENT_CONFIRMED = 'branch_payment.confirmed';
 
     public const UPDATED_AT = null;
 

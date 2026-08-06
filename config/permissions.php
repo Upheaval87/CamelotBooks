@@ -108,6 +108,7 @@ return [
         'setup-wizard'       => ['view', 'manage'],
         'companies'          => ['view', 'create', 'edit'],
         'branches'           => ['view', 'create', 'edit', 'void'],
+        'branch-requests'    => ['view', 'create', 'approve', 'reject', 'quote', 'confirm', 'cancel'],
 
         // ── Analytics & BI ──
         'analytics' => ['view'],
@@ -587,12 +588,32 @@ return [
                 'system-health.view',
                 'companies.view',
                 'branches.view',
+                'branch-requests.view',
                 // Analytics & BI (view only)
                 'analytics.view',
                 'bi.view',
 
                 // ALL reports — view only (auditors see everything including detail-level)
                 'reports.*',
+            ],
+        ],
+
+        'billing' => [
+            'label' => 'Billing',
+            'scope' => 'company',
+            'permissions' => [
+                // Narrow: branch-request billing lifecycle only
+                'branch-requests.view',
+                'branch-requests.quote',
+                'branch-requests.confirm',
+                // Read-only on customers, invoices, quotations for verification
+                'customers.view',
+                'invoices.view',
+                'quotations.view',
+                // Read-only on system areas relevant to billing
+                'branches.view',
+                'audit-log.view',
+                'system-health.view',
             ],
         ],
 
@@ -625,6 +646,7 @@ return [
                 'employees.view',
                 'payroll-runs.view',
                 'budgets.view',
+                'branch-requests.view',
                 // Reports — all read-only
                 'reports.*',
                 // System — minimal

@@ -56,6 +56,7 @@
                         <h3 class="text-lg font-semibold text-ink">{{ __('Branch Limit Reached') }}</h3>
                         <p class="mt-2 text-sm text-gray-600" x-text="errorMessage"></p>
                         <div class="mt-4 flex items-center gap-3">
+                            <a href="{{ route('branch-requests.index') }}" class="btn-primary">{{ __('Request More Branches') }}</a>
                             <a href="#" @click.prevent="showUpgrade = false" class="btn-ghost">{{ __('Close') }}</a>
                         </div>
                     </div>

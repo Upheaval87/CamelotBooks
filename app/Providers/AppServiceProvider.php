@@ -14,6 +14,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(\App\Services\Tenancy\TenantConnectionResolver::class);
+
+        $this->app->bind(
+            \App\Services\BranchRequests\BranchPricingService::class,
+            \App\Services\BranchRequests\FlatBranchPricingService::class,
+        );
     }
 
     /**

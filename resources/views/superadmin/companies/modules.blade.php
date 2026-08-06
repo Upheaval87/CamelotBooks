@@ -1,60 +1,61 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Modules') }} - {{ $company->name }}</x-slot>
-
     @include('superadmin._nav', ['active' => 'companies'])
 
-    <div class="py-6">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            <div class="card p-6">
-                <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-                    <div>
-                        <h3 class="text-sm font-semibold text-ink">{{ __('Module Activation') }}</h3>
-                        <p class="text-sm text-gray-500 mt-1">
-                            {{ __('Activation is controlled here — it is the single source of truth. Tenant-side feature settings are read-only.') }}
-                        </p>
-                    </div>
-                    <a href="{{ route('superadmin.companies.show', $company) }}" class="btn-ghost">{{ __('Back to Company') }}</a>
-                </div>
+    <div class="sa-page py-6">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
 
-                <div class="list-table-wrap">
-                    <table class="list-table">
+            <div class="sa-page-head">
+                <div>
+                    <h1 class="sa-page-title">{{ __('Module Activation') }} — {{ $company->name }}</h1>
+                    <p class="sa-page-subtitle">{{ __('Controls which modules this company’s tenant database exposes. Activation is the single source of truth — tenant-side feature settings are read-only.') }}</p>
+                </div>
+                <a href="{{ route('superadmin.companies.show', $company) }}" class="sa-btn sa-btn--ghost">{{ __('Back to Company') }}</a>
+            </div>
+
+            <x-elevated-card :flush="true">
+                <div class="sa-table-wrap">
+                    <table class="sa-table">
                         <thead>
                             <tr>
                                 <th>{{ __('Module') }}</th>
-                                <th>{{ __('Description') }}</th>
                                 <th>{{ __('Status') }}</th>
-                                <th class="text-right">{{ __('Action') }}</th>
+                                <th>{{ __('Activated') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($modules as $module)
                                 @php
-                                    $isActive = (bool) ($moduleStates[$module->id]?->is_active ?? false);
+                                    $state = $moduleStates[$module->id] ?? null;
+                                    $isActive = (bool) ($state?->is_active ?? false);
                                     $effectiveActive = $module->is_core || $isActive;
                                 @endphp
                                 <tr>
                                     <td>
-                                        <span class="font-medium text-ink">{{ $module->name }}</span>
+                                        <span style="font-weight: 500; color: var(--sa-ink);">{{ $module->name }}</span>
                                         @if($module->is_core)
-                                            <x-status-badge variant="default" class="ml-1">Core</x-status-badge>
+                                            <span class="sa-pill sa-pill--muted" style="margin-left: 8px;">Core</span>
+                                        @endif
+                                        @if($module->description)
+                                            <span class="sa-table-sub">{{ $module->description }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-gray-600">{{ $module->description ?? '—' }}</td>
                                     <td>
-                                        <x-status-badge :variant="$effectiveActive ? 'success' : 'default'">
-                                            {{ $effectiveActive ? 'Enabled' : 'Disabled' }}
-                                        </x-status-badge>
-                                    </td>
-                                    <td class="text-right">
                                         @if($module->is_core)
-                                            <span class="text-xs text-gray-400">{{ __('Always on') }}</span>
+                                            <span class="sa-pill sa-pill--accent">{{ __('Always On') }}</span>
                                         @else
                                             <form method="POST" action="{{ route('superadmin.companies.modules.toggle', [$company, $module]) }}">
                                                 @csrf
-                                                <x-button variant="ghost" type="submit" class="btn-sm">
-                                                    {{ $isActive ? __('Disable') : __('Enable') }}
-                                                </x-button>
+                                                <x-toggle-switch :checked="$isActive" aria-label="{{ __('Toggle :module', ['module' => $module->name]) }}" />
                                             </form>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($module->is_core)
+                                            <span style="color: #c8ccd2;">—</span>
+                                        @elseif($isActive && $state?->activated_at)
+                                            <span style="color: var(--sa-muted); font-size: 12px;">{{ $state->activated_at->format('M j, Y') }}</span>
+                                        @else
+                                            <span style="color: #c8ccd2;">{{ __('Not activated') }}</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -62,7 +63,7 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </x-elevated-card>
         </div>
     </div>
 </x-app-layout>

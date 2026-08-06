@@ -222,6 +222,7 @@
                 ['label' => __('Setup Wizard'),          'route' => 'admin.setup-wizard.index'],
                 ['label' => __('Companies'),             'route' => 'companies.index'],
                 ['label' => __('Branches'),              'route' => 'branches.index'],
+                ['label' => __('Branch Requests'),       'route' => 'branch-requests.index'],
             ],
         ];
     }

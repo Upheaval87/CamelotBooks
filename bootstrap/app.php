@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureCompanyIsActive;
 use App\Http\Middleware\RequireFeature;
 use App\Http\Middleware\SegregationOfDuty;
 use App\Http\Middleware\SuperAdmin;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('branch-quotations:expire')->daily();
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'company.active' => EnsureCompanyIsActive::class,

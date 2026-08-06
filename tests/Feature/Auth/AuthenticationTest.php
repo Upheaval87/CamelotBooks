@@ -17,6 +17,29 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_login_screen_renders_split_panel_and_form(): void
+    {
+        $response = $this->get('/login');
+
+        $response->assertStatus(200)
+            ->assertSee('auth-login-hero', false)
+            ->assertSee('auth-login-panel', false)
+            ->assertSee('Welcome back', false)
+            ->assertSee('name="remember"', false)
+            ->assertSee('auth-login-forgot', false)
+            ->assertSee('Log in', false)
+            ->assertSee('Contact your administrator', false);
+    }
+
+    public function test_login_screen_password_toggle_is_accessible(): void
+    {
+        $response = $this->get('/login');
+
+        $response->assertStatus(200)
+            ->assertSee('aria-pressed', false)
+            ->assertSee('Show password', false);
+    }
+
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();

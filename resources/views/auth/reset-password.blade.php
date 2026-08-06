@@ -1,39 +1,23 @@
-<x-guest-layout>
+<x-auth-layout title="Set a new password">
+    <p class="auth-login-form-eyebrow auth-login-mono">{{ __('Security') }}</p>
+    <h2 class="auth-login-form-title auth-login-serif">{{ __('Set a new password') }}</h2>
+    <p class="auth-login-form-sub">{{ __('Choose a strong password you haven\'t used before on CamelotBooks.') }}</p>
+
     <form method="POST" action="{{ route('password.store') }}">
         @csrf
 
-        <!-- Password Reset Token -->
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
+        <input type="hidden" name="email" value="{{ old('email', $request->email) }}">
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        @include('auth.partials.new-password-fields', [
+            'policy' => $policy,
+            'prefix' => '',
+            'errorBag' => '',
+            'autofocus' => true,
+        ])
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                                type="password"
-                                name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Reset Password') }}
-            </x-primary-button>
-        </div>
+        <button type="submit" class="auth-login-submit">{{ __('Update password') }}</button>
     </form>
-</x-guest-layout>
+
+    <p class="auth-login-footnote">{{ __('Contact your administrator if you can\'t access your account.') }}</p>
+</x-auth-layout>

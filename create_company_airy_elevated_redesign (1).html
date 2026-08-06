@@ -1,0 +1,90 @@
+
+<div style="--ink:#0f1420; --muted:#6b7280; --border:#eceef2; --page-bg:linear-gradient(180deg,#f6f7fb 0%,#eef0f6 100%); --accent:#9C7A3C; --accent-tint:#f5efe3; font-family: Inter, system-ui, sans-serif; background:var(--page-bg); border-radius:20px; padding:0; overflow:hidden;">
+
+  <!-- Tab bar, subtle elevation -->
+  <div style="background:rgba(255,255,255,0.9); backdrop-filter:blur(10px); box-shadow:0 1px 0 rgba(15,20,32,0.04), 0 4px 14px -8px rgba(15,20,32,0.06); padding:0 32px; display:flex; gap:30px;">
+    <span style="padding:17px 0; font-size:12.5px; color:var(--muted); font-weight:500;">Overview</span>
+    <span style="padding:17px 0; font-size:12.5px; color:var(--accent); font-weight:700; border-bottom:2.5px solid var(--accent);">Companies</span>
+    <span style="padding:17px 0; font-size:12.5px; color:var(--muted); font-weight:500;">Users</span>
+    <span style="padding:17px 0; font-size:12.5px; color:var(--muted); font-weight:500;">Assignments</span>
+    <span style="padding:17px 0; font-size:12.5px; color:var(--muted); font-weight:500;">Branch Requests</span>
+    <span style="padding:17px 0; font-size:12.5px; color:var(--muted); font-weight:500;">Currencies</span>
+    <span style="padding:17px 0; font-size:12.5px; color:var(--muted); font-weight:500;">Audit Log</span>
+  </div>
+
+  <div style="padding:36px 40px 110px; max-width:920px; margin:0 auto;">
+    <div style="display:flex; align-items:center; gap:7px; font-size:11px; color:#9aa1ae; margin-bottom:18px; letter-spacing:0.01em;">
+      <span>Super Admin</span><i class="ti ti-chevron-right" style="font-size:10px;" aria-hidden="true"></i><span>Companies</span><i class="ti ti-chevron-right" style="font-size:10px;" aria-hidden="true"></i><span style="color:var(--ink); font-weight:600;">Create Company</span>
+    </div>
+    <div style="font-size:24px; font-weight:700; color:var(--ink); margin-bottom:4px; letter-spacing:-0.01em;">Create Company</div>
+    <div style="font-size:13px; color:var(--muted); margin-bottom:32px;">Provision a new tenant company with its own dedicated database.</div>
+
+    <!-- Section: Company Identity — elevated card -->
+    <div style="background:#fff; border-radius:18px; padding:26px 28px; margin-bottom:20px; box-shadow:0 1px 2px rgba(15,20,32,0.03), 0 12px 28px -14px rgba(15,20,32,0.10); border:1px solid rgba(15,20,32,0.04);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+        <div style="width:32px; height:32px; border-radius:10px; background:var(--accent-tint); display:flex; align-items:center; justify-content:center;"><i class="ti ti-building" style="font-size:15px; color:var(--accent);" aria-hidden="true"></i></div>
+        <span style="font-size:14.5px; font-weight:700; color:var(--ink); letter-spacing:-0.005em;">Company Identity</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px 24px;">
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">COMPANY NAME</label><input value="Kuwala SACCO" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">LEGAL NAME</label><input value="Kuwala Savings and Credit Cooperative" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">COMPANY CODE</label><input value="KUWALA" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">TAX ID</label><input value="TIN-4471-2026" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+      </div>
+    </div>
+
+    <!-- Section: Contact Information -->
+    <div style="background:#fff; border-radius:18px; padding:26px 28px; margin-bottom:20px; box-shadow:0 1px 2px rgba(15,20,32,0.03), 0 12px 28px -14px rgba(15,20,32,0.10); border:1px solid rgba(15,20,32,0.04);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+        <div style="width:32px; height:32px; border-radius:10px; background:var(--accent-tint); display:flex; align-items:center; justify-content:center;"><i class="ti ti-address-book" style="font-size:15px; color:var(--accent);" aria-hidden="true"></i></div>
+        <span style="font-size:14.5px; font-weight:700; color:var(--ink); letter-spacing:-0.005em;">Contact Information</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px 24px; margin-bottom:20px;">
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">EMAIL</label><input value="admin@kuwalasacco.mw" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">PHONE</label><input value="+265 1 234 567" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+      </div>
+      <div style="margin-bottom:20px;"><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">ADDRESS</label><input value="P.O. Box 1140, Chichiri" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:20px 16px;">
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">CITY</label><input value="Blantyre" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">STATE</label><input value="Southern Region" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">COUNTRY</label><input value="Malawi" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">POSTAL CODE</label><input value="P.O. Box 1140" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+      </div>
+    </div>
+
+    <!-- Section: Financial Configuration -->
+    <div style="background:#fff; border-radius:18px; padding:26px 28px; margin-bottom:20px; box-shadow:0 1px 2px rgba(15,20,32,0.03), 0 12px 28px -14px rgba(15,20,32,0.10); border:1px solid rgba(15,20,32,0.04);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+        <div style="width:32px; height:32px; border-radius:10px; background:var(--accent-tint); display:flex; align-items:center; justify-content:center;"><i class="ti ti-report-money" style="font-size:15px; color:var(--accent);" aria-hidden="true"></i></div>
+        <span style="font-size:14.5px; font-weight:700; color:var(--ink); letter-spacing:-0.005em;">Financial Configuration</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px 24px;">
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">BASE CURRENCY</label>
+          <div style="border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; background:#fbfbfd; display:flex; justify-content:space-between; align-items:center; color:var(--ink);"><span>MWK — Malawian Kwacha</span><i class="ti ti-chevron-down" style="font-size:14px; color:var(--muted);" aria-hidden="true"></i></div></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">FISCAL YEAR STARTS</label>
+          <div style="border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; background:#fbfbfd; display:flex; justify-content:space-between; align-items:center; color:var(--ink);"><span>January</span><i class="ti ti-chevron-down" style="font-size:14px; color:var(--muted);" aria-hidden="true"></i></div></div>
+        <div><label style="font-size:11px; font-weight:600; color:#374151; display:block; margin-bottom:6px; letter-spacing:0.01em;">INITIAL BRANCH LIMIT</label>
+          <input value="1" style="width:100%; border:1.5px solid var(--border); border-radius:10px; padding:11px 14px; font-size:13.5px; color:var(--ink); background:#fbfbfd;"></div>
+      </div>
+      <div style="font-size:11px; color:#9aa1ae; margin-top:12px;">0 = none until raised; a higher limit can be set later via the <span style="color:var(--accent); font-weight:600;">Branch Limit override</span>.</div>
+    </div>
+
+    <!-- Tenant DB preview — soft elevated highlight -->
+    <div style="background:linear-gradient(135deg, var(--accent-tint), #fff); border-radius:18px; padding:20px 24px; display:flex; align-items:center; gap:16px; box-shadow:0 1px 2px rgba(15,20,32,0.03), 0 14px 30px -16px rgba(156,122,60,0.35); border:1px solid rgba(156,122,60,0.18);">
+      <div style="width:42px; height:42px; border-radius:12px; background:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 10px -4px rgba(15,20,32,0.15);"><i class="ti ti-database" style="font-size:19px; color:var(--accent);" aria-hidden="true"></i></div>
+      <div style="flex:1;">
+        <div style="font-size:13.5px; font-weight:700; color:var(--ink);">Tenant Database Preview</div>
+        <div style="font-size:11.5px; color:var(--muted); margin-top:2px;">A dedicated tenant database will be created and provisioned on submission.</div>
+      </div>
+      <div style="background:#fff; border-radius:8px; padding:8px 14px; font-family:monospace; font-size:11.5px; color:var(--ink); box-shadow:0 1px 3px rgba(15,20,32,0.06);">acct_kuwalasacco_71b0d3</div>
+    </div>
+  </div>
+
+  <!-- Glassy sticky footer -->
+  <div style="position:sticky; bottom:0; background:rgba(255,255,255,0.72); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 -1px 0 rgba(15,20,32,0.05), 0 -12px 30px -16px rgba(15,20,32,0.12); padding:16px 40px; display:flex; justify-content:flex-end; gap:10px;">
+    <button style="background:rgba(255,255,255,0.6); border:1.5px solid var(--border); color:var(--ink); padding:10px 20px; border-radius:11px; font-size:13px; font-weight:600;">Cancel</button>
+    <button style="background:var(--accent); color:#fff; border:none; padding:10px 22px; border-radius:11px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:7px; box-shadow:0 10px 20px -8px rgba(156,122,60,0.5);">
+      <i class="ti ti-database-plus" style="font-size:15px;" aria-hidden="true"></i>Create &amp; Provision
+    </button>
+  </div>
+</div>

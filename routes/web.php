@@ -51,12 +51,15 @@ use App\Http\Controllers\Accounting\ChequeController;
 use App\Http\Controllers\Accounting\PettyCashController;
 use App\Http\Controllers\Accounting\CashPositionController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\BranchPaymentController;
+use App\Http\Controllers\BranchRequestController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavouritesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SuperAdmin\AssignmentsController;
 use App\Http\Controllers\SuperAdmin\AuditLogController;
+use App\Http\Controllers\SuperAdmin\BranchRequestsController;
 use App\Http\Controllers\SuperAdmin\CompaniesController;
 use App\Http\Controllers\SuperAdmin\CurrenciesController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
@@ -117,6 +120,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('companies.branches');
         Route::patch('/companies/{company}/branch-limit', [CompaniesController::class, 'updateBranchLimit'])
             ->name('companies.branch-limit');
+
+        Route::get('/branch-requests', [BranchRequestsController::class, 'index'])
+            ->name('branch-requests.index');
+        Route::get('/companies/{company}/branch-requests/{branchRequest}', [BranchRequestsController::class, 'show'])
+            ->name('companies.branch-requests.show');
+        Route::post('/companies/{company}/branch-requests/{branchRequest}/approve', [BranchRequestsController::class, 'approve'])
+            ->name('companies.branch-requests.approve');
+        Route::post('/companies/{company}/branch-requests/{branchRequest}/reject', [BranchRequestsController::class, 'reject'])
+            ->name('companies.branch-requests.reject');
 
         Route::get('/users', [UsersController::class, 'index'])
             ->name('users.index');
@@ -194,6 +206,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/branches/{branch}/toggle', [BranchController::class, 'toggle'])
             ->middleware('role_or_permission:system_admin|company_admin')
             ->name('branches.toggle');
+
+        Route::get('/branch-requests', [BranchRequestController::class, 'index'])
+            ->name('branch-requests.index');
+
+        Route::post('/branch-requests', [BranchRequestController::class, 'store'])
+            ->middleware('role_or_permission:system_admin|company_admin')
+            ->name('branch-requests.store');
+
+        Route::get('/branch-requests/{branchRequest}', [BranchRequestController::class, 'show'])
+            ->name('branch-requests.show');
+
+        Route::post('/branch-requests/{branchRequest}/cancel', [BranchRequestController::class, 'cancel'])
+            ->middleware('role_or_permission:system_admin|company_admin')
+            ->name('branch-requests.cancel');
+
+        Route::post('/branch-requests/{branchRequest}/payments', [BranchPaymentController::class, 'store'])
+            ->middleware('role_or_permission:system_admin|company_admin|accountant|billing')
+            ->name('branch-requests.payments.store');
+
+        Route::post('/branch-requests/{branchRequest}/payments/{payment}/confirm', [BranchPaymentController::class, 'confirm'])
+            ->middleware('role_or_permission:system_admin|accountant|billing')
+            ->name('branch-requests.payments.confirm');
+
+        Route::post('/branch-requests/{branchRequest}/payments/{payment}/reject', [BranchPaymentController::class, 'reject'])
+            ->middleware('role_or_permission:system_admin|accountant|billing')
+            ->name('branch-requests.payments.reject');
 
         Route::prefix('accounting')->name('accounting.')
             ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer')

@@ -56,6 +56,7 @@ class NumberingSequence extends Model
             'pos_settlement' => 'POS Settlement',
             'quotation' => 'Quotation',
             'sales_receipt' => 'Sales Receipt',
+            'billing_quotation' => 'Branch Quotation',
         ];
     }
 
@@ -83,6 +84,7 @@ class NumberingSequence extends Model
             ['document_type' => 'pos_settlement', 'prefix' => 'STL-', 'padding_width' => 5, 'reset_policy' => 'never'],
             ['document_type' => 'quotation', 'prefix' => 'QTN-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'sales_receipt', 'prefix' => 'SR-', 'padding_width' => 4, 'reset_policy' => 'annually'],
+            ['document_type' => 'billing_quotation', 'prefix' => 'BQ-', 'padding_width' => 4, 'reset_policy' => 'annually'],
         ];
     }
 }

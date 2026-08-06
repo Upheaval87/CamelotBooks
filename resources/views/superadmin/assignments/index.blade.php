@@ -1,19 +1,25 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Assignments') }}</x-slot>
-
     @include('superadmin._nav', ['active' => 'assignments'])
 
-    <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="card p-6">
-                <h3 class="text-sm font-semibold text-ink mb-6">{{ __('All Assignments') }}</h3>
-                <div class="flex items-center justify-between mb-4">
-                    <p class="text-sm text-gray-500">{{ __('User-to-company access with role and branch scope.') }}</p>
-                    <a href="{{ route('superadmin.assignments.create') }}" class="list-header-create">{{ __('New Assignment') }}</a>
-                </div>
+    <div class="sa-page py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-                <div class="list-table-wrap">
-                    <table class="list-table">
+            <div class="sa-page-head">
+                <div>
+                    <h1 class="sa-page-title">{{ __('Assignments') }}</h1>
+                    <p class="sa-page-subtitle">{{ __('User-to-company access with role and branch scope.') }}</p>
+                </div>
+                <a href="{{ route('superadmin.assignments.create') }}" class="sa-btn sa-btn--primary">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {{ __('New Assignment') }}
+                </a>
+            </div>
+
+            <x-elevated-card :flush="true">
+                <div class="sa-table-wrap">
+                    <table class="sa-table">
                         <thead>
                             <tr>
                                 <th>{{ __('User') }}</th>
@@ -21,51 +27,51 @@
                                 <th>{{ __('Role') }}</th>
                                 <th>{{ __('Branches') }}</th>
                                 <th>{{ __('Status') }}</th>
-                                <th class="text-right">{{ __('Actions') }}</th>
+                                <th class="sa-table-num">{{ __('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($assignments as $assignment)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('superadmin.users.show', $assignment->user) }}" class="font-medium text-ink">{{ $assignment->user->name }}</a>
-                                        <span class="block text-xs text-gray-500">{{ $assignment->user->email }}</span>
+                                        <a href="{{ route('superadmin.users.show', $assignment->user) }}" class="sa-table-primary">{{ $assignment->user->name }}</a>
+                                        <span class="sa-table-sub">{{ $assignment->user->email }}</span>
                                     </td>
                                     <td>
-                                        <a href="{{ route('superadmin.companies.show', $assignment->company) }}" class="text-ink">{{ $assignment->company->name }}</a>
+                                        <a href="{{ route('superadmin.companies.show', $assignment->company) }}" class="sa-table-primary">{{ $assignment->company->name }}</a>
                                     </td>
-                                    <td>{{ $assignment->role }}</td>
+                                    <td><span style="color: var(--sa-muted);">{{ $assignment->role }}</span></td>
                                     <td>
                                         @if(count($assignment->branch_ids ?? []))
-                                            <span class="text-gray-600">{{ count($assignment->branch_ids ?? []) }} {{ __('branches') }}</span>
+                                            <span style="color: var(--sa-muted);">{{ count($assignment->branch_ids ?? []) }} {{ __('branches') }}</span>
                                         @else
-                                            <span class="text-gray-400">{{ __('All branches') }}</span>
+                                            <span style="color: #9aa1ae;">{{ __('All branches') }}</span>
                                         @endif
                                     </td>
                                     <td>
                                         @if($assignment->is_active)
-                                            <x-status-badge variant="success">Active</x-status-badge>
+                                            <span class="sa-pill sa-pill--accent">Active</span>
                                         @else
-                                            <x-status-badge variant="default">Inactive</x-status-badge>
+                                            <span class="sa-pill sa-pill--muted">Inactive</span>
                                         @endif
                                     </td>
-                                    <td class="text-right">
-                                        <a href="{{ route('superadmin.assignments.edit', $assignment) }}" class="text-sm text-accent hover:underline">{{ __('Edit') }}</a>
+                                    <td class="sa-table-num">
+                                        <a href="{{ route('superadmin.assignments.edit', $assignment) }}" class="sa-btn sa-btn--tint">{{ __('Edit') }}</a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-gray-500">{{ __('No assignments yet.') }}</td>
+                                    <td colspan="6" class="sa-table-empty">{{ __('No assignments yet.') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
 
-                <div class="mt-4">
-                    {{ $assignments->links() }}
-                </div>
-            </div>
+                @if($assignments->hasPages())
+                    <div class="sa-table-pagination">{{ $assignments->links() }}</div>
+                @endif
+            </x-elevated-card>
         </div>
     </div>
 </x-app-layout>
