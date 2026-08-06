@@ -31,7 +31,9 @@ class CompaniesController extends Controller
 
     public function create()
     {
-        return view('superadmin.companies.create');
+        $currencies = \App\Models\Currency::query()->active()->ordered()->get();
+
+        return view('superadmin.companies.create', compact('currencies'));
     }
 
     public function store(Request $request)

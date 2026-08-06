@@ -28,6 +28,9 @@ class SuperAdminAuditLog extends Model
     public const ACTION_ASSIGNMENT_CREATED = 'assignment.created';
     public const ACTION_ASSIGNMENT_UPDATED = 'assignment.updated';
     public const ACTION_ASSIGNMENT_DELETED = 'assignment.deleted';
+    public const ACTION_CURRENCY_CREATED = 'currency.created';
+    public const ACTION_CURRENCY_UPDATED = 'currency.updated';
+    public const ACTION_CURRENCY_TOGGLED = 'currency.toggled';
 
     public const UPDATED_AT = null;
 

@@ -12,20 +12,11 @@
     <div class="settings-card">
         <div class="settings-grid">
             <x-settings.field label="Base Currency" name="base_currency" type="select" required hint="All journal entries balance in this currency. Foreign currency transactions are converted at the exchange rate.">
-                @foreach([
-                    'USD' => 'USD - US Dollar', 'EUR' => 'EUR - Euro', 'GBP' => 'GBP - British Pound',
-                    'MWK' => 'MWK - Malawian Kwacha', 'KES' => 'KES - Kenyan Shilling',
-                    'ZMW' => 'ZMW - Zambian Kwacha', 'ZWL' => 'ZWL - Zimbabwean Dollar',
-                    'PHP' => 'PHP - Philippine Peso', 'JPY' => 'JPY - Japanese Yen',
-                    'INR' => 'INR - Indian Rupee', 'ZAR' => 'ZAR - South African Rand',
-                    'BWP' => 'BWP - Botswana Pula', 'TZS' => 'TZS - Tanzanian Shilling',
-                    'UGX' => 'UGX - Ugandan Shilling', 'NGN' => 'NGN - Nigerian Naira',
-                    'GHS' => 'GHS - Ghanaian Cedi', 'CAD' => 'CAD - Canadian Dollar',
-                    'AUD' => 'AUD - Australian Dollar', 'CHF' => 'CHF - Swiss Franc',
-                    'CNY' => 'CNY - Chinese Yuan',
-                ] as $code => $label)
-                    <option value="{{ $code }}" {{ old('base_currency', $company->base_currency) === $code ? 'selected' : '' }}>{{ $label }}</option>
-                @endforeach
+                @forelse($currencies as $curOption)
+                    <option value="{{ $curOption->code }}" {{ old('base_currency', $company->base_currency) === $curOption->code ? 'selected' : '' }}>{{ $curOption->label() }}</option>
+                @empty
+                    <option value="{{ $company->base_currency }}" selected>{{ $company->base_currency }}</option>
+                @endforelse
             </x-settings.field>
             <x-settings.field label="Decimal Places for Display" name="decimal_places" type="select" required hint="Number of decimal places for display purposes. Journals always use full precision.">
                 @foreach([0, 2, 3, 4] as $dp)

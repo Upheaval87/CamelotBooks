@@ -58,6 +58,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SuperAdmin\AssignmentsController;
 use App\Http\Controllers\SuperAdmin\AuditLogController;
 use App\Http\Controllers\SuperAdmin\CompaniesController;
+use App\Http\Controllers\SuperAdmin\CurrenciesController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
 use App\Http\Controllers\SuperAdmin\UsersController;
 use App\Http\Controllers\TodoTaskController;
@@ -145,6 +146,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/audit-log', [AuditLogController::class, 'index'])
             ->name('audit.index');
+
+        Route::get('/currencies', [CurrenciesController::class, 'index'])
+            ->name('currencies.index');
+        Route::get('/currencies/create', [CurrenciesController::class, 'create'])
+            ->name('currencies.create');
+        Route::post('/currencies', [CurrenciesController::class, 'store'])
+            ->name('currencies.store');
+        Route::get('/currencies/{currency}/edit', [CurrenciesController::class, 'edit'])
+            ->name('currencies.edit');
+        Route::patch('/currencies/{currency}', [CurrenciesController::class, 'update'])
+            ->name('currencies.update');
+        Route::patch('/currencies/{currency}/toggle', [CurrenciesController::class, 'toggle'])
+            ->name('currencies.toggle');
 
         Route::get('/db-preview', [CompaniesController::class, 'dbPreview'])
             ->name('db-preview');

@@ -36,13 +36,14 @@ class SettingsController extends Controller
             $q->where('company_id', $companyId)->orWhereNull('company_id');
         })->get();
         $eventLabels = EmailTemplate::eventLabels();
+        $currencies = \App\Models\Currency::query()->active()->ordered()->get();
 
         return view('system-settings.index', compact(
             'company', 'regional', 'currency', 'accounting', 'accounts', 'mappings',
             'approvalSetting', 'approvalThresholds',
             'sequences', 'documentTypeLabels',
             'notifications', 'emailTemplates', 'eventLabels',
-            'tab'
+            'currencies', 'tab'
         ));
     }
 

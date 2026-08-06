@@ -38,7 +38,9 @@ class CompanyController extends Controller
             ]);
         }
 
-        return view('companies.index', compact('companies'));
+        $currencies = \App\Models\Currency::query()->active()->ordered()->get();
+
+        return view('companies.index', compact('companies', 'currencies'));
     }
 
     public function select(Request $request, int $id)

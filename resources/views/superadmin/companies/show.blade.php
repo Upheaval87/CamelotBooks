@@ -97,7 +97,7 @@
                                             <span class="block text-xs text-gray-500">{{ $assignment->user->email }}</span>
                                         </td>
                                         <td>{{ $assignment->role }}</td>
-                                        <td class="text-right">{{ count($assignment->branch_ids) }}</td>
+                                        <td class="text-right">{{ count($assignment->branch_ids ?? []) }}</td>
                                     </tr>
                                 @empty
                                     <tr>

@@ -36,8 +36,8 @@
                                     </td>
                                     <td>{{ $assignment->role }}</td>
                                     <td>
-                                        @if(count($assignment->branch_ids))
-                                            <span class="text-gray-600">{{ count($assignment->branch_ids) }} {{ __('branches') }}</span>
+                                        @if(count($assignment->branch_ids ?? []))
+                                            <span class="text-gray-600">{{ count($assignment->branch_ids ?? []) }} {{ __('branches') }}</span>
                                         @else
                                             <span class="text-gray-400">{{ __('All branches') }}</span>
                                         @endif

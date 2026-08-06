@@ -87,9 +87,11 @@
                         <div>
                             <x-input-label for="base_currency">{{ __('Base Currency') }}</x-input-label>
                             <select id="base_currency" name="base_currency" class="input mt-1 block w-full" required>
-                                @foreach(['USD' => 'USD - US Dollar', 'ZWL' => 'ZWL - Zimbabwe Dollar', 'ZAR' => 'ZAR - South African Rand', 'GBP' => 'GBP - British Pound', 'EUR' => 'EUR - Euro', 'BWP' => 'BWP - Botswana Pula'] as $code => $label)
-                                    <option value="{{ $code }}" @selected(old('base_currency', 'USD') === $code)>{{ $label }}</option>
-                                @endforeach
+                                @forelse($currencies as $currency)
+                                    <option value="{{ $currency->code }}" @selected(old('base_currency', 'MWK') === $currency->code)>{{ $currency->label() }}</option>
+                                @empty
+                                    <option value="MWK">MWK - Malawian Kwacha</option>
+                                @endforelse
                             </select>
                             <x-input-error :messages="$errors->get('base_currency')" class="mt-1" />
                         </div>
