@@ -3,7 +3,8 @@
     <x-superadmin.layout>
         <x-superadmin.page-head title="{{ __('New User') }}" description="{{ __('Create a platform account.') }}" />
 
-        <form method="POST" action="{{ route('superadmin.users.store') }}">
+        <form method="POST" action="{{ route('superadmin.users.store') }}"
+            class="mx-auto flex w-full max-w-[1080px] flex-col gap-[22px]">
             @csrf
 
             <x-form-section icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" title="{{ __('User') }}" :columns="2">

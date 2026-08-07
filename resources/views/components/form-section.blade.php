@@ -1,33 +1,44 @@
 @props(['icon' => null, 'title' => null, 'columns' => null, 'titleBind' => null])
 
-@php $hasActions = isset($actions) && $actions instanceof \Illuminate\View\ComponentSlot && $actions->isNotEmpty(); @endphp
+@php
+    $hasActions = isset($actions) && $actions instanceof \Illuminate\View\ComponentSlot && $actions->isNotEmpty();
+    $gridClass = match ((int) $columns) {
+        4 => 'grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2 lg:grid-cols-4',
+        3 => 'grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2 lg:grid-cols-3',
+        2 => 'grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2',
+        default => null,
+    };
+@endphp
 
-<section {{ $attributes->merge(['class' => 'elevated-card elevated-card--padded form-section']) }}>
+<section {{ $attributes->merge(['class' => 'rounded-3xl bg-white/[.66] p-[26px] shadow-card backdrop-blur-[14px]']) }}>
     @if($titleBind || $title || $icon || $hasActions)
-        <div class="form-section-head">
+        <div class="flex items-center gap-3">
             @if($icon)
-                <span class="form-section-icon">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <span class="grid h-7 w-7 shrink-0 place-items-center rounded-[9px] bg-gradient-to-b from-[#2e4763] to-[#22394f] text-[#e2c069] shadow-[inset_0_1px_0_rgba(255,255,255,.10),0_3px_8px_-3px_rgba(0,0,0,.4)]">
+                    <svg class="h-[15px] w-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}" />
                     </svg>
                 </span>
             @endif
             @if($titleBind)
-                <h3 class="form-section-title" x-text="{{ $titleBind }}"></h3>
+                <h2 class="text-[15px] font-extrabold text-gray-900" x-text="{{ $titleBind }}"></h2>
             @else
-                <h3 class="form-section-title">{{ $title }}</h3>
+                <h2 class="text-[15px] font-extrabold text-gray-900">{{ $title }}</h2>
             @endif
+            <span class="h-px flex-1 bg-line"></span>
             @if($hasActions)
-                <div class="form-section-actions">{{ $actions }}</div>
+                <div class="flex items-center gap-2">{{ $actions }}</div>
             @endif
         </div>
     @endif
 
-    @if($columns)
-        <div class="form-section-grid" style="--sa-cols: {{ $columns }}">
+    @if($gridClass)
+        <div class="mt-[22px] {{ $gridClass }}">
             {{ $slot }}
         </div>
     @else
-        {{ $slot }}
+        <div class="mt-[22px]">
+            {{ $slot }}
+        </div>
     @endif
 </section>

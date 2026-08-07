@@ -3,7 +3,8 @@
     <x-superadmin.layout>
         <x-superadmin.page-head title="{{ __('Edit Assignment') }} — {{ $assignment->user->name }}" description="{{ __('Update role and branch scoping for this assignment.') }}" />
 
-            <form method="POST" action="{{ route('superadmin.assignments.update', $assignment) }}">
+            <form method="POST" action="{{ route('superadmin.assignments.update', $assignment) }}"
+                class="mx-auto flex w-full max-w-[1080px] flex-col gap-[22px]">
                 @csrf
                 @method('PATCH')
 

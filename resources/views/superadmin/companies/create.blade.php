@@ -4,6 +4,7 @@
         <x-superadmin.page-head title="{{ __('Create Company') }}" description="{{ __('Provision a new tenant company with its own dedicated database.') }}" />
 
             <form method="POST" action="{{ route('superadmin.companies.store') }}" id="company-create-form"
+                class="mx-auto flex w-full max-w-[1080px] flex-col gap-[22px]"
                 x-data="{
                     companyName: '',
                     preview: '',
@@ -137,7 +138,7 @@
                         <div class="sa-db-preview-sub">{{ __('A dedicated tenant database will be created and provisioned on submission.') }}</div>
                     </div>
                     <div class="sa-db-preview-chip">
-                        <span class="opacity-50">{{ __('Name:') }}</span>
+                        <span class="sa-db-preview-chip-label">{{ __('Name:') }}</span>
                         <span x-text="preview || '—'">—</span>
                     </div>
                 </div>

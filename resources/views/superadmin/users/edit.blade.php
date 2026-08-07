@@ -1,9 +1,14 @@
 <x-app-layout>
 
     <x-superadmin.layout>
-        <x-superadmin.page-head title="{{ __('Edit User') }} - {{ $user->name }}" description="{{ __('Update account details and access flags.') }}" />
+        <x-superadmin.page-head title="{{ __('Edit User') }} - {{ $user->name }}" description="{{ __('Update account details and access flags.') }}">
+            <x-slot name="badge">
+                <x-superadmin.badge :variant="$user->is_active ? 'active' : 'danger'">{{ $user->is_active ? __('Active') : __('Deactivated') }}</x-superadmin.badge>
+            </x-slot>
+        </x-superadmin.page-head>
 
-        <form method="POST" action="{{ route('superadmin.users.update', $user) }}">
+        <form method="POST" action="{{ route('superadmin.users.update', $user) }}"
+            class="mx-auto flex w-full max-w-[1080px] flex-col gap-[22px]">
             @csrf
             @method('PATCH')
 

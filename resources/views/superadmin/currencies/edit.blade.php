@@ -1,9 +1,14 @@
 <x-app-layout>
 
     <x-superadmin.layout>
-        <x-superadmin.page-head title="{{ __('Edit Currency') }} - {{ $currency->code }}" description="{{ __('Update a reference currency.') }}" />
+        <x-superadmin.page-head title="{{ __('Edit Currency') }} - {{ $currency->code }}" description="{{ __('Update a reference currency.') }}">
+            <x-slot name="badge">
+                <x-superadmin.badge :variant="$currency->is_active ? 'active' : 'muted'">{{ $currency->is_active ? __('Active') : __('Inactive') }}</x-superadmin.badge>
+            </x-slot>
+        </x-superadmin.page-head>
 
-        <form method="POST" action="{{ route('superadmin.currencies.update', $currency) }}">
+        <form method="POST" action="{{ route('superadmin.currencies.update', $currency) }}"
+            class="mx-auto flex w-full max-w-[1080px] flex-col gap-[22px]">
             @csrf
             @method('PATCH')
 

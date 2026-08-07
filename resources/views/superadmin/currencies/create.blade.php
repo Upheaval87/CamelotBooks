@@ -3,7 +3,8 @@
     <x-superadmin.layout>
         <x-superadmin.page-head title="{{ __('New Currency') }}" description="{{ __('Add a reference currency for new companies.') }}" />
 
-        <form method="POST" action="{{ route('superadmin.currencies.store') }}">
+        <form method="POST" action="{{ route('superadmin.currencies.store') }}"
+            class="mx-auto flex w-full max-w-[1080px] flex-col gap-[22px]">
             @csrf
 
             <x-form-section icon="M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1zm8 9a3 3 0 100-6 3 3 0 000 6zM18 12h.01" title="{{ __('Currency') }}" :columns="2">

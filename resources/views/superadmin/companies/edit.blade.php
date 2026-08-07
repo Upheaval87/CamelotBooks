@@ -1,9 +1,27 @@
 <x-app-layout>
 
     <x-superadmin.layout>
-        <x-superadmin.page-head title="{{ __('Edit Company') }} - {{ $company->name }}" description="{{ __('Update tenant company details.') }}" />
+        <x-superadmin.page-head title="{{ __('Edit Company') }} - {{ $company->name }}" description="{{ __('Update tenant company details.') }}">
+            <x-slot name="badge">
+                @if(!$company->is_active)
+                    <x-superadmin.badge variant="danger">{{ __('Suspended') }}</x-superadmin.badge>
+                @elseif($company->provisioning_status === 'active')
+                    <x-superadmin.badge variant="active">{{ __('Active') }}</x-superadmin.badge>
+                @else
+                    @php
+                        $badge = match ($company->provisioning_status) {
+                            'pending', 'provisioning' => 'warning',
+                            'failed' => 'danger',
+                            default => 'muted',
+                        };
+                    @endphp
+                    <x-superadmin.badge :variant="$badge">{{ ucfirst($company->provisioning_status) }}</x-superadmin.badge>
+                @endif
+            </x-slot>
+        </x-superadmin.page-head>
 
-        <form method="POST" action="{{ route('superadmin.companies.update', $company) }}">
+        <form method="POST" action="{{ route('superadmin.companies.update', $company) }}"
+            class="mx-auto flex w-full max-w-[1080px] flex-col gap-[22px]">
             @csrf
             @method('PATCH')
 

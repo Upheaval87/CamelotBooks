@@ -4,6 +4,7 @@
         <x-superadmin.page-head title="{{ __('Assign User') }}{{ $preselectUser ? ' — ' . $preselectUser->name : '' }}" description="{{ __('Company, role, and branch scoping for this user.') }}" />
 
             <form method="POST" action="{{ route('superadmin.assignments.store') }}" id="company-create-form"
+                class="mx-auto flex w-full max-w-[1080px] flex-col gap-[22px]"
                 x-data="{
                     rows: [{ companyId: '', role: 'viewer', branchOptions: [], branchIds: [] }],
                     addRow() { this.rows.push({ companyId: '', role: 'viewer', branchOptions: [], branchIds: [] }) },
