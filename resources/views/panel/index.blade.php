@@ -1,9 +1,5 @@
 <x-app-layout>
-    <div class="list-header">
-        <div>
-            <h1 class="font-sans italic font-semibold tracking-tight text-ink text-[1.125rem] lg:text-[1.375rem]">{{ __('Super Admin Panel') }}</h1>
-        </div>
-    </div>
+    <x-list-header title="{{ __('Super Admin Panel') }}" />
 
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

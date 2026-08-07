@@ -1,13 +1,10 @@
 <x-app-layout>
-    <div class="list-header">
-        <div>
-            <h1 class="font-sans italic font-semibold tracking-tight text-ink text-[1.125rem] lg:text-[1.375rem]">{{ __('Companies') }}</h1>
-        </div>
+    <x-list-header title="{{ __('Companies') }}">
         <button onclick="document.getElementById('create-company-modal').classList.remove('hidden')" class="list-header-create">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             {{ __('Create Company') }}
         </button>
-    </div>
+    </x-list-header>
 
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">

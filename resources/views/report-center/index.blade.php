@@ -1,10 +1,6 @@
 <x-app-layout>
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <div class="list-header">
-        <div>
-            <h1 class="font-sans italic font-semibold tracking-tight text-ink text-[1.125rem] lg:text-[1.375rem]">Report Center</h1>
-            <p class="mt-1 text-sm text-gray-600">Browse and access all available reports.</p>
-        </div>
+    <x-list-header title="Report Center" description="Browse and access all available reports.">
         <form method="GET" action="{{ route('accounting.report-center.index') }}" class="flex items-center gap-2">
             <input type="text" name="search" value="{{ $search }}" placeholder="Search reports..."
                    class="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-64" />
@@ -13,7 +9,7 @@
                 <a href="{{ route('accounting.report-center.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Clear</a>
             @endif
         </form>
-    </div>
+    </x-list-header>
 
     @if(!empty($favoriteReports))
         <div class="mb-8">
