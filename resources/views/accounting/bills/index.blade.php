@@ -4,11 +4,11 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-list-header title="Bills" createRoute="{{ route('accounting.bills.create') }}" createLabel="Create Bill" />
+            <x-list-header title="Bills" description="Track vendor bills and supplier payments." createRoute="{{ route('accounting.bills.create') }}" createLabel="Create Bill" />
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.bills.index') }}" searchPlaceholder="Vendor name..." entity="bill">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.bills.index') }}" searchPlaceholder="Vendor name..." entity="bill" countText="{{ $bills->total() }} bills">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
@@ -20,12 +20,8 @@
                         </select>
                     </x-list-filter-bar>
 
-                    @if(session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-                    @endif
-                    @if(session('error'))
-                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-                    @endif
+                    
+                    
 
                     <div class="list-table-wrap">
                         <table class="list-table">
@@ -77,7 +73,7 @@
                             </tbody>
                         </table>
                         @if($bills->hasPages())
-                        <div class="px-6 py-3 border-t border-gray-200">{{ $bills->links() }}</div>
+                        <x-list-pagination :paginator="$bills" label="bills" />
                         @endif
                     </div>
 
@@ -104,7 +100,7 @@
                         <div class="text-center text-ink-soft py-8">No bills found.</div>
                         @endforelse
                         @if($bills->hasPages())
-                        <div class="px-2 py-3">{{ $bills->links() }}</div>
+                        <x-list-pagination :paginator="$bills" label="bills" />
                         @endif
                     </div>
                 </div>

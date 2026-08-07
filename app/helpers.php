@@ -42,3 +42,23 @@ if (!function_exists('format_number')) {
         return $negative . $formatted;
     }
 }
+
+if (!function_exists('format_bytes')) {
+    /**
+     * Format a byte count as a human-readable size string.
+     *
+     * @param  int|float|null  $bytes
+     */
+    function format_bytes($bytes): string
+    {
+        $bytes = (int) $bytes;
+        if ($bytes <= 0) {
+            return '0 B';
+        }
+
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $i = (int) floor(log($bytes, 1024));
+
+        return round($bytes / (1024 ** $i), $i > 0 ? 1 : 0) . ' ' . $units[$i];
+    }
+}

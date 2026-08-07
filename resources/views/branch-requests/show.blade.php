@@ -3,12 +3,10 @@
 
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-            @endif
+            
 
             @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ $errors->first() }}</div>
+                <x-feedback.alert variant="error" class="mb-4">{{ $errors->first() }}</x-feedback.alert>
             @endif
 
             <div class="card p-6">
@@ -18,7 +16,7 @@
                         @include('branch-requests._status', ['status' => $branchRequest->status])
                     </div>
                     @if(in_array($branchRequest->status, [\App\Models\BranchRequest::STATUS_PENDING_REVIEW, \App\Models\BranchRequest::STATUS_QUOTED], true))
-                        <form method="POST" action="{{ route('branch-requests.cancel', $branchRequest) }}" onsubmit="return confirm('{{ __('Cancel this branch request?') }}')">
+                        <form method="POST" action="{{ route('branch-requests.cancel', $branchRequest) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Cancel this branch request?') }}')">
                             @csrf
                             <x-button variant="danger" type="submit">{{ __('Cancel Request') }}</x-button>
                         </form>
@@ -166,7 +164,7 @@
                                                     </td>
                                                     <td class="text-right whitespace-nowrap">
                                                         @if($payment->status === 'pending' && $canConfirmPayment)
-                                                            <form method="POST" action="{{ route('branch-requests.payments.confirm', [$branchRequest, $payment]) }}" class="inline" onsubmit="return confirm('{{ __('Confirm this payment and raise the branch limit?') }}')">
+                                                            <form method="POST" action="{{ route('branch-requests.payments.confirm', [$branchRequest, $payment]) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Confirm this payment and raise the branch limit?') }}')">
                                                                 @csrf
                                                                 <button type="submit" class="inline-flex items-center justify-center rounded-[8px] border border-green-600/35 bg-white px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:border-green-600/55 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500">{{ __('Confirm') }}</button>
                                                             </form>

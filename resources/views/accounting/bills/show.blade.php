@@ -48,8 +48,8 @@
                     <button type="button" class="tr-item relative">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                         {{ __('Attach Bill/Receipt') }}
-                        @if(($bill->attachments_count ?? 0) > 0)
-                            <span class="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-atlas-danger rounded-full">{{ $bill->attachments_count }}</span>
+                        @if(($bill->attachments->count() ?? 0) > 0)
+                            <span class="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-atlas-danger rounded-full">{{ $bill->attachments->count() }}</span>
                         @endif
                     </button>
                     @if($bill->vendor && $bill->vendor->email)
@@ -72,7 +72,7 @@
                         <form method="POST" action="{{ route('accounting.bills.void', $bill) }}" class="inline">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to cancel this bill?') }}')">
+                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to cancel this bill?') }}')">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 {{ __('Cancel Bill') }}
                             </button>
@@ -109,17 +109,9 @@
                 </x-dropdown>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">
@@ -140,8 +132,20 @@
                             <x-detail-field :label="__('Bill Date')" :value="$bill->bill_date?->format('M d, Y') ?? '—'" />
                             <x-detail-field :label="__('Due Date')" :value="$bill->due_date?->format('M d, Y') ?? '—'" />
                             <x-detail-field :label="__('Reference')" :value="$bill->reference ?? '—'" />
+                            @if($bill->po_number)
+                                <x-detail-field :label="__('Purchase Order')" :value="$bill->po_number" />
+                            @endif
+                            @if($bill->grn_reference)
+                                <x-detail-field :label="__('GRN')" :value="$bill->grn_reference" />
+                            @endif
                             @if($bill->memo)
                                 <x-detail-field :label="__('Description')" :value="$bill->memo" class="col-span-3" />
+                            @endif
+                            @if($bill->supplier_notes)
+                                <x-detail-field :label="__('Supplier Notes')" :value="$bill->supplier_notes" class="col-span-3" />
+                            @endif
+                            @if($bill->payment_instructions)
+                                <x-detail-field :label="__('Payment Instructions')" :value="$bill->payment_instructions" class="col-span-3" />
                             @endif
                         </div>
                     </div>
@@ -184,6 +188,30 @@
                                         <span class="balance-value">{{ format_money($bill->tax_total) }}</span>
                                     </div>
                                 @endif
+                                @if((float) $bill->freight_charges > 0)
+                                    <div class="balance-row">
+                                        <span class="balance-label">{{ __('Freight') }}:</span>
+                                        <span class="balance-value">{{ format_money($bill->freight_charges) }}</span>
+                                    </div>
+                                @endif
+                                @if((float) $bill->insurance_charges > 0)
+                                    <div class="balance-row">
+                                        <span class="balance-label">{{ __('Insurance') }}:</span>
+                                        <span class="balance-value">{{ format_money($bill->insurance_charges) }}</span>
+                                    </div>
+                                @endif
+                                @if((float) $bill->customs_charges > 0)
+                                    <div class="balance-row">
+                                        <span class="balance-label">{{ __('Customs') }}:</span>
+                                        <span class="balance-value">{{ format_money($bill->customs_charges) }}</span>
+                                    </div>
+                                @endif
+                                @if((float) $bill->other_charges > 0)
+                                    <div class="balance-row">
+                                        <span class="balance-label">{{ __('Other Charges') }}:</span>
+                                        <span class="balance-value">{{ format_money($bill->other_charges) }}</span>
+                                    </div>
+                                @endif
                                 <div class="balance-total-row">
                                     <span class="balance-label">{{ __('Total') }}:</span>
                                     <span class="balance-value">{{ format_money($bill->total) }}</span>
@@ -199,6 +227,21 @@
                             </div>
                         </div>
                     </div>
+
+                    @if($bill->attachments->isNotEmpty())
+                        <div class="card p-6">
+                            <p class="text-base font-semibold text-ink mb-5">{{ __('Attachments') }}</p>
+                            <ul class="divide-y divide-line border border-shell rounded-[14px] bg-[#fbfcfe]">
+                                @foreach($bill->attachments as $attachment)
+                                    <li class="flex items-center gap-3 px-4 py-3">
+                                        <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                        <a href="{{ Storage::disk('public')->url($attachment->file_path) }}" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate text-[13px] text-gray-800 hover:text-gold-700">{{ $attachment->name }}</a>
+                                        <span class="shrink-0 text-[11px] text-slate-400">{{ format_bytes($attachment->file_size) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
                     @if($bill->journalEntry)
                         <div class="card p-6">

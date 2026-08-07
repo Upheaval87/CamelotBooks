@@ -11,13 +11,13 @@
                 </x-button>
             </div>
             @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <x-feedback.alert variant="error" class="mb-4">
                     <ul class="list-disc list-inside">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
-                </div>
+                </x-feedback.alert>
             @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">

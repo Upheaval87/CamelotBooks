@@ -45,7 +45,7 @@
             @endif
         @endif
 
-        <form method="POST" action="{{ route('todo.destroy', $task) }}" class="ml-auto" onsubmit="return confirm('{{ __('Delete this task permanently?') }}');">
+        <form method="POST" action="{{ route('todo.destroy', $task) }}" class="ml-auto" onsubmit="return fbConfirmSubmit(event, '{{ __('Delete this task permanently?') }}');">
             @csrf
             @method('DELETE')
             <button type="submit" class="icon-btn todo-delete-btn" title="{{ __('Delete') }}" aria-label="{{ __('Delete') }}">

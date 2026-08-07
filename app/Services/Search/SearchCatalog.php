@@ -117,7 +117,7 @@ class SearchCatalog
                 $products = $this->matchColumns(
                     Product::forCompany($companyId)
                         ->active()
-                        ->select(['id', 'name', 'sku', 'barcode', 'sales_price', 'purchase_price', 'description', 'tax_rate', 'income_account_id', 'type', 'tracked_as_inventory']),
+                        ->select(['id', 'name', 'sku', 'barcode', 'sales_price', 'purchase_price', 'description', 'tax_rate', 'income_account_id', 'expense_account_id', 'type', 'tracked_as_inventory']),
                     ['name', 'sku', 'barcode', 'description'],
                     $q
                 )->orderBy('name')->limit($limit)->get();
@@ -145,6 +145,7 @@ class SearchCatalog
                         'description' => $p->description,
                         'tax_rate' => $p->tax_rate,
                         'income_account_id' => $p->income_account_id,
+                        'expense_account_id' => $p->expense_account_id,
                         'stock_qty' => $p->tracked_as_inventory ? (float) ($stock[$p->id] ?? 0) : null,
                         'url' => route('accounting.products.show', $p->id),
                     ];

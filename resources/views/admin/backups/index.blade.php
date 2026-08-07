@@ -3,12 +3,8 @@
 
 <div class="pb-12">
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="mb-4 p-4 bg-red-100 border border-red-300 text-red-800 rounded-md">{{ session('error') }}</div>
-        @endif
+        
+        
 
         <div class="settings-layout">
             <div class="settings-layout-sidebar">
@@ -24,7 +20,7 @@
                 </div>
 
                 <div class="flex justify-end mb-4">
-                    <form method="POST" action="{{ route('admin.backups.trigger') }}" onsubmit="return confirm('Trigger a database backup now? This may take a moment for large databases.')">
+                    <form method="POST" action="{{ route('admin.backups.trigger') }}" onsubmit="return fbConfirmSubmit(event, 'Trigger a database backup now? This may take a moment for large databases.')">
                         @csrf
                         <button type="submit" class="btn-primary">Trigger Backup Now</button>
                     </form>
@@ -128,12 +124,12 @@
                                     <td>{{ $snapshot->record_count }} settings</td>
                                     <td>{{ $snapshot->notes ?? '—' }}</td>
                                     <td class="text-right">
-                                        <form method="POST" action="{{ route('admin.backups.restore-snapshot', $snapshot) }}" class="inline" onsubmit="return confirm('Restore settings from this snapshot? Current settings will be overwritten.')">
+                                        <form method="POST" action="{{ route('admin.backups.restore-snapshot', $snapshot) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Restore settings from this snapshot? Current settings will be overwritten.')">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit" class="settings-pill-btn">Restore</button>
                                         </form>
-                                        <form method="POST" action="{{ route('admin.backups.delete-snapshot', $snapshot) }}" class="inline ml-2" onsubmit="return confirm('Delete this snapshot permanently?')">
+                                        <form method="POST" action="{{ route('admin.backups.delete-snapshot', $snapshot) }}" class="inline ml-2" onsubmit="return fbConfirmSubmit(event, 'Delete this snapshot permanently?')">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="settings-pill-btn" style="border-color: rgba(142,59,59,1); color: rgba(142,59,59,1);">Delete</button>

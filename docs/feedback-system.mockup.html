@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback System — System Banner · Alerts · Toasts · Confirmation Modal</title>
+<style>
+  /* ============ DESIGN TOKENS ============ */
+  :root{
+    --navy-700:#24384f;
+    --navy-800:#182a3e;
+    --navy-900:#132234;
+    --navy-200:#cdd7e2;
+    --navy-hairline:rgba(190,152,72,.45);
+
+    --gold-500:#b6913f;
+    --gold-600:#96742c;
+    --gold-700:#8f6f2a;
+    --gold-text:#8f6f2a;
+
+    --line:#ebedf2;
+    --shell:#e3e6eb;
+    --row:#f8f9fb;
+
+    --green-700:#15803d;
+    --green-600:#16a34a;
+    --green-100:#dcfce7;
+    --mint-100:#ecfdf3;
+    --mint-200:#dcf5e7;
+
+    --red-700:#b91c1c;
+    --red-100:#fee2e2;
+    --red-50:#fef2f2;
+
+    --amber-700:#b45309;
+    --amber-100:#fef3c7;
+    --amber-50:#fffbeb;
+
+    --info-700:#1d4ed8;
+    --info-100:#dbeafe;
+    --info-50:#eff6ff;
+
+    --text:#1f2937;
+    --muted:#6b7280;
+    --slate-500:#64748b;
+
+    --r-card:20px;
+    --r-alert:12px;
+    --r-btn:12px;
+    --r-toast:14px;
+
+    --shadow-card:0 1px 2px rgb(16 24 40 / .05), 0 12px 32px -8px rgb(16 24 40 / .10), 0 32px 64px -24px rgb(15 30 50 / .14);
+    --shadow-new:0 1px 2px rgb(63 44 7 / .25), 0 10px 22px -8px rgb(150 116 44 / .55), inset 0 1px 0 rgb(255 255 255 / .28);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    background:
+      radial-gradient(1100px 380px at 85% -10%, rgba(36,56,79,.07), transparent 60%),
+      #eef1f6;
+    color:#1f2937;
+    padding:48px 40px 120px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .page-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.02em;color:#111827}
+  .sub{margin:6px 0 32px;color:#6b7280;font-size:14px}
+  .section-label{margin:44px 0 14px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#64748b}
+  .row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+
+  /* ============ 1. SYSTEM BANNER ============ */
+  .system-banner{
+    display:flex;align-items:center;gap:14px;
+    background:linear-gradient(90deg,var(--navy-700),var(--navy-800) 55%,var(--navy-900));
+    color:#fff;
+    border-radius:16px;
+    padding:14px 20px;
+    max-width:1000px;
+    margin-bottom:32px;
+    box-shadow:var(--shadow-card);
+    position:relative;
+  }
+  .system-banner .icon{
+    flex-shrink:0;
+    width:34px;height:34px;
+    border-radius:10px;
+    background:linear-gradient(180deg,var(--gold-500),var(--gold-600));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;
+    box-shadow:inset 0 1px 0 rgb(255 255 255 / .28);
+  }
+  .system-banner .content{flex:1;min-width:0}
+  .system-banner .title{font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .system-banner .body{font-size:13px;color:var(--navy-200);margin-top:2px}
+  .system-banner .action{
+    flex-shrink:0;
+    color:var(--gold-500);font-weight:600;font-size:13px;text-decoration:none;
+  }
+  .system-banner .action:hover{color:var(--gold-500);text-decoration:underline}
+  .system-banner .dismiss{
+    flex-shrink:0;
+    width:28px;height:28px;
+    border:1px solid rgb(255 255 255 / .16);
+    border-radius:8px;
+    background:transparent;color:var(--navy-200);
+    font-size:15px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .system-banner .dismiss:hover{background:rgb(255 255 255 / .08);color:#fff}
+
+  /* ============ 2. INLINE ALERTS ============ */
+  .alert{
+    display:flex;align-items:flex-start;gap:12px;
+    border-radius:var(--r-alert);
+    padding:14px 16px;
+    font-size:14px;
+    max-width:640px;
+  }
+  .alert .icon{flex-shrink:0;margin-top:1px}
+  .alert .msg{flex:1}
+  .alert .msg .title{font-weight:600}
+  .alert.info{background:var(--info-50);border:1px solid var(--info-100);color:var(--info-700)}
+  .alert.success{background:var(--mint-100);border:1px solid var(--mint-200);color:var(--green-700)}
+  .alert.warning{background:var(--amber-50);border:1px solid var(--amber-100);color:var(--amber-700)}
+  .alert.error{background:var(--red-50);border:1px solid var(--red-100);color:var(--red-700)}
+  .alert.error .icon{color:var(--red-700)}
+  .alert.warning .icon{color:var(--amber-700)}
+  .alert.success .icon{color:var(--green-600)}
+  .alert.info .icon{color:var(--info-700)}
+
+  /* ============ 3. TOASTS ============ */
+  .toast-viewport{
+    position:fixed;right:20px;top:20px;z-index:120;
+    display:flex;flex-direction:column;gap:12px;
+    width:380px;max-width:calc(100vw - 40px);
+    pointer-events:none;
+  }
+  .toast{
+    pointer-events:auto;
+    display:flex;align-items:flex-start;gap:12px;
+    background:rgba(255,255,255,.96);
+    backdrop-filter:blur(8px);
+    border:1px solid var(--line);
+    border-radius:var(--r-toast);
+    padding:14px 16px;
+    box-shadow:0 8px 32px -4px rgba(13,26,41,.16), 0 2px 8px -2px rgba(13,26,41,.08);
+    position:relative;
+    overflow:hidden;
+  }
+  .toast .icon{flex-shrink:0;margin-top:1px}
+  .toast .content{flex:1;min-width:0}
+  .toast .content .title{font-size:14px;font-weight:600;color:#111827}
+  .toast .content .msg{font-size:13px;color:var(--muted);margin-top:2px}
+  .toast .close{
+    flex-shrink:0;
+    width:22px;height:22px;
+    border-radius:6px;
+    background:transparent;border:none;color:#9ca3af;
+    font-size:15px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .toast .close:hover{background:var(--row);color:#374151}
+  .toast .progress{
+    position:absolute;left:0;bottom:0;height:3px;width:100%;
+    background:transparent;
+  }
+  .toast .progress span{
+    display:block;height:100%;
+    background:linear-gradient(90deg,var(--gold-500),var(--gold-600));
+    transition:width linear;
+  }
+  .toast.success .icon{color:var(--green-600)}
+  .toast.success .progress span{background:linear-gradient(90deg,#22c55e,#16a34a)}
+  .toast.error .icon{color:var(--red-700)}
+  .toast.error .progress span{background:linear-gradient(90deg,#ef4444,#dc2626)}
+  .toast.warning .icon{color:var(--amber-600)}
+  .toast.warning .progress span{background:linear-gradient(90deg,#f59e0b,#d97706)}
+  .toast.info .icon{color:var(--info-700)}
+  .toast.info .progress span{background:linear-gradient(90deg,#3b82f6,#2563eb)}
+
+  /* ============ 4. CONFIRMATION MODAL ============ */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:130;
+    background:rgba(13,26,41,.45);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .modal{
+    width:100%;max-width:430px;
+    background:rgba(255,255,255,.94);
+    backdrop-filter:blur(14px);
+    border-radius:var(--r-card);
+    box-shadow:0 24px 64px -16px rgba(13,26,41,.35);
+    overflow:hidden;
+  }
+  .modal .head{
+    display:flex;align-items:flex-start;gap:14px;
+    padding:24px 24px 0;
+  }
+  .modal .icon{
+    flex-shrink:0;
+    width:44px;height:44px;
+    border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .modal.danger .icon{background:var(--red-50);color:var(--red-700)}
+  .modal.danger .icon svg{stroke:var(--red-700)}
+  .modal.navy .icon{
+    background:linear-gradient(180deg,var(--gold-500),var(--gold-600));
+    color:#fff;box-shadow:inset 0 1px 0 rgb(255 255 255 / .28);
+  }
+  .modal .title{font-size:18px;font-weight:700;letter-spacing:-.01em;color:#111827}
+  .modal .body{font-size:14px;color:var(--muted);margin-top:6px;line-height:1.5}
+  .modal .body .em{color:#374151;font-weight:600}
+
+  /* navy head variant */
+  .modal.navy .head-panel{
+    background:linear-gradient(135deg,var(--navy-700),var(--navy-800) 55%,var(--navy-900));
+    padding:20px 24px;
+    display:flex;align-items:center;gap:14px;
+    color:#fff;
+  }
+  .modal.navy .head-panel .icon{
+    width:40px;height:40px;border-radius:10px;
+    background:linear-gradient(180deg,var(--gold-500),var(--gold-600));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 1px 0 rgb(255 255 255 / .28);
+  }
+  .modal.navy .head-panel .title{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.01em}
+  .modal.navy .head-panel .sub{font-size:12px;color:var(--navy-200);margin-top:2px}
+  .modal .summary{
+    margin:18px 24px 0;
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+  }
+  .modal .summary .row{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;font-size:13px}
+  .modal .summary .row + .row{border-top:1px solid var(--line)}
+  .modal .summary .row .k{color:var(--slate-500)}
+  .modal .summary .row .v{font-weight:600;color:#111827}
+
+  .modal .type-confirm{padding:16px 24px 0}
+  .modal .type-confirm label{font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px}
+  .modal .type-confirm input{
+    width:100%;
+    border:1.5px solid var(--shell);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:14px;
+    color:#111827;
+    background:#fff;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .modal .type-confirm input:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(182,145,63,.15)}
+  .modal .type-confirm input.match{border-color:var(--green-600)}
+  .modal .actions{
+    display:flex;justify-content:flex-end;gap:10px;
+    padding:20px 24px 24px;
+  }
+  .btn{
+    padding:10px 18px;
+    border-radius:10px;
+    font-size:14px;font-weight:600;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-cancel{background:#fff;border:1px solid var(--shell);color:#374151}
+  .btn-cancel:hover{background:var(--row)}
+  .btn-danger{
+    background:linear-gradient(180deg,#ef4444,#dc2626);
+    border:1px solid rgba(255,255,255,.22);
+    color:#fff;
+    box-shadow:0 1px 2px rgba(127,29,29,.25), 0 10px 22px -8px rgba(220,38,38,.55), inset 0 1px 0 rgb(255 255 255 / .28);
+  }
+  .btn-danger:hover{transform:translateY(-1px)}
+  .btn-primary{
+    background:linear-gradient(180deg,var(--gold-500),var(--gold-600));
+    border:1px solid rgba(255,255,255,.22);
+    color:#fff;
+    box-shadow:var(--shadow-new);
+  }
+  .btn-primary:hover{transform:translateY(-1px)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+  .demo-stack{display:flex;flex-direction:column;gap:14px}
+</style>
+</head>
+<body>
+
+  <div class="page-head">
+    <h1>Feedback System</h1>
+  </div>
+  <p class="sub">Centralised system banner, inline alerts, toasts and confirmation modal — reference implementation.</p>
+
+  <!-- ============ 1. SYSTEM BANNER ============ -->
+  <div class="section-label">1 · System Banner</div>
+  <div class="system-banner" role="status" x-data="{ visible: true }" x-show="visible">
+    <span class="icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </span>
+    <div class="content">
+      <div class="title">System maintenance window</div>
+      <div class="body">Accounting will be unavailable Sun 02:00–03:00 for scheduled maintenance. Your data is safe.</div>
+    </div>
+    <a class="action" href="#">View schedule</a>
+    <button class="dismiss" aria-label="Dismiss">×</button>
+  </div>
+
+  <!-- ============ 2. INLINE ALERTS ============ -->
+  <div class="section-label">2 · Inline Alerts (4 variants)</div>
+  <div class="demo-stack">
+    <div class="alert info" role="status">
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+      <div class="msg"><span class="title">Heads up</span> — new purchase order #PO-0041 awaits review.</div>
+    </div>
+    <div class="alert success" role="status">
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></span>
+      <div class="msg"><span class="title">Posted</span> — journal entry #JE-0087 was posted to the general ledger.</div>
+    </div>
+    <div class="alert warning" role="alert">
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.3 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.7 3.86a2 2 0 00-3.4 0z"/></svg></span>
+      <div class="msg">You are close to your branch limit of <strong>8</strong>. 2 branches remaining.</div>
+    </div>
+    <div class="alert error" role="alert">
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v2m0 4h.01"/></svg></span>
+      <div class="msg">Debits and credits are out of balance by <strong>1,250.00</strong>.</div>
+    </div>
+  </div>
+
+  <!-- ============ 3. TOASTS ============ -->
+  <div class="section-label">3 · Toasts (viewport top-right, max 4)</div>
+  <div class="toast-viewport" aria-live="polite">
+    <div class="toast success" role="status">
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></span>
+      <div class="content"><div class="title">Saved</div><div class="msg">Invoice #INV-0092 was created successfully.</div></div>
+      <button class="close" aria-label="Dismiss">×</button>
+      <div class="progress"><span style="width:62%;transition-duration:5000ms"></span></div>
+    </div>
+    <div class="toast error" role="alert">
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></span>
+      <div class="content"><div class="title">Payment failed</div><div class="msg">The bank rejected the transaction. Please verify account details.</div></div>
+      <button class="close" aria-label="Dismiss">×</button>
+      <div class="progress"><span style="width:74%;transition-duration:8000ms"></span></div>
+    </div>
+  </div>
+
+  <!-- ============ 4. CONFIRMATION MODAL (danger) ============ -->
+  <div class="section-label">4 · Confirmation Modal — destructive (danger)</div>
+  <div class="modal-overlay" style="position:static;padding:0;background:transparent;backdrop-filter:none">
+    <div class="modal danger">
+      <div class="head">
+        <span class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></span>
+        <div>
+          <div class="title">Void this invoice?</div>
+          <div class="body">Invoice <span class="em">#INV-0092</span> will be marked void and can no longer be used. This cannot be undone.</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-cancel">Cancel</button>
+        <button class="btn btn-danger">Void invoice</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5. CONFIRMATION MODAL (navy head, with type-to-confirm) ============ -->
+  <div class="section-label">5 · Confirmation Modal — navy head + type-to-confirm</div>
+  <div class="modal-overlay" style="position:static;padding:0;background:transparent;backdrop-filter:none">
+    <div class="modal navy">
+      <div class="head-panel">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+        <div>
+          <div class="title">Approve payroll run?</div>
+          <div class="sub">March 2026 · 12 employees · 1,240,000.00</div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="row"><span class="k">Gross pay</span><span class="v">1,240,000.00</span></div>
+        <div class="row"><span class="k">Tax (PAYE)</span><span class="v">− 312,000.00</span></div>
+        <div class="row"><span class="k">Net pay</span><span class="v">928,000.00</span></div>
+      </div>
+      <div class="type-confirm">
+        <label for="type-confirm-demo">Type <strong>APPROVE</strong> to confirm</label>
+        <input id="type-confirm-demo" type="text" placeholder="APPROVE">
+      </div>
+      <div class="actions">
+        <button class="btn btn-cancel">Cancel</button>
+        <button class="btn btn-primary" disabled>Approve run</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -10,11 +10,7 @@
                     {{ __('Back to Templates') }}
                 </x-button>
             </div>
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="form-page">
                 <div class="form-page-main">
@@ -202,7 +198,7 @@
         function removeLine(btn) {
             const tbody = document.getElementById('linesBody');
             if (tbody.rows.length <= 2) {
-                alert('At least two lines are required.');
+                window.feedback.alert('At least two lines are required.');
                 return;
             }
             btn.closest('tr').remove();
@@ -259,13 +255,13 @@
 
             if (Math.abs(totalDebit - totalCredit) >= 0.005) {
                 e.preventDefault();
-                alert('Debits and credits must be equal before submitting.');
+                window.feedback.alert('Debits and credits must be equal before submitting.');
                 return;
             }
 
             if (totalDebit === 0 && totalCredit === 0) {
                 e.preventDefault();
-                alert('At least one line must have a debit or credit amount.');
+                window.feedback.alert('At least one line must have a debit or credit amount.');
                 return;
             }
         });

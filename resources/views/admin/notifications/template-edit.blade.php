@@ -8,9 +8,7 @@
             <a href="{{ route('admin.notifications.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-500 transition ease-in-out duration-150">Back to Notifications</a>
         </div>
 
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">{{ session('success') }}</div>
-        @endif
+        
 
         <form method="POST" action="{{ route('admin.notifications.template-update', $emailTemplate) }}">
             @csrf

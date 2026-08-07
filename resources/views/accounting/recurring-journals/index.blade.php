@@ -8,17 +8,9 @@
                     {{ __('New Recurring Template') }}
                 </x-button>
             </div>
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
@@ -75,7 +67,7 @@
                                     </td>
                                     <td class="text-right">
                                         <a href="{{ route('accounting.recurring-journals.edit', $template) }}" class="text-ink hover:text-gold">Edit</a>
-                                        <form method="POST" action="{{ route('accounting.recurring-journals.toggle', $template) }}" class="inline" onsubmit="return confirm('Are you sure you want to toggle this template?');">
+                                        <form method="POST" action="{{ route('accounting.recurring-journals.toggle', $template) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to toggle this template?');">
                                             @csrf
                                             <button type="submit" class="{{ $template->is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900' }}">
                                                 {{ $template->is_active ? 'Deactivate' : 'Activate' }}

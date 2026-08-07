@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Bill — Enterprise v2</title>
+<style>
+  :root{
+    --navy-700:#24384f;--navy-800:#182a3e;--navy-900:#132234;--navy-200:#cdd7e2;
+    --gold-500:#b6913f;--gold-600:#96742c;--gold-700:#8f6f2a;
+    --green-600:#15803d;--red-600:#dc2626;
+    --line:#ebedf2;--border:#e3e6eb;
+    --st-lt-hover:rgba(36,56,79,.06);
+    --shadow-card:0 1px 2px rgba(16,24,40,.05),0 12px 32px -8px rgba(16,24,40,.10),0 32px 64px -24px rgba(15,30,50,.14);
+    --shadow-thead:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -1px 0 rgba(190,152,72,.45);
+    --shadow-new:0 1px 2px rgba(63,44,7,.25),0 10px 22px -8px rgba(150,116,44,.55),inset 0 1px 0 rgba(255,255,255,.28);
+    --shadow-navy-btn:0 1px 2px rgba(10,20,33,.30),0 10px 20px -10px rgba(24,42,62,.60),inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#f5f7fc;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}
+  :focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .page{max-width:1360px;margin:0 auto;padding:0 24px 56px}
+
+  .sticky-head{position:sticky;top:0;z-index:60;background:rgba(245,247,252,.82);backdrop-filter:blur(12px);
+    padding:18px 0 16px;border-bottom:1px solid var(--line);margin-bottom:24px;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+  h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#111827}
+  .sub{margin-top:5px;font-size:13.5px;color:#6b7280}
+  .head-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:12px;
+    font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s ease;white-space:nowrap}
+  .btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(0)}
+  .btn-tertiary{background:transparent;color:#4b5563}
+  .btn-tertiary:hover{background:rgba(255,255,255,.75);color:#16283c}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .btn-ghost:hover{background:var(--st-lt-hover);border-color:rgba(36,56,79,.28);color:#1d3349}
+  .btn-primary{color:#f0f5fa;background:linear-gradient(180deg,#2e4763 0%,#1d3349 55%,#15263a 100%);border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-navy-btn)}
+  .btn-accent{color:#fff;background:linear-gradient(180deg,var(--gold-500),var(--gold-600));border-color:rgba(255,255,255,.22);box-shadow:var(--shadow-new)}
+  .btn-sm{height:34px;padding:0 13px;font-size:12.5px;border-radius:10px}
+
+  .shell{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:22px;min-width:0}
+
+  .card{background:rgba(255,255,255,.7);backdrop-filter:blur(14px);border-radius:20px;padding:24px 26px;box-shadow:var(--shadow-card)}
+  .sec-head{display:flex;align-items:center;gap:12px}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(180deg,#2e4763,#22394f);color:#e2c069;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 3px 8px -3px rgba(0,0,0,.4)}
+  .sec-head h2{font-size:15px;font-weight:800;color:#111827}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 20px;margin-top:20px}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 20px;margin-top:20px}
+  .sp2{grid-column:span 2}.sp4{grid-column:1/-1}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:7px}
+  .req{color:var(--red-600)}
+  .input{width:100%;height:44px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.85);
+    padding:0 14px;font-size:13.5px;color:#111827;font-family:inherit;transition:all .15s}
+  .input::placeholder{color:#94a3b8}
+  .input:hover{border-color:rgba(36,56,79,.28);background:#fff}
+  .input:focus{outline:none;border-color:rgba(182,145,63,.55);box-shadow:0 0 0 3px rgba(182,145,63,.15)}
+  .input[readonly]{background:rgba(244,246,250,.8);color:#64748b;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  .input-err{border-color:rgba(220,38,38,.5)}
+  .f-err{margin-top:6px;font-size:11.5px;font-weight:600;color:var(--red-600)}
+  .in-wrap{position:relative}
+  .in-wrap .input{padding-right:40px}
+  .in-wrap .lead{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
+  .in-wrap.has-lead .input{padding-left:38px}
+  .in-wrap svg.end{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none}
+  .combo{display:flex}
+  .combo .in-wrap{flex:1}
+  .combo .input{border-radius:12px 0 0 12px}
+  .combo button{width:42px;border:1px solid var(--border);border-left:none;border-radius:0 12px 12px 0;background:rgba(248,249,251,.9);color:var(--gold-700);cursor:pointer}
+  .combo button:hover{background:var(--st-lt-hover)}
+  textarea.input{height:auto;min-height:96px;padding:10px 14px;resize:vertical}
+
+  /* ===== line items — fluid, NO horizontal scroll ===== */
+  .li-wrap{margin-top:18px;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fbfcfe}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+  thead th{background:linear-gradient(180deg,var(--navy-700),var(--navy-800) 55%,var(--navy-900));
+    color:var(--navy-200);text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    padding:11px 10px;box-shadow:var(--shadow-thead)}
+  thead th.num{text-align:right}
+  tbody td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr{transition:background .13s}
+  tbody tr:hover td{background:#f2f6fa}
+  tbody tr:last-child td{border-bottom:none}
+  .ci{height:36px;border-radius:10px;border:1px solid var(--border);background:#fff;padding:0 9px;font-size:12.5px;width:100%;font-family:inherit;color:#111827;transition:all .15s}
+  .ci:focus{outline:none;border-color:rgba(182,145,63,.55);box-shadow:0 0 0 3px rgba(182,145,63,.14)}
+  td.num .ci{text-align:right;font-variant-numeric:tabular-nums}
+  .amt{display:block;text-align:right;font-weight:700;color:#111827;font-variant-numeric:tabular-nums;padding-right:8px}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:#94a3b8;cursor:pointer;transition:all .13s}
+  .ibtn:hover{background:var(--st-lt-hover);color:var(--navy-700)}
+  .ibtn.del:hover{background:rgba(220,38,38,.08);color:var(--red-600)}
+
+  /* ===== attachments ===== */
+  .drop{margin-top:18px;border:1.5px dashed rgba(36,56,79,.28);border-radius:16px;background:rgba(255,255,255,.5);padding:28px 20px;text-align:center;transition:all .15s}
+  .drop:hover{border-color:rgba(182,145,63,.55);background:rgba(182,145,63,.05)}
+  .drop .halo{width:46px;height:46px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;background:var(--st-lt-hover);border:1px solid rgba(36,56,79,.15);color:var(--navy-700)}
+  .drop p{font-size:13px;color:#64748b}.drop p b{color:var(--gold-700)}
+  .fmts{margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .fmt{padding:3px 10px;border-radius:999px;background:rgba(36,56,79,.06);border:1px solid rgba(36,56,79,.16);color:var(--navy-700);font-size:10.5px;font-weight:800;letter-spacing:.06em}
+  .files{margin-top:14px;display:flex;gap:12px;flex-wrap:wrap}
+  .file{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.85);border:1px solid var(--border);box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .file .fic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center}
+  .fic.pdf{background:rgba(220,38,38,.08);color:var(--red-600)}
+  .fic.img{background:rgba(34,197,94,.12);color:var(--green-600)}
+  .file .n{font-size:12.5px;font-weight:700;color:#111827}
+  .file .s{font-size:11px;color:#94a3b8}
+
+  /* ===== summary ===== */
+  .sum{position:sticky;top:88px}
+  .srow{display:flex;justify-content:space-between;gap:16px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:13px}
+  .srow .l{color:#64748b}.srow .v{font-weight:600;color:#111827;font-variant-numeric:tabular-nums}
+  .gt{margin-top:14px;display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-radius:14px;
+    background:linear-gradient(90deg,var(--navy-700),var(--navy-800) 60%,var(--navy-900));
+    box-shadow:var(--shadow-thead),0 10px 24px -10px rgba(13,26,41,.5)}
+  .gt .l{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-200)}
+  .gt .v{font-size:24px;font-weight:800;color:#f2f6fa;font-variant-numeric:tabular-nums}
+  .sum-note{margin-top:10px;font-size:11.5px;color:#94a3b8;text-align:center}
+
+  @media (max-width:1100px){.shell{grid-template-columns:1fr}.sum{position:static}.g4{grid-template-columns:repeat(2,1fr)}.sp2{grid-column:1/-1}}
+  @media (max-width:760px){.ci{font-size:11.5px;padding:0 6px}thead th{padding:10px 6px;letter-spacing:.05em}}
+  @media (max-width:640px){.g4,.g3{grid-template-columns:1fr}.sp2{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="sticky-head">
+    <div><h1>Create Bill</h1><p class="sub">Record a supplier bill with line items and charges.</p></div>
+    <div class="head-actions">
+      <button class="btn btn-tertiary">Cancel</button>
+      <button class="btn btn-ghost">Save Draft</button>
+      <button class="btn btn-ghost">Save &amp; New</button>
+      <button class="btn btn-primary">Save</button>
+      <button class="btn btn-accent"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 19V6M6 12l6-6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Submit for Approval</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <div class="col">
+
+      <!-- supplier -->
+      <section class="card">
+        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-6 9 6M5 9v11M19 9v11M9 9v11M15 9v11M3 20h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h2>Supplier Information</h2><span class="rule"></span></div>
+        <div class="g4">
+          <div class="field sp2"><label>Supplier <span class="req">*</span></label>
+            <div class="combo"><div class="in-wrap has-lead"><svg class="lead" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="input" placeholder="Search vendors…"></div><button aria-label="Search">⌕</button></div>
+          </div>
+          <div class="field"><label>Contact Person</label><input class="input" value="Elvis Seyama"></div>
+          <div class="field"><label>Currency</label>
+            <div class="in-wrap"><select class="input" style="appearance:none"><option>MWK – Kwacha</option><option>USD – Dollar</option></select><svg class="end" width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+          </div>
+          <div class="field"><label>Email</label><input class="input" type="email" value="orders@metro.test"></div>
+          <div class="field"><label>Phone</label><input class="input" value="+265 991 234 567"></div>
+          <div class="field"><label>Exchange Rate</label><input class="input" value="1.0000"></div>
+          <div class="field"><label>Payment Terms</label>
+            <div class="in-wrap"><select class="input" style="appearance:none"><option>Net 30</option><option>Due on Receipt</option><option>Net 60</option></select><svg class="end" width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+          </div>
+          <div class="field sp4"><label>Address</label><input class="input" value="PO BOX 40035, Kanengo, Lilongwe 4"></div>
+        </div>
+      </section>
+
+      <!-- bill info -->
+      <section class="card">
+        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Bill Information</h2><span class="rule"></span></div>
+        <div class="g4">
+          <div class="field"><label>Bill Number</label><input class="input" readonly value="BILL-2026-0148"></div>
+          <div class="field"><label>Supplier Invoice №</label><input class="input" placeholder="INV-0092"></div>
+          <div class="field"><label>Bill Date <span class="req">*</span></label>
+            <div class="in-wrap"><input class="input" value="08/07/2026"><svg class="end" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          </div>
+          <div class="field"><label>Due Date <span class="req">*</span></label>
+            <div class="in-wrap"><input class="input input-err" placeholder="mm/dd/yyyy"><svg class="end" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+            <div class="f-err">Due date must be on or after bill date.</div>
+          </div>
+          <div class="field"><label>Purchase Order</label><input class="input" placeholder="PO-…"></div>
+          <div class="field"><label>GRN</label><input class="input" placeholder="GRN-…"></div>
+          <div class="field"><label>Reference №</label><input class="input"></div>
+          <div class="field"><label>Branch</label>
+            <div class="in-wrap"><select class="input" style="appearance:none"><option>Headquarters</option><option>Mzuzu</option></select><svg class="end" width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+          </div>
+          <div class="field"><label>Department</label><input class="input" placeholder="Operations"></div>
+          <div class="field"><label>Cost Centre</label><input class="input" placeholder="CC-…"></div>
+          <div class="field sp2"><label>Project</label><input class="input" placeholder="Optional"></div>
+        </div>
+      </section>
+
+      <!-- line items: trimmed columns, fluid width -->
+      <section class="card">
+        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Line Items</h2><span class="rule"></span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:12px">＋ Add Line</button></div>
+        <div class="li-wrap">
+          <table>
+            <thead><tr>
+              <th style="width:13%">Item Code</th>
+              <th style="width:16%">Item Name</th>
+              <th>Description</th>
+              <th style="width:8%" class="num">Qty</th>
+              <th style="width:13%" class="num">Unit Cost</th>
+              <th style="width:8%" class="num">Disc %</th>
+              <th style="width:12%" class="num">Amount</th>
+              <th style="width:8%"></th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><input class="ci" value="AIR-001"></td>
+                <td><input class="ci" value="Airtime Bundles"></td>
+                <td><input class="ci" value="Field team airtime — August"></td>
+                <td class="num"><input class="ci" value="10"></td>
+                <td class="num"><input class="ci" value="2,500.00"></td>
+                <td class="num"><input class="ci" value="0"></td>
+                <td><span class="amt">25,000.00</span></td>
+                <td><div class="row-act"><button class="ibtn" title="Duplicate line">⧉</button><button class="ibtn del" title="Delete line">🗑</button></div></td>
+              </tr>
+              <tr>
+                <td><input class="ci" placeholder="Code"></td>
+                <td><input class="ci" placeholder="Search items…"></td>
+                <td><input class="ci"></td>
+                <td class="num"><input class="ci" value="1"></td>
+                <td class="num"><input class="ci" value="0"></td>
+                <td class="num"><input class="ci" value="0"></td>
+                <td><span class="amt">0.00</span></td>
+                <td><div class="row-act"><button class="ibtn" title="Duplicate line">⧉</button><button class="ibtn del" title="Delete line">🗑</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- charges -->
+      <section class="card">
+        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Additional Charges</h2><span class="rule"></span></div>
+        <div class="g4">
+          <div class="field"><label>Freight</label><input class="input" id="ch-freight" data-charge="freight" value="1,500.00"></div>
+          <div class="field"><label>Insurance</label><input class="input" id="ch-insurance" data-charge="insurance" value="0.00"></div>
+          <div class="field"><label>Customs</label><input class="input" id="ch-customs" data-charge="customs" value="0.00"></div>
+          <div class="field"><label>Other Charges</label><input class="input" id="ch-other" data-charge="other" value="0.00"></div>
+        </div>
+      </section>
+
+      <!-- notes -->
+      <section class="card">
+        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Notes</h2><span class="rule"></span></div>
+        <div class="g3">
+          <div class="field"><label>Internal Notes</label><textarea class="input" placeholder="Visible to your team only…"></textarea></div>
+          <div class="field"><label>Supplier Notes</label><textarea class="input" placeholder="Printed on the bill PDF…"></textarea></div>
+          <div class="field"><label>Payment Instructions</label><textarea class="input" placeholder="Bank / settlement details…"></textarea></div>
+        </div>
+      </section>
+
+      <!-- attachments -->
+      <section class="card">
+        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h2>Attachments</h2><span class="rule"></span></div>
+        <div class="drop">
+          <div class="halo"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <p>Drag &amp; drop files here, or <b>browse</b></p>
+          <div class="fmts"><span class="fmt">PDF</span><span class="fmt">IMG</span><span class="fmt">XLSX</span><span class="fmt">DOCX</span></div>
+        </div>
+        <div class="files">
+          <div class="file"><span class="fic pdf">🗎</span><span><span class="n">supplier-invoice-0092.pdf</span><br><span class="s">412 KB</span></span><button class="ibtn del" style="margin-left:auto">✕</button></div>
+          <div class="file"><span class="fic img">🖼</span><span><span class="n">grn-scan.jpg</span><br><span class="s">1.1 MB</span></span><button class="ibtn del" style="margin-left:auto">✕</button></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- summary: zero charges hidden live -->
+    <aside class="sum card">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Summary</h2></div>
+      <div style="margin-top:14px">
+        <div class="srow"><span class="l">Subtotal</span><span class="v" id="v-sub">25,000.00</span></div>
+        <div class="srow"><span class="l">Discount</span><span class="v">0.00</span></div>
+        <div class="srow"><span class="l">Tax</span><span class="v">0.00</span></div>
+        <div class="srow" data-charge="freight"><span class="l">Freight</span><span class="v">1,500.00</span></div>
+        <div class="srow" data-charge="insurance" style="display:none"><span class="l">Insurance</span><span class="v">0.00</span></div>
+        <div class="srow" data-charge="customs" style="display:none"><span class="l">Customs</span><span class="v">0.00</span></div>
+        <div class="srow" data-charge="other" style="display:none"><span class="l">Other Charges</span><span class="v">0.00</span></div>
+        <div class="srow" style="border-bottom:none"><span class="l">Rounding</span><span class="v">0.00</span></div>
+      </div>
+      <div class="gt"><span class="l">Grand Total</span><span class="v" id="v-gt">K26,500.00</span></div>
+      <p class="sum-note">Zero charges are hidden · totals update instantly.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+  const SUB = 25000;
+  const fmt = n => n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const parse = s => parseFloat(String(s).replace(/,/g,'')) || 0;
+  function update(){
+    let total = SUB;
+    document.querySelectorAll('input[data-charge]').forEach(inp=>{
+      const v = parse(inp.value);
+      const row = document.querySelector('.srow[data-charge="'+inp.dataset.charge+'"]');
+      if (v > 0){ row.style.display=''; row.querySelector('.v').textContent = fmt(v); total += v; }
+      else { row.style.display='none'; }
+    });
+    document.getElementById('v-gt').textContent = 'K' + fmt(total);
+  }
+  document.querySelectorAll('input[data-charge]').forEach(i=>i.addEventListener('input',update));
+  update();
+</script>
+</body>
+</html>

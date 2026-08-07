@@ -96,9 +96,7 @@
             </x-report.card>
 
             @if(!$balanced)
-                <div class="mt-4 px-6 py-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-sm font-semibold text-red-600">Warning: Balance sheet is out of balance by {{ format_number(abs($total_assets - ($total_liabilities + $total_equity))) }}</p>
-                </div>
+                <x-feedback.alert variant="error" class="mt-4">Warning: Balance sheet is out of balance by {{ format_number(abs($total_assets - ($total_liabilities + $total_equity))) }}</x-feedback.alert>
             @endif
         </div>
     </div>

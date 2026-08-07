@@ -20,7 +20,7 @@
                         <form method="POST" action="{{ route('accounting.vendor-credits.void', $vendorCredit) }}" class="inline">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to void this vendor credit?') }}')">{{ __('Void') }}</button>
+                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this vendor credit?') }}')">{{ __('Void') }}</button>
                         </form>
                     @endcan
                 @endif
@@ -28,17 +28,9 @@
                 <a href="{{ route('accounting.vendor-credits.index') }}" class="tr-item">{{ __('Back to Vendor Credits') }}</a>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">

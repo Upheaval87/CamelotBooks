@@ -3,14 +3,10 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-            @endif
+            
 
             @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ $errors->first() }}
-                </div>
+                <x-feedback.alert variant="error" class="mb-4">{{ $errors->first() }}</x-feedback.alert>
             @endif
 
             <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -117,7 +113,7 @@
                                     <td class="text-right whitespace-nowrap">
                                         <a href="{{ route('branch-requests.show', $r) }}" class="btn-ghost px-3 py-1 text-xs">{{ __('View') }}</a>
                                         @if(in_array($r->status, [\App\Models\BranchRequest::STATUS_PENDING_REVIEW, \App\Models\BranchRequest::STATUS_QUOTED], true))
-                                            <form method="POST" action="{{ route('branch-requests.cancel', $r) }}" class="inline" onsubmit="return confirm('{{ __('Cancel this branch request?') }}')">
+                                            <form method="POST" action="{{ route('branch-requests.cancel', $r) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Cancel this branch request?') }}')">
                                                 @csrf
                                                 <button type="submit" class="px-3 py-1 text-xs text-red-600 hover:text-red-800">{{ __('Cancel') }}</button>
                                             </form>

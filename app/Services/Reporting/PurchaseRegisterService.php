@@ -14,7 +14,7 @@ class PurchaseRegisterService
             ->whereIn('status', ['posted', 'partially_paid', 'paid'])
             ->where('bill_date', '>=', $dateFrom)
             ->where('bill_date', '<=', $dateTo)
-            ->with('vendor')
+            ->with(['vendor', 'lines'])
             ->orderBy('bill_date')
             ->get();
 

@@ -8,9 +8,7 @@
                     {{ __('New Category') }}
                 </x-button>
             </div>
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
-            @endif
+            
 
             <div class="datasheet-wrap">
                 <div class="overflow-x-auto">

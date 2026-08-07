@@ -22,11 +22,7 @@
                 <span x-text="syncResult?.message"></span>
                 <button @click="syncResult = null" class="ml-2 font-bold">&times;</button>
             </div>
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
             <div id="pos-error" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative hidden">
                 <span id="pos-error-text"></span>

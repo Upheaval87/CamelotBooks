@@ -435,4 +435,49 @@ class BillServicePoBackedTest extends TestCase
 
         $this->assertEquals(10, (float) $setup['poLine']->fresh()->quantity_billed);
     }
+
+    public function test_po_backed_bill_with_charges_creates_balanced_je(): void
+    {
+        $setup = $this->createPoBackedSetup(10.00, 10.00);
+
+        $bill = $this->service->create([
+            'company_id' => $this->company->id,
+            'vendor_id' => $this->vendor->id,
+            'purchase_order_id' => $setup['po']->id,
+            'grn_id' => $setup['grn']->id,
+            'bill_date' => '2026-01-20',
+            'due_date' => '2026-02-20',
+            'freight_charges' => 25,
+            'insurance_charges' => 10,
+            'lines' => [
+                [
+                    'product_id' => $this->product->id,
+                    'description' => 'Widget A',
+                    'quantity' => 10,
+                    'unit_price' => 10.00,
+                    'expense_account_id' => $this->expenseAccount->id,
+                    'purchase_order_line_id' => $setup['poLine']->id,
+                ],
+            ],
+        ], $this->userId);
+
+        $this->assertEquals(135.00, (float) $bill->amount);
+
+        $bill = $this->service->post($bill, $this->userId);
+
+        $je = JournalEntry::findOrFail($bill->journal_entry_id);
+        $lines = $je->lines()->get();
+
+        // DR AccruedPurchases 100, DR expense 35 (charges), CR AP 135
+        $accruedLine = $lines->firstWhere('account_id', $this->accruedPurchasesAccount->id);
+        $this->assertEquals(100.00, (float) $accruedLine->debit);
+
+        $expenseCharges = $lines->where('account_id', $this->expenseAccount->id);
+        $this->assertEquals(35.00, round($expenseCharges->sum('debit'), 2));
+
+        $apCredit = $lines->where('account_id', $this->apAccount->id)->sum('credit');
+        $this->assertEquals(135.00, (float) $apCredit);
+
+        $this->assertEqualsWithDelta($lines->sum('debit'), $lines->sum('credit'), 0.01);
+    }
 }

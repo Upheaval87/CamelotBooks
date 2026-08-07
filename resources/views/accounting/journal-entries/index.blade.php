@@ -51,17 +51,9 @@
                 </form>
             </div>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
@@ -137,7 +129,7 @@
                                         @endif
                                         @if($je->status === 'posted')
                                             @can('journal-entries.reverse')
-                                                <form method="POST" action="{{ route('accounting.journal-entries.reverse', $je) }}" class="inline" onsubmit="return confirm('Are you sure you want to reverse this entry?');">
+                                                <form method="POST" action="{{ route('accounting.journal-entries.reverse', $je) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to reverse this entry?');">
                                                     @csrf
                                                     <button type="submit" class="text-red-600 hover:text-red-900">Reverse</button>
                                                 </form>

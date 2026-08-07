@@ -13,11 +13,7 @@
                 <a href="{{ route('accounting.vendors.index') }}" class="tr-item">{{ __('Back') }}</a>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">

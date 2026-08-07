@@ -10,17 +10,9 @@
                     {{ __('Back to Vendor Credits') }}
                 </x-button>
             </div>
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="form-page">
                 <div class="form-page-main">
@@ -171,7 +163,7 @@
             tr.innerHTML = `
                 <td class="px-4 py-2">
                     ${scopedSearchFieldHtml({
-                        name: 'lines[${idx}][expense_account_id]',
+                        name: `lines[${idx}][expense_account_id]`,
                         entity: 'account',
                         searchUrl: ACCOUNT_SEARCH_URL,
                         value: '',

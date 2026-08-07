@@ -7,17 +7,9 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
@@ -65,7 +57,7 @@
                                     <td class="text-right">
                                         @if($period->isOpen())
                                             @can('accounting-periods.close')
-                                                <form method="POST" action="{{ route('accounting.periods.close', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to close this period?');">
+                                                <form method="POST" action="{{ route('accounting.periods.close', $period) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to close this period?');">
                                                     @csrf
                                                     <button type="submit" class="text-yellow-600 hover:text-yellow-900">Close</button>
                                                 </form>
@@ -73,13 +65,13 @@
                                         @endif
                                         @if($period->isClosed())
                                             @can('accounting-periods.lock')
-                                                <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to lock this period? This cannot be undone.');">
+                                                <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to lock this period? This cannot be undone.');">
                                                     @csrf
                                                     <button type="submit" class="text-red-600 hover:text-red-900">Lock</button>
                                                 </form>
                                             @endcan
                                             @can('accounting-periods.reopen')
-                                                <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" class="inline" onsubmit="return confirm('Are you sure you want to reopen this period?');">
+                                                <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to reopen this period?');">
                                                     @csrf
                                                     <button type="submit" class="text-ink hover:text-gold">Reopen</button>
                                                 </form>

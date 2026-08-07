@@ -10,17 +10,9 @@
                     {{ __('Back to Invoice') }}
                 </x-button>
             </div>
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="form-page">
                 <div class="form-page-main">
@@ -194,7 +186,7 @@
             const incomeAccountId = data ? (data.income_account_id || '') : '';
             const costCenterId = data ? (data.cost_center_id || '') : '';
             const incomeAccountField = scopedSearchFieldHtml({
-                name: 'lines[${idx}][income_account_id]',
+                name: `lines[${idx}][income_account_id]`,
                 entity: 'account',
                 searchUrl: ACCOUNT_SEARCH_URL,
                 value: incomeAccountId,
@@ -202,7 +194,7 @@
                 placeholder: 'Select Account',
             });
             const costCenterField = scopedSearchFieldHtml({
-                name: 'lines[${idx}][cost_center_id]',
+                name: `lines[${idx}][cost_center_id]`,
                 entity: 'cost-center',
                 searchUrl: COST_CENTER_SEARCH_URL,
                 value: costCenterId,
@@ -214,7 +206,7 @@
             tr.innerHTML = `
                 <td class="px-4 py-2" style="min-width: 220px;">
                     ${scopedSearchFieldHtml({
-                        name: 'lines[${idx}][product_id]',
+                        name: `lines[${idx}][product_id]`,
                         entity: 'product',
                         searchUrl: PRODUCT_SEARCH_URL,
                         value: '${selectedId}',

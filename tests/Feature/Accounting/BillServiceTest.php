@@ -349,4 +349,123 @@ class BillServiceTest extends TestCase
             $this->assertNull($jeLine->cost_center_id);
         }
     }
+
+    public function test_create_persists_supplier_info_and_charges(): void
+    {
+        $branch = \App\Models\Branch::create([
+            'company_id' => $this->company->id,
+            'name' => 'Headquarters',
+            'code' => 'HQ',
+        ]);
+
+        $bill = $this->service->create($this->makeBillData([
+            'branch_id' => $branch->id,
+            'currency' => 'USD',
+            'exchange_rate' => 1.25,
+            'po_number' => 'PO-0001',
+            'grn_reference' => 'GRN-0001',
+            'supplier_notes' => 'Ship to warehouse B.',
+            'payment_instructions' => 'Bank transfer to vendor account.',
+            'freight_charges' => 100,
+            'insurance_charges' => 50,
+            'customs_charges' => 25,
+            'other_charges' => 10,
+        ]), $this->userId);
+
+        $bill->refresh();
+
+        $this->assertEquals($branch->id, $bill->branch_id);
+        $this->assertEquals('USD', $bill->currency);
+        $this->assertEquals('1.25', (string) $bill->exchange_rate);
+        $this->assertEquals('PO-0001', $bill->po_number);
+        $this->assertEquals('GRN-0001', $bill->grn_reference);
+        $this->assertEquals('Ship to warehouse B.', $bill->supplier_notes);
+        $this->assertEquals('Bank transfer to vendor account.', $bill->payment_instructions);
+        $this->assertEquals(185.00, $bill->totalCharges());
+        $this->assertEquals(2185.00, (float) $bill->amount);
+    }
+
+    public function test_update_updates_charges_and_refs(): void
+    {
+        $bill = $this->service->create($this->makeBillData(['freight_charges' => 100]), $this->userId);
+        $this->assertEquals(2100.00, (float) $bill->amount);
+
+        $bill = $this->service->update($bill, [
+            'freight_charges' => 200,
+            'customs_charges' => 50,
+            'po_number' => 'PO-0002',
+            'grn_reference' => 'GRN-0002',
+        ], $this->userId);
+
+        $bill->refresh();
+
+        $this->assertEquals(200.00, (float) $bill->freight_charges);
+        $this->assertEquals(50.00, (float) $bill->customs_charges);
+        $this->assertEquals('PO-0002', $bill->po_number);
+        $this->assertEquals('GRN-0002', $bill->grn_reference);
+        $this->assertEquals(2250.00, (float) $bill->amount);
+    }
+
+    public function test_posting_bill_with_charges_creates_balanced_je(): void
+    {
+        $bill = $this->service->create($this->makeBillData([
+            'lines' => [
+                [
+                    'description' => 'Monthly rent',
+                    'quantity' => 2,
+                    'unit_price' => 1000,
+                    'expense_account_id' => $this->expenseAccount->id,
+                ],
+            ],
+            'freight_charges' => 100,
+            'customs_charges' => 50,
+        ]), $this->userId);
+
+        $this->assertEquals(2150.00, (float) $bill->amount);
+
+        $bill = $this->service->post($bill, $this->userId);
+
+        $je = JournalEntry::findOrFail($bill->journal_entry_id);
+        $lines = $je->lines()->get();
+
+        $debitTotal = $lines->sum('debit');
+        $creditTotal = $lines->sum('credit');
+        $this->assertEquals(round($debitTotal, 2), round($creditTotal, 2));
+
+        $apCredit = $lines->where('account_id', $this->apAccount->id)->sum('credit');
+        $this->assertEquals(2150.00, (float) $apCredit);
+
+        $expenseLines = $lines->where('account_id', $this->expenseAccount->id);
+        $this->assertEquals(2150.00, round($expenseLines->sum('debit'), 2));
+    }
+
+    public function test_approve_pending_bill_with_charges_and_tax_creates_balanced_je(): void
+    {
+        $bill = $this->service->create($this->makeBillData([
+            'lines' => [
+                [
+                    'description' => 'Monthly rent',
+                    'quantity' => 1,
+                    'unit_price' => 2000,
+                    'tax_rate' => 10,
+                    'expense_account_id' => $this->expenseAccount->id,
+                ],
+            ],
+            'freight_charges' => 150,
+        ]), $this->userId);
+
+        $bill->update(['status' => Bill::STATUS_PENDING_APPROVAL]);
+        $bill = $this->service->approve($bill, $this->userId);
+
+        $je = JournalEntry::findOrFail($bill->journal_entry_id);
+        $lines = $je->lines()->get();
+
+        $debitTotal = $lines->sum('debit');
+        $creditTotal = $lines->sum('credit');
+        $this->assertEquals(round($debitTotal, 2), round($creditTotal, 2));
+
+        // amount = 2200 (line total incl. tax) + 150 freight = 2350
+        $apCredit = $lines->where('account_id', $this->apAccount->id)->sum('credit');
+        $this->assertEquals(2350.00, (float) $apCredit);
+    }
 }

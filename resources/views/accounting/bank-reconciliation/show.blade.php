@@ -65,17 +65,9 @@
                 @endif
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">
@@ -237,60 +229,58 @@
     </div>
 
     <script>
-        function matchLine(lineId) {
+        async function matchLine(lineId) {
             const lineRow = document.getElementById('statement-line-' + lineId);
             const bookRows = document.querySelectorAll('#book-transaction-');
             if (bookRows.length === 0) {
-                alert('No book transactions available to match.');
+                window.feedback.alert('No book transactions available to match.');
                 return;
             }
-            if (confirm('Match this statement line with the first available book transaction?')) {
-                fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        matches: [{
-                            bank_statement_line_id: lineId,
-                            amount: 0
-                        }]
-                    })
-                }).then(response => response.json()).then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert(data.message || 'Failed to match.');
-                    }
-                });
-            }
+            if (!(await window.feedback.openConfirm({ title: 'Match this statement line with the first available book transaction?' }))) return;
+            fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    matches: [{
+                        bank_statement_line_id: lineId,
+                        amount: 0
+                    }]
+                })
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    window.feedback.alert(data.message || 'Failed to match.');
+                }
+            });
         }
 
-        function matchTransaction(transactionId) {
-            if (confirm('Match this book transaction with the first available statement line?')) {
-                fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        matches: [{
-                            bank_transaction_id: transactionId,
-                            amount: 0
-                        }]
-                    })
-                }).then(response => response.json()).then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert(data.message || 'Failed to match.');
-                    }
-                });
-            }
+        async function matchTransaction(transactionId) {
+            if (!(await window.feedback.openConfirm({ title: 'Match this book transaction with the first available statement line?' }))) return;
+            fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    matches: [{
+                        bank_transaction_id: transactionId,
+                        amount: 0
+                    }]
+                })
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    window.feedback.alert(data.message || 'Failed to match.');
+                }
+            });
         }
     </script>
 </x-app-layout>

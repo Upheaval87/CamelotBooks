@@ -41,7 +41,7 @@
 
                 <div class="tr-spacer"></div>
 
-                <button type="button" class="tr-archive" onclick="if(confirm('{{ __('Cancel this schedule?') }}')){}">
+                <button type="button" class="tr-archive" onclick="window.feedback.openConfirm({ title: '{{ __('Cancel this schedule?') }}' })">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     {{ __('Cancel Schedule') }}
                 </button>
@@ -71,17 +71,9 @@
                 </x-dropdown>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">

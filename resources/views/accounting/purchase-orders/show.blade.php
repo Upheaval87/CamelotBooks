@@ -25,7 +25,7 @@
                     @can('purchase-orders.cancel')
                         <form method="POST" action="{{ route('accounting.purchase-orders.cancel', $order) }}" class="inline">
                             @csrf
-                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure?') }}')">{{ __('Cancel') }}</button>
+                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure?') }}')">{{ __('Cancel') }}</button>
                         </form>
                     @endcan
                 @endif
@@ -36,9 +36,7 @@
             <div class="detail-page">
                 <div class="detail-page-main">
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-            @endif
+            
 
             <div class="card p-6">
                 <div class="detail-grid">

@@ -28,6 +28,9 @@
             window.todoIndexUrl = "{{ route('todo.index') }}";
         </script>
 
+        @if(!\Illuminate\Support\Facades\Vite::isRunningHot())
+            <script src="{{ \Illuminate\Support\Facades\Vite::asset('resources/js/scoped-search-field.js') }}"></script>
+        @endif
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="h-full font-sans antialiased bg-neutral-50 dark:bg-neutral-950">
@@ -66,8 +69,9 @@
         </div>
 
 
-        {{-- Toast container --}}
-        <div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+        {{-- Feedback system: toasts viewport (JS-created), flash emitter, confirm modal root --}}
+        <x-feedback.flashes />
+        <div id="feedback-confirm-root"></div>
 
         {{-- Global search modal --}}
         <x-global-search-modal :search-url="route('accounting.search.global')" />
@@ -90,21 +94,7 @@
             };
 
             window.atlasToast = function(message, type) {
-                type = type || 'success';
-                var container = document.getElementById('toast-container');
-                if (!container) return;
-                var icons = {
-                    success: '<svg class="w-5 h-5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
-                    warning: '<svg class="w-5 h-5 text-warning shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-                    error: '<svg class="w-5 h-5 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
-                    info: '<svg class="w-5 h-5 text-info shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-                };
-                var colors = { success: 'border-l-success', warning: 'border-l-warning', error: 'border-l-danger', info: 'border-l-info' };
-                var t = document.createElement('div');
-                t.className = 'pointer-events-auto flex items-start gap-3 bg-white dark:bg-neutral-900 border-l-[3px] ' + (colors[type] || colors.success) + ' rounded-xl px-4 py-3.5 shadow-elevated min-w-[300px] max-w-sm animate-fade-in-up';
-                t.innerHTML = (icons[type] || icons.success) + '<span class="text-sm text-neutral-700 dark:text-neutral-300">' + message + '</span>';
-                container.appendChild(t);
-                setTimeout(function(){ if (t.parentNode) { t.style.opacity = '0'; t.style.transform = 'translateX(20px)'; t.style.transition = 'all 0.3s ease'; setTimeout(function(){ t.remove(); }, 300); } }, 4000);
+                if (window.feedback) window.feedback.toast(type || 'success', message);
             };
 
             if ('serviceWorker' in navigator) {

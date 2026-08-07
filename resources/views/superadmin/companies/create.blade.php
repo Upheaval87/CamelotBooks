@@ -122,7 +122,7 @@
 
                     <p class="sa-help" style="margin-top: 12px;">
                         {{ __('0 = none until raised; a higher limit can be set later via the') }}
-                        <strong>{{ __('Branch Limit override') }}</strong>.
+                        <a href="{{ route('superadmin.companies.index') }}" class="sa-link">{{ __('Branch Limit override') }}</a>.
                     </p>
                 </x-form-section>
 
@@ -138,8 +138,8 @@
                         <div class="sa-db-preview-sub">{{ __('A dedicated tenant database will be created and provisioned on submission.') }}</div>
                     </div>
                     <div class="sa-db-preview-chip">
-                        <span class="sa-db-preview-chip-label">{{ __('Name:') }}</span>
-                        <span x-text="preview || '—'">—</span>
+                        <span class="sa-db-preview-chip-label">{{ __('Name') }}</span>
+                        <span x-text="preview || 'acct_••••_pending'">acct_••••_pending</span>
                     </div>
                 </div>
 

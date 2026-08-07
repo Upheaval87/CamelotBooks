@@ -64,7 +64,7 @@
 
                 @if(in_array($quotation->status, ['draft', 'sent', 'accepted']))
                     @can('quotations.void')
-                        <form method="POST" action="{{ route('accounting.quotations.void', $quotation) }}" class="inline" onsubmit="var r=prompt('{{ __('Enter void reason') }}:');if(!r)return false;this.void_reason.value=r;">
+                        <form method="POST" action="{{ route('accounting.quotations.void', $quotation) }}" class="inline" onsubmit="return fbPromptForm(event, '{{ __('Enter void reason') }}:')">
                             @csrf<input type="hidden" name="void_reason" value="" />
                             <button type="submit" class="tr-archive">{{ __('Void') }}</button>
                         </form>
@@ -74,8 +74,8 @@
                 <a href="{{ route('accounting.quotations.index') }}" class="tr-item">{{ __('Back to Quotations') }}</a>
             </x-record-toolbar>
 
-            @if(session('success'))<div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>@endif
-            @if(session('error'))<div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>@endif
+            
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">

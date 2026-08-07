@@ -68,7 +68,7 @@
                 </a>
 
                 @can('customers.void')
-                    <form method="POST" action="{{ route('accounting.customers.index') }}" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to archive this customer?') }}')">
+                    <form method="POST" action="{{ route('accounting.customers.index') }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Are you sure you want to archive this customer?') }}')">
                         @csrf
                         @method('PUT')
                         <button type="submit" class="tr-archive">

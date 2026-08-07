@@ -10,7 +10,7 @@
                         @can('goods-received-notes.post')
                             <form method="POST" action="{{ route('accounting.goods-received-notes.post', $grn) }}" class="inline">
                                 @csrf
-                                <button type="submit" class="tr-save" onclick="return confirm('{{ __('Post this GRN? This will create inventory cost layers and a journal entry.') }}')">{{ __('Post') }}</button>
+                                <button type="submit" class="tr-save" onclick="return fbConfirmButton(event, '{{ __('Post this GRN? This will create inventory cost layers and a journal entry.') }}')">{{ __('Post') }}</button>
                             </form>
                         @endcan
                     @endif
@@ -24,13 +24,9 @@
             <div class="detail-page">
                 <div class="detail-page-main">
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-            @endif
+            
 
             <div class="card p-6">
                 <div class="detail-grid">

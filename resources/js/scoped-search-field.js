@@ -167,8 +167,9 @@ document.addEventListener('alpine:init', () => {
             }));
         },
     }));
+});
 
-    function escapeAttr(value) {
+function escapeAttr(value) {
         return String(value == null ? '' : value)
             .replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
@@ -227,4 +228,3 @@ document.addEventListener('alpine:init', () => {
     </div>
 </div>`;
     };
-});

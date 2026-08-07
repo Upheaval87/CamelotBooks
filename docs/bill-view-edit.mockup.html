@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Company — Redesigned</title>
+<style>
+  :root{
+    --navy-700:#24384f;--navy-800:#182a3e;--navy-900:#132234;--navy-200:#cdd7e2;
+    --gold-500:#b6913f;--gold-600:#96742c;--gold-700:#8f6f2a;
+    --line:#ebedf2;--border:#e3e6eb;
+    --st-lt-hover:rgba(36,56,79,.06);
+    --shadow-card:0 1px 2px rgba(16,24,40,.05),0 12px 32px -8px rgba(16,24,40,.10),0 32px 64px -24px rgba(15,30,50,.14);
+    --shadow-thead:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -1px 0 rgba(190,152,72,.45);
+    --shadow-new:0 1px 2px rgba(63,44,7,.25),0 10px 22px -8px rgba(150,116,44,.55),inset 0 1px 0 rgba(255,255,255,.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(1100px 380px at 85% -10%, rgba(36,56,79,.07), transparent 60%),#eef1f6;
+    color:#374151;padding:36px 24px;-webkit-font-smoothing:antialiased}
+  svg{flex:none}
+  :focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+
+  h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#111827}
+  .sub{margin-top:6px;font-size:14px;color:#6b7280}
+
+  .card{background:rgba(255,255,255,.66);backdrop-filter:blur(14px);border-radius:24px;padding:26px 28px;box-shadow:var(--shadow-card)}
+  .sec-head{display:flex;align-items:center;gap:12px}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(180deg,#2e4763,#22394f);color:#e2c069;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 3px 8px -3px rgba(0,0,0,.4)}
+  .sec-head h2{font-size:15px;font-weight:800;color:#111827}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px 24px;margin-top:22px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px 24px;margin-top:22px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 24px;margin-top:20px}
+  .full{grid-column:1/-1}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:7px}
+  .input{width:100%;height:40px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.8);
+    padding:0 14px;font-size:13.5px;color:#111827;font-family:inherit;transition:all .15s}
+  .input::placeholder{color:#94a3b8}
+  .input:hover{border-color:rgba(36,56,79,.28);background:#fff}
+  .input:focus{outline:none;border-color:rgba(182,145,63,.55);box-shadow:0 0 0 3px rgba(182,145,63,.15)}
+  .select{position:relative}
+  .select select{appearance:none;width:100%;height:40px;border-radius:12px;border:1px solid var(--border);
+    background:rgba(255,255,255,.8);padding:0 34px 0 14px;font-size:13.5px;font-weight:600;color:#111827;
+    font-family:inherit;cursor:pointer;transition:all .15s}
+  .select select:hover{border-color:rgba(36,56,79,.28);background:#fff}
+  .select select:focus{outline:none;border-color:rgba(182,145,63,.55);box-shadow:0 0 0 3px rgba(182,145,63,.15)}
+  .select svg{position:absolute;right:11px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none}
+  .note{margin-top:14px;font-size:12px;color:#94a3b8}
+  .link-gold{font-size:12px;font-weight:600;color:var(--gold-700);text-decoration:none}
+  .link-gold:hover{color:var(--gold-800);text-decoration:underline}
+
+  /* ===== tenant database preview — navy strip ===== */
+  .db-prev{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;
+    background:linear-gradient(90deg,var(--navy-700) 0%,var(--navy-800) 60%,var(--navy-900) 100%);
+    box-shadow:var(--shadow-thead),0 10px 24px -10px rgba(13,26,41,.5)}
+  .db-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;
+    background:linear-gradient(180deg,var(--gold-500),var(--gold-600));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 14px -6px rgba(150,116,44,.6)}
+  .db-prev .t{font-size:14px;font-weight:800;color:#f2f6fa}
+  .db-prev .s{margin-top:3px;font-size:12px;color:#aebfcc}
+  .db-name{margin-left:auto;display:inline-flex;align-items:center;gap:10px;padding:9px 14px;border-radius:12px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+  .db-name .l{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#8fa3b8}
+  .db-name .v{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#e2c069}
+
+  .form-foot{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding-top:4px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 17px;
+    border-radius:12px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s ease}
+  .btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(0)}
+  .btn-ghost{background:rgba(255,255,255,.8);border-color:var(--border);color:#374151;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .btn-ghost:hover{background:var(--st-lt-hover);border-color:rgba(36,56,79,.28);color:#1d3349}
+  .btn-accent{color:#fff;background:linear-gradient(180deg,var(--gold-500),var(--gold-600));border-color:rgba(255,255,255,.22);box-shadow:var(--shadow-new)}
+
+  @media (max-width:900px){.grid3,.grid4{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:600px){.grid2,.grid3,.grid4{grid-template-columns:1fr}.db-name{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div>
+    <h1>Create Company</h1>
+    <p class="sub">Provision a new tenant company with its own dedicated database.</p>
+  </div>
+
+  <!-- ===== Company Identity ===== -->
+  <section class="card">
+    <div class="sec-head">
+      <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M4 21h16M9 7h2M9 11h2M9 15h2M16 9h4v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <h2>Company Identity</h2><span class="rule"></span>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="cname">Company Name</label><input class="input" id="cname"></div>
+      <div class="field"><label for="lname">Legal Name</label><input class="input" id="lname"></div>
+      <div class="field"><label for="ccode">Company Code</label><input class="input" id="ccode"></div>
+      <div class="field"><label for="taxid">Tax ID</label><input class="input" id="taxid"></div>
+    </div>
+  </section>
+
+  <!-- ===== Contact Information ===== -->
+  <section class="card">
+    <div class="sec-head">
+      <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 7l9 6 9-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <h2>Contact Information</h2><span class="rule"></span>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="email">Email</label><input class="input" id="email" type="email"></div>
+      <div class="field"><label for="phone">Phone</label><input class="input" id="phone" type="tel"></div>
+      <div class="field full"><label for="address">Address</label><input class="input" id="address"></div>
+    </div>
+    <div class="grid4">
+      <div class="field"><label for="city">City</label><input class="input" id="city"></div>
+      <div class="field"><label for="state">State / Province</label><input class="input" id="state"></div>
+      <div class="field"><label for="country">Country</label><input class="input" id="country"></div>
+      <div class="field"><label for="postal">Postal Code</label><input class="input" id="postal"></div>
+    </div>
+  </section>
+
+  <!-- ===== Financial Configuration ===== -->
+  <section class="card">
+    <div class="sec-head">
+      <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      <h2>Financial Configuration</h2><span class="rule"></span>
+    </div>
+    <div class="grid3">
+      <div class="field"><label for="currency">Base Currency</label>
+        <div class="select"><select id="currency"><option>MWK – Malawian Kwacha</option><option>USD – US Dollar</option><option>EUR – Euro</option></select>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+      </div>
+      <div class="field"><label for="fiscal">Fiscal Year Starts</label>
+        <div class="select"><select id="fiscal"><option>January</option><option>April</option><option>July</option><option>October</option></select>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+      </div>
+      <div class="field"><label for="blimit">Initial Branch Limit</label><input class="input" id="blimit" type="number" value="1"></div>
+    </div>
+    <p class="note">0 = none until raised; a higher limit can be set later via the <a class="link-gold" href="#">Branch Limit override</a>.</p>
+  </section>
+
+  <!-- ===== Tenant Database Preview ===== -->
+  <section class="db-prev">
+    <span class="db-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="5.5" rx="8" ry="3" stroke="currentColor" stroke-width="2"/><path d="M4 5.5V18.5c0 1.7 3.6 3 8 3s8-1.3 8-3V5.5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" stroke="currentColor" stroke-width="2"/></svg></span>
+    <div>
+      <div class="t">Tenant Database Preview</div>
+      <div class="s">A dedicated tenant database will be created and provisioned on submission.</div>
+    </div>
+    <span class="db-name"><span class="l">Name</span><span class="v">acct_••••_pending</span></span>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <div class="form-foot">
+    <button class="btn btn-ghost">Cancel</button>
+    <button class="btn btn-accent"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="5.5" rx="8" ry="3" stroke="currentColor" stroke-width="2"/><path d="M4 5.5V18.5c0 1.7 3.6 3 8 3s8-1.3 8-3V5.5" stroke="currentColor" stroke-width="2"/></svg>Create &amp; Provision</button>
+  </div>
+
+</div>
+</body>
+</html>

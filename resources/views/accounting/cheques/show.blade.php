@@ -7,7 +7,7 @@
                 <div class="tr-spacer"></div>
                 @if($cheque->status === 'outstanding')
                     @can('cheques.void')
-                        <form method="POST" action="{{ route('accounting.cheques.void', $cheque->id) }}" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to void this cheque?') }}')">
+                        <form method="POST" action="{{ route('accounting.cheques.void', $cheque->id) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Are you sure you want to void this cheque?') }}')">
                             @csrf
                             <button type="submit" class="tr-archive">{{ __('Void Cheque') }}</button>
                         </form>
@@ -16,9 +16,7 @@
                 <a href="{{ route('accounting.cheques.index') }}" class="tr-item">{{ __('Back') }}</a>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">
@@ -54,9 +52,7 @@
                         </div>
 
                         @if($cheque->voided_at)
-                            <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                                <p class="text-sm text-red-800">{{ __('This cheque was voided on') }} {{ $cheque->voided_at->format('M d, Y') }} {{ __('by') }} {{ $cheque->voidedBy->name ?? 'Unknown' }}.</p>
-                            </div>
+                            <x-feedback.alert variant="error" class="mt-6">{{ __('This cheque was voided on') }} {{ $cheque->voided_at->format('M d, Y') }} {{ __('by') }} {{ $cheque->voidedBy->name ?? 'Unknown' }}.</x-feedback.alert>
                         @endif
                     </div>
                 </div>

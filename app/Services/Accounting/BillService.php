@@ -47,15 +47,23 @@ class BillService
                 'grn_id' => $data['grn_id'] ?? null,
                 'bill_number' => $billNumber,
                 'internal_number' => $data['internal_number'] ?? null,
+                'po_number' => $data['po_number'] ?? null,
+                'grn_reference' => $data['grn_reference'] ?? null,
                 'bill_date' => $data['bill_date'],
                 'due_date' => $data['due_date'],
                 'reference' => $data['reference'] ?? null,
                 'memo' => $data['memo'] ?? null,
+                'supplier_notes' => $data['supplier_notes'] ?? null,
+                'payment_instructions' => $data['payment_instructions'] ?? null,
                 'status' => Bill::STATUS_DRAFT,
                 'amount' => 0,
                 'amount_paid' => 0,
                 'currency' => $data['currency'] ?? 'USD',
                 'exchange_rate' => $data['exchange_rate'] ?? 1,
+                'freight_charges' => $data['freight_charges'] ?? 0,
+                'insurance_charges' => $data['insurance_charges'] ?? 0,
+                'customs_charges' => $data['customs_charges'] ?? 0,
+                'other_charges' => $data['other_charges'] ?? 0,
                 'created_by' => $userId,
             ]);
 
@@ -91,11 +99,19 @@ class BillService
                 'bill_date' => $data['bill_date'] ?? $bill->bill_date,
                 'due_date' => $data['due_date'] ?? $bill->due_date,
                 'internal_number' => $data['internal_number'] ?? $bill->internal_number,
+                'po_number' => $data['po_number'] ?? $bill->po_number,
+                'grn_reference' => $data['grn_reference'] ?? $bill->grn_reference,
                 'reference' => $data['reference'] ?? $bill->reference,
                 'memo' => $data['memo'] ?? $bill->memo,
+                'supplier_notes' => $data['supplier_notes'] ?? $bill->supplier_notes,
+                'payment_instructions' => $data['payment_instructions'] ?? $bill->payment_instructions,
                 'branch_id' => $data['branch_id'] ?? $bill->branch_id,
                 'currency' => $data['currency'] ?? $bill->currency,
                 'exchange_rate' => $data['exchange_rate'] ?? $bill->exchange_rate,
+                'freight_charges' => $data['freight_charges'] ?? $bill->freight_charges,
+                'insurance_charges' => $data['insurance_charges'] ?? $bill->insurance_charges,
+                'customs_charges' => $data['customs_charges'] ?? $bill->customs_charges,
+                'other_charges' => $data['other_charges'] ?? $bill->other_charges,
             ]);
 
             if (isset($data['lines'])) {
@@ -109,6 +125,23 @@ class BillService
             $this->updateBillAmount($bill);
 
             $this->logBillAction($bill, 'updated', $oldValues, $bill->toArray(), $userId);
+
+            return $bill;
+        });
+    }
+
+    public function submitForApproval(Bill $bill, int $userId): Bill
+    {
+        if ($bill->status !== Bill::STATUS_DRAFT) {
+            throw new InvalidArgumentException('Only draft bills can be submitted for approval.');
+        }
+
+        return DB::transaction(function () use ($bill, $userId) {
+            $oldValues = $bill->toArray();
+
+            $bill->update(['status' => Bill::STATUS_PENDING_APPROVAL]);
+
+            $this->logBillAction($bill, 'submitted_for_approval', $oldValues, $bill->toArray(), $userId);
 
             return $bill;
         });
@@ -295,6 +328,8 @@ class BillService
                     }
                 }
             }
+
+            $this->appendChargeLines($bill, $lines, $apAccount, $jeLines, $totalDebit, $totalCredit);
 
             if (round($totalDebit, 2) !== round($totalCredit, 2)) {
                 $diff = round($totalDebit - $totalCredit, 2);
@@ -491,6 +526,7 @@ class BillService
                                 'entity_id' => $bill->id,
                                 'cost_center_id' => $line->cost_center_id,
                             ];
+                            $totalDebit += $line->tax_amount;
                         }
 
                         $jeLines[] = [
@@ -525,6 +561,8 @@ class BillService
                     }
                 }
 
+                $this->appendChargeLines($bill, $lines, $apAccount, $jeLines, $totalDebit, $totalCredit);
+
                 $this->fxService->postBillInForeignCurrency($bill, $jeLines, $userId);
 
                 $journalEntry = $this->postingEngine->post([
@@ -549,6 +587,76 @@ class BillService
 
             return $bill;
         });
+    }
+
+    /**
+     * Add journal entry lines for the bill's additional charges (freight, insurance,
+     * customs, other). Each charge is debited to the charge account and credited to AP,
+     * so the JE stays balanced with the stored bill amount.
+     */
+    protected function appendChargeLines(Bill $bill, $lines, Account $apAccount, array &$jeLines, float &$totalDebit, float &$totalCredit): void
+    {
+        $charges = [
+            'Freight' => (float) $bill->freight_charges,
+            'Insurance' => (float) $bill->insurance_charges,
+            'Customs' => (float) $bill->customs_charges,
+            'Other charges' => (float) $bill->other_charges,
+        ];
+
+        $chargeAccountId = null;
+
+        foreach ($charges as $label => $value) {
+            if ($value <= 0) {
+                continue;
+            }
+
+            if ($chargeAccountId === null) {
+                $chargeAccountId = $this->resolveChargeAccountId($bill->company_id, $lines);
+            }
+
+            $memo = "Bill {$bill->bill_number} - {$label}";
+
+            $jeLines[] = [
+                'account_id' => $chargeAccountId,
+                'debit' => $value,
+                'credit' => 0,
+                'memo' => $memo,
+                'entity_type' => Bill::class,
+                'entity_id' => $bill->id,
+            ];
+            $totalDebit += $value;
+
+            $jeLines[] = [
+                'account_id' => $apAccount->id,
+                'debit' => 0,
+                'credit' => $value,
+                'memo' => $memo,
+                'entity_type' => Bill::class,
+                'entity_id' => $bill->id,
+            ];
+            $totalCredit += $value;
+        }
+    }
+
+    /**
+     * Account that absorbs additional charges: the first line's expense account,
+     * falling back to the default expense mapping.
+     */
+    protected function resolveChargeAccountId(int $companyId, $lines): int
+    {
+        $first = $lines->first();
+
+        if ($first && $first->expense_account_id) {
+            return (int) $first->expense_account_id;
+        }
+
+        $account = DefaultAccountMapping::getAccount($companyId, 'default_expense');
+
+        if ($account) {
+            return (int) $account->id;
+        }
+
+        throw new InvalidArgumentException('No account available for bill additional charges. Set a default expense account.');
     }
 
     public function void(Bill $bill, string $reason, int $userId): Bill
@@ -585,7 +693,7 @@ class BillService
 
     public function updateBillAmount(Bill $bill): void
     {
-        $total = (float) $bill->lines()->sum('line_total');
+        $total = (float) $bill->lines()->sum('line_total') + $bill->totalCharges();
 
         $bill->update(['amount' => round($total, 2)]);
     }

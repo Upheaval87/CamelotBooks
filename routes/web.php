@@ -66,6 +66,7 @@ use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardCo
 use App\Http\Controllers\SuperAdmin\UsersController;
 use App\Http\Controllers\TodoTaskController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PdfController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -499,6 +500,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('bills/{bill}', [BillController::class, 'show'])->name('bills.show');
             Route::get('bills/{bill}/edit', [BillController::class, 'edit'])->name('bills.edit');
             Route::put('bills/{bill}', [BillController::class, 'update'])->name('bills.update');
+            Route::post('bills/{bill}/submit', [BillController::class, 'submit'])->name('bills.submit')->middleware(['permission:bills.edit', 'sod:bill']);
             Route::post('bills/{bill}/post', [BillController::class, 'post'])->name('bills.post')->middleware(['permission:bills.post', 'sod:bill']);
             Route::post('bills/{bill}/approve', [BillController::class, 'approve'])->name('bills.approve')->middleware(['permission:bills.approve', 'sod:bill']);
             Route::post('bills/{bill}/void', [BillController::class, 'void'])->name('bills.void')->middleware(['permission:bills.void', 'sod:bill']);
@@ -851,6 +853,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('customer-lifetime-value', [\App\Http\Controllers\BiController::class, 'customerLifetimeValue'])->name('customer-lifetime-value');
             Route::get('employee-productivity', [\App\Http\Controllers\BiController::class, 'employeeProductivity'])->name('employee-productivity');
             Route::get('branch-profitability', [\App\Http\Controllers\BiController::class, 'branchProfitability'])->name('branch-profitability');
+        });
+
+        //PDFS
+        Route::middleware(['web', 'auth'])->prefix('pdf')->name('pdf.')->group(function () {
+            Route::get('/{type}/{id}/preview',   [PdfController::class, 'preview'])->name('preview');
+            Route::get('/{type}/{id}/download',  [PdfController::class, 'download'])->name('download');
         });
 
         // POS

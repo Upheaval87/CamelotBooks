@@ -62,7 +62,7 @@
                 </x-dropdown>
 
                 <x-slot name="right">
-                    <button type="button" onclick="if(confirm('Deactivate this account? It will be hidden from new entries.')){}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-atlas-danger/30 text-atlas-danger text-sm font-medium rounded-md hover:bg-atlas-danger/5 transition-colors">
+                    <button type="button" onclick="window.feedback.openConfirm({ title: 'Deactivate this account? It will be hidden from new entries.' })" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-atlas-danger/30 text-atlas-danger text-sm font-medium rounded-md hover:bg-atlas-danger/5 transition-colors">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                         Deactivate Account
                     </button>

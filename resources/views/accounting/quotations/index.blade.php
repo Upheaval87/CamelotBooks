@@ -45,12 +45,8 @@
                     </div>
                 </form>
             </div>
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-            @endif
+            
+            
             <div class="datasheet-wrap">
                 <div class="overflow-x-auto">
                     <table class="datasheet">
@@ -105,7 +101,7 @@
                                         @endif
                                         @if(in_array($q->status, ['draft', 'sent', 'accepted']))
                                             @can('quotations.void')
-                                                <form method="POST" action="{{ route('accounting.quotations.void', $q) }}" class="inline">@csrf<button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Void this quotation?')">Void</button></form>
+                                                <form method="POST" action="{{ route('accounting.quotations.void', $q) }}" class="inline">@csrf<button type="submit" class="text-red-600 hover:text-red-900" onclick="return fbConfirmButton(event, 'Void this quotation?')">Void</button></form>
                                             @endcan
                                         @endif
                                     </td>

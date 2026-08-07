@@ -3,11 +3,7 @@
 
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
             <div class="datasheet-wrap">
                 <div class="px-6 py-4 border-b border-gray-200">

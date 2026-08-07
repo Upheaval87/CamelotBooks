@@ -8,20 +8,16 @@
                     {{ __('Add Tax Table') }}
                 </x-button>
             </div>
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
             @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                <x-feedback.alert variant="error" class="mb-4">
                     <ul class="list-disc list-inside">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
-                </div>
+                </x-feedback.alert>
             @endif
 
             <div class="datasheet-wrap">
@@ -62,7 +58,7 @@
                                         @endif
                                         <a href="{{ route('accounting.paye-tables.edit', $table) }}" class="text-ink hover:text-gold">Edit</a>
                                         @if(!$table->is_current)
-                                            <form method="POST" action="{{ route('accounting.paye-tables.destroy', $table) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this PAYE table?')">
+                                            <form method="POST" action="{{ route('accounting.paye-tables.destroy', $table) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to delete this PAYE table?')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>

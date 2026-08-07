@@ -7,6 +7,7 @@ use App\Models\Concerns\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Bill extends Model
@@ -22,15 +23,23 @@ class Bill extends Model
         'grn_id',
         'bill_number',
         'internal_number',
+        'po_number',
+        'grn_reference',
         'bill_date',
         'due_date',
         'reference',
         'memo',
+        'supplier_notes',
+        'payment_instructions',
         'status',
         'amount',
         'amount_paid',
         'currency',
         'exchange_rate',
+        'freight_charges',
+        'insurance_charges',
+        'customs_charges',
+        'other_charges',
         'base_amount',
         'journal_entry_id',
         'recurring_template_id',
@@ -49,6 +58,10 @@ class Bill extends Model
         'due_date' => 'date',
         'amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
+        'freight_charges' => 'decimal:2',
+        'insurance_charges' => 'decimal:2',
+        'customs_charges' => 'decimal:2',
+        'other_charges' => 'decimal:2',
         'approved_at' => 'datetime',
         'posted_at' => 'datetime',
         'voided_at' => 'datetime',
@@ -97,6 +110,11 @@ class Bill extends Model
         return $this->belongsTo(JournalEntry::class);
     }
 
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachmentable');
+    }
+
     public function recurringTemplate(): BelongsTo
     {
         return $this->belongsTo(RecurringBillTemplate::class, 'recurring_template_id');
@@ -141,6 +159,32 @@ class Bill extends Model
     public function getBalanceDueAttribute(): float
     {
         return (float) $this->amount - (float) $this->amount_paid;
+    }
+
+    public function totalCharges(): float
+    {
+        return round(
+            (float) $this->freight_charges
+            + (float) $this->insurance_charges
+            + (float) $this->customs_charges
+            + (float) $this->other_charges,
+            2
+        );
+    }
+
+    public function getSubtotalAttribute(): float
+    {
+        return round((float) $this->lines->sum('amount'), 2);
+    }
+
+    public function getTaxTotalAttribute(): float
+    {
+        return round((float) $this->lines->sum('tax_amount'), 2);
+    }
+
+    public function getTotalAttribute(): float
+    {
+        return round((float) $this->subtotal + (float) $this->tax_total + $this->totalCharges(), 2);
     }
 
     public function scopeForCompany($query, int $companyId)

@@ -24,17 +24,9 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">
@@ -53,7 +45,7 @@
                                 <x-slot name="actions">
                                     @can('payroll-runs.approve')
                                         <form id="payroll-approve-form" method="POST" action="{{ route('accounting.payroll-runs.approve', $run) }}" class="inline">@csrf</form>
-                                        <x-review.btn variant="primary" size="lg" type="submit" form="payroll-approve-form" onclick="return confirm('Are you sure you want to approve this payroll run?')">{{ __('Approve Run') }}</x-review.btn>
+                                        <x-review.btn variant="primary" size="lg" type="submit" form="payroll-approve-form" onclick="return fbConfirmButton(event, 'Are you sure you want to approve this payroll run?')">{{ __('Approve Run') }}</x-review.btn>
                                     @endcan
                                 </x-slot>
                             </x-review.decision>
@@ -78,7 +70,7 @@
                                 @can('payroll-runs.post')
                                     <form method="POST" action="{{ route('accounting.payroll-runs.post', $run) }}">
                                         @csrf
-                                        <button type="submit" class="x-button x-button-positive" onclick="return confirm('Are you sure you want to post this payroll run to the General Ledger?')">
+                                        <button type="submit" class="x-button x-button-positive" onclick="return fbConfirmButton(event, 'Are you sure you want to post this payroll run to the General Ledger?')">
                                             {{ __('Post to GL') }}
                                         </button>
                                     </form>
@@ -88,7 +80,7 @@
                             @if(in_array($run->status, ['posted', 'partially_paid', 'fully_paid']))
                                 <form method="POST" action="{{ route('accounting.payroll-runs.send-payslips', $run) }}">
                                     @csrf
-                                    <button type="submit" class="x-button x-button-primary" onclick="return confirm('Send payslips to all employees?')">
+                                    <button type="submit" class="x-button x-button-primary" onclick="return fbConfirmButton(event, 'Send payslips to all employees?')">
                                         {{ __('Send Payslips') }}
                                     </button>
                                 </form>

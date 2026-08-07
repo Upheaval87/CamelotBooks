@@ -4,18 +4,16 @@
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <x-feedback.alert variant="error" class="mb-4">
                     <ul class="list-disc list-inside">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
-                </div>
+                </x-feedback.alert>
             @endif
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
-            @endif
+            
 
             <div class="form-page">
                 <div class="form-page-main">
@@ -65,7 +63,7 @@
                                 </div>
                                 <div class="flex justify-end gap-3 p-4 border-t border-gray-200">
                                     <x-button variant="ghost" href="{{ route('accounting.stock-counts.index') }}">{{ __('Cancel') }}</x-button>
-                                    <button type="submit" name="post_count" value="1" onclick="return confirm('Post this count? Variances will be posted to the general ledger.')"
+                                    <button type="submit" name="post_count" value="1" onclick="return fbConfirmButton(event, 'Post this count? Variances will be posted to the general ledger.')"
                                         class="inline-flex items-center px-4 py-2 bg-gold-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gold-800">
                                         {{ __('Save & Post Count') }}
                                     </button>

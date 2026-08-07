@@ -51,7 +51,7 @@
                             </form>
                         @endif
                         @if($company->is_active)
-                            <form method="POST" action="{{ route('superadmin.companies.suspend', $company) }}" onsubmit="return confirm('{{ __('Suspend this company? Users will lose access immediately.') }}')">
+                            <form method="POST" action="{{ route('superadmin.companies.suspend', $company) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Suspend this company? Users will lose access immediately.') }}')">
                                 @csrf
                                 <x-superadmin.btn variant="danger" size="md" type="submit">
                                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

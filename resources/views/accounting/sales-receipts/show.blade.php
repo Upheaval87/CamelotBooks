@@ -34,7 +34,7 @@
 
                 @if($salesReceipt->status === 'posted')
                     @can('sales-receipts.void')
-                        <form method="POST" action="{{ route('accounting.sales-receipts.void', $salesReceipt) }}" class="inline" onsubmit="return prompt('{{ __('Enter void reason') }}:')">
+                        <form method="POST" action="{{ route('accounting.sales-receipts.void', $salesReceipt) }}" class="inline" onsubmit="return fbPromptForm(event, '{{ __('Enter void reason') }}:')">
                             @csrf
                             <input type="hidden" name="void_reason" value="Voided via UI" />
                             <button type="submit" class="tr-archive">{{ __('Void Receipt') }}</button>
@@ -45,12 +45,8 @@
                 <a href="{{ route('accounting.sales-receipts.index') }}" class="tr-item">{{ __('Back to Sales Receipts') }}</a>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-            @endif
+            
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">

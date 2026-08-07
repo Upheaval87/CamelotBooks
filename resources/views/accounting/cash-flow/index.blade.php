@@ -81,9 +81,7 @@
             </x-report.card>
 
             @if($mismatch)
-                <div class="mt-4 px-6 py-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-sm font-semibold text-red-600">Warning: Ending cash does not match actual bank balances. Difference: {{ format_number($mismatch) }}</p>
-                </div>
+                <x-feedback.alert variant="error" class="mt-4">Warning: Ending cash does not match actual bank balances. Difference: {{ format_number($mismatch) }}</x-feedback.alert>
             @endif
         </div>
     </div>

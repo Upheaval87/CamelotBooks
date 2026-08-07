@@ -7,9 +7,7 @@
             </x-superadmin.btn>
         </x-superadmin.page-head>
 
-        @if(session('success'))
-            <div class="mb-4 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
-        @endif
+        
 
         <x-superadmin.card>
             <div class="overflow-x-auto rounded-[12px] border border-shell bg-row">

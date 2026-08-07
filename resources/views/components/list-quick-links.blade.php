@@ -1,5 +1,9 @@
 @props(['title' => 'Quick Links', 'groups' => []])
 
+@php
+    $currentFullUrl = rtrim(request()->fullUrl(), '/');
+@endphp
+
 <aside class="list-sidebar" x-data="{ mobileOpen: false }">
     <button @click="mobileOpen = !mobileOpen" class="list-sidebar-mobile-trigger lg:hidden">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
@@ -15,7 +19,7 @@
                 <div class="list-sidebar-divider"></div>
             @endif
             @foreach($group as $link)
-                <a href="{{ $link['route'] }}" class="list-sidebar-link">
+                <a href="{{ $link['route'] }}" class="list-sidebar-link @if(rtrim($link['route'], '/') === $currentFullUrl) is-active @endif" @if(rtrim($link['route'], '/') === $currentFullUrl) aria-current="page" @endif>
                     <span class="list-sidebar-icon-square">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $link['icon'] }}" />
@@ -39,7 +43,7 @@
                 <div class="list-sidebar-divider"></div>
             @endif
             @foreach($group as $link)
-                <a href="{{ $link['route'] }}" class="list-sidebar-link">
+                <a href="{{ $link['route'] }}" class="list-sidebar-link @if(rtrim($link['route'], '/') === $currentFullUrl) is-active @endif" @if(rtrim($link['route'], '/') === $currentFullUrl) aria-current="page" @endif>
                     <span class="list-sidebar-icon-square">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $link['icon'] }}" />

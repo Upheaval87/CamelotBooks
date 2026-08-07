@@ -8,11 +8,7 @@
             <x-button variant="primary" href="{{ route('admin.numbering-sequences.create') }}">{{ __('Add Sequence') }}</x-button>
         </div>
 
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">
-                {{ session('success') }}
-            </div>
-        @endif
+        
 
         <div class="datasheet-wrap">
             <div class="overflow-x-auto">

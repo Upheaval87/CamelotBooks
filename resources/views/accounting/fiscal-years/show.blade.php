@@ -9,7 +9,7 @@
                     <span class="tr-group-label">{{ __('Actions') }}</span>
                     @if($fiscalYear->isOpen() && $fiscalYear->allPeriodsClosedOrLocked())
                         @can('fiscal-years.close')
-                            <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}" class="inline" onsubmit="return confirm('Are you sure you want to close fiscal year {{ $fiscalYear->label }}?');">
+                            <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to close fiscal year {{ $fiscalYear->label }}?');">
                                 @csrf
                                 <button type="submit" class="tr-save">{{ __('Run Year-End Close') }}</button>
                             </form>
@@ -29,17 +29,9 @@
             <div class="detail-page">
                 <div class="detail-page-main">
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             {{-- FY Summary --}}
             <div class="card p-6">
@@ -66,9 +58,7 @@
                     </div>
                 @endif
                 @if($fiscalYear->isOpen() && !$fiscalYear->allPeriodsClosedOrLocked())
-                    <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-700">
-                        {{ __('All periods must be closed or locked before running year-end close.') }}
-                    </div>
+                    <x-feedback.alert variant="warning" class="mt-4">{{ __('All periods must be closed or locked before running year-end close.') }}</x-feedback.alert>
                 @endif
             </div>
 
@@ -105,17 +95,17 @@
                                     <td>{{ $period->closedByUser->name ?? '—' }}</td>
                                     <td class="text-right">
                                         @if($period->isOpen())
-                                            <form method="POST" action="{{ route('accounting.periods.close', $period) }}" class="inline" onsubmit="return confirm('Close this period?');">
+                                            <form method="POST" action="{{ route('accounting.periods.close', $period) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Close this period?');">
                                                 @csrf
                                                 <button type="submit" class="text-yellow-600 hover:text-yellow-900">{{ __('Close') }}</button>
                                             </form>
                                         @endif
                                         @if($period->isClosed())
-                                            <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" class="inline" onsubmit="return confirm('Lock this period?');">
+                                            <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Lock this period?');">
                                                 @csrf
                                                 <button type="submit" class="text-red-600 hover:text-red-900">{{ __('Lock') }}</button>
                                             </form>
-                                            <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" class="inline" onsubmit="return confirm('Reopen this period?');">
+                                            <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Reopen this period?');">
                                                 @csrf
                                                 <button type="submit" class="text-ink hover:text-gold">{{ __('Reopen') }}</button>
                                             </form>

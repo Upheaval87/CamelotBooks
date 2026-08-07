@@ -4,9 +4,9 @@
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                <x-feedback.alert variant="error" class="mb-4">
                     <ul class="list-disc list-inside text-sm">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
-                </div>
+                </x-feedback.alert>
             @endif
 
             <div class="form-page">
@@ -151,7 +151,7 @@
                     <div>
                         <label class="block text-xs text-gray-500">Payee Account</label>
                         ${scopedSearchFieldHtml({
-                            name: 'components[${idx}][payee_account_id]',
+                            name: `components[${idx}][payee_account_id]`,
                             entity: 'account',
                             searchUrl: ACCOUNT_SEARCH_URL,
                             value: '',

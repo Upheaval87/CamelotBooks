@@ -4,11 +4,11 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-list-header title="Customers" createRoute="{{ route('accounting.customers.create') }}" createLabel="Create Customer" />
+            <x-list-header title="Customers" description="Manage customer records, terms and balances." createRoute="{{ route('accounting.customers.create') }}" createLabel="Create Customer" />
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.customers.index') }}" searchPlaceholder="Name or email..." entity="customer">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.customers.index') }}" searchPlaceholder="Name or email..." entity="customer" countText="{{ $customers->total() }} customers">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
@@ -16,12 +16,8 @@
                         </select>
                     </x-list-filter-bar>
 
-                    @if(session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-                    @endif
-                    @if(session('error'))
-                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-                    @endif
+                    
+                    
 
                     <div class="list-table-wrap">
                         <table class="list-table">
@@ -44,6 +40,7 @@
                                             <x-list-avatar-initials name="{{ $customer->name }}" size="sm" />
                                             <div class="name-cell-text">
                                                 <span class="name-cell-primary"><a href="{{ route('accounting.customers.show', $customer) }}">{{ $customer->name }}</a></span>
+                                                <span class="name-cell-secondary">Since {{ $customer->created_at?->format('M Y') }}</span>
                                             </div>
                                         </div>
                                     </td>
@@ -69,7 +66,7 @@
                             </tbody>
                         </table>
                         @if($customers->hasPages())
-                        <div class="px-6 py-3 border-t border-gray-200">{{ $customers->links() }}</div>
+                        <x-list-pagination :paginator="$customers" label="customers" />
                         @endif
                     </div>
 
@@ -90,7 +87,7 @@
                         <div class="text-center text-ink-soft py-8">No customers found.</div>
                         @endforelse
                         @if($customers->hasPages())
-                        <div class="px-2 py-3">{{ $customers->links() }}</div>
+                        <x-list-pagination :paginator="$customers" label="customers" />
                         @endif
                     </div>
                 </div>

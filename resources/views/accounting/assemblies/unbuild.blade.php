@@ -8,19 +8,17 @@
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <x-feedback.alert variant="error" class="mb-4">
                     <ul class="list-disc list-inside">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
-                </div>
+                </x-feedback.alert>
             @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="mb-4 p-3 bg-orange-50 border border-orange-200 rounded text-sm text-orange-800">
-                    Unbuild reverses a Build: consumes assembled product stock and returns components. Journal reverses the build entry.
-                </div>
+                <x-feedback.alert variant="info" class="mb-4">Unbuild reverses a Build: consumes assembled product stock and returns components. Journal reverses the build entry.</x-feedback.alert>
 
                 <form method="POST" action="{{ route('accounting.assemblies.store-unbuild') }}">
                     @csrf

@@ -151,7 +151,7 @@
             tr.innerHTML = `
                 <td class="px-4 py-2">
                     ${scopedSearchFieldHtml({
-                        name: 'lines[${idx}][expense_account_id]',
+                        name: `lines[${idx}][expense_account_id]`,
                         entity: 'account',
                         searchUrl: ACCOUNT_SEARCH_URL,
                         value: accountId,
@@ -171,7 +171,7 @@
                 </td>
                 <td class="px-4 py-2"><input type="hidden" name="lines[${idx}][tax_rate]" value="${data ? data.tax_rate : 0}" />
                     ${scopedSearchFieldHtml({
-                        name: 'lines[${idx}][cost_center_id]',
+                        name: `lines[${idx}][cost_center_id]`,
                         entity: 'cost-center',
                         searchUrl: COST_CENTER_SEARCH_URL,
                         value: costCenterId,

@@ -4,11 +4,11 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-list-header title="Vendors" createRoute="{{ route('accounting.vendors.create') }}" createLabel="Create Vendor" />
+            <x-list-header title="Vendors" description="Manage vendor records, terms and balances." createRoute="{{ route('accounting.vendors.create') }}" createLabel="Create Vendor" />
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.vendors.index') }}" searchPlaceholder="Name or email..." entity="vendor">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.vendors.index') }}" searchPlaceholder="Name or email..." entity="vendor" countText="{{ $vendors->total() }} vendors">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
@@ -16,12 +16,8 @@
                         </select>
                     </x-list-filter-bar>
 
-                    @if(session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-                    @endif
-                    @if(session('error'))
-                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-                    @endif
+                    
+                    
 
                     <div class="list-table-wrap">
                         <table class="list-table">
@@ -69,7 +65,7 @@
                             </tbody>
                         </table>
                         @if($vendors->hasPages())
-                        <div class="px-6 py-3 border-t border-gray-200">{{ $vendors->links() }}</div>
+                        <x-list-pagination :paginator="$vendors" label="vendors" />
                         @endif
                     </div>
 
@@ -90,7 +86,7 @@
                         <div class="text-center text-ink-soft py-8">No vendors found.</div>
                         @endforelse
                         @if($vendors->hasPages())
-                        <div class="px-2 py-3">{{ $vendors->links() }}</div>
+                        <x-list-pagination :paginator="$vendors" label="vendors" />
                         @endif
                     </div>
                 </div>

@@ -3,11 +3,11 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-list-header title="Employees" createRoute="{{ route('accounting.employees.create') }}" createLabel="Create Employee" />
+            <x-list-header title="Employees" description="Manage employee records and payroll details." createRoute="{{ route('accounting.employees.create') }}" createLabel="Create Employee" />
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.employees.index') }}" searchPlaceholder="Name, number, or email..." entity="employee">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.employees.index') }}" searchPlaceholder="Name, number, or email..." entity="employee" countText="{{ $employees->total() }} employees">
                         <input type="text" name="department" value="{{ request('department') }}" placeholder="Department..." class="list-filter-input" style="max-width:160px">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>
@@ -16,12 +16,8 @@
                         </select>
                     </x-list-filter-bar>
 
-                    @if(session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-                    @endif
-                    @if(session('error'))
-                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-                    @endif
+                    
+                    
 
                     <div class="list-table-wrap">
                         <table class="list-table">
@@ -69,7 +65,7 @@
                             </tbody>
                         </table>
                         @if($employees->hasPages())
-                        <div class="px-6 py-3 border-t border-gray-200">{{ $employees->links() }}</div>
+                        <x-list-pagination :paginator="$employees" label="employees" />
                         @endif
                     </div>
 
@@ -90,7 +86,7 @@
                         <div class="text-center text-ink-soft py-8">No employees found.</div>
                         @endforelse
                         @if($employees->hasPages())
-                        <div class="px-2 py-3">{{ $employees->links() }}</div>
+                        <x-list-pagination :paginator="$employees" label="employees" />
                         @endif
                     </div>
                 </div>

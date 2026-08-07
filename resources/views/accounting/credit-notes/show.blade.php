@@ -23,7 +23,7 @@
                         <form method="POST" action="{{ route('accounting.credit-notes.void', $creditNote) }}" class="inline">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to void this credit note?') }}')">{{ __('Void') }}</button>
+                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this credit note?') }}')">{{ __('Void') }}</button>
                         </form>
                     @endcan
                 @endif
@@ -31,17 +31,9 @@
                 <a href="{{ route('accounting.credit-notes.index') }}" class="tr-item">{{ __('Back to Credit Notes') }}</a>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">

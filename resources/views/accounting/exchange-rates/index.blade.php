@@ -3,11 +3,7 @@
 
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ __('Add Exchange Rate') }}</h3>
@@ -72,7 +68,7 @@
                                     <td class="numeric">{{ number_format($rate->rate, 8) }}</td>
                                     <td class="text-ink-soft">{{ $rate->effective_date->format('Y-m-d') }}</td>
                                     <td class="text-right">
-                                        <form method="POST" action="{{ route('accounting.exchange-rates.destroy', $rate) }}" class="inline" onsubmit="return confirm('Delete this rate?')">
+                                        <form method="POST" action="{{ route('accounting.exchange-rates.destroy', $rate) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Delete this rate?')">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>

@@ -4,11 +4,11 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-list-header title="Products" createRoute="{{ route('accounting.products.create') }}" createLabel="Create Product" />
+            <x-list-header title="Products" description="Manage your product catalogue and inventory." createRoute="{{ route('accounting.products.create') }}" createLabel="Create Product" />
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.products.index') }}" searchPlaceholder="Name or SKU..." entity="product">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.products.index') }}" searchPlaceholder="Name or SKU..." entity="product" countText="{{ $products->total() }} products">
                         <select name="type" class="list-filter-select">
                             <option value="">All Types</option>
                             <option value="service" {{ request('type') === 'service' ? 'selected' : '' }}>Service</option>
@@ -22,12 +22,8 @@
                         </select>
                     </x-list-filter-bar>
 
-                    @if(session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-                    @endif
-                    @if(session('error'))
-                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-                    @endif
+                    
+                    
 
                     <div class="list-table-wrap">
                         <table class="list-table">
@@ -70,7 +66,7 @@
                             </tbody>
                         </table>
                         @if($products->hasPages())
-                        <div class="px-6 py-3 border-t border-gray-200">{{ $products->links() }}</div>
+                        <x-list-pagination :paginator="$products" label="products" />
                         @endif
                     </div>
 
@@ -87,7 +83,7 @@
                         <div class="text-center text-ink-soft py-8">No products found.</div>
                         @endforelse
                         @if($products->hasPages())
-                        <div class="px-2 py-3">{{ $products->links() }}</div>
+                        <x-list-pagination :paginator="$products" label="products" />
                         @endif
                     </div>
                 </div>

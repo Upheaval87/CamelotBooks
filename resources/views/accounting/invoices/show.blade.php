@@ -67,7 +67,7 @@
                         <form method="POST" action="{{ route('accounting.invoices.void', $invoice) }}" class="inline">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" class="tr-archive" onclick="return confirm('{{ __('Are you sure you want to void this invoice?') }}')">
+                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this invoice?') }}')">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 {{ __('Void Invoice') }}
                             </button>
@@ -106,17 +106,9 @@
                 </x-dropdown>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
-            @if(session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">

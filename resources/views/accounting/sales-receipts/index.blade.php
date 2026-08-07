@@ -4,11 +4,11 @@
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-list-header title="Sales Receipts" createRoute="{{ route('accounting.sales-receipts.create') }}" createLabel="Create Sales Receipt" />
+            <x-list-header title="Sales Receipts" description="Record customer payments and receipts." createRoute="{{ route('accounting.sales-receipts.create') }}" createLabel="Create Sales Receipt" />
 
             <div class="list-layout">
                 <div class="list-layout-content">
-                    <x-list-filter-bar searchRoute="{{ route('accounting.sales-receipts.index') }}" searchPlaceholder="Customer, number..." entity="sales-receipt">
+                    <x-list-filter-bar searchRoute="{{ route('accounting.sales-receipts.index') }}" searchPlaceholder="Customer, number..." entity="sales-receipt" countText="{{ $receipts->total() }} receipts">
                         <select name="status" class="list-filter-select">
                             <option value="">All Statuses</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
@@ -17,12 +17,8 @@
                         </select>
                     </x-list-filter-bar>
 
-                    @if(session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
-                    @endif
-                    @if(session('error'))
-                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ session('error') }}</div>
-                    @endif
+                    
+                    
 
                     <div class="list-table-wrap">
                         <table class="list-table">
@@ -65,7 +61,7 @@
                                                 @can('sales-receipts.void')
                                                 <form method="POST" action="{{ route('accounting.sales-receipts.void', $receipt) }}" class="inline">
                                                     @csrf
-                                                    <button type="submit" class="icon-btn" onclick="return confirm('Void this receipt?')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg><span class="icon-btn-tooltip">Void</span></button>
+                                                    <button type="submit" class="icon-btn" onclick="return fbConfirmButton(event, 'Void this receipt?')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg><span class="icon-btn-tooltip">Void</span></button>
                                                 </form>
                                                 @endcan
                                             @endif
@@ -78,7 +74,7 @@
                             </tbody>
                         </table>
                         @if($receipts->hasPages())
-                        <div class="px-6 py-3 border-t border-gray-200">{{ $receipts->links() }}</div>
+                        <x-list-pagination :paginator="$receipts" label="receipts" />
                         @endif
                     </div>
 
@@ -101,7 +97,7 @@
                         <div class="text-center text-ink-soft py-8">No sales receipts found.</div>
                         @endforelse
                         @if($receipts->hasPages())
-                        <div class="px-2 py-3">{{ $receipts->links() }}</div>
+                        <x-list-pagination :paginator="$receipts" label="receipts" />
                         @endif
                     </div>
                 </div>

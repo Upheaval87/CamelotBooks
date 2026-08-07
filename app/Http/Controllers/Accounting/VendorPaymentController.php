@@ -80,7 +80,7 @@ class VendorPaymentController extends Controller
         $companyId = session('current_company_id');
         abort_unless($payment->company_id == $companyId, 403);
 
-        $payment->load(['vendor', 'bankAccount', 'journalEntry', 'allocations.bill']);
+        $payment->load(['vendor', 'bankAccount', 'journalEntry', 'allocations.bill.lines']);
 
         return view('accounting.vendor-payments.show', compact('payment'));
     }

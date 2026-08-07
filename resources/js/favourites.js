@@ -96,32 +96,10 @@ function svg(d) {
 }
 
 function makeToast(message, onUndo) {
-    var container = document.getElementById('toast-container');
-    if (!container) return;
-    var t = document.createElement('div');
-    t.className = 'pointer-events-auto flex items-center gap-3 bg-white dark:bg-neutral-900 border-l-[3px] border-l-gold rounded-xl px-4 py-3 shadow-elevated min-w-[300px] max-w-sm animate-fade-in-up';
-    t.innerHTML = '<span class="text-sm text-neutral-700 dark:text-neutral-300">' + message + '</span>';
-    if (onUndo) {
-        var undo = document.createElement('button');
-        undo.type = 'button';
-        undo.className = 'ml-auto text-xs font-semibold text-gold hover:text-gold/80 shrink-0';
-        undo.textContent = 'Undo';
-        undo.addEventListener('click', function () {
-            onUndo();
-            dismiss();
-        });
-        t.appendChild(undo);
-    }
-    container.appendChild(t);
-    function dismiss() {
-        if (t.parentNode) {
-            t.style.opacity = '0';
-            t.style.transform = 'translateX(20px)';
-            t.style.transition = 'all 0.3s ease';
-            setTimeout(function () { if (t.parentNode) t.remove(); }, 300);
-        }
-    }
-    setTimeout(dismiss, 5000);
+    if (!window.feedback) return;
+    window.feedback.toast('info', message, null, {
+        action: onUndo ? { label: 'Undo', onClick: onUndo } : null,
+    });
 }
 
 function buildStore() {

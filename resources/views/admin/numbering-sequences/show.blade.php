@@ -12,11 +12,7 @@
                 <a href="{{ route('admin.numbering-sequences.index') }}" class="tr-item">{{ __('Back to List') }}</a>
             </x-record-toolbar>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-300 text-green-800 rounded-md p-4">
-                    {{ session('success') }}
-                </div>
-            @endif
+            
 
             <div class="detail-page">
                 <div class="detail-page-main">
@@ -48,7 +44,7 @@
                     </div>
 
                     <div class="card p-6">
-                        <form method="POST" action="{{ route('admin.numbering-sequences.reset', $numberingSequence) }}" onsubmit="return confirm('Are you sure you want to reset this sequence to 1? This should only be done at the start of a new period.')">
+                        <form method="POST" action="{{ route('admin.numbering-sequences.reset', $numberingSequence) }}" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to reset this sequence to 1? This should only be done at the start of a new period.')">
                             @csrf
                             <button type="submit" class="x-button x-button-ghost">{{ __('Reset Sequence to 1') }}</button>
                         </form>

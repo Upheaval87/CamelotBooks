@@ -5,9 +5,7 @@
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         <h1 class="text-2xl font-semibold text-gray-900 mb-6">Setup Wizard — {{ $company->name }}</h1>
 
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">{{ session('success') }}</div>
-        @endif
+        
 
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mb-6">
             <div class="flex items-center gap-3 mb-4">

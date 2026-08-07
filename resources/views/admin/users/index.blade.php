@@ -5,9 +5,7 @@
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
         <h1 class="text-2xl font-semibold text-gray-900 mb-6">User Management</h1>
 
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md">{{ session('success') }}</div>
-        @endif
+        
 
         <div class="datasheet-wrap">
             <div class="overflow-x-auto">
