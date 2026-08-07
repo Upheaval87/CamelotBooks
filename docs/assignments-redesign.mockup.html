@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assignments — Executive Table Redesign</title>
+<style>
+  /* ============ DESIGN TOKENS ============ */
+  :root{
+    /* Existing accent (kept) */
+    --gold-600:#96742c;
+    --gold-500:#b6913f;
+    --gold-text:#8f6f2a;
+
+    /* NEW: corporate header navy */
+    --navy-top:#24384f;
+    --navy-mid:#182a3e;
+    --navy-bot:#132234;
+    --navy-text:#cdd7e2;
+    --navy-hairline:rgba(190,152,72,.45);
+
+    /* Kept surfaces */
+    --row-bg:#f8f9fb;
+    --line:#ebedf2;
+    --border:#e3e6eb;
+
+    /* Enhanced semantic green */
+    --green-600:#15803d;
+    --green-500:#22c55e;
+
+    /* Radii — UNCHANGED from original */
+    --r-card:24px;
+    --r-table:12px;
+    --r-btn:12px;
+    --r-edit:10px;
+    --r-pill:999px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    background:
+      radial-gradient(1100px 380px at 85% -10%, rgba(36,56,79,.07), transparent 60%),
+      #eef1f6;
+    color:#1f2937;
+    padding:48px 40px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ============ PAGE HEAD ============ */
+  .page-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.02em;color:#111827}
+  .sub{margin-top:6px;color:#6b7280;font-size:14px}
+
+  .btn-new{
+    display:inline-flex;align-items:center;gap:9px;
+    background:linear-gradient(180deg,var(--gold-500),var(--gold-600));
+    color:#fff;font-weight:600;font-size:14px;
+    padding:12px 20px;border-radius:var(--r-btn);
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 1px 2px rgba(63,44,7,.25),
+               0 10px 22px -8px rgba(150,116,44,.55),
+               inset 0 1px 0 rgba(255,255,255,.28);
+    cursor:pointer;transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .btn-new:hover{transform:translateY(-1px);
+    box-shadow:0 2px 4px rgba(63,44,7,.25),
+               0 14px 28px -8px rgba(150,116,44,.6),
+               inset 0 1px 0 rgba(255,255,255,.28)}
+  .btn-new:focus-visible,.btn-edit:focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+
+  /* ============ GLASSY ELEVATED CARD (container only) ============ */
+  .card{
+    background:rgba(255,255,255,.66);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-radius:var(--r-card);
+    padding:24px;
+    box-shadow:0 1px 2px rgba(16,24,40,.05),
+               0 12px 32px -8px rgba(16,24,40,.10),
+               0 32px 64px -24px rgba(15,30,50,.14);
+  }
+
+  /* Table shell — borders & radii UNCHANGED */
+  .table-wrap{
+    border:1px solid var(--border);
+    border-radius:var(--r-table);
+    background:var(--row-bg);
+    overflow-x:auto;
+  }
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:960px}
+
+  /* ============ REDESIGNED HEADER — executive navy ============ */
+  thead th{
+    background:linear-gradient(180deg,var(--navy-top) 0%,var(--navy-mid) 55%,var(--navy-bot) 100%);
+    color:var(--navy-text);
+    text-align:left;
+    font-size:11px;font-weight:600;
+    letter-spacing:.09em;text-transform:uppercase;
+    padding:16px 20px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),   /* top sheen  */
+               inset 0 -1px 0 var(--navy-hairline);   /* gold hairline */
+  }
+  thead th:first-child{border-top-left-radius:calc(var(--r-table) - 1px)}
+  thead th:last-child{border-top-right-radius:calc(var(--r-table) - 1px)}
+
+  /* ============ RECORDS — background & separators UNCHANGED ============ */
+  tbody td{
+    padding:18px 20px;
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr{transition:background .15s ease}
+  tbody tr:hover{background:rgba(255,255,255,.5)} /* whisper-light, optional */
+
+  .u-name{font-weight:700;color:#111827}
+  .u-mail{font-size:12.5px;color:#9aa3af;margin-top:4px}
+  .company{font-weight:700;color:#1f2937}
+  .role,.branches{color:#4b5563}
+
+  /* ============ ENHANCED "ACTIVE" BADGE ============ */
+  .badge-active{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:6px 12px;border-radius:var(--r-pill);
+    background:linear-gradient(180deg,#ecfdf3,#dcf5e7);
+    border:1px solid rgba(22,163,74,.28);
+    color:var(--green-600);font-weight:700;font-size:12px;
+    box-shadow:0 1px 2px rgba(16,24,40,.06),
+               inset 0 1px 0 rgba(255,255,255,.65);
+  }
+  .badge-active .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--green-500);
+    box-shadow:0 0 0 3px rgba(34,197,94,.18); /* soft pulse ring */
+  }
+
+  /* ============ ENHANCED EDIT ACTION ============ */
+  .btn-edit{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:9px 16px;border-radius:var(--r-edit);
+    background:linear-gradient(180deg,#fffdf8,#f7f0df);
+    border:1px solid rgba(150,116,44,.35);
+    color:var(--gold-text);font-weight:700;font-size:13px;
+    box-shadow:0 1px 2px rgba(16,24,40,.06);
+    cursor:pointer;transition:all .18s ease;
+  }
+  .btn-edit:hover{
+    transform:translateY(-1px);
+    background:linear-gradient(180deg,#ffffff,#faf4e6);
+    border-color:rgba(150,116,44,.55);
+    color:#7a5d20;
+    box-shadow:0 6px 14px -4px rgba(143,111,42,.35);
+  }
+  .btn-edit svg{flex:none}
+</style>
+</head>
+<body>
+
+  <div class="page-head">
+    <div>
+      <h1>Assignments</h1>
+      <p class="sub">User-to-company access with role and branch scope.</p>
+    </div>
+    <button class="btn-new">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      New Assignment
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:20%">User</th>
+            <th style="width:20%">Company</th>
+            <th style="width:18%">Role</th>
+            <th style="width:15%">Branches</th>
+            <th style="width:13%">Status</th>
+            <th style="width:14%">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="u-name">Accountant User</div><div class="u-mail">accountant@test.com</div></td>
+            <td class="company">Beta Industries</td>
+            <td class="role">accountant</td>
+            <td class="branches">All branches</td>
+            <td><span class="badge-active"><span class="dot"></span>Active</span></td>
+            <td><button class="btn-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Edit</button></td>
+          </tr>
+          <tr>
+            <td><div class="u-name">Accountant User</div><div class="u-mail">accountant@test.com</div></td>
+            <td class="company">Acme Corporation</td>
+            <td class="role">accountant</td>
+            <td class="branches">All branches</td>
+            <td><span class="badge-active"><span class="dot"></span>Active</span></td>
+            <td><button class="btn-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Edit</button></td>
+          </tr>
+          <tr>
+            <td><div class="u-name">Elvis Seyama</div><div class="u-mail">admin@test.com</div></td>
+            <td class="company">Beta Industries</td>
+            <td class="role">company_admin</td>
+            <td class="branches">All branches</td>
+            <td><span class="badge-active"><span class="dot"></span>Active</span></td>
+            <td><button class="btn-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Edit</button></td>
+          </tr>
+          <tr>
+            <td><div class="u-name">Elvis Seyama</div><div class="u-mail">admin@test.com</div></td>
+            <td class="company">Acme Corporation</td>
+            <td class="role">system_admin</td>
+            <td class="branches">All branches</td>
+            <td><span class="badge-active"><span class="dot"></span>Active</span></td>
+            <td><button class="btn-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Edit</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</body>
+</html>

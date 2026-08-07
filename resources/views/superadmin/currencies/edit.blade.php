@@ -1,9 +1,8 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Edit Currency') }} - {{ $currency->code }}</x-slot>
 
-    <div class="py-6">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="card p-6">
+    <x-superadmin.layout>
+        <div class="card p-6">
                 <form method="POST" action="{{ route('superadmin.currencies.update', $currency) }}" class="space-y-6">
                     @csrf
                     @method('PATCH')
@@ -60,7 +59,6 @@
                         <a href="{{ route('superadmin.currencies.index') }}" class="btn-ghost">{{ __('Cancel') }}</a>
                     </div>
                 </form>
-            </div>
         </div>
-    </div>
+    </x-superadmin.layout>
 </x-app-layout>

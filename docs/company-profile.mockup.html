@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acme Corporation — Company Profile</title>
+<style>
+  :root{
+    --gold-500:#b6913f; --gold-600:#96742c; --gold-700:#8f6f2a; --gold-800:#7a5d20;
+    --navy-700:#24384f; --navy-800:#182a3e; --navy-900:#132234; --navy-200:#cdd7e2;
+    --row:#f8f9fb; --line:#ebedf2; --border:#e3e6eb;
+    --green-600:#15803d; --green-500:#22c55e; --red-600:#dc2626;
+    --ink-900:#111827; --ink-700:#374151; --ink-500:#6b7280; --ink-400:#9aa3af;
+    --r-card:24px; --r-table:12px; --r-btn:12px; --r-sm:10px;
+    --shadow-card:0 1px 2px rgba(16,24,40,.05),0 12px 32px -8px rgba(16,24,40,.10),0 32px 64px -24px rgba(15,30,50,.14);
+    --shadow-thead:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -1px 0 rgba(190,152,72,.45);
+    --shadow-badge:0 1px 2px rgba(16,24,40,.06),inset 0 1px 0 rgba(255,255,255,.65);
+    --shadow-new:0 1px 2px rgba(63,44,7,.25),0 10px 22px -8px rgba(150,116,44,.55),inset 0 1px 0 rgba(255,255,255,.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    background:radial-gradient(1100px 380px at 85% -10%, rgba(36,56,79,.07), transparent 60%),#eef1f6;
+    color:var(--ink-700);padding:40px 24px;-webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+  /* ---------- glassy elevated card ---------- */
+  .card{
+    background:rgba(255,255,255,.66);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-radius:var(--r-card);padding:26px 28px;box-shadow:var(--shadow-card);
+  }
+  .card-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}
+  h2{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink-900)}
+  .card-link{font-size:13px;font-weight:600;color:var(--gold-700);text-decoration:none}
+  .card-link:hover{color:var(--gold-800);text-decoration:underline}
+  .card-link:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+
+  /* ---------- overview header ---------- */
+  .ov-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+  .ov-id{display:flex;align-items:center;gap:12px}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--ink-900)}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px;
+    padding:10px 16px;border-radius:var(--r-btn);cursor:pointer;transition:all .18s ease}
+  .btn-ghost{background:rgba(255,255,255,.75);border:1px solid var(--border);color:var(--ink-700);
+    box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .btn-ghost:hover{background:#fff;transform:translateY(-1px);box-shadow:0 6px 14px -6px rgba(16,24,40,.14)}
+  .btn-primary{background:linear-gradient(180deg,var(--gold-500),var(--gold-600));color:#fff;
+    border:1px solid rgba(255,255,255,.22);box-shadow:var(--shadow-new)}
+  .btn-primary:hover{transform:translateY(-1px)}
+  .btn-danger{background:#fff;border:1px solid rgba(220,38,38,.35);color:var(--red-600);
+    box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .btn-danger:hover{background:#fef2f2;border-color:rgba(220,38,38,.55);transform:translateY(-1px);
+    box-shadow:0 6px 14px -6px rgba(220,38,38,.25)}
+
+  /* ---------- badges ---------- */
+  .badge{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;
+    font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .badge-active{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);
+    color:var(--green-600);box-shadow:var(--shadow-badge)}
+  .badge-active .dot{width:7px;height:7px;border-radius:50%;background:var(--green-500);
+    box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+  .badge-navy{background:rgba(36,56,79,.08);border:1px solid rgba(36,56,79,.22);color:var(--navy-700)}
+
+  /* ---------- info grid ---------- */
+  .info-grid{margin-top:22px;padding-top:22px;border-top:1px solid var(--line);
+    display:grid;grid-template-columns:repeat(3,1fr);gap:22px 32px}
+  .f-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-500);margin-bottom:6px}
+  .f-value{font-size:14px;font-weight:600;color:var(--ink-900)}
+  .f-value.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:500}
+
+  /* ---------- branch limit ---------- */
+  .desc{font-size:13.5px;color:var(--ink-500);max-width:880px;line-height:1.55}
+  .limit-row{display:flex;align-items:center;gap:18px;margin-top:18px;flex-wrap:wrap}
+  .limit-field label{display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-500);margin-bottom:6px}
+  .limit-field input{width:130px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
+    background:rgba(244,246,250,.6);color:var(--ink-400);font-size:14px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink-700)}
+  .chk input{width:16px;height:16px;accent-color:var(--gold-600)}
+  .btn-save{padding:9px 15px;font-size:13px;border-radius:var(--r-sm);
+    background:linear-gradient(180deg,var(--gold-500),var(--gold-600));color:#fff;
+    border:1px solid rgba(255,255,255,.22);box-shadow:var(--shadow-new);cursor:pointer;transition:all .18s ease}
+  .btn-save:hover{transform:translateY(-1px)}
+  .footnote{margin-top:14px;font-size:12px;color:var(--ink-400)}
+
+  /* ---------- two-column row ---------- */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .duo .card{margin:0}
+
+  /* ---------- datasheets (executive navy) ---------- */
+  .table-wrap{border:1px solid var(--border);border-radius:var(--r-table);background:var(--row);overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+  thead th{
+    background:linear-gradient(180deg,var(--navy-700) 0%,var(--navy-800) 55%,var(--navy-900) 100%);
+    color:var(--navy-200);text-align:left;font-size:11px;font-weight:600;
+    letter-spacing:.09em;text-transform:uppercase;padding:13px 18px;box-shadow:var(--shadow-thead);
+  }
+  thead th.num{text-align:right}
+  tbody td{padding:14px 18px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  .u-name{font-weight:700;color:var(--ink-900)}
+  .u-mail{font-size:12px;color:var(--ink-400);margin-top:3px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-700)}
+  .reason{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#475569;
+    background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:3px 8px}
+
+  /* ---------- module chips ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid var(--border);
+    color:#3f4a5a;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    box-shadow:0 1px 2px rgba(16,24,40,.04)}
+
+  /* ---------- activity timeline ---------- */
+  .activity{list-style:none}
+  .activity li{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .activity li:last-child{border-bottom:none;padding-bottom:4px}
+  .a-dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none}
+  .a-dot.navy{background:var(--navy-700);box-shadow:0 0 0 3px rgba(36,56,79,.14)}
+  .a-dot.gold{background:var(--gold-500);box-shadow:0 0 0 3px rgba(182,145,63,.16)}
+  .a-dot.green{background:var(--green-500);box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+  .a-dot.slate{background:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  .a-text{font-size:13.5px;color:var(--ink-700)}
+  .a-text strong{color:var(--ink-900)}
+  .a-time{margin-left:auto;font-size:12px;color:var(--ink-400);white-space:nowrap;padding-top:2px}
+
+  @media (max-width:960px){ .duo{grid-template-columns:1fr} .info-grid{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:600px){ .info-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="card">
+    <div class="ov-head">
+      <div class="ov-id">
+        <h1>Acme Corporation</h1>
+        <span class="badge badge-active"><span class="dot"></span>Active</span>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Edit Details</button>
+        <button class="btn btn-ghost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/></svg>Manage Modules</button>
+        <button class="btn btn-primary"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Enter Company (Support)</button>
+        <button class="btn btn-danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M6 6l12 12" stroke="currentColor" stroke-width="2"/></svg>Suspend</button>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div><div class="f-label">Company Code</div><div class="f-value">ACME</div></div>
+      <div><div class="f-label">Legal Name</div><div class="f-value">Acme Corporation Ltd.</div></div>
+      <div><div class="f-label">Base Currency</div><div class="f-value">MWK</div></div>
+      <div><div class="f-label">Tax ID</div><div class="f-value mono">123456789</div></div>
+      <div><div class="f-label">Fiscal Year Start</div><div class="f-value">January</div></div>
+      <div><div class="f-label">Email</div><div class="f-value">info@acme.test</div></div>
+      <div><div class="f-label">Phone</div><div class="f-value">+1-555-0100</div></div>
+      <div><div class="f-label">Address</div><div class="f-value">123 Business Ave</div></div>
+      <div><div class="f-label">City</div><div class="f-value">New York</div></div>
+      <div><div class="f-label">Country</div><div class="f-value">US</div></div>
+      <div><div class="f-label">Database Name</div><div class="f-value mono">acct_acme_149593cc</div></div>
+      <div><div class="f-label">Provisioned At</div><div class="f-value">Aug 5, 2026 8:08 AM</div></div>
+    </div>
+  </section>
+
+  <!-- ============ BRANCH LIMIT ============ -->
+  <section class="card">
+    <div class="card-head">
+      <h2>Branch Limit</h2>
+      <span class="badge badge-navy">Unlimited</span>
+    </div>
+    <p class="desc">The company can create up to its limit of active branches; creation beyond it is blocked (the Company Manager keeps the ability, the system enforces the count). No limit is currently enforced.</p>
+    <div class="limit-row">
+      <div class="limit-field">
+        <label for="limit">Limit</label>
+        <input id="limit" type="text" value="—" disabled>
+      </div>
+      <label class="chk"><input type="checkbox" checked> Unlimited</label>
+      <button class="btn-save">Save Limit</button>
+    </div>
+    <p class="footnote">Raising a limit beyond the initial value normally goes through the branch request/billing process; this manual override is for exceptions (trials, corrections, negotiated deals).</p>
+  </section>
+
+  <!-- ============ USERS + MODULES ============ -->
+  <div class="duo">
+    <section class="card">
+      <div class="card-head">
+        <h2>Assigned Users</h2>
+        <a class="card-link" href="#">Assign a user</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:42%">User</th><th style="width:38%">Role</th><th class="num" style="width:20%">Branches</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="u-name">Elvis Seyama</div><div class="u-mail">admin@test.com</div></td>
+              <td>system_admin</td>
+              <td class="num">0</td>
+            </tr>
+            <tr>
+              <td><div class="u-name">Accountant User</div><div class="u-mail">accountant@test.com</div></td>
+              <td>accountant</td>
+              <td class="num">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Active Modules</h2>
+        <a class="card-link" href="#">Manage</a>
+      </div>
+      <div class="chips">
+        <span class="chip">Accounting</span><span class="chip">Sales</span><span class="chip">Reports</span>
+        <span class="chip">System</span><span class="chip">Users</span><span class="chip">Banking</span>
+        <span class="chip">Purchasing</span><span class="chip">Analytics</span><span class="chip">Budgets</span>
+        <span class="chip">Point of Sale</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ SUPPORT SESSIONS ============ -->
+  <section class="card">
+    <div class="card-head"><h2>Support Access Sessions</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:22%">Admin</th><th style="width:20%">Started</th><th style="width:20%">Ended</th>
+          <th style="width:15%">Duration</th><th style="width:23%">End Reason</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><div class="u-name">Elvis Seyama</div><div class="u-mail">admin@test.com</div></td>
+            <td>Aug 6, 2026 11:32 AM</td><td>Aug 6, 2026 1:47 PM</td><td>2 hours</td>
+            <td><span class="reason">logout</span></td>
+          </tr>
+          <tr>
+            <td><div class="u-name">Elvis Seyama</div><div class="u-mail">admin@test.com</div></td>
+            <td>Aug 6, 2026 1:52 AM</td><td>Aug 6, 2026 1:53 AM</td><td>51 seconds</td>
+            <td><span class="reason">context_changed</span></td>
+          </tr>
+          <tr>
+            <td><div class="u-name">Elvis Seyama</div><div class="u-mail">admin@test.com</div></td>
+            <td>Aug 6, 2026 1:51 AM</td><td>Aug 6, 2026 1:52 AM</td><td>1 minute</td>
+            <td><span class="reason">context_changed</span></td>
+          </tr>
+          <tr>
+            <td><div class="u-name">Elvis Seyama</div><div class="u-mail">admin@test.com</div></td>
+            <td>Aug 6, 2026 1:50 AM</td><td>Aug 6, 2026 1:51 AM</td><td>46 seconds</td>
+            <td><span class="reason">context_changed</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ RECENT ACTIVITY ============ -->
+  <section class="card">
+    <div class="card-head"><h2>Recent Activity</h2></div>
+    <ul class="activity">
+      <li><span class="a-dot slate"></span><span class="a-text"><strong>Elvis Seyama</strong> ended a support session — <span class="reason">context_changed</span></span><span class="a-time">Aug 6, 2026 1:47 PM</span></li>
+      <li><span class="a-dot green"></span><span class="a-text"><strong>Elvis Seyama</strong> started a support session</span><span class="a-time">Aug 6, 2026 11:32 AM</span></li>
+      <li><span class="a-dot gold"></span><span class="a-text"><strong>Elvis Seyama</strong> set the branch limit to <strong>Unlimited</strong></span><span class="a-time">Aug 5, 2026 9:12 AM</span></li>
+      <li><span class="a-dot navy"></span><span class="a-text"><strong>System</strong> provisioned the company — database <span class="reason">acct_acme_149593cc</span></span><span class="a-time">Aug 5, 2026 8:08 AM</span></li>
+    </ul>
+  </section>
+
+</div>
+</body>
+</html>

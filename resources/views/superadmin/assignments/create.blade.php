@@ -1,18 +1,7 @@
 <x-app-layout>
 
-    <div class="sa-page py-6" style="background: #F8F9FC;">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-
-            <div class="sa-breadcrumb">
-                <span>{{ __('Super Admin') }}</span>
-                <svg class="sa-breadcrumb-sep" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18l6-6-6-6"/></svg>
-                <span>{{ __('Assignments') }}</span>
-                <svg class="sa-breadcrumb-sep" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18l6-6-6-6"/></svg>
-                <span class="sa-breadcrumb-current">{{ __('Assign User') }}</span>
-            </div>
-
-            <h1 class="sa-page-title">{{ __('Assign User') }}{{ $preselectUser ? ' — ' . $preselectUser->name : '' }}</h1>
-            <p class="sa-page-subtitle">{{ __('Company, role, and branch scoping for this user.') }}</p>
+    <x-superadmin.layout>
+        <x-superadmin.page-head title="{{ __('Assign User') }}{{ $preselectUser ? ' — ' . $preselectUser->name : '' }}" description="{{ __('Company, role, and branch scoping for this user.') }}" />
 
             <form method="POST" action="{{ route('superadmin.assignments.store') }}" id="company-create-form"
                 x-data="{
@@ -126,6 +115,5 @@
                     <button type="submit" class="sa-btn sa-btn--primary">{{ __('Save Assignments') }}</button>
                 </div>
             </form>
-        </div>
-    </div>
+    </x-superadmin.layout>
 </x-app-layout>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Customer — Alternative Designs</title>
+<style>
+  :root{
+    --navy-700:#24384f;--navy-800:#182a3e;--navy-900:#132234;--navy-200:#cdd7e2;
+    --gold-500:#b6913f;--gold-600:#96742c;--gold-700:#8f6f2a;
+    --line:#ebedf2;--border:#e3e6eb;
+    --st-lt-hover:rgba(36,56,79,.06);--st-lt-press:rgba(36,56,79,.12);
+    --shadow-card:0 1px 2px rgba(16,24,40,.05),0 12px 32px -8px rgba(16,24,40,.10),0 32px 64px -24px rgba(15,30,50,.14);
+    --shadow-thead:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -1px 0 rgba(190,152,72,.45);
+    --shadow-new:0 1px 2px rgba(63,44,7,.25),0 10px 22px -8px rgba(150,116,44,.55),inset 0 1px 0 rgba(255,255,255,.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(1100px 380px at 85% -10%, rgba(36,56,79,.07), transparent 60%),#eef1f6;
+    color:#374151;padding:44px 24px;-webkit-font-smoothing:antialiased}
+  svg{flex:none}
+  :focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .wrap{max-width:1180px;margin:0 auto}
+  .opt-tag{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--navy-700);background:rgba(36,56,79,.08);border:1px solid rgba(36,56,79,.2);
+    border-radius:999px;padding:5px 12px;margin-bottom:14px}
+  .option{margin-bottom:64px}
+  h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#111827}
+  .sub{margin-top:6px;font-size:14px;color:#6b7280}
+  .crumbs{font-size:12px;color:#94a3b8;margin-bottom:6px}
+  .crumbs b{color:var(--gold-700);font-weight:600}
+
+  /* shared form pieces */
+  .card{background:rgba(255,255,255,.66);backdrop-filter:blur(14px);border-radius:24px;box-shadow:var(--shadow-card)}
+  .sec-head{display:flex;align-items:center;gap:12px}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(180deg,#2e4763,#22394f);color:#e2c069;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 3px 8px -3px rgba(0,0,0,.4)}
+  .sec-head h2{font-size:15px;font-weight:800;color:#111827}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px 24px;margin-top:22px}
+  .section + .section{margin-top:30px}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:7px}
+  .input{width:100%;height:40px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.8);
+    padding:0 14px;font-size:13.5px;color:#111827;font-family:inherit;transition:all .15s}
+  .input::placeholder{color:#94a3b8}
+  .input:hover{border-color:rgba(36,56,79,.28);background:#fff}
+  .input:focus{outline:none;border-color:rgba(182,145,63,.55);box-shadow:0 0 0 3px rgba(182,145,63,.15)}
+  textarea.input{height:auto;min-height:88px;padding:10px 14px;resize:vertical}
+  .select{position:relative}
+  .select select{appearance:none;width:100%;height:40px;border-radius:12px;border:1px solid var(--border);
+    background:rgba(255,255,255,.8);padding:0 34px 0 14px;font-size:13.5px;font-weight:600;color:#111827;font-family:inherit;cursor:pointer}
+  .select svg{position:absolute;right:11px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none}
+  .form-foot{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 17px;border-radius:12px;
+    font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s ease}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-tertiary{background:transparent;color:#4b5563}
+  .btn-tertiary:hover{background:rgba(255,255,255,.75);color:#16283c}
+  .btn-ghost{background:rgba(255,255,255,.8);border-color:var(--border);color:#374151;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .btn-ghost:hover{background:var(--st-lt-hover);border-color:rgba(36,56,79,.28);color:#1d3349}
+  .btn-accent{color:#fff;background:linear-gradient(180deg,var(--gold-500),var(--gold-600));border-color:rgba(255,255,255,.22);box-shadow:var(--shadow-new)}
+
+  /* ============ OPTION 1 — STEPPER CARD ============ */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .wiz{display:grid;grid-template-columns:232px 1fr;margin-top:22px;overflow:hidden}
+  .stepper{border-right:1px solid var(--line);background:rgba(248,249,251,.6);padding:18px 14px;display:flex;flex-direction:column;gap:6px}
+  .step-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:14px;position:relative;
+    color:#4b5563;font-size:13.5px;font-weight:600;text-decoration:none;transition:all .15s}
+  .step-item:hover{background:var(--st-lt-hover);color:#1d3349}
+  .step-item .ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+    background:var(--st-lt-hover);border:1px solid rgba(36,56,79,.12);color:var(--navy-700)}
+  .step-item small{display:block;font-size:11px;font-weight:500;color:#94a3b8;margin-top:1px}
+  .step-item.current{background:linear-gradient(90deg,#2e4763,#22394f 60%,#1d3349);color:#f2f6fa;font-weight:700;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 6px 16px -6px rgba(13,26,41,.55)}
+  .step-item.current::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:4px;border-radius:4px;background:var(--gold-500)}
+  .step-item.current .ic{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.16);color:#e2c069}
+  .step-item.current small{color:#aebfcc}
+  .tip{margin-top:auto;background:rgba(36,56,79,.05);border:1px solid rgba(36,56,79,.12);border-radius:14px;
+    padding:12px;font-size:12px;line-height:1.5;color:#64748b}
+  .tip b{color:var(--navy-700)}
+  .wiz-body{padding:26px 28px}
+
+  /* ============ OPTION 2 — NAVY BAND + TABS ============ */
+  .band{border-radius:24px;padding:26px 28px;color:var(--navy-200);
+    background:linear-gradient(180deg,var(--navy-700) 0%,var(--navy-800) 55%,var(--navy-900) 100%);
+    box-shadow:var(--shadow-thead),var(--shadow-card);
+    display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+  .band h1{color:#f2f6fa}
+  .band .sub{color:#aebfcc}
+  .band .crumbs{color:#7d93aa}
+  .chips-dark{display:flex;gap:8px;flex-wrap:wrap}
+  .chip-dark{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:12px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--navy-200);
+    font-size:13px;font-weight:600;text-decoration:none;transition:all .15s}
+  .chip-dark:hover{background:linear-gradient(180deg,#26405b,#1d3349);color:#e8f0f8}
+  .tabs{display:flex;gap:6px;padding:16px 20px 0;border-bottom:1px solid var(--line)}
+  .tab{padding:10px 16px;border-radius:12px 12px 0 0;font-size:13.5px;font-weight:600;color:#4b5563;
+    background:transparent;border:none;cursor:pointer;position:relative;transition:all .15s}
+  .tab:hover{background:var(--st-lt-hover);color:#1d3349}
+  .tab.active{color:#f2f6fa;background:linear-gradient(180deg,#2e4763,#22394f);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10)}
+  .tab.active::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;background:var(--gold-500)}
+  .tab-body{padding:26px 28px}
+  .panel[hidden]{display:none}
+
+  @media (max-width:1080px){.grid3{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:860px){.wiz{grid-template-columns:1fr}.stepper{border-right:none;border-bottom:1px solid var(--line)}}
+  @media (max-width:640px){.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= OPTION 1 ================= -->
+<section class="option">
+  <span class="opt-tag">Option 1 — Stepper Card · guided onboarding feel</span>
+  <div class="crumbs">Customers / <b>Create</b></div>
+  <h1>Create Customer</h1>
+  <p class="sub">Add a new customer record with payment terms and opening balances.</p>
+  <div class="toolbar">
+    <button class="btn btn-ghost">🗎 New Invoice</button>
+    <button class="btn btn-ghost">💳 New Payment</button>
+    <button class="btn btn-ghost">👥 Customer List</button>
+  </div>
+
+  <div class="card wiz">
+    <aside class="stepper">
+      <a class="step-item current" href="#"><span class="ic">🪪</span><span>Customer Details<small>Identity &amp; addresses</small></span></a>
+      <a class="step-item" href="#"><span class="ic"></span><span>Terms &amp; Balances<small>Currency, limits, opening</small></span></a>
+      <div class="tip"><b>Tip —</b> Opening balance posts straight to the ledger. Use the customer's first statement date.</div>
+    </aside>
+    <div class="wiz-body">
+      <div class="section">
+        <div class="sec-head"><span class="sec-ic">🪪</span><h2>Customer Details</h2><span class="rule"></span></div>
+        <div class="grid3">
+          <div class="field"><label>Name</label><input class="input"></div>
+          <div class="field"><label>Display Name</label><input class="input"></div>
+          <div class="field"><label>Email</label><input class="input"></div>
+          <div class="field"><label>Phone</label><input class="input"></div>
+          <div class="field"><label>Billing Address</label><textarea class="input"></textarea></div>
+          <div class="field"><label>Shipping Address</label><textarea class="input"></textarea></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="sec-head"><span class="sec-ic">🖩</span><h2>Terms &amp; Balances</h2><span class="rule"></span></div>
+        <div class="grid3">
+          <div class="field"><label>Currency</label><div class="select"><select><option>$</option></select><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div></div>
+          <div class="field"><label>Payment Terms</label><div class="select"><select><option>Due on Receipt</option></select><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div></div>
+          <div class="field"><label>Payment Terms (Days)</label><input class="input"></div>
+          <div class="field"><label>Credit Limit</label><input class="input"></div>
+          <div class="field"><label>Opening Balance ($)</label><input class="input" value="0.00"></div>
+          <div class="field"><label>Opening Balance Date</label><input class="input" placeholder="mm/dd/yyyy"></div>
+        </div>
+      </div>
+      <div class="form-foot">
+        <button class="btn btn-tertiary">Cancel</button>
+        <button class="btn btn-accent">Create Customer</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OPTION 2 ================= -->
+<section class="option">
+  <span class="opt-tag">Option 2 — Navy Band + Tabs · maximum air</span>
+  <div class="band">
+    <div>
+      <div class="crumbs">Customers / <b style="color:#e2c069">Create</b></div>
+      <h1>Create Customer</h1>
+      <p class="sub">Add a new customer record with payment terms and opening balances.</p>
+    </div>
+    <div class="chips-dark">
+      <a class="chip-dark" href="#">🗎 New Invoice</a>
+      <a class="chip-dark" href="#">💳 New Payment</a>
+      <a class="chip-dark" href="#">👥 Customer List</a>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-p="p1" role="tab">Customer Details</button>
+      <button class="tab" data-p="p2" role="tab">Terms &amp; Balances</button>
+    </div>
+    <div class="tab-body">
+      <div class="panel" id="p1">
+        <div class="grid3" style="margin-top:0">
+          <div class="field"><label>Name</label><input class="input"></div>
+          <div class="field"><label>Display Name</label><input class="input"></div>
+          <div class="field"><label>Email</label><input class="input"></div>
+          <div class="field"><label>Phone</label><input class="input"></div>
+          <div class="field"><label>Billing Address</label><textarea class="input"></textarea></div>
+          <div class="field"><label>Shipping Address</label><textarea class="input"></textarea></div>
+        </div>
+      </div>
+      <div class="panel" id="p2" hidden>
+        <div class="grid3" style="margin-top:0">
+          <div class="field"><label>Currency</label><div class="select"><select><option>$</option></select><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div></div>
+          <div class="field"><label>Payment Terms</label><div class="select"><select><option>Due on Receipt</option></select><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></div></div>
+          <div class="field"><label>Payment Terms (Days)</label><input class="input"></div>
+          <div class="field"><label>Credit Limit</label><input class="input"></div>
+          <div class="field"><label>Opening Balance ($)</label><input class="input" value="0.00"></div>
+          <div class="field"><label>Opening Balance Date</label><input class="input" placeholder="mm/dd/yyyy"></div>
+        </div>
+      </div>
+      <div class="form-foot">
+        <button class="btn btn-tertiary">Cancel</button>
+        <button class="btn btn-accent">Create Customer</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+<script>
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.hidden=true);
+    t.classList.add('active');document.getElementById(t.dataset.p).hidden=false;
+  }));
+</script>
+</body>
+</html>

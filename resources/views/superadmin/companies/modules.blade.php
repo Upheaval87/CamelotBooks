@@ -1,68 +1,59 @@
 <x-app-layout>
 
-    <div class="sa-page py-6" style="background: #F8F9FC;">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <x-superadmin.layout>
+        <x-superadmin.page-head title="{{ __('Modules') }}" description="{{ __('Manage which features are enabled for this company.') }}">
+            <a href="{{ route('superadmin.companies.show', $company) }}" class="inline-flex items-center gap-2 rounded-[10px] border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-gray-400 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+                {{ __('Back to Company') }}
+            </a>
+        </x-superadmin.page-head>
 
-            <div class="sa-page-head">
-                <div>
-                    <h1 class="sa-page-title">{{ __('Module Activation') }} — {{ $company->name }}</h1>
-                    <p class="sa-page-subtitle">{{ __('Controls which modules this company’s tenant database exposes. Activation is the single source of truth — tenant-side feature settings are read-only.') }}</p>
-                </div>
-                <a href="{{ route('superadmin.companies.show', $company) }}" class="sa-btn sa-btn--ghost">{{ __('Back to Company') }}</a>
-            </div>
-
-            <x-elevated-card :flush="true">
-                <div class="sa-table-wrap">
-                    <table class="sa-table">
-                        <thead>
-                            <tr>
-                                <th>{{ __('Module') }}</th>
-                                <th class="sa-table-center">{{ __('Status') }}</th>
-                                <th>{{ __('Activated') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($modules as $module)
+        <div class="overflow-x-auto rounded-xl border border-shell bg-row">
+            <table class="w-full min-w-[720px] border-collapse text-sm">
+                <thead>
+                    <tr>
+                        <th class="bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 px-[18px] py-[14px] text-left text-[11px] font-semibold uppercase tracking-[0.09em] text-navy-200 shadow-thead">{{ __('Module') }}</th>
+                        <th class="bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 px-[18px] py-[14px] text-left text-[11px] font-semibold uppercase tracking-[0.09em] text-navy-200 shadow-thead">{{ __('Status') }}</th>
+                        <th class="bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 px-[18px] py-[14px] text-left text-[11px] font-semibold uppercase tracking-[0.09em] text-navy-200 shadow-thead">{{ __('Activated') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-line">
+                    @forelse($modules as $module)
+                        <tr class="transition-colors hover:bg-[rgba(36,56,79,.035)]">
+                            <td class="px-[18px] py-[14px] align-middle">
+                                <a href="#modules-{{ $module->id }}" class="font-bold text-gray-900 hover:underline">{{ $module->name }}</a>
+                                <span class="mt-0.5 block text-[12.5px] text-gray-400">{{ $module->code }}</span>
+                            </td>
+                            <td class="px-[18px] py-[14px] align-middle">
+                                @if($module->is_core)
+                                    <span class="inline-flex items-center gap-[7px] rounded-full border border-gold-600/30 bg-gradient-to-b from-[#fffdf6] to-[#f6ecd2] px-3 py-1.5 text-xs font-bold text-gold-700 shadow-badge">
+                                        {{ __('Core') }}
+                                    </span>
+                                @else
+                                    <span class="sa-pill sa-pill--muted">{{ __('Optional') }}</span>
+                                @endif
+                            </td>
+                            <td class="px-[18px] py-[14px] align-middle">
                                 @php
-                                    $state = $moduleStates[$module->id] ?? null;
-                                    $isActive = (bool) ($state?->is_active ?? false);
-                                    $effectiveActive = $module->is_core || $isActive;
+                                    $enabled = ($module->is_active ?? false) && $module->is_active;
                                 @endphp
-                                <tr>
-                                    <td>
-                                        <span style="font-weight: 500; color: var(--sa-ink);">{{ $module->name }}</span>
-                                        @if($module->is_core)
-                                            <span class="sa-pill sa-pill--muted" style="margin-left: 8px;">Core</span>
-                                        @endif
-                                        @if($module->description)
-                                            <span class="sa-table-sub">{{ $module->description }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="sa-table-center">
-                                        @if($module->is_core)
-                                            <span class="sa-pill sa-pill--accent">{{ __('Always On') }}</span>
-                                        @else
-                                            <form method="POST" action="{{ route('superadmin.companies.modules.toggle', [$company, $module]) }}" style="display: inline-flex;">
-                                                @csrf
-                                                <x-toggle-switch :checked="$isActive" aria-label="{{ __('Toggle :module', ['module' => $module->name]) }}" />
-                                            </form>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($module->is_core)
-                                            <span style="color: #c8ccd2;">—</span>
-                                        @elseif($isActive && $state?->activated_at)
-                                            <span style="color: var(--sa-muted); font-size: 12px;">{{ $state->activated_at->format('M j, Y') }}</span>
-                                        @else
-                                            <span style="color: #c8ccd2;">{{ __('Not activated') }}</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </x-elevated-card>
+                                @if($enabled)
+                                    <span class="inline-flex items-center gap-[7px] rounded-full border border-green-600/30 bg-gradient-to-b from-mint-100 to-mint-200 px-3 py-1.5 text-xs font-bold text-green-700 shadow-badge">
+                                        <span class="h-[7px] w-[7px] rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,.18)]"></span>
+                                        {{ __('Activated') }}
+                                    </span>
+                                @else
+                                    <span class="sa-pill sa-pill--muted">{{ __('Not Activated') }}</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="px-[18px] py-[14px] align-middle text-center text-gray-400">{{ __('No modules found.') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    </div>
+    </x-superadmin.layout>
+
 </x-app-layout>

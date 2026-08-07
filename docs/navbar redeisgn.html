@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Row-Two & Sidebar — Colour Options</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef1f6;color:#1f2937;padding:40px 24px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:#24384f;background:rgba(36,56,79,.08);border:1px solid rgba(36,56,79,.2);border-radius:999px;
+    padding:5px 12px;margin-bottom:12px}
+  .demo{margin-bottom:56px}
+
+  /* ===== ROW ONE — constant executive navy ===== */
+  .topbar{height:64px;display:flex;align-items:center;gap:14px;padding:0 20px;
+    background:linear-gradient(180deg,#182a3e,#132234)}
+  .logo{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;color:#fff;font-weight:800;background:#b6913f}
+  .brand{color:#fff;font-weight:700;font-size:15px}
+  .vdiv{width:1px;height:26px;background:rgba(255,255,255,.15)}
+  .ctx-co{color:#e5e7eb;font-weight:600;font-size:13.5px}
+  .ctx-loc{color:#9ca3af;font-size:13px}
+  .spacer{flex:1}
+  .hbtn-gold{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:10px;
+    background:rgba(182,145,63,.15);border:1px solid rgba(182,145,63,.5);color:#d8b968;font-size:13px;font-weight:600}
+  .avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;background:#b6913f}
+  .u-n{color:#fff;font-weight:700;font-size:13px}
+  .u-r{color:#9ca3af;font-size:10px;letter-spacing:.08em}
+
+  /* ===== shared layout ===== */
+  .modnav{height:52px;display:flex;align-items:center;gap:6px;padding:0 16px}
+  .mnav{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;border-radius:9px;
+    font-size:13.5px;font-weight:600;text-decoration:none;transition:all .15s;position:relative}
+  .shell{display:flex;align-items:flex-start}
+  .rail{width:88px;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 8px;min-height:420px}
+  .rail-head{color:#94a3b8;font-size:10px;font-weight:700;letter-spacing:.1em;margin-bottom:8px}
+  .rail-item{display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:10px 4px;border-radius:10px;
+    font-size:10px;font-weight:600;text-align:center;text-decoration:none;transition:all .15s;position:relative}
+  .rail-item.active::before,.mnav.active::before{content:"";position:absolute;background:#b6913f;border-radius:3px}
+  .mnav.active::before{left:10px;right:10px;bottom:4px;height:2px}
+  .rail-item.active::before{left:0;top:12px;bottom:12px;width:3px}
+  .main{flex:1;padding:26px 30px;background:#f4f6fa}
+  h1{font-size:22px;font-weight:700;font-style:italic;color:#111827;margin-bottom:18px}
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;max-width:640px}
+  .kpi{background:#fbfbfc;border:1px solid #e5e7eb;border-radius:8px;padding:20px}
+  .kpi .l{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#374151}
+  .kpi .v{margin-top:8px;font-size:22px;font-weight:800;color:#111827}
+
+  /* ============ OPTION A — FROSTED PORCELAIN ============ */
+  .theme-porcelain .modnav{background:rgba(255,255,255,.72);backdrop-filter:blur(14px);box-shadow:inset 0 -1px 0 rgba(15,23,42,.08)}
+  .theme-porcelain .mnav{color:#3b4a5f}
+  .theme-porcelain .mnav:hover{background:rgba(36,56,79,.06);color:#1d3349}
+  .theme-porcelain .mnav.active{background:linear-gradient(180deg,#2e4763,#22394f);color:#f2f6fa;box-shadow:0 4px 10px -4px rgba(13,26,41,.4)}
+  .theme-porcelain .mnav.active::before{background:#e2c069}
+  .theme-porcelain .rail{background:rgba(255,255,255,.66);backdrop-filter:blur(14px);box-shadow:inset -1px 0 0 rgba(15,23,42,.07)}
+  .theme-porcelain .rail-item{color:#64748b}
+  .theme-porcelain .rail-item:hover{background:rgba(36,56,79,.06);color:#1d3349}
+  .theme-porcelain .rail-item.active{background:rgba(36,56,79,.08);color:#182a3e}
+
+  /* ============ OPTION B — GRAPHITE ============ */
+  .theme-graphite .modnav{background:linear-gradient(180deg,#2e3238,#23262b);box-shadow:inset 0 -1px 0 rgba(182,145,63,.35)}
+  .theme-graphite .mnav{color:#c9ced4}
+  .theme-graphite .mnav:hover{background:rgba(255,255,255,.07);color:#fff}
+  .theme-graphite .mnav.active{background:#3a3f46;color:#fff}
+  .theme-graphite .rail{background:linear-gradient(180deg,#26292e,#1c1f23)}
+  .theme-graphite .rail-item{color:#9aa1a9}
+  .theme-graphite .rail-item:hover{background:rgba(255,255,255,.06);color:#e5e7eb}
+  .theme-graphite .rail-item.active{background:rgba(182,145,63,.12);color:#e2c069}
+
+  /* ============ OPTION C — NAVY MIST ============ */
+  .theme-mist .modnav{background:linear-gradient(180deg,#f2f5f9,#e8edf4);box-shadow:inset 0 -1px 0 rgba(36,56,79,.14)}
+  .theme-mist .mnav{color:#24384f}
+  .theme-mist .mnav:hover{background:rgba(36,56,79,.08)}
+  .theme-mist .mnav.active{background:linear-gradient(180deg,#2e4763,#22394f);color:#f2f6fa;box-shadow:0 4px 10px -4px rgba(13,26,41,.4)}
+  .theme-mist .mnav.active::before{background:#e2c069}
+  .theme-mist .rail{background:linear-gradient(180deg,#f2f5f9,#e9eef5);box-shadow:inset -1px 0 0 rgba(36,56,79,.12)}
+  .theme-mist .rail-item{color:#4b5c72}
+  .theme-mist .rail-item:hover{background:rgba(36,56,79,.08);color:#182a3e}
+  .theme-mist .rail-item.active{background:rgba(36,56,79,.1);color:#132234}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ OPTION A ============ -->
+<section class="demo theme-porcelain">
+  <span class="opt-tag">Option A — Frosted Porcelain · light, glassy, modern SaaS</span>
+  <header class="topbar"><div class="logo">L</div><span class="brand">CamelotBooks</span><span class="vdiv"></span>
+    <span class="ctx-co">Acme Corporation</span><span class="ctx-loc">· Headquarters</span><span class="spacer"></span>
+    <button class="hbtn-gold">★ Favourites</button>
+    <span class="avatar">E</span><span><span class="u-n">Elvis Seyama</span><br><span class="u-r">SYSTEM_ADMIN</span></span>
+  </header>
+  <nav class="modnav"><a class="mnav" href="#">Sales</a><a class="mnav" href="#">Purchasing</a><a class="mnav" href="#">Banking</a>
+    <a class="mnav active" href="#">Accounting</a><a class="mnav" href="#">Reports</a><a class="mnav" href="#">System</a></nav>
+  <div class="shell">
+    <aside class="rail"><div class="rail-head">FAVS</div>
+      <a class="rail-item active" href="#">☑<span>My Tasks</span></a><a class="rail-item" href="#">🗎<span>Bills</span></a>
+      <a class="rail-item" href="#">🚚<span>Vendors</span></a><a class="rail-item" href="#">🗎<span>Invoices</span></a>
+      <a class="rail-item" href="#">🏛<span>Cash Position</span></a></aside>
+    <main class="main"><h1>Dashboard</h1>
+      <div class="kpis"><section class="kpi"><div class="l">Total Revenue</div><div class="v">K0.00</div></section>
+      <section class="kpi"><div class="l">Cash Balance</div><div class="v">K0.00</div></section></div></main>
+  </div>
+</section>
+
+<!-- ============ OPTION B ============ -->
+<section class="demo theme-graphite">
+  <span class="opt-tag">Option B — Graphite · neutral charcoal, gold pops</span>
+  <header class="topbar"><div class="logo">L</div><span class="brand">CamelotBooks</span><span class="vdiv"></span>
+    <span class="ctx-co">Acme Corporation</span><span class="ctx-loc">· Headquarters</span><span class="spacer"></span>
+    <button class="hbtn-gold">★ Favourites</button>
+    <span class="avatar">E</span><span><span class="u-n">Elvis Seyama</span><br><span class="u-r">SYSTEM_ADMIN</span></span>
+  </header>
+  <nav class="modnav"><a class="mnav" href="#">Sales</a><a class="mnav" href="#">Purchasing</a><a class="mnav" href="#">Banking</a>
+    <a class="mnav active" href="#">Accounting</a><a class="mnav" href="#">Reports</a><a class="mnav" href="#">System</a></nav>
+  <div class="shell">
+    <aside class="rail"><div class="rail-head">FAVS</div>
+      <a class="rail-item active" href="#">☑<span>My Tasks</span></a><a class="rail-item" href="#">🗎<span>Bills</span></a>
+      <a class="rail-item" href="#">🚚<span>Vendors</span></a><a class="rail-item" href="#">🗎<span>Invoices</span></a>
+      <a class="rail-item" href="#">🏛<span>Cash Position</span></a></aside>
+    <main class="main"><h1>Dashboard</h1>
+      <div class="kpis"><section class="kpi"><div class="l">Total Revenue</div><div class="v">K0.00</div></section>
+      <section class="kpi"><div class="l">Cash Balance</div><div class="v">K0.00</div></section></div></main>
+  </div>
+</section>
+
+<!-- ============ OPTION C ============ -->
+<section class="demo theme-mist">
+  <span class="opt-tag">Option C — Navy Mist · soft corporate monochrome</span>
+  <header class="topbar"><div class="logo">L</div><span class="brand">CamelotBooks</span><span class="vdiv"></span>
+    <span class="ctx-co">Acme Corporation</span><span class="ctx-loc">· Headquarters</span><span class="spacer"></span>
+    <button class="hbtn-gold">★ Favourites</button>
+    <span class="avatar">E</span><span><span class="u-n">Elvis Seyama</span><br><span class="u-r">SYSTEM_ADMIN</span></span>
+  </header>
+  <nav class="modnav"><a class="mnav" href="#">Sales</a><a class="mnav" href="#">Purchasing</a><a class="mnav" href="#">Banking</a>
+    <a class="mnav active" href="#">Accounting</a><a class="mnav" href="#">Reports</a><a class="mnav" href="#">System</a></nav>
+  <div class="shell">
+    <aside class="rail"><div class="rail-head">FAVS</div>
+      <a class="rail-item active" href="#">☑<span>My Tasks</span></a><a class="rail-item" href="#">🗎<span>Bills</span></a>
+      <a class="rail-item" href="#">🚚<span>Vendors</span></a><a class="rail-item" href="#">🗎<span>Invoices</span></a>
+      <a class="rail-item" href="#">🏛<span>Cash Position</span></a></aside>
+    <main class="main"><h1>Dashboard</h1>
+      <div class="kpis"><section class="kpi"><div class="l">Total Revenue</div><div class="v">K0.00</div></section>
+      <section class="kpi"><div class="l">Cash Balance</div><div class="v">K0.00</div></section></div></main>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

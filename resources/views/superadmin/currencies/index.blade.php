@@ -1,70 +1,51 @@
 <x-app-layout>
 
-    <div class="sa-page py-6" style="background: #F8F9FC;">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <x-superadmin.layout>
+        <x-superadmin.page-head title="{{ __('Currencies') }}" description="{{ __('Reference currencies available to new companies.') }}">
+            <a href="{{ route('superadmin.currencies.create') }}" class="inline-flex items-center gap-2 rounded-[12px] border border-white/20 bg-gradient-to-b from-gold-500 to-gold-600 px-5 py-3 text-sm font-semibold text-white shadow-new transition hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                {{ __('New Currency') }}
+            </a>
+        </x-superadmin.page-head>
 
-            <div class="sa-page-head">
-                <div>
-                    <h1 class="sa-page-title">{{ __('Currencies') }}</h1>
-                    <p class="sa-page-subtitle">{{ __('Base currency options shown in company setup and tenant Settings.') }}</p>
-                </div>
-                <a href="{{ route('superadmin.currencies.create') }}" class="sa-btn sa-btn--primary">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    {{ __('New Currency') }}
-                </a>
-            </div>
-
-            <x-elevated-card :flush="true">
-                <div class="sa-table-wrap">
-                    <table class="sa-table">
-                        <thead>
+        <x-elevated-card :flush="true">
+            <div class="sa-table-wrap">
+                <table class="sa-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('Code') }}</th>
+                            <th>{{ __('Name') }}</th>
+                            <th>{{ __('Symbol') }}</th>
+                            <th class="sa-table-center">{{ __('Status') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($currencies as $currency)
                             <tr>
-                                <th>{{ __('Code') }}</th>
-                                <th>{{ __('Name') }}</th>
-                                <th>{{ __('Symbol') }}</th>
-                                <th>{{ __('Position') }}</th>
-                                <th>{{ __('Sort') }}</th>
-                                <th class="sa-table-center">{{ __('Status') }}</th>
-                                <th class="sa-table-center">{{ __('Actions') }}</th>
+                                <td>
+                                    <a href="{{ route('superadmin.currencies.edit', $currency) }}" class="sa-table-primary">{{ $currency->code }}</a>
+                                </td>
+                                <td>{{ $currency->name }}</td>
+                                <td><span class="sa-table-mono">{{ $currency->symbol }}</span></td>
+                                <td class="sa-table-center">
+                                    @if($currency->is_active)
+                                        <span class="sa-pill sa-pill--accent">{{ __('Active') }}</span>
+                                    @else
+                                        <span class="sa-pill sa-pill--muted">{{ __('Inactive') }}</span>
+                                    @endif
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($currencies as $currency)
-                                <tr>
-                                    <td><span class="sa-table-primary">{{ $currency->code }}</span></td>
-                                    <td><span style="color: var(--sa-muted);">{{ $currency->name }}</span></td>
-                                    <td><span class="sa-table-mono">{{ $currency->symbol ?: '—' }}</span></td>
-                                    <td><span style="color: var(--sa-muted);">{{ $currency->symbol_position }}</span></td>
-                                    <td><span style="color: var(--sa-muted);">{{ $currency->sort_order }}</span></td>
-                                    <td class="sa-table-center">
-                                        @if($currency->is_active)
-                                            <span class="sa-pill sa-pill--accent">{{ __('Active') }}</span>
-                                        @else
-                                            <span class="sa-pill sa-pill--muted">{{ __('Inactive') }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="sa-table-center">
-                                        <a href="{{ route('superadmin.currencies.edit', $currency) }}" class="sa-btn sa-btn--tint">{{ __('Edit') }}</a>
-                                        <form method="POST" action="{{ route('superadmin.currencies.toggle', $currency) }}" class="inline" style="display: inline;">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="sa-btn sa-btn--ghost sa-btn--sm" style="margin-left: 8px;">
-                                                {{ $currency->is_active ? __('Disable') : __('Enable') }}
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="sa-table-empty">{{ __('No currencies yet.') }}</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </x-elevated-card>
-        </div>
-    </div>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="sa-table-empty">{{ __('No currencies yet.') }}</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </x-elevated-card>
+    </x-superadmin.layout>
+
 </x-app-layout>

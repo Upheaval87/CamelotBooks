@@ -377,12 +377,4 @@
         </div>
     </div>
 
-    {{-- Row 3 (super admin only): section tabs — part of the sticky header so it
-         always sits flush below row 2 and scrolls/sticks in lockstep with it. --}}
-    @if(str_starts_with($routeName, 'superadmin.'))
-        @php
-            $saActive = explode('.', substr($routeName, strlen('superadmin.')))[0] ?? 'dashboard';
-        @endphp
-        @include('superadmin._nav', ['active' => $saActive])
-    @endif
 </header>

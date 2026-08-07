@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Customer — Redesigned v5</title>
+<style>
+  :root{
+    --navy-700:#24384f;--navy-800:#182a3e;--navy-900:#132234;
+    --gold-500:#b6913f;--gold-600:#96742c;--gold-700:#8f6f2a;
+    --line:#ebedf2;--border:#e3e6eb;
+    --st-lt-hover:rgba(36,56,79,.06);--st-lt-press:rgba(36,56,79,.12);
+    --shadow-card:0 1px 2px rgba(16,24,40,.05),0 12px 32px -8px rgba(16,24,40,.10),0 32px 64px -24px rgba(15,30,50,.14);
+    --shadow-new:0 1px 2px rgba(63,44,7,.25),0 10px 22px -8px rgba(150,116,44,.55),inset 0 1px 0 rgba(255,255,255,.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(1100px 380px at 85% -10%, rgba(36,56,79,.07), transparent 60%),#eef1f6;
+    color:#374151;padding:36px 24px;-webkit-font-smoothing:antialiased}
+  svg{flex:none}
+  :focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .wrap{max-width:1280px;margin:0 auto}
+
+  h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#111827}
+  .sub{margin-top:6px;font-size:14px;color:#6b7280}
+  .page-head{margin-bottom:22px}
+
+  /* card + rail share one grid → tops align */
+  .shell{display:grid;grid-template-columns:1fr 264px;gap:24px;align-items:start}
+
+  /* ===== form card ===== */
+  .card{background:rgba(255,255,255,.66);backdrop-filter:blur(14px);border-radius:24px;padding:28px;box-shadow:var(--shadow-card)}
+  .sec-head{display:flex;align-items:center;gap:12px}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(180deg,#2e4763,#22394f);color:#e2c069;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 3px 8px -3px rgba(0,0,0,.4)}
+  .sec-head h2{font-size:15px;font-weight:800;color:#111827}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px 24px;margin-top:22px}
+  .section + .section{margin-top:30px}
+
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:7px}
+  .input{width:100%;height:40px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.8);
+    padding:0 14px;font-size:13.5px;color:#111827;font-family:inherit;transition:all .15s}
+  .input::placeholder{color:#94a3b8}
+  .input:hover{border-color:rgba(36,56,79,.28);background:#fff}
+  .input:focus{outline:none;border-color:rgba(182,145,63,.55);box-shadow:0 0 0 3px rgba(182,145,63,.15)}
+  textarea.input{height:auto;min-height:88px;padding:10px 14px;resize:vertical}
+  .in-wrap{position:relative}
+  .in-wrap .input{padding-right:38px}
+  .in-wrap svg{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none}
+  .select{position:relative}
+  .select select{appearance:none;width:100%;height:40px;border-radius:12px;border:1px solid var(--border);
+    background:rgba(255,255,255,.8);padding:0 34px 0 14px;font-size:13.5px;font-weight:600;color:#111827;
+    font-family:inherit;cursor:pointer;transition:all .15s}
+  .select select:hover{border-color:rgba(36,56,79,.28);background:#fff}
+  .select select:focus{outline:none;border-color:rgba(182,145,63,.55);box-shadow:0 0 0 3px rgba(182,145,63,.15)}
+  .select svg{position:absolute;right:11px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none}
+
+  .form-foot{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 17px;
+    border-radius:12px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s ease}
+  .btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(0)}
+  .btn-tertiary{background:transparent;color:#4b5563}
+  .btn-tertiary:hover{background:rgba(255,255,255,.75);color:#16283c}
+  .btn-accent{color:#fff;background:linear-gradient(180deg,var(--gold-500),var(--gold-600));border-color:rgba(255,255,255,.22);box-shadow:var(--shadow-new)}
+
+  /* ===== rail ===== */
+  .rail-card{position:sticky;top:20px;background:rgba(255,255,255,.66);backdrop-filter:blur(14px);
+    border-radius:20px;padding:12px;box-shadow:var(--shadow-card)}
+  .rail-label{padding:6px 10px 10px;font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#64748b}
+  .vnav{display:flex;flex-direction:column;gap:6px}
+  .vitem{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:14px;position:relative;
+    color:#4b5563;font-size:13.5px;font-weight:600;text-decoration:none;transition:all .15s ease}
+  .vitem:hover{background:var(--st-lt-hover);color:#1d3349}
+  .vitem:active{background:var(--st-lt-press)}
+  .vitem .ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+    background:var(--st-lt-hover);border:1px solid rgba(36,56,79,.12);color:var(--navy-700);transition:all .15s}
+  .vitem .t small{display:block;font-size:11px;font-weight:500;color:#94a3b8;margin-top:1px}
+  .vitem[aria-current="page"]{background:linear-gradient(90deg,#2e4763 0%,#22394f 60%,#1d3349 100%);
+    color:#f2f6fa;font-weight:700;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 6px 16px -6px rgba(13,26,41,.55)}
+  .vitem[aria-current="page"]::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:4px;
+    border-radius:4px;background:var(--gold-500)}
+  .vitem[aria-current="page"] .ic{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16);color:#e2c069}
+  .vitem[aria-current="page"] .t small{color:#aebfcc}
+  .rail-div{height:1px;background:var(--line);margin:10px 6px}
+
+  @media (max-width:1080px){.grid3{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:960px){.shell{grid-template-columns:1fr}.rail-card{position:static}}
+  @media (max-width:640px){.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- full-width page head -->
+  <div class="page-head">
+    <h1>Create Customer</h1>
+    <p class="sub">Add a new customer record with payment terms and opening balances.</p>
+  </div>
+
+  <!-- card + rail start on the same top line -->
+  <div class="shell">
+
+    <!-- ============ MAIN ============ -->
+    <form class="card">
+      <!-- Customer Details -->
+      <div class="section">
+        <div class="sec-head">
+          <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="2" stroke="currentColor" stroke-width="2"/><path d="M6 16c.7-1.8 1.8-2.5 3-2.5s2.3.7 3 2.5M15 9h4M15 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <h2>Customer Details</h2><span class="rule"></span>
+        </div>
+        <div class="grid3">
+          <div class="field"><label for="name">Name</label><input class="input" id="name" type="text"></div>
+          <div class="field"><label for="dname">Display Name</label><input class="input" id="dname" type="text"></div>
+          <div class="field"><label for="email">Email</label><input class="input" id="email" type="email"></div>
+          <div class="field"><label for="phone">Phone</label><input class="input" id="phone" type="tel"></div>
+          <div class="field"><label for="billing">Billing Address</label><textarea class="input" id="billing"></textarea></div>
+          <div class="field"><label for="shipping">Shipping Address</label><textarea class="input" id="shipping"></textarea></div>
+        </div>
+      </div>
+
+      <!-- Terms & Balances -->
+      <div class="section">
+        <div class="sec-head">
+          <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <h2>Terms &amp; Balances</h2><span class="rule"></span>
+        </div>
+        <div class="grid3">
+          <div class="field"><label for="currency">Currency</label>
+            <div class="select">
+              <select id="currency"><option>$</option><option>K</option><option>€</option><option>£</option></select>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="field"><label for="terms">Payment Terms</label>
+            <div class="select">
+              <select id="terms"><option>Due on Receipt</option><option>Net 15</option><option>Net 30</option><option>Net 60</option></select>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="field"><label for="tdays">Payment Terms (Days)</label><input class="input" id="tdays" type="number"></div>
+          <div class="field"><label for="credit">Credit Limit</label><input class="input" id="credit" type="number"></div>
+          <div class="field"><label for="obal">Opening Balance ($)</label><input class="input" id="obal" type="number" value="0.00" step="0.01"></div>
+          <div class="field"><label for="odate">Opening Balance Date</label>
+            <div class="in-wrap">
+              <input class="input" id="odate" type="text" placeholder="mm/dd/yyyy">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-foot">
+        <button type="button" class="btn btn-tertiary">Cancel</button>
+        <button type="submit" class="btn btn-accent">Create Customer</button>
+      </div>
+    </form>
+
+    <!-- ============ RIGHT RAIL ============ -->
+    <aside class="rail-card">
+      <div class="rail-label">Quick Actions</div>
+      <nav class="vnav" aria-label="Quick actions">
+        <a class="vitem" href="#">
+          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <span class="t">New Invoice<small>Bill a customer</small></span>
+        </a>
+        <a class="vitem" href="#">
+          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <span class="t">New Payment<small>Record a receipt</small></span>
+        </a>
+        <a class="vitem" href="#" aria-current="page">
+          <span class="ic"><svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <span class="t">Create Customer<small>Add new record</small></span>
+        </a>
+        <div class="rail-div"></div>
+        <a class="vitem" href="#">
+          <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.2c2 .6 3.4 2 4 4.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <span class="t">Customer List</span>
+        </a>
+      </nav>
+    </aside>
+
+  </div>
+</div>
+</body>
+</html>

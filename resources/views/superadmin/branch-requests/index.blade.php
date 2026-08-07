@@ -1,16 +1,9 @@
 <x-app-layout>
 
-    <div class="sa-page py-6" style="background: #F8F9FC;">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <x-superadmin.layout>
+        <x-superadmin.page-head title="{{ __('Branch Requests') }}" description="{{ __('Requests for extra branch capacity, with quotations and payments.') }}" />
 
-            <div class="sa-page-head">
-                <div>
-                    <h1 class="sa-page-title">{{ __('Branch Requests') }}</h1>
-                    <p class="sa-page-subtitle">{{ __('Requests for extra branch capacity, with quotations and payments.') }}</p>
-                </div>
-            </div>
-
-            @if(session('success'))
+        @if(session('success'))
                 <div class="mb-4" style="padding: 12px 16px; border-radius: 10px; background: #eef6ee; border: 1px solid #cfe6cf; color: #22662c; font-size: 13px;">{{ session('success') }}</div>
             @endif
 
@@ -82,6 +75,5 @@
                     </table>
                 </div>
             </x-elevated-card>
-        </div>
-    </div>
+    </x-superadmin.layout>
 </x-app-layout>

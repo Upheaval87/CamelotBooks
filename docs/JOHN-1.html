@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>John Banda — Customer Detail</title>
+<style>
+  :root{
+    --navy-700:#24384f;--navy-800:#182a3e;--navy-900:#132234;--navy-200:#cdd7e2;
+    --gold-500:#b6913f;--gold-600:#96742c;--gold-700:#8f6f2a;
+    --line:#ebedf2;--border:#e3e6eb;--row:#f8f9fb;
+    --st-lt-hover:rgba(36,56,79,.06);--st-lt-press:rgba(36,56,79,.12);
+    --shadow-card:0 1px 2px rgba(16,24,40,.05),0 12px 32px -8px rgba(16,24,40,.10),0 32px 64px -24px rgba(15,30,50,.14);
+    --shadow-thead:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -1px 0 rgba(190,152,72,.45);
+    --shadow-new:0 1px 2px rgba(63,44,7,.25),0 10px 22px -8px rgba(150,116,44,.55),inset 0 1px 0 rgba(255,255,255,.28);
+    --shadow-badge:0 1px 2px rgba(16,24,40,.06),inset 0 1px 0 rgba(255,255,255,.65);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(1100px 380px at 85% -10%, rgba(36,56,79,.07), transparent 60%),#eef1f6;
+    color:#374151;padding:36px 24px;-webkit-font-smoothing:antialiased}
+  svg{flex:none}
+  :focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .wrap{max-width:1320px;margin:0 auto}
+  .crumbs{font-size:12px;color:#94a3b8;margin-bottom:8px}
+  .crumbs b{color:var(--gold-700);font-weight:600}
+
+  .page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+  h1{font-size:24px;font-weight:800;letter-spacing:-.02em;color:#111827;display:flex;align-items:center;gap:12px}
+  .sub{margin-top:6px;font-size:13.5px;color:#6b7280}
+  .badge{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase}
+  .badge-mint{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:#15803d;box-shadow:var(--shadow-badge)}
+  .badge-mint .dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+  .stat-chip{display:inline-flex;align-items:baseline;gap:8px;padding:10px 16px;border-radius:14px;
+    background:rgba(36,56,79,.08);border:1px solid rgba(36,56,79,.2);box-shadow:var(--shadow-badge)}
+  .stat-chip .l{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-700)}
+  .stat-chip .v{font-size:16px;font-weight:800;color:#111827;font-variant-numeric:tabular-nums}
+
+  /* ===== toolbar ===== */
+  .card{background:rgba(255,255,255,.66);backdrop-filter:blur(14px);border-radius:24px;box-shadow:var(--shadow-card)}
+  .toolbar-card{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;padding:16px 20px;margin-bottom:22px}
+  .glabel{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin-bottom:8px}
+  .tbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .vdiv{width:1px;align-self:stretch;background:var(--line)}
+  .tright{margin-left:auto;padding-top:17px;display:flex;gap:10px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;font-weight:600;
+    border:1px solid transparent;cursor:pointer;transition:all .16s ease;height:40px;padding:0 17px;font-size:13.5px}
+  .btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(0)}
+  .btn-sm{height:36px;padding:0 14px;font-size:13px}
+  .btn-ghost{background:rgba(255,255,255,.8);border-color:var(--border);color:#374151;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .btn-ghost:hover{background:var(--st-lt-hover);border-color:rgba(36,56,79,.28);color:#1d3349}
+  .btn-table{background:linear-gradient(180deg,#fffdf8,#f7f0df);border-color:rgba(150,116,44,.35);color:var(--gold-700);
+    border-radius:10px;box-shadow:0 1px 2px rgba(16,24,40,.06)}
+  .btn-table:hover{border-color:rgba(150,116,44,.55);color:var(--gold-800);box-shadow:0 6px 14px -4px rgba(143,111,42,.35)}
+  .btn-accent{color:#fff;background:linear-gradient(180deg,var(--gold-500),var(--gold-600));border-color:rgba(255,255,255,.22);box-shadow:var(--shadow-new)}
+
+  /* ===== layout ===== */
+  .shell{display:grid;grid-template-columns:1fr 280px;gap:24px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:22px;min-width:0}
+
+  .sec{padding:24px 26px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(180deg,#2e4763,#22394f);color:#e2c069;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 3px 8px -3px rgba(0,0,0,.4)}
+  .sec-head h2{font-size:15px;font-weight:800;color:#111827}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px 24px}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:7px}
+  .input{width:100%;height:40px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.8);
+    padding:0 14px;font-size:13.5px;color:#111827;font-family:inherit;transition:all .15s}
+  .input::placeholder{color:#94a3b8}
+  .input:hover{border-color:rgba(36,56,79,.28);background:#fff}
+  .input:focus{outline:none;border-color:rgba(182,145,63,.55);box-shadow:0 0 0 3px rgba(182,145,63,.15)}
+  .in-wrap{position:relative}
+  .in-wrap .input{padding-right:38px}
+  .in-wrap svg{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none}
+
+  .navy-strip{margin-top:20px;display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-radius:14px;
+    background:linear-gradient(90deg,var(--navy-700) 0%,var(--navy-800) 60%,var(--navy-900) 100%);
+    box-shadow:var(--shadow-thead),0 8px 18px -8px rgba(13,26,41,.5)}
+  .navy-strip .l{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-200)}
+  .navy-strip .v{font-size:22px;font-weight:800;color:#f2f6fa;font-variant-numeric:tabular-nums}
+
+  /* ===== datasheet ===== */
+  .table-wrap{border:1px solid var(--border);border-radius:12px;background:var(--row);overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:880px}
+  thead th{background:linear-gradient(180deg,var(--navy-700) 0%,var(--navy-800) 55%,var(--navy-900) 100%);
+    color:var(--navy-200);text-align:left;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+    padding:13px 16px;box-shadow:var(--shadow-thead)}
+  thead th.num{text-align:right}
+  tbody td{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .empty{padding:48px 20px;text-align:center}
+  .empty-icon{width:44px;height:44px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;
+    background:var(--st-lt-hover);border:1px solid rgba(36,56,79,.15);color:var(--navy-700)}
+  .empty h3{font-size:14px;font-weight:800;color:#111827}
+  .empty p{margin-top:5px;font-size:12.5px;color:#94a3b8}
+
+  /* ===== rail ===== */
+  .rail-col{display:flex;flex-direction:column;gap:16px;position:sticky;top:20px}
+  .rail-card{background:rgba(255,255,255,.66);backdrop-filter:blur(14px);border-radius:20px;padding:12px;box-shadow:var(--shadow-card)}
+  .rail-label{padding:6px 10px 10px;font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#64748b}
+  .vnav{display:flex;flex-direction:column;gap:5px}
+  .vitem{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:14px;color:#4b5563;font-size:13.5px;
+    font-weight:600;text-decoration:none;transition:all .15s ease}
+  .vitem:hover{background:var(--st-lt-hover);color:#1d3349}
+  .vitem:active{background:var(--st-lt-press)}
+  .vitem .ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+    background:var(--st-lt-hover);border:1px solid rgba(36,56,79,.12);color:var(--navy-700)}
+  .back-card{padding:10px}
+  .back-card .btn{width:100%}
+
+  @media (max-width:1080px){.grid3{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:960px){.shell{grid-template-columns:1fr}.rail-col{position:static}}
+  @media (max-width:640px){.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="crumbs">Customers / <b>John Banda</b></div>
+  <div class="page-head">
+    <div>
+      <h1>John Banda
+        <span class="badge badge-mint"><span class="dot"></span>Active</span>
+      </h1>
+      <p class="sub">Customer since Feb 2026</p>
+    </div>
+    <div class="stat-chip"><span class="l">Open Balance</span><span class="v">K0.00</span></div>
+  </div>
+
+  <!-- ===== grouped toolbar ===== -->
+  <div class="card toolbar-card">
+    <div><div class="glabel">Create</div>
+      <div class="tbtns">
+        <button class="btn btn-ghost btn-sm">New Invoice</button>
+        <button class="btn btn-ghost btn-sm">New Payment</button>
+      </div>
+    </div>
+    <span class="vdiv"></span>
+    <div><div class="glabel">Reports</div>
+      <div class="tbtns">
+        <button class="btn btn-ghost btn-sm">Transaction History</button>
+        <button class="btn btn-ghost btn-sm">View Statement</button>
+      </div>
+    </div>
+    <span class="vdiv"></span>
+    <div><div class="glabel">Document</div>
+      <div class="tbtns">
+        <button class="btn btn-ghost btn-sm">Print</button>
+        <button class="btn btn-ghost btn-sm">Attach</button>
+        <button class="btn btn-table btn-sm">Email</button>
+      </div>
+    </div>
+    <div class="tright">
+      <button class="btn btn-ghost">Archive</button>
+      <button class="btn btn-accent">Save</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <div class="col">
+
+      <!-- ===== details ===== -->
+      <section class="card sec">
+        <div class="sec-head">
+          <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="2" stroke="currentColor" stroke-width="2"/><path d="M6 16c.7-1.8 1.8-2.5 3-2.5s2.3.7 3 2.5M15 9h4M15 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <h2>Customer Details</h2><span class="rule"></span>
+        </div>
+        <div class="grid3">
+          <div class="field"><label for="name">Name</label><input class="input" id="name" value="John Banda"></div>
+          <div class="field"><label for="email">Email</label><input class="input" id="email" value="john@example.com"></div>
+          <div class="field"><label for="phone">Phone</label><input class="input" id="phone" value="+265 991 234 567"></div>
+          <div class="field"><label for="terms">Payment Terms</label><input class="input" id="terms" value="Net 30"></div>
+          <div class="field"><label for="cur">Currency</label><input class="input" id="cur" value="USD"></div>
+          <div class="field"><label for="credit">Credit Limit</label><input class="input" id="credit" value="K0.00"></div>
+          <div class="field"><label for="bill">Billing Address</label><input class="input" id="bill" placeholder="Not set"></div>
+          <div class="field"><label for="ship">Shipping Address</label><input class="input" id="ship" placeholder="Not set"></div>
+          <div class="field"><label>Status</label>
+            <div style="padding-top:6px"><span class="badge badge-mint"><span class="dot"></span>Active</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== balance ===== -->
+      <section class="card sec">
+        <div class="sec-head">
+          <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M8 21h8M12 6H7a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h5M12 6h5a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <h2>Balance</h2><span class="rule"></span>
+        </div>
+        <div class="grid3" style="grid-template-columns:1fr 1fr">
+          <div class="field"><label for="obal">Opening Balance</label><input class="input" id="obal" value="K0.00"></div>
+          <div class="field"><label for="odate">Opening Balance Date</label>
+            <div class="in-wrap"><input class="input" id="odate" placeholder="Not set">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="navy-strip"><span class="l">Open Balance</span><span class="v">K0.00</span></div>
+      </section>
+
+      <!-- ===== transactions ===== -->
+      <section class="card sec">
+        <div class="sec-head">
+          <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <h2>Transaction History</h2><span class="rule"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Type</th><th>Date</th><th>Reference</th><th style="width:26%">Description</th>
+              <th class="num">Amount</th><th class="num">Paid</th><th class="num">Balance</th><th>Status</th>
+            </tr></thead>
+            <tbody><tr><td colspan="8">
+              <div class="empty">
+                <div class="empty-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+                <h3>No transactions found for this customer yet.</h3>
+                <p>Create an invoice or record a payment to start the history.</p>
+              </div>
+            </td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== rail ===== -->
+    <aside class="rail-col">
+      <div class="rail-card">
+        <div class="rail-label">Insights</div>
+        <nav class="vnav" aria-label="Insights">
+          <a class="vitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>View Invoices</a>
+          <a class="vitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Record Payment</a>
+          <a class="vitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>View Statement</a>
+          <a class="vitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 8V3h10v5M7 17H4a1 1 0 0 1-1-1v-7h18v7a1 1 0 0 1-1 1h-3M7 13h10v8H7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>Print Statement</a>
+        </nav>
+      </div>
+      <div class="rail-card back-card">
+        <button class="btn btn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to Customers</button>
+      </div>
+    </aside>
+  </div>
+</div>
+</body>
+</html>

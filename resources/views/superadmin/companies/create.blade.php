@@ -1,18 +1,7 @@
 <x-app-layout>
 
-    <div class="sa-page py-6" style="background: #F8F9FC;">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-
-            <div class="sa-breadcrumb">
-                <span>{{ __('Super Admin') }}</span>
-                <svg class="sa-breadcrumb-sep" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18l6-6-6-6"/></svg>
-                <span>{{ __('Companies') }}</span>
-                <svg class="sa-breadcrumb-sep" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18l6-6-6-6"/></svg>
-                <span class="sa-breadcrumb-current">{{ __('Create Company') }}</span>
-            </div>
-
-            <h1 class="sa-page-title">{{ __('Create Company') }}</h1>
-            <p class="sa-page-subtitle">{{ __('Provision a new tenant company with its own dedicated database.') }}</p>
+    <x-superadmin.layout>
+        <x-superadmin.page-head title="{{ __('Create Company') }}" description="{{ __('Provision a new tenant company with its own dedicated database.') }}" />
 
             <form method="POST" action="{{ route('superadmin.companies.store') }}" id="company-create-form"
                 x-data="{
@@ -164,6 +153,5 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
+    </x-superadmin.layout>
 </x-app-layout>

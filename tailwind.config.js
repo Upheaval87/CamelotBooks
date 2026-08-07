@@ -19,7 +19,7 @@ export default {
                     faint: 'rgba(140,147,160,<alpha-value>)',
                 },
                 line: {
-                    DEFAULT: 'rgba(229,227,220,<alpha-value>)',
+                    DEFAULT: 'rgba(235,237,242,<alpha-value>)',
                 },
                 panel: {
                     DEFAULT: 'rgba(246,245,241,<alpha-value>)',
@@ -28,7 +28,23 @@ export default {
                     DEFAULT: 'rgba(156,122,60,<alpha-value>)',
                     soft: 'rgba(243,236,220,<alpha-value>)',
                     line: 'rgba(217,200,154,<alpha-value>)',
+                    500: '#b6913f',
+                    600: '#96742c',
+                    700: '#8f6f2a',
+                    800: '#7a5d20',
                 },
+                navy: {
+                    200: '#cdd7e2',
+                    700: '#24384f',
+                    800: '#182a3e',
+                    900: '#132234',
+                },
+                mint: {
+                    100: '#ecfdf3',
+                    200: '#dcf5e7',
+                },
+                row: '#f8f9fb',
+                shell: '#e3e6eb',
                 brick: {
                     DEFAULT: 'rgba(142,59,59,<alpha-value>)',
                     soft: 'rgba(245,233,231,<alpha-value>)',
@@ -146,7 +162,12 @@ export default {
             },
             boxShadow: {
                 'soft': '0 1px 2px 0 rgba(0,0,0,0.03), 0 1px 3px 0 rgba(0,0,0,0.04)',
-                'card': '0 1px 2px 0 rgba(0,0,0,0.02), 0 1px 6px -1px rgba(0,0,0,0.04), 0 2px 4px -1px rgba(0,0,0,0.02)',
+                'card': '0 1px 2px rgb(16 24 40 / .05), 0 12px 32px -8px rgb(16 24 40 / .10), 0 32px 64px -24px rgb(15 30 50 / .14)',
+                'thead': 'inset 0 1px 0 rgb(255 255 255 / .07), inset 0 -1px 0 rgb(190 152 72 / .45)',
+                'badge': '0 1px 2px rgb(16 24 40 / .06), inset 0 1px 0 rgb(255 255 255 / .65)',
+                'edit': '0 1px 2px rgb(16 24 40 / .06)',
+                'edit-hover': '0 6px 14px -4px rgb(143 111 42 / .35)',
+                'new': '0 1px 2px rgb(63 44 7 / .25), 0 10px 22px -8px rgb(150 116 44 / .55), inset 0 1px 0 rgb(255 255 255 / .28)',
                 'elevated': '0 4px 6px -1px rgba(0,0,0,0.04), 0 2px 4px -1px rgba(0,0,0,0.02), 0 10px 15px -3px rgba(0,0,0,0.04)',
                 'dropdown': '0 4px 6px -1px rgba(0,0,0,0.03), 0 10px 24px -4px rgba(0,0,0,0.08), 0 1px 3px 0 rgba(0,0,0,0.02)',
                 'modal': '0 8px 32px -4px rgba(0,0,0,0.12), 0 2px 8px -2px rgba(0,0,0,0.04)',

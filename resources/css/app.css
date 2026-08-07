@@ -3627,8 +3627,8 @@ a.todo-link-chip:hover { background: #EFE5CE; }
      --sa-ink #0f1420 � --sa-muted #6b7280 � --sa-border #eceef2
      --sa-accent #9C7A3C � --sa-accent-tint #f5efe3 � --sa-input #fbfbfd
    GLASS CONSTRAINT: translucency + backdrop blur appears ONLY on the
-   tab bar (.sa-glass--top). Every data-entry card and every table below is
-   fully opaque.
+   left nav rail and data-entry cards (the Super Admin redesign); every
+   table body below is fully opaque.
 ---------------------------------------------------------------- */
 :root {
     --sa-ink: #0f1420;
@@ -3683,45 +3683,6 @@ a.todo-link-chip:hover { background: #EFE5CE; }
 }
 .sa-page-head .sa-page-title { margin-bottom: 4px; }
 .sa-page-head .sa-page-subtitle { margin-bottom: 0; }
-
-/* --- Glass bar (tab bar only — action buttons live inline below the form) --- */
-.sa-glass {
-    background: rgba(255, 255, 255, 0.9);
-    -webkit-backdrop-filter: blur(10px) saturate(150%);
-    backdrop-filter: blur(10px) saturate(150%);
-}
-.sa-glass--top {
-    box-shadow: 0 1px 0 rgba(15, 20, 32, 0.04), 0 4px 14px -8px rgba(15, 20, 32, 0.06);
-}
-
-/* --- Tab bar + tab items --- */
-.sa-tabbar {
-    display: flex;
-    align-items: stretch;
-    gap: 30px;
-    padding: 0 32px;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-.sa-tabbar::-webkit-scrollbar { display: none; }
-.sa-tab {
-    display: inline-flex;
-    align-items: center;
-    padding: 17px 0;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--sa-muted);
-    text-decoration: none;
-    border-bottom: 2.5px solid transparent;
-    white-space: nowrap;
-    transition: color 0.15s ease, border-color 0.15s ease;
-}
-.sa-tab:hover { color: var(--sa-ink); }
-.sa-tab.is-active {
-    color: var(--sa-accent);
-    font-weight: 700;
-    border-bottom-color: var(--sa-accent);
-}
 
 /* --- Elevated card --- */
 .elevated-card {
@@ -4081,7 +4042,6 @@ select.sa-input {
 @media (max-width: 720px) {
     .form-section-grid { grid-template-columns: 1fr !important; }
     .form-field--full { grid-column: auto; }
-    .sa-tabbar { gap: 22px; padding: 0 18px; }
     .sa-db-preview { flex-wrap: wrap; }
     .sa-db-preview-chip { width: 100%; }
 }

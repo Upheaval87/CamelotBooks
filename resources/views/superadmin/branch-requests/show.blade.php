@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Branch Request') }} - {{ $request->branch_name }}</x-slot>
 
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <x-superadmin.layout>
+        <div class="space-y-6">
             @if(session('success'))
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
             @endif
@@ -142,5 +142,5 @@
                 </div>
             @endif
         </div>
-    </div>
+    </x-superadmin.layout>
 </x-app-layout>

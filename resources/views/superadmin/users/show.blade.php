@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">{{ __('User Detail') }} - {{ $user->name }}</x-slot>
 
-    <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <x-superadmin.layout>
+        <div class="space-y-6">
             <div class="card p-6">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
@@ -102,7 +102,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </x-superadmin.layout>
 
     <x-modal name="reset-password" maxWidth="sm">
         <div class="p-6">

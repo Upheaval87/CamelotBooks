@@ -1,9 +1,8 @@
 <x-app-layout>
     <x-slot name="header">{{ __('Edit Assignment') }} - {{ $assignment->user->name }}</x-slot>
 
-    <div class="py-6">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="card p-6">
+    <x-superadmin.layout>
+        <div class="card p-6">
                 <form method="POST" action="{{ route('superadmin.assignments.update', $assignment) }}" class="space-y-6">
                     @csrf
                     @method('PATCH')
@@ -65,7 +64,6 @@
                         <a href="{{ route('superadmin.users.show', $assignment->user) }}" class="btn-ghost">{{ __('Cancel') }}</a>
                     </div>
                 </form>
-            </div>
         </div>
-    </div>
+    </x-superadmin.layout>
 </x-app-layout>
