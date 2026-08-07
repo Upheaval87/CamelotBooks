@@ -2,61 +2,62 @@
 
     <x-superadmin.layout>
         <x-superadmin.page-head title="{{ __('Overview') }}" description="{{ __('Platform health at a glance.') }}">
-            <a href="{{ route('superadmin.companies.create') }}" class="inline-flex items-center gap-2 rounded-[12px] border border-white/20 bg-gradient-to-b from-gold-500 to-gold-600 px-5 py-3 text-sm font-semibold text-white shadow-new transition hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+            <x-superadmin.btn href="{{ route('superadmin.companies.create') }}">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 {{ __('New Company') }}
-            </a>
+            </x-superadmin.btn>
         </x-superadmin.page-head>
 
-        <div class="sa-kpi-grid grid gap-4 sm:grid-cols-3">
-            <x-elevated-card>
+        <div class="grid gap-4 sm:grid-cols-3">
+            <x-superadmin.card>
                 <p class="kpi-label">{{ __('Companies') }}</p>
                 <p class="kpi-value">{{ $companyCount }}</p>
-                <p class="text-sm" style="color: var(--sa-muted);">{{ $activeCompanyCount }} {{ __('active') }}</p>
-            </x-elevated-card>
+                <p class="mt-1 text-[13px] text-gray-500">{{ $activeCompanyCount }} {{ __('active') }}</p>
+            </x-superadmin.card>
 
-            <x-elevated-card>
+            <x-superadmin.card>
                 <p class="kpi-label">{{ __('Platform Users') }}</p>
                 <p class="kpi-value">{{ $userCount }}</p>
-                <p class="text-sm" style="color: var(--sa-muted);">{{ __('Across all companies') }}</p>
-            </x-elevated-card>
+                <p class="mt-1 text-[13px] text-gray-500">{{ __('Across all companies') }}</p>
+            </x-superadmin.card>
 
-            <x-elevated-card>
+            <x-superadmin.card>
                 <p class="kpi-label">{{ __('Modules') }}</p>
                 <p class="kpi-value">{{ \App\Models\Module::query()->count() }}</p>
-                <p class="text-sm" style="color: var(--sa-muted);">{{ __('Activation is per company') }}</p>
-            </x-elevated-card>
+                <p class="mt-1 text-[13px] text-gray-500">{{ __('Activation is per company') }}</p>
+            </x-superadmin.card>
         </div>
 
-        <x-elevated-card :flush="true" class="mt-8">
-            <div class="sa-card-head">
-                <h2 class="sa-card-title">{{ __('Recent Super Admin Activity') }}</h2>
-            </div>
-            <div class="sa-table-wrap">
-                <table class="sa-table">
+        <x-superadmin.card title="{{ __('Recent Super Admin Activity') }}" class="mt-6">
+            <div class="overflow-x-auto rounded-[12px] border border-shell bg-row">
+                <table class="w-full min-w-[960px] border-collapse text-sm">
                     <thead>
                         <tr>
-                            <th>{{ __('When') }}</th>
-                            <th>{{ __('Actor') }}</th>
-                            <th>{{ __('Company') }}</th>
-                            <th>{{ __('Action') }}</th>
-                            <th>{{ __('Description') }}</th>
+                            <x-superadmin.th>{{ __('When') }}</x-superadmin.th>
+                            <x-superadmin.th>{{ __('Actor') }}</x-superadmin.th>
+                            <x-superadmin.th>{{ __('Company') }}</x-superadmin.th>
+                            <x-superadmin.th>{{ __('Action') }}</x-superadmin.th>
+                            <x-superadmin.th>{{ __('Description') }}</x-superadmin.th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-line">
                         @forelse($recentAudit as $log)
                             <tr>
-                                <td class="sa-table-mono">{{ $log->created_at->format('M j, Y g:i A') }}</td>
-                                <td>{{ $log->user?->name ?? '—' }}</td>
-                                <td>{{ $log->company?->name ?? '—' }}</td>
-                                <td><span class="sa-table-mono">{{ $log->action }}</span></td>
-                                <td style="color: var(--sa-muted);">{{ $log->description }}</td>
+                                <td class="px-5 py-[18px] align-middle">
+                                    <code class="rounded-md border border-slate-200 bg-slate-100 px-2 py-[3px] font-mono text-xs text-slate-600">{{ $log->created_at->format('M j, Y g:i A') }}</code>
+                                </td>
+                                <td class="px-5 py-[18px] align-middle font-semibold text-gray-900">{{ $log->user?->name ?? '—' }}</td>
+                                <td class="px-5 py-[18px] align-middle text-gray-600">{{ $log->company?->name ?? '—' }}</td>
+                                <td class="px-5 py-[18px] align-middle">
+                                    <code class="rounded-md border border-slate-200 bg-slate-100 px-2 py-[3px] font-mono text-xs text-slate-600">{{ $log->action }}</code>
+                                </td>
+                                <td class="px-5 py-[18px] align-middle text-gray-500">{{ $log->description }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="sa-table-empty">{{ __('No activity yet.') }}</td>
+                                <td colspan="5" class="px-5 py-[18px] text-center align-middle text-gray-400">{{ __('No activity yet.') }}</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -64,9 +65,9 @@
             </div>
 
             @if($recentAudit->hasPages())
-                <div class="sa-table-pagination">{{ $recentAudit->links() }}</div>
+                <div class="mt-4">{{ $recentAudit->links() }}</div>
             @endif
-        </x-elevated-card>
+        </x-superadmin.card>
     </x-superadmin.layout>
 
 </x-app-layout>

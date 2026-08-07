@@ -4,76 +4,81 @@
         <x-superadmin.page-head title="{{ __('Branch Requests') }}" description="{{ __('Requests for extra branch capacity, with quotations and payments.') }}" />
 
         @if(session('success'))
-                <div class="mb-4" style="padding: 12px 16px; border-radius: 10px; background: #eef6ee; border: 1px solid #cfe6cf; color: #22662c; font-size: 13px;">{{ session('success') }}</div>
-            @endif
+            <div class="mb-4 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
+        @endif
 
-            @if($errors->any())
-                <div class="mb-4" style="padding: 12px 16px; border-radius: 10px; background: #fbecec; border: 1px solid #f2c9c9; color: #8e3b3b; font-size: 13px;">{{ $errors->first() }}</div>
-            @endif
+        @if($errors->any())
+            <div class="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
+        @endif
 
-            <x-elevated-card :flush="true">
-                <div class="sa-table-wrap">
-                    <table class="sa-table">
-                        <thead>
+        <x-superadmin.card>
+            <div class="overflow-x-auto rounded-[12px] border border-shell bg-row">
+                <table class="w-full min-w-[960px] border-collapse text-sm">
+                    <thead>
+                        <tr>
+                            <x-superadmin.th>{{ __('Company') }}</x-superadmin.th>
+                            <x-superadmin.th>{{ __('Branch') }}</x-superadmin.th>
+                            <x-superadmin.th align="right">{{ __('Qty') }}</x-superadmin.th>
+                            <x-superadmin.th>{{ __('Requested') }}</x-superadmin.th>
+                            <x-superadmin.th>{{ __('Quotation') }}</x-superadmin.th>
+                            <x-superadmin.th align="center">{{ __('Status') }}</x-superadmin.th>
+                            <x-superadmin.th align="center">{{ __('Actions') }}</x-superadmin.th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line">
+                        @php
+                            $pillMap = [
+                                \App\Models\BranchRequest::STATUS_PENDING_REVIEW => 'warning',
+                                \App\Models\BranchRequest::STATUS_QUOTED => 'accent',
+                                \App\Models\BranchRequest::STATUS_AWAITING_PAYMENT => 'warning',
+                                \App\Models\BranchRequest::STATUS_APPROVED => 'active',
+                                \App\Models\BranchRequest::STATUS_REJECTED => 'danger',
+                                \App\Models\BranchRequest::STATUS_EXPIRED => 'muted',
+                                \App\Models\BranchRequest::STATUS_CANCELLED => 'muted',
+                            ];
+                        @endphp
+                        @forelse($requests as $r)
+                            @php $label = $r->statusLabel(); @endphp
                             <tr>
-                                <th>{{ __('Company') }}</th>
-                                <th>{{ __('Branch') }}</th>
-                                <th class="sa-table-num">{{ __('Qty') }}</th>
-                                <th>{{ __('Requested') }}</th>
-                                <th>{{ __('Quotation') }}</th>
-                                <th class="sa-table-center">{{ __('Status') }}</th>
-                                <th class="sa-table-center">{{ __('Actions') }}</th>
+                                <td class="px-5 py-[18px] align-middle">
+                                    <a href="{{ route('superadmin.companies.branch-requests.show', [$r->company_id, $r->id]) }}" class="font-bold text-gray-900">{{ $r->company_name ?? ($r->company?->name ?? '—') }}</a>
+                                </td>
+                                <td class="px-5 py-[18px] align-middle">
+                                    <span class="text-gray-600">{{ $r->branch_name }}</span>
+                                    @if($r->branch_code)
+                                        <span class="mt-1 block text-[12.5px] text-gray-400">{{ $r->branch_code }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-[18px] text-right align-middle font-semibold tabular-nums text-gray-900">{{ $r->requested_quantity }}</td>
+                                <td class="px-5 py-[18px] align-middle text-gray-500">{{ $r->requested_at?->format('M j, Y') }}</td>
+                                <td class="px-5 py-[18px] align-middle">
+                                    @if($r->quotation)
+                                        <code class="rounded-md border border-slate-200 bg-slate-100 px-2 py-[3px] font-mono text-xs text-slate-600">{{ $r->quotation->quotation_number }}</code>
+                                        <span class="mt-1 block text-[12.5px] text-gray-400">{{ number_format($r->quotation->total, 2) }} {{ $r->quotation->currency_code }}</span>
+                                    @else
+                                        <span class="text-gray-300">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-[18px] text-center align-middle">
+                                    <x-superadmin.badge :variant="$pillMap[$r->status] ?? 'muted'">{{ $label }}</x-superadmin.badge>
+                                </td>
+                                <td class="px-5 py-[18px] text-center align-middle">
+                                    <a href="{{ route('superadmin.companies.branch-requests.show', [$r->company_id, $r->id]) }}" class="inline-flex items-center gap-1.5 rounded-[10px] border border-gold-600/35 bg-gradient-to-b from-[#fffdf8] to-[#f7f0df] px-4 py-2 text-[13px] font-bold text-gold-700 shadow-edit transition hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        {{ __('Review') }}
+                                    </a>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @php
-                                $pillMap = [
-                                    \App\Models\BranchRequest::STATUS_PENDING_REVIEW => 'sa-pill--amber',
-                                    \App\Models\BranchRequest::STATUS_QUOTED => 'sa-pill--accent',
-                                    \App\Models\BranchRequest::STATUS_AWAITING_PAYMENT => 'sa-pill--amber',
-                                    \App\Models\BranchRequest::STATUS_APPROVED => 'sa-pill--accent',
-                                    \App\Models\BranchRequest::STATUS_REJECTED => 'sa-pill--danger',
-                                    \App\Models\BranchRequest::STATUS_EXPIRED => 'sa-pill--muted',
-                                    \App\Models\BranchRequest::STATUS_CANCELLED => 'sa-pill--muted',
-                                ];
-                            @endphp
-                            @forelse($requests as $r)
-                                @php $label = $r->statusLabel(); @endphp
-                                <tr>
-                                    <td>
-                                        <a href="{{ route('superadmin.companies.branch-requests.show', [$r->company_id, $r->id]) }}" class="sa-table-primary">{{ $r->company_name ?? ($r->company?->name ?? '—') }}</a>
-                                    </td>
-                                    <td>
-                                        <span style="color: var(--sa-muted);">{{ $r->branch_name }}</span>
-                                        @if($r->branch_code)
-                                            <span class="sa-table-sub">{{ $r->branch_code }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="sa-table-num" style="font-weight: 600;">{{ $r->requested_quantity }}</td>
-                                    <td><span style="color: var(--sa-muted);">{{ $r->requested_at?->format('M j, Y') }}</span></td>
-                                    <td>
-                                        @if($r->quotation)
-                                            <span class="sa-table-mono">{{ $r->quotation->quotation_number }}</span>
-                                            <span class="sa-table-sub">{{ number_format($r->quotation->total, 2) }} {{ $r->quotation->currency_code }}</span>
-                                        @else
-                                            <span style="color: #c8ccd2;">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="sa-table-center">
-                                        <span class="sa-pill {{ $pillMap[$r->status] ?? 'sa-pill--muted' }}">{{ $label }}</span>
-                                    </td>
-                                    <td class="sa-table-center">
-                                        <a href="{{ route('superadmin.companies.branch-requests.show', [$r->company_id, $r->id]) }}" class="sa-btn sa-btn--tint">{{ __('Review') }}</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="sa-table-empty">{{ __('No branch requests found.') }}</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </x-elevated-card>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-5 py-[18px] text-center align-middle text-gray-400">{{ __('No branch requests found.') }}</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </x-superadmin.card>
     </x-superadmin.layout>
 </x-app-layout>

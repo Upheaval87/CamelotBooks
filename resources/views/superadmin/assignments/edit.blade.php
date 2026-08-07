@@ -1,27 +1,28 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Edit Assignment') }} - {{ $assignment->user->name }}</x-slot>
 
     <x-superadmin.layout>
-        <div class="card p-6">
-                <form method="POST" action="{{ route('superadmin.assignments.update', $assignment) }}" class="space-y-6">
-                    @csrf
-                    @method('PATCH')
+        <x-superadmin.page-head title="{{ __('Edit Assignment') }} — {{ $assignment->user->name }}" description="{{ __('Update role and branch scoping for this assignment.') }}" />
 
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <x-input-label>{{ __('User') }}</x-input-label>
-                            <p class="mt-1 text-sm font-medium text-ink">{{ $assignment->user->name }}</p>
+            <form method="POST" action="{{ route('superadmin.assignments.update', $assignment) }}">
+                @csrf
+                @method('PATCH')
+
+                <x-form-section icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" title="{{ __('Assignment') }}">
+                    <div class="form-section-grid" style="--sa-cols: 2;">
+                        <div class="form-field">
+                            <label class="sa-label">{{ __('User') }}</label>
+                            <p style="font-size: 14px; font-weight: 500; color: var(--ink);">{{ $assignment->user->name }}</p>
                         </div>
-                        <div>
-                            <x-input-label>{{ __('Company') }}</x-input-label>
-                            <p class="mt-1 text-sm font-medium text-ink">{{ $assignment->company->name }}</p>
+                        <div class="form-field">
+                            <label class="sa-label">{{ __('Company') }}</label>
+                            <p style="font-size: 14px; font-weight: 500; color: var(--ink);">{{ $assignment->company->name }}</p>
                         </div>
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <x-input-label for="role">{{ __('Role') }}</x-input-label>
-                            <select id="role" name="role" class="input mt-1 block w-full" required>
+                    <div class="form-section-grid" style="--sa-cols: 2; margin-top: 20px;">
+                        <div class="form-field">
+                            <label class="sa-label" for="role">{{ __('Role') }}</label>
+                            <select id="role" name="role" class="sa-input" required>
                                 @foreach($roles as $code => $label)
                                     <option value="{{ $code }}" @selected(old('role', $assignment->role) === $code)>{{ $label }}</option>
                                 @endforeach
@@ -29,41 +30,43 @@
                             <x-input-error :messages="$errors->get('role')" class="mt-1" />
                         </div>
 
-                        <div>
-                            <x-input-label for="is_active">{{ __('Status') }}</x-input-label>
-                            <select id="is_active" name="is_active" class="input mt-1 block w-full">
+                        <div class="form-field">
+                            <label class="sa-label" for="is_active">{{ __('Status') }}</label>
+                            <select id="is_active" name="is_active" class="sa-input">
                                 <option value="1" @selected(old('is_active', $assignment->is_active))>{{ __('Active') }}</option>
                                 <option value="0" @selected(!old('is_active', $assignment->is_active))>{{ __('Inactive') }}</option>
                             </select>
                         </div>
                     </div>
 
-                    <div>
-                        <p class="input-label">{{ __('Branch Access') }}</p>
-                        <p class="text-xs text-gray-500 mt-1">{{ __('Leave none selected for access to all branches.') }}</p>
+                    <div style="margin-top: 20px;">
+                        <p class="sa-label">{{ __('Branch Access') }}</p>
+                        <p style="font-size: 11.5px; color: var(--sa-muted); margin-top: 2px; margin-bottom: 10px;">
+                            {{ __('Leave none selected for access to all branches.') }}
+                        </p>
 
                         @if(count($branches))
-                            <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 mt-3">
+                            <div class="sa-check-grid">
                                 @foreach($branches as $branch)
-                                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                                    <label class="sa-check-item">
                                         <input type="checkbox" name="branch_ids[]" value="{{ $branch['id'] }}"
-                                            @checked(in_array($branch['id'], old('branch_ids', $assignment->branch_ids ?? [])))
-                                            class="rounded border-line text-accent focus:ring-accent">
-                                        {{ $branch['name'] }}
+                                            @checked(in_array($branch['id'], old('branch_ids', $assignment->branch_ids ?? [])))>
+                                        <span>{{ $branch['name'] }}</span>
                                     </label>
                                 @endforeach
                             </div>
                         @else
-                            <p class="text-sm text-gray-400 mt-2">{{ __('No branches found for this company (or it is not provisioned).') }}</p>
+                            <p style="font-size: 12.5px; color: #9aa1ae;">{{ __('No branches found for this company (or it is not provisioned).') }}</p>
                         @endif
                         <x-input-error :messages="$errors->get('branch_ids')" class="mt-1" />
                     </div>
+                </x-form-section>
 
-                    <div class="flex items-center gap-3">
-                        <x-button variant="primary" type="submit">{{ __('Save Assignment') }}</x-button>
-                        <a href="{{ route('superadmin.users.show', $assignment->user) }}" class="btn-ghost">{{ __('Cancel') }}</a>
-                    </div>
-                </form>
-        </div>
+                <div class="sa-form-actions">
+                    <a href="{{ route('superadmin.users.show', $assignment->user) }}" class="sa-btn sa-btn--ghost">{{ __('Cancel') }}</a>
+                    <button type="submit" class="sa-btn sa-btn--primary">{{ __('Save Assignment') }}</button>
+                </div>
+            </form>
     </x-superadmin.layout>
+
 </x-app-layout>

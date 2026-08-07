@@ -1,38 +1,42 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('User Detail') }} - {{ $user->name }}</x-slot>
 
     <x-superadmin.layout>
         <div class="space-y-6">
-            <div class="card p-6">
+            <x-superadmin.card>
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg font-semibold text-ink">{{ $user->name }}</span>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="text-[26px] font-extrabold tracking-[-0.02em] text-gray-900">{{ $user->name }}</span>
                         @if($user->is_super_admin)
-                            <x-status-badge variant="accent">Super Admin</x-status-badge>
+                            <x-superadmin.badge variant="accent">{{ __('Super Admin') }}</x-superadmin.badge>
                         @endif
                         @if($user->is_active)
-                            <x-status-badge variant="success">Active</x-status-badge>
+                            <x-superadmin.badge variant="active">{{ __('Active') }}</x-superadmin.badge>
                         @else
-                            <x-status-badge variant="danger">Deactivated</x-status-badge>
+                            <x-superadmin.badge variant="danger">{{ __('Deactivated') }}</x-superadmin.badge>
                         @endif
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <a href="{{ route('superadmin.users.edit', $user) }}" class="btn-ghost">{{ __('Edit') }}</a>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-superadmin.btn variant="edit" href="{{ route('superadmin.users.edit', $user) }}">
+                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            {{ __('Edit') }}
+                        </x-superadmin.btn>
                         @if($user->id !== auth()->id())
                             @if($user->is_active)
                                 <form method="POST" action="{{ route('superadmin.users.deactivate', $user) }}" onsubmit="return confirm('{{ __('Deactivate this user? They will no longer be able to log in.') }}')">
                                     @csrf
-                                    <x-button variant="danger" type="submit">{{ __('Deactivate') }}</x-button>
+                                    <x-superadmin.btn variant="danger" size="md" type="submit">{{ __('Deactivate') }}</x-superadmin.btn>
                                 </form>
                             @else
                                 <form method="POST" action="{{ route('superadmin.users.reactivate', $user) }}">
                                     @csrf
-                                    <x-button variant="primary" type="submit">{{ __('Reactivate') }}</x-button>
+                                    <x-superadmin.btn type="submit">{{ __('Reactivate') }}</x-superadmin.btn>
                                 </form>
                             @endif
                         @endif
-                        <x-button variant="ghost" type="button" x-data x-on:click="$dispatch('open-modal', 'reset-password')">{{ __('Reset Password') }}</x-button>
+                        <x-superadmin.btn variant="ghost" size="md" type="button" x-data x-on:click="$dispatch('open-modal', 'reset-password')">{{ __('Reset Password') }}</x-superadmin.btn>
                     </div>
                 </div>
 
@@ -41,66 +45,77 @@
                     <x-detail-field label="Member Since">{{ $user->created_at?->format('M j, Y') ?? '—' }}</x-detail-field>
                     <x-detail-field label="Password Changed">{{ $user->password_changed_at?->format('M j, Y') ?? '—' }}</x-detail-field>
                 </div>
-            </div>
+            </x-superadmin.card>
 
-            <div class="card p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-semibold text-ink">{{ __('Company Assignments') }}</h3>
-                    <a href="{{ route('superadmin.assignments.create') }}?user={{ $user->id }}" class="btn-ghost btn-sm">{{ __('Assign Company') }}</a>
-                </div>
+            <x-superadmin.card title="{{ __('Company Assignments') }}">
+                <x-slot name="action">
+                    <a href="{{ route('superadmin.assignments.create') }}?user={{ $user->id }}" class="inline-flex items-center gap-1.5 rounded-[10px] border border-gold-600/35 bg-gradient-to-b from-[#fffdf8] to-[#f7f0df] px-4 py-2 text-[13px] font-bold text-gold-700 shadow-edit transition hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        {{ __('Assign Company') }}
+                    </a>
+                </x-slot>
 
-                <div class="list-table-wrap">
-                    <table class="list-table">
+                <div class="overflow-x-auto rounded-[12px] border border-shell bg-row">
+                    <table class="w-full min-w-[960px] border-collapse text-sm">
                         <thead>
                             <tr>
-                                <th>{{ __('Company') }}</th>
-                                <th>{{ __('Role') }}</th>
-                                <th>{{ __('Branches') }}</th>
-                                <th class="text-center">{{ __('Status') }}</th>
-                                <th class="text-center">{{ __('Actions') }}</th>
+                                <x-superadmin.th>{{ __('Company') }}</x-superadmin.th>
+                                <x-superadmin.th>{{ __('Role') }}</x-superadmin.th>
+                                <x-superadmin.th>{{ __('Branches') }}</x-superadmin.th>
+                                <x-superadmin.th align="center">{{ __('Status') }}</x-superadmin.th>
+                                <x-superadmin.th align="center">{{ __('Actions') }}</x-superadmin.th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-line">
                             @forelse($assignments as $assignment)
                                 <tr>
-                                    <td>
-                                        <a href="{{ route('superadmin.companies.show', $assignment->company) }}" class="font-medium text-ink">{{ $assignment->company->name }}</a>
+                                    <td class="px-5 py-[18px] align-middle">
+                                        <a href="{{ route('superadmin.companies.show', $assignment->company) }}" class="font-bold text-gray-900">{{ $assignment->company->name }}</a>
                                     </td>
-                                    <td>{{ $assignment->role }}</td>
-                                    <td>
+                                    <td class="px-5 py-[18px] align-middle text-gray-600">{{ $assignment->role }}</td>
+                                    <td class="px-5 py-[18px] align-middle text-gray-600">
                                         @if(count($assignment->branch_ids ?? []))
-                                            <span class="text-gray-600">{{ count($assignment->branch_ids ?? []) }} {{ __('branches') }}</span>
+                                            {{ count($assignment->branch_ids ?? []) }} {{ __('branches') }}
                                         @else
                                             <span class="text-gray-400">{{ __('All branches') }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-center">
+                                    <td class="px-5 py-[18px] text-center align-middle">
                                         @if($assignment->is_active)
-                                            <x-status-badge variant="success">Active</x-status-badge>
+                                            <x-superadmin.badge variant="active">{{ __('Active') }}</x-superadmin.badge>
                                         @else
-                                            <x-status-badge variant="default">Inactive</x-status-badge>
+                                            <x-superadmin.badge variant="muted">{{ __('Inactive') }}</x-superadmin.badge>
                                         @endif
                                     </td>
-                                    <td class="text-center">
+                                    <td class="px-5 py-[18px] text-center align-middle">
                                         <div class="flex items-center justify-center gap-2">
-                                            <a href="{{ route('superadmin.assignments.edit', $assignment) }}" class="text-sm text-accent hover:underline">{{ __('Edit') }}</a>
+                                            <a href="{{ route('superadmin.assignments.edit', $assignment) }}" class="inline-flex items-center gap-1.5 rounded-[10px] border border-gold-600/35 bg-gradient-to-b from-[#fffdf8] to-[#f7f0df] px-4 py-2 text-[13px] font-bold text-gold-700 shadow-edit transition hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+                                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                                {{ __('Edit') }}
+                                            </a>
                                             <form method="POST" action="{{ route('superadmin.assignments.destroy', $assignment) }}" onsubmit="return confirm('{{ __('Remove this assignment? The user will lose access to this company.') }}')">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-sm text-brick hover:underline">{{ __('Remove') }}</button>
+                                                <button type="submit" class="inline-flex items-center gap-1.5 rounded-[10px] border border-red-300 bg-white px-4 py-2 text-[13px] font-bold text-red-700 transition hover:border-red-400 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500">
+                                                    {{ __('Remove') }}
+                                                </button>
                                             </form>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-gray-500">{{ __('No company assignments yet.') }}</td>
+                                    <td colspan="5" class="px-5 py-[18px] text-center align-middle text-gray-400">{{ __('No company assignments yet.') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </x-superadmin.card>
         </div>
     </x-superadmin.layout>
 

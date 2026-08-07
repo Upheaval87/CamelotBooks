@@ -1,23 +1,35 @@
 <x-app-layout>
-    <x-slot name="header">{{ __('Branch Request') }} - {{ $request->branch_name }}</x-slot>
 
     <x-superadmin.layout>
         <div class="space-y-6">
             @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">{{ session('success') }}</div>
+                <div class="mb-4 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
             @endif
 
             @if($errors->any())
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">{{ $errors->first() }}</div>
+                <div class="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
             @endif
 
-            <div class="card p-6">
+            @php
+                $requestBadge = match ($request->status) {
+                    \App\Models\BranchRequest::STATUS_PENDING_REVIEW => 'warning',
+                    \App\Models\BranchRequest::STATUS_QUOTED => 'accent',
+                    \App\Models\BranchRequest::STATUS_AWAITING_PAYMENT => 'warning',
+                    \App\Models\BranchRequest::STATUS_APPROVED => 'active',
+                    \App\Models\BranchRequest::STATUS_REJECTED => 'danger',
+                    \App\Models\BranchRequest::STATUS_EXPIRED => 'muted',
+                    \App\Models\BranchRequest::STATUS_CANCELLED => 'muted',
+                    default => 'muted',
+                };
+            @endphp
+
+            <x-superadmin.card>
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg font-semibold text-ink">{{ $request->branch_name }}</span>
-                        @include('branch-requests._status', ['status' => $request->status])
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="text-[26px] font-extrabold tracking-[-0.02em] text-gray-900">{{ $request->branch_name }}</span>
+                        <x-superadmin.badge :variant="$requestBadge">{{ $request->statusLabel() }}</x-superadmin.badge>
                     </div>
-                    <a href="{{ route('superadmin.companies.show', $company) }}" class="btn-ghost">{{ __('Back to Company') }}</a>
+                    <x-superadmin.btn variant="ghost" href="{{ route('superadmin.companies.show', $company) }}">{{ __('Back to Company') }}</x-superadmin.btn>
                 </div>
 
                 <div class="detail-grid mt-6">
@@ -31,11 +43,10 @@
                     <x-detail-field label="Contact Phone">{{ $request->contact_phone ?? '—' }}</x-detail-field>
                     <x-detail-field label="Reason">{{ $request->reason ?? '—' }}</x-detail-field>
                 </div>
-            </div>
+            </x-superadmin.card>
 
             @if(in_array($request->status, [\App\Models\BranchRequest::STATUS_PENDING_REVIEW], true))
-                <div class="card p-6">
-                    <div class="form-section-label mb-4">Review & Decide</div>
+                <x-superadmin.card title="{{ __('Review & Decide') }}">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <form method="POST" action="{{ route('superadmin.companies.branch-requests.approve', [$company, $request]) }}">
                             @csrf
@@ -43,7 +54,7 @@
                                 <x-input-label for="admin_notes" value="{{ __('Admin Notes (optional)') }}" />
                                 <textarea id="admin_notes" name="admin_notes" rows="3" class="input mt-1 block w-full" placeholder="{{ __('e.g. Pricing notes, agreed discounts, volume tier.') }}"></textarea>
                             </div>
-                            <x-button variant="primary" type="submit">{{ __('Approve & Issue Quotation') }}</x-button>
+                            <x-superadmin.btn type="submit">{{ __('Approve & Issue Quotation') }}</x-superadmin.btn>
                         </form>
 
                         <form method="POST" action="{{ route('superadmin.companies.branch-requests.reject', [$company, $request]) }}">
@@ -53,28 +64,25 @@
                                 <textarea id="reason" name="reason" rows="3" class="input mt-1 block w-full" required></textarea>
                                 <x-input-error :messages="$errors->get('reason')" class="mt-2" />
                             </div>
-                            <x-button variant="danger" type="submit">{{ __('Reject Request') }}</x-button>
+                            <x-superadmin.btn variant="danger" type="submit">{{ __('Reject Request') }}</x-superadmin.btn>
                         </form>
                     </div>
-                </div>
+                </x-superadmin.card>
             @endif
 
             @if($request->quotation)
                 @php $quotation = $request->quotation; @endphp
-                <div class="card p-6">
-                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                        <h3 class="text-sm font-semibold text-ink">Quotation {{ $quotation->quotation_number }}</h3>
-                        <div class="flex items-center gap-2">
-                            @php
-                                $qStatus = match ($quotation->status) {
-                                    'paid' => 'positive',
-                                    'expired', 'cancelled' => 'default',
-                                    default => 'neutral',
-                                };
-                            @endphp
-                            <span class="status-pill {{ $qStatus }}">{{ $quotation->statusLabel() }}</span>
-                        </div>
-                    </div>
+                <x-superadmin.card title="{{ __('Quotation') }} {{ $quotation->quotation_number }}">
+                    <x-slot name="action">
+                        @php
+                            $qStatus = match ($quotation->status) {
+                                'paid' => 'active',
+                                'expired', 'cancelled' => 'muted',
+                                default => 'warning',
+                            };
+                        @endphp
+                        <x-superadmin.badge :variant="$qStatus">{{ $quotation->statusLabel() }}</x-superadmin.badge>
+                    </x-slot>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="kpi-card">
@@ -103,43 +111,41 @@
                     @if($quotation->payments->isNotEmpty())
                         <div class="mt-6">
                             <div class="form-section-label mb-3">Payments</div>
-                            <div class="datasheet-wrap">
-                                <div class="overflow-x-auto">
-                                    <table class="datasheet">
-                                        <thead>
+                            <div class="overflow-x-auto rounded-[12px] border border-shell bg-row">
+                                <table class="w-full min-w-[720px] border-collapse text-sm">
+                                    <thead>
+                                        <tr>
+                                            <x-superadmin.th>{{ __('Mode') }}</x-superadmin.th>
+                                            <x-superadmin.th>{{ __('Reference') }}</x-superadmin.th>
+                                            <x-superadmin.th align="right">{{ __('Amount') }}</x-superadmin.th>
+                                            <x-superadmin.th>{{ __('Date') }}</x-superadmin.th>
+                                            <x-superadmin.th align="center">{{ __('Status') }}</x-superadmin.th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-line">
+                                        @foreach($quotation->payments as $payment)
                                             <tr>
-                                                <th>Mode</th>
-                                                <th>Reference</th>
-                                                <th class="text-right">Amount</th>
-                                                <th>Date</th>
-                                                <th class="text-center">Status</th>
+                                                <td class="px-5 py-[18px] align-middle text-gray-600">{{ $payment->modeLabel() }}</td>
+                                                <td class="px-5 py-[18px] align-middle text-gray-600">{{ $payment->reference_no ?? '—' }}</td>
+                                                <td class="px-5 py-[18px] text-right align-middle font-semibold tabular-nums text-gray-900">{{ number_format($payment->amount, 2) }} {{ $quotation->currency_code }}</td>
+                                                <td class="px-5 py-[18px] align-middle text-gray-500">{{ $payment->paid_at?->format('M j, Y') }}</td>
+                                                <td class="px-5 py-[18px] text-center align-middle">
+                                                    @php
+                                                        $pVariant = $payment->status === 'confirmed' ? 'active' : ($payment->status === 'rejected' ? 'danger' : 'warning');
+                                                    @endphp
+                                                    <x-superadmin.badge :variant="$pVariant">{{ $payment->statusLabel() }}</x-superadmin.badge>
+                                                    @if($payment->amount !== round((float) $quotation->total, 2) && $payment->status === 'pending')
+                                                        <span class="mt-1 block text-xs text-gold">{{ __('Amount differs from total') }}</span>
+                                                    @endif
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($quotation->payments as $payment)
-                                                <tr>
-                                                    <td>{{ $payment->modeLabel() }}</td>
-                                                    <td>{{ $payment->reference_no ?? '—' }}</td>
-                                                    <td class="text-right font-medium text-ink">{{ number_format($payment->amount, 2) }} {{ $quotation->currency_code }}</td>
-                                                    <td>{{ $payment->paid_at?->format('M j, Y') }}</td>
-                                                    <td class="text-center">
-                                                        @php
-                                                            $pStatus = $payment->status === 'confirmed' ? 'positive' : ($payment->status === 'rejected' ? 'negative' : 'neutral');
-                                                        @endphp
-                                                        <span class="status-pill {{ $pStatus }}">{{ $payment->statusLabel() }}</span>
-                                                        @if($payment->amount !== round((float) $quotation->total, 2) && $payment->status === 'pending')
-                                                            <span class="block text-xs text-gold mt-1">Amount differs from total</span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     @endif
-                </div>
+                </x-superadmin.card>
             @endif
         </div>
     </x-superadmin.layout>
