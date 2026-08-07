@@ -52,7 +52,7 @@
                 <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <x-form.section number="02" :title="__('Budget Lines')" />
-                        <button type="button" id="add-line" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <button type="button" id="add-line" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Add Line') }}
                         </button>
                     </div>
@@ -164,15 +164,15 @@
                     }) +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<select name="lines[' + lineIndex + '][period_label]" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">' +
+                    '<select name="lines[' + lineIndex + '][period_label]" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm">' +
                         buildPeriodOptions(periodLabel) +
                     '</select>' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<input type="number" name="lines[' + lineIndex + '][amount]" step="0.01" min="0" value="' + amount + '" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" />' +
+                    '<input type="number" name="lines[' + lineIndex + '][amount]" step="0.01" min="0" value="' + amount + '" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right" />' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<input type="text" name="lines[' + lineIndex + '][notes]" value="' + notes + '" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />' +
+                    '<input type="text" name="lines[' + lineIndex + '][notes]" value="' + notes + '" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm" />' +
                 '</td>' +
                 '<td class="px-4 py-2 text-center">' +
                     '<button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>' +

@@ -6,7 +6,7 @@
         <form method="GET" class="flex items-end gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Status</label>
-                <select name="status" class="mt-1 block border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <select name="status" class="mt-1 block border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     <option value="">All Statuses</option>
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Submitted</option>
@@ -36,7 +36,7 @@
                         'accepted' => 'bg-green-100 text-green-800',
                         'rejected' => 'bg-red-100 text-red-800',
                         'error' => 'bg-red-100 text-red-800',
-                        'submitted' => 'bg-blue-100 text-blue-800',
+                        'submitted' => 'bg-gray-100 text-gray-600',
                         default => 'bg-gray-100 text-gray-800',
                     };
                 @endphp

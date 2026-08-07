@@ -39,7 +39,7 @@
                 <div class="mb-4">
                     <label for="terminal_id" class="block text-sm font-medium text-gray-700 mb-1">Terminal</label>
                     <select id="terminal_id" name="terminal_id" required
-                        class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                        class="w-full border-gray-300 rounded-md shadow-sm focus:border-gold-500 focus:ring-gold-500 text-sm">
                         <option value="">Select terminal...</option>
                         @foreach($terminals as $terminal)
                             <option value="{{ $terminal->id }}" {{ old('terminal_id') == $terminal->id ? 'selected' : '' }}>
@@ -54,12 +54,12 @@
                     <label for="pin" class="block text-sm font-medium text-gray-700 mb-1">PIN</label>
                     <input type="password" id="pin" name="pin" required
                         maxlength="10" minlength="4" autocomplete="off"
-                        class="pin-input w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                        class="pin-input w-full border-gray-300 rounded-md shadow-sm focus:border-gold-500 focus:ring-gold-500 text-sm"
                         placeholder="••••" autofocus>
                 </div>
 
                 <button type="submit"
-                    class="w-full bg-indigo-600 text-white py-3 rounded-md font-semibold hover:bg-indigo-700 transition text-sm">
+                    class="w-full bg-gold-600 text-white py-3 rounded-md font-semibold hover:bg-gold-800 transition text-sm">
                     Start Session
                 </button>
             </form>

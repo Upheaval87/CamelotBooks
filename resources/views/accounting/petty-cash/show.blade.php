@@ -25,7 +25,7 @@
                     <div class="grid grid-cols-3 gap-6 mb-6">
                         <div class="card p-6">
                             <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Float Amount') }}</p>
-                            <p class="mt-1 text-2xl font-bold text-indigo-600">{{ format_money($fund->petty_cash_float ?? 0) }}</p>
+                            <p class="mt-1 text-2xl font-bold text-gold-700">{{ format_money($fund->petty_cash_float ?? 0) }}</p>
                         </div>
                         <div class="card p-6">
                             <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Current Balance') }}</p>

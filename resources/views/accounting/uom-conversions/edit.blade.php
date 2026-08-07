@@ -35,26 +35,26 @@
                                             <div>
                                                 <label class="block text-xs font-medium text-gray-500 uppercase">UOM Name</label>
                                                 <input :name="'uoms['+index+'][uom_name]'" x-model="uom.uom_name" type="text" required
-                                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" placeholder="e.g. Carton, Box">
+                                                    class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm" placeholder="e.g. Carton, Box">
                                             </div>
                                             <div>
                                                 <label class="block text-xs font-medium text-gray-500 uppercase">Conversion Factor</label>
                                                 <input :name="'uoms['+index+'][conversion_factor]'" x-model.number="uom.conversion_factor" type="number" step="0.01" min="0.01" required
-                                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm">
                                             </div>
                                             <div>
                                                 <label class="block text-xs font-medium text-gray-500 uppercase">Purchase Price</label>
                                                 <input :name="'uoms['+index+'][purchase_price]'" x-model.number="uom.purchase_price" type="number" step="0.01" min="0"
-                                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm">
                                             </div>
                                             <div>
                                                 <label class="block text-xs font-medium text-gray-500 uppercase">Sales Price</label>
                                                 <input :name="'uoms['+index+'][sales_price]'" x-model.number="uom.sales_price" type="number" step="0.01" min="0"
-                                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm">
                                             </div>
                                             <div class="col-span-2">
                                                 <label class="inline-flex items-center">
-                                                    <input type="checkbox" :name="'uoms['+index+'][is_base]'" value="1" x-model="uom.is_base" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                    <input type="checkbox" :name="'uoms['+index+'][is_base]'" value="1" x-model="uom.is_base" class="rounded border-gray-300 text-gold-700 shadow-sm focus:ring-gold-500">
                                                     <span class="ml-2 text-sm text-gray-600">Base Unit of Measure</span>
                                                 </label>
                                             </div>
@@ -62,7 +62,7 @@
                                     </div>
                                 </template>
 
-                                <button type="button" @click="addUom()" class="mb-6 inline-flex items-center px-3 py-1.5 border border-dashed border-gray-400 rounded-md text-sm text-gray-600 hover:border-indigo-500 hover:text-indigo-600">+ Add UOM</button>
+                                <button type="button" @click="addUom()" class="mb-6 inline-flex items-center px-3 py-1.5 border border-dashed border-gray-400 rounded-md text-sm text-gray-600 hover:border-gold-500 hover:text-gold-700">+ Add UOM</button>
 
                                 <div class="border-t pt-4 flex justify-end mt-8 gap-3">
                                     <x-button variant="ghost" href="{{ route('accounting.uom-conversions.index') }}">{{ __('Cancel') }}</x-button>

@@ -47,7 +47,7 @@
                         <p class="text-xs text-ink-soft uppercase">Gross Sales</p>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <p class="text-2xl font-bold text-blue-600">@money($data['returns_total'])</p>
+                        <p class="text-2xl font-bold text-gold-700">@money($data['returns_total'])</p>
                         <p class="text-xs text-ink-soft uppercase">Returns</p>
                     </div>
                 </div>
@@ -89,24 +89,24 @@
                 </table>
             </div>
 
-            <div class="bg-indigo-50 border border-indigo-200 card p-6">
+            <div class="bg-gold-soft border border-gold-line card p-6">
                 <div class="form-section-label">3 · Cash Drawer</div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <p class="text-sm text-indigo-600">Opening Float</p>
+                        <p class="text-sm text-gold-700">Opening Float</p>
                         <p class="text-lg font-bold text-gray-900">@money($data['opening_float'])</p>
                     </div>
                     <div>
-                        <p class="text-sm text-indigo-600">+ Cash Payments</p>
+                        <p class="text-sm text-gold-700">+ Cash Payments</p>
                         <p class="text-lg font-bold text-gray-900">@money($data['cash_payments'])</p>
                     </div>
                     <div>
-                        <p class="text-sm text-indigo-600">− Returns (Cash)</p>
+                        <p class="text-sm text-gold-700">− Returns (Cash)</p>
                         <p class="text-lg font-bold text-gray-900">@money($data['returns_total'])</p>
                     </div>
                     <div>
-                        <p class="text-sm text-indigo-600">= Expected Cash</p>
-                        <p class="text-xl font-bold text-indigo-700">@money($data['expected_cash'])</p>
+                        <p class="text-sm text-gold-700">= Expected Cash</p>
+                        <p class="text-xl font-bold text-gray-900">@money($data['expected_cash'])</p>
                     </div>
                 </div>
             </div>

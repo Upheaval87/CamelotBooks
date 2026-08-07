@@ -56,7 +56,7 @@
                             <div class="space-y-2 max-h-60 overflow-y-auto">
                                 @forelse($grns as $grn)
                                     <label class="flex items-center p-2 border rounded hover:bg-gray-50">
-                                        <input type="checkbox" name="grn_ids[]" value="{{ $grn->id }}" {{ in_array($grn->id, old('grn_ids', [])) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                        <input type="checkbox" name="grn_ids[]" value="{{ $grn->id }}" {{ in_array($grn->id, old('grn_ids', [])) ? 'checked' : '' }} class="rounded border-gray-300 text-gold-700 shadow-sm focus:ring-gold-500">
                                         <span class="ml-3 text-sm">
                                             <span class="font-medium">{{ $grn->grn_number }}</span> &mdash; {{ $grn->date->format('M d, Y') }} &mdash; {{ format_money($grn->lines->sum('total_cost')) }} &mdash; {{ $grn->lines->count() }} line(s)
                                         </span>
@@ -71,7 +71,7 @@
                         <div class="card p-6 mb-6" id="components-card">
                             <div class="flex items-center justify-between mb-4">
                                 <x-form.section number="03" :title="__('Cost Components')" />
-                                <button type="button" onclick="addComponent()" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Component</button>
+                                <button type="button" onclick="addComponent()" class="text-sm text-gold-700 hover:text-gold-800">+ Add Component</button>
                             </div>
                             <div id="components-wrap" class="space-y-3">
                                 @php $oldComponents = old('components', [['component_type' => 'freight', 'description' => '', 'amount' => '', 'payee_account_id' => '']]); @endphp

@@ -13,7 +13,7 @@
                     <input type="hidden" name="requires_approval" value="0">
                     <input type="checkbox" name="requires_approval" value="1" id="requires_approval"
                         {{ old('requires_approval', $approvalSetting->requires_approval ? '1' : '0') == '1' ? 'checked' : '' }}
-                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                        class="rounded border-gray-300 text-gold-700 focus:ring-gold-500" />
                 </div>
                 <div>
                     <label for="requires_approval" class="block text-sm font-medium text-gray-700">Enable Approval Workflow</label>
@@ -28,7 +28,7 @@
                 </label>
                 <input type="number" step="0.01" min="0" name="threshold_amount" id="global_threshold"
                     value="{{ old('threshold_amount', $approvalSetting->threshold_amount) }}"
-                    class="mt-1 block w-48 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
+                    class="mt-1 block w-48 border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm" />
                 <p class="text-xs text-gray-500 mt-1">Used as the default threshold for any document type that does not have its own threshold configured below. Set to <strong>0</strong> to require approval for all transactions of that type.</p>
             </div>
 
@@ -50,7 +50,7 @@
                                 <input type="checkbox" name="active.{{ $type }}" value="1"
                                     id="active_{{ $type }}"
                                     {{ $active ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                    class="rounded border-gray-300 text-gold-700 focus:ring-gold-500" />
                                 <label for="active_{{ $type }}" class="text-sm font-medium text-gray-700">{{ $label }}</label>
                             </div>
                             <div class="flex-1">
@@ -58,7 +58,7 @@
                                     <span class="text-xs text-gray-400">Threshold:</span>
                                     <input type="number" step="0.01" min="0" name="thresholds.{{ $type }}"
                                         value="{{ $threshold }}"
-                                        class="block w-40 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                        class="block w-40 border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm"
                                         {{ !$active ? 'disabled' : '' }}
                                         x-ref="threshold_{{ $type }}" />
                                     <span class="text-xs text-gray-400">0 = always require approval</span>
@@ -78,8 +78,8 @@
                 </div>
             </div>
 
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p class="text-sm text-blue-800"><strong>Note:</strong> Approval workflows also block period closes and fiscal year closes until all pending items are resolved.</p>
+            <div class="p-4 bg-gold-soft rounded-lg border border-gold-line">
+                <p class="text-sm text-gold-800"><strong>Note:</strong> Approval workflows also block period closes and fiscal year closes until all pending items are resolved.</p>
             </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">

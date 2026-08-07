@@ -20,7 +20,7 @@
                                 <p class="text-sm text-ink-soft">Original Sale</p>
                                 <p class="text-lg font-semibold text-gray-900">
                                     @if($return->sale)
-                                        <a href="{{ route('pos.sales.receipt', $return->sale) }}" class="text-indigo-600 hover:text-indigo-900">{{ $return->sale->sale_number }}</a>
+                                        <a href="{{ route('pos.sales.receipt', $return->sale) }}" class="text-gold-700 hover:text-gold-800">{{ $return->sale->sale_number }}</a>
                                     @else
                                         —
                                     @endif
@@ -109,7 +109,7 @@
                     @if($return->journalEntry)
                         <div class="card p-6">
                             <div class="form-section-label">3 · Journal Entry
-                                <a href="{{ route('accounting.journal-entries.show', $return->journalEntry) }}" class="text-sm text-indigo-600 hover:text-indigo-900 ml-2">
+                                <a href="{{ route('accounting.journal-entries.show', $return->journalEntry) }}" class="text-sm text-gold-700 hover:text-gold-800 ml-2">
                                     #{{ $return->journalEntry->journal_number }}
                                 </a>
                             </div>

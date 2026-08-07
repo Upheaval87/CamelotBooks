@@ -90,7 +90,7 @@
 
                                 <div class="flex items-center">
                                     <input type="hidden" name="is_active" value="0">
-                                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') === '1' ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') === '1' ? 'checked' : '' }} class="rounded border-gray-300 text-gold-700 shadow-sm focus:ring-gold-500">
                                     <x-input-label value="{{ __('Active') }}" class="ml-2" />
                                 </div>
                             </div>

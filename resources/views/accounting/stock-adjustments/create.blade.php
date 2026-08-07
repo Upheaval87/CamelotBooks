@@ -57,11 +57,11 @@
                                         <x-input-label value="{{ __('Adjustment Type') }}" />
                                         <div class="mt-2 flex gap-4">
                                             <label class="inline-flex items-center">
-                                                <input type="radio" name="type" value="increase" x-model="adjustmentType" {{ old('type', 'increase') === 'increase' ? 'checked' : '' }} class="border-gray-300 text-indigo-600 focus:ring-indigo-500" required>
+                                                <input type="radio" name="type" value="increase" x-model="adjustmentType" {{ old('type', 'increase') === 'increase' ? 'checked' : '' }} class="border-gray-300 text-gold-700 focus:ring-gold-500" required>
                                                 <span class="ml-2 text-sm text-gray-700">Increase (found/gained)</span>
                                             </label>
                                             <label class="inline-flex items-center">
-                                                <input type="radio" name="type" value="decrease" x-model="adjustmentType" {{ old('type') === 'decrease' ? 'checked' : '' }} class="border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                                <input type="radio" name="type" value="decrease" x-model="adjustmentType" {{ old('type') === 'decrease' ? 'checked' : '' }} class="border-gray-300 text-gold-700 focus:ring-gold-500">
                                                 <span class="ml-2 text-sm text-gray-700">Decrease (damaged/lost)</span>
                                             </label>
                                         </div>

@@ -30,7 +30,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Stock Value</div>
-                    <div class="text-2xl font-bold text-indigo-600">@money($data['current_value']['total_value'])</div>
+                    <div class="text-2xl font-bold text-gold-700">@money($data['current_value']['total_value'])</div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Quantity</div>

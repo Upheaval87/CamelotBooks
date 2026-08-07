@@ -159,7 +159,7 @@
                                         <tr>
                                             <td>
                                                 @if($txn['type'] === 'Bill')
-                                                    <span class="text-indigo-600">{{ $txn['type'] }}</span>
+                                                    <span class="text-gold-700">{{ $txn['type'] }}</span>
                                                 @else
                                                     <span class="text-green-600">{{ $txn['type'] }}</span>
                                                 @endif

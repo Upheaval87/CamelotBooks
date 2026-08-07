@@ -13,7 +13,7 @@
                 <form method="GET" action="{{ route('accounting.purchase-orders.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
                         <x-input-label for="status" value="{{ __('Status') }}" />
-                        <select id="status" name="status" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <select id="status" name="status" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
                             <option value="">All Statuses</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                             <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Sent</option>

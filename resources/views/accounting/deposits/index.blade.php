@@ -14,7 +14,7 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('Undeposited Funds Balance') }}</h3>
-                <p class="text-3xl font-bold text-indigo-600">{{ format_money($undepositedBalance) }}</p>
+                <p class="text-3xl font-bold text-gold-700">{{ format_money($undepositedBalance) }}</p>
             </div>
 
             <div class="datasheet-wrap">

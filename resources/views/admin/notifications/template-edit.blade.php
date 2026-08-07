@@ -20,19 +20,19 @@
                 <div class="flex items-center gap-4 mb-6">
                     <label class="flex items-center gap-2">
                         <input type="hidden" name="is_enabled" value="0">
-                        <input type="checkbox" name="is_enabled" value="1" {{ $emailTemplate->is_enabled ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <input type="checkbox" name="is_enabled" value="1" {{ $emailTemplate->is_enabled ? 'checked' : '' }} class="rounded border-gray-300 text-gold-700 shadow-sm focus:ring-gold-500">
                         <span class="text-sm font-medium text-gray-700">Enable this notification</span>
                     </label>
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700">Subject</label>
-                    <input type="text" name="subject" value="{{ old('subject', $emailTemplate->subject) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                    <input type="text" name="subject" value="{{ old('subject', $emailTemplate->subject) }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm" required>
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700">Body</label>
-                    <textarea name="body" rows="12" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-sans text-sm" required>{{ old('body', $emailTemplate->body) }}</textarea>
+                    <textarea name="body" rows="12" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm font-sans text-sm" required>{{ old('body', $emailTemplate->body) }}</textarea>
                 </div>
 
                 <p class="text-xs text-gray-500">Use @{{curly braces}} for variables. Common variables: company_name, customer_name, invoice_number, amount, due_date, document_type, document_number.</p>

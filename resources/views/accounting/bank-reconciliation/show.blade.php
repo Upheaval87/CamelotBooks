@@ -124,7 +124,7 @@
                                                     {{ format_money(abs($line->amount)) }}
                                                 </td>
                                                 <td class="text-center">
-                                                    <button type="button" onclick="matchLine({{ $line->id }})" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                                                    <button type="button" onclick="matchLine({{ $line->id }})" class="text-gold-700 hover:text-gold-800 text-sm font-medium">
                                                         {{ __('Match') }} →
                                                     </button>
                                                 </td>
@@ -164,7 +164,7 @@
                                                     {{ format_money(abs($transaction->credit - $transaction->debit)) }}
                                                 </td>
                                                 <td class="text-center">
-                                                    <button type="button" onclick="matchTransaction({{ $transaction->id }})" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                                                    <button type="button" onclick="matchTransaction({{ $transaction->id }})" class="text-gold-700 hover:text-gold-800 text-sm font-medium">
                                                         ← {{ __('Match') }}
                                                     </button>
                                                 </td>

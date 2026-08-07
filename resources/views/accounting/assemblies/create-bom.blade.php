@@ -53,7 +53,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <x-input-label value="{{ __('Component Lines') }}" />
-                                <button type="button" onclick="addComponentLine()" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Component</button>
+                                <button type="button" onclick="addComponentLine()" class="text-sm text-gold-700 hover:text-gold-800">+ Add Component</button>
                             </div>
 
                             <div class="overflow-x-auto">

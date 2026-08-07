@@ -8,7 +8,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Revenue</div>
-                    <div class="text-2xl font-bold text-indigo-600">@money($data['revenue']['total_income'])</div>
+                    <div class="text-2xl font-bold text-gold-700">@money($data['revenue']['total_income'])</div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Invoices</div>
@@ -48,7 +48,7 @@
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Conversion Rate</span>
-                            <span class="font-semibold text-indigo-600">{{ $data['conversion']['rate'] !== null ? number_format($data['conversion']['rate'], 1) . '%' : 'No quotations' }}</span>
+                            <span class="font-semibold text-gold-700">{{ $data['conversion']['rate'] !== null ? number_format($data['conversion']['rate'], 1) . '%' : 'No quotations' }}</span>
                         </div>
                     </div>
                 </div>

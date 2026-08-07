@@ -200,13 +200,13 @@
             tr.innerHTML =
                 '<td class="px-4 py-2" style="min-width: 220px;">' + picker + '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<input type="text" name="lines[' + idx + '][description]" value="' + (data ? (data.description || '') : '') + '" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" required />' +
+                    '<input type="text" name="lines[' + idx + '][description]" value="' + (data ? (data.description || '') : '') + '" readonly class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm bg-gray-50" required />' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<input type="number" name="lines[' + idx + '][quantity_received]" value="' + (data ? data.quantity_received : 1) + '" min="0.01" step="any" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" required />' +
+                    '<input type="number" name="lines[' + idx + '][quantity_received]" value="' + (data ? data.quantity_received : 1) + '" min="0.01" step="any" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right" onchange="updateTotals()" oninput="updateTotals()" required />' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<input type="number" name="lines[' + idx + '][unit_cost]" value="' + (data ? (data.unit_cost || 0) : 0) + '" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" onchange="updateTotals()" oninput="updateTotals()" required />' +
+                    '<input type="number" name="lines[' + idx + '][unit_cost]" value="' + (data ? (data.unit_cost || 0) : 0) + '" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right bg-gray-50" onchange="updateTotals()" oninput="updateTotals()" required />' +
                 '</td>' +
                 '<td class="px-4 py-2" style="min-width: 200px;">' + expenseAccountField + '</td>' +
                 '<td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>' +

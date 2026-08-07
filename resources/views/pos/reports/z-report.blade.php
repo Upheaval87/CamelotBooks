@@ -46,8 +46,8 @@
                         <p class="text-2xl font-bold text-gray-900">@money($data['sales_total'])</p>
                         <p class="text-xs text-ink-soft uppercase">Gross Amount</p>
                     </div>
-                    <div class="text-center p-4 bg-indigo-50 rounded-lg">
-                        <p class="text-2xl font-bold text-indigo-700">@money($data['net_sales'])</p>
+                    <div class="text-center p-4 bg-gold-soft rounded-lg">
+                        <p class="text-2xl font-bold text-gray-900">@money($data['net_sales'])</p>
                         <p class="text-xs text-ink-soft uppercase">Net Sales</p>
                     </div>
                 </div>
@@ -93,31 +93,31 @@
                 </table>
             </div>
 
-            <div class="bg-indigo-50 border border-indigo-200 card p-6 mb-6">
+            <div class="bg-gold-soft border border-gold-line card p-6 mb-6">
                 <div class="form-section-label">3 · Cash Drawer Reconciliation</div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <p class="text-sm text-indigo-600">Opening Float</p>
+                        <p class="text-sm text-gold-700">Opening Float</p>
                         <p class="font-semibold text-gray-900">@money($data['opening_float'])</p>
                     </div>
                     <div>
-                        <p class="text-sm text-indigo-600">+ Cash Payments</p>
+                        <p class="text-sm text-gold-700">+ Cash Payments</p>
                         <p class="font-semibold text-gray-900">@money($data['cash_payments'])</p>
                     </div>
                     <div>
-                        <p class="text-sm text-indigo-600">− Returns (Cash)</p>
+                        <p class="text-sm text-gold-700">− Returns (Cash)</p>
                         <p class="font-semibold text-gray-900">@money($data['returns_total'])</p>
                     </div>
                     <div>
-                        <p class="text-sm text-indigo-600">= Expected Cash</p>
-                        <p class="text-xl font-bold text-indigo-700">@money($data['expected_cash'])</p>
+                        <p class="text-sm text-gold-700">= Expected Cash</p>
+                        <p class="text-xl font-bold text-gray-900">@money($data['expected_cash'])</p>
                     </div>
                     <div>
-                        <p class="text-sm text-indigo-600">Actual Cash Count</p>
+                        <p class="text-sm text-gold-700">Actual Cash Count</p>
                         <p class="text-xl font-bold text-gray-900">{{ $data['actual_cash_count'] !== null ? format_money($data['actual_cash_count']) : '—' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-indigo-600">Variance</p>
+                        <p class="text-sm text-gold-700">Variance</p>
                         <p class="text-xl font-bold {{ ($data['variance'] ?? 0) > 0 ? 'text-green-600' : (($data['variance'] ?? 0) < 0 ? 'text-red-600' : 'text-gray-900') }}">
                             {{ $data['variance'] !== null ? ($data['variance'] >= 0 ? '+' : '') . format_money($data['variance']) : '—' }}
                         </p>

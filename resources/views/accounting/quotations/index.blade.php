@@ -27,7 +27,7 @@
                     </div>
                     <div class="flex-1">
                         <x-input-label for="status" value="{{ __('Status') }}" />
-                        <select id="status" name="status" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <select id="status" name="status" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
                             <option value="">All Statuses</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                             <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Sent</option>
@@ -90,7 +90,7 @@
                                                 <span class="status-pill negative">Declined</span>
                                                 @break
                                             @case('converted')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Converted</span>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-mint-100 text-green-700">Converted</span>
                                                 @break
                                             @case('void')
                                                 <span class="status-pill neutral">Void</span>
@@ -101,7 +101,7 @@
                                         <a href="{{ route('accounting.quotations.show', $q) }}" class="text-ink hover:text-gold">View</a>
                                         @if($q->status === 'draft')
                                             <a href="{{ route('accounting.quotations.edit', $q) }}" class="text-ink hover:text-gold">Edit</a>
-                                            <form method="POST" action="{{ route('accounting.quotations.send', $q) }}" class="inline">@csrf<button type="submit" class="text-blue-600 hover:text-blue-900">Send</button></form>
+                                            <form method="POST" action="{{ route('accounting.quotations.send', $q) }}" class="inline">@csrf<button type="submit" class="text-gold-700 hover:text-gold-800">Send</button></form>
                                         @endif
                                         @if(in_array($q->status, ['draft', 'sent', 'accepted']))
                                             @can('quotations.void')

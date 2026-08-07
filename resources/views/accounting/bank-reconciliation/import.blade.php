@@ -28,7 +28,7 @@
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="csv_file" value="{{ __('CSV File') }}" />
-                            <input type="file" id="csv_file" name="csv_file" accept=".csv" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required />
+                            <input type="file" id="csv_file" name="csv_file" accept=".csv" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm" required />
                             <x-input-error :messages="$errors->get('csv_file')" class="mt-2" />
                         </div>
 
@@ -72,7 +72,7 @@
 
                         <div>
                             <x-input-label for="date_format" value="{{ __('Date Format') }}" />
-                            <select id="date_format" name="date_format" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="date_format" name="date_format" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
                                 <option value="Y-m-d" {{ old('date_format') === 'Y-m-d' ? 'selected' : '' }}>YYYY-MM-DD</option>
                                 <option value="m/d/Y" {{ old('date_format', 'm/d/Y') === 'm/d/Y' ? 'selected' : '' }}>MM/DD/YYYY</option>
                                 <option value="d/m/Y" {{ old('date_format') === 'd/m/Y' ? 'selected' : '' }}>DD/MM/YYYY</option>
@@ -84,7 +84,7 @@
                     </div>
 
                     <div class="flex justify-end gap-3 mt-6">
-                        <a href="{{ route('accounting.bank-reconciliation.index', $bankAccount->id) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <a href="{{ route('accounting.bank-reconciliation.index', $bankAccount->id) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Cancel') }}
                         </a>
                         <x-primary-button type="submit">{{ __('Import') }}</x-primary-button>

@@ -39,7 +39,7 @@
                                         </a>
                                     </td>
                                     <td>
-                                        <a href="{{ route('accounting.fixed-assets.show', $asset) }}" class="hover:text-indigo-600">
+                                        <a href="{{ route('accounting.fixed-assets.show', $asset) }}" class="hover:text-gold-700">
                                             {{ $asset->name }}
                                         </a>
                                     </td>

@@ -61,7 +61,7 @@
         @if($showCompare)
             <div>
                 <x-input-label for="compare_mode" value="Compare" />
-                <select id="compare_mode" name="compare_mode" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <select id="compare_mode" name="compare_mode" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     <option value="">No Comparison</option>
                     <option value="prior_period" {{ request('compare_mode') === 'prior_period' ? 'selected' : '' }}>Prior Period</option>
                     <option value="year_ago" {{ request('compare_mode') === 'year_ago' ? 'selected' : '' }}>Year Ago</option>
@@ -72,7 +72,7 @@
         @if($showDimension)
             <div>
                 <x-input-label for="dimension" value="Group By" />
-                <select id="dimension" name="dimension" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <select id="dimension" name="dimension" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     @foreach($dimensions as $key => $label)
                         <option value="{{ $key }}" {{ request('dimension') === $key ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach

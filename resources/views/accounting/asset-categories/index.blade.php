@@ -40,7 +40,7 @@
                                             </a>
                                         </td>
                                         <td>
-                                            <a href="{{ route('accounting.asset-categories.show', $cat) }}" class="hover:text-indigo-600">
+                                            <a href="{{ route('accounting.asset-categories.show', $cat) }}" class="hover:text-gold-700">
                                                 {{ $cat->name }}
                                             </a>
                                         </td>

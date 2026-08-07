@@ -15,7 +15,7 @@
                     </div>
                     <div>
                         <x-input-label for="type" value="{{ __('Type') }}" />
-                        <select id="type" name="type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <select id="type" name="type" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
                             <option value="all" {{ $type === 'all' ? 'selected' : '' }}>All Types</option>
                             <option value="invoice" {{ $type === 'invoice' ? 'selected' : '' }}>Invoices</option>
                             <option value="pos_sale" {{ $type === 'pos_sale' ? 'selected' : '' }}>POS Sales</option>
@@ -41,7 +41,7 @@
                         <div class="text-sm text-gray-500">Tax</div>
                     </div>
                     <div>
-                        <div class="text-2xl font-bold text-indigo-600">{{ format_money($summary['total_total']) }}</div>
+                        <div class="text-2xl font-bold text-gold-700">{{ format_money($summary['total_total']) }}</div>
                         <div class="text-sm text-gray-500">Grand Total</div>
                     </div>
                 </div>

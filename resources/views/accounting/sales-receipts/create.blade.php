@@ -91,7 +91,7 @@
                                 <input type="hidden" :name="'payments[' + pIdx + '][institution]'" x-model="payment.provider_id" />
                                 <div class="w-48 shrink-0">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Payment Method</label>
-                                    <select :name="'payments[' + pIdx + '][payment_method_id]'" x-model="payment.payment_method_id" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" @change="onMethodChange(pIdx)">
+                                    <select :name="'payments[' + pIdx + '][payment_method_id]'" x-model="payment.payment_method_id" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm" @change="onMethodChange(pIdx)">
                                         <option value="">Select method...</option>
                                         @foreach($paymentMethods as $pm)
                                             <option value="{{ $pm->id }}" data-type="{{ $pm->type }}" data-clearing="{{ $pm->clearing_account_id }}">{{ $pm->name }}</option>
@@ -100,7 +100,7 @@
                                 </div>
                                 <div x-show="payment.type === 'mobile_money'" class="w-44 shrink-0">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Provider</label>
-                                    <select x-model="payment.provider_id" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                    <select x-model="payment.provider_id" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm">
                                         <option value="">Select provider...</option>
                                         @foreach($mobileProviders as $mp)
                                             <option value="{{ $mp->name }}">{{ $mp->name }}</option>
@@ -109,15 +109,15 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Amount ({{ $cs }})</label>
-                                    <input type="number" :name="'payments[' + pIdx + '][amount]'" x-model.number="payment.amount" step="0.01" min="0" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" @input="updateRemaining()" />
+                                    <input type="number" :name="'payments[' + pIdx + '][amount]'" x-model.number="payment.amount" step="0.01" min="0" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right" @input="updateRemaining()" />
                                 </div>
                                 <div x-show="payment.type === 'cash'" class="w-44 shrink-0">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Cash Tendered</label>
-                                    <input type="number" :name="'payments[' + pIdx + '][cash_tendered]'" x-model.number="payment.cash_tendered" step="0.01" min="0" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" />
+                                    <input type="number" :name="'payments[' + pIdx + '][cash_tendered]'" x-model.number="payment.cash_tendered" step="0.01" min="0" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right" />
                                 </div>
                                 <div x-show="payment.type === 'bank_transfer' || payment.type === 'card'" class="w-44 shrink-0">
                                     <label class="block text-xs font-medium text-gray-500 mb-1">Reference</label>
-                                    <input type="text" :name="'payments[' + pIdx + '][reference_number]'" x-model="payment.reference_number" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />
+                                    <input type="text" :name="'payments[' + pIdx + '][reference_number]'" x-model="payment.reference_number" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm" />
                                 </div>
                                 <div class="shrink-0 flex items-end pb-1">
                                     <button type="button" @click="removePayment(pIdx)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
@@ -230,10 +230,10 @@
             });
             tr.innerHTML =
                 '<td class="px-4 py-2" style="min-width: 220px;">' + picker + '</td>' +
-                '<td class="px-4 py-2"><input type="text" name="lines[' + idx + '][description]" value="" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm bg-gray-50" /></td>' +
-                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="1" min="0" step="any" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" oninput="updateTotals()" /></td>' +
-                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][unit_price]" value="0" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right bg-gray-50" oninput="updateTotals()" /></td>' +
-                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][discount]" value="0" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" oninput="updateTotals()" /></td>' +
+                '<td class="px-4 py-2"><input type="text" name="lines[' + idx + '][description]" value="" readonly class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm bg-gray-50" /></td>' +
+                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][quantity]" value="1" min="0" step="any" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right" oninput="updateTotals()" /></td>' +
+                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][unit_price]" value="0" min="0" step="0.01" readonly class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right bg-gray-50" oninput="updateTotals()" /></td>' +
+                '<td class="px-4 py-2"><input type="number" name="lines[' + idx + '][discount]" value="0" min="0" max="100" step="0.01" class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right" oninput="updateTotals()" /></td>' +
                 '<td class="px-4 py-2"><input type="hidden" name="lines[' + idx + '][tax_rate]" value="0" />' + incomeAccountField + '</td>' +
                 '<td class="px-4 py-2 text-right text-sm font-medium line-total">0.00</td>' +
                 '<td class="px-4 py-2 text-center"><button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900" title="Remove"><svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></td>';

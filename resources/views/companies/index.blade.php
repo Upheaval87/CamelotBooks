@@ -27,7 +27,7 @@
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-800">{{ $company->name }}</h3>
                             @if(session('current_company_id') == $company->id)
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">Current</span>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gold-soft text-gold-800">Current</span>
                             @endif
                         </div>
                         <div class="text-sm text-gray-600 space-y-1 mb-4">
@@ -44,12 +44,12 @@
                             @if(session('current_company_id') != $company->id)
                                 <form method="POST" action="{{ route('companies.select', $company->id) }}">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-gold-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gold-700 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                         {{ __('Switch To') }}
                                     </button>
                                 </form>
                             @else
-                                <a href="{{ route('dashboard') }}" class="inline-flex items-center px-3 py-1.5 bg-indigo-100 border border-transparent rounded-md font-semibold text-xs text-indigo-700 uppercase tracking-widest transition ease-in-out duration-150">
+                                <a href="{{ route('dashboard') }}" class="inline-flex items-center px-3 py-1.5 bg-gold-soft border border-transparent rounded-md font-semibold text-xs text-gray-900 uppercase tracking-widest transition ease-in-out duration-150">
                                     {{ __('Go to Dashboard') }}
                                 </a>
                             @endif
@@ -87,7 +87,7 @@
                             </div>
                             <div>
                                 <x-input-label for="base_currency" value="{{ __('Base Currency') }}" />
-                                <select id="base_currency" name="base_currency" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <select id="base_currency" name="base_currency" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm" required>
                                     @forelse($currencies as $currency)
                                         <option value="{{ $currency->code }}">{{ $currency->label() }}</option>
                                     @empty
@@ -97,7 +97,7 @@
                             </div>
                             <div>
                                 <x-input-label for="fiscal_year_start_month" value="{{ __('Fiscal Year Start Month') }}" />
-                                <select id="fiscal_year_start_month" name="fiscal_year_start_month" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <select id="fiscal_year_start_month" name="fiscal_year_start_month" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm" required>
                                     @foreach(range(1, 12) as $m)
                                         <option value="{{ $m }}">{{ Carbon\Carbon::create()->month($m)->format('F') }}</option>
                                     @endforeach
@@ -113,7 +113,7 @@
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
                         <x-primary-button type="submit">{{ __('Create') }}</x-primary-button>
-                        <button type="button" onclick="document.getElementById('create-company-modal').classList.add('hidden')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <button type="button" onclick="document.getElementById('create-company-modal').classList.add('hidden')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Cancel') }}
                         </button>
                     </div>

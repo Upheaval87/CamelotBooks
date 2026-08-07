@@ -16,7 +16,7 @@
             <div class="form-page">
                 <div class="form-page-main">
                     <div class="card p-6">
-                        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                        <div class="mb-4 p-3 bg-gold-soft border border-gold-line rounded text-sm text-gold-800">
                             A new stock count will include all tracked inventory products with their current expected quantities. Enter physical counts and post to generate variance adjustments.
                         </div>
 

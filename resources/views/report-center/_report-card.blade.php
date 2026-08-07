@@ -18,7 +18,7 @@
     <div class="flex items-start justify-between">
         <div class="flex-1 min-w-0">
             <a href="{{ $reportUrl }}"
-               class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 {{ $reportLinkable ? '' : 'opacity-50 pointer-events-none' }}">
+               class="text-sm font-semibold text-gold-700 hover:text-gold-800 {{ $reportLinkable ? '' : 'opacity-50 pointer-events-none' }}">
                 {{ $report['name'] }}
             </a>
             <p class="mt-1 text-xs text-gray-500 line-clamp-2">{{ $report['description'] }}</p>
@@ -33,7 +33,7 @@
     @if(!empty($report['feature_flag']))
         <div class="mt-2">
             @foreach((array)$report['feature_flag'] as $flag)
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-1">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 mr-1">
                     {{ $flag }}
                 </span>
             @endforeach

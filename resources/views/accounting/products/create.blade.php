@@ -102,7 +102,7 @@
 
                                 <div class="flex items-end pb-1">
                                     <label class="flex items-center">
-                                        <input type="checkbox" name="is_taxable" value="1" {{ old('is_taxable') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                        <input type="checkbox" name="is_taxable" value="1" {{ old('is_taxable') ? 'checked' : '' }} class="rounded border-gray-300 text-gold-700 focus:ring-gold-500" />
                                         <span class="ms-2 text-sm text-gray-600">{{ __('Taxable') }}</span>
                                     </label>
                                 </div>

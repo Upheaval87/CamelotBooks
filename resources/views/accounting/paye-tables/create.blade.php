@@ -39,7 +39,7 @@
                             <div class="mb-6">
                                 <div class="flex items-center justify-between mb-3">
                                     <span class="text-sm text-gray-500">Define the income brackets and applicable rates.</span>
-                                    <button type="button" id="add-band" class="text-sm text-indigo-600 hover:text-indigo-900">+ Add Band</button>
+                                    <button type="button" id="add-band" class="text-sm text-gold-700 hover:text-gold-800">+ Add Band</button>
                                 </div>
 
                                 <div id="bands-container">
@@ -115,17 +115,17 @@
                 row.innerHTML = `
                     <div class="col-span-4">
                         <input type="number" name="bands[${bandIndex}][threshold]" step="0.01" min="0"
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                            class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm"
                             placeholder="0.00" required>
                     </div>
                     <div class="col-span-4">
                         <input type="number" name="bands[${bandIndex}][upper_limit]" step="0.01" min="0"
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                            class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm"
                             placeholder="No limit (last band)">
                     </div>
                     <div class="col-span-3">
                         <input type="number" name="bands[${bandIndex}][rate]" step="0.01" min="0" max="100"
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                            class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm"
                             placeholder="0" required>
                     </div>
                     <div class="col-span-1 text-right">

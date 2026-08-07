@@ -61,11 +61,11 @@
                                         @if($submission->status === 'error' && $submission->retry_count < 5)
                                             <form method="POST" action="{{ route('pos.eis.submissions.retry', $submission) }}" class="inline">
                                                 @csrf
-                                                <button type="submit" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Retry</button>
+                                                <button type="submit" class="text-gold-700 hover:text-gold-800 text-xs font-medium">Retry</button>
                                             </form>
                                         @endif
                                         @if($submission->validation_url)
-                                            <a href="{{ $submission->validation_url }}" target="_blank" class="ml-2 text-blue-600 hover:text-blue-900 text-xs font-medium">Validate</a>
+                                            <a href="{{ $submission->validation_url }}" target="_blank" class="ml-2 text-gold-700 hover:text-gold-800 text-xs font-medium">Validate</a>
                                         @endif
                                     </td>
                                 </tr>

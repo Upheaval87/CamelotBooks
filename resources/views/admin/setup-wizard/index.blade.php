@@ -37,7 +37,7 @@
                         <span class="text-sm font-medium {{ $step['done'] ? 'text-green-800' : 'text-gray-900' }}">{{ $step['label'] }}</span>
                     </div>
                     @if(!$step['done'])
-                        <a href="{{ route($step['route']) }}" class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">Set Up →</a>
+                        <a href="{{ route($step['route']) }}" class="text-sm text-gold-700 hover:text-gold-800 font-medium">Set Up →</a>
                     @else
                         <span class="text-xs text-green-600 font-medium">Done</span>
                     @endif
@@ -55,19 +55,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">First Branch Name</label>
-                        <input type="text" name="branch_name" value="{{ old('branch_name', 'Main Branch') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                        <input type="text" name="branch_name" value="{{ old('branch_name', 'Main Branch') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Branch Code</label>
-                        <input type="text" name="branch_code" value="{{ old('branch_code', 'MBR') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <input type="text" name="branch_code" value="{{ old('branch_code', 'MBR') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">First Cost Center Name</label>
-                        <input type="text" name="cost_center_name" value="{{ old('cost_center_name', 'General') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                        <input type="text" name="cost_center_name" value="{{ old('cost_center_name', 'General') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Cost Center Code</label>
-                        <input type="text" name="cost_center_code" value="{{ old('cost_center_code', 'GEN') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <input type="text" name="cost_center_code" value="{{ old('cost_center_code', 'GEN') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">

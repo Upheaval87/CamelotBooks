@@ -80,7 +80,7 @@
                                                     </a>
                                                 </td>
                                                 <td>
-                                                    <a href="{{ route('accounting.accounts.show', $child) }}" class="hover:text-indigo-600">
+                                                    <a href="{{ route('accounting.accounts.show', $child) }}" class="hover:text-gold-700">
                                                         {{ $child->name }}
                                                     </a>
                                                 </td>

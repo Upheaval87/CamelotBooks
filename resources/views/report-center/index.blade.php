@@ -3,7 +3,7 @@
     <x-list-header title="Report Center" description="Browse and access all available reports.">
         <form method="GET" action="{{ route('accounting.report-center.index') }}" class="flex items-center gap-2">
             <input type="text" name="search" value="{{ $search }}" placeholder="Search reports..."
-                   class="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-64" />
+                   class="border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm w-64" />
             <x-primary-button>Search</x-primary-button>
             @if($search)
                 <a href="{{ route('accounting.report-center.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Clear</a>

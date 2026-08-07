@@ -41,7 +41,7 @@
                                         @endif
                                     </td>
                                     <td class="text-right">
-                                        <a href="{{ route('pos.returns.show', $return) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                        <a href="{{ route('pos.returns.show', $return) }}" class="text-gold-700 hover:text-gold-800">View</a>
                                     </td>
                                 </tr>
                             @empty

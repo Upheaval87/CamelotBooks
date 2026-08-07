@@ -5,7 +5,7 @@
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('Total Cash Position') }}</h3>
-                <p class="text-3xl font-bold text-indigo-600">{{ format_money($totalCashPosition) }}</p>
+                <p class="text-3xl font-bold text-gold-700">{{ format_money($totalCashPosition) }}</p>
                 <div class="mt-2 flex gap-6 text-sm text-gray-500">
                     <span>Bank: <strong class="text-gray-900">{{ format_money($totalBankBalance) }}</strong></span>
                     <span>Petty Cash: <strong class="text-gray-900">{{ format_money($totalPettyCash) }}</strong></span>

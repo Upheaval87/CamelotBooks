@@ -58,7 +58,7 @@
                                 <td class="numeric">{{ $data['grand_count'] }}</td>
                                 <td class="numeric">@money($data['grand_total_sales'])</td>
                                 <td class="numeric text-red-600">@money($data['grand_total_returns'])</td>
-                                <td class="numeric text-indigo-700">@money($data['grand_net_sales'])</td>
+                                <td class="numeric text-gray-900">@money($data['grand_net_sales'])</td>
                                 <td class="numeric text-ink-soft">
                                     @money($data['grand_count'] > 0 ? $data['grand_total_sales'] / $data['grand_count'] : 0)
                                 </td>

@@ -44,7 +44,7 @@
                     @csrf
                     <p class="text-sm text-gray-500">Format: <code>FROM,TO,RATE,DATE</code> (one per line). Example: <code>EUR,USD,1.0850,2026-07-01</code></p>
                     <x-input-label for="csv_data" value="{{ __('CSV Data') }}" />
-                    <textarea id="csv_data" name="csv_data" rows="5" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm font-sans text-sm">{{ old('csv_data') }}</textarea>
+                    <textarea id="csv_data" name="csv_data" rows="5" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm font-sans text-sm">{{ old('csv_data') }}</textarea>
                     <x-primary-button type="submit">{{ __('Import') }}</x-primary-button>
                 </form>
             </div>

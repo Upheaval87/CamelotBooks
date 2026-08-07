@@ -6,7 +6,7 @@
         <form method="GET" class="flex items-end gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Type</label>
-                <select name="type" class="mt-1 block border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <select name="type" class="mt-1 block border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     <option value="">All Types</option>
                     <option value="build" {{ request('type') === 'build' ? 'selected' : '' }}>Build</option>
                     <option value="unbuild" {{ request('type') === 'unbuild' ? 'selected' : '' }}>Unbuild</option>

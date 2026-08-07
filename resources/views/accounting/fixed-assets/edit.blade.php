@@ -116,7 +116,7 @@
                             </div>
                             <div>
                                 <div class="flex items-center mt-6">
-                                    <input type="checkbox" id="is_revaluation_enabled" name="is_revaluation_enabled" value="1" {{ old('is_revaluation_enabled', $asset->is_revaluation_enabled) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                    <input type="checkbox" id="is_revaluation_enabled" name="is_revaluation_enabled" value="1" {{ old('is_revaluation_enabled', $asset->is_revaluation_enabled) ? 'checked' : '' }} class="rounded border-gray-300 text-gold-700 focus:ring-gold-500" />
                                     <x-input-label for="is_revaluation_enabled" value="{{ __('Enable Revaluation') }}" class="ml-2" />
                                 </div>
                             </div>

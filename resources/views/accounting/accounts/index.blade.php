@@ -27,7 +27,7 @@
                     </div>
                     <div class="flex-1">
                         <x-input-label for="type" value="{{ __('Account Type') }}" />
-                        <select id="type" name="type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <select id="type" name="type" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
                             <option value="">All Types</option>
                             @foreach($typeLabels as $value => $label)
                                 <option value="{{ $value }}" {{ request('type') === $value ? 'selected' : '' }}>{{ $label }}</option>
@@ -37,7 +37,7 @@
                     <div class="flex gap-2">
                         <x-primary-button type="submit">{{ __('Filter') }}</x-primary-button>
                         @if(request('search') || request('type'))
-                            <a href="{{ route('accounting.accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <a href="{{ route('accounting.accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 {{ __('Clear') }}
                             </a>
                         @endif
@@ -84,7 +84,7 @@
                                                 </a>
                                             </td>
                                             <td>
-                                                <a href="{{ route('accounting.accounts.show', $account) }}" class="hover:text-indigo-600">
+                                                <a href="{{ route('accounting.accounts.show', $account) }}" class="hover:text-gold-700">
                                                     {{ $account->name }}
                                                 </a>
                                             </td>
@@ -121,7 +121,7 @@
                                                 </td>
                                                 <td>
                                                     <span class="text-gray-400 mr-1">└</span>
-                                                    <a href="{{ route('accounting.accounts.show', $child) }}" class="hover:text-indigo-600">
+                                                    <a href="{{ route('accounting.accounts.show', $child) }}" class="hover:text-gold-700">
                                                         {{ $child->name }}
                                                     </a>
                                                 </td>

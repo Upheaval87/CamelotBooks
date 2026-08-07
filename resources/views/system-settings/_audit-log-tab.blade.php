@@ -66,7 +66,7 @@
                         {{ $log->user?->name ?? 'System' }}
                     </td>
                     <td>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gold-soft text-gold-800">
                             {{ $log->notes ?? 'Settings' }}
                         </span>
                     </td>

@@ -22,7 +22,7 @@
             <tbody class="divide-y divide-gray-200">
                 @forelse($bills as $row)
                 <tr class="hover:bg-gray-50">
-                    <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $row['type'] === 'Bill' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800' }}">{{ $row['type'] }}</span></td>
+                    <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $row['type'] === 'Bill' ? 'bg-gray-100 text-gray-600' : 'bg-orange-100 text-orange-800' }}">{{ $row['type'] }}</span></td>
                     <td class="px-4 py-2 text-sm font-sans">{{ $row['reference'] }}</td>
                     <td>{{ $row['date'] }}</td>
                     <td>{{ $row['vendor_name'] }}</td>

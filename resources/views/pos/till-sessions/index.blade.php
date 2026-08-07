@@ -86,7 +86,7 @@
                                                 class="text-orange-600 hover:text-orange-900">Close Till</button>
                                         @endif
                                         @if($session->isClosed())
-                                            <a href="{{ route('pos.till-sessions.show', $session) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                            <a href="{{ route('pos.till-sessions.show', $session) }}" class="text-gold-700 hover:text-gold-800">View</a>
                                         @endif
                                     </td>
                                 </tr>

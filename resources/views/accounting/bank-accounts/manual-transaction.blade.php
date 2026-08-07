@@ -26,13 +26,13 @@
                     <div class="space-y-6">
                         <div>
                             <x-input-label for="bank_account_id" value="{{ __('Bank Account') }}" />
-                            <input type="text" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-gray-50" value="{{ $bankAccount->name }}" disabled />
+                            <input type="text" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm bg-gray-50" value="{{ $bankAccount->name }}" disabled />
                             <input type="hidden" name="bank_account_id" value="{{ $bankAccount->id }}" />
                         </div>
 
                         <div x-data="{ type: '{{ old('type', 'fee') }}' }">
                             <x-input-label for="type" value="{{ __('Transaction Type') }}" />
-                            <select id="type" name="type" x-model="type" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                            <select id="type" name="type" x-model="type" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm" required>
                                 <option value="fee">Bank Fee</option>
                                 <option value="withdrawal">Withdrawal / Other Expense</option>
                                 <option value="deposit">Deposit / Other Income</option>
@@ -97,7 +97,7 @@
                     </div>
 
                     <div class="flex justify-end gap-3 mt-6">
-                        <a href="{{ route('accounting.bank-accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <a href="{{ route('accounting.bank-accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Cancel') }}
                         </a>
                         <x-primary-button type="submit">{{ __('Save Transaction') }}</x-primary-button>

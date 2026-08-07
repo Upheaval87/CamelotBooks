@@ -84,7 +84,7 @@
                         </div>
                         <div class="flex items-end pb-1">
                             <label class="flex items-center">
-                                <input type="checkbox" name="auto_post" value="1" {{ old('auto_post', $template->auto_post) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                <input type="checkbox" name="auto_post" value="1" {{ old('auto_post', $template->auto_post) ? 'checked' : '' }} class="rounded border-gray-300 text-gold-700 focus:ring-gold-500" />
                                 <span class="ml-2 text-sm text-gray-600">{{ __('Auto Post') }}</span>
                             </label>
                         </div>
@@ -99,7 +99,7 @@
                 <div class="card p-6 mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <x-form.section number="02" :title="__('Template Lines')" />
-                        <button type="button" id="addLineBtn" class="inline-flex items-center px-3 py-1 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <button type="button" id="addLineBtn" class="inline-flex items-center px-3 py-1 bg-gold-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gold-700 focus:bg-gold-600 active:bg-gold-800 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             + {{ __('Add Line') }}
                         </button>
                     </div>
@@ -186,13 +186,13 @@
                     }) +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<input type="number" name="lines[' + lineIndex + '][debit]" step="0.01" min="0" value="' + (preselectedDebit || '0') + '" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right debit-input" />' +
+                    '<input type="number" name="lines[' + lineIndex + '][debit]" step="0.01" min="0" value="' + (preselectedDebit || '0') + '" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right debit-input" />' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<input type="number" name="lines[' + lineIndex + '][credit]" step="0.01" min="0" value="' + (preselectedCredit || '0') + '" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right credit-input" />' +
+                    '<input type="number" name="lines[' + lineIndex + '][credit]" step="0.01" min="0" value="' + (preselectedCredit || '0') + '" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right credit-input" />' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
-                    '<input type="text" name="lines[' + lineIndex + '][memo]" value="' + (preselectedMemo || '') + '" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />' +
+                    '<input type="text" name="lines[' + lineIndex + '][memo]" value="' + (preselectedMemo || '') + '" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm" />' +
                 '</td>' +
                 '<td class="px-4 py-2">' +
                     scopedSearchFieldHtml({

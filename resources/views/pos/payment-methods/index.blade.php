@@ -54,7 +54,7 @@
                         </div>
                         <div class="flex items-center gap-2 mt-6">
                             <input type="checkbox" id="requires_reference" name="requires_reference" value="1" {{ old('requires_reference') ? 'checked' : '' }}
-                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" />
+                                class="rounded border-gray-300 text-gold-700 shadow-sm focus:ring-gold-500" />
 
                             <x-input-label for="requires_reference" :value="__('Requires Reference Number')" class="mb-0" />
                         </div>

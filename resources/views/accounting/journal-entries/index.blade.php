@@ -13,7 +13,7 @@
                 <form method="GET" action="{{ route('accounting.journal-entries.index') }}" class="flex items-end gap-4">
                     <div class="flex-1">
                         <x-input-label for="status" value="{{ __('Status') }}" />
-                        <select id="status" name="status" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <select id="status" name="status" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
                             <option value="">All Statuses</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                             <option value="pending_approval" {{ request('status') === 'pending_approval' ? 'selected' : '' }}>Pending Approval</option>
@@ -43,7 +43,7 @@
                     <div class="flex gap-2">
                         <x-primary-button type="submit">{{ __('Filter') }}</x-primary-button>
                         @if(request('status') || request('date_from') || request('date_to') || request('branch_id'))
-                            <a href="{{ route('accounting.journal-entries.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <a href="{{ route('accounting.journal-entries.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 {{ __('Clear') }}
                             </a>
                         @endif

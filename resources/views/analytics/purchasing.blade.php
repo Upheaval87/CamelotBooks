@@ -8,7 +8,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Purchases</div>
-                    <div class="text-2xl font-bold text-indigo-600">@money(array_sum(array_column($data['monthly_summary'], 'total')))</div>
+                    <div class="text-2xl font-bold text-gold-700">@money(array_sum(array_column($data['monthly_summary'], 'total')))</div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <div class="text-xs text-gray-500 uppercase">Total Bills</div>

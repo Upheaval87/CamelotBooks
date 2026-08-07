@@ -53,7 +53,7 @@
                                             @endif
                                         </td>
                                         <td class="text-right">
-                                            <a href="{{ route('accounting.pension-schemes.show', $scheme) }}" class="text-blue-600 hover:text-blue-900">View</a>
+                                            <a href="{{ route('accounting.pension-schemes.show', $scheme) }}" class="text-gold-700 hover:text-gold-800">View</a>
                                             <a href="{{ route('accounting.pension-schemes.edit', $scheme) }}" class="text-ink hover:text-gold">Edit</a>
                                             <form action="{{ route('accounting.pension-schemes.toggle', $scheme) }}" method="POST" class="inline">
                                                 @csrf

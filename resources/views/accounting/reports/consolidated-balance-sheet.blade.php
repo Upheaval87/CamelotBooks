@@ -10,7 +10,7 @@
 
     @forelse($companies as $c)
     <div class="mb-6 bg-white shadow-sm sm:rounded-lg overflow-hidden">
-        <div class="px-4 py-3 bg-indigo-50 border-b border-indigo-200"><h2 class="text-lg font-semibold text-indigo-800">{{ $c['company_name'] }}</h2></div>
+        <div class="px-4 py-3 bg-gold-soft border-b border-gold-line"><h2 class="text-lg font-semibold text-gold-800">{{ $c['company_name'] }}</h2></div>
 
         @php
             $cAssets = collect($c['assets']);
@@ -21,7 +21,7 @@
             $cEqTotal = $cEquity->sum('balance');
         @endphp
 
-        <div class="px-4 py-3 bg-blue-50 border-b border-blue-200"><h3 class="text-sm font-semibold text-blue-800">Assets</h3></div>
+        <div class="px-4 py-3 bg-gold-soft border-b border-gold-line"><h3 class="text-sm font-semibold text-gold-800">Assets</h3></div>
         <table class="datasheet">
             <thead><tr><th>Account</th><th class="text-right">Balance ({{ $cs }})</th></tr></thead>
             <tbody class="divide-y divide-gray-200">
@@ -47,7 +47,7 @@
             </tbody>
         </table>
 
-        <div class="px-4 py-3 bg-purple-50 border-b border-purple-200"><h3 class="text-sm font-semibold text-purple-800">Equity</h3></div>
+        <div class="px-4 py-3 bg-gold-soft border-b border-gold-line"><h3 class="text-sm font-semibold text-gold-800">Equity</h3></div>
         <table class="datasheet">
             <thead><tr><th>Account</th><th class="text-right">Balance ({{ $cs }})</th></tr></thead>
             <tbody class="divide-y divide-gray-200">

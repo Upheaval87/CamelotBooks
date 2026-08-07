@@ -60,8 +60,8 @@
                 @foreach($imports as $import)
                     <div class="border border-gray-200 rounded-lg p-4">
                         <div class="flex items-center gap-3 mb-3">
-                            <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                            <div class="flex-shrink-0 w-10 h-10 bg-gold-soft rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-gold-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="{{ $import['icon'] }}" />
                                 </svg>
                             </div>

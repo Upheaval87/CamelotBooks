@@ -34,7 +34,7 @@
                                         <td>{{ $account->name }}</td>
                                         <td class="text-ink-soft">{{ ucfirst($account->type) }}</td>
                                         <td class="px-6 py-3 whitespace-nowrap">
-                                            <select name="cash_flow_sections[{{ $account->id }}]" class="block w-48 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                            <select name="cash_flow_sections[{{ $account->id }}]" class="block w-48 border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm">
                                                 <option value="">None</option>
                                                 <option value="operating" {{ ($account->cash_flow_section ?? '') === 'operating' ? 'selected' : '' }}>Operating</option>
                                                 <option value="investing" {{ ($account->cash_flow_section ?? '') === 'investing' ? 'selected' : '' }}>Investing</option>
@@ -42,7 +42,7 @@
                                             </select>
                                         </td>
                                         <td class="text-center">
-                                            <input type="checkbox" name="is_non_cash[{{ $account->id }}]" value="1" {{ ($account->is_non_cash ?? false) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                            <input type="checkbox" name="is_non_cash[{{ $account->id }}]" value="1" {{ ($account->is_non_cash ?? false) ? 'checked' : '' }} class="rounded border-gray-300 text-gold-700 focus:ring-gold-500">
                                         </td>
                                     </tr>
                                 @empty

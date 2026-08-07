@@ -80,7 +80,7 @@
                         <div class="w-[160px]" x-show="selectedProductName">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
                             <select x-model="addUom" @change="onUomChange()"
-                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm">
                                 <option value="">Each (base)</option>
                                 <template x-for="u in (productUoms.uoms || []).filter(u => !u.is_base)" :key="u.uom_name">
                                     <option :value="u.uom_name" x-text="u.uom_name + ' (' + u.conversion_factor + 'x)'"></option>
@@ -91,10 +91,10 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
                             <input type="number" x-model="addQty" min="1" step="1" value="1"
                                 @keydown.enter.prevent="addLine()"
-                                class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-center" />
+                                class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-center" />
                         </div>
                         <button type="button" @click="addLine()"
-                            class="px-6 py-2 bg-indigo-600 text-white rounded-md font-semibold text-sm hover:bg-indigo-500 shadow-sm whitespace-nowrap">
+                            class="px-6 py-2 bg-gold-600 text-white rounded-md font-semibold text-sm hover:bg-gold-700 shadow-sm whitespace-nowrap">
                             {{ __('Add') }}
                         </button>
                         <div class="text-sm text-gray-500" x-show="selectedProductName">
@@ -180,13 +180,13 @@
                                     placeholder="{{ __('Search customers...') }}"
                                 />
                             </div>
-                            <button type="button" @click="clearPosCustomer()" class="mt-1 text-xs text-gray-500 hover:text-indigo-600">Walk-in Customer</button>
+                            <button type="button" @click="clearPosCustomer()" class="mt-1 text-xs text-gray-500 hover:text-gold-700">Walk-in Customer</button>
                         </div>
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700">Reference</label>
                             <input type="text" x-model="reference"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" placeholder="Optional" />
+                                class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm" placeholder="Optional" />
                         </div>
 
                         {{-- Totals --}}
@@ -205,7 +205,7 @@
                             </div>
                             <div class="flex justify-between text-xl font-bold border-t pt-2">
                                 <span>Total Due</span>
-                                <span class="text-indigo-600" x-text="formatMoney(getTotals().total)"></span>
+                                <span class="text-gold-700" x-text="formatMoney(getTotals().total)"></span>
                             </div>
                         </div>
 
@@ -242,11 +242,11 @@
                                     Cash
                                 </button>
                                 <button type="button" @click="openPaymentModal('card')"
-                                    class="py-3 px-4 bg-blue-50 border-2 border-blue-300 text-blue-700 rounded-lg font-semibold text-sm hover:bg-blue-100 transition">
+                                    class="py-3 px-4 bg-gold-soft border-2 border-gold-line text-gray-900 rounded-lg font-semibold text-sm hover:bg-gold-soft transition">
                                     Card
                                 </button>
                                 <button type="button" @click="openPaymentModal('mobile_money')"
-                                    class="py-3 px-4 bg-purple-50 border-2 border-purple-300 text-purple-700 rounded-lg font-semibold text-sm hover:bg-purple-100 transition">
+                                    class="py-3 px-4 bg-gold-soft border-2 border-gold-line text-gold-700 rounded-lg font-semibold text-sm hover:bg-gold-soft transition">
                                     Mobile Money
                                 </button>
                                 <button type="button" @click="openSplitModal()"
@@ -283,7 +283,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <div class="text-sm text-gray-500 mb-1">Total Due</div>
-                    <div class="text-3xl font-bold text-indigo-600" x-text="formatMoney(modalDue)"></div>
+                    <div class="text-3xl font-bold text-gold-700" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 <div class="mb-4">
@@ -342,7 +342,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <div class="text-sm text-gray-500 mb-1">Balance Due</div>
-                    <div class="text-3xl font-bold text-indigo-600" x-text="formatMoney(modalDue)"></div>
+                    <div class="text-3xl font-bold text-gold-700" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 <div class="mb-3">
@@ -350,7 +350,7 @@
                     <input type="number" x-model.number="modalAmount" x-ref="cardAmountInput" min="0.01" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm text-right"
+                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-right"
                         placeholder="0.00" />
                 </div>
 
@@ -358,21 +358,21 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm"
                         placeholder="e.g. TXN12345" />
                 </div>
 
                 <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
                     <input type="text" x-model="modalAccountName"
-                        class="block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm"
                         placeholder="Cardholder name" />
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Financial Institution</label>
                     <select x-model="modalInstitution"
-                        class="block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm">
+                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
                         <option value="">Select bank...</option>
                         @foreach($bankAccounts as $bank)
                             <option value="{{ $bank->name }}">{{ $bank->name }}</option>
@@ -385,7 +385,7 @@
                         class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalAmount || modalAmount <= 0 || Math.abs(parseFloat(modalAmount) - modalDue) > 0.01"
-                        class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-gold-600 text-white rounded-lg font-bold text-lg hover:bg-gold-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -400,7 +400,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <div class="text-sm text-gray-500 mb-1">Balance Due</div>
-                    <div class="text-3xl font-bold text-indigo-600" x-text="formatMoney(modalDue)"></div>
+                    <div class="text-3xl font-bold text-gold-700" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 <div class="mb-3">
@@ -408,7 +408,7 @@
                     <input type="number" x-model.number="modalAmount" x-ref="mobileAmountInput" min="0.01" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-right"
+                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-right"
                         placeholder="0.00" />
                 </div>
 
@@ -416,21 +416,21 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm"
+                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm"
                         placeholder="e.g. MP123456" />
                 </div>
 
                 <div class="mb-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
                     <input type="text" x-model="modalAccountName"
-                        class="block w-full border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm"
+                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm"
                         placeholder="Account holder name" />
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Provider / Institution</label>
                     <select x-model="modalInstitution"
-                        class="block w-full border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm">
+                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
                         <option value="">Select provider...</option>
                         @foreach($mobileProviders as $provider)
                             <option value="{{ $provider->name }}">{{ $provider->name }}</option>
@@ -443,7 +443,7 @@
                         class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalAmount || modalAmount <= 0 || Math.abs(parseFloat(modalAmount) - modalDue) > 0.01"
-                        class="flex-1 py-3 px-4 bg-purple-600 text-white rounded-lg font-bold text-lg hover:bg-purple-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="flex-1 py-3 px-4 bg-gold-600 text-white rounded-lg font-bold text-lg hover:bg-gold-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -458,7 +458,7 @@
 
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <div class="text-sm text-gray-500">Total Due</div>
-                    <div class="text-3xl font-bold text-indigo-600" x-text="formatMoney(modalDue)"></div>
+                    <div class="text-3xl font-bold text-gold-700" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 {{-- Cash Row --}}
@@ -493,10 +493,10 @@
                 </div>
 
                 {{-- Card Row --}}
-                <div class="border rounded-lg p-4 mb-3" :class="splitCardEnabled ? 'border-blue-300 bg-blue-50/30' : ''">
+                <div class="border rounded-lg p-4 mb-3" :class="splitCardEnabled ? 'border-gold-line bg-gold-soft/30' : ''">
                     <label class="flex items-center gap-2 mb-0 cursor-pointer">
-                        <input type="checkbox" x-model="splitCardEnabled" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                        <input type="checkbox" x-model="splitCardEnabled" class="rounded border-gray-300 text-gold-700 focus:ring-gold-500">
+                        <div class="w-3 h-3 rounded-full bg-gold-600"></div>
                         <span class="font-semibold text-gray-800">Card</span>
                     </label>
                     <div x-show="splitCardEnabled" x-transition class="mt-3">
@@ -534,10 +534,10 @@
                 </div>
 
                 {{-- Mobile Money Row --}}
-                <div class="border rounded-lg p-4 mb-4" :class="splitMobileEnabled ? 'border-purple-300 bg-purple-50/30' : ''">
+                <div class="border rounded-lg p-4 mb-4" :class="splitMobileEnabled ? 'border-gold-line bg-gold-soft/30' : ''">
                     <label class="flex items-center gap-2 mb-0 cursor-pointer">
-                        <input type="checkbox" x-model="splitMobileEnabled" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
-                        <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+                        <input type="checkbox" x-model="splitMobileEnabled" class="rounded border-gray-300 text-gold-700 focus:ring-gold-500">
+                        <div class="w-3 h-3 rounded-full bg-gold-600"></div>
                         <span class="font-semibold text-gray-800">Mobile Money</span>
                     </label>
                     <div x-show="splitMobileEnabled" x-transition class="mt-3">

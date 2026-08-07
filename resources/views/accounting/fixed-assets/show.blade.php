@@ -89,14 +89,14 @@
                         <a href="{{ route('accounting.asset-disposals.create', ['asset_id' => $asset->id]) }}" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Dispose Asset') }}
                         </a>
-                        <a href="{{ route('accounting.asset-transfers.create', ['asset_id' => $asset->id]) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <a href="{{ route('accounting.asset-transfers.create', ['asset_id' => $asset->id]) }}" class="inline-flex items-center px-4 py-2 bg-gold-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gold-700 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Transfer Asset') }}
                         </a>
                         <a href="{{ route('accounting.asset-impairments.create', ['asset_id' => $asset->id]) }}" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             {{ __('Record Impairment') }}
                         </a>
                         @if($asset->is_revaluation_enabled)
-                            <a href="{{ route('accounting.asset-revaluations.create', ['asset_id' => $asset->id]) }}" class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <a href="{{ route('accounting.asset-revaluations.create', ['asset_id' => $asset->id]) }}" class="inline-flex items-center px-4 py-2 bg-gold-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gold-700 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 {{ __('Revalue Asset') }}
                             </a>
                         @endif

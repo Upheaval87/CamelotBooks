@@ -169,7 +169,7 @@
                     <td class="numeric">${parseFloat(bill.total).toFixed(2)}</td>
                     <td class="numeric">${parseFloat(bill.balance_due).toFixed(2)}</td>
                     <td class="numeric">
-                        <input type="number" name="allocations[${bill.id}]" class="allocation-input block w-32 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm text-right" min="0" max="${bill.balance_due}" step="0.01" value="0" oninput="updateAllocationTotals()" />
+                        <input type="number" name="allocations[${bill.id}]" class="allocation-input block w-32 border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right" min="0" max="${bill.balance_due}" step="0.01" value="0" oninput="updateAllocationTotals()" />
                     </td>
                 </tr>
             `).join('');

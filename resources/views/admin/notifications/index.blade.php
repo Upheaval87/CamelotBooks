@@ -19,23 +19,23 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">SMTP Host</label>
-                        <input type="text" name="smtp[host]" value="{{ $smtpSettings['host'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="smtp.gmail.com">
+                        <input type="text" name="smtp[host]" value="{{ $smtpSettings['host'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm" placeholder="smtp.gmail.com">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Port</label>
-                        <input type="number" name="smtp[port]" value="{{ $smtpSettings['port'] ?? '587' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <input type="number" name="smtp[port]" value="{{ $smtpSettings['port'] ?? '587' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Username</label>
-                        <input type="text" name="smtp[username]" value="{{ $smtpSettings['username'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <input type="text" name="smtp[username]" value="{{ $smtpSettings['username'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Password</label>
-                        <input type="password" name="smtp[password]" value="{{ $smtpSettings['password'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <input type="password" name="smtp[password]" value="{{ $smtpSettings['password'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Encryption</label>
-                        <select name="smtp[encryption]" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <select name="smtp[encryption]" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm">
                             <option value="tls" {{ ($smtpSettings['encryption'] ?? '') === 'tls' ? 'selected' : '' }}>TLS</option>
                             <option value="ssl" {{ ($smtpSettings['encryption'] ?? '') === 'ssl' ? 'selected' : '' }}>SSL</option>
                             <option value="none" {{ ($smtpSettings['encryption'] ?? '') === 'none' ? 'selected' : '' }}>None</option>
@@ -43,11 +43,11 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">From Address</label>
-                        <input type="email" name="smtp[from_address]" value="{{ $smtpSettings['from_address'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="noreply@company.com">
+                        <input type="email" name="smtp[from_address]" value="{{ $smtpSettings['from_address'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm" placeholder="noreply@company.com">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">From Name</label>
-                        <input type="text" name="smtp[from_name]" value="{{ $smtpSettings['from_name'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="My Company">
+                        <input type="text" name="smtp[from_name]" value="{{ $smtpSettings['from_name'] ?? '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gold-500 focus:border-gold-500 sm:text-sm" placeholder="My Company">
                     </div>
                 </div>
             </div>
