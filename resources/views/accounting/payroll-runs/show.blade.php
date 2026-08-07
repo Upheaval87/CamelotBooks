@@ -1,5 +1,26 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Payroll Run') }} #{{ $run->run_number }}" />
+    @php
+        $runStatusBadge = match ($run->status) {
+            'calculated' => 'pending',
+            'approved' => 'approved',
+            'posted', 'partially_paid', 'fully_paid' => 'approved',
+            default => 'neutral',
+        };
+        $runIsDecisionState = $run->status === 'calculated';
+        $runIsPosted = in_array($run->status, ['posted', 'partially_paid', 'fully_paid'], true);
+    @endphp
+
+    <x-review.head
+        :title="__('Payroll Run') . ' #' . $run->run_number"
+        :back-url="route('accounting.payroll-runs.index')"
+        back-label="{{ __('Back to Payroll Runs') }}"
+    >
+        <x-slot name="badge">
+            <x-review.badge :variant="$runStatusBadge" :dot="$runIsDecisionState || $run->status === 'approved'">
+                {{ str_replace('_', ' ', ucfirst($run->status)) }}
+            </x-review.badge>
+        </x-slot>
+    </x-review.head>
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -17,42 +38,42 @@
 
             <div class="detail-page">
                 <div class="detail-page-main">
-                    <div class="card p-6">
-                        <p class="text-base font-semibold text-ink mb-5">{{ __('Run Details') }}</p>
-                        <div class="detail-grid">
-                            <x-detail-field :label="__('Run Number')" :value="$run->run_number" />
-                            <x-detail-field :label="__('Period')" :value="$run->period_label" />
-                            <x-detail-field :label="__('Period Start')" :value="$run->period_start?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Period End')" :value="$run->period_end?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Pay Date')" :value="$run->pay_date?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Status')" noBorder>
-                                @php
-                                    $statusColors = [
-                                        'draft' => 'neutral',
-                                        'calculated' => 'info',
-                                        'posted' => 'positive',
-                                        'partially_paid' => 'warning',
-                                        'fully_paid' => 'positive',
-                                    ];
-                                    $color = $statusColors[$run->status] ?? 'neutral';
-                                @endphp
-                                <span class="status-pill {{ $color }}">{{ str_replace('_', ' ', ucfirst($run->status)) }}</span>
-                            </x-detail-field>
-                            <x-detail-field :label="__('Employees')" :value="$run->items->count()" />
+                    <x-review.card title="{{ __('Run Details') }}" icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'/>">
+                        <div class="mt-[22px] grid grid-cols-1 gap-x-8 gap-y-[22px] md:grid-cols-2 lg:grid-cols-3">
+                            <x-review.field label="{{ __('Run Number') }}" mono>{{ $run->run_number }}</x-review.field>
+                            <x-review.field label="{{ __('Period') }}">{{ $run->period_label }}</x-review.field>
+                            <x-review.field label="{{ __('Period Start') }}">{{ $run->period_start?->format('M d, Y') ?? '—' }}</x-review.field>
+                            <x-review.field label="{{ __('Period End') }}">{{ $run->period_end?->format('M d, Y') ?? '—' }}</x-review.field>
+                            <x-review.field label="{{ __('Pay Date') }}">{{ $run->pay_date?->format('M d, Y') ?? '—' }}</x-review.field>
+                            <x-review.field label="{{ __('Employees') }}">{{ $run->items->count() }}</x-review.field>
                         </div>
 
-                        <div class="mt-6 flex items-center space-x-3">
-                            @if($run->status === 'calculated')
-                                @can('payroll-runs.approve')
-                                    <form method="POST" action="{{ route('accounting.payroll-runs.approve', $run) }}">
-                                        @csrf
-                                        <button type="submit" class="x-button x-button-primary" onclick="return confirm('Are you sure you want to approve this payroll run?')">
-                                            {{ __('Approve Run') }}
-                                        </button>
-                                    </form>
-                                @endcan
-                            @endif
+                        @if($runIsDecisionState)
+                            <x-review.decision class="mt-6" title="{{ __('Review & Decide') }}" hint="{{ __('Approve this run to make it ready for posting to the General Ledger.') }}">
+                                <x-slot name="actions">
+                                    @can('payroll-runs.approve')
+                                        <form id="payroll-approve-form" method="POST" action="{{ route('accounting.payroll-runs.approve', $run) }}" class="inline">@csrf</form>
+                                        <x-review.btn variant="primary" size="lg" type="submit" form="payroll-approve-form" onclick="return confirm('Are you sure you want to approve this payroll run?')">{{ __('Approve Run') }}</x-review.btn>
+                                    @endcan
+                                </x-slot>
+                            </x-review.decision>
+                        @elseif($run->status === 'approved')
+                            <x-review.outcome
+                                class="mt-6"
+                                title="{{ __('Payroll run approved') }}"
+                                :description="__('Approved by') . ' ' . ($run->approvedByUser->name ?? '—') . ($run->approved_at ? ' — ' . $run->approved_at->format('M d, Y g:i A') : '')"
+                                chip="APPROVED"
+                            />
+                        @elseif($runIsPosted)
+                            <x-review.outcome
+                                class="mt-6"
+                                title="{{ __('Payroll run posted') }}"
+                                :description="__('This run has been posted to the General Ledger.')"
+                                chip="POSTED"
+                            />
+                        @endif
 
+                        <div class="mt-6 flex items-center space-x-3">
                             @if($run->status === 'approved')
                                 @can('payroll-runs.post')
                                     <form method="POST" action="{{ route('accounting.payroll-runs.post', $run) }}">
@@ -83,7 +104,7 @@
                                 {{ __('Pension Schedule') }}
                             </a>
                         </div>
-                    </div>
+                    </x-review.card>
 
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div class="kpi-card">

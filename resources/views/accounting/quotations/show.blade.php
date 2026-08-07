@@ -1,5 +1,32 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Quotation') }} {{ $quotation->quotation_number }}" />
+    @php
+        $quotationStatusBadge = match ($quotation->status) {
+            'accepted', 'converted' => 'approved',
+            'declined' => 'rejected',
+            'sent' => 'pending',
+            default => 'neutral',
+        };
+        $isDecisionState = in_array($quotation->status, ['sent'], true);
+    @endphp
+
+    <x-review.head
+        :title="__('Quotation') . ' ' . $quotation->quotation_number"
+        :back-url="route('accounting.quotations.index')"
+        back-label="{{ __('Back to Quotations') }}"
+    >
+        <x-slot name="badge">
+            <x-review.badge :variant="$quotationStatusBadge" :dot="in_array($quotation->status, ['sent', 'accepted', 'declined'], true)">
+                @switch($quotation->status)
+                    @case('draft') {{ __('Draft') }} @break
+                    @case('sent') {{ __('Sent') }} @break
+                    @case('accepted') {{ __('Accepted') }} @break
+                    @case('declined') {{ __('Declined') }} @break
+                    @case('converted') {{ __('Converted') }} @break
+                    @case('void') {{ __('Void') }} @break
+                @endswitch
+            </x-review.badge>
+        </x-slot>
+    </x-review.head>
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -16,10 +43,6 @@
                         @can('quotations.send')
                             <form method="POST" action="{{ route('accounting.quotations.send', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-save">{{ __('Mark as Sent') }}</button></form>
                         @endcan
-                    @endif
-                    @if($quotation->status === 'sent')
-                        <form method="POST" action="{{ route('accounting.quotations.accept', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-save">{{ __('Accept') }}</button></form>
-                        <form method="POST" action="{{ route('accounting.quotations.decline', $quotation) }}" class="inline">@csrf<button type="submit" class="tr-archive">{{ __('Decline') }}</button></form>
                     @endif
                     @if(in_array($quotation->status, ['sent', 'accepted']))
                         @can('quotations.convert')
@@ -56,26 +79,44 @@
 
             <div class="detail-page">
                 <div class="detail-page-main">
-                    <div class="card p-6">
-                        <div class="detail-grid">
-                            <x-detail-field :label="__('Status')" noBorder>
-                                @switch($quotation->status)
-                                    @case('draft') <span class="status-pill neutral">{{ __('Draft') }}</span>@break
-                                    @case('sent') <span class="status-pill neutral">{{ __('Sent') }}</span>@break
-                                    @case('accepted') <span class="status-pill positive">{{ __('Accepted') }}</span>@break
-                                    @case('declined') <span class="status-pill negative">{{ __('Declined') }}</span>@break
-                                    @case('converted') <span class="status-pill positive">{{ __('Converted') }}</span>@break
-                                    @case('void') <span class="status-pill neutral">{{ __('Void') }}</span>@break
-                                @endswitch
-                            </x-detail-field>
-                            <x-detail-field :label="__('Customer')" :value="$quotation->customer->name ?? '—'" />
-                            <x-detail-field :label="__('Date')" :value="$quotation->quotation_date?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Valid Until')" :value="$quotation->valid_until?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Reference')" :value="$quotation->reference ?? '—'" />
-                            <x-detail-field :label="__('Created By')" :value="$quotation->createdByUser->name ?? '—'" />
-                            <x-detail-field :label="__('Description')" :value="$quotation->memo ?? '—'" />
+                    <x-review.card title="{{ __('Quotation Details') }}" icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'/>">
+                        <div class="mt-[22px] grid grid-cols-1 gap-x-8 gap-y-[22px] md:grid-cols-2 lg:grid-cols-3">
+                            <x-review.field label="{{ __('Quotation Number') }}" mono>{{ $quotation->quotation_number }}</x-review.field>
+                            <x-review.field label="{{ __('Customer') }}">{{ $quotation->customer->name ?? '—' }}</x-review.field>
+                            <x-review.field label="{{ __('Date') }}">{{ $quotation->quotation_date?->format('M d, Y') ?? '—' }}</x-review.field>
+                            <x-review.field label="{{ __('Valid Until') }}">{{ $quotation->valid_until?->format('M d, Y') ?? '—' }}</x-review.field>
+                            <x-review.field label="{{ __('Reference') }}" mono>{{ $quotation->reference ?? '—' }}</x-review.field>
+                            <x-review.field label="{{ __('Created By') }}">{{ $quotation->createdByUser->name ?? '—' }}</x-review.field>
+                            @if($quotation->memo)
+                                <x-review.field label="{{ __('Description') }}" class="lg:col-span-3">{{ $quotation->memo ?? '—' }}</x-review.field>
+                            @endif
                         </div>
-                    </div>
+                    </x-review.card>
+
+                    @if($isDecisionState)
+                        <x-review.decision title="{{ __('Review & Decide') }}" hint="{{ __('Accept to proceed with this quotation, or decline it.') }}">
+                            <x-slot name="actions">
+                                <form id="quotation-decline-form" method="POST" action="{{ route('accounting.quotations.decline', $quotation) }}" class="inline">@csrf</form>
+                                <form id="quotation-accept-form" method="POST" action="{{ route('accounting.quotations.accept', $quotation) }}" class="inline">@csrf</form>
+                                <x-review.btn variant="reject" type="submit" form="quotation-decline-form">{{ __('Decline') }}</x-review.btn>
+                                <x-review.btn variant="primary" size="lg" type="submit" form="quotation-accept-form">{{ __('Accept') }}</x-review.btn>
+                            </x-slot>
+                        </x-review.decision>
+                    @elseif(in_array($quotation->status, ['accepted', 'declined', 'converted'], true))
+                        @php
+                            $quotationOutcome = match ($quotation->status) {
+                                'accepted' => ['chip' => 'ACCEPTED', 'tone' => 'approved', 'title' => __('Quotation accepted')],
+                                'converted' => ['chip' => 'CONVERTED', 'tone' => 'approved', 'title' => __('Quotation converted to invoice')],
+                                default => ['chip' => 'DECLINED', 'tone' => 'rejected', 'title' => __('Quotation declined')],
+                            };
+                        @endphp
+                        <x-review.outcome
+                            :title="$quotationOutcome['title']"
+                            :description="__('This quotation is no longer open for decision.')"
+                            :chip="$quotationOutcome['chip']"
+                            :tone="$quotationOutcome['tone']"
+                        />
+                    @endif
 
                     <div class="card p-6">
                         <p class="text-base font-semibold text-ink mb-5">{{ __('Line Items') }}</p>

@@ -1,5 +1,29 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Requisition') }} #{{ $requisition->requisition_number }}" />
+    @php
+        $reqStatusBadge = match ($requisition->status) {
+            'approved' => 'approved',
+            'rejected' => 'rejected',
+            'submitted' => 'pending',
+            default => 'neutral',
+        };
+    @endphp
+
+    <x-review.head
+        :title="__('Requisition') . ' #' . $requisition->requisition_number"
+        :back-url="route('accounting.purchase-requisitions.index')"
+        back-label="{{ __('Back to Requisitions') }}"
+    >
+        <x-slot name="badge">
+            <x-review.badge :variant="$reqStatusBadge" :dot="in_array($requisition->status, ['submitted', 'approved', 'rejected'], true)">
+                @switch($requisition->status)
+                    @case('draft') {{ __('Draft') }} @break
+                    @case('submitted') {{ __('Submitted') }} @break
+                    @case('approved') {{ __('Approved') }} @break
+                    @case('rejected') {{ __('Rejected') }} @break
+                @endswitch
+            </x-review.badge>
+        </x-slot>
+    </x-review.head>
 
     <div class="pb-12">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -13,20 +37,6 @@
                             </form>
                         @endcan
                         <a href="{{ route('accounting.purchase-requisitions.edit', $requisition) }}" class="tr-save">{{ __('Edit') }}</a>
-                    @endif
-                    @if($requisition->status === 'submitted')
-                        @can('purchase-requisitions.approve')
-                            <form method="POST" action="{{ route('accounting.purchase-requisitions.approve', $requisition) }}" class="inline">
-                                @csrf
-                                <button type="submit" class="tr-save">{{ __('Approve') }}</button>
-                            </form>
-                        @endcan
-                        @can('purchase-requisitions.reject')
-                            <form method="POST" action="{{ route('accounting.purchase-requisitions.reject', $requisition) }}" class="inline">
-                                @csrf
-                                <button type="submit" class="tr-archive">{{ __('Reject') }}</button>
-                            </form>
-                        @endcan
                     @endif
                     @if($requisition->status === 'approved')
                         <a href="{{ route('accounting.purchase-orders.create', ['requisition_id' => $requisition->id]) }}" class="tr-save">{{ __('Create Purchase Order') }}</a>
@@ -47,30 +57,50 @@
                 </div>
             @endif
 
-            <div class="card p-6">
-                <div class="detail-grid">
-                    <x-detail-field :label="__('Requisition Number')" :value="$requisition->requisition_number" />
-                    <x-detail-field :label="__('Status')" noBorder>
-                        @switch($requisition->status)
-                            @case('draft') <span class="status-pill neutral">{{ __('Draft') }}</span> @break
-                            @case('submitted') <span class="status-pill neutral">{{ __('Submitted') }}</span> @break
-                            @case('approved') <span class="status-pill positive">{{ __('Approved') }}</span> @break
-                            @case('rejected') <span class="status-pill negative">{{ __('Rejected') }}</span> @break
-                        @endswitch
-                    </x-detail-field>
-                    <x-detail-field :label="__('Date')" :value="$requisition->date?->format('M d, Y') ?? '—'" />
-                    <x-detail-field :label="__('Created By')" :value="$requisition->createdBy->name ?? '—'" />
-                    <x-detail-field :label="__('Branch')" :value="$requisition->branch->name ?? '—'" />
-                    <x-detail-field :label="__('Cost Center')" :value="$requisition->costCenter->name ?? '—'" />
+            <x-review.card title="{{ __('Requisition Details') }}" icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'/>">
+                <div class="mt-[22px] grid grid-cols-1 gap-x-8 gap-y-[22px] md:grid-cols-2 lg:grid-cols-3">
+                    <x-review.field label="{{ __('Requisition Number') }}" mono>{{ $requisition->requisition_number }}</x-review.field>
+                    <x-review.field label="{{ __('Date') }}">{{ $requisition->date?->format('M d, Y') ?? '—' }}</x-review.field>
+                    <x-review.field label="{{ __('Created By') }}">{{ $requisition->createdBy->name ?? '—' }}</x-review.field>
+                    <x-review.field label="{{ __('Branch') }}">{{ $requisition->branch->name ?? '—' }}</x-review.field>
+                    <x-review.field label="{{ __('Cost Center') }}">{{ $requisition->costCenter->name ?? '—' }}</x-review.field>
                     @if($requisition->approvedBy)
-                        <x-detail-field :label="__('Approved By')" :value="$requisition->approvedBy->name" />
-                        <x-detail-field :label="__('Approved At')" :value="$requisition->approved_at?->format('M d, Y g:i A') ?? '—'" />
+                        <x-review.field label="{{ __('Approved By') }}">{{ $requisition->approvedBy->name }}</x-review.field>
+                        <x-review.field label="{{ __('Approved At') }}">{{ $requisition->approved_at?->format('M d, Y g:i A') ?? '—' }}</x-review.field>
                     @endif
                     @if($requisition->memo)
-                        <x-detail-field :label="__('Description')" :value="$requisition->memo" class="col-span-3" />
+                        <x-review.field label="{{ __('Description') }}" class="lg:col-span-3">{{ $requisition->memo }}</x-review.field>
                     @endif
                 </div>
-            </div>
+            </x-review.card>
+
+            @if($requisition->status === 'submitted')
+                <x-review.decision title="{{ __('Review & Decide') }}" hint="{{ __('Approve to create a purchase order, or reject this requisition.') }}">
+                    <x-slot name="actions">
+                        <form id="req-reject-form" method="POST" action="{{ route('accounting.purchase-requisitions.reject', $requisition) }}" class="inline">
+                            @csrf
+                        </form>
+                        <form id="req-approve-form" method="POST" action="{{ route('accounting.purchase-requisitions.approve', $requisition) }}" class="inline">
+                            @csrf
+                        </form>
+                        <x-review.btn variant="reject" type="submit" form="req-reject-form">{{ __('Reject') }}</x-review.btn>
+                        <x-review.btn variant="primary" size="lg" type="submit" form="req-approve-form">{{ __('Approve') }}</x-review.btn>
+                    </x-slot>
+                </x-review.decision>
+            @elseif($requisition->status === 'approved')
+                <x-review.outcome
+                    title="{{ __('Requisition approved') }}"
+                    :description="__('Approved by') . ' ' . ($requisition->approvedBy->name ?? '—') . ($requisition->approved_at ? ' — ' . $requisition->approved_at->format('M d, Y g:i A') : '')"
+                    chip="APPROVED"
+                />
+            @elseif($requisition->status === 'rejected')
+                <x-review.outcome
+                    title="{{ __('Requisition rejected') }}"
+                    :description="__('This requisition was not approved.')"
+                    chip="REJECTED"
+                    tone="rejected"
+                />
+            @endif
 
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Line Items') }}</p>

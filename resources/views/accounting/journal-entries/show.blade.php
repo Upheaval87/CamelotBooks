@@ -1,6 +1,30 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-list-header title="{{ __('Journal Entry') }} - {{ $journalEntry->journal_number }}" />
+    @php
+        $jeStatusBadge = match ($journalEntry->status) {
+            'pending_approval' => 'pending',
+            'posted' => 'approved',
+            'reversed', 'rejected' => 'rejected',
+            default => 'neutral',
+        };
+    @endphp
+
+    <x-review.head
+        :title="__('Journal Entry') . ' - ' . $journalEntry->journal_number"
+        :back-url="route('accounting.journal-entries.index')"
+        back-label="{{ __('Back to Journal Entries') }}"
+    >
+        <x-slot name="badge">
+            <x-review.badge :variant="$jeStatusBadge" :dot="in_array($journalEntry->status, ['pending_approval', 'posted'], true)">
+                @if($journalEntry->status === 'draft'){{ __('Draft') }}
+                @elseif($journalEntry->status === 'pending_approval'){{ __('Pending Approval') }}
+                @elseif($journalEntry->status === 'posted'){{ __('Posted') }}
+                @elseif($journalEntry->status === 'reversed'){{ __('Reversed') }}
+                @elseif($journalEntry->status === 'rejected'){{ __('Rejected') }}
+                @else{{ ucfirst($journalEntry->status) }}@endif
+            </x-review.badge>
+        </x-slot>
+    </x-review.head>
 
     <div class="pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -18,18 +42,6 @@
                                 <button type="submit" class="tr-save">{{ __('Submit for Approval') }}</button>
                             </form>
                         @endcan
-                    @endif
-                    @if($journalEntry->status === 'pending_approval')
-                        @can('journal-entries.approve')
-                            <form method="POST" action="{{ route('accounting.journal-entries.approve', $journalEntry) }}" class="inline">
-                                @csrf
-                                <button type="submit" class="tr-save">{{ __('Approve') }}</button>
-                            </form>
-                        @endcan
-                        <button type="button" onclick="document.getElementById('rejectModal').classList.remove('hidden')" class="tr-item">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            {{ __('Reject') }}
-                        </button>
                     @endif
                     @if($journalEntry->status === 'posted')
                         @can('journal-entries.reverse')
@@ -115,38 +127,65 @@
                 </div>
             @endif
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Entry Information') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field :label="__('Journal Number')" :value="$journalEntry->journal_number" />
-                    <x-detail-field :label="__('Date')" :value="$journalEntry->date->format('M d, Y')" />
-                    <x-detail-field :label="__('Reference')" :value="$journalEntry->reference ?? '—'" />
-                    <x-detail-field :label="__('Status')" noBorder>
-                        @if($journalEntry->status === 'draft')
-                            <span class="status-pill neutral">{{ __('Draft') }}</span>
-                        @elseif($journalEntry->status === 'pending_approval')
-                            <span class="status-pill neutral">{{ __('Pending Approval') }}</span>
-                        @elseif($journalEntry->status === 'posted')
-                            <span class="status-pill positive">{{ __('Posted') }}</span>
-                        @elseif($journalEntry->status === 'reversed')
-                            <span class="status-pill negative">{{ __('Reversed') }}</span>
-                        @else
-                            <span class="status-pill neutral">{{ ucfirst($journalEntry->status) }}</span>
-                        @endif
-                    </x-detail-field>
-                    <x-detail-field :label="__('Branch')" :value="$journalEntry->branch->name ?? '—'" />
-                    <x-detail-field :label="__('Adjusting Entry')" :value="$journalEntry->is_adjusting_entry ? __('Yes') : __('No')" />
-                    <x-detail-field :label="__('Created By')" :value="$journalEntry->createdBy->name ?? '—'" />
-                    <x-detail-field :label="__('Posted By')" :value="$journalEntry->postedByUser->name ?? '—'" />
+            <x-review.card title="{{ __('Entry Information') }}" icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'/>">
+                <div class="mt-[22px] grid grid-cols-1 gap-x-8 gap-y-[22px] md:grid-cols-2 lg:grid-cols-3">
+                    <x-review.field label="{{ __('Journal Number') }}" mono>{{ $journalEntry->journal_number }}</x-review.field>
+                    <x-review.field label="{{ __('Date') }}">{{ $journalEntry->date->format('M d, Y') }}</x-review.field>
+                    <x-review.field label="{{ __('Reference') }}" mono>{{ $journalEntry->reference ?? '—' }}</x-review.field>
+                    <x-review.field label="{{ __('Branch') }}">{{ $journalEntry->branch->name ?? '—' }}</x-review.field>
+                    <x-review.field label="{{ __('Adjusting Entry') }}">{{ $journalEntry->is_adjusting_entry ? __('Yes') : __('No') }}</x-review.field>
+                    <x-review.field label="{{ __('Created By') }}">{{ $journalEntry->createdBy->name ?? '—' }}</x-review.field>
+                    <x-review.field label="{{ __('Posted By') }}">{{ $journalEntry->postedByUser->name ?? '—' }}</x-review.field>
                     @if($journalEntry->posted_at)
-                        <x-detail-field :label="__('Posted At')" :value="\Illuminate\Support\Carbon::parse($journalEntry->posted_at)->format('M d, Y h:i A')" />
+                        <x-review.field label="{{ __('Posted At') }}">{{\Illuminate\Support\Carbon::parse($journalEntry->posted_at)->format('M d, Y h:i A') }}</x-review.field>
                     @endif
-                    <x-detail-field :label="__('Description')" :value="$journalEntry->memo ?? '—'" class="col-span-3" />
                     @if($journalEntry->rejection_reason)
-                        <x-detail-field :label="__('Rejection Reason')" :value="$journalEntry->rejection_reason" class="col-span-3" value-class="text-red-600" />
+                        <x-review.field label="{{ __('Rejection Reason') }}" class="lg:col-span-2"><span class="text-red-600">{{ $journalEntry->rejection_reason }}</span></x-review.field>
                     @endif
+                    <x-review.field label="{{ __('Description') }}" class="lg:col-span-3">{{ $journalEntry->memo ?? '—' }}</x-review.field>
                 </div>
-            </div>
+            </x-review.card>
+
+            @if($journalEntry->status === 'pending_approval')
+                <x-review.decision title="{{ __('Review & Decide') }}" hint="{{ __('Approve to post this entry, or reject it with a reason.') }}">
+                    <x-slot name="fields">
+                        <form id="je-reject-form" method="POST" action="{{ route('accounting.journal-entries.reject', $journalEntry) }}">
+                            @csrf
+                            <div>
+                                <x-input-label for="rejection_reason" value="{{ __('Reason for Rejection') }}" />
+                                <textarea id="rejection_reason" name="rejection_reason" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(182,145,63,.55)] focus:ring-[3px] focus:ring-[rgba(182,145,63,.15)] focus:outline-none" required></textarea>
+                                <x-input-error :messages="$errors->get('rejection_reason')" class="mt-2" />
+                            </div>
+                        </form>
+                    </x-slot>
+                    <x-slot name="actions">
+                        <form id="je-approve-form" method="POST" action="{{ route('accounting.journal-entries.approve', $journalEntry) }}" class="inline">
+                            @csrf
+                        </form>
+                        <x-review.btn variant="reject" type="submit" form="je-reject-form">{{ __('Reject') }}</x-review.btn>
+                        <x-review.btn variant="primary" size="lg" type="submit" form="je-approve-form">{{ __('Approve') }}</x-review.btn>
+                    </x-slot>
+                </x-review.decision>
+            @elseif($journalEntry->status === 'posted')
+                <x-review.outcome
+                    title="{{ __('Journal entry approved and posted') }}"
+                    :description="__('Approved by') . ' ' . ($journalEntry->approvedByUser->name ?? $journalEntry->postedByUser->name ?? '—') . ($journalEntry->approved_at ? ' — ' . \Illuminate\Support\Carbon::parse($journalEntry->approved_at)->format('M d, Y h:i A') : '')"
+                    chip="POSTED"
+                />
+            @elseif($journalEntry->status === 'rejected')
+                <x-review.outcome
+                    title="{{ __('Journal entry rejected') }}"
+                    :description="$journalEntry->rejection_reason ?: __('The entry was not approved.')"
+                    chip="REJECTED"
+                    tone="rejected"
+                />
+            @elseif($journalEntry->status === 'reversed')
+                <x-review.outcome
+                    title="{{ __('Journal entry reversed') }}"
+                    :description="__('This entry was reversed and no longer affects the ledger.')"
+                    chip="REVERSED"
+                />
+            @endif
 
             <div class="card p-6">
                 <p class="text-base font-semibold text-ink mb-5">{{ __('Journal Lines') }}</p>
@@ -246,29 +285,6 @@
                     ]],
                 ]" />
             </div>
-        </div>
-    </div>
-
-    <div id="rejectModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Reject Journal Entry') }}</h3>
-            @can('journal-entries.reject')
-                <form method="POST" action="{{ route('accounting.journal-entries.reject', $journalEntry) }}">
-                    @csrf
-                    <div class="mb-4">
-                        <x-input-label for="rejection_reason" value="{{ __('Reason for Rejection') }}" />
-                        <textarea id="rejection_reason" name="rejection_reason" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required></textarea>
-                    </div>
-                    <div class="flex items-center justify-end space-x-3">
-                        <button type="button" onclick="document.getElementById('rejectModal').classList.add('hidden')" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Cancel') }}
-                        </button>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Reject') }}
-                        </button>
-                    </div>
-                </form>
-            @endcan
         </div>
     </div>
 

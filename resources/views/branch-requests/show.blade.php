@@ -168,13 +168,13 @@
                                                         @if($payment->status === 'pending' && $canConfirmPayment)
                                                             <form method="POST" action="{{ route('branch-requests.payments.confirm', [$branchRequest, $payment]) }}" class="inline" onsubmit="return confirm('{{ __('Confirm this payment and raise the branch limit?') }}')">
                                                                 @csrf
-                                                                <button type="submit" class="px-3 py-1 text-xs text-green-600 hover:text-green-800">{{ __('Confirm') }}</button>
+                                                                <button type="submit" class="inline-flex items-center justify-center rounded-[8px] border border-green-600/35 bg-white px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:border-green-600/55 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500">{{ __('Confirm') }}</button>
                                                             </form>
-                                                            <button type="button" class="px-3 py-1 text-xs text-red-600 hover:text-red-800" onclick="document.getElementById('reject-{{ $payment->id }}').classList.toggle('hidden')">{{ __('Reject') }}</button>
-                                                            <form id="reject-{{ $payment->id }}" method="POST" action="{{ route('branch-requests.payments.reject', [$branchRequest, $payment]) }}" class="hidden mt-1">
+                                                            <button type="button" class="inline-flex items-center justify-center rounded-[8px] border border-red-600/35 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:border-red-600/55 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500" onclick="document.getElementById('reject-{{ $payment->id }}').classList.toggle('hidden')">{{ __('Reject') }}</button>
+                                                            <form id="reject-{{ $payment->id }}" method="POST" action="{{ route('branch-requests.payments.reject', [$branchRequest, $payment]) }}" class="hidden mt-2">
                                                                 @csrf
-                                                                <input type="text" name="reason" placeholder="Rejection reason" required class="input mt-1 block w-full text-xs" />
-                                                                <button type="submit" class="mt-1 text-xs text-red-600">{{ __('Confirm Rejection') }}</button>
+                                                                <input type="text" name="reason" placeholder="Rejection reason" required class="mt-1 block w-full rounded-xl border-shell bg-white/80 px-3 py-2 text-xs text-gray-900 focus:border-[rgba(182,145,63,.55)] focus:ring-[3px] focus:ring-[rgba(182,145,63,.15)] focus:outline-none" />
+                                                                <button type="submit" class="mt-2 inline-flex items-center justify-center rounded-[8px] border border-red-600/35 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:border-red-600/55 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500">{{ __('Confirm Rejection') }}</button>
                                                             </form>
                                                         @endif
                                                     </td>

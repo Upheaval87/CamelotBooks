@@ -12,79 +12,105 @@
 
             @php
                 $requestBadge = match ($request->status) {
-                    \App\Models\BranchRequest::STATUS_PENDING_REVIEW => 'warning',
+                    \App\Models\BranchRequest::STATUS_PENDING_REVIEW => 'pending',
                     \App\Models\BranchRequest::STATUS_QUOTED => 'accent',
-                    \App\Models\BranchRequest::STATUS_AWAITING_PAYMENT => 'warning',
-                    \App\Models\BranchRequest::STATUS_APPROVED => 'active',
-                    \App\Models\BranchRequest::STATUS_REJECTED => 'danger',
-                    \App\Models\BranchRequest::STATUS_EXPIRED => 'muted',
-                    \App\Models\BranchRequest::STATUS_CANCELLED => 'muted',
-                    default => 'muted',
+                    \App\Models\BranchRequest::STATUS_AWAITING_PAYMENT => 'pending',
+                    \App\Models\BranchRequest::STATUS_APPROVED => 'approved',
+                    \App\Models\BranchRequest::STATUS_REJECTED => 'rejected',
+                    \App\Models\BranchRequest::STATUS_EXPIRED => 'neutral',
+                    \App\Models\BranchRequest::STATUS_CANCELLED => 'neutral',
+                    default => 'neutral',
                 };
+                $isDecided = in_array($request->status, [
+                    \App\Models\BranchRequest::STATUS_APPROVED,
+                    \App\Models\BranchRequest::STATUS_REJECTED,
+                    \App\Models\BranchRequest::STATUS_EXPIRED,
+                    \App\Models\BranchRequest::STATUS_CANCELLED,
+                ], true);
             @endphp
 
-            <x-superadmin.card>
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span class="text-[26px] font-extrabold tracking-[-0.02em] text-gray-900">{{ $request->branch_name }}</span>
-                        <x-superadmin.badge :variant="$requestBadge">{{ $request->statusLabel() }}</x-superadmin.badge>
-                    </div>
-                    <x-superadmin.btn variant="ghost" href="{{ route('superadmin.companies.show', $company) }}">{{ __('Back to Company') }}</x-superadmin.btn>
-                </div>
+            <x-review.head
+                :title="$request->branch_name"
+                :back-url="route('superadmin.companies.show', $company)"
+                back-label="{{ __('Back to Company') }}"
+            >
+                <x-slot name="badge">
+                    <x-review.badge :variant="$requestBadge" :dot="$request->status === \App\Models\BranchRequest::STATUS_APPROVED || $request->status === \App\Models\BranchRequest::STATUS_REJECTED">{{ $request->statusLabel() }}</x-review.badge>
+                </x-slot>
+            </x-review.head>
 
-                <div class="detail-grid mt-6">
-                    <x-detail-field label="Company">{{ $company->name }}</x-detail-field>
-                    <x-detail-field label="Branch Code">{{ $request->branch_code ?? '—' }}</x-detail-field>
-                    <x-detail-field label="Quantity Requested">{{ $request->requested_quantity }}</x-detail-field>
-                    <x-detail-field label="Requested At">{{ $request->requested_at?->format('M j, Y g:i A') }}</x-detail-field>
-                    <x-detail-field label="Address">{{ $request->branch_address ?? '—' }}</x-detail-field>
-                    <x-detail-field label="Contact Person">{{ $request->contact_person ?? '—' }}</x-detail-field>
-                    <x-detail-field label="Contact Email">{{ $request->contact_email ?? '—' }}</x-detail-field>
-                    <x-detail-field label="Contact Phone">{{ $request->contact_phone ?? '—' }}</x-detail-field>
-                    <x-detail-field label="Reason">{{ $request->reason ?? '—' }}</x-detail-field>
+            <x-review.card title="{{ __('Branch Request') }}" icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'/>">
+                <div class="mt-[22px] grid grid-cols-1 gap-x-8 gap-y-[22px] md:grid-cols-2 lg:grid-cols-3">
+                    <x-review.field label="Company">{{ $company->name }}</x-review.field>
+                    <x-review.field label="Branch Code" mono>{{ $request->branch_code ?? '—' }}</x-review.field>
+                    <x-review.field label="Quantity Requested">{{ $request->requested_quantity }}</x-review.field>
+                    <x-review.field label="Requested At">{{ $request->requested_at?->format('M j, Y g:i A') }}</x-review.field>
+                    <x-review.field label="Address">{{ $request->branch_address ?? '—' }}</x-review.field>
+                    <x-review.field label="Contact Person">{{ $request->contact_person ?? '—' }}</x-review.field>
+                    <x-review.field label="Contact Email">{{ $request->contact_email ?? '—' }}</x-review.field>
+                    <x-review.field label="Contact Phone">{{ $request->contact_phone ?? '—' }}</x-review.field>
+                    <x-review.field label="Reason" class="lg:col-span-2">{{ $request->reason ?? '—' }}</x-review.field>
                 </div>
-            </x-superadmin.card>
+            </x-review.card>
 
             @if(in_array($request->status, [\App\Models\BranchRequest::STATUS_PENDING_REVIEW], true))
-                <x-superadmin.card title="{{ __('Review & Decide') }}">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <form method="POST" action="{{ route('superadmin.companies.branch-requests.approve', [$company, $request]) }}">
+                <x-review.decision title="{{ __('Review & Decide') }}" hint="{{ __('Approve to issue a priced quotation, or reject the request.') }}">
+                    <x-slot name="fields">
+                        <form id="branch-request-approve-form" method="POST" action="{{ route('superadmin.companies.branch-requests.approve', [$company, $request]) }}">
                             @csrf
-                            <div class="mb-3">
+                            <div>
                                 <x-input-label for="admin_notes" value="{{ __('Admin Notes (optional)') }}" />
-                                <textarea id="admin_notes" name="admin_notes" rows="3" class="input mt-1 block w-full" placeholder="{{ __('e.g. Pricing notes, agreed discounts, volume tier.') }}"></textarea>
+                                <textarea id="admin_notes" name="admin_notes" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(182,145,63,.55)] focus:ring-[3px] focus:ring-[rgba(182,145,63,.15)] focus:outline-none" placeholder="{{ __('e.g. Pricing notes, agreed discounts, volume tier.') }}"></textarea>
                             </div>
-                            <x-superadmin.btn type="submit">{{ __('Approve & Issue Quotation') }}</x-superadmin.btn>
                         </form>
 
-                        <form method="POST" action="{{ route('superadmin.companies.branch-requests.reject', [$company, $request]) }}">
+                        <form id="branch-request-reject-form" method="POST" action="{{ route('superadmin.companies.branch-requests.reject', [$company, $request]) }}">
                             @csrf
-                            <div class="mb-3">
+                            <div>
                                 <x-input-label for="reason" value="{{ __('Rejection Reason (required)') }}" />
-                                <textarea id="reason" name="reason" rows="3" class="input mt-1 block w-full" required></textarea>
+                                <textarea id="reason" name="reason" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(182,145,63,.55)] focus:ring-[3px] focus:ring-[rgba(182,145,63,.15)] focus:outline-none" required></textarea>
                                 <x-input-error :messages="$errors->get('reason')" class="mt-2" />
                             </div>
-                            <x-superadmin.btn variant="danger" type="submit">{{ __('Reject Request') }}</x-superadmin.btn>
                         </form>
-                    </div>
-                </x-superadmin.card>
+                    </x-slot>
+                    <x-slot name="actions">
+                        <x-review.btn variant="reject" type="submit" form="branch-request-reject-form">{{ __('Reject Request') }}</x-review.btn>
+                        <x-review.btn variant="primary" size="lg" type="submit" form="branch-request-approve-form">{{ __('Approve & Issue Quotation') }}</x-review.btn>
+                    </x-slot>
+                </x-review.decision>
+            @elseif($isDecided)
+                @php
+                    $outcomeTone = $request->status === \App\Models\BranchRequest::STATUS_APPROVED ? 'approved' : 'rejected';
+                    $outcomeTitle = $request->status === \App\Models\BranchRequest::STATUS_APPROVED
+                        ? __('Branch request approved')
+                        : __('Branch request not approved');
+                    $outcomeDescription = $request->status === \App\Models\BranchRequest::STATUS_APPROVED
+                        ? ($request->admin_notes ?: __('The requested branch capacity was granted.'))
+                        : ($request->admin_notes ?: __('No additional branch capacity was granted.'));
+                @endphp
+                <x-review.outcome
+                    :title="$outcomeTitle"
+                    :description="$outcomeDescription"
+                    chip="{{ strtoupper($request->statusLabel()) }}"
+                    :tone="$outcomeTone"
+                />
             @endif
 
             @if($request->quotation)
                 @php $quotation = $request->quotation; @endphp
-                <x-superadmin.card title="{{ __('Quotation') }} {{ $quotation->quotation_number }}">
+                <x-review.card title="{{ __('Quotation') }} {{ $quotation->quotation_number }}">
                     <x-slot name="action">
                         @php
                             $qStatus = match ($quotation->status) {
-                                'paid' => 'active',
-                                'expired', 'cancelled' => 'muted',
-                                default => 'warning',
+                                'paid' => 'approved',
+                                'expired', 'cancelled' => 'neutral',
+                                default => 'pending',
                             };
                         @endphp
-                        <x-superadmin.badge :variant="$qStatus">{{ $quotation->statusLabel() }}</x-superadmin.badge>
+                        <x-review.badge :variant="$qStatus">{{ $quotation->statusLabel() }}</x-review.badge>
                     </x-slot>
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="mt-[22px] grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="kpi-card">
                             <div class="kpi-label">Unit Price ({{ $quotation->currency_code }})</div>
                             <div class="kpi-value">{{ number_format($quotation->unit_price, 2) }}</div>
@@ -103,9 +129,9 @@
                         </div>
                     </div>
 
-                    <div class="mt-4 rounded-lg border border-line bg-panel px-4 py-3 text-sm">
-                        <span class="font-medium text-ink">Bank Reference:</span>
-                        <code class="ml-1 font-mono text-xs">{{ $quotation->bank_reference }}</code>
+                    <div class="mt-4 rounded-lg border border-shell bg-white/80 px-4 py-3 text-sm">
+                        <span class="font-medium text-gray-900">Bank Reference:</span>
+                        <code class="ml-1 font-mono text-xs text-gray-600">{{ $quotation->bank_reference }}</code>
                     </div>
 
                     @if($quotation->payments->isNotEmpty())
@@ -131,9 +157,9 @@
                                                 <td class="px-5 py-[18px] align-middle text-gray-500">{{ $payment->paid_at?->format('M j, Y') }}</td>
                                                 <td class="px-5 py-[18px] text-center align-middle">
                                                     @php
-                                                        $pVariant = $payment->status === 'confirmed' ? 'active' : ($payment->status === 'rejected' ? 'danger' : 'warning');
+                                                        $pVariant = $payment->status === 'confirmed' ? 'approved' : ($payment->status === 'rejected' ? 'rejected' : 'pending');
                                                     @endphp
-                                                    <x-superadmin.badge :variant="$pVariant">{{ $payment->statusLabel() }}</x-superadmin.badge>
+                                                    <x-review.badge :variant="$pVariant">{{ $payment->statusLabel() }}</x-review.badge>
                                                     @if($payment->amount !== round((float) $quotation->total, 2) && $payment->status === 'pending')
                                                         <span class="mt-1 block text-xs text-gold">{{ __('Amount differs from total') }}</span>
                                                     @endif
@@ -145,7 +171,7 @@
                             </div>
                         </div>
                     @endif
-                </x-superadmin.card>
+                </x-review.card>
             @endif
         </div>
     </x-superadmin.layout>
