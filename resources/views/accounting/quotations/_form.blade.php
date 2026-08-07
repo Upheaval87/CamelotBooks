@@ -73,8 +73,7 @@
 
 <div>
     {{-- sticky page head --}}
-    <div class="flex items-start justify-between gap-4 flex-wrap pb-4 mb-6 border-b border-line"
-         style="position: sticky; top: var(--topbar-h, 106px); z-index: 40; background: rgba(245,247,252,.88); backdrop-filter: blur(12px);">
+    <div class="form-page-head flex items-start justify-between gap-4 flex-wrap pb-4 mb-6 border-b border-line">
         <div>
             <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-gray-900">{{ $title }}</h1>
             <p class="mt-1 text-[13.5px] text-gray-500">{{ $subtitle }}</p>
@@ -227,7 +226,7 @@
                 </section>
 
                 {{-- line items --}}
-                <section class="card rounded-[20px] p-6 xl:p-[26px]">
+                <section class="card relative z-30 rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
                         <h2 class="text-[15px] font-extrabold text-gray-900">{{ __('Line Items') }}</h2>
@@ -235,7 +234,7 @@
                         <button type="button" id="quot-add-line" class="{{ $btnGhost }}" style="height:34px;padding:0 13px;font-size:12.5px;border-radius:10px;margin-left:12px;">＋ {{ __('Add Line') }}</button>
                     </div>
 
-                    <div class="mt-4 border border-shell rounded-[14px] overflow-hidden bg-[#fbfcfe]">
+                    <div class="mt-4 border border-shell rounded-[14px] overflow-visible round-thead-clip bg-[#fbfcfe]">
                         <table id="quot-lines-table" class="w-full border-collapse text-[13px] table-fixed">
                             <thead>
                                 <tr>
