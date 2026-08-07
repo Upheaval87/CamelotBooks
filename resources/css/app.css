@@ -4661,3 +4661,152 @@ select.sa-input {
 .bill-file-list:empty {
     display: none;
 }
+
+/* ═══════════════════════════════════════════
+   QUOTATION FORM — mockup create-quotation (live document preview)
+═══════════════════════════════════════════ */
+.quot-prev {
+    position: sticky;
+    top: calc(var(--topbar-h, 106px) + 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 10;
+}
+.quot-prev-label {
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+.quot-paper {
+    background: #fff;
+    border: 1px solid var(--border, #e3e6eb);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, .05), 0 12px 32px -8px rgba(16, 24, 40, .10));
+}
+.quot-p-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: linear-gradient(90deg, var(--navy-700, #24384f), var(--navy-800, #182a3e) 60%, var(--navy-900, #132234));
+    box-shadow: var(--shadow-thead, inset 0 1px 0 rgba(255, 255, 255, .07), inset 0 -1px 0 rgba(190, 152, 72, .45));
+}
+.quot-p-head .quot-p-title {
+    color: #f2f6fa;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.quot-p-head .quot-p-num {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    color: #e2c069;
+}
+.quot-p-body { padding: 18px; }
+.quot-p-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 14px;
+}
+.quot-p-l {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+.quot-p-v {
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #111827;
+    overflow-wrap: anywhere;
+}
+.quot-p-lines {
+    margin-top: 14px;
+    border-top: 1px solid var(--line, #ebedf2);
+}
+.quot-p-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line, #ebedf2);
+    font-size: 12px;
+}
+.quot-p-line .quot-p-code {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 10.5px;
+    color: var(--navy-700, #24384f);
+}
+.quot-p-line .quot-p-name {
+    flex: 1;
+    font-weight: 600;
+    color: #374151;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.quot-p-line .quot-p-qty { color: #94a3b8; }
+.quot-p-line .quot-p-amt {
+    font-weight: 700;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+}
+.quot-p-totals {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+}
+.quot-p-row {
+    display: flex;
+    justify-content: space-between;
+    color: #64748b;
+}
+.quot-p-row .v {
+    font-weight: 600;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+}
+.quot-p-gt {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--navy-700, #24384f), var(--navy-800, #182a3e) 60%, var(--navy-900, #132234));
+    box-shadow: var(--shadow-thead, inset 0 1px 0 rgba(255, 255, 255, .07), inset 0 -1px 0 rgba(190, 152, 72, .45));
+}
+.quot-p-gt .quot-p-gt-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--navy-200, #cdd7e2);
+}
+.quot-p-gt .quot-p-gt-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #f2f6fa;
+    font-variant-numeric: tabular-nums;
+}
+.quot-p-foot {
+    margin-top: 12px;
+    font-size: 10.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+    .quot-prev {
+        position: static;
+    }
+}

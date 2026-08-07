@@ -108,6 +108,7 @@ class QuotationService
                 'valid_until' => $data['valid_until'] ?? $quotation->valid_until,
                 'reference' => $data['reference'] ?? $quotation->reference,
                 'memo' => $data['memo'] ?? $quotation->memo,
+                'currency' => $data['currency'] ?? $quotation->currency,
                 'amount' => $subtotal,
                 'tax_total' => $taxTotal,
                 'total' => $subtotal + $taxTotal,

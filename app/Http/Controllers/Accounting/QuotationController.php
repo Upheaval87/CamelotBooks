@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\Attachment;
 use App\Models\Branch;
 use App\Models\CostCenter;
+use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Services\Accounting\QuotationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class QuotationController extends Controller
 {
@@ -42,26 +46,35 @@ class QuotationController extends Controller
         $incomeAccounts = Account::where('company_id', $companyId)->where('type', 'revenue')->where('is_active', true)->orderBy('code')->get();
         $itemCategories = \App\Models\ItemCategory::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $products = Product::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
+        $currencies = Currency::query()->active()->ordered()->get();
+        $defaultIncomeAccountId = $incomeAccounts->first()?->id;
 
-        return view('accounting.quotations.create', compact('customers', 'branches', 'costCenters', 'incomeAccounts', 'itemCategories', 'products'));
+        return view('accounting.quotations.create', compact('customers', 'branches', 'costCenters', 'incomeAccounts', 'itemCategories', 'products', 'currencies', 'defaultIncomeAccountId'));
     }
 
     public function store(Request $request)
     {
+        $companyId = session('current_company_id');
+
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'quotation_date' => 'required|date',
             'valid_until' => 'nullable|date|after:quotation_date',
+            'currency' => 'nullable|string|max:10',
             'lines' => 'required|array|min:1',
             'lines.*.description' => 'required|string|max:500',
             'lines.*.quantity' => 'required|numeric|min:0.01',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.income_account_id' => 'required|exists:accounts,id',
+            'files' => 'nullable|array|max:10',
+            'files.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,webp,xls,xlsx,doc,docx,txt,csv|max:10240',
+            'delete_documents' => 'nullable|array',
+            'delete_documents.*' => 'integer',
         ]);
 
         $quotationService = app(QuotationService::class);
         $quotation = $quotationService->create([
-            'company_id' => session('current_company_id'),
+            'company_id' => $companyId,
             'branch_id' => $request->branch_id,
             'cost_center_id' => $request->cost_center_id,
             'customer_id' => $request->customer_id,
@@ -69,16 +82,28 @@ class QuotationController extends Controller
             'valid_until' => $request->valid_until,
             'reference' => $request->reference,
             'memo' => $request->memo,
+            'currency' => $request->currency,
             'lines' => $request->lines,
         ], auth()->id());
 
+        $this->handleAttachments($request, $quotation);
+
+        if ($request->input('action') === 'save_and_new') {
+            return redirect()->route('accounting.quotations.create')
+                ->with('success', "Quotation {$quotation->quotation_number} saved. You can add another.");
+        }
+
+        $submitted = $this->handlePostSaveAction($request, $quotation);
+
         return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', "Quotation {$quotation->quotation_number} created.");
+            ->with('success', $submitted
+                ? "Quotation {$quotation->quotation_number} created and submitted for approval."
+                : "Quotation {$quotation->quotation_number} created.");
     }
 
     public function show(Quotation $quotation)
     {
-        $quotation->load(['lines.product', 'customer', 'branch', 'costCenter', 'createdByUser', 'postedByUser']);
+        $quotation->load(['lines.product', 'customer', 'branch', 'costCenter', 'createdByUser', 'postedByUser', 'attachments']);
         return view('accounting.quotations.show', compact('quotation'));
     }
 
@@ -96,10 +121,12 @@ class QuotationController extends Controller
         $incomeAccounts = Account::where('company_id', $companyId)->where('type', 'revenue')->where('is_active', true)->orderBy('code')->get();
         $itemCategories = \App\Models\ItemCategory::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $products = Product::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
+        $currencies = Currency::query()->active()->ordered()->get();
+        $defaultIncomeAccountId = $incomeAccounts->first()?->id;
 
-        $quotation->load('lines');
+        $quotation->load(['lines', 'attachments']);
 
-        return view('accounting.quotations.edit', compact('quotation', 'customers', 'branches', 'costCenters', 'incomeAccounts', 'itemCategories', 'products'));
+        return view('accounting.quotations.edit', compact('quotation', 'customers', 'branches', 'costCenters', 'incomeAccounts', 'itemCategories', 'products', 'currencies', 'defaultIncomeAccountId'));
     }
 
     public function update(Request $request, Quotation $quotation)
@@ -112,11 +139,17 @@ class QuotationController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'quotation_date' => 'required|date',
+            'valid_until' => 'nullable|date|after:quotation_date',
+            'currency' => 'nullable|string|max:10',
             'lines' => 'required|array|min:1',
             'lines.*.description' => 'required|string|max:500',
             'lines.*.quantity' => 'required|numeric|min:0.01',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.income_account_id' => 'required|exists:accounts,id',
+            'files' => 'nullable|array|max:10',
+            'files.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,webp,xls,xlsx,doc,docx,txt,csv|max:10240',
+            'delete_documents' => 'nullable|array',
+            'delete_documents.*' => 'integer',
         ]);
 
         $quotationService = app(QuotationService::class);
@@ -128,11 +161,70 @@ class QuotationController extends Controller
             'valid_until' => $request->valid_until,
             'reference' => $request->reference,
             'memo' => $request->memo,
+            'currency' => $request->currency,
             'lines' => $request->lines,
         ]);
 
+        $this->handleAttachments($request, $quotation);
+
+        $submitted = $this->handlePostSaveAction($request, $quotation);
+
         return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', "Quotation {$quotation->quotation_number} updated.");
+            ->with('success', $submitted
+                ? "Quotation {$quotation->quotation_number} updated and submitted for approval."
+                : "Quotation {$quotation->quotation_number} updated.");
+    }
+
+    /**
+     * Handle the optional post-save action button (Submit for Approval).
+     */
+    private function handlePostSaveAction(Request $request, Quotation $quotation): bool
+    {
+        if ($request->input('action') !== 'submit_for_approval') {
+            return false;
+        }
+
+        app(QuotationService::class)->send($quotation);
+
+        return true;
+    }
+
+    /**
+     * Persist uploaded attachments and delete any flagged for removal.
+     */
+    private function handleAttachments(Request $request, Quotation $quotation): void
+    {
+        $companyId = $quotation->company_id;
+
+        foreach ((array) $request->input('delete_documents', []) as $id) {
+            $attachment = Attachment::where('company_id', $companyId)
+                ->where('id', (int) $id)
+                ->where('attachmentable_type', Quotation::class)
+                ->where('attachmentable_id', $quotation->id)
+                ->first();
+
+            if ($attachment) {
+                Storage::disk('public')->delete($attachment->file_path);
+                $attachment->delete();
+            }
+        }
+
+        foreach ($request->file('files', []) as $file) {
+            $path = $file->storeAs(
+                "quotation-attachments/{$companyId}/{$quotation->id}",
+                Str::random(24) . '.' . $file->getClientOriginalExtension(),
+                'public'
+            );
+
+            $quotation->attachments()->create([
+                'company_id' => $companyId,
+                'name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+                'file_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+                'uploaded_by' => auth()->id(),
+            ]);
+        }
     }
 
     public function send(Quotation $quotation)

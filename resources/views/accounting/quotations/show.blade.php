@@ -161,6 +161,21 @@
                             </div>
                         </div>
                     </div>
+
+                    @if($quotation->attachments->isNotEmpty())
+                        <div class="card p-6">
+                            <p class="text-base font-semibold text-ink mb-5">{{ __('Attachments') }}</p>
+                            <ul class="divide-y divide-line border border-shell rounded-[14px] bg-[#fbfcfe] overflow-hidden">
+                                @foreach($quotation->attachments as $attachment)
+                                    <li class="flex items-center gap-3 px-4 py-2.5 text-[13px]">
+                                        <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                        <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($attachment->file_path) }}" target="_blank" class="flex-1 min-w-0 truncate text-gold-700 hover:text-gold-800 font-semibold">{{ $attachment->name }}</a>
+                                        <span class="shrink-0 text-[11px] text-slate-400">{{ format_bytes($attachment->file_size) }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 </div>
                 <x-detail-quick-actions :groups="[
                     ['label' => __('Insights'), 'links' => [

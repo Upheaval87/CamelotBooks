@@ -202,6 +202,10 @@ class SearchCatalog
                         'label' => $c->name,
                         'subtitle' => collect([$c->email, $c->phone])->filter()->implode(' · '),
                         'url' => route('accounting.customers.show', $c->id),
+                        'email' => $c->email,
+                        'phone' => $c->phone,
+                        'display_name' => $c->display_name,
+                        'payment_terms' => $c->payment_terms,
                     ])->values();
             },
         ];
