@@ -26,9 +26,22 @@ class CustomerController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
+        if ($request->filled('terms')) {
+            $query->where('payment_terms', $request->terms);
+        }
+
+        $stats = [
+            'total' => (int) Customer::where('company_id', $companyId)->count(),
+            'active' => (int) Customer::where('company_id', $companyId)->where('is_active', true)->count(),
+            'balance_owed' => (float) \App\Models\Invoice::where('company_id', $companyId)
+                ->whereIn('status', [\App\Models\Invoice::STATUS_SENT, \App\Models\Invoice::STATUS_PARTIALLY_PAID, \App\Models\Invoice::STATUS_OVERDUE])
+                ->selectRaw('COALESCE(SUM(amount), 0) - COALESCE(SUM(amount_paid), 0) as due')
+                ->value('due'),
+        ];
+
         $customers = $query->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('accounting.customers.index', compact('customers'));
+        return view('accounting.customers.index', compact('customers', 'stats'));
     }
 
     public function create()

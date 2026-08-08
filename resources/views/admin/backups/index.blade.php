@@ -20,7 +20,7 @@
                 </div>
 
                 <div class="flex justify-end mb-4">
-                    <form method="POST" action="{{ route('admin.backups.trigger') }}" onsubmit="return fbConfirmSubmit(event, 'Trigger a database backup now? This may take a moment for large databases.')">
+                    <form method="POST" action="{{ route('admin.backups.trigger') }}" onsubmit="return fbConfirmSubmit(event, 'Trigger a database backup now? This may take a moment for large databases.', { type: 'action' })">
                         @csrf
                         <button type="submit" class="btn-primary">Trigger Backup Now</button>
                     </form>
@@ -124,12 +124,12 @@
                                     <td>{{ $snapshot->record_count }} settings</td>
                                     <td>{{ $snapshot->notes ?? '—' }}</td>
                                     <td class="text-right">
-                                        <form method="POST" action="{{ route('admin.backups.restore-snapshot', $snapshot) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Restore settings from this snapshot? Current settings will be overwritten.')">
+                                        <form method="POST" action="{{ route('admin.backups.restore-snapshot', $snapshot) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Restore settings from this snapshot? Current settings will be overwritten.', { type: 'danger' })">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit" class="settings-pill-btn">Restore</button>
                                         </form>
-                                        <form method="POST" action="{{ route('admin.backups.delete-snapshot', $snapshot) }}" class="inline ml-2" onsubmit="return fbConfirmSubmit(event, 'Delete this snapshot permanently?')">
+                                        <form method="POST" action="{{ route('admin.backups.delete-snapshot', $snapshot) }}" class="inline ml-2" onsubmit="return fbConfirmSubmit(event, 'Delete this snapshot permanently?', { type: 'danger' })">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="settings-pill-btn" style="border-color: rgba(142,59,59,1); color: rgba(142,59,59,1);">Delete</button>

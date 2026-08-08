@@ -10,7 +10,7 @@
                         @can('goods-received-notes.post')
                             <form method="POST" action="{{ route('accounting.goods-received-notes.post', $grn) }}" class="inline">
                                 @csrf
-                                <button type="submit" class="tr-save" onclick="return fbConfirmButton(event, '{{ __('Post this GRN? This will create inventory cost layers and a journal entry.') }}')">{{ __('Post') }}</button>
+                                <button type="submit" class="tr-save" onclick="return fbConfirmButton(event, '{{ __('Post this GRN? This will create inventory cost layers and a journal entry.') }}', { type: 'action' })">{{ __('Post') }}</button>
                             </form>
                         @endcan
                     @endif

@@ -101,7 +101,7 @@
                                         @endif
                                         @if(in_array($q->status, ['draft', 'sent', 'accepted']))
                                             @can('quotations.void')
-                                                <form method="POST" action="{{ route('accounting.quotations.void', $q) }}" class="inline">@csrf<button type="submit" class="text-red-600 hover:text-red-900" onclick="return fbConfirmButton(event, 'Void this quotation?')">Void</button></form>
+                                                <form method="POST" action="{{ route('accounting.quotations.void', $q) }}" class="inline">@csrf<button type="submit" class="text-red-600 hover:text-red-900" onclick="return fbConfirmButton(event, 'Void this quotation?', { type: 'danger' })">Void</button></form>
                                             @endcan
                                         @endif
                                     </td>

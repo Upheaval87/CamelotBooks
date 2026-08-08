@@ -134,6 +134,74 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'status' => 'draft',
         ]);
 
+        $itemCategory = \App\Models\ItemCategory::create([
+            'company_id' => $this->company->id,
+            'code' => 'CAT-01',
+            'name' => 'Resale Goods',
+            'default_income_account_id' => $this->incomeAccount->id,
+            'default_cogs_account_id' => $depExp->id,
+            'default_inventory_asset_account_id' => $bank->id,
+            'default_base_uom' => 'each',
+            'is_active' => true,
+        ]);
+        $product = \App\Models\Product::create([
+            'company_id' => $this->company->id,
+            'category_id' => $itemCategory->id,
+            'name' => 'Widget 3000',
+            'sku' => 'WG-3000',
+            'type' => 'product',
+            'tracked_as_inventory' => false,
+            'sales_price' => 100,
+            'unit_of_measure' => 'each',
+            'income_account_id' => $this->incomeAccount->id,
+            'expense_account_id' => $depExp->id,
+            'tax_rate' => 16.5,
+            'is_taxable' => true,
+            'is_active' => true,
+        ]);
+        $invoice = \App\Models\Invoice::create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'cost_center_id' => $costCenter->id,
+            'customer_id' => $customer->id,
+            'invoice_number' => 'INV-0001',
+            'invoice_date' => now(),
+            'due_date' => now()->addDays(30),
+            'status' => \App\Models\Invoice::STATUS_DRAFT,
+            'amount' => 116.50,
+            'amount_paid' => 0,
+            'created_by' => $this->user->id,
+        ]);
+        \App\Models\InvoiceLine::create([
+            'invoice_id' => $invoice->id,
+            'product_id' => $product->id,
+            'transaction_uom' => 'each',
+            'transaction_qty' => 1,
+            'conversion_factor' => 1,
+            'description' => 'Widget 3000',
+            'quantity' => 1,
+            'unit_price' => 100,
+            'discount' => 0,
+            'tax_rate' => 16.5,
+            'amount' => 100,
+            'tax_amount' => 16.50,
+            'line_total' => 116.50,
+            'income_account_id' => $this->incomeAccount->id,
+            'cost_center_id' => $costCenter->id,
+        ]);
+        $quot = \App\Models\Quotation::create([
+            'company_id' => $this->company->id,
+            'customer_id' => $customer->id,
+            'quotation_number' => 'Q-0001',
+            'quotation_date' => now(),
+            'valid_until' => now()->addDays(14),
+            'status' => \App\Models\Quotation::STATUS_SENT,
+            'amount' => 116.50,
+            'tax_total' => 16.50,
+            'total' => 116.50,
+            'created_by' => $this->user->id,
+        ]);
+
         $routes = [
             'bills.create' => route('accounting.bills.create'),
             'expenses.create' => route('accounting.expenses.create'),
@@ -169,9 +237,16 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'report-center.index' => route('accounting.report-center.index'),
             'payroll-runs.show' => route('accounting.payroll-runs.show', $run),
             'petty-cash.show' => route('accounting.petty-cash.show', $pettyCash->id),
+            'customers.index' => route('accounting.customers.index'),
             'customers.create' => route('accounting.customers.create'),
             'customers.edit' => route('accounting.customers.edit', $customer),
             'customers.show' => route('accounting.customers.show', $customer),
+            'invoices.create' => route('accounting.invoices.create'),
+            'invoices.create-copy-quote' => route('accounting.invoices.create', ['copy_quote' => $quot->id]),
+            'invoices.create-preselect-customer' => route('accounting.invoices.create', ['customer_id' => $customer->id]),
+            'invoices.edit' => route('accounting.invoices.edit', $invoice),
+            'invoices.show' => route('accounting.invoices.show', $invoice),
+            'invoices.copy-quote' => route('accounting.invoices.copy-quote', ['quotation' => $quot->id]),
         ];
 
         foreach ($routes as $name => $url) {

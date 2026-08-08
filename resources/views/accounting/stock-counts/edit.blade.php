@@ -63,7 +63,7 @@
                                 </div>
                                 <div class="flex justify-end gap-3 p-4 border-t border-gray-200">
                                     <x-button variant="ghost" href="{{ route('accounting.stock-counts.index') }}">{{ __('Cancel') }}</x-button>
-                                    <button type="submit" name="post_count" value="1" onclick="return fbConfirmButton(event, 'Post this count? Variances will be posted to the general ledger.')"
+                                    <button type="submit" name="post_count" value="1" onclick="return fbConfirmButton(event, 'Post this count? Variances will be posted to the general ledger.', { type: 'action' })"
                                         class="inline-flex items-center px-4 py-2 bg-gold-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gold-800">
                                         {{ __('Save & Post Count') }}
                                     </button>

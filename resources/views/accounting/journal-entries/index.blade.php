@@ -129,7 +129,7 @@
                                         @endif
                                         @if($je->status === 'posted')
                                             @can('journal-entries.reverse')
-                                                <form method="POST" action="{{ route('accounting.journal-entries.reverse', $je) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to reverse this entry?');">
+                                                <form method="POST" action="{{ route('accounting.journal-entries.reverse', $je) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to reverse this entry?', { type: 'danger' });">
                                                     @csrf
                                                     <button type="submit" class="text-red-600 hover:text-red-900">Reverse</button>
                                                 </form>

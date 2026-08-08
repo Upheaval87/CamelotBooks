@@ -58,7 +58,7 @@
                                         @endif
                                         <a href="{{ route('accounting.paye-tables.edit', $table) }}" class="text-ink hover:text-gold">Edit</a>
                                         @if(!$table->is_current)
-                                            <form method="POST" action="{{ route('accounting.paye-tables.destroy', $table) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to delete this PAYE table?')">
+                                            <form method="POST" action="{{ route('accounting.paye-tables.destroy', $table) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to delete this PAYE table?', { type: 'danger' })">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>

@@ -233,10 +233,10 @@
             const lineRow = document.getElementById('statement-line-' + lineId);
             const bookRows = document.querySelectorAll('#book-transaction-');
             if (bookRows.length === 0) {
-                window.feedback.alert('No book transactions available to match.');
+                CB.toast('error', 'No book transactions available to match.');
                 return;
             }
-            if (!(await window.feedback.openConfirm({ title: 'Match this statement line with the first available book transaction?' }))) return;
+            if (!(await CB.confirm({ type: 'action', title: 'Match this statement line with the first available book transaction?' }))) return;
             fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
                 method: 'POST',
                 headers: {
@@ -254,13 +254,13 @@
                 if (data.success) {
                     location.reload();
                 } else {
-                    window.feedback.alert(data.message || 'Failed to match.');
+                    CB.toast('error', data.message || 'Failed to match.');
                 }
             });
         }
 
         async function matchTransaction(transactionId) {
-            if (!(await window.feedback.openConfirm({ title: 'Match this book transaction with the first available statement line?' }))) return;
+            if (!(await CB.confirm({ type: 'action', title: 'Match this book transaction with the first available statement line?' }))) return;
             fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
                 method: 'POST',
                 headers: {
@@ -278,7 +278,7 @@
                 if (data.success) {
                     location.reload();
                 } else {
-                    window.feedback.alert(data.message || 'Failed to match.');
+                    CB.toast('error', data.message || 'Failed to match.');
                 }
             });
         }

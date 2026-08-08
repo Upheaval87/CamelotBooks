@@ -16,7 +16,7 @@
                         @include('branch-requests._status', ['status' => $branchRequest->status])
                     </div>
                     @if(in_array($branchRequest->status, [\App\Models\BranchRequest::STATUS_PENDING_REVIEW, \App\Models\BranchRequest::STATUS_QUOTED], true))
-                        <form method="POST" action="{{ route('branch-requests.cancel', $branchRequest) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Cancel this branch request?') }}')">
+                        <form method="POST" action="{{ route('branch-requests.cancel', $branchRequest) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Cancel this branch request?') }}', { type: 'danger' })">
                             @csrf
                             <x-button variant="danger" type="submit">{{ __('Cancel Request') }}</x-button>
                         </form>
@@ -164,7 +164,7 @@
                                                     </td>
                                                     <td class="text-right whitespace-nowrap">
                                                         @if($payment->status === 'pending' && $canConfirmPayment)
-                                                            <form method="POST" action="{{ route('branch-requests.payments.confirm', [$branchRequest, $payment]) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Confirm this payment and raise the branch limit?') }}')">
+                                                            <form method="POST" action="{{ route('branch-requests.payments.confirm', [$branchRequest, $payment]) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Confirm this payment and raise the branch limit?') }}', { type: 'action' })">
                                                                 @csrf
                                                                 <button type="submit" class="inline-flex items-center justify-center rounded-[8px] border border-green-600/35 bg-white px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:border-green-600/55 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500">{{ __('Confirm') }}</button>
                                                             </form>

@@ -67,7 +67,7 @@
                                     </td>
                                     <td class="text-right">
                                         <a href="{{ route('accounting.recurring-journals.edit', $template) }}" class="text-ink hover:text-gold">Edit</a>
-                                        <form method="POST" action="{{ route('accounting.recurring-journals.toggle', $template) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to toggle this template?');">
+                                        <form method="POST" action="{{ route('accounting.recurring-journals.toggle', $template) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to toggle this template?', { type: 'action' });">
                                             @csrf
                                             <button type="submit" class="{{ $template->is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900' }}">
                                                 {{ $template->is_active ? 'Deactivate' : 'Activate' }}

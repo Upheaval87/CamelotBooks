@@ -198,7 +198,7 @@
         function removeLine(btn) {
             const tbody = document.getElementById('linesBody');
             if (tbody.rows.length <= 2) {
-                window.feedback.alert('At least two lines are required.');
+                CB.toast('error', 'At least two lines are required.');
                 return;
             }
             btn.closest('tr').remove();
@@ -255,13 +255,13 @@
 
             if (Math.abs(totalDebit - totalCredit) >= 0.005) {
                 e.preventDefault();
-                window.feedback.alert('Debits and credits must be equal before submitting.');
+                CB.toast('error', 'Debits and credits must be equal before submitting.');
                 return;
             }
 
             if (totalDebit === 0 && totalCredit === 0) {
                 e.preventDefault();
-                window.feedback.alert('At least one line must have a debit or credit amount.');
+                CB.toast('error', 'At least one line must have a debit or credit amount.');
                 return;
             }
         });

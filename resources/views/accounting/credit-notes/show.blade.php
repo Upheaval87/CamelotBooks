@@ -23,7 +23,7 @@
                         <form method="POST" action="{{ route('accounting.credit-notes.void', $creditNote) }}" class="inline">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this credit note?') }}')">{{ __('Void') }}</button>
+                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this credit note?') }}', { type: 'danger' })">{{ __('Void') }}</button>
                         </form>
                     @endcan
                 @endif

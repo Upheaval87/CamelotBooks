@@ -44,7 +44,7 @@
                     </div>
 
                     <div class="card p-6">
-                        <form method="POST" action="{{ route('admin.numbering-sequences.reset', $numberingSequence) }}" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to reset this sequence to 1? This should only be done at the start of a new period.')">
+                        <form method="POST" action="{{ route('admin.numbering-sequences.reset', $numberingSequence) }}" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to reset this sequence to 1? This should only be done at the start of a new period.', { type: 'danger' })">
                             @csrf
                             <button type="submit" class="x-button x-button-ghost">{{ __('Reset Sequence to 1') }}</button>
                         </form>

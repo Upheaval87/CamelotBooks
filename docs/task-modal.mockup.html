@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Modal — Clean</title>
+<style>
+  :root{
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;
+    --sec:#128F8E;--sec-2:#149897;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e6eeed;
+    --muted:#5f7476;--faint:#8aa5a7;--link:#0C6B6A;--focus:#94a3b8;
+    --red:#dc2626;--red-2:#b91c1c;--warn-2:#b45309;--info:#46708C;
+    --shadow-dlg:0 30px 80px -20px rgba(4,20,22,.65), 0 8px 24px -8px rgba(4,20,22,.4);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  .stage{min-height:100vh;display:grid;place-items:center;padding:28px 16px;
+    background:
+      radial-gradient(700px 300px at 85% -10%, rgba(20,217,197,.10), transparent 60%),
+      radial-gradient(500px 300px at -10% 110%, rgba(18,143,142,.14), transparent 60%),
+      linear-gradient(160deg, rgba(17,69,75,.90), rgba(12,53,57,.92) 55%, rgba(10,46,50,.94));
+    backdrop-filter:blur(6px)}
+
+  .dlg{width:min(29rem,100%);border-radius:20px;overflow:hidden;position:relative;
+    background:rgba(255,255,255,.95);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);
+    box-shadow:var(--shadow-dlg)}
+
+  /* header */
+  .dhead{display:flex;align-items:flex-start;gap:12px;padding:22px 24px 18px}
+  .halo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none;
+    background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);color:var(--sec)}
+  .dhead .t{font-size:16.5px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-right:2.2rem}
+  .dhead .m{margin-top:5px;font-size:11.5px;color:var(--muted)}
+  .dhead .m .mono{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:600;color:var(--deep-1);
+    background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);border-radius:6px;padding:2px 6px}
+  .chip{display:inline-flex;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+  .st-un{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}
+  .x{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:9px;border:none;background:transparent;
+    color:var(--faint);cursor:pointer;display:grid;place-items:center}
+  .x:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+
+  /* sections */
+  .dsec{padding:18px 24px;border-top:1px solid var(--line)}
+  .dl{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+
+  /* linked record */
+  .link-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+    background:rgba(18,143,142,.07);border:1px solid rgba(18,143,142,.30)}
+  .lc-ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#fff;color:var(--sec);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 6px -2px rgba(10,80,80,.3)}
+  .lc-t{font-size:13px;font-weight:800;color:var(--sec)}
+  .lc-s{margin-top:2px;font-size:11px;color:var(--muted)}
+  .link-sub{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+  .ghost-link{border:none;background:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+    font-size:11.5px;font-weight:700;color:var(--muted)}
+  .ghost-link:hover{color:var(--red-2)}
+  .combo{display:flex;width:15rem}
+  .combo .in-wrap{flex:1;position:relative}
+  .combo .in-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .input{height:2.375rem;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 .75rem;
+    font-size:.78125rem;color:var(--ink);font-family:inherit;width:100%;transition:all .15s}
+  .combo .input{padding-left:2rem;border-radius:8px 0 0 8px}
+  .input:hover{border-color:rgba(17,69,75,.3)}
+  .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  .combo button{width:2.375rem;border:1px solid var(--border);border-left:none;border-radius:0 8px 8px 0;
+    background:rgba(240,248,248,.9);color:var(--sec);cursor:pointer;display:grid;place-items:center}
+
+  /* deadline pills */
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .dchip{height:2.25rem;padding:0 .9rem;border-radius:999px;border:1px solid var(--border);background:#fff;cursor:pointer;
+    font-size:.75rem;font-weight:700;color:var(--muted);transition:all .15s}
+  .dchip:hover{border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .dchip.on{background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:transparent;color:#fff;
+    box-shadow:0 4px 10px -4px rgba(18,143,142,.55)}
+  .no-dl{margin-top:12px;border:none;background:none;cursor:pointer;font-size:.75rem;font-weight:700;color:var(--link);
+    text-decoration:underline;text-underline-offset:3px}
+
+  /* priority segmented */
+  .pseg{display:flex;gap:8px}
+  .pseg button{flex:1;height:2.5rem;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;
+    font-size:.78125rem;font-weight:800;color:var(--muted);transition:all .15s}
+  .pseg button:hover{border-color:rgba(17,69,75,.3)}
+  .pseg button.on-low{background:rgba(70,112,140,.10);border-color:rgba(70,112,140,.4);color:var(--info)}
+  .pseg button.on-med{background:rgba(217,119,6,.10);border-color:rgba(217,119,6,.4);color:var(--warn-2)}
+  .pseg button.on-high{background:rgba(220,38,38,.10);border-color:rgba(220,38,38,.35);color:var(--red-2)}
+
+  /* footer */
+  .dfoot{display:flex;align-items:center;gap:10px;padding:18px 24px;border-top:1px solid var(--line)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:2.5rem;padding:0 1.1rem;border-radius:12px;
+    font-weight:600;font-size:.8125rem;border:1px solid transparent;cursor:pointer;transition:all .16s;white-space:nowrap}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151;box-shadow:0 1px 2px rgba(10,42,46,.05)}
+  .btn-ghost:hover{background:rgba(17,69,75,.06);border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));
+    border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-danger-o{background:#fff;border-color:rgba(220,38,38,.35);color:var(--red)}
+  .btn-danger-o:hover{background:#fef2f2;border-color:rgba(220,38,38,.55)}
+  .btn-sm{height:2.125rem;padding:0 .8125rem;font-size:.75rem;border-radius:10px}
+  .spacer{flex:1}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="taskTitle">
+    <button class="x" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+
+    <div class="dhead">
+      <div class="halo"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div>
+        <div class="t" id="taskTitle">Run payrolls <span class="chip st-un">Overdue</span></div>
+        <div class="m">Created Aug 3 · Assigned to <b style="color:var(--ink)">you</b> · <span class="mono">T-1042</span></div>
+      </div>
+    </div>
+
+    <div class="dsec">
+      <div class="dl">Linked record</div>
+      <div class="link-card">
+        <span class="lc-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M10 14a4 4 0 0 0 6 .4l3-3a4 4 0 0 0-5.6-5.6l-1.7 1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 10a4 4 0 0 0-6-.4l-3 3a4 4 0 0 0 5.6 5.6l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <div style="flex:1"><div class="lc-t">INV-2026-0001</div><div class="lc-s">Invoice · Walk-in Customer · K1,500.00</div></div>
+        <button class="btn btn-ghost btn-sm">Open ⧉</button>
+      </div>
+      <div class="link-sub">
+        <button class="ghost-link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Remove link</button>
+        <div class="combo">
+          <div class="in-wrap"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input class="input" placeholder="Change link — search records…"></div>
+          <button aria-label="Search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dsec">
+      <div class="dl">Deadline</div>
+      <div class="pills">
+        <button class="dchip">Today</button>
+        <button class="dchip">This Week</button>
+        <button class="dchip on">This Month</button>
+        <button class="dchip">This Year</button>
+        <button class="dchip">Pick a date</button>
+      </div>
+      <button class="no-dl">No deadline</button>
+    </div>
+
+    <div class="dsec">
+      <div class="dl">Priority</div>
+      <div class="pseg">
+        <button data-p="low">Low</button>
+        <button data-p="med" class="on-med">Medium</button>
+        <button data-p="high">High</button>
+      </div>
+    </div>
+
+    <div class="dfoot">
+      <button class="btn btn-danger-o">Delete</button>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-cta">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.pills').forEach(function(g){
+    g.addEventListener('click', function(e){
+      var b=e.target.closest('.dchip'); if(!b) return;
+      g.querySelectorAll('.dchip').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.pseg').forEach(function(g){
+    g.addEventListener('click', function(e){
+      var b=e.target.closest('button'); if(!b) return;
+      g.querySelectorAll('button').forEach(function(x){x.className='';});
+      b.className='on-'+b.dataset.p;
+    });
+  });
+</script>
+</body>
+</html>

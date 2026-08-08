@@ -1,234 +1,238 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Customer Detail') }} - {{ $customer->name }}" />
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+        $totalInvoiced = (float) $customer->invoices->sum('amount');
+        $txnStatusMap = [
+            'draft' => ['label' => 'Draft', 'class' => 'x-badge--gray'],
+            'sent' => ['label' => 'Sent', 'class' => 'x-badge--teal'],
+            'partially_paid' => ['label' => 'Partially Paid', 'class' => 'x-badge--teal'],
+            'paid' => ['label' => 'Paid', 'class' => 'x-badge--mint'],
+            'overdue' => ['label' => 'Overdue', 'class' => 'x-badge--red'],
+            'void' => ['label' => 'Void', 'class' => 'x-badge--gray'],
+        ];
+    @endphp
 
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="pb-6">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
-            <x-record-toolbar>
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Create') }}</span>
-                    <a href="{{ route('accounting.invoices.create', ['customer_id' => $customer->id]) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        {{ __('New Invoice') }}
-                    </a>
-                    <a href="{{ route('accounting.customer-payments.create', ['customer_id' => $customer->id]) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        {{ __('New Payment') }}
-                    </a>
+            {{-- page head --}}
+            <div class="flex items-start justify-between gap-4 flex-wrap pb-4 mb-6 border-b border-line">
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-gray-900">
+                        {{ __('Customer Detail') }} - {{ $customer->name }}
+                        @if ($customer->is_active)
+                            <span class="x-badge x-badge--mint x-head-badge"><span class="x-badge-dot"></span>{{ __('Active') }}</span>
+                        @else
+                            <span class="x-badge x-badge--gray x-head-badge"><span class="x-badge-dot"></span>{{ __('Inactive') }}</span>
+                        @endif
+                    </h1>
+                    <p class="x-page-sub">
+                        {{ $customer->email ?? 'No email on file' }}
+                        @if ($customer->phone)
+                            · {{ $customer->phone }}
+                        @endif
+                    </p>
                 </div>
-
-                <div class="tr-divider"></div>
-
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Reports') }}</span>
-                    <a href="{{ route('accounting.invoices.index', ['customer_id' => $customer->id]) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                        {{ __('Transaction History') }}
-                    </a>
-                    <a href="{{ route('accounting.reports.customer-statement', ['customer_id' => $customer->id]) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                        {{ __('View Statement') }}
-                    </a>
-                </div>
-
-                <div class="tr-divider"></div>
-
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Document') }}</span>
-                    <button onclick="window.print()" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        {{ __('Print Statement') }}
-                    </button>
-                    <button type="button" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                        {{ __('Attach File') }}
-                    </button>
-                    @if($customer->email)
-                        <a href="mailto:{{ $customer->email }}" class="tr-item">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            {{ __('Email Statement') }}
+                <div class="x-tb">
+                    <div class="x-tb-group">
+                        <span class="x-tb-label">{{ __('Create') }}</span>
+                        <a href="{{ route('accounting.invoices.create', ['customer_id' => $customer->id]) }}" class="x-tb-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6"/></svg>
+                            {{ __('New Invoice') }}
                         </a>
-                    @else
-                        <button type="button" disabled title="{{ __('No email on file') }}" class="tr-item opacity-40 cursor-not-allowed">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            {{ __('Email Statement') }}
+                        <a href="{{ route('accounting.customer-payments.create', ['customer_id' => $customer->id]) }}" class="x-tb-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
+                            {{ __('New Payment') }}
+                        </a>
+                    </div>
+                    <span class="x-tb-divider"></span>
+                    <div class="x-tb-group">
+                        <span class="x-tb-label">{{ __('Reports') }}</span>
+                        <a href="{{ route('accounting.invoices.index', ['customer_id' => $customer->id]) }}" class="x-tb-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/></svg>
+                            {{ __('Transaction History') }}
+                        </a>
+                        <a href="{{ route('accounting.reports.customer-statement', ['customer_id' => $customer->id]) }}" class="x-tb-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>
+                            {{ __('View Statement') }}
+                        </a>
+                    </div>
+                    <span class="x-tb-divider"></span>
+                    <div class="x-tb-group">
+                        <span class="x-tb-label">{{ __('Document') }}</span>
+                        <button type="button" class="x-tb-btn" onclick="window.print()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10z"/></svg>
+                            {{ __('Print') }}
                         </button>
-                    @endif
-                </div>
-
-                <div class="tr-spacer"></div>
-
-                <span class="status-pill positive">{{ __('Open Balance:') }} {{ format_money($customer->open_balance ?? 0) }}</span>
-
-                <div class="tr-divider"></div>
-
-                <a href="{{ route('accounting.customers.edit', $customer) }}" class="tr-save">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                    {{ __('Save') }}
-                </a>
-
-                @can('customers.void')
-                    <form method="POST" action="{{ route('accounting.customers.index') }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Are you sure you want to archive this customer?') }}')">
-                        @csrf
-                        @method('PUT')
-                        <button type="submit" class="tr-archive">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-                            {{ __('Archive') }}
-                        </button>
-                    </form>
-                @endcan
-
-                <x-dropdown align="left" width="56">
-                    <x-slot name="trigger">
-                        <button type="button" class="tr-more" aria-label="{{ __('More actions') }}">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        <div class="py-1">
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                {{ __('Duplicate') }}
-                            </button>
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                {{ __('Merge') }}
-                            </button>
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                                {{ __('Add Note') }}
-                            </button>
-                            <a href="{{ route('accounting.customers.index') }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                                {{ __('Back to Customers') }}
+                        @if ($customer->email)
+                            <a href="mailto:{{ $customer->email }}" class="x-tb-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
+                                {{ __('Email Statement') }}
                             </a>
-                        </div>
-                    </x-slot>
-                </x-dropdown>
-            </x-record-toolbar>
+                        @endif
+                    </div>
+                    <span class="x-tb-spacer"></span>
+                    <a href="{{ route('accounting.customers.edit', $customer) }}" class="x-tb-btn x-tb-btn--cta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        {{ __('Edit') }}
+                    </a>
+                    @can('customers.void')
+                        <form method="POST" action="{{ route('accounting.customers.toggle', $customer) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Are you sure you want to archive this customer?') }}', { type: 'danger' })">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="x-tb-btn x-tb-btn--danger">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14M5 8a2 2 0 1 1 0-4h14a2 2 0 1 1 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8m-9 4h4"/></svg>
+                                {{ $customer->is_active ? __('Archive') : __('Activate') }}
+                            </button>
+                        </form>
+                    @endcan
+                    <a href="{{ route('accounting.customers.index') }}" class="x-tb-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        {{ __('All Customers') }}
+                    </a>
+                </div>
+            </div>
 
-            <div class="detail-page">
-                <div class="detail-page-main">
-                    <div class="card p-6">
+            <div class="x-port">
+                <div class="x-port-card">
+                    <span class="x-port-ic x-port-ic--{{ $balanceDue > 0 ? 'red' : 'mint' }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </span>
+                    <div>
+                        <div class="x-port-lbl">{{ __('Open Balance') }} ({{ $cs }})</div>
+                        <div class="x-port-num {{ $balanceDue > 0 ? 'x-port-num--red' : '' }}">{{ format_number($balanceDue) }}</div>
+                    </div>
+                </div>
+                <div class="x-port-card">
+                    <span class="x-port-ic x-port-ic--teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
+                    </span>
+                    <div>
+                        <div class="x-port-lbl">{{ __('Total Invoiced') }} ({{ $cs }})</div>
+                        <div class="x-port-num">{{ format_number($totalInvoiced) }}</div>
+                    </div>
+                </div>
+                <div class="x-port-card">
+                    <span class="x-port-ic x-port-ic--mint">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                    </span>
+                    <div>
+                        <div class="x-port-lbl">{{ __('Credit Limit') }} ({{ $cs }})</div>
+                        <div class="x-port-num">{{ format_number($customer->credit_limit ?? 0) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid gap-6 items-start lg:grid-cols-[1fr_340px]">
+                <div class="flex flex-col gap-5 min-w-0">
+
+                    {{-- info card --}}
+                    <section class="card rounded-[20px] p-6 xl:p-[26px]">
+                        <div class="x-sec">
+                            <span class="x-sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5"/></svg></span>
+                            <h2 class="x-sec-h2">{{ __('Customer Information') }}</h2>
+                            <span class="x-sec-rule"></span>
+                        </div>
                         <div class="detail-grid">
-                            <x-detail-field label="{{ __('Name') }}" strong>{{ $customer->name }}</x-detail-field>
-                            <x-detail-field label="{{ __('Email') }}">{{ $customer->email ?? '—' }}</x-detail-field>
-                            <x-detail-field label="{{ __('Phone') }}">{{ $customer->phone ?? '—' }}</x-detail-field>
-
-                            <x-detail-field label="{{ __('Payment Terms') }}">{{ str_replace('_', ' ', ucfirst($customer->payment_terms ?? 'due_on_receipt')) }}</x-detail-field>
-                            <x-detail-field label="{{ __('Currency') }}">{{ $customer->currency ?? 'USD' }}</x-detail-field>
-                            <x-detail-field label="{{ __('Credit Limit') }}" strong>{{ format_money($customer->credit_limit ?? 0) }}</x-detail-field>
-
-                            <x-detail-field label="{{ __('Billing Address') }}">{{ $customer->billing_address ?? '—' }}</x-detail-field>
-                            <x-detail-field label="{{ __('Shipping Address') }}">{{ $customer->shipping_address ?? '—' }}</x-detail-field>
-                            <x-detail-field label="{{ __('Status') }}" noBorder>
-                                @if($customer->is_active)
-                                    <span class="status-pill positive">{{ __('Active') }}</span>
-                                @else
-                                    <span class="status-pill neutral">{{ __('Inactive') }}</span>
-                                @endif
-                            </x-detail-field>
+                            <x-detail-field :label="__('Display Name')" :value="$customer->display_name ?? '—'" />
+                            <x-detail-field :label="__('Payment Terms')" :value="str_replace('_', ' ', ucfirst($customer->payment_terms ?? 'due_on_receipt'))" />
+                            <x-detail-field :label="__('Payment Terms (Days)')" :value="$customer->payment_terms_days ?? '—'" />
+                            <x-detail-field :label="__('Currency')" :value="$customer->currency ?? '—'" />
+                            <x-detail-field :label="__('Opening Balance')" :value="format_money($customer->opening_balance ?? 0)" />
+                            <x-detail-field :label="__('Opening Balance Date')" :value="$customer->opening_balance_date?->format('M d, Y') ?? '—'" />
+                            <x-detail-field :label="__('Billing Address')">{{ $customer->billing_address ?? '—' }}</x-detail-field>
+                            <x-detail-field :label="__('Shipping Address')">{{ $customer->shipping_address ?? '—' }}</x-detail-field>
                         </div>
-                    </div>
+                    </section>
 
-                    <div class="card p-6">
-                        <p class="text-base font-semibold text-ink mb-5">{{ __('Balance') }}</p>
-                        <div class="balance-grid">
-                            <x-detail-field label="{{ __('Opening Balance') }}">{{ format_money($customer->opening_balance ?? 0) }}</x-detail-field>
-                            <x-detail-field label="{{ __('Opening Balance Date') }}">{{ $customer->opening_balance_date?->format('M d, Y') ?? '—' }}</x-detail-field>
+                    {{-- recent transactions --}}
+                    <section class="card rounded-[20px] p-6 xl:p-[26px]">
+                        <div class="x-sec">
+                            <span class="x-sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+                            <h2 class="x-sec-h2">{{ __('Transaction History') }}</h2>
+                            <span class="x-sec-rule"></span>
+                            <span class="x-chip">{{ $transactions->count() }} {{ __('transactions') }}</span>
                         </div>
-                        <div class="balance-total-row">
-                            <p class="detail-lbl">{{ __('Open Balance') }}</p>
-                            <span class="balance-amount {{ $balanceDue > 0 ? 'text-brick' : '' }}">{{ format_money($balanceDue) }}</span>
-                        </div>
-                    </div>
 
-                    <div class="card p-6">
-                        <p class="text-base font-semibold text-ink mb-5">{{ __('Transaction History') }}</p>
-                        <div class="overflow-x-auto">
-                            <table class="record-datasheet">
+                        <div class="mt-4 border border-shell rounded-[14px] overflow-visible round-thead-clip bg-[#fbfcfe]">
+                            <table class="x-wset-recent w-full border-collapse text-[13px] table-fixed">
                                 <thead>
                                     <tr>
-                                        <th>{{ __('Type') }}</th>
-                                        <th>{{ __('Date') }}</th>
-                                        <th>{{ __('Reference') }}</th>
-                                        <th>{{ __('Description') }}</th>
-                                        <th class="text-right">{{ __('Amount') }}</th>
-                                        <th class="text-right">{{ __('Paid') }}</th>
-                                        <th class="text-right">{{ __('Balance') }}</th>
-                                        <th class="text-center">{{ __('Status') }}</th>
+                                        <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Type') }}</th>
+                                        <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Date') }}</th>
+                                        <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Reference') }}</th>
+                                        <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Amount') }}</th>
+                                        <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Paid') }}</th>
+                                        <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Balance') }}</th>
+                                        <th class="py-[11px] px-2.5 text-center text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Status') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($transactions as $txn)
+                                    @forelse ($transactions as $txn)
+                                        @php $tStatus = $txnStatusMap[$txn['status']] ?? ['label' => ucfirst($txn['status']), 'class' => 'x-badge--gray']; @endphp
                                         <tr>
-                                            <td>
-                                                @if($txn['type'] === 'Invoice')
-                                                    <span class="text-gold-700">{{ $txn['type'] }}</span>
+                                            <td class="py-3 px-2.5 border-b border-line align-middle">
+                                                @if ($txn['type'] === 'Invoice')
+                                                    <span class="x-badge x-badge--teal">{{ __('Invoice') }}</span>
                                                 @else
-                                                    <span class="text-green-600">{{ $txn['type'] }}</span>
+                                                    <span class="x-badge x-badge--mint">{{ __('Payment') }}</span>
                                                 @endif
                                             </td>
-                                            <td>
-                                                {{ $txn['date']?->format('M d, Y') ?? '—' }}
-                                            </td>
-                                            <td>
-                                                {{ $txn['reference'] }}
-                                            </td>
-                                            <td>
-                                                {{ $txn['description'] }}
-                                            </td>
-                                            <td class="numeric">
-                                                {{ format_money(abs($txn['amount'])) }}
-                                            </td>
-                                            <td class="text-right">
-                                                {{ format_money($txn['paid']) }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ $txn['balance'] > 0 ? 'text-brick' : 'text-ink' }}">
-                                                {{ format_money(abs($txn['balance'])) }}
-                                            </td>
-                                            <td class="text-center">
-                                                @php
-                                                    $statusColors = [
-                                                        'draft' => 'gray',
-                                                        'sent' => 'blue',
-                                                        'partially_paid' => 'yellow',
-                                                        'paid' => 'green',
-                                                        'overdue' => 'red',
-                                                        'void' => 'gray',
-                                                    ];
-                                                    $color = $statusColors[$txn['status']] ?? 'gray';
-                                                @endphp
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $color }}-100 text-{{ $color }}-800">
-                                                    {{ str_replace('_', ' ', ucfirst($txn['status'])) }}
-                                                </span>
+                                            <td class="py-3 px-2.5 border-b border-line align-middle text-gray-600">{{ $txn['date']?->format('M d, Y') ?? '—' }}</td>
+                                            <td class="py-3 px-2.5 border-b border-line align-middle font-semibold text-gray-900">{{ $txn['reference'] }}</td>
+                                            <td class="py-3 px-2.5 border-b border-line align-middle text-right tabular-nums text-gray-900">{{ format_number(abs($txn['amount'])) }}</td>
+                                            <td class="py-3 px-2.5 border-b border-line align-middle text-right tabular-nums text-gray-600">{{ format_number($txn['paid']) }}</td>
+                                            <td class="py-3 px-2.5 border-b border-line align-middle text-right font-bold tabular-nums {{ $txn['balance'] > 0 ? 'text-[#DC2626]' : 'text-gray-900' }}">{{ format_number(abs($txn['balance'])) }}</td>
+                                            <td class="py-3 px-2.5 border-b border-line align-middle text-center">
+                                                <span class="x-badge {{ $tStatus['class'] }}"><span class="x-badge-dot"></span>{{ str_replace('_', ' ', ucfirst($txn['status'])) }}</span>
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr class="empty-row">
-                                            <td colspan="8" class="text-center text-ink-soft py-7">
-                                                {{ __('No transactions found.') }}
-                                            </td>
+                                        <tr>
+                                            <td colspan="7" class="py-6 text-center text-sm text-slate-400">{{ __('No transactions found.') }}</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </section>
                 </div>
-                <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => [
-                        ['route' => route('accounting.invoices.index', ['customer_id' => $customer->id]), 'icon' => 'invoice', 'title' => __('View Invoices')],
-                        ['route' => route('accounting.customer-payments.create', ['customer_id' => $customer->id]), 'icon' => 'payment', 'title' => __('Record Payment')],
-                        ['route' => route('accounting.reports.customer-statement', ['customer_id' => $customer->id]), 'icon' => 'statement', 'title' => __('View Statement')],
-                        ['route' => route('accounting.customers.show', $customer), 'icon' => 'print', 'title' => __('Print Statement')],
-                    ]],
-                    ['label' => __('Navigation'), 'links' => [
-                        ['route' => route('accounting.customers.index'), 'icon' => 'back', 'title' => __('Back to Customers')],
-                    ]],
-                ]" />
-            </div>
 
+                {{-- right rail --}}
+                <aside class="x-rail-wrap">
+                    <div class="x-rail">
+                        <div class="x-rail-card">
+                            <div class="x-rail-title">{{ __('Summary') }}</div>
+                            <div class="x-rail-v"><span class="x-rail-vl">{{ __('Opening Balance') }}</span><span class="x-rail-vv">{{ format_number($customer->opening_balance ?? 0) }}</span></div>
+                            <div class="x-rail-v"><span class="x-rail-vl">{{ __('Total Invoiced') }}</span><span class="x-rail-vv">{{ format_number($totalInvoiced) }}</span></div>
+                            <div class="x-rail-v"><span class="x-rail-vl">{{ __('Credit Limit') }}</span><span class="x-rail-vv">{{ format_number($customer->credit_limit ?? 0) }}</span></div>
+                            <div class="x-rail-gt"><span class="x-rail-vl">{{ __('Open Balance') }}</span><span class="x-rail-vv">{{ format_number($balanceDue) }}</span></div>
+                        </div>
+
+                        <nav class="x-rail-card">
+                            <div class="x-rail-title">{{ __('Quick Links') }}</div>
+                            <div class="x-rail-nav">
+                                <a href="{{ route('accounting.invoices.create', ['customer_id' => $customer->id]) }}" class="x-rail-link">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6"/></svg>
+                                    {{ __('New Invoice') }}
+                                </a>
+                                <a href="{{ route('accounting.customer-payments.create', ['customer_id' => $customer->id]) }}" class="x-rail-link">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
+                                    {{ __('Record Payment') }}
+                                </a>
+                                <a href="{{ route('accounting.reports.customer-statement', ['customer_id' => $customer->id]) }}" class="x-rail-link">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>
+                                    {{ __('View Statement') }}
+                                </a>
+                                <a href="{{ route('accounting.customers.index') }}" class="x-rail-link">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg>
+                                    {{ __('All Customers') }}
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </aside>
+            </div>
         </div>
     </div>
 </x-app-layout>

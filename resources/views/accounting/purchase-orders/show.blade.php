@@ -25,7 +25,7 @@
                     @can('purchase-orders.cancel')
                         <form method="POST" action="{{ route('accounting.purchase-orders.cancel', $order) }}" class="inline">
                             @csrf
-                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure?') }}')">{{ __('Cancel') }}</button>
+                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure?') }}', { type: 'danger' })">{{ __('Cancel') }}</button>
                         </form>
                     @endcan
                 @endif

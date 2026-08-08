@@ -11,11 +11,11 @@
                     {{ __('Edit') }}
                 </a>
                 @if(!$table->is_current)
-                    <form method="POST" action="{{ route('accounting.paye-tables.activate', $table) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to activate this PAYE tax table?');">
+                    <form method="POST" action="{{ route('accounting.paye-tables.activate', $table) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to activate this PAYE tax table?', { type: 'action' });">
                         @csrf
                         <button type="submit" class="tr-save">{{ __('Activate') }}</button>
                     </form>
-                    <form method="POST" action="{{ route('accounting.paye-tables.destroy', $table) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to delete this PAYE tax table?');">
+                    <form method="POST" action="{{ route('accounting.paye-tables.destroy', $table) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to delete this PAYE tax table?', { type: 'danger' });">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="tr-archive">{{ __('Delete') }}</button>

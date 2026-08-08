@@ -25,7 +25,7 @@
                         </x-superadmin.btn>
                         @if($user->id !== auth()->id())
                             @if($user->is_active)
-                                <form method="POST" action="{{ route('superadmin.users.deactivate', $user) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Deactivate this user? They will no longer be able to log in.') }}')">
+                                <form method="POST" action="{{ route('superadmin.users.deactivate', $user) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Deactivate this user? They will no longer be able to log in.') }}', { type: 'danger' })">
                                     @csrf
                                     <x-superadmin.btn variant="danger" size="md" type="submit">{{ __('Deactivate') }}</x-superadmin.btn>
                                 </form>
@@ -97,7 +97,7 @@
                                                 </svg>
                                                 {{ __('Edit') }}
                                             </a>
-                                            <form method="POST" action="{{ route('superadmin.assignments.destroy', $assignment) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Remove this assignment? The user will lose access to this company.') }}')">
+                                            <form method="POST" action="{{ route('superadmin.assignments.destroy', $assignment) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Remove this assignment? The user will lose access to this company.') }}', { type: 'danger' })">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="inline-flex items-center gap-1.5 rounded-[10px] border border-red-300 bg-white px-4 py-2 text-[13px] font-bold text-red-700 transition hover:border-red-400 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500">

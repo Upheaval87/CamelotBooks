@@ -7,7 +7,7 @@
                 <div class="tr-spacer"></div>
                 @if($cheque->status === 'outstanding')
                     @can('cheques.void')
-                        <form method="POST" action="{{ route('accounting.cheques.void', $cheque->id) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Are you sure you want to void this cheque?') }}')">
+                        <form method="POST" action="{{ route('accounting.cheques.void', $cheque->id) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Are you sure you want to void this cheque?') }}', { type: 'danger' })">
                             @csrf
                             <button type="submit" class="tr-archive">{{ __('Void Cheque') }}</button>
                         </form>

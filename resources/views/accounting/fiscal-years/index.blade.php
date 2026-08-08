@@ -53,7 +53,7 @@
                                     <td class="text-right">
                                         <a href="{{ route('accounting.fiscal-years.show', $fy) }}" class="text-ink hover:text-gold">View</a>
                                         @if($fy->isOpen() && $fy->allPeriodsClosedOrLocked())
-                                            <form method="POST" action="{{ route('accounting.fiscal-years.close', $fy) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to close fiscal year {{ $fy->label }}? This will post a closing journal entry.');">
+                                            <form method="POST" action="{{ route('accounting.fiscal-years.close', $fy) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to close fiscal year {{ $fy->label }}? This will post a closing journal entry.', { type: 'action' });">
                                                 @csrf
                                                 <button type="submit" class="text-yellow-600 hover:text-yellow-900">Close Year</button>
                                             </form>

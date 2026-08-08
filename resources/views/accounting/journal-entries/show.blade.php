@@ -45,7 +45,7 @@
                     @endif
                     @if($journalEntry->status === 'posted')
                         @can('journal-entries.reverse')
-                            <form method="POST" action="{{ route('accounting.journal-entries.reverse', $journalEntry) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Are you sure you want to reverse this entry?') }}');">
+                            <form method="POST" action="{{ route('accounting.journal-entries.reverse', $journalEntry) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Are you sure you want to reverse this entry?') }}', { type: 'danger' });">
                                 @csrf
                                 <button type="submit" class="tr-save">{{ __('Reverse') }}</button>
                             </form>

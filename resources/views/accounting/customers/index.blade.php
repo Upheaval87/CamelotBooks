@@ -1,12 +1,41 @@
 @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
 <x-app-layout>
-    
 
-    <div class="pb-12">
+    <div class="pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-list-header title="Customers" description="Manage customer records, terms and balances." createRoute="{{ route('accounting.customers.create') }}" createLabel="Create Customer" />
 
-            <div class="list-layout">
+            <div class="x-port">
+                <div class="x-port-card">
+                    <span class="x-port-ic x-port-ic--teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg>
+                    </span>
+                    <div>
+                        <div class="x-port-lbl">{{ __('Total Customers') }}</div>
+                        <div class="x-port-num">{{ number_format($stats['total']) }}</div>
+                    </div>
+                </div>
+                <div class="x-port-card">
+                    <span class="x-port-ic x-port-ic--mint">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                    </span>
+                    <div>
+                        <div class="x-port-lbl">{{ __('Active') }}</div>
+                        <div class="x-port-num">{{ number_format($stats['active']) }}</div>
+                    </div>
+                </div>
+                <div class="x-port-card">
+                    <span class="x-port-ic x-port-ic--red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </span>
+                    <div>
+                        <div class="x-port-lbl">{{ __('Balance Owed') }} ({{ $cs }})</div>
+                        <div class="x-port-num x-port-num--red">{{ number_format($stats['balance_owed'], 2) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="list-layout x-cust-index">
                 <div class="list-layout-content">
                     <x-list-filter-bar searchRoute="{{ route('accounting.customers.index') }}" searchPlaceholder="Name or email..." entity="customer" countText="{{ $customers->total() }} customers">
                         <select name="status" class="list-filter-select">
@@ -14,13 +43,16 @@
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>
+                        <select name="terms" class="list-filter-select">
+                            <option value="">All Terms</option>
+                            @foreach(['due_on_receipt' => 'Due on receipt', 'net_15' => 'Net 15', 'net_30' => 'Net 30', 'net_60' => 'Net 60', 'net_90' => 'Net 90', 'custom' => 'Custom'] as $termKey => $termLabel)
+                                <option value="{{ $termKey }}" {{ request('terms') === $termKey ? 'selected' : '' }}>{{ $termLabel }}</option>
+                            @endforeach
+                        </select>
                     </x-list-filter-bar>
 
-                    
-                    
-
                     <div class="list-table-wrap">
-                        <table class="list-table">
+                        <table class="list-table x-wset-custlist">
                             <thead>
                                 <tr>
                                     <th>Name</th>

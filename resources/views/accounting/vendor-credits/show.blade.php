@@ -20,7 +20,7 @@
                         <form method="POST" action="{{ route('accounting.vendor-credits.void', $vendorCredit) }}" class="inline">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this vendor credit?') }}')">{{ __('Void') }}</button>
+                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this vendor credit?') }}', { type: 'danger' })">{{ __('Void') }}</button>
                         </form>
                     @endcan
                 @endif

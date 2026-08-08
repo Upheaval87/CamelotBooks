@@ -41,7 +41,7 @@
 
                 <div class="tr-spacer"></div>
 
-                <button type="button" class="tr-archive" onclick="window.feedback.openConfirm({ title: '{{ __('Cancel this schedule?') }}' })">
+                <button type="button" class="tr-archive" onclick="CB.confirm({ type: 'danger', title: '{{ __('Cancel this schedule?') }}' })">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     {{ __('Cancel Schedule') }}
                 </button>

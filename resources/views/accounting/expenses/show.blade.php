@@ -14,7 +14,7 @@
                     @if($expense->status === 'draft')
                         <a href="{{ route('accounting.expenses.edit', $expense) }}" class="tr-save">{{ __('Save') }}</a>
                         @can('expenses.post')
-                            <form method="POST" action="{{ route('accounting.expenses.post', $expense) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Post this expense?') }}')">
+                            <form method="POST" action="{{ route('accounting.expenses.post', $expense) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ __('Post this expense?') }}', { type: 'action' })">
                                 @csrf
                                 <button type="submit" class="tr-save">{{ __('Save & Submit') }}</button>
                             </form>
@@ -165,7 +165,7 @@
 
     <script>
         function askVoidReason() {
-            window.feedback.openPrompt({ title: '{{ __('Please enter the reason for withdrawing this claim') }}:', confirmLabel: '{{ __('Withdraw') }}' }).then(function (reason) {
+            CB.prompt({ title: '{{ __('Please enter the reason for withdrawing this claim') }}:', confirmLabel: '{{ __('Withdraw') }}' }).then(function (reason) {
                 if (reason && reason.trim() !== '') {
                     document.getElementById('void-reason').value = reason;
                     document.getElementById('void-form').submit();

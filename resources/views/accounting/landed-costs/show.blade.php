@@ -7,7 +7,7 @@
             <x-record-toolbar>
                 <div class="tr-group">
                     @if($voucher->status === 'draft')
-                        <form method="POST" action="{{ route('accounting.landed-costs.post', $voucher) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Post this landed cost voucher?') }}')">
+                        <form method="POST" action="{{ route('accounting.landed-costs.post', $voucher) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Post this landed cost voucher?') }}', { type: 'action' })">
                             @csrf
                             <button type="submit" class="tr-save">{{ __('Post Voucher') }}</button>
                         </form>

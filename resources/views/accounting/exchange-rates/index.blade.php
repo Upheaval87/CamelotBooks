@@ -68,7 +68,7 @@
                                     <td class="numeric">{{ number_format($rate->rate, 8) }}</td>
                                     <td class="text-ink-soft">{{ $rate->effective_date->format('Y-m-d') }}</td>
                                     <td class="text-right">
-                                        <form method="POST" action="{{ route('accounting.exchange-rates.destroy', $rate) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Delete this rate?')">
+                                        <form method="POST" action="{{ route('accounting.exchange-rates.destroy', $rate) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Delete this rate?', { type: 'danger' })">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>

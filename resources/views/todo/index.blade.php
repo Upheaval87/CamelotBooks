@@ -267,7 +267,7 @@
                             id="task-delete-form"
                             class="hidden"
                             aria-hidden="true"
-                            onsubmit="return fbConfirmSubmit(event, '{{ __('Delete this task permanently?') }}');"
+                            onsubmit="return fbConfirmSubmit(event, '{{ __('Delete this task permanently?') }}', { type: 'danger' });"
                         >
                             @csrf
                             @method('DELETE')

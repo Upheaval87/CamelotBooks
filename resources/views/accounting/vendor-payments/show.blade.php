@@ -10,7 +10,7 @@
                     <form method="POST" action="{{ route('accounting.vendor-payments.void', $payment) }}" class="inline">
                         @csrf
                         @method('PATCH')
-                        <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this payment?') }}')">{{ __('Void') }}</button>
+                        <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this payment?') }}', { type: 'danger' })">{{ __('Void') }}</button>
                     </form>
                 @endif
 
