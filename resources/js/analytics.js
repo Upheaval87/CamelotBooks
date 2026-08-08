@@ -46,12 +46,12 @@ export function formatNumber(value) {
 
 export function chartColors(count) {
     const palette = [
-        '#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd',
-        '#3b82f6', '#60a5fa', '#93c5fd',
-        '#10b981', '#34d399', '#6ee7b7',
-        '#f59e0b', '#fbbf24', '#fcd34d',
-        '#ef4444', '#f87171', '#fca5a5',
-        '#ec4899', '#f472b6', '#f9a8d4',
+        '#128F8E', '#0C3539', '#17565D', '#7FD1C0',
+        '#149897', '#46708C', '#9BC7C5',
+        '#15803D', '#34d399', '#6ee7b7',
+        '#D97706', '#fbbf24', '#fcd34d',
+        '#DC2626', '#f87171', '#fca5a5',
+        '#E2A33C', '#E07A5F', '#94a3b8',
     ];
     return palette.slice(0, count);
 }

@@ -26,12 +26,14 @@ class PasswordResetLinkController extends Controller
     /**
      * Handle an incoming password reset request.
      *
-     * Issues a 6-digit verification code (mailed to the account) instead of an
-     * emailed link. The response is deliberately identical whether or not the
-     * submitted email belongs to a registered account, so this endpoint cannot
-     * be used to enumerate which addresses are in the system. The account email
-     * is remembered in the session so the verify-code page can show the masked
-     * address and confirm the code without it ever appearing in a URL.
+     * Issues a 6-digit verification code (mailed to the account) and forwards
+     * to the verify-code page. Unknown emails are rejected with an inline
+     * error under the field (no mail, no redirect). NOTE — this intentionally
+     * reveals whether an email is registered (trade-off accepted in the auth
+     * redesign); the route keeps its throttle so a single address cannot be
+     * probed quickly. The account email is remembered in the session so the
+     * verify-code page can show the masked address and confirm the code
+     * without it ever appearing in a URL.
      *
      * @throws ValidationException
      */
@@ -43,22 +45,30 @@ class PasswordResetLinkController extends Controller
 
         $user = User::where('email', $request->input('email'))->first();
 
-        if ($user) {
-            $request->session()->put('password_reset_email', $user->email);
+        if (! $user) {
+            $message = __('We can\'t find an account with that email address.');
 
-            $result = app(PasswordResetCodeService::class)->issue($user);
+            if ($request->wantsJson()) {
+                throw ValidationException::withMessages(['email' => [$message]]);
+            }
 
-            Mail::to($user)->queue(new VerificationCodeMail(
-                code: $result['code'],
-                maskedEmail: app(PasswordResetCodeService::class)->maskEmail($user->email),
-                expiresAt: $result['expires_at'],
-            ));
+            return back()->withErrors(['email' => $message])->withInput($request->only('email'));
         }
+
+        $request->session()->put('password_reset_email', $user->email);
+
+        $result = app(PasswordResetCodeService::class)->issue($user);
+
+        Mail::to($user)->queue(new VerificationCodeMail(
+            code: $result['code'],
+            maskedEmail: app(PasswordResetCodeService::class)->maskEmail($user->email),
+            expiresAt: $result['expires_at'],
+        ));
 
         if ($request->wantsJson()) {
-            return response()->json(['status' => 'sent']);
+            return response()->json(['redirect' => route('password.verify-code')]);
         }
 
-        return back()->with('status', __('passwords.sent'));
+        return redirect()->route('password.verify-code');
     }
 }

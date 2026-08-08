@@ -14,7 +14,7 @@
     @if($titleBind || $title || $icon || $hasActions)
         <div class="flex items-center gap-3">
             @if($icon)
-                <span class="grid h-7 w-7 shrink-0 place-items-center rounded-[9px] bg-gradient-to-b from-[#2e4763] to-[#22394f] text-[#e2c069] shadow-[inset_0_1px_0_rgba(255,255,255,.10),0_3px_8px_-3px_rgba(0,0,0,.4)]">
+                <span class="grid h-7 w-7 shrink-0 place-items-center rounded-[9px] bg-gradient-to-b from-[#17565D] to-[#0C3539] text-[#DFF7F6] shadow-[inset_0_1px_0_rgba(255,255,255,.10),0_3px_8px_-3px_rgba(0,0,0,.4)]">
                     <svg class="h-[15px] w-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}" />
                     </svg>

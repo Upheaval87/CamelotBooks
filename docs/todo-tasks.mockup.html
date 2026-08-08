@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To-Do List — Tabs</title>
+<style>
+  :root{
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;
+    --sec:#128F8E;--sec-2:#149897;--mint:#7FD1C0;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;
+    --muted:#5f7476;--faint:#8aa5a7;--link:#0C6B6A;--focus:#94a3b8;
+    --red:#dc2626;--red-2:#b91c1c;--warn:#d97706;--warn-2:#b45309;--info:#46708C;--green:#15803d;
+    --shadow-card:0 1px 2px rgba(10,42,46,.05),0 12px 32px -8px rgba(10,42,46,.10),0 32px 64px -24px rgba(8,40,44,.14);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 72px}
+
+  /* ===== shell header ===== */
+  .tealbar{width:100%;background:radial-gradient(620px 220px at 10% -30%, rgba(255,255,255,.09), transparent 60%),
+    linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;
+    background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}
+  .brand-s{color:rgba(226,244,244,.55);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-top:1px}
+  .vdiv{width:1px;height:26px;background:rgba(255,255,255,.12)}
+  .ctx{color:rgba(226,244,244,.7);font-size:12.5px;font-weight:600}
+  .spacer{flex:1}
+  .cbtn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;position:relative;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(226,244,244,.85)}
+  .cbtn .dot{position:absolute;top:7px;right:8px;width:6px;height:6px;border-radius:50%;background:#2ecc8f;box-shadow:0 0 0 3px rgba(46,204,143,.25)}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;
+    background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2;border:1px solid rgba(255,255,255,.25)}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .u-r{color:rgba(226,244,244,.55);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55)}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none}
+  .navitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--ink)}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .navitem.active .ic{color:#fff}
+
+  /* ===== sticky page head ===== */
+  .sticky-head{position:sticky;top:0;z-index:40;background:rgba(238,244,244,.88);backdrop-filter:blur(12px);
+    padding:14px 0;border-bottom:1px solid var(--line);margin:22px 0;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  h1{font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:12px;
+    font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s;white-space:nowrap}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151;box-shadow:0 1px 2px rgba(10,42,46,.05)}
+  .btn-ghost:hover{background:rgba(17,69,75,.06);border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-sm{height:34px;padding:0 13px;font-size:12.5px;border-radius:10px}
+  .seg{display:inline-flex;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--border)}
+  .seg button{height:32px;padding:0 14px;border-radius:10px;border:none;background:transparent;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .seg button.on{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff;box-shadow:0 4px 10px -4px rgba(18,143,142,.55)}
+
+  .shell{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:20px;min-width:0}
+  .card{background:rgba(255,255,255,.75);backdrop-filter:blur(14px);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-sec{padding:20px 24px}
+  .card-sec + .card-sec{border-top:1px solid var(--line)}
+  .sec-head{display:flex;align-items:center;gap:12px}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;background:var(--sec);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px -3px rgba(10,80,80,.4)}
+  .sec-head h2{font-size:15px;font-weight:800;color:var(--sec)}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  .search{position:relative;flex:1;min-width:220px;max-width:380px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .input{height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 12px;
+    font-size:13px;color:var(--ink);font-family:inherit;transition:all .15s;width:100%}
+  .search .input{padding-left:36px}
+  .input:hover{border-color:rgba(17,69,75,.3)}
+  .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  select.input{width:auto;padding-right:30px;appearance:none;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center}
+  .count-chip{margin-left:auto;padding:5px 12px;border-radius:999px;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--deep-1);font-size:11.5px;font-weight:800}
+
+  .express{display:flex;align-items:center;gap:10px;margin-top:16px;padding:6px 6px 6px 16px;border-radius:12px;
+    border:1.5px dashed rgba(17,69,75,.28);background:rgba(255,255,255,.6)}
+  .express:focus-within{border-color:rgba(18,143,142,.6);background:#fff;box-shadow:0 0 0 3px rgba(18,143,142,.12)}
+  .express input{flex:1;border:none;background:transparent;height:38px;font-size:13.5px;font-family:inherit;color:var(--ink)}
+  .express input:focus{outline:none}
+  .express kbd{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:3px 8px;font-size:10.5px;color:#475569}
+
+  /* ===== TABS ===== */
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-top:18px}
+  .tab{display:flex;align-items:center;gap:8px;padding:11px 16px;border:none;background:none;cursor:pointer;position:relative;
+    font-size:13px;font-weight:800;color:var(--muted);transition:color .15s}
+  .tab::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2.5px;border-radius:3px;background:transparent;transition:background .15s}
+  .tab:hover{color:var(--ink)}
+  .tab.on{color:var(--ink)}
+  .tab.on::after{background:var(--sec)}
+  .tab .n{padding:2px 9px;border-radius:999px;font-size:10px;font-weight:800}
+  .n-warn{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.4);color:var(--warn-2)}
+  .n-mint{background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);color:var(--sec)}
+  .tab-tools{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:6px}
+
+  /* tasks */
+  .task{display:flex;gap:12px;align-items:flex-start;padding:12px 8px;border-bottom:1px solid var(--line);border-radius:10px;transition:background .13s}
+  .task:last-child{border-bottom:none}
+  .task:hover{background:rgba(17,69,75,.04)}
+  .tcheck{position:relative;display:block;cursor:pointer;margin-top:1px}
+  .tcheck input{position:absolute;opacity:0}
+  .tcheck .box{width:18px;height:18px;border-radius:6px;border:1.5px solid #bfd6d5;background:#fff;display:grid;place-items:center;transition:all .15s}
+  .tcheck .box svg{opacity:0;transform:scale(.6);transition:all .15s}
+  .tcheck input:checked + .box{background:var(--sec);border-color:var(--sec)}
+  .tcheck input:checked + .box svg{opacity:1;transform:scale(1)}
+  .tcheck input:focus-visible + .box{outline:2px solid var(--focus);outline-offset:2px}
+  .t-main{flex:1;min-width:0}
+  .t-title{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .task.done .t-title{text-decoration:line-through;color:var(--faint)}
+  .task.done{opacity:.72}
+  .t-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.04em}
+  .pr-high{background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.35);color:var(--red-2)}
+  .pr-med{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.4);color:var(--warn-2)}
+  .pr-low{background:rgba(70,112,140,.10);border:1px solid rgba(70,112,140,.4);color:var(--info)}
+  .du-over{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}
+  .du-today{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.4);color:var(--warn-2)}
+  .du-next{background:rgba(17,69,75,.05);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .doc{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:600;color:var(--deep-1);
+    background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);border-radius:7px;padding:3px 8px}
+  .ava{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:9.5px;font-weight:800;
+    background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.15);color:var(--deep-1)}
+  .t-act{display:flex;gap:4px}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .ibtn.del:hover{background:rgba(220,38,38,.08);color:var(--red)}
+  .done-when{font-size:11px;color:var(--faint)}
+
+  /* rail */
+  .railsum{position:sticky;top:86px}
+  .rail-sec{padding:18px}
+  .rail-sec + .rail-sec{border-top:1px solid var(--line)}
+  .prog{height:8px;border-radius:8px;background:rgba(17,69,75,.10);overflow:hidden;margin-top:12px}
+  .prog i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .prog-note{margin-top:8px;font-size:11.5px;color:var(--muted)}
+  .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+  .sbox{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.85)}
+  .sbox .l{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .sbox .v{margin-top:3px;font-size:15px;font-weight:800;color:var(--ink)}
+  .sbox .v.red{color:var(--red-2)}.sbox .v.warn{color:var(--warn-2)}.sbox .v.mint{color:var(--sec)}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .tile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border-radius:14px;border:1px solid var(--border);
+    background:rgba(255,255,255,.85);font-size:11.5px;font-weight:700;color:#374151;cursor:pointer;transition:all .14s;text-align:left}
+  .tile:hover{transform:translateY(-1px);border-color:rgba(17,69,75,.3);background:rgba(17,69,75,.06);color:var(--ink)}
+  .tile .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(17,69,75,.06);color:var(--deep-1)}
+  @media (max-width:1100px){.shell{grid-template-columns:1fr}.railsum{position:static}}
+</style>
+</head>
+<body>
+
+<header class="tealbar">
+  <div class="row1">
+    <span class="logo">CB</span>
+    <div><div class="brand-n">CamelotBooks</div><div class="brand-s">Enterprise Accounting</div></div>
+    <span class="vdiv"></span><div class="ctx">Acme Corporation · Headquarters</div><span class="spacer"></span>
+    <button class="cbtn" aria-label="Search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="cbtn" aria-label="Notifications"><span class="dot"></span><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="userchip"><span class="avatar">ES</span><span><span class="u-n">Elvis Seyama</span><br><span class="u-r">System Admin</span></span></div>
+  </div>
+  <div class="row2">
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 7h12l1.5 14h-15L6 7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10V6a3 3 0 0 1 6 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Sales</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 4h2.5l2.2 11h10.1l2-8H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Purchasing</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-5.5L21 9M5 9.5V19M9.5 9.5V19M14.5 9.5V19M19 9.5V19M3 19.5h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Banking</a>
+    <a class="navitem active" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>My Tasks</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Reports</a>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="sticky-head">
+  <div><h1>To-Do List</h1><div class="sub">Your queue across invoicing, purchasing and closing — Fri, Aug 7 2026.</div></div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="seg"><button class="on">Today</button><button>This Week</button><button>All</button></div>
+    <button class="btn btn-ghost btn-sm">🖨 Print List</button>
+    <button class="btn btn-cta">＋ New Task</button>
+  </div>
+</div>
+
+<div class="shell">
+  <section class="card">
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Queue</h2><span class="rule"></span></div>
+      <div class="controls">
+        <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input class="input" placeholder="Search tasks, documents…"></div>
+        <select class="input"><option>All Priorities</option><option>High</option><option>Medium</option><option>Low</option></select>
+        <select class="input"><option>Everyone</option><option>Me</option><option>T. Mwale</option><option>M. Kunda</option></select>
+        <span class="count-chip">6 open · 2 done</span>
+      </div>
+      <div class="express">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#8aa5a7" stroke-width="2" stroke-linecap="round"/></svg>
+        <input placeholder="Quick-add a task and press Enter…">
+        <kbd>⏎ Enter</kbd>
+      </div>
+
+      <!-- ===== TABS ===== -->
+      <div class="tabs">
+        <button class="tab on" data-tab="open" onclick="setTab('open')">Open <span class="n n-warn">6</span></button>
+        <button class="tab" data-tab="done" onclick="setTab('done')">Completed <span class="n n-mint">2</span></button>
+        <div class="tab-tools"><button class="btn btn-ghost btn-sm" id="clearDone" style="display:none">Clear completed</button></div>
+      </div>
+    </div>
+
+    <!-- ===== OPEN TAB ===== -->
+    <div class="card-sec" id="panel-open">
+      <div class="task">
+        <label class="tcheck"><input type="checkbox" onchange="toggleDone(this)"><span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+        <div class="t-main"><div class="t-title">Reconcile NBM bank feed — July statement</div>
+          <div class="t-meta"><span class="chip pr-high">High</span><span class="chip du-over">Overdue · Aug 5</span><span class="doc">BANK-NBM</span><span class="ava">ES</span></div></div>
+        <div class="t-act"><button class="ibtn">✎</button><button class="ibtn del">🗑</button></div>
+      </div>
+      <div class="task">
+        <label class="tcheck"><input type="checkbox" onchange="toggleDone(this)"><span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+        <div class="t-main"><div class="t-title">Approve bill for Metro Supplies (PO-1101)</div>
+          <div class="t-meta"><span class="chip pr-high">High</span><span class="chip du-today">Due today</span><span class="doc">BILL-2026-0148</span><span class="ava">ES</span></div></div>
+        <div class="t-act"><button class="ibtn">✎</button><button class="ibtn del">🗑</button></div>
+      </div>
+      <div class="task">
+        <label class="tcheck"><input type="checkbox" onchange="toggleDone(this)"><span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+        <div class="t-main"><div class="t-title">Send quotation Q-2211 to Beta Industries</div>
+          <div class="t-meta"><span class="chip pr-med">Medium</span><span class="chip du-today">Due today</span><span class="doc">Q-2211</span><span class="ava">TM</span></div></div>
+        <div class="t-act"><button class="ibtn">✎</button><button class="ibtn del">🗑</button></div>
+      </div>
+      <div class="task">
+        <label class="tcheck"><input type="checkbox" onchange="toggleDone(this)"><span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+        <div class="t-main"><div class="t-title">Draft August VAT return for review</div>
+          <div class="t-meta"><span class="chip pr-low">Low</span><span class="chip du-today">Due today</span><span class="ava">MK</span></div></div>
+        <div class="t-act"><button class="ibtn">✎</button><button class="ibtn del">🗑</button></div>
+      </div>
+      <div class="task">
+        <label class="tcheck"><input type="checkbox" onchange="toggleDone(this)"><span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+        <div class="t-main"><div class="t-title">Prepare payroll journal — August</div>
+          <div class="t-meta"><span class="chip pr-med">Medium</span><span class="chip du-next">Aug 12</span><span class="ava">ES</span></div></div>
+        <div class="t-act"><button class="ibtn">✎</button><button class="ibtn del">🗑</button></div>
+      </div>
+      <div class="task">
+        <label class="tcheck"><input type="checkbox" onchange="toggleDone(this)"><span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+        <div class="t-main"><div class="t-title">Review customer credit limits (quarterly)</div>
+          <div class="t-meta"><span class="chip pr-low">Low</span><span class="chip du-next">Aug 15</span><span class="ava">TM</span></div></div>
+        <div class="t-act"><button class="ibtn">✎</button><button class="ibtn del">🗑</button></div>
+      </div>
+    </div>
+
+    <!-- ===== COMPLETED TAB ===== -->
+    <div class="card-sec" id="panel-done" style="display:none">
+      <div class="task done">
+        <label class="tcheck"><input type="checkbox" checked onchange="toggleDone(this)"><span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+        <div class="t-main"><div class="t-title">Issue invoice INV-2026-0001 (Walk-in)</div>
+          <div class="t-meta"><span class="doc">INV-2026-0001</span><span class="ava">ES</span><span class="done-when">Completed · Aug 7, 8:41 AM</span></div></div>
+        <div class="t-act"><button class="ibtn">✎</button><button class="ibtn del">🗑</button></div>
+      </div>
+      <div class="task done">
+        <label class="tcheck"><input type="checkbox" checked onchange="toggleDone(this)"><span class="box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+        <div class="t-main"><div class="t-title">Record cash payment RCT-0208</div>
+          <div class="t-meta"><span class="doc">RCT-0208</span><span class="ava">ES</span><span class="done-when">Completed · Aug 7, 9:12 AM</span></div></div>
+        <div class="t-act"><button class="ibtn">✎</button><button class="ibtn del">🗑</button></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="railsum">
+    <section class="card">
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2 style="font-size:13.5px">This Week</h2></div>
+        <div class="prog"><i style="width:25%"></i></div>
+        <p class="prog-note">2 of 8 tasks completed · 25%</p>
+        <div class="sgrid">
+          <div class="sbox"><div class="l">Open</div><div class="v">6</div></div>
+          <div class="sbox"><div class="l">Due Today</div><div class="v warn">3</div></div>
+          <div class="sbox"><div class="l">Overdue</div><div class="v red">1</div></div>
+          <div class="sbox"><div class="l">Done</div><div class="v mint">2</div></div>
+        </div>
+      </div>
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/></svg></span><h2 style="font-size:13.5px">Shortcuts</h2></div>
+        <div class="tiles">
+          <button class="tile"><span class="ic">🗎</span>Linked Invoices</button>
+          <button class="tile"><span class="ic">🧾</span>Linked Bills</button>
+          <button class="tile"><span class="ic">👥</span>Team Tasks</button>
+          <button class="tile"><span class="ic">📅</span>Calendar</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+</div>
+
+<script>
+  function setTab(id){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===id));
+    document.getElementById('panel-open').style.display = id==='open' ? '' : 'none';
+    document.getElementById('panel-done').style.display = id==='done' ? '' : 'none';
+    document.getElementById('clearDone').style.display = id==='done' ? '' : 'none';
+  }
+  /* checking a task in Open moves it to Completed (and vice-versa) in the live mock */
+  function toggleDone(cb){
+    const task = cb.closest('.task');
+    task.classList.toggle('done', cb.checked);
+    const target = cb.checked ? document.getElementById('panel-done') : document.getElementById('panel-open');
+    target.appendChild(task);
+  }
+</script>
+</body>
+</html>

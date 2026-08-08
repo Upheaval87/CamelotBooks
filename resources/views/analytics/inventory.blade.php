@@ -45,7 +45,7 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Stock Value Trend</h3>
                 <x-chart type="line" :id="'stock-value-trend'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                    ['label' => 'Stock Value', 'data' => $data['value_data'], 'borderColor' => '#6366f1', 'backgroundColor' => 'rgba(99,102,241,0.1)', 'fill' => true],
+                    ['label' => 'Stock Value', 'data' => $data['value_data'], 'borderColor' => '#128F8E', 'backgroundColor' => 'rgba(18,143,142,0.1)', 'fill' => true],
                 ])" height="300" />
             </div>
 

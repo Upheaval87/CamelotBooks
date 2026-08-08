@@ -26,8 +26,8 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Net Cash Flow Trend</h3>
                 <x-chart type="line" :id="'cash-flow-trend'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                    ['label' => 'Historical Operating', 'data' => array_merge($data['operating'], array_fill(0, $data['projection_count'], null)), 'borderColor' => '#6366f1', 'backgroundColor' => 'rgba(99,102,241,0.1)', 'fill' => true],
-                    ['label' => 'Projected Operating', 'data' => array_merge(array_fill(0, $data['historical_count'], null), $data['projection_operating']), 'borderColor' => '#6366f1', 'borderDash' => [5,5], 'backgroundColor' => 'transparent', 'fill' => false],
+                    ['label' => 'Historical Operating', 'data' => array_merge($data['operating'], array_fill(0, $data['projection_count'], null)), 'borderColor' => '#128F8E', 'backgroundColor' => 'rgba(18,143,142,0.1)', 'fill' => true],
+                    ['label' => 'Projected Operating', 'data' => array_merge(array_fill(0, $data['historical_count'], null), $data['projection_operating']), 'borderColor' => '#128F8E', 'borderDash' => [5,5], 'backgroundColor' => 'transparent', 'fill' => false],
                     ['label' => 'Historical Investing', 'data' => array_merge($data['investing'], array_fill(0, $data['projection_count'], null)), 'borderColor' => '#f59e0b', 'backgroundColor' => 'transparent', 'fill' => false],
                     ['label' => 'Projected Investing', 'data' => array_merge(array_fill(0, $data['historical_count'], null), $data['projection_investing']), 'borderColor' => '#f59e0b', 'borderDash' => [5,5], 'backgroundColor' => 'transparent', 'fill' => false],
                     ['label' => 'Historical Financing', 'data' => array_merge($data['financing'], array_fill(0, $data['projection_count'], null)), 'borderColor' => '#10b981', 'backgroundColor' => 'transparent', 'fill' => false],

@@ -19,9 +19,10 @@ class PasswordResetTest extends TestCase
         $response = $this->get('/forgot-password');
 
         $response->assertStatus(200)
-            ->assertSee('Account recovery', false)
-            ->assertSee('Reset your password', false)
-            ->assertSee('Send verification code', false)
+            ->assertSee('Reset access', false)
+            ->assertSee('Forgot your password?', false)
+            ->assertSee('Send reset link', false)
+            ->assertSee('Links expire after 30 minutes', false)
             ->assertSee('Back to sign in', false)
             ->assertSee('aria-live="polite"', false);
     }
@@ -34,30 +35,30 @@ class PasswordResetTest extends TestCase
 
         $this->post('/forgot-password', ['email' => $user->email])
             ->assertSessionHasNoErrors()
-            ->assertSessionHas('password_reset_email', $user->email);
+            ->assertSessionHas('password_reset_email', $user->email)
+            ->assertRedirect(route('password.verify-code'));
 
         Mail::assertQueued(VerificationCodeMail::class, 1);
     }
 
-    public function test_reset_request_does_not_reveal_whether_email_exists(): void
+    public function test_reset_request_for_unknown_email_shows_inline_error(): void
     {
         Mail::fake();
 
         $this->post('/forgot-password', ['email' => 'nobody@example.com'])
-            ->assertSessionHasNoErrors()
-            ->assertSessionHas('status')
+            ->assertSessionHasErrors('email')
             ->assertSessionMissing('password_reset_email');
 
         Mail::assertNothingQueued();
     }
 
-    public function test_reset_request_json_response_is_neutral_for_unknown_email(): void
+    public function test_reset_request_json_rejects_unknown_email(): void
     {
         Mail::fake();
 
         $this->postJson('/forgot-password', ['email' => 'nobody@example.com'])
-            ->assertOk()
-            ->assertJson(['status' => 'sent']);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('email');
 
         Mail::assertNothingQueued();
     }
@@ -72,15 +73,16 @@ class PasswordResetTest extends TestCase
 
         $this->get('/verify-code')
             ->assertStatus(200)
-            ->assertSee('Identity verification', false)
+            ->assertSee('Verification', false)
             ->assertSee('Enter verification code', false)
             ->assertSee('j***@example.com', false)
-            ->assertSee('Code expires in', false)
+            ->assertSee('Codes expire after 5 minutes', false)
             ->assertSee('Digit 1 of 6', false)
             ->assertSee('Digit 6 of 6', false)
-            ->assertSee('Verify and continue', false)
+            ->assertSee('Verify &amp; continue', false)
             ->assertSee('Back to sign in', false)
-            ->assertSee('Resend it', false);
+            ->assertSee('Resend', false)
+            ->assertSee('Didn\'t receive it');
     }
 
     public function test_verify_code_page_redirects_to_forgot_without_session_email(): void
@@ -234,7 +236,7 @@ class PasswordResetTest extends TestCase
 
         $this->get('/reset-password/token-placeholder?email=' . $user->email)
             ->assertStatus(200)
-            ->assertSee('Security', false)
+            ->assertSee('Secure reset', false)
             ->assertSee('Set a new password', false)
             ->assertSee('Choose a strong password', false)
             ->assertSee('At least 8 characters', false)
@@ -243,9 +245,9 @@ class PasswordResetTest extends TestCase
             ->assertSee('One number (0–9)', false)
             ->assertSee('auth-login-password-checklist', false)
             ->assertSee('newPassword(', false)
-            ->assertSee('Update password', false)
-            ->assertSee('Contact your administrator', false)
-            ->assertDontSee('Back to sign in', false);
+            ->assertSee('Set new password', false)
+            ->assertSee('You\'ll be signed out of all other devices')
+            ->assertSee('Back to sign in', false);
     }
 
     public function test_invalid_reset_token_redirects_back_to_forgot_password(): void

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Pages — Create · Edit · View (Teal System)</title>
+<style>
+  :root{
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;--deep-row1:#11454b;
+    --sec:#128F8E;--sec-2:#149897;--sec-3:#107c7b;
+    --ink:#0B2A2D;--row2:#DCE6E7;--head-line:rgba(71,95,97,.45);
+    --focus:#94a3b8;--line:#e2ecec;--border:#dceaea;--st-hover:rgba(17,69,75,.06);
+    --muted:#5f7476;--faint:#8aa5a7;--red:#dc2626;--green:#15803d;
+    --shadow-card:0 1px 2px rgba(10,42,46,.05),0 12px 32px -8px rgba(10,42,46,.10),0 32px 64px -24px rgba(8,40,44,.14);
+    --shadow-acc:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overscroll-behavior:none}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 72px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+
+  /* ===== HEADER (colours-only shell) ===== */
+  .tealbar{width:100%;background:radial-gradient(620px 220px at 10% -30%, rgba(255,255,255,.09), transparent 60%),
+    linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}
+  .brand-s{color:rgba(226,244,244,.55);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+  .vdiv{width:1px;height:26px;background:rgba(255,255,255,.12)}
+  .ctx{color:rgba(226,244,244,.7);font-size:12.5px;font-weight:600}
+  .spacer{flex:1}
+  .cbtn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;position:relative;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(226,244,244,.85)}
+  .cbtn .dot{position:absolute;top:7px;right:8px;width:6px;height:6px;border-radius:50%;background:#2ecc8f;box-shadow:0 0 0 3px rgba(46,204,143,.25)}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;
+    background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2;border:1px solid rgba(255,255,255,.25)}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .u-r{color:rgba(226,244,244,.55);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:var(--row2);border-top:1px solid rgba(255,255,255,.55)}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none}
+  .navitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--ink)}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .navitem.active .ic{color:#fff}
+
+  /* ===== sticky head (+toolbar on view) ===== */
+  .sticky-head{position:sticky;top:0;z-index:40;background:rgba(238,244,244,.88);backdrop-filter:blur(12px);
+    padding:14px 0;border-bottom:1px solid var(--line);margin:22px 0;display:flex;flex-direction:column;gap:12px}
+  .sh-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  h1{font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--ink);display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .mono-chip{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--deep-1);
+    background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);border-radius:8px;padding:4px 10px}
+  .badge{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .badge .bdot{width:7px;height:7px;border-radius:50%}
+  .b-draft{background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);color:var(--deep-1)}.b-draft .bdot{background:var(--deep-1)}
+  .b-pend{background:rgba(18,143,142,.12);border:1px solid rgba(18,143,142,.45);color:#0c6b6a}.b-pend .bdot{background:var(--sec);box-shadow:0 0 0 3px rgba(18,143,142,.18)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:12px;
+    font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s;white-space:nowrap}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-tertiary{background:transparent;color:#4b6365}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151;box-shadow:0 1px 2px rgba(10,42,46,.05)}
+  .btn-ghost:hover{background:var(--st-hover);border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-primary{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-acc)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-danger{background:#fff;border-color:rgba(220,38,38,.35);color:var(--red)}.btn-danger:hover{background:#fef2f2}
+  .btn-sm{height:34px;padding:0 13px;font-size:12.5px;border-radius:10px}
+  .seg{display:inline-flex;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--border)}
+  .seg .btn{height:34px;border-radius:10px;box-shadow:none}
+
+  /* grouped toolbar (view) */
+  .toolbar{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .glabel{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+  .tbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .tdiv{width:1px;align-self:stretch;background:var(--line)}
+
+  .shell{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:20px;min-width:0}
+  .card{background:rgba(255,255,255,.75);backdrop-filter:blur(14px);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-sec{padding:22px 26px}
+  .card-sec + .card-sec{border-top:1px solid var(--line)}
+  .sec-head{display:flex;align-items:center;gap:12px}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;background:var(--sec);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px -3px rgba(10,80,80,.4)}
+  .sec-head h2{font-size:15px;font-weight:800;color:var(--sec)}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 20px;margin-top:18px}
+  .sp2{grid-column:span 2}.sp4{grid-column:1/-1}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .input{width:100%;height:44px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.85);
+    padding:0 14px;font-size:13.5px;color:var(--ink);font-family:inherit;transition:all .15s}
+  .input:hover{border-color:rgba(17,69,75,.3);background:#fff}
+  .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  .in-wrap{position:relative}.in-wrap .input{padding-right:40px}
+  .in-wrap svg.end{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+  .combo{display:flex}.combo .in-wrap{flex:1}.combo .input{border-radius:8px 0 0 8px}
+  .combo button{width:42px;border:1px solid var(--border);border-left:none;border-radius:0 8px 8px 0;background:rgba(240,248,248,.9);color:var(--sec-3);cursor:pointer}
+
+  .li-wrap{margin-top:14px;border:1px solid var(--border);border-radius:14px;background:#fafdfd;overflow:visible;position:relative;z-index:30}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;
+    letter-spacing:.08em;text-transform:uppercase;padding:11px 10px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 var(--head-line)}
+  thead th:first-child{border-radius:13px 0 0 0}thead th:last-child{border-radius:0 13px 0 0}
+  thead th.num{text-align:right}
+  tbody td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:500;color:var(--ink)}
+  .ci{height:36px;border-radius:7px;border:1px solid var(--border);background:#fff;padding:0 9px;font-size:12.5px;width:100%;font-family:inherit;color:var(--ink)}
+  .ci:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  td.num .ci{text-align:right;font-variant-numeric:tabular-nums}
+  .amt{display:block;text-align:right;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;padding-right:8px}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:var(--st-hover);color:var(--deep-1)}
+  .ibtn.del:hover{background:rgba(220,38,38,.08);color:var(--red)}
+
+  .drop{display:block;width:100%;margin-top:16px;border:1.5px dashed rgba(17,69,75,.3);border-radius:16px;background:rgba(255,255,255,.5);
+    padding:22px 18px;text-align:center}
+  .drop:hover{border-color:rgba(18,143,142,.6);background:rgba(18,143,142,.05)}
+  .drop p{font-size:12.5px;color:var(--muted)}.drop p b{color:var(--sec)}
+  .fmts{margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .fmt{padding:3px 10px;border-radius:999px;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--deep-1);font-size:10.5px;font-weight:800;letter-spacing:.06em}
+
+  .railsum{position:sticky;top:86px}
+  .rail-sec{padding:18px}
+  .rail-sec + .rail-sec{border-top:1px solid var(--line)}
+  .srow{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
+  .srow .l{color:var(--muted)}.srow .v{font-weight:600;color:var(--ink)}
+  .srow.strong .v{font-weight:800}
+  .gt{margin-top:12px;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:13px;
+    background:linear-gradient(90deg,var(--sec-2),var(--sec) 60%,var(--sec-3));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -1px 0 rgba(11,42,45,.35)}
+  .gt .l{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#dff7f6}
+  .gt .v{font-size:20px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+  .gt.red{background:linear-gradient(90deg,#7f1d1d,#991b1b)}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .tile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border-radius:14px;border:1px solid var(--border);
+    background:rgba(255,255,255,.85);font-size:11.5px;font-weight:700;color:#374151;cursor:pointer;transition:all .14s;text-align:left}
+  .tile:hover{transform:translateY(-1px);border-color:rgba(17,69,75,.3);background:var(--st-hover);color:var(--ink)}
+  .tile .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .vlist{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+  .vbtn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);
+    background:rgba(255,255,255,.85);font-size:13px;font-weight:600;color:#374151;cursor:pointer;transition:all .14s}
+  .vbtn:hover{background:var(--st-hover);border-color:rgba(17,69,75,.3);color:var(--ink);transform:translateY(-1px)}
+  .vbtn .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(17,69,75,.06);color:var(--deep-1)}
+
+  .ro-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 28px;margin-top:18px}
+  .ro .l{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .ro .v{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .ro .v.mono{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;font-weight:500}
+  @media (max-width:1100px){.shell{grid-template-columns:1fr}.railsum{position:static}.g4,.ro-grid{grid-template-columns:repeat(2,1fr)}.sp2{grid-column:1/-1}}
+</style>
+</head>
+<body>
+
+<!-- ===== shell header ===== -->
+<header class="tealbar">
+  <div class="row1">
+    <span class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 15c3-6 7-9 12-9 3 0 5 1 6 3-1 8-6 12-12 12-3 0-5-2-6-6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 15c2-4 5-6 9-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+    <div><div class="brand-n">CamelotBooks</div><div class="brand-s">Enterprise Accounting</div></div>
+    <span class="vdiv"></span><div class="ctx">Acme Corporation · Headquarters</div><span class="spacer"></span>
+    <button class="cbtn" aria-label="Search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="cbtn" aria-label="Notifications"><span class="dot"></span><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="userchip"><span class="avatar">ES</span><span><span class="u-n">Elvis Seyama</span><br><span class="u-r">System Admin</span></span></div>
+  </div>
+  <div class="row2">
+    <a class="navitem active" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 7h12l1.5 14h-15L6 7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10V6a3 3 0 0 1 6 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Sales</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 4h2.5l2.2 11h10.1l2-8H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Purchasing</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-5.5L21 9M5 9.5V19M9.5 9.5V19M14.5 9.5V19M19 9.5V19M3 19.5h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Banking</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="5" y="3.5" width="14" height="17" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 7.5h7M9 12h.01M12 12h.01M15 12h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Accounting</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Reports</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ================= CREATE INVOICE ================= -->
+<span class="opt-tag">Create Invoice</span>
+<div class="sticky-head">
+  <div class="sh-row">
+    <div><h1>Create Invoice</h1><div class="sub">Bill a customer with line items, tax and payment terms.</div></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-tertiary">Cancel</button>
+      <button class="btn btn-ghost">⧉ Copy from Quote</button>
+      <div class="seg">
+        <button class="btn btn-ghost">Save Draft</button>
+        <button class="btn btn-primary">Save</button>
+        <button class="btn btn-cta">Save &amp; Send ⤴</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="shell">
+  <section class="card">
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Invoice Details</h2><span class="rule"></span></div>
+      <div class="g4">
+        <div class="field sp2"><label>Customer *</label>
+          <div class="combo"><div class="in-wrap"><input class="input" placeholder="Search customers…" style="padding-left:38px"></div><button>⌕</button></div></div>
+        <div class="field"><label>Invoice Date *</label><div class="in-wrap"><input class="input" value="08/07/2026"><svg class="end" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div></div>
+        <div class="field"><label>Due Date *</label><div class="in-wrap"><input class="input" value="09/06/2026"><svg class="end" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div></div>
+        <div class="field sp2"><label>Reference</label><input class="input" placeholder="Optional reference"></div>
+        <div class="field sp2"><label>Description</label><input class="input" placeholder="Optional memo"></div>
+      </div>
+    </div>
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Line Items</h2><span class="rule"></span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:12px">＋ Add Line</button></div>
+      <div class="li-wrap">
+        <table>
+          <thead><tr><th style="width:15%">Product</th><th style="width:18%">Description</th><th class="num" style="width:6%">Qty</th>
+            <th class="num" style="width:11%">Unit Price</th><th class="num" style="width:6%">Disc %</th><th style="width:16%">Income Account</th>
+            <th style="width:10%">Cost Center</th><th class="num" style="width:10%">Amount</th><th style="width:8%"></th></tr></thead>
+          <tbody><tr>
+            <td><div class="combo"><div class="in-wrap"><input class="ci" placeholder="Search products…" style="border-radius:7px 0 0 7px"></div><button style="width:32px;border:1px solid #dceaea;border-left:none;border-radius:0 7px 7px 0;background:#f0f8f8;color:#107c7b">⌕</button></div></td>
+            <td><input class="ci"></td>
+            <td class="num"><input class="ci" value="1"></td><td class="num"><input class="ci" value="0"></td><td class="num"><input class="ci" value="0"></td>
+            <td><input class="ci" placeholder="Select account"></td><td><input class="ci" placeholder="None"></td>
+            <td><span class="amt">0.00</span></td>
+            <td><div class="row-act"><button class="ibtn">⧉</button><button class="ibtn del">🗑</button></div></td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h2>Attachments</h2><span class="rule"></span></div>
+      <div class="drop"><p>Drag &amp; drop files here, or <b>browse</b></p>
+        <div class="fmts"><span class="fmt">PDF</span><span class="fmt">IMG</span><span class="fmt">XLSX</span><span class="fmt">DOCX</span></div></div>
+    </div>
+  </section>
+
+  <aside class="railsum">
+    <section class="card">
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2 style="font-size:13.5px">Summary</h2></div>
+        <div style="margin-top:10px">
+          <div class="srow"><span class="l">Subtotal</span><span class="v">0.00</span></div>
+        </div>
+        <div class="gt"><span class="l">Grand Total</span><span class="v">K0.00</span></div>
+      </div>
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/></svg></span><h2 style="font-size:13.5px">Shortcuts</h2></div>
+        <div class="tiles">
+          <button class="tile"><span class="ic">👤</span>New Customer</button>
+          <button class="tile"><span class="ic">🗎</span>Invoice List</button>
+          <button class="tile"><span class="ic">🧾</span>Receipts</button>
+          <button class="tile"><span class="ic">📊</span>Day Book</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<!-- ================= EDIT INVOICE ================= -->
+<span class="opt-tag">Edit Invoice — INV-2026-0001 · Draft</span>
+<div class="sticky-head">
+  <div class="sh-row">
+    <div><h1>Edit Invoice <span class="mono-chip">INV-2026-0001</span><span class="badge b-draft"><span class="bdot"></span>Draft</span></h1>
+      <div class="sub">Walk-in Customer · last saved Jul 15, 2026 8:40 AM</div></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm">← Back to Invoice</button>
+      <button class="btn btn-danger btn-sm">🗑 Delete</button>
+      <div class="seg">
+        <button class="btn btn-primary">Save Changes</button>
+        <button class="btn btn-cta">Save &amp; Send ⤴</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="shell">
+  <section class="card">
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Invoice Details</h2><span class="rule"></span></div>
+      <div class="g4">
+        <div class="field sp2"><label>Customer *</label>
+          <div class="combo"><div class="in-wrap"><input class="input" value="Walk-in Customer" style="padding-left:38px"></div><button>⌕</button></div></div>
+        <div class="field"><label>Invoice Date *</label><div class="in-wrap"><input class="input" value="07/15/2026"><svg class="end" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div></div>
+        <div class="field"><label>Due Date *</label><div class="in-wrap"><input class="input" value="08/15/2026"><svg class="end" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div></div>
+        <div class="field sp2"><label>Reference</label><input class="input" value="REF-001"></div>
+        <div class="field sp2"><label>Description</label><input class="input" value="Test invoice"></div>
+      </div>
+    </div>
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Line Items</h2><span class="rule"></span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:12px">＋ Add Line</button></div>
+      <div class="li-wrap">
+        <table>
+          <thead><tr><th style="width:15%">Product</th><th style="width:18%">Description</th><th class="num" style="width:6%">Qty</th>
+            <th class="num" style="width:11%">Unit Price</th><th class="num" style="width:6%">Disc %</th><th style="width:16%">Income Account</th>
+            <th style="width:10%">Cost Center</th><th class="num" style="width:10%">Amount</th><th style="width:8%"></th></tr></thead>
+          <tbody><tr>
+            <td><span class="code">SRV-001</span></td>
+            <td><input class="ci" value="Consultation · Test invoice"></td>
+            <td class="num"><input class="ci" value="1"></td><td class="num"><input class="ci" value="1,500.00"></td><td class="num"><input class="ci" value="0"></td>
+            <td><input class="ci" value="4000 · Sales"></td><td><input class="ci" placeholder="None"></td>
+            <td><span class="amt">1,500.00</span></td>
+            <td><div class="row-act"><button class="ibtn">⧉</button><button class="ibtn del">🗑</button></div></td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h2>Attachments</h2><span class="rule"></span></div>
+      <div class="drop"><p>Drag &amp; drop files here, or <b>browse</b></p>
+        <div class="fmts"><span class="fmt">PDF</span><span class="fmt">IMG</span><span class="fmt">XLSX</span><span class="fmt">DOCX</span></div></div>
+    </div>
+  </section>
+
+  <aside class="railsum">
+    <section class="card">
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2 style="font-size:13.5px">Balances</h2></div>
+        <div style="margin-top:10px">
+          <div class="srow"><span class="l">Subtotal</span><span class="v">1,500.00</span></div>
+          <div class="srow strong"><span class="l">Total</span><span class="v">1,500.00</span></div>
+          <div class="srow"><span class="l">Paid</span><span class="v">0.00</span></div>
+        </div>
+        <div class="gt red"><span class="l">Balance Due</span><span class="v">K1,500.00</span></div>
+      </div>
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/></svg></span><h2 style="font-size:13.5px">Shortcuts</h2></div>
+        <div class="tiles">
+          <button class="tile"><span class="ic">👤</span>Customer</button>
+          <button class="tile"><span class="ic">🗎</span>Invoice List</button>
+          <button class="tile"><span class="ic">🧾</span>Receipts</button>
+          <button class="tile"><span class="ic">📊</span>Day Book</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<!-- ================= INVOICE VIEW ================= -->
+<span class="opt-tag">Invoice View — head + grouped toolbar move together</span>
+<div class="sticky-head">
+  <div class="sh-row">
+    <div><h1>Invoice <span class="mono-chip">INV-2026-0001</span><span class="badge b-pend"><span class="bdot"></span>Pending</span></h1>
+      <div class="sub">Walk-in Customer · Issued Jul 15, 2026 · Due Aug 15, 2026</div></div>
+    <button class="btn btn-ghost btn-sm">← Back to Invoices</button>
+  </div>
+  <div class="toolbar">
+    <div><div class="glabel">Create</div>
+      <div class="tbtns"><button class="btn btn-ghost btn-sm">＋ New</button><button class="btn btn-ghost btn-sm">Save</button>
+        <button class="btn btn-cta btn-sm">Save &amp; Send</button></div></div>
+    <span class="tdiv"></span>
+    <div><div class="glabel">Reference</div>
+      <div class="tbtns"><button class="btn btn-ghost btn-sm">🔍 Lookup Customer</button><button class="btn btn-ghost btn-sm">⧉ Copy from Quote</button></div></div>
+    <span class="tdiv"></span>
+    <div><div class="glabel">Document</div>
+      <div class="tbtns"><button class="btn btn-ghost btn-sm">🖨 Print</button><button class="btn btn-ghost btn-sm">📎 Attach File</button><button class="btn btn-ghost btn-sm">✉ Email Invoice</button></div></div>
+  </div>
+</div>
+<div class="shell">
+  <div class="col">
+    <section class="card">
+      <div class="card-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Invoice Information</h2><span class="rule"></span></div>
+        <div class="ro-grid">
+          <div class="ro"><div class="l">Invoice Number</div><div class="v mono">INV-2026-0001</div></div>
+          <div class="ro"><div class="l">Status</div><div class="v"><span class="badge b-pend"><span class="bdot"></span>Pending</span></div></div>
+          <div class="ro"><div class="l">Customer</div><div class="v">Walk-in Customer</div></div>
+          <div class="ro"><div class="l">Reference</div><div class="v mono">REF-001</div></div>
+          <div class="ro"><div class="l">Invoice Date</div><div class="v">Jul 15, 2026</div></div>
+          <div class="ro"><div class="l">Due Date</div><div class="v">Aug 15, 2026</div></div>
+          <div class="ro"><div class="l">Description</div><div class="v">Test invoice</div></div>
+          <div class="ro"><div class="l">Prepared By</div><div class="v">Elvis Seyama</div></div>
+        </div>
+      </div>
+      <div class="card-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Line Items</h2><span class="rule"></span></div>
+        <div class="li-wrap">
+          <table>
+            <thead><tr><th style="width:16%">Product</th><th style="width:22%">Description</th><th class="num" style="width:7%">Qty</th>
+              <th class="num" style="width:11%">Unit Price</th><th class="num" style="width:8%">Discount</th><th class="num" style="width:8%">Tax</th>
+              <th style="width:12%">Cost Center</th><th class="num" style="width:16%">Total</th></tr></thead>
+            <tbody><tr>
+              <td><span class="code">SRV-001</span></td><td style="font-weight:500;color:#0B2A2D">Consultation</td>
+              <td class="num" style="text-align:right">1</td><td style="text-align:right">1,500.00</td>
+              <td style="text-align:right">0%</td><td style="text-align:right">0%</td>
+              <td style="color:#8aa5a7">—</td><td class="amt" style="padding-right:10px">1,500.00</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="railsum">
+    <section class="card">
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2 style="font-size:13.5px">Balances</h2></div>
+        <div style="margin-top:10px">
+          <div class="srow"><span class="l">Subtotal</span><span class="v">1,500.00</span></div>
+          <div class="srow strong"><span class="l">Total</span><span class="v">1,500.00</span></div>
+          <div class="srow"><span class="l">Paid</span><span class="v">0.00</span></div>
+        </div>
+        <div class="gt red"><span class="l">Balance Due</span><span class="v">K1,500.00</span></div>
+      </div>
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2 style="font-size:13.5px">Quick Nav</h2></div>
+        <div class="vlist">
+          <button class="vbtn"><span class="ic">🖨</span>Print</button>
+          <button class="vbtn"><span class="ic">←</span>Back to Invoices</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+</div>
+</body>
+</html>

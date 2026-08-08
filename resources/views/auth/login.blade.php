@@ -1,22 +1,38 @@
 <x-auth-layout title="Sign in">
-    <p class="auth-login-form-eyebrow auth-login-mono">{{ __('Sign in') }}</p>
-    <h2 class="auth-login-form-title auth-login-serif">{{ __('Welcome back') }}</h2>
-    <p class="auth-login-form-sub">{{ __('Enter your credentials to access your workspace.') }}</p>
+    @slot('footnote')
+        {{ __('Don\'t have access?') }} <a href="mailto:support@camelotbooks.com">{{ __('Contact your administrator.') }}</a>
+    @endslot
+
+    <p class="auth-form-eyebrow">{{ __('Sign in') }}</p>
+    <h2 class="auth-form-title">{{ __('Welcome back') }}</h2>
+    <p class="auth-form-sub">{{ __('Enter your credentials to access your workspace.') }}</p>
 
     <x-auth-session-status class="mb-5" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}" class="auth-login-form-fields">
+    <form method="POST" action="{{ route('login') }}" class="auth-form-fields">
         @csrf
 
-        <div class="auth-login-field">
+        <div class="auth-form-field">
             <label for="email" class="input-label">{{ __('Email') }}</label>
             <x-text-input id="email" class="input w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" placeholder="you@company.com" />
             <x-input-error :messages="$errors->get('email')" class="mt-1.5" />
         </div>
 
-        <div class="auth-login-field">
+        <div class="auth-form-field">
             <label for="password" class="input-label">{{ __('Password') }}</label>
-            <x-text-input id="password" class="input w-full" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password" />
+            <div class="password-input-wrap" x-data="{ showLoginPassword: false }">
+                <input
+                    id="password"
+                    class="input password-input-boxed w-full"
+                    type="password"
+                    name="password"
+                    :type="showLoginPassword ? 'text' : 'password'"
+                    required
+                    autocomplete="current-password"
+                    placeholder="Enter your password"
+                >
+                @include('auth.partials.password-toggle', ['xVar' => 'showLoginPassword'])
+            </div>
             <x-input-error :messages="$errors->get('password')" class="mt-1.5" />
         </div>
 
@@ -38,5 +54,8 @@
         </x-primary-button>
     </form>
 
-    <p class="auth-login-footnote">{{ __('Don\'t have access? Contact your administrator.') }}</p>
+    <p class="auth-secure">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        {{ __('Protected by 256-bit encryption') }}
+    </p>
 </x-auth-layout>

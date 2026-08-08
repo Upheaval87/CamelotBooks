@@ -1,11 +1,11 @@
 document.addEventListener('alpine:init', () => {
     // Forgot-password form: client-side email validation, in-place submission
-    // to the existing password.email endpoint, and an enumeration-safe neutral
-    // confirmation that replaces the form without a page navigation.
+    // to the existing password.email endpoint, and navigation to the
+    // verify-code page when the email matches an account. Unknown emails get
+    // an inline error returned by the server (422).
     Alpine.data('forgotPassword', () => ({
         email: '',
         submitting: false,
-        sent: false,
         error: '',
 
         get valid() {
@@ -33,7 +33,12 @@ document.addEventListener('alpine:init', () => {
                 });
 
                 if (response.ok) {
-                    this.sent = true;
+                    // Known email: the server issues the code and returns the
+                    // verify-code URL for the client to follow.
+                    const data = await response.json().catch(() => ({}));
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
                     return;
                 }
 

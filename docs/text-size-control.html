@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" data-fs="100">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Try Text Size — CamelotBooks</title>
+<script>/* apply saved size before paint (no FOUC) */
+(function(){var v=parseInt(localStorage.getItem('cb_textsize')||'100',10);
+document.documentElement.dataset.fs=v;})();
+</script>
+<style>
+  /* ===== scaling steps ===== */
+  html{font-size:100%}
+  html[data-fs="90"]{font-size:90%} html[data-fs="100"]{font-size:100%}
+  html[data-fs="110"]{font-size:110%} html[data-fs="120"]{font-size:120%}
+  html[data-fs="125"]{font-size:125%} html[data-fs="130"]{font-size:130%}
+  @media print{html{font-size:100%!important}}
+
+  :root{
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;
+    --sec:#128F8E;--sec-2:#149897;--mint:#7FD1C0;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;
+    --muted:#5f7476;--faint:#8aa5a7;--link:#0C6B6A;--focus:#94a3b8;
+    --shadow-card:0 1px 2px rgba(10,42,46,.05),0 12px 32px -8px rgba(10,42,46,.10),0 32px 64px -24px rgba(8,40,44,.14);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;
+    font-size:.84375rem;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:90rem;margin:0 auto;padding:0 1.75rem 4.5rem}
+
+  /* ===== header ===== */
+  .tealbar{width:100%;background:radial-gradient(38rem 13.75rem at 10% -30%, rgba(255,255,255,.09), transparent 60%),
+    linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%);position:relative}
+  .row1{display:flex;align-items:center;gap:.75rem;padding:.625rem 1.75rem}
+  .logo{width:2.125rem;height:2.125rem;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:.75rem;
+    background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:.90625rem;font-weight:800}
+  .brand-s{color:rgba(226,244,244,.55);font-size:.59375rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-top:1px}
+  .vdiv{width:1px;height:1.625rem;background:rgba(255,255,255,.12)}
+  .ctx{color:rgba(226,244,244,.7);font-size:.78125rem;font-weight:600}
+  .spacer{flex:1}
+  .cbtn{width:2.125rem;height:2.125rem;border-radius:50%;display:grid;place-items:center;position:relative;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(226,244,244,.85);transition:all .15s}
+  .cbtn:hover{background:rgba(255,255,255,.12);color:#fff}
+  .cbtn.on{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.3)}
+  .cbtn .aa{font-size:.75rem;font-weight:800}
+  .cbtn .dot{position:absolute;top:.4375rem;right:.5rem;width:.375rem;height:.375rem;border-radius:50%;background:#2ecc8f;box-shadow:0 0 0 3px rgba(46,204,143,.25)}
+  .userchip{display:flex;align-items:center;gap:.5625rem;padding:.25rem .6875rem .25rem .25rem;border-radius:.75rem;
+    background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar{width:1.8125rem;height:1.8125rem;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.6875rem;
+    background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2;border:1px solid rgba(255,255,255,.25)}
+  .u-n{color:#fff;font-size:.75rem;font-weight:700}
+  .u-r{color:rgba(226,244,244,.55);font-size:.5625rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .row2{display:flex;gap:.125rem;padding:.4375rem 1.25rem .5625rem;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55)}
+  .navitem{display:flex;align-items:center;gap:.375rem;padding:.375rem .75rem;border-radius:.625rem;color:var(--ink);
+    font-size:.8125rem;font-weight:700;text-decoration:none}
+  .navitem .ic{width:1.875rem;height:1.875rem;border-radius:.5625rem;display:grid;place-items:center;color:var(--ink)}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .navitem.active .ic{color:#fff}
+
+  /* ===== text-size popover ===== */
+  .fs-pop{position:absolute;right:6rem;top:3.25rem;width:15.625rem;border-radius:1rem;padding:1rem;z-index:70;display:none;
+    background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);
+    box-shadow:0 30px 80px -20px rgba(4,20,22,.65), 0 8px 24px -8px rgba(4,20,22,.4)}
+  .fs-pop.open{display:block}
+  .fs-pop .l{font-size:.65625rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .fs-row{display:flex;align-items:center;justify-content:space-between;gap:.625rem;margin-top:.75rem}
+  .fs-btn{width:2.25rem;height:2.25rem;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;
+    color:var(--ink);font-weight:800;font-size:.8125rem;display:grid;place-items:center;transition:all .15s}
+  .fs-btn:hover{background:rgba(17,69,75,.06);border-color:rgba(17,69,75,.3)}
+  .fs-btn:disabled{opacity:.4;cursor:not-allowed}
+  .fs-val{min-width:3.5rem;text-align:center;font-size:.875rem;font-weight:800;color:var(--ink)}
+  .fs-presets{display:flex;gap:.375rem;margin-top:.75rem}
+  .fs-presets button{flex:1;height:1.875rem;border-radius:.5625rem;border:1px solid var(--border);background:#fff;cursor:pointer;
+    font-size:.6875rem;font-weight:800;color:var(--muted);transition:all .15s}
+  .fs-presets button.on{background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:transparent;color:#fff;
+    box-shadow:0 4px 10px -4px rgba(18,143,142,.55)}
+  .fs-reset{margin-top:.75rem;width:100%;border:none;background:none;cursor:pointer;font-size:.71875rem;font-weight:700;
+    color:var(--link);text-decoration:underline;text-underline-offset:3px}
+  .fs-note{margin-top:.5rem;font-size:.65625rem;color:var(--faint);text-align:center}
+
+  /* ===== page ===== */
+  .sticky-head{position:sticky;top:0;z-index:40;background:rgba(238,244,244,.88);backdrop-filter:blur(12px);
+    padding:.875rem 0;border-bottom:1px solid var(--line);margin:1.375rem 0;
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+  h1{font-size:1.3125rem;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+  .sub{font-size:.78125rem;color:var(--muted);margin-top:.25rem}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;height:2.5rem;padding:0 1rem;border-radius:.75rem;
+    font-weight:600;font-size:.84375rem;border:1px solid transparent;cursor:pointer;transition:all .16s;white-space:nowrap}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151;box-shadow:0 1px 2px rgba(10,42,46,.05)}
+  .btn-ghost:hover{background:rgba(17,69,75,.06);border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-sm{height:2.125rem;padding:0 .8125rem;font-size:.78125rem;border-radius:.625rem}
+  .seg{display:inline-flex;gap:.25rem;padding:.25rem;border-radius:.875rem;background:rgba(255,255,255,.7);border:1px solid var(--border)}
+  .seg button{height:2rem;padding:0 .875rem;border-radius:.625rem;border:none;background:transparent;font-size:.78125rem;font-weight:700;color:var(--muted);cursor:pointer}
+  .seg button.on{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+
+  .shell{display:grid;grid-template-columns:1fr 21.25rem;gap:1.5rem;align-items:start}
+  .card{background:rgba(255,255,255,.75);backdrop-filter:blur(14px);border-radius:1.25rem;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-sec{padding:1.25rem 1.5rem}
+  .card-sec + .card-sec{border-top:1px solid var(--line)}
+  .sec-head{display:flex;align-items:center;gap:.75rem}
+  .sec-ic{width:1.75rem;height:1.75rem;border-radius:.5625rem;display:grid;place-items:center;flex:none;color:#fff;background:var(--sec);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px -3px rgba(10,80,80,.4)}
+  .sec-head h2{font-size:.9375rem;font-weight:800;color:var(--sec)}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1.125rem 1.25rem;margin-top:1.125rem}
+  .sp2{grid-column:span 2}
+  .field label{display:block;font-size:.6875rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:.4375rem}
+  .input{width:100%;height:2.75rem;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.85);
+    padding:0 .875rem;font-size:.84375rem;color:var(--ink);font-family:inherit;transition:all .15s}
+  .input:hover{border-color:rgba(17,69,75,.3);background:#fff}
+  .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+
+  .li-wrap{margin-top:.875rem;border:1px solid var(--border);border-radius:.875rem;background:#fafdfd;overflow:visible}
+  table{width:100%;border-collapse:collapse;font-size:.8125rem;table-layout:fixed}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:.65625rem;font-weight:800;
+    letter-spacing:.08em;text-transform:uppercase;padding:.6875rem .625rem;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th:first-child{border-radius:13px 0 0 0}thead th:last-child{border-radius:0 13px 0 0}
+  thead th.num{text-align:right}
+  tbody td{padding:.5rem .375rem;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  .ci{height:2.25rem;border-radius:7px;border:1px solid var(--border);background:#fff;padding:0 .5625rem;font-size:.78125rem;width:100%;font-family:inherit;color:var(--ink)}
+  .ci:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  td.num .ci{text-align:right;font-variant-numeric:tabular-nums}
+  .amt{display:block;text-align:right;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;padding-right:.5rem}
+  .li-totals{margin-top:.875rem;display:flex;justify-content:flex-end}
+  .li-totals .box{width:17.5rem}
+  .trow{display:flex;justify-content:space-between;padding:.4375rem .125rem;border-bottom:1px solid var(--line);font-size:.78125rem;color:var(--muted)}
+  .trow .v{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  .trow.total{border-bottom:none;border-top:1.5px solid var(--deep-1);margin-top:.25rem;padding-top:.5625rem;color:var(--deep-1);font-weight:800}
+  .trow.total .v{font-weight:800;font-size:.875rem;color:var(--deep-2)}
+
+  .railsum{position:sticky;top:5.375rem}
+  .rail-sec{padding:1.125rem}
+  .rail-sec + .rail-sec{border-top:1px solid var(--line)}
+  .srow{display:flex;justify-content:space-between;padding:.5rem .125rem;border-bottom:1px solid var(--line);font-size:.8125rem}
+  .srow .l{color:var(--muted)}.srow .v{font-weight:600;color:var(--ink)}
+  .gt{margin-top:.75rem;display:flex;justify-content:space-between;align-items:center;padding:.875rem 1rem;border-radius:.8125rem;
+    background:linear-gradient(90deg,var(--sec-2),var(--sec) 60%,#107c7b);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -1px 0 rgba(11,42,45,.35)}
+  .gt .l{font-size:.625rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#dff7f6}
+  .gt .v{font-size:1.25rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+  .prog{height:.5rem;border-radius:.5rem;background:rgba(17,69,75,.10);overflow:hidden;margin-top:.75rem}
+  .prog i{display:block;height:100%;border-radius:.5rem;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .prog-note{margin-top:.5rem;font-size:.71875rem;color:var(--muted)}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.75rem}
+  .tile{display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;padding:.75rem;border-radius:.875rem;border:1px solid var(--border);
+    background:rgba(255,255,255,.85);font-size:.71875rem;font-weight:700;color:#374151;cursor:pointer;transition:all .14s;text-align:left}
+  .tile:hover{transform:translateY(-1px);border-color:rgba(17,69,75,.3);background:rgba(17,69,75,.06);color:var(--ink)}
+  .tile .ic{width:1.875rem;height:1.875rem;border-radius:.5625rem;display:grid;place-items:center;background:rgba(17,69,75,.06);color:var(--deep-1)}
+  @media (max-width:1100px){.shell{grid-template-columns:1fr}.railsum{position:static}.g4{grid-template-columns:repeat(2,1fr)}.sp2{grid-column:1/-1}}
+</style>
+</head>
+<body>
+
+<header class="tealbar">
+  <div class="row1">
+    <span class="logo">CB</span>
+    <div><div class="brand-n">CamelotBooks</div><div class="brand-s">Enterprise Accounting</div></div>
+    <span class="vdiv"></span><div class="ctx">Acme Corporation · Headquarters</div><span class="spacer"></span>
+    <button class="cbtn" aria-label="Search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="cbtn" aria-label="Notifications"><span class="dot"></span><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="cbtn" id="fsBtn" aria-label="Text size" aria-expanded="false"><span class="aa">Aa</span></button>
+    <div class="userchip"><span class="avatar">ES</span><span><span class="u-n">Elvis Seyama</span><br><span class="u-r">System Admin</span></span></div>
+  </div>
+
+  <!-- text-size popover -->
+  <div class="fs-pop" id="fsPop" role="dialog" aria-label="Text size">
+    <div class="l">Text size</div>
+    <div class="fs-row">
+      <button class="fs-btn" id="fsMinus" aria-label="Reduce text size">A−</button>
+      <span class="fs-val" id="fsVal" aria-live="polite">100%</span>
+      <button class="fs-btn" id="fsPlus" aria-label="Enlarge text size">A+</button>
+    </div>
+    <div class="fs-presets" id="fsPresets">
+      <button data-v="90">90</button><button data-v="100" class="on">100</button><button data-v="110">110</button><button data-v="125">125</button>
+    </div>
+    <button class="fs-reset" id="fsReset">Reset to default</button>
+    <div class="fs-note">Applies everywhere · saved on this device</div>
+  </div>
+
+  <div class="row2">
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 7h12l1.5 14h-15L6 7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10V6a3 3 0 0 1 6 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Sales</a>
+    <a class="navitem active" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 4h2.5l2.2 11h10.1l2-8H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Purchasing</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-5.5L21 9M5 9.5V19M9.5 9.5V19M14.5 9.5V19M19 9.5V19M3 19.5h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Banking</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>My Tasks</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Reports</a>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="sticky-head">
+  <div><h1>Create Bill</h1><div class="sub">Record a supplier bill with line items and charges — try the Aa control above.</div></div>
+  <div style="display:flex;gap:.625rem;align-items:center;flex-wrap:wrap">
+    <div class="seg"><button class="on">Draft</button><button>Posted</button><button>All</button></div>
+    <button class="btn btn-ghost btn-sm">Save Draft</button>
+    <button class="btn btn-cta">Submit for Approval ⤴</button>
+  </div>
+</div>
+
+<div class="shell">
+  <section class="card">
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-6 9 6M5 9v11M19 9v11M9 9v11M15 9v11M3 20h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h2>Supplier Information</h2><span class="rule"></span></div>
+      <div class="g4">
+        <div class="field sp2"><label>Supplier *</label><input class="input" value="Metro Supplies Ltd"></div>
+        <div class="field"><label>Bill Date *</label><input class="input" value="08/07/2026"></div>
+        <div class="field"><label>Due Date *</label><input class="input" value="09/06/2026"></div>
+        <div class="field sp2"><label>Supplier Invoice №</label><input class="input" value="INV-0092"></div>
+        <div class="field"><label>Purchase Order</label><input class="input" value="PO-1101"></div>
+        <div class="field"><label>Terms</label><input class="input" value="Net 30"></div>
+      </div>
+    </div>
+    <div class="card-sec">
+      <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Line Items</h2><span class="rule"></span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:.75rem">＋ Add Line</button></div>
+      <div class="li-wrap">
+        <table>
+          <thead><tr><th style="width:17%">Product</th><th style="width:23%">Description</th><th class="num" style="width:8%">Qty</th>
+            <th class="num" style="width:13%">Unit Cost</th><th class="num" style="width:8%">Disc %</th>
+            <th class="num" style="width:14%">Amount</th><th style="width:17%">Income Account</th></tr></thead>
+          <tbody>
+            <tr><td><input class="ci" value="PAP-001 · Office Paper A4"></td><td><input class="ci" value="80gsm reams"></td>
+              <td class="num"><input class="ci" value="50"></td><td class="num"><input class="ci" value="250.00"></td>
+              <td class="num"><input class="ci" value="0"></td><td><span class="amt">12,500.00</span></td>
+              <td><input class="ci" value="5000 · Supplies"></td></tr>
+            <tr><td><input class="ci" value="TON-002 · Toner Cartridge"></td><td><input class="ci" value="HP 26A black"></td>
+              <td class="num"><input class="ci" value="4"></td><td class="num"><input class="ci" value="18,000.00"></td>
+              <td class="num"><input class="ci" value="0"></td><td><span class="amt">72,000.00</span></td>
+              <td><input class="ci" value="5000 · Supplies"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="li-totals"><div class="box">
+        <div class="trow"><span>Subtotal</span><span class="v">84,500.00</span></div>
+        <div class="trow"><span>Freight</span><span class="v">1,500.00</span></div>
+        <div class="trow total"><span>Total (tax-exclusive)</span><span class="v">K86,000.00</span></div>
+      </div></div>
+    </div>
+  </section>
+
+  <aside class="railsum">
+    <section class="card">
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2 style="font-size:.84375rem">Summary</h2></div>
+        <div style="margin-top:.625rem">
+          <div class="srow"><span class="l">Subtotal</span><span class="v">84,500.00</span></div>
+          <div class="srow"><span class="l">Freight</span><span class="v">1,500.00</span></div>
+        </div>
+        <div class="gt"><span class="l">Grand Total</span><span class="v">K86,000.00</span></div>
+        <div class="prog"><i style="width:64%"></i></div>
+        <p class="prog-note">3 of 5 approval steps complete · 64%</p>
+      </div>
+      <div class="rail-sec">
+        <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2"/></svg></span><h2 style="font-size:.84375rem">Shortcuts</h2></div>
+        <div class="tiles">
+          <button class="tile"><span class="ic">🏢</span>New Vendor</button>
+          <button class="tile"><span class="ic">🧾</span>Bills List</button>
+          <button class="tile"><span class="ic">📦</span>GRNs</button>
+          <button class="tile"><span class="ic">🛒</span>Purchase Orders</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+</div>
+
+<script>
+(function(){
+  var MIN=90, MAX=130, STEP=10;
+  var btn=document.getElementById('fsBtn'), pop=document.getElementById('fsPop'),
+      minus=document.getElementById('fsMinus'), plus=document.getElementById('fsPlus'),
+      val=document.getElementById('fsVal'), presets=document.getElementById('fsPresets'),
+      reset=document.getElementById('fsReset');
+  function current(){ return parseInt(document.documentElement.dataset.fs||'100',10); }
+  function render(v){
+    val.textContent=v+'%';
+    minus.disabled = v<=MIN; plus.disabled = v>=MAX;
+    presets.querySelectorAll('button').forEach(function(b){
+      b.classList.toggle('on', parseInt(b.dataset.v,10)===v);
+    });
+    btn.classList.toggle('on', v!==100);
+  }
+  function set(v){
+    v=Math.min(MAX,Math.max(MIN,v));
+    document.documentElement.dataset.fs=v;
+    localStorage.setItem('cb_textsize', String(v));
+    render(v);
+  }
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    var open=pop.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open?'true':'false');
+  });
+  document.addEventListener('click', function(e){
+    if(!pop.contains(e.target) && e.target!==btn){ pop.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){ pop.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+  });
+  minus.addEventListener('click', function(){ set(current()-STEP); });
+  plus.addEventListener('click', function(){ set(current()+STEP); });
+  presets.addEventListener('click', function(e){
+    var b=e.target.closest('button[data-v]'); if(b) set(parseInt(b.dataset.v,10));
+  });
+  reset.addEventListener('click', function(){ set(100); });
+  render(current());
+})();
+</script>
+</body>
+</html>

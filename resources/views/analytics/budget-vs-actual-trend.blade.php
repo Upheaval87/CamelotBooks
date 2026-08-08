@@ -59,7 +59,7 @@
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Cumulative Budget vs Actual</h3>
                     <x-chart type="line" :id="'budget-vs-actual'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                        ['label' => 'Budget (Cumulative)', 'data' => $data['budget_data'], 'borderColor' => '#6366f1', 'backgroundColor' => 'rgba(99,102,241,0.1)', 'fill' => false, 'borderWidth' => 2],
+                        ['label' => 'Budget (Cumulative)', 'data' => $data['budget_data'], 'borderColor' => '#128F8E', 'backgroundColor' => 'rgba(18,143,142,0.1)', 'fill' => false, 'borderWidth' => 2],
                         ['label' => 'Actual (Cumulative)', 'data' => $data['actual_data'], 'borderColor' => '#10b981', 'backgroundColor' => 'rgba(16,185,129,0.1)', 'fill' => false, 'borderWidth' => 2],
                         ['label' => 'Variance', 'data' => $data['variance_data'], 'borderColor' => '#f59e0b', 'backgroundColor' => 'rgba(245,158,11,0.1)', 'fill' => true, 'borderDash' => [5,5]],
                     ])" height="350" />

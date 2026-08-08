@@ -27,7 +27,7 @@
                                 $isActive = (bool) ($state?->is_active ?? false);
                                 $effectiveActive = $module->is_core || $isActive;
                             @endphp
-                            <tr class="transition-colors hover:bg-[rgba(36,56,79,.035)]">
+                            <tr class="transition-colors hover:bg-[rgba(17,69,75,.035)]">
                                 <td class="px-5 py-[18px] align-middle">
                                     <span class="font-bold text-gray-900">{{ $module->name }}</span>
                                     @if($module->description)

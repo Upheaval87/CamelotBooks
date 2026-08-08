@@ -9,7 +9,7 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Profitability by Branch</h3>
                 <x-chart type="bar" :id="'profit-by-branch'" :labels="json_encode(array_column($data['by_branch'], 'branch_name'))" :datasets="json_encode([
-                    ['label' => 'Revenue', 'data' => array_column($data['by_branch'], 'revenue'), 'backgroundColor' => '#6366f1'],
+                    ['label' => 'Revenue', 'data' => array_column($data['by_branch'], 'revenue'), 'backgroundColor' => '#128F8E'],
                     ['label' => 'Expenses', 'data' => array_column($data['by_branch'], 'expenses'), 'backgroundColor' => '#ef4444'],
                 ])" height="300" />
             </div>
@@ -19,7 +19,7 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Profitability by Cost Center</h3>
                 <x-chart type="bar" :id="'profit-by-cc'" :labels="json_encode(array_column($data['by_cost_center'], 'cost_center_name'))" :datasets="json_encode([
-                    ['label' => 'Revenue', 'data' => array_column($data['by_cost_center'], 'revenue'), 'backgroundColor' => '#6366f1'],
+                    ['label' => 'Revenue', 'data' => array_column($data['by_cost_center'], 'revenue'), 'backgroundColor' => '#128F8E'],
                     ['label' => 'Expenses', 'data' => array_column($data['by_cost_center'], 'expenses'), 'backgroundColor' => '#ef4444'],
                 ])" height="300" />
             </div>

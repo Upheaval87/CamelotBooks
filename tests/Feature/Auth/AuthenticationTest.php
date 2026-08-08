@@ -22,8 +22,8 @@ class AuthenticationTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertStatus(200)
-            ->assertSee('auth-login-hero', false)
-            ->assertSee('auth-login-panel', false)
+            ->assertSee('auth-brand', false)
+            ->assertSee('auth-form-col', false)
             ->assertSee('Welcome back', false)
             ->assertSee('name="remember"', false)
             ->assertSee('auth-login-forgot', false)

@@ -8,7 +8,7 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly Trend</h3>
                 <x-chart type="line" :id="'revenue-expense-trend'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                    ['label' => 'Revenue', 'data' => $data['revenue_data'], 'borderColor' => '#6366f1', 'backgroundColor' => 'rgba(99,102,241,0.1)', 'fill' => true],
+                    ['label' => 'Revenue', 'data' => $data['revenue_data'], 'borderColor' => '#128F8E', 'backgroundColor' => 'rgba(18,143,142,0.1)', 'fill' => true],
                     ['label' => 'Expenses', 'data' => $data['expense_data'], 'borderColor' => '#ef4444', 'backgroundColor' => 'rgba(239,68,68,0.1)', 'fill' => true],
                     ['label' => 'Net Income', 'data' => $data['net_income_data'], 'borderColor' => '#10b981', 'backgroundColor' => 'rgba(16,185,129,0.1)', 'fill' => false, 'borderDash' => [5,5]],
                 ])" height="350" />

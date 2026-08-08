@@ -10,14 +10,17 @@ document.addEventListener('alpine:init', () => {
         submitting: false,
         resending: false,
         resendDisabledUntil: 0,
+        resendLabel: '',
         error: '',
         timer: null,
         resendTimer: null,
 
         init() {
             this.countdown = this.remainingLabel();
+            this.resendLabel = this.resendRemainingLabel();
             this.timer = setInterval(() => {
                 this.countdown = this.remainingLabel();
+                this.resendLabel = this.resendRemainingLabel();
                 if (this.expired) {
                     clearInterval(this.timer);
                 }
@@ -59,6 +62,22 @@ document.addEventListener('alpine:init', () => {
             return this.resendDisabledUntil > Date.now();
         },
 
+        resendRemainingLabel() {
+            if (!this.resendDisabled) {
+                return '';
+            }
+            const total = Math.max(0, Math.floor((this.resendDisabledUntil - Date.now()) / 1000));
+            const minutes = String(Math.floor(total / 60)).padStart(2, '0');
+            const seconds = String(total % 60).padStart(2, '0');
+            return `${minutes}:${seconds}`;
+        },
+
+        maybeAutoSubmit() {
+            if (this.complete && !this.submitting && !this.expired) {
+                this.submit();
+            }
+        },
+
         remainingLabel() {
             const total = Math.floor(this.remainingMs / 1000);
 
@@ -91,6 +110,8 @@ document.addEventListener('alpine:init', () => {
             if (this.code[index] && index < 5) {
                 this.focusBox(index + 1);
             }
+
+            this.maybeAutoSubmit();
         },
 
         onKeydown(index, event) {
@@ -130,7 +151,10 @@ document.addEventListener('alpine:init', () => {
                 cursor += 1;
             }
 
-            this.$nextTick(() => this.focusBox(Math.min(cursor - 1, 5)));
+            this.$nextTick(() => {
+                this.focusBox(Math.min(cursor - 1, 5));
+                this.maybeAutoSubmit();
+            });
         },
 
         async submit() {
@@ -219,9 +243,11 @@ document.addEventListener('alpine:init', () => {
 
         cooldown(seconds) {
             this.resendDisabledUntil = Date.now() + seconds * 1000;
+            this.resendLabel = this.resendRemainingLabel();
             clearTimeout(this.resendTimer);
             this.resendTimer = setTimeout(() => {
                 this.resendDisabledUntil = 0;
+                this.resendLabel = this.resendRemainingLabel();
             }, seconds * 1000);
         },
     }));

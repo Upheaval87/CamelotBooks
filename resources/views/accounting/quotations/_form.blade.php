@@ -61,12 +61,12 @@
         })->all();
     }
 
-    $secIc = 'w-7 h-7 rounded-[9px] grid place-items-center text-[#e2c069] bg-gradient-to-b from-[#2e4763] to-[#22394f] shadow-[inset_0_1px_0_rgba(255,255,255,.10),0_3px_8px_-3px_rgba(0,0,0,.4)]';
+    $secIc = 'w-7 h-7 rounded-[9px] grid place-items-center text-white bg-[#128F8E] shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_3px_8px_-3px_rgba(10,80,80,.4)]';
     $secHead = 'flex items-center gap-3';
-    $btnTertiary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-transparent bg-transparent text-gray-600 transition-all duration-150 hover:bg-white/75 hover:text-[#16283c] hover:-translate-y-px active:translate-y-0';
-    $btnGhost = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-shell bg-white/85 text-gray-700 shadow-sm transition-all duration-150 hover:bg-[rgba(36,56,79,.06)] hover:border-navy-700/25 hover:text-[#1d3349] hover:-translate-y-px active:translate-y-0';
-    $btnPrimary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-[#f0f5fa] border border-white/15 bg-gradient-to-b from-[#2e4763] via-[#1d3349] to-[#15263a] shadow-[0_1px_2px_rgba(10,20,33,.30),0_10px_20px_-10px_rgba(24,42,62,.60),inset_0_1px_0_rgba(255,255,255,.12)] transition-all duration-150 hover:-translate-y-px active:translate-y-0';
-    $btnAccent = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-white border border-white/25 bg-gradient-to-b from-gold-500 to-gold-600 shadow-new transition-all duration-150 hover:-translate-y-px active:translate-y-0';
+    $btnTertiary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-transparent bg-transparent text-gray-600 transition-all duration-150 hover:bg-white/75 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
+    $btnGhost = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-shell bg-white/85 text-gray-700 shadow-sm transition-all duration-150 hover:bg-[rgba(17,69,75,.06)] hover:border-navy-700/25 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
+    $btnPrimary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-white border border-white/25 bg-gradient-to-b from-gold-500 to-gold-600 shadow-new transition-all duration-150 hover:-translate-y-px active:translate-y-0';
+    $btnAccent = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-[#EAFFFF] border border-white/15 bg-gradient-to-b from-[#17565D] via-[#0C3539] to-[#0A2E32] shadow-[0_1px_2px_rgba(6,32,35,.30),0_10px_20px_-10px_rgba(12,53,57,.60),inset_0_1px_0_rgba(255,255,255,.12)] transition-all duration-150 hover:-translate-y-px active:translate-y-0 font-bold';
     $selectWrap = 'relative';
     $selectChevron = 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500';
 @endphp
@@ -107,7 +107,7 @@
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-gray-900">{{ __('Customer Information') }}</h2>
+                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Customer Information') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
                     <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
@@ -167,7 +167,7 @@
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-gray-900">{{ __('Quotation Information') }}</h2>
+                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Quotation Information') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
                     <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
@@ -229,7 +229,7 @@
                 <section class="card relative z-30 rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-gray-900">{{ __('Line Items') }}</h2>
+                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Line Items') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                         <button type="button" id="quot-add-line" class="{{ $btnGhost }}" style="height:34px;padding:0 13px;font-size:12.5px;border-radius:10px;margin-left:12px;">＋ {{ __('Add Line') }}</button>
                     </div>
@@ -259,7 +259,7 @@
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-gray-900">{{ __('Notes') }}</h2>
+                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Notes') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
                     <div class="grid grid-cols-1 gap-x-5 gap-y-4 mt-5 xl:grid-cols-2">
@@ -279,7 +279,7 @@
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-gray-900">{{ __('Attachments') }}</h2>
+                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Attachments') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
 
@@ -297,15 +297,15 @@
                     @endif
 
                     <label class="bill-drop mt-4" id="quot-dropzone" for="quot-files">
-                        <div class="w-[46px] h-[46px] mx-auto mb-2.5 rounded-full grid place-items-center bg-[rgba(36,56,79,.06)] border border-navy-700/15 text-navy-700">
+                        <div class="w-[46px] h-[46px] mx-auto mb-2.5 rounded-full grid place-items-center bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700">
                             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
                         <p class="text-[13px] text-slate-500">{{ __('Drag & drop files here, or') }} <b class="text-gold-700">{{ __('browse') }}</b></p>
                         <div class="mt-2.5 flex gap-1.5 justify-center flex-wrap">
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(36,56,79,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">PDF</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(36,56,79,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">IMG</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(36,56,79,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">XLSX</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(36,56,79,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">DOCX</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">PDF</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">IMG</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">XLSX</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">DOCX</span>
                         </div>
                     </label>
 

@@ -1,9 +1,16 @@
-<x-auth-layout title="Set a new password">
-    <p class="auth-login-form-eyebrow auth-login-mono">{{ __('Security') }}</p>
-    <h2 class="auth-login-form-title auth-login-serif">{{ __('Set a new password') }}</h2>
-    <p class="auth-login-form-sub">{{ __('Choose a strong password you haven\'t used before on CamelotBooks.') }}</p>
+<x-auth-layout title="Set a new password" back-href="{{ route('login') }}">
+    @slot('footnote')
+        {{ __('You\'ll be signed out of all other devices after reset.') }}
+    @endslot
 
-    <form method="POST" action="{{ route('password.store') }}">
+    <div class="auth-halo" aria-hidden="true">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="5" y="10" width="14" height="10" rx="2.5" stroke-width="1.8"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg>
+    </div>
+    <p class="auth-form-eyebrow">{{ __('Secure reset') }}</p>
+    <h2 class="auth-form-title">{{ __('Set a new password') }}</h2>
+    <p class="auth-form-sub">{{ __('Choose a strong password you haven\'t used before on this workspace.') }}</p>
+
+    <form method="POST" action="{{ route('password.store') }}" class="auth-form-fields">
         @csrf
 
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
@@ -16,8 +23,6 @@
             'autofocus' => true,
         ])
 
-        <button type="submit" class="auth-login-submit">{{ __('Update password') }}</button>
+        <button type="submit" class="auth-login-submit">{{ __('Set new password') }}</button>
     </form>
-
-    <p class="auth-login-footnote">{{ __('Contact your administrator if you can\'t access your account.') }}</p>
 </x-auth-layout>

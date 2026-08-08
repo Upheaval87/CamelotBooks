@@ -13,7 +13,7 @@
         <title>{{ config('app.name', 'CamelotBooks') }}</title>
 
         <link rel="manifest" href="/manifest.json">
-        <meta name="theme-color" content="#6366f1">
+        <meta name="theme-color" content="#128F8E">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />

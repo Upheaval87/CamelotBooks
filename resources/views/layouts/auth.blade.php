@@ -8,49 +8,62 @@
         <title>{{ $title ? $title.' — '.config('app.name', 'CamelotBooks') : config('app.name', 'CamelotBooks') }}</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="auth-login">
-        <aside class="auth-login-hero">
-            <div class="auth-login-hero-top">
-                <div class="auth-login-monogram" aria-hidden="true">CB</div>
-                <div class="auth-login-wordmark">
-                    <span class="auth-login-wordmark-name">{{ __('CamelotBooks') }}</span>
-                    <span class="auth-login-wordmark-tag">{{ __('Enterprise Accounting') }}</span>
+        <div class="auth-split">
+            <aside class="auth-brand">
+                <div class="auth-brand-top">
+                    <span class="auth-logo" aria-hidden="true">CB</span>
+                    <div class="auth-wordmark">
+                        <span class="auth-wordmark-name">{{ __('CamelotBooks') }}</span>
+                        <span class="auth-wordmark-tag">{{ __('Enterprise Accounting') }}</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="auth-login-hero-copy">
-                <p class="auth-login-eyebrow auth-login-mono">{{ __('ENTERPRISE ACCOUNTING PLATFORM') }}</p>
-                <h1 class="auth-login-headline auth-login-serif">{{ __('Enterprise financial operations, unified.') }}</h1>
-                <p class="auth-login-sub">{{ __('Close the books faster with live bank feeds, automated reconciliation, and audit-ready reports — all in one place.') }}</p>
-            </div>
+                <h1>{{ __('Financial operations, unified.') }}</h1>
+                <p class="auth-brand-lede">{{ __('Close the books faster with live bank feeds, automated reconciliation, and audit-ready reports — all in one place.') }}</p>
 
-            <div class="auth-login-hero-bottom">
-                <div class="auth-login-trust auth-login-mono">
-                    <span>{{ __('SOC 2 Type II') }}</span>
-                    <span>{{ __('99.99% Uptime SLA') }}</span>
-                    <span>{{ __('256-bit Encryption') }}</span>
+                <div class="auth-glass">
+                    <div class="auth-glass-row">
+                        <span class="auth-glass-label">{{ __('Month-end close') }}</span>
+                        <span class="auth-glass-value">3.2 days <span class="auth-glass-chip">{{ __('−38% faster') }}</span></span>
+                    </div>
+                    <div class="auth-glass-row">
+                        <span class="auth-glass-label">{{ __('Auto-reconciled transactions') }}</span>
+                        <span class="auth-glass-value">96.4%</span>
+                    </div>
+                    <div class="auth-glass-row">
+                        <span class="auth-glass-label">{{ __('Audit readiness') }}</span>
+                        <span class="auth-glass-value">100% <span class="auth-glass-chip">{{ __('Always-on') }}</span></span>
+                    </div>
                 </div>
-                <p class="auth-login-copyright">{{ __('© 2026 CamelotBooks, Inc.') }}</p>
-            </div>
-        </aside>
 
-        <main class="auth-login-panel">
-            <div class="auth-login-card{{ $wide ? ' auth-login-card--wide' : '' }}">
-                <div class="auth-login-header">
+                <p class="auth-copy">{{ __('© 2026 CamelotBooks, Inc.') }}</p>
+            </aside>
+
+            <main class="auth-form-col">
+                <div class="auth-help">{{ __('Need help?') }} <a href="mailto:support@camelotbooks.com">{{ __('Contact support') }}</a></div>
+
+                <div class="auth-form-card{{ $centered ? ' auth-form-card--center' : '' }}">
+                    {{ $slot }}
+
                     @if ($backHref)
-                        <a href="{{ $backHref }}" class="auth-login-back-link">&larr; {{ __('Back to sign in') }}</a>
-                    @else
-                        <span class="auth-login-header-spacer" aria-hidden="true"></span>
+                        <div class="auth-backrow">
+                            <a class="auth-backlink" href="{{ $backHref }}">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                {{ __('Back to sign in') }}
+                            </a>
+                        </div>
                     @endif
-                    <a href="mailto:support@camelotbooks.com" class="auth-login-help-link">{{ __('Need help? Contact support') }}</a>
                 </div>
 
-                {{ $slot }}
-            </div>
-        </main>
+                @isset($footnote)
+                    <p class="auth-admin">{{ $footnote }}</p>
+                @endisset
+            </main>
+        </div>
     </body>
 </html>

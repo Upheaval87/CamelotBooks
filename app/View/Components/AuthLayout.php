@@ -13,7 +13,7 @@ class AuthLayout extends Component
     public function __construct(
         public ?string $backHref = null,
         public string $title = '',
-        public bool $wide = false,
+        public bool $centered = false,
     ) {}
 
     /**

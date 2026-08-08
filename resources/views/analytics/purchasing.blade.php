@@ -27,7 +27,7 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Purchase Trend</h3>
                 <x-chart type="bar" :id="'purchase-trend'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                    ['label' => 'Purchase Amount', 'data' => $data['spend_data'], 'backgroundColor' => '#6366f1'],
+                    ['label' => 'Purchase Amount', 'data' => $data['spend_data'], 'backgroundColor' => '#128F8E'],
                 ])" height="300" />
             </div>
 

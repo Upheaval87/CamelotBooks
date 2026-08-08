@@ -3,7 +3,7 @@
 @php
     $variants = [
         'primary' => 'border border-white/20 bg-gradient-to-b from-gold-500 to-gold-600 text-white shadow-new hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500',
-        'edit' => 'border border-gold-600/35 bg-gradient-to-b from-[#fffdf8] to-[#f7f0df] text-gold-700 shadow-edit hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500',
+        'edit' => 'border border-gold-600/35 bg-gradient-to-b from-[#F4FBFB] to-[#DFF7F6] text-gold-700 shadow-edit hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500',
         'ghost' => 'border border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500',
         'danger' => 'border border-red-300 bg-white text-red-700 hover:border-red-400 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500',
     ];

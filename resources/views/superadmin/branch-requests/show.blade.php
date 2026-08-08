@@ -58,7 +58,7 @@
                             @csrf
                             <div>
                                 <x-input-label for="admin_notes" value="{{ __('Admin Notes (optional)') }}" />
-                                <textarea id="admin_notes" name="admin_notes" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(182,145,63,.55)] focus:ring-[3px] focus:ring-[rgba(182,145,63,.15)] focus:outline-none" placeholder="{{ __('e.g. Pricing notes, agreed discounts, volume tier.') }}"></textarea>
+                                <textarea id="admin_notes" name="admin_notes" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(18,143,142,.55)] focus:ring-[3px] focus:ring-[rgba(18,143,142,.15)] focus:outline-none" placeholder="{{ __('e.g. Pricing notes, agreed discounts, volume tier.') }}"></textarea>
                             </div>
                         </form>
 
@@ -66,7 +66,7 @@
                             @csrf
                             <div>
                                 <x-input-label for="reason" value="{{ __('Rejection Reason (required)') }}" />
-                                <textarea id="reason" name="reason" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(182,145,63,.55)] focus:ring-[3px] focus:ring-[rgba(182,145,63,.15)] focus:outline-none" required></textarea>
+                                <textarea id="reason" name="reason" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(18,143,142,.55)] focus:ring-[3px] focus:ring-[rgba(18,143,142,.15)] focus:outline-none" required></textarea>
                                 <x-input-error :messages="$errors->get('reason')" class="mt-2" />
                             </div>
                         </form>

@@ -145,7 +145,7 @@
                             @csrf
                             <div>
                                 <x-input-label for="rejection_reason" value="{{ __('Reason for Rejection') }}" />
-                                <textarea id="rejection_reason" name="rejection_reason" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(182,145,63,.55)] focus:ring-[3px] focus:ring-[rgba(182,145,63,.15)] focus:outline-none" required></textarea>
+                                <textarea id="rejection_reason" name="rejection_reason" rows="3" class="min-h-[110px] mt-1 block w-full rounded-xl border-shell bg-white/80 focus:border-[rgba(18,143,142,.55)] focus:ring-[3px] focus:ring-[rgba(18,143,142,.15)] focus:outline-none" required></textarea>
                                 <x-input-error :messages="$errors->get('rejection_reason')" class="mt-2" />
                             </div>
                         </form>

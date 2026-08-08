@@ -28,7 +28,7 @@
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Invoice Trend</h3>
                     <x-chart type="bar" :id="'invoice-trend'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                        ['label' => 'Invoice Amount', 'data' => $data['invoice_value_data'], 'backgroundColor' => '#6366f1'],
+                        ['label' => 'Invoice Amount', 'data' => $data['invoice_value_data'], 'backgroundColor' => '#128F8E'],
                         ['label' => 'Invoice Count', 'data' => $data['invoice_count_data'], 'backgroundColor' => '#a78bfa', 'yAxisID' => 'y1'],
                     ])" :options="json_encode([
                         'scales' => ['y' => ['position' => 'left'], 'y1' => ['position' => 'right', 'grid' => ['drawOnChartArea' => false]]]

@@ -20,10 +20,10 @@
         @if($isActive)
             <a href="{{ $tab['href'] }}"
                aria-current="page"
-               class="relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-[#f2f6fa] bg-gradient-to-b from-[#2e4763] to-[#22394f] shadow-[inset_0_1px_0_rgba(255,255,255,.10),0_4px_10px_-4px_rgba(0,0,0,.35)] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-gold-500 before:content-[''] before:hidden lg:before:block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 [&_svg]:text-[#e2c069]">
+               class="relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-[#f2f6fa] bg-gradient-to-b from-[#17565D] to-[#0C3539] shadow-[inset_0_1px_0_rgba(255,255,255,.10),0_4px_10px_-4px_rgba(0,0,0,.35)] before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-gold-500 before:content-[''] before:hidden lg:before:block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 [&_svg]:text-[#DFF7F6]">
         @else
             <a href="{{ $tab['href'] }}"
-               class="relative flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-gray-600 transition-all duration-150 hover:bg-[rgba(36,56,79,.06)] hover:text-[#1d3349] active:bg-[rgba(36,56,79,.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 lg:whitespace-normal">
+               class="relative flex items-center gap-2.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-gray-600 transition-all duration-150 hover:bg-[rgba(17,69,75,.06)] hover:text-[#0B2A2D] active:bg-[rgba(17,69,75,.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 lg:whitespace-normal">
         @endif
             <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $tab['icon'] }}" />

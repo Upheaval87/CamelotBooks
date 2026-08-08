@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth Suite — CamelotBooks</title>
+<style>
+  :root{
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;
+    --sec:#128F8E;--mint:#7FD1C0;
+    --ink:#0B2A2D;--border:#dceaea;
+    --muted:#5f7476;--faint:#8aa5a7;--link:#0C6B6A;--focus:#94a3b8;
+    --shadow-card:0 1px 2px rgba(10,42,46,.05),0 12px 32px -8px rgba(10,42,46,.10),0 32px 64px -24px rgba(8,40,44,.14);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --pad:clamp(12px, 2vw, 22px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:#374151;-webkit-font-smoothing:antialiased;
+    background:#fff;padding:var(--pad)}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .frame + .frame{margin-top:calc(var(--pad) * 2)}
+  /* FORM SIDE WIDER than brand side */
+  .split{display:grid;grid-template-columns:0.9fr 1.1fr;height:calc(100vh - (var(--pad) * 2));min-height:620px;
+    border-radius:24px;overflow:hidden;
+    box-shadow:0 24px 70px -28px rgba(10,42,45,.45), 0 4px 16px -6px rgba(10,42,45,.22)}
+
+  /* ============ LEFT (shared) ============ */
+  .left{position:relative;display:flex;flex-direction:column;justify-content:center;padding:40px 56px;overflow:hidden;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(20,217,197,.13), transparent 60%),
+      radial-gradient(700px 420px at -10% 110%, rgba(18,143,142,.20), transparent 60%),
+      linear-gradient(160deg,#11454b 0%,#0c3539 55%,#0a2e32 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+  .left::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background:repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 96px)}
+  .brand{display:flex;align-items:center;gap:15px;position:relative}
+  /* ENLARGED brand icon + text */
+  .logo{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:16px;
+    background:linear-gradient(180deg,#f4fbfb,#d9edee);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 8px 20px -8px rgba(0,0,0,.5)}
+  .brand-n{color:#fff;font-size:19px;font-weight:800;letter-spacing:-.01em}
+  .brand-s{color:rgba(226,244,244,.6);font-size:11.5px;font-weight:700;letter-spacing:.08em;margin-top:2px}
+  h1{margin-top:26px;color:#fff;font-size:36px;line-height:1.14;font-weight:800;letter-spacing:-.02em;max-width:500px;position:relative}
+  .lede-l{margin-top:12px;color:rgba(226,244,244,.72);font-size:14px;line-height:1.65;max-width:450px;position:relative}
+  .glass-card{position:relative;margin-top:24px;max-width:450px;border-radius:16px;padding:14px 18px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);
+    box-shadow:0 18px 44px -18px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.10)}
+  .gc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 2px}
+  .gc-row + .gc-row{border-top:1px solid rgba(255,255,255,.10)}
+  .gc-row .l{color:rgba(226,244,244,.62);font-size:11.5px;font-weight:600}
+  .gc-row .v{color:#fff;font-size:12.5px;font-weight:800}
+  .gc-chip{display:inline-flex;padding:2px 9px;border-radius:999px;font-size:9.5px;font-weight:800;letter-spacing:.04em;
+    background:rgba(127,209,192,.14);border:1px solid rgba(127,209,192,.4);color:var(--mint)}
+  .copy{margin-top:22px;color:rgba(226,244,244,.45);font-size:11px;position:relative}
+
+  /* ============ RIGHT (shared, wider) ============ */
+  .right{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px 28px;
+    background:radial-gradient(700px 380px at 90% -10%, rgba(18,143,142,.10), transparent 60%), #eef4f4}
+  .help{width:min(480px,100%);display:flex;justify-content:flex-end;font-size:12px;color:var(--muted)}
+  .help a,.admin a,.backlink{color:var(--link);font-weight:700;text-decoration:none}
+  .help a:hover,.admin a:hover,.backlink:hover{text-decoration:underline}
+  .form-card{width:min(480px,100%);border-radius:20px;padding:28px 34px;
+    background:rgba(255,255,255,.82);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);box-shadow:var(--shadow-card)}
+  .eyebrow-sm{color:var(--sec);font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+  h2{margin-top:8px;color:var(--ink);font-size:24px;font-weight:800;letter-spacing:-.02em}
+  .lede{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.6}
+  form{margin-top:18px;display:flex;flex-direction:column;gap:15px}
+  .field label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .input{width:100%;height:44px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 14px;
+    font-size:13.5px;color:var(--ink);font-family:inherit;transition:all .15s}
+  .input::placeholder{color:#a8bdbd}
+  .input:hover{border-color:rgba(17,69,75,.3)}
+  .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  .pw{position:relative}.pw .input{padding-right:44px}
+  .pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;border-radius:8px;
+    background:transparent;color:var(--faint);cursor:pointer;display:grid;place-items:center}
+  .pw button:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .btn-cta{width:100%;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.14);cursor:pointer;
+    background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));color:#eaffff;
+    font-size:13.5px;font-weight:700;letter-spacing:.01em;box-shadow:var(--shadow-cta);transition:all .16s}
+  .btn-cta:hover{transform:translateY(-1px);filter:brightness(1.06)}
+  .btn-cta:active{transform:translateY(0)}
+  .secure{margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--faint);font-size:11px}
+  .secure svg{color:var(--sec)}
+  .admin{font-size:12px;color:var(--muted)}
+  .center{text-align:center}
+  .backrow{margin-top:14px;display:flex;justify-content:center}
+  .backlink{font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
+
+  .otp{display:flex;gap:10px;justify-content:center;margin-top:4px}
+  .otp input{width:50px;height:56px;border-radius:10px;border:1px solid var(--border);background:#fff;text-align:center;
+    font-size:20px;font-weight:800;color:var(--ink);font-family:inherit;transition:all .15s}
+  .otp input:hover{border-color:rgba(17,69,75,.3)}
+  .otp input:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 3px rgba(18,143,142,.16)}
+  .resend{display:flex;justify-content:center;font-size:12px;color:var(--muted)}
+  .resend b{color:var(--ink)}
+
+  .reqs{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;margin-top:2px}
+  .reqs li{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--faint)}
+  .reqs li.ok{color:var(--sec)}
+  .reqs .rk{width:15px;height:15px;border-radius:50%;display:grid;place-items:center;flex:none;border:1.5px solid #bfd6d5;background:#fff}
+  .reqs li.ok .rk{background:var(--sec);border-color:var(--sec)}
+  .reqs .rk svg{opacity:0}
+  .reqs li.ok .rk svg{opacity:1}
+
+  .halo{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;margin-bottom:14px;
+    background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);color:var(--sec)}
+
+  @media (max-height:820px){.glass-card{display:none}h1{font-size:30px}}
+  @media (max-width:960px){
+    .split{grid-template-columns:1fr;height:auto;min-height:calc(100vh - (var(--pad) * 2))}
+    .left{padding:36px 26px}.glass-card{display:none}.right{padding:32px 18px 40px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= 1 · SIGN IN ================= -->
+<div class="frame"><div class="split">
+  <aside class="left">
+    <div class="brand"><span class="logo">CB</span>
+      <div><div class="brand-n">CamelotBooks</div><div class="brand-s">Enterprise Accounting</div></div></div>
+    <h1>Financial operations, unified.</h1>
+    <p class="lede-l">Close the books faster with live bank feeds, automated reconciliation, and audit-ready reports — all in one place.</p>
+    <div class="glass-card">
+      <div class="gc-row"><span class="l">Month-end close</span><span class="v">3.2 days <span class="gc-chip">−38% faster</span></span></div>
+      <div class="gc-row"><span class="l">Auto-reconciled transactions</span><span class="v">96.4%</span></div>
+      <div class="gc-row"><span class="l">Audit readiness</span><span class="v">100% <span class="gc-chip">Always-on</span></span></div>
+    </div>
+    <div class="copy">© 2026 CamelotBooks, Inc.</div>
+  </aside>
+  <main class="right">
+    <div class="help">Need help? <a href="#">Contact support</a></div>
+    <div class="form-card">
+      <div class="eyebrow-sm">Sign in</div>
+      <h2>Welcome back</h2>
+      <p class="lede">Enter your credentials to access your workspace.</p>
+      <form>
+        <div class="field"><label for="em">Email</label><input class="input" id="em" type="email" placeholder="you@company.com"></div>
+        <div class="field"><label for="pw">Password</label>
+          <div class="pw"><input class="input" id="pw" type="password" placeholder="Enter your password">
+            <button type="button" aria-label="Show password"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end"><a href="#" style="font-size:12.5px;font-weight:700;color:var(--link);text-decoration:underline;text-underline-offset:3px">Forgot password?</a></div>
+        <button class="btn-cta" type="submit">Log in</button>
+      </form>
+      <div class="secure"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Protected by 256-bit encryption</div>
+    </div>
+    <p class="admin">Don't have access? <a href="#">Contact your administrator.</a></p>
+  </main>
+</div></div>
+
+<!-- ================= 2 · FORGOT PASSWORD ================= -->
+<div class="frame"><div class="split">
+  <aside class="left">
+    <div class="brand"><span class="logo">CB</span>
+      <div><div class="brand-n">CamelotBooks</div><div class="brand-s">Enterprise Accounting</div></div></div>
+    <h1>Financial operations, unified.</h1>
+    <p class="lede-l">Close the books faster with live bank feeds, automated reconciliation, and audit-ready reports — all in one place.</p>
+    <div class="glass-card">
+      <div class="gc-row"><span class="l">Month-end close</span><span class="v">3.2 days <span class="gc-chip">−38% faster</span></span></div>
+      <div class="gc-row"><span class="l">Auto-reconciled transactions</span><span class="v">96.4%</span></div>
+      <div class="gc-row"><span class="l">Audit readiness</span><span class="v">100% <span class="gc-chip">Always-on</span></span></div>
+    </div>
+    <div class="copy">© 2026 CamelotBooks, Inc.</div>
+  </aside>
+  <main class="right">
+    <div class="help">Need help? <a href="#">Contact support</a></div>
+    <div class="form-card">
+      <div class="halo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="13" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M4 8l8 6 8-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="eyebrow-sm">Reset access</div>
+      <h2>Forgot your password?</h2>
+      <p class="lede">Enter the email linked to your account and we'll send a secure reset link.</p>
+      <form>
+        <div class="field"><label for="fp">Email</label><input class="input" id="fp" type="email" placeholder="you@company.com"></div>
+        <button class="btn-cta" type="submit">Send reset link</button>
+      </form>
+      <div class="backrow"><a class="backlink" href="#"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to sign in</a></div>
+    </div>
+    <p class="admin">Links expire after 30 minutes for your security.</p>
+  </main>
+</div></div>
+
+<!-- ================= 3 · VERIFY CODE ================= -->
+<div class="frame"><div class="split">
+  <aside class="left">
+    <div class="brand"><span class="logo">CB</span>
+      <div><div class="brand-n">CamelotBooks</div><div class="brand-s">Enterprise Accounting</div></div></div>
+    <h1>Financial operations, unified.</h1>
+    <p class="lede-l">Close the books faster with live bank feeds, automated reconciliation, and audit-ready reports — all in one place.</p>
+    <div class="glass-card">
+      <div class="gc-row"><span class="l">Month-end close</span><span class="v">3.2 days <span class="gc-chip">−38% faster</span></span></div>
+      <div class="gc-row"><span class="l">Auto-reconciled transactions</span><span class="v">96.4%</span></div>
+      <div class="gc-row"><span class="l">Audit readiness</span><span class="v">100% <span class="gc-chip">Always-on</span></span></div>
+    </div>
+    <div class="copy">© 2026 CamelotBooks, Inc.</div>
+  </aside>
+  <main class="right">
+    <div class="help">Need help? <a href="#">Contact support</a></div>
+    <div class="form-card center">
+      <div class="halo" style="margin-left:auto;margin-right:auto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 12l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="eyebrow-sm">Verification</div>
+      <h2>Enter verification code</h2>
+      <p class="lede">We sent a 6-digit code to <b style="color:var(--ink)">e•••@company.com</b>.</p>
+      <form>
+        <div class="otp">
+          <input maxlength="1" inputmode="numeric" aria-label="Digit 1"><input maxlength="1" inputmode="numeric" aria-label="Digit 2"><input maxlength="1" inputmode="numeric" aria-label="Digit 3"><input maxlength="1" inputmode="numeric" aria-label="Digit 4"><input maxlength="1" inputmode="numeric" aria-label="Digit 5"><input maxlength="1" inputmode="numeric" aria-label="Digit 6">
+        </div>
+        <button class="btn-cta" type="submit">Verify &amp; continue</button>
+        <div class="resend">Didn't receive it? <a href="#" style="color:var(--link);font-weight:700;text-decoration:none">Resend</a> in <b>0:42</b></div>
+      </form>
+      <div class="backrow"><a class="backlink" href="#"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to sign in</a></div>
+    </div>
+    <p class="admin">Codes expire after 5 minutes.</p>
+  </main>
+</div></div>
+
+<!-- ================= 4 · SET NEW PASSWORD ================= -->
+<div class="frame"><div class="split">
+  <aside class="left">
+    <div class="brand"><span class="logo">CB</span>
+      <div><div class="brand-n">CamelotBooks</div><div class="brand-s">Enterprise Accounting</div></div></div>
+    <h1>Financial operations, unified.</h1>
+    <p class="lede-l">Close the books faster with live bank feeds, automated reconciliation, and audit-ready reports — all in one place.</p>
+    <div class="glass-card">
+      <div class="gc-row"><span class="l">Month-end close</span><span class="v">3.2 days <span class="gc-chip">−38% faster</span></span></div>
+      <div class="gc-row"><span class="l">Auto-reconciled transactions</span><span class="v">96.4%</span></div>
+      <div class="gc-row"><span class="l">Audit readiness</span><span class="v">100% <span class="gc-chip">Always-on</span></span></div>
+    </div>
+    <div class="copy">© 2026 CamelotBooks, Inc.</div>
+  </aside>
+  <main class="right">
+    <div class="help">Need help? <a href="#">Contact support</a></div>
+    <div class="form-card">
+      <div class="halo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="10" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="eyebrow-sm">Secure reset</div>
+      <h2>Set a new password</h2>
+      <p class="lede">Choose a strong password you haven't used before on this workspace.</p>
+      <form>
+        <div class="field"><label for="np">New password</label>
+          <div class="pw"><input class="input" id="np" type="password" placeholder="Create new password">
+            <button type="button" aria-label="Show password"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
+        </div>
+        <ul class="reqs">
+          <li class="ok"><span class="rk"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>8+ characters</li>
+          <li class="ok"><span class="rk"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Upper &amp; lower case</li>
+          <li class="ok"><span class="rk"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>At least one number</li>
+          <li><span class="rk"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>One symbol (!@#$)</li>
+        </ul>
+        <div class="field"><label for="cp">Confirm password</label>
+          <div class="pw"><input class="input" id="cp" type="password" placeholder="Repeat new password">
+            <button type="button" aria-label="Show password"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
+        </div>
+        <button class="btn-cta" type="submit">Set new password</button>
+      </form>
+      <div class="backrow"><a class="backlink" href="#"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to sign in</a></div>
+    </div>
+    <p class="admin">You'll be signed out of all other devices after reset.</p>
+  </main>
+</div></div>
+
+</body>
+</html>
