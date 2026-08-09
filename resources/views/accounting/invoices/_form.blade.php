@@ -64,34 +64,32 @@
     } elseif ($copyQuote) {
         $linesData = $copyQuote['lines'];
     }
-
-    $secIc = 'w-7 h-7 rounded-[9px] grid place-items-center text-white bg-[#128F8E] shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_3px_8px_-3px_rgba(10,80,80,.4)]';
-    $secHead = 'flex items-center gap-3';
-    $btnTertiary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-transparent bg-transparent text-gray-600 transition-all duration-150 hover:bg-white/75 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
-    $btnGhost = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-shell bg-white/85 text-gray-700 shadow-sm transition-all duration-150 hover:bg-[rgba(17,69,75,.06)] hover:border-navy-700/25 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
-    $btnPrimary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-white border border-white/25 bg-gradient-to-b from-gold-500 to-gold-600 shadow-new transition-all duration-150 hover:-translate-y-px active:translate-y-0';
-    $selectWrap = 'relative';
-    $selectChevron = 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500';
 @endphp
 
-<div>
-    {{-- sticky page head --}}
-    <div class="form-page-head flex items-start justify-between gap-4 flex-wrap pb-4 mb-6 border-b border-line">
-        <div>
-            <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-gray-900">{{ $title }}</h1>
-            <p class="mt-1 text-[13.5px] text-gray-500">{{ $subtitle }}</p>
+<div class="q2">
+    {{-- §2/§3 sticky page head --}}
+    <div class="q2-head q2-head--sticky">
+        <div class="min-w-0">
+            <div class="flex items-center gap-2.5 flex-wrap">
+                <h1 class="q2-title" style="font-size:1.375rem">{{ $title }}</h1>
+                @if ($isEdit)
+                    <span class="q2-mono" style="padding:.25rem .625rem;border:1px solid var(--line,#E2ECEC);border-radius:.5rem;background:#fff">{{ $invoice->invoice_number }}</span>
+                    <span class="q2-badge q2-badge--{{ $invoice->status }}"><span class="q2-dot"></span>{{ __(ucfirst(str_replace('_', ' ', $invoice->status))) }}</span>
+                @endif
+            </div>
+            <p class="q2-sub">{{ $subtitle }}</p>
         </div>
-        <div class="flex gap-2.5 flex-wrap items-center">
-            <button type="button" class="{{ $btnTertiary }}" onclick="CopyQuote.open()">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="q2-head-actions">
+            <button type="button" class="q2-btn q2-btn--ghost" onclick="CopyQuote.open()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 {{ __('Copy from Quote') }}
             </button>
-            <a href="{{ $cancelRoute }}" class="{{ $btnGhost }}">{{ __('Cancel') }}</a>
-            <button type="submit" form="invoice-form" class="{{ $btnPrimary }}">{{ $submitLabel }}</button>
+            <a href="{{ $cancelRoute }}" class="q2-btn q2-btn--ghost">{{ __('Cancel') }}</a>
+            <button type="submit" form="invoice-form" class="q2-btn q2-btn--cta">{{ $submitLabel }}</button>
         </div>
     </div>
 
-    <form method="POST" action="{{ $formAction }}" id="invoice-form" novalidate>
+    <form method="POST" action="{{ $formAction }}" id="invoice-form" class="q2-form" novalidate>
         @csrf
         @if ($formMethod === 'PUT')
             @method('PUT')
@@ -99,19 +97,18 @@
 
         <x-input-error :messages="$errors->get('error')" class="mb-4" />
 
-        <div class="grid gap-6 items-start lg:grid-cols-[1fr_340px]">
-            <div class="flex flex-col gap-5 min-w-0">
+        <div class="q2-shell q2-shell--form">
+            <div class="q2-main">
 
-                {{-- customer --}}
-                <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Customer Information') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
+                {{-- (a) customer --}}
+                <section class="q2-sec">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Customer Information') }}</h2>
                     </div>
-                    <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
-                        <div class="col-span-2">
-                            <label for="customer_id" class="input-label">{{ __('Customer') }} <span class="text-red-600">*</span></label>
+                    <div class="q2-g4 mt-5">
+                        <div class="q2-field" style="grid-column: span 2">
+                            <label for="customer_id" class="q2-label">{{ __('Customer') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
                             <x-scoped-search-field
                                 name="customer_id"
                                 entity="customer"
@@ -122,82 +119,80 @@
                                 on-select="invCustomerSelected"
                                 required
                             />
-                            <x-input-error :messages="$errors->get('customer_id')" class="mt-2" />
+                            <x-input-error :messages="$errors->get('customer_id')" />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Contact Person') }}</label>
-                            <input type="text" class="input" id="inv-contact" value="{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Contact Person') }}</label>
+                            <input type="text" class="q2-input" id="inv-contact" value="{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '' }}" readonly />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Email') }}</label>
-                            <input type="email" class="input" id="inv-email" value="{{ $selectedCustomer?->email ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Email') }}</label>
+                            <input type="email" class="q2-input" id="inv-email" value="{{ $selectedCustomer?->email ?? '' }}" readonly />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Phone') }}</label>
-                            <input type="text" class="input" id="inv-phone" value="{{ $selectedCustomer?->phone ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Phone') }}</label>
+                            <input type="text" class="q2-input" id="inv-phone" value="{{ $selectedCustomer?->phone ?? '' }}" readonly />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Payment Terms') }}</label>
-                            <input type="text" class="input" id="inv-terms" value="{{ $selectedCustomer?->payment_terms ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Payment Terms') }}</label>
+                            <input type="text" class="q2-input" id="inv-terms" value="{{ $selectedCustomer?->payment_terms ?? '' }}" readonly />
                         </div>
                     </div>
-                    <p class="mt-3 text-[11px] text-slate-400">Contact details shown are from the customer record.</p>
+                    <p class="q2-hint mt-4">{{ __('Contact details shown are from the customer record.') }}</p>
                 </section>
 
-                {{-- invoice info --}}
-                <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Invoice Information') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
+                {{-- (b) invoice info --}}
+                <section class="q2-sec">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Invoice Information') }}</h2>
                     </div>
-                    <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
-                        <div>
-                            <label class="input-label">{{ __('Invoice №') }}</label>
-                            <input type="text" class="input" value="{{ $invoice?->invoice_number ?? '' }}" placeholder="{{ __('Auto-assigned on save') }}" readonly />
+                    <div class="q2-g4 mt-5">
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Invoice №') }}</label>
+                            <input type="text" class="q2-input" value="{{ $invoice?->invoice_number ?? '' }}" placeholder="{{ __('Auto-assigned on save') }}" readonly />
                         </div>
-                        <div>
-                            <label for="invoice_date" class="input-label">{{ __('Invoice Date') }} <span class="text-red-600">*</span></label>
-                            <input id="invoice_date" name="invoice_date" type="date" class="input" value="{{ old('invoice_date', $invoice?->invoice_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
-                            <x-input-error :messages="$errors->get('invoice_date')" class="mt-2" />
+                        <div class="q2-field">
+                            <label for="invoice_date" class="q2-label">{{ __('Invoice Date') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                            <input id="invoice_date" name="invoice_date" type="date" class="q2-input" value="{{ old('invoice_date', $invoice?->invoice_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
+                            <x-input-error :messages="$errors->get('invoice_date')" />
                         </div>
-                        <div>
-                            <label for="due_date" class="input-label">{{ __('Due Date') }} <span class="text-red-600">*</span></label>
-                            <input id="due_date" name="due_date" type="date" class="input" value="{{ old('due_date', $invoice?->due_date?->format('Y-m-d') ?? now()->addDays(30)->format('Y-m-d')) }}" required />
-                            <x-input-error :messages="$errors->get('due_date')" class="mt-2" />
+                        <div class="q2-field">
+                            <label for="due_date" class="q2-label">{{ __('Due Date') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                            <input id="due_date" name="due_date" type="date" class="q2-input" value="{{ old('due_date', $invoice?->due_date?->format('Y-m-d') ?? now()->addDays(30)->format('Y-m-d')) }}" required />
+                            <x-input-error :messages="$errors->get('due_date')" />
                         </div>
-                        <div>
-                            <label for="reference" class="input-label">{{ __('Reference №') }}</label>
-                            <input id="reference" name="reference" type="text" class="input" value="{{ old('reference', $invoice?->reference ?? '') }}" placeholder="{{ __('Optional') }}" />
-                            <x-input-error :messages="$errors->get('reference')" class="mt-2" />
+                        <div class="q2-field">
+                            <label for="reference" class="q2-label">{{ __('Reference №') }}</label>
+                            <input id="reference" name="reference" type="text" class="q2-input" value="{{ old('reference', $invoice?->reference ?? '') }}" placeholder="{{ __('Optional') }}" />
+                            <x-input-error :messages="$errors->get('reference')" />
                         </div>
                     </div>
-                    <p class="mt-3 text-[11px] text-slate-400">Invoice № is auto-assigned on save.</p>
+                    <p class="q2-hint mt-4">{{ __('Invoice № is auto-assigned on save.') }}</p>
                 </section>
 
-                {{-- line items --}}
-                <section class="card relative z-30 rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Line Items') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
-                        <button type="button" id="inv-add-line" class="{{ $btnGhost }}" style="height:34px;padding:0 13px;font-size:12.5px;border-radius:10px;margin-left:12px;">＋ {{ __('Add Line') }}</button>
+                {{-- (c) line items --}}
+                <section class="q2-sec relative z-30">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Line Items') }}</h2>
+                        <button type="button" id="inv-add-line" class="q2-btn q2-btn--ghost q2-btn--sm" style="margin-left:auto">＋ {{ __('Add Line') }}</button>
                     </div>
 
-                    <div class="mt-4 border border-shell rounded-[14px] overflow-visible round-thead-clip bg-[#fbfcfe]">
-                        <table id="inv-lines-table" class="x-wset-create w-full border-collapse text-[13px] table-fixed">
+                    <div class="mt-4 border border-shell round-thead-clip bg-[#fbfcfe]">
+                        <table id="inv-lines-table" class="q2-tbl w-full text-[13px] table-fixed">
                             <thead>
                                 <tr>
-                                    <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Item Code') }}</th>
-                                    <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Item Name') }}</th>
-                                    <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Description') }}</th>
-                                    <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Qty') }}</th>
-                                    <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Unit Price') }} ({{ $cs }})</th>
-                                    <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Disc %') }}</th>
-                                    <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Income Account') }}</th>
-                                    <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Cost Center') }}</th>
-                                    <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Amount') }} ({{ $cs }})</th>
-                                    <th class="py-[11px] px-2.5 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead"></th>
+                                    <th style="width:8%">{{ __('Item Code') }}</th>
+                                    <th style="width:16%">{{ __('Item Name') }}</th>
+                                    <th style="width:16%">{{ __('Description') }}</th>
+                                    <th style="width:6%" class="q2-right">{{ __('Qty') }}</th>
+                                    <th style="width:9%" class="q2-right">{{ __('Unit Price') }} ({{ $cs }})</th>
+                                    <th style="width:7%" class="q2-right">{{ __('Disc %') }}</th>
+                                    <th style="width:14%">{{ __('Income Account') }}</th>
+                                    <th style="width:12%">{{ __('Cost Center') }}</th>
+                                    <th style="width:9%" class="q2-right">{{ __('Amount') }} ({{ $cs }})</th>
+                                    <th style="width:3%"></th>
                                 </tr>
                             </thead>
                             <tbody id="inv-lines-body"></tbody>
@@ -207,38 +202,52 @@
                     <x-input-error :messages="$errors->get('lines')" class="mt-2" />
                 </section>
 
-                {{-- notes --}}
-                <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Notes') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
+                {{-- (d) notes --}}
+                <section class="q2-sec">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Notes') }}</h2>
                     </div>
-                    <div class="mt-5">
-                        <label for="memo" class="input-label">{{ __('Description / Memo') }}</label>
-                        <textarea id="memo" name="memo" class="input" placeholder="Printed on the invoice…">{{ old('memo', $invoice?->memo ?? '') }}</textarea>
-                        <x-input-error :messages="$errors->get('memo')" class="mt-2" />
+                    <div class="q2-g2 mt-5">
+                        <div class="q2-field">
+                            <label for="memo" class="q2-label">{{ __('Description / Memo') }}</label>
+                            <textarea id="memo" name="memo" class="q2-input" style="height:auto;min-height:6rem;padding:.75rem .875rem;resize:vertical" placeholder="{{ __('Printed on the invoice…') }}">{{ old('memo', $invoice?->memo ?? '') }}</textarea>
+                            <x-input-error :messages="$errors->get('memo')" />
+                        </div>
                     </div>
                 </section>
             </div>
 
-            {{-- right rail --}}
-            <aside class="x-rail">
-                <div class="x-rail-card">
-                    <div class="x-rail-title">{{ __('Summary') }}</div>
-                    <div class="x-totals">
-                        <div class="x-totals-row"><span>{{ __('Subtotal') }}</span><span id="inv-subtotal">0.00</span></div>
-                        <div class="x-totals-row"><span>{{ __('Tax') }}</span><span id="inv-tax">0.00</span></div>
-                        <div class="x-strip x-strip--gt"><span>{{ __('Total') }}</span><span id="inv-total">{{ $cs }}0.00</span></div>
+            {{-- §2/§3 rail: summary + quick nav --}}
+            <aside class="q2-rail">
+                <div class="q2-railcard">
+                    <div class="q2-rail-group">{{ __('Summary') }}</div>
+                    <div class="q2-railsum">
+                        <div class="q2-srow"><span>{{ __('Subtotal') }}</span><span class="q2-sval" id="inv-subtotal">0.00</span></div>
+                        <div class="q2-srow"><span>{{ __('Tax') }}</span><span class="q2-sval" id="inv-tax">0.00</span></div>
+                        <div class="q2-srow gt"><span>{{ __('Total') }}</span><span class="q2-sval" id="inv-total">{{ $cs }}0.00</span></div>
                     </div>
                 </div>
 
-                <nav class="x-rail-nav">
-                    <a href="{{ route('accounting.customers.create') }}" class="x-rail-link">{{ __('New Customer') }}</a>
-                    <a href="{{ route('accounting.customer-payments.create') }}" class="x-rail-link">{{ __('Record Payment') }}</a>
-                    <a href="{{ route('accounting.invoices.index') }}" class="x-rail-link">{{ __('Invoice List') }}</a>
-                    <button type="button" class="x-rail-link" onclick="CopyQuote.open()">{{ __('Copy from Quote') }}</button>
-                </nav>
+                <div class="q2-railcard">
+                    <div class="q2-rail-group">{{ __('Quick Nav') }}</div>
+                    <a href="{{ route('accounting.customers.create') }}" class="q2-vitem">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13v5m2.5-2.5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        <span>{{ __('New Customer') }}</span>
+                    </a>
+                    <a href="{{ route('accounting.customer-payments.create') }}" class="q2-vitem">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 10a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9zm4 4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>{{ __('Record Payment') }}</span>
+                    </a>
+                    <a href="{{ route('accounting.invoices.index') }}" class="q2-vitem">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        <span>{{ __('Invoice List') }}</span>
+                    </a>
+                    <button type="button" class="q2-vitem" style="width:100%;text-align:left;background:none;border:0;cursor:pointer" onclick="CopyQuote.open()">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>{{ __('Copy from Quote') }}</span>
+                    </button>
+                </div>
             </aside>
         </div>
     </form>

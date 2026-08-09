@@ -24,36 +24,55 @@ class InvoiceController extends Controller
     {
         $companyId = session('current_company_id');
 
-        $query = Invoice::where('company_id', $companyId)
-            ->with('customer');
+        $sort = $request->input('sort', 'date-desc');
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $query = $this->baseQuery($request);
+        foreach ($this->orderByFor($sort) as $column => $direction) {
+            $query->orderBy($column, $direction);
         }
 
-        if ($request->filled('from_date')) {
-            $query->where('invoice_date', '>=', $request->from_date);
-        }
+        $invoices = $query->paginate(15)->withQueryString();
 
-        if ($request->filled('to_date')) {
-            $query->where('invoice_date', '<=', $request->to_date);
-        }
+        $stats = Invoice::where('company_id', $companyId)
+            ->selectRaw('status, COUNT(*) as total, COALESCE(SUM(amount), 0) as amount')
+            ->groupBy('status')
+            ->get()
+            ->keyBy('status');
+        $statsTotal = Invoice::where('company_id', $companyId)->count();
 
-        if ($request->filled('customer_id')) {
-            $query->where('customer_id', $request->customer_id);
-        }
+        return view('accounting.invoices.index', compact('invoices', 'stats', 'statsTotal', 'sort'));
+    }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$search}%"));
+    private function baseQuery(Request $request)
+    {
+        $companyId = session('current_company_id');
+
+        return Invoice::where('company_id', $companyId)
+            ->with('customer')
+            ->when($request->status === 'open', fn ($q) => $q->whereIn('status', [Invoice::STATUS_DRAFT, Invoice::STATUS_SENT]))
+            ->when($request->filled('status') && $request->status !== 'open', fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('from_date'), fn ($q) => $q->where('invoice_date', '>=', $request->from_date))
+            ->when($request->filled('to_date'), fn ($q) => $q->where('invoice_date', '<=', $request->to_date))
+            ->when($request->filled('customer_id'), fn ($q) => $q->where('customer_id', $request->customer_id))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $search = $request->search;
+                $q->where(function ($q2) use ($search) {
+                    $q2->where('invoice_number', 'like', "%{$search}%")
+                      ->orWhere('reference', 'like', "%{$search}%")
+                      ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%"));
+                });
             });
-        }
+    }
 
-        $invoices = $query->orderByDesc('invoice_date')->paginate(15)->withQueryString();
-
-        return view('accounting.invoices.index', compact('invoices'));
+    private function orderByFor(string $sort): array
+    {
+        return match ($sort) {
+            'date-asc' => ['invoice_date' => 'asc', 'id' => 'asc'],
+            'amount-desc' => ['amount' => 'desc', 'invoice_date' => 'desc'],
+            'amount-asc' => ['amount' => 'asc', 'invoice_date' => 'asc'],
+            'status' => ['status' => 'asc', 'invoice_date' => 'desc'],
+            default => ['invoice_date' => 'desc', 'id' => 'desc'],
+        };
     }
 
     public function create(Request $request)

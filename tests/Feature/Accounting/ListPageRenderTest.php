@@ -105,9 +105,9 @@ class ListPageRenderTest extends TestCase
             'accounting.vendors.index' => 'list-table',
             'accounting.products.index' => 'list-table',
             'accounting.employees.index' => 'list-table',
-            'accounting.invoices.index' => 'list-table',
+            'accounting.invoices.index' => 'q2-tbl',
             'accounting.bills.index' => 'list-table',
-            'accounting.sales-receipts.index' => 'q2-tbl',
+            'accounting.sales-receipts.index' => 'li-wrap',
         ];
 
         foreach ($routes as $route => $marker) {

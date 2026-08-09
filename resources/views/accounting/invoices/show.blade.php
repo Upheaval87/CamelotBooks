@@ -6,267 +6,301 @@
         $invTotal = $invSubtotal + $invTax;
         $invPaid = (float) $invoice->amount_paid;
         $invBalance = max($invTotal - $invPaid, 0);
-        $invStatusMap = [
-            'draft' => ['label' => 'Draft', 'class' => 'x-badge--gray'],
-            'sent' => ['label' => 'Sent', 'class' => 'x-badge--teal'],
-            'paid' => ['label' => 'Paid', 'class' => 'x-badge--mint'],
-            'overdue' => ['label' => 'Overdue', 'class' => 'x-badge--red'],
-            'void' => ['label' => 'Void', 'class' => 'x-badge--gray'],
-        ];
-        $invStatus = $invStatusMap[$invoice->status] ?? ['label' => ucfirst($invoice->status), 'class' => 'x-badge--gray'];
     @endphp
 
-    <div class="pb-6">
+    <div class="q2 py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- page head --}}
-            <div class="flex items-start justify-between gap-4 flex-wrap pb-4 mb-6 border-b border-line">
+            {{-- §4 sticky page head --}}
+            <div class="q2-head q2-head--sticky">
                 <div>
-                    <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-gray-900">
-                        {{ __('Invoice') }} #{{ $invoice->invoice_number }}
-                        <span class="x-badge {{ $invStatus['class'] }} x-head-badge">
-                            <span class="x-badge-dot"></span>{{ __($invStatus['label']) }}
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <h1 class="q2-title" style="font-size:1.375rem">{{ __('Invoice') }} <span class="q2-mono">{{ $invoice->invoice_number }}</span></h1>
+                        <span class="q2-badge q2-badge--{{ $invoice->status }}">
+                            @switch($invoice->status)
+                                @case('draft') <span class="q2-dot"></span>{{ __('Draft') }} @break
+                                @case('sent') <span class="q2-dot"></span>{{ __('Sent') }} @break
+                                @case('partially_paid') <span class="q2-dot"></span>{{ __('Partially Paid') }} @break
+                                @case('paid') <span class="q2-dot"></span>{{ __('Paid') }} @break
+                                @case('overdue') <span class="q2-dot"></span>{{ __('Overdue') }} @break
+                                @case('void') <span class="q2-dot"></span>{{ __('Void') }} @break
+                            @endswitch
                         </span>
-                    </h1>
-                    <p class="x-page-sub">
-                        Issued {{ $invoice->invoice_date?->format('M d, Y') ?? '—' }}
-                        @if ($invoice->due_date)
-                            · Due {{ $invoice->due_date->format('M d, Y') }}
-                        @endif
+                    </div>
+                    <p class="q2-sub">{{ $invoice->customer->name ?? __('—') }} · {{ __('issued') }} {{ $invoice->invoice_date?->format('M d, Y') ?? '—' }}
+                        @if ($invoice->due_date) · {{ __('due') }} {{ $invoice->due_date->format('M d, Y') }} @endif
                     </p>
                 </div>
-                <div class="x-tb">
-                    <div class="x-tb-group">
-                        <span class="x-tb-label">{{ __('Create') }}</span>
-                        <a href="{{ route('accounting.invoices.create') }}" class="x-tb-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v16m8-8H4"/></svg>
-                            {{ __('New') }}
-                        </a>
-                        @if ($invoice->status === 'draft')
-                            @can('invoices.post')
-                                <form method="POST" action="{{ route('accounting.invoices.post', $invoice) }}" class="inline">
-                                    @csrf
-                                    <button type="submit" class="x-tb-btn x-tb-btn--cta">{{ __('Save') }}</button>
-                                </form>
-                            @endcan
-                            <a href="{{ route('accounting.invoices.edit', $invoice) }}" class="x-tb-btn x-tb-btn--cta">{{ __('Save & Send') }}</a>
-                        @endif
-                    </div>
-                    <span class="x-tb-divider"></span>
-                    <div class="x-tb-group">
-                        <span class="x-tb-label">{{ __('Reference') }}</span>
-                        <a href="{{ route('accounting.customers.show', $invoice->customer) }}" class="x-tb-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            {{ __('Customer') }}
-                        </a>
-                        @if ($copyQuotes->isNotEmpty())
-                            <button type="button" class="x-tb-btn" onclick="CopyQuote.open()">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>
-                                {{ __('Copy from Quote') }}
-                            </button>
-                        @endif
-                    </div>
-                    <span class="x-tb-divider"></span>
-                    <div class="x-tb-group">
-                        <span class="x-tb-label">{{ __('Document') }}</span>
-                        <button type="button" class="x-tb-btn" onclick="window.print()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10z"/></svg>
-                            {{ __('Print') }}
-                        </button>
-                        @if ($invoice->customer && $invoice->customer->email)
-                            <a href="mailto:{{ $invoice->customer->email }}?subject=Invoice {{ $invoice->invoice_number }}" class="x-tb-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
-                                {{ __('Email Invoice') }}
-                            </a>
-                        @endif
-                        @if ($invoice->journalEntry)
-                            <a href="{{ route('accounting.journal-entries.show', $invoice->journalEntry) }}" class="x-tb-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                {{ __('Journal') }}
-                            </a>
-                        @endif
-                    </div>
-                    <span class="x-tb-spacer"></span>
-                    @if (in_array($invoice->status, ['sent', 'paid', 'overdue']))
-                        @can('invoices.void')
-                            <form method="POST" action="{{ route('accounting.invoices.void', $invoice) }}" class="inline">
+                <div class="q2-head-actions">
+                    @if($invoice->status === 'draft')
+                        <a href="{{ route('accounting.invoices.edit', $invoice) }}" class="q2-btn q2-btn--sec">{{ __('Edit') }}</a>
+                        @can('invoices.post')
+                            <form method="POST" action="{{ route('accounting.invoices.post', $invoice) }}" class="inline" onsubmit="return fbConfirmButton(event, 'Post this invoice?', { type: 'action' })">
                                 @csrf
-                                @method('PATCH')
-                                <button type="submit" class="x-tb-btn x-tb-btn--danger" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this invoice?') }}', { type: 'danger' })">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/></svg>
-                                    {{ __('Void') }}
-                                </button>
+                                <button type="submit" class="q2-btn q2-btn--cta">{{ __('Post Invoice') }}</button>
                             </form>
                         @endcan
                     @endif
-                    <a href="{{ route('accounting.invoices.index') }}" class="x-tb-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                        {{ __('All Invoices') }}
-                    </a>
+                    @if(in_array($invoice->status, ['sent', 'paid', 'overdue']))
+                        @can('invoices.void')
+                            <form method="POST" action="{{ route('accounting.invoices.void', $invoice) }}" class="inline" onsubmit="return fbConfirmButton(event, '{{ __('Are you sure you want to void this invoice?') }}', { type: 'danger' })">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="q2-btn q2-btn--danger">{{ __('Void Invoice') }}</button>
+                            </form>
+                        @endcan
+                    @endif
+                    <a href="{{ route('accounting.invoices.print', $invoice) }}" target="_blank" class="q2-btn q2-btn--ghost">{{ __('Print') }}</a>
+                    <a href="{{ route('accounting.invoices.index') }}" class="q2-btn q2-btn--ghost">{{ __('Back') }}</a>
                 </div>
             </div>
 
             <x-input-error :messages="$errors->get('error')" class="mb-4" />
 
-            <div class="grid gap-6 items-start lg:grid-cols-[1fr_340px]">
-                <div class="flex flex-col gap-5 min-w-0">
+            <div class="q2-shell">
+                <div class="q2-main">
 
-                    {{-- info card --}}
-                    <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                        <div class="x-sec">
-                            <span class="x-sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6"/></svg></span>
-                            <h2 class="x-sec-h2">{{ __('Invoice Information') }}</h2>
-                            <span class="x-sec-rule"></span>
-                        </div>
-                        <div class="detail-grid">
-                            <x-detail-field :label="__('Customer')">
-                                <a href="{{ route('accounting.customers.show', $invoice->customer) }}" class="font-semibold text-[#128F8E] hover:text-[#0C6B6A]">{{ $invoice->customer->name ?? '—' }}</a>
-                            </x-detail-field>
-                            <x-detail-field :label="__('Invoice Date')" :value="$invoice->invoice_date?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Due Date')" :value="$invoice->due_date?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Reference')" :value="$invoice->reference ?? '—'" />
-                            <x-detail-field :label="__('Created By')" :value="$invoice->createdBy?->name ?? '—'" />
-                            @if ($invoice->memo)
-                                <x-detail-field :label="__('Description')" class="col-span-3">{{ $invoice->memo }}</x-detail-field>
-                            @endif
-                        </div>
-                    </section>
-
-                    {{-- line items --}}
-                    <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                        <div class="x-sec">
-                            <span class="x-sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
-                            <h2 class="x-sec-h2">{{ __('Line Items') }}</h2>
-                            <span class="x-sec-rule"></span>
-                            <span class="x-chip">{{ $invoice->lines->count() }} {{ __('lines') }}</span>
-                        </div>
-
-                        <div class="mt-4 border border-shell rounded-[14px] overflow-visible round-thead-clip bg-[#fbfcfe]">
-                            <table class="x-wset-view w-full border-collapse text-[13px] table-fixed">
-                                <thead>
-                                    <tr>
-                                        <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Item Code') }}</th>
-                                        <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Item') }}</th>
-                                        <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Description') }}</th>
-                                        <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Qty') }}</th>
-                                        <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Unit Price') }}</th>
-                                        <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Disc %') }}</th>
-                                        <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Tax %') }}</th>
-                                        <th class="py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Amount') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse ($invoice->lines as $line)
-                                        <tr>
-                                            <td class="py-3 px-2.5 border-b border-line align-middle text-[12px] text-gray-500">{{ $line->product?->sku ?? '—' }}</td>
-                                            <td class="py-3 px-2.5 border-b border-line align-middle font-semibold text-gray-900">
-                                                {{ $line->product?->name ?? '—' }}
-                                                @if ($line->costCenter?->name)
-                                                    <span class="block text-[11px] font-normal text-slate-400">{{ $line->costCenter->code }} - {{ $line->costCenter->name }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="py-3 px-2.5 border-b border-line align-middle text-gray-600">{{ $line->description }}</td>
-                                            <td class="py-3 px-2.5 border-b border-line align-middle text-right tabular-nums text-gray-900">{{ $line->quantity }}</td>
-                                            <td class="py-3 px-2.5 border-b border-line align-middle text-right tabular-nums text-gray-900">{{ number_format((float) $line->unit_price, 2) }}</td>
-                                            <td class="py-3 px-2.5 border-b border-line align-middle text-right tabular-nums text-gray-600">{{ $line->discount }}%</td>
-                                            <td class="py-3 px-2.5 border-b border-line align-middle text-right tabular-nums text-gray-600">{{ $line->tax_rate }}%</td>
-                                            <td class="py-3 px-2.5 border-b border-line align-middle text-right font-bold tabular-nums text-gray-900">{{ number_format((float) $line->line_total, 2) }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="8" class="py-6 text-center text-sm text-slate-400">{{ __('No line items on this invoice.') }}</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-
-                    @if ($invoice->journalEntry)
-                        <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                            <div class="x-sec">
-                                <span class="x-sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12h6M9 16h6M8 7h8"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg></span>
-                                <h2 class="x-sec-h2">{{ __('Journal Entry') }}</h2>
-                                <span class="x-sec-rule"></span>
+                    {{-- §4 profile header --}}
+                    <div class="q2-prof">
+                        <div class="q2-pbar">
+                            <div class="q2-pid">
+                                <span class="q2-pic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                                <div>
+                                    <div class="q2-plabel">{{ __('Invoice') }} №</div>
+                                    <div class="q2-pname">{{ $invoice->invoice_number }}</div>
+                                    <div class="q2-pmeta">
+                                        <span class="q2-cchip"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ $invoice->customer->name ?? '—' }}</span>
+                                        <span class="q2-cchip">{{ __('Date') }} · {{ $invoice->invoice_date?->format('M d, Y') ?? '—' }}</span>
+                                        @if ($invoice->due_date)
+                                            <span class="q2-cchip">{{ __('Due') }} · {{ $invoice->due_date->format('M d, Y') }}</span>
+                                        @endif
+                                        @if($invoice->reference)
+                                            <span class="q2-cchip">{{ __('Reference') }} · {{ $invoice->reference }}</span>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
-                            <a href="{{ route('accounting.journal-entries.show', $invoice->journalEntry) }}" class="text-sm font-semibold text-[#128F8E] hover:text-[#0C6B6A]">
-                                {{ $invoice->journalEntry->reference }} — {{ __('View Journal Entry') }}
-                            </a>
+                            <div class="q2-pacts">
+                                <a href="{{ route('accounting.invoices.print', $invoice) }}" target="_blank" class="q2-btn q2-btn--ghost q2-btn--sm">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Print / PDF') }}
+                                </a>
+                                @if($invoice->status === 'draft')
+                                    <a href="{{ route('accounting.invoices.edit', $invoice) }}" class="q2-btn q2-btn--soft q2-btn--sm">{{ __('Edit') }}</a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- §4 stat grid --}}
+                    <div class="q2-statgrid">
+                        <div class="q2-stat">
+                            <span class="q2-stat-ic q2-stat-ic--teal"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M15 9.5c-.6-1-1.7-1.5-3-1.5-1.8 0-3 .9-3 2.2 0 2.8 6 1.6 6 4.3 0 1.3-1.2 2.2-3 2.2-1.3 0-2.4-.5-3-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                            <div class="q2-stat-meta">
+                                <span class="q2-stat-lbl">{{ __('Total') }}</span>
+                                <span class="q2-stat-val">{{ format_number($invTotal) }}</span>
+                                <span class="q2-stat-var">{{ $cs }}</span>
+                            </div>
+                        </div>
+                        <div class="q2-stat">
+                            <span class="q2-stat-ic q2-stat-ic--mint"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                            <div class="q2-stat-meta">
+                                <span class="q2-stat-lbl">{{ __('Paid') }}</span>
+                                <span class="q2-stat-val q2-stat-val--mint">{{ format_number($invPaid) }}</span>
+                                <span class="q2-stat-var">{{ $cs }}</span>
+                            </div>
+                        </div>
+                        <div class="q2-stat">
+                            <span class="q2-stat-ic q2-stat-ic--ink"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                            <div class="q2-stat-meta">
+                                <span class="q2-stat-lbl">{{ __('Balance Due') }}</span>
+                                <span class="q2-stat-val @if($invBalance > 0 && $invoice->status === 'overdue') q2-stat-val--red @endif">{{ format_number($invBalance) }}</span>
+                                <span class="q2-stat-var">{{ $cs }}</span>
+                            </div>
+                        </div>
+                        <div class="q2-stat">
+                            <span class="q2-stat-ic q2-stat-ic--steel"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                            <div class="q2-stat-meta">
+                                <span class="q2-stat-lbl">{{ __('Tax') }}</span>
+                                <span class="q2-stat-val">{{ format_number($invTax) }}</span>
+                                <span class="q2-stat-var">{{ $cs }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- §4 tabs --}}
+                    <div class="q2-tabs" role="tablist">
+                        <button type="button" class="q2-tab is-active" data-target="tab-overview" role="tab">{{ __('Overview') }}</button>
+                        <button type="button" class="q2-tab" data-target="tab-payments" role="tab">{{ __('Payments') }}</button>
+                        <button type="button" class="q2-tab" data-target="tab-lines" role="tab">{{ __('Line Items') }}</button>
+                    </div>
+
+                    <div class="q2-tdiv">
+                        {{-- overview tab --}}
+                        <section id="tab-overview" class="q2-tab-panel">
+                            <div class="q2-sec">
+                                <div class="q2-sec-head">
+                                    <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                                    <h2 class="q2-sec-title">{{ __('Invoice Details') }}</h2>
+                                </div>
+                                <div class="q2-g4 mt-5">
+                                    <div class="q2-field">
+                                        <span class="q2-label">{{ __('Customer') }}</span>
+                                        <a href="{{ route('accounting.customers.show', $invoice->customer) }}" class="q2-amt q2-link" style="font-weight:600">{{ $invoice->customer->name ?? '—' }}</a>
+                                    </div>
+                                    <div class="q2-field">
+                                        <span class="q2-label">{{ __('Invoice Date') }}</span>
+                                        <span class="q2-amt" style="font-weight:600">{{ $invoice->invoice_date?->format('M d, Y') ?? '—' }}</span>
+                                    </div>
+                                    <div class="q2-field">
+                                        <span class="q2-label">{{ __('Due Date') }}</span>
+                                        <span class="q2-amt" style="font-weight:600">{{ $invoice->due_date?->format('M d, Y') ?? '—' }}</span>
+                                    </div>
+                                    <div class="q2-field">
+                                        <span class="q2-label">{{ __('Reference') }}</span>
+                                        <span class="q2-amt q2-mono">{{ $invoice->reference ?? '—' }}</span>
+                                    </div>
+                                    <div class="q2-field">
+                                        <span class="q2-label">{{ __('Created By') }}</span>
+                                        <span class="q2-amt" style="font-weight:600">{{ $invoice->createdBy?->name ?? '—' }}</span>
+                                    </div>
+                                    @if ($invoice->journalEntry)
+                                        <div class="q2-field">
+                                            <span class="q2-label">{{ __('Journal Entry') }}</span>
+                                            <a href="{{ route('accounting.journal-entries.show', $invoice->journalEntry) }}" class="q2-amt q2-link q2-mono">{{ $invoice->journalEntry->reference ?? ('JE-' . str_pad($invoice->journalEntry->id, 4, '0', STR_PAD_LEFT)) }}</a>
+                                        </div>
+                                    @endif
+                                    @if ($invoice->memo)
+                                        <div class="q2-field" style="grid-column: span 2">
+                                            <span class="q2-label">{{ __('Description') }}</span>
+                                            <p class="q2-rail-memo" style="font-size:.8125rem;color:var(--muted,#5F7476)">{{ $invoice->memo }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                         </section>
-                    @endif
 
-                    @if ($invoice->payments->count() > 0)
-                        <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                            <div class="x-sec">
-                                <span class="x-sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg></span>
-                                <h2 class="x-sec-h2">{{ __('Payment History') }}</h2>
-                                <span class="x-sec-rule"></span>
-                            </div>
-                            <div class="mt-4 overflow-x-auto">
-                                <table class="datasheet w-full text-[13px]">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-left">{{ __('Date') }}</th>
-                                            <th class="text-left">{{ __('Reference') }}</th>
-                                            <th class="text-right">{{ __('Amount') }}</th>
-                                            <th class="text-left">{{ __('Method') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($invoice->payments as $payment)
-                                            <tr>
-                                                <td>{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
-                                                <td>{{ $payment->reference ?? '—' }}</td>
-                                                <td class="numeric">{{ number_format((float) $payment->pivot->amount, 2) }}</td>
-                                                <td>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                        {{-- payments tab --}}
+                        <section id="tab-payments" class="q2-tab-panel">
+                            <div class="q2-card q2-card--list">
+                                <div class="q2-tbl-wrap" style="border:none;border-radius:0">
+                                    <table class="q2-tbl">
+                                        <thead><tr>
+                                            <th>{{ __('Date') }}</th>
+                                            <th>{{ __('Reference') }}</th>
+                                            <th class="q2-right">{{ __('Amount') }} ({{ $cs }})</th>
+                                            <th>{{ __('Method') }}</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            @forelse($payments as $payment)
+                                                <tr>
+                                                    <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
+                                                    <td class="q2-amt q2-mono">{{ $payment->reference ?? '—' }}</td>
+                                                    <td class="q2-right q2-amt">{{ format_number($payment->pivot->amount) }}</td>
+                                                    <td>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="q2-empty">{{ __('No payments recorded yet.') }}</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if($payments->isNotEmpty())
+                                    <div class="flex justify-end mt-4 px-5 pb-5">
+                                        <div class="q2-railsum" style="width:16rem">
+                                            <div class="q2-srow"><span>{{ __('Paid') }}</span><span class="q2-sval">{{ format_number($invPaid) }}</span></div>
+                                            <div class="q2-srow"><span>{{ __('Balance Due') }}</span><span class="q2-sval">{{ format_number($invBalance) }}</span></div>
+                                            <div class="q2-srow gt"><span>{{ __('Total') }}</span><span class="q2-sval">{{ format_number($invTotal) }}</span></div>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </section>
-                    @endif
+
+                        {{-- line items tab --}}
+                        <section id="tab-lines" class="q2-tab-panel">
+                            <div class="q2-card q2-card--list">
+                                <div class="q2-tbl-wrap" style="border:none;border-radius:0">
+                                    <table class="q2-tbl">
+                                        <thead><tr>
+                                            <th>{{ __('Item Code') }}</th>
+                                            <th>{{ __('Item') }}</th>
+                                            <th>{{ __('Description') }}</th>
+                                            <th class="q2-right">{{ __('Qty') }}</th>
+                                            <th class="q2-right">{{ __('Unit Price') }} ({{ $cs }})</th>
+                                            <th class="q2-right">{{ __('Disc %') }}</th>
+                                            <th class="q2-right">{{ __('Tax %') }}</th>
+                                            <th class="q2-right">{{ __('Amount') }} ({{ $cs }})</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            @forelse($invoice->lines as $line)
+                                                <tr>
+                                                    <td class="q2-amt q2-mono">{{ $line->product?->sku ?? '—' }}</td>
+                                                    <td style="font-weight:600;color:var(--ink,#0B2A2D)">
+                                                        {{ $line->product?->name ?? '—' }}
+                                                        @if ($line->costCenter?->name)
+                                                            <span class="block text-[11px] font-normal" style="color:var(--muted,#5F7476)">{{ $line->costCenter->code }} - {{ $line->costCenter->name }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>{{ $line->description }}</td>
+                                                    <td class="q2-right">{{ number_format((float) $line->quantity, 2) }}</td>
+                                                    <td class="q2-right q2-amt">{{ format_number((float) $line->unit_price) }}</td>
+                                                    <td class="q2-right">{{ $line->discount }}%</td>
+                                                    <td class="q2-right">{{ $line->tax_rate }}%</td>
+                                                    <td class="q2-right q2-amt" style="font-weight:800">{{ format_number((float) $line->line_total) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="8" class="q2-empty">{{ __('No line items on this invoice.') }}</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="flex justify-end mt-4 px-5 pb-5">
+                                    <div class="q2-railsum" style="width:16rem">
+                                        <div class="q2-srow"><span>{{ __('Subtotal') }}</span><span class="q2-sval">{{ format_number($invSubtotal) }}</span></div>
+                                        <div class="q2-srow"><span>{{ __('Tax') }}</span><span class="q2-sval">{{ format_number($invTax) }}</span></div>
+                                        <div class="q2-srow gt"><span>{{ __('Total') }}</span><span class="q2-sval">{{ format_number($invTotal) }}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
                 </div>
 
-                {{-- right rail --}}
-                <aside class="x-rail-wrap">
-                    <div class="x-rail">
-                        <div class="x-rail-card">
-                            <div class="x-rail-title">{{ __('Summary') }}</div>
-                            <div class="x-rail-v"><span class="x-rail-vl">{{ __('Subtotal') }}</span><span class="x-rail-vv">{{ number_format($invSubtotal, 2) }}</span></div>
-                            <div class="x-rail-v"><span class="x-rail-vl">{{ __('Tax') }}</span><span class="x-rail-vv">{{ number_format($invTax, 2) }}</span></div>
-                            <div class="x-rail-gt"><span class="x-rail-vl">{{ __('Total') }}</span><span class="x-rail-vv">{{ $cs }}{{ number_format($invTotal, 2) }}</span></div>
-                            <div class="x-rail-v"><span class="x-rail-vl">{{ __('Paid') }}</span><span class="x-rail-vv">{{ number_format($invPaid, 2) }}</span></div>
-                            <div class="x-rail-v"><span class="x-rail-vl">{{ __('Balance Due') }}</span><span class="x-rail-vv {{ $invBalance > 0 ? '' : '' }}">{{ number_format($invBalance, 2) }}</span></div>
-                        </div>
-
-                        <nav class="x-rail-card">
-                            <div class="x-rail-title">{{ __('Quick Links') }}</div>
-                            <div class="x-rail-nav">
-                                @if ($copyQuotes->isNotEmpty())
-                                    <button type="button" class="x-rail-link" onclick="CopyQuote.open()">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>
-                                        {{ __('Copy from Quote') }}
-                                    </button>
-                                @endif
-                                <a href="{{ route('accounting.invoices.print', $invoice) }}" class="x-rail-link">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10z"/></svg>
-                                    {{ __('Printable Invoice') }}
-                                </a>
-                                <a href="{{ route('accounting.customers.show', $invoice->customer) }}" class="x-rail-link">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5"/></svg>
-                                    {{ __('View Customer') }}
-                                </a>
-                                <a href="{{ route('accounting.invoices.create') }}" class="x-rail-link">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v16m8-8H4"/></svg>
-                                    {{ __('New Invoice') }}
-                                </a>
-                                <a href="{{ route('accounting.invoices.index') }}" class="x-rail-link">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                                    {{ __('All Invoices') }}
-                                </a>
-                            </div>
-                        </nav>
+                {{-- §4 rail --}}
+                <aside class="q2-rail">
+                    <div class="q2-railcard">
+                        <div class="q2-rail-group">{{ __('Actions') }}</div>
+                        <a href="{{ route('accounting.invoices.print', $invoice) }}" target="_blank" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            {{ __('Print / PDF') }}
+                        </a>
+                        @if($invoice->status === 'draft')
+                            <a href="{{ route('accounting.invoices.edit', $invoice) }}" class="q2-vitem">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                {{ __('Edit Invoice') }}
+                            </a>
+                        @endif
+                        @if($copyQuotes->isNotEmpty())
+                            <button type="button" class="q2-vitem" style="width:100%;text-align:left;background:none;border:0;cursor:pointer" onclick="CopyQuote.open()">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                {{ __('Copy from Quote') }}
+                            </button>
+                        @endif
+                        @if($invoice->customer)
+                            <a href="{{ route('accounting.customers.show', $invoice->customer) }}" class="q2-vitem">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                {{ __('View Customer') }}
+                            </a>
+                        @endif
+                        <a href="{{ route('accounting.invoices.create') }}" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                            {{ __('New Invoice') }}
+                        </a>
+                        <a href="{{ route('accounting.invoices.index') }}" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 19l-7-7 7-7M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            {{ __('All Invoices') }}
+                        </a>
                     </div>
                 </aside>
             </div>
@@ -274,4 +308,16 @@
     </div>
 
     <x-copy-quote-picker :quotes="$copyQuotes" mode="navigate" />
+
+    <script>
+        document.querySelectorAll('.q2-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.q2-tab').forEach(t => t.classList.remove('is-active'));
+                tab.classList.add('is-active');
+                document.querySelectorAll('.q2-tab-panel').forEach(p => {
+                    p.style.display = (p.id === tab.dataset.target) ? '' : 'none';
+                });
+            });
+        });
+    </script>
 </x-app-layout>

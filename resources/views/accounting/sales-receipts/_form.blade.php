@@ -89,230 +89,221 @@
     }
 @endphp
 
-<div class="q2">
-    {{-- sticky page head --}}
-    <div class="q2-head q2-head--sticky">
-        <div class="min-w-0">
-            <div class="flex items-center gap-2.5 flex-wrap">
-                <h1 class="q2-title" style="font-size:1.375rem">{{ $title }}</h1>
-                @if ($isEdit)
-                    <span class="q2-mono" style="padding:.25rem .625rem;border:1px solid var(--line,#E2ECEC);border-radius:.5rem;background:#fff">{{ $salesReceipt->receipt_number }}</span>
-                    <span class="q2-badge q2-badge--draft"><span class="q2-dot"></span>{{ __('Draft') }}</span>
-                @endif
-            </div>
-            <p class="q2-sub">{{ $subtitle }}</p>
-        </div>
-        <div class="q2-head-actions">
-            <a href="{{ $cancelRoute }}" class="q2-btn q2-btn--ghost">{{ __('Cancel') }}</a>
-            @if($isEdit)
-                @if($salesReceipt->created_by && (int) $salesReceipt->created_by !== (int) auth()->id())
-                    <button type="submit" form="receipt-delete-form" class="q2-btn q2-btn--danger">{{ __('Delete') }}</button>
-                @endif
-                <div class="q2-seg">
-                    <button type="submit" name="action" value="save" form="receipt-form" class="q2-btn q2-btn--sec">{{ $submitLabel }}</button>
-                    <button type="submit" name="action" value="save_and_post" form="receipt-form" class="q2-btn q2-btn--cta">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        {{ __('Save & Post') }}
-                    </button>
-                </div>
-            @else
-                <button type="submit" name="action" value="save_and_new" form="receipt-form" class="q2-btn q2-btn--ghost">{{ __('Save & New') }}</button>
-                <div class="q2-seg">
-                    <button type="submit" name="action" value="save_draft" form="receipt-form" class="q2-btn q2-btn--ghost">{{ __('Save Draft') }}</button>
-                    <button type="submit" name="action" value="save" form="receipt-form" class="q2-btn q2-btn--sec">{{ $submitLabel }}</button>
-                    <button type="submit" name="action" value="save_and_post" form="receipt-form" class="q2-btn q2-btn--cta">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        {{ __('Save & Post') }}
-                    </button>
-                </div>
-            @endif
-        </div>
-    </div>
+<div class="sr-suite py-6">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
-    <form method="POST" action="{{ $formAction }}" id="receipt-form" class="q2-form" novalidate data-customer-name="{{ $selectedCustomer?->name ?? '' }}">
-        @csrf
-        @if ($formMethod === 'PUT')
-            @method('PUT')
-        @endif
-
-        <x-input-error :messages="$errors->get('error')" class="mb-4" />
-
-        <div class="q2-shell q2-shell--form">
-            <div class="q2-main">
-
-                {{-- (a) customer --}}
-                <section class="q2-sec">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Customer Information') }}</h2>
-                    </div>
-                    <div class="q2-g4 mt-5">
-                        <div class="q2-field" style="grid-column: span 2">
-                            <label for="customer_id" class="q2-label">{{ __('Customer') }}</label>
-                            <x-scoped-search-field
-                                name="customer_id"
-                                entity="customer"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
-                                :value="old('customer_id', $oldCustomerId)"
-                                :label="old('customer_name', $selectedCustomer?->name ?? '')"
-                                placeholder="{{ __('Search customers…') }}"
-                                on-select="srCustomerSelected"
-                            />
-                            <x-input-error :messages="$errors->get('customer_id')" />
-                        </div>
-                        <div class="q2-field" style="grid-column: span 2">
-                            <label for="receipt_date" class="q2-label">{{ __('Receipt Date') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
-                            <input id="receipt_date" name="receipt_date" type="date" class="q2-input" value="{{ old('receipt_date', $salesReceipt?->receipt_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
-                            <x-input-error :messages="$errors->get('receipt_date')" />
-                        </div>
-                    </div>
-                </section>
-
-                {{-- (b) receipt information --}}
-                <section class="q2-sec">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 9h12M6 12l3 3M6 12l3-3M9 7h6M6 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Receipt Information') }}</h2>
-                    </div>
-                    <div class="q2-g4 mt-5">
-                        <div class="q2-field">
-                            <label for="receipt_number_ro" class="q2-label">{{ __('Receipt №') }}</label>
-                            <input id="receipt_number_ro" type="text" class="q2-input" value="{{ $salesReceipt?->receipt_number ?? __('Auto-assigned on save') }}" readonly tabindex="-1" />
-                        </div>
-                        <div class="q2-field">
-                            <label for="reference" class="q2-label">{{ __('Reference') }}</label>
-                            <input id="reference" name="reference" type="text" class="q2-input" value="{{ old('reference', $salesReceipt?->reference ?? '') }}" placeholder="{{ __('Optional reference') }}" />
-                        </div>
-                        <div class="q2-field" style="grid-column: span 2">
-                            <label for="branch_id" class="q2-label">{{ __('Branch') }}</label>
-                            <x-scoped-search-field
-                                name="branch_id"
-                                entity="branch"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
-                                :value="old('branch_id', $selectedBranchId)"
-                                :label="old('branch_id', $selectedBranchLabel)"
-                                placeholder="{{ __('None') }}"
-                            />
-                            <x-input-error :messages="$errors->get('branch_id')" />
-                        </div>
-                        <div class="q2-field" style="grid-column: span 4">
-                            <label for="memo" class="q2-label">{{ __('Description') }}</label>
-                            <textarea id="memo" name="memo" rows="2" class="q2-input" placeholder="{{ __('Optional memo') }}">{{ old('memo', $salesReceipt?->memo ?? '') }}</textarea>
-                        </div>
-                    </div>
-                </section>
-
-                {{-- (c) line items --}}
-                <section class="q2-sec">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Line Items') }}</h2>
-                        <button type="button" id="sr-add-line" class="q2-btn q2-btn--soft q2-btn--sm" style="margin-left:auto">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            {{ __('Add Line') }}
-                        </button>
-                    </div>
-                    <div class="q2-tbl-wrap" style="margin-top:1rem">
-                        <table class="q2-tbl" id="sr-lines-table" style="min-width:940px">
-                            <thead>
-                                <tr>
-                                    <th style="width:7rem">{{ __('Code') }}</th>
-                                    <th style="min-width:11rem">{{ __('Product') }}</th>
-                                    <th style="min-width:10rem">{{ __('Description') }}</th>
-                                    <th class="q2-numr" style="width:5.5rem">{{ __('Qty') }}</th>
-                                    <th class="q2-numr" style="width:6.5rem">{{ __('Price') }} ({{ $cs }})</th>
-                                    <th class="q2-numr" style="width:5.5rem">{{ __('Disc %') }}</th>
-                                    <th style="min-width:11rem">{{ __('Income Account') }}</th>
-                                    <th class="q2-numr" style="width:6.5rem">{{ __('Line Total') }}</th>
-                                    <th style="width:3.5rem"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="sr-lines-body"></tbody>
-                        </table>
-                    </div>
-                    <x-input-error :messages="$errors->get('lines')" class="mt-2" />
-                    <div class="q2-note-info">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span>{{ __('Totals recalculate automatically. Posting requires total payments to match the receipt total.') }}</span>
-                    </div>
-                </section>
-
-                {{-- (d) payments --}}
-                <section class="q2-sec">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M2 10h20" stroke="currentColor" stroke-width="2"/><path d="M15 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Payments') }}</h2>
-                        <button type="button" id="sr-add-payment" class="q2-btn q2-btn--soft q2-btn--sm" style="margin-left:auto">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            {{ __('Add Payment') }}
-                        </button>
-                    </div>
-                    <div class="q2-paygrid" style="margin-top:1.25rem">
-                        <span class="q2-label">{{ __('Payment Method') }}</span>
-                        <span class="q2-label">{{ __('Amount') }} ({{ $cs }})</span>
-                        <span></span>
-                    </div>
-                    <div id="sr-payments-body" style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.25rem"></div>
-                    <x-input-error :messages="$errors->get('payments')" class="mt-2" />
-                </section>
-            </div>
-
-            {{-- rail: summary + quick nav --}}
-            <aside class="q2-rail">
-                <div class="q2-railcard">
-                    <div class="q2-rail-group">{{ $isEdit ? __('Breakdown') : __('Summary') }}</div>
-                    <div class="q2-railsum">
-                        <div class="q2-srow"><span>{{ __('Customer') }}</span><span class="q2-sval" id="p-cust">{{ $selectedCustomer?->name ?? __('Walk-in') }}</span></div>
-                        <div class="q2-srow"><span>{{ __('Date') }}</span><span class="q2-sval" id="p-date">{{ $salesReceipt?->receipt_date?->format('M d, Y') ?? now()->format('M d, Y') }}</span></div>
-                        <div style="height:10px"></div>
-                        <div class="q2-srow"><span>{{ __('Subtotal') }}</span><span class="q2-sval" id="v-sub">0.00</span></div>
-                        <div class="q2-srow" id="r-disc" style="display:none"><span>{{ __('Discount') }}</span><span class="q2-sval" id="v-disc">0.00</span></div>
-                        <div class="q2-srow" id="r-tax" style="display:none"><span>{{ __('Tax') }}</span><span class="q2-sval" id="v-tax">0.00</span></div>
-                        <div class="q2-srow"><span>{{ __('Payments') }}</span><span class="q2-sval" id="v-pay">0.00</span></div>
-                        <div class="q2-srow gt"><span>{{ __('Grand Total') }}</span><span class="q2-sval" id="v-gt">{{ $cs }}0.00</span></div>
-                        <p class="q2-rail-memo" id="p-foot" hidden></p>
-                    </div>
-                </div>
-
-                <div class="q2-railcard">
-                    <div class="q2-rail-group">{{ __('Quick Nav') }}</div>
+        {{-- §2/§3 sticky page head --}}
+        <div class="sticky-head">
+            <div>
+                <h1>{{ $title }}
                     @if ($isEdit)
-                        <a href="{{ route('accounting.sales-receipts.print', $salesReceipt) }}" target="_blank" rel="noopener" class="q2-vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span>{{ __('Print / PDF') }}</span>
-                        </a>
-                        @if ($salesReceipt?->customer?->email)
-                            <form method="POST" action="{{ route('accounting.sales-receipts.email', $salesReceipt) }}" class="q2-vitem">
-                                @csrf
-                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm18 3-10 7L2 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span>{{ __('Email') }}</span>
-                            </form>
-                        @endif
-                        <a href="{{ $cancelRoute }}" class="q2-vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span>{{ __('Back') }}</span>
-                        </a>
-                    @else
-                        <a href="{{ route('accounting.sales-receipts.index') }}" class="q2-vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            <span>{{ __('Receipts List') }}</span>
-                        </a>
-                        <a href="{{ route('accounting.customers.create') }}" class="q2-vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13v5m2.5-2.5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            <span>{{ __('New Customer') }}</span>
-                        </a>
+                        <span class="mono-chip">{{ $salesReceipt->receipt_number }}</span>
+                        <span class="badge b-draft"><span class="bdot"></span>{{ __('Draft') }}</span>
                     @endif
-                </div>
-            </aside>
+                </h1>
+                <div class="sub">{{ $subtitle }}</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                @if(!$isEdit)
+                    <a href="{{ route('accounting.sales-receipts.index') }}" class="btn btn-ghost btn-sm">← {{ __('Back') }}</a>
+                @endif
+                <a href="{{ $cancelRoute }}" class="btn btn-ghost btn-sm">{{ __('Cancel') }}</a>
+                @if($isEdit)
+                    @if($salesReceipt->created_by && (int) $salesReceipt->created_by !== (int) auth()->id())
+                        <button type="submit" form="receipt-delete-form" class="btn btn-danger-o btn-sm">{{ __('Delete') }}</button>
+                    @endif
+                    <div class="seg">
+                        <button type="submit" name="action" value="save" form="receipt-form" class="btn btn-sec">{{ $submitLabel }}</button>
+                        <button type="submit" name="action" value="save_and_post" form="receipt-form" class="btn btn-cta">
+                            {{ __('Save & Post') }} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                @else
+                    <button type="submit" name="action" value="save_and_new" form="receipt-form" class="btn btn-ghost btn-sm">{{ __('Save & New') }}</button>
+                    <div class="seg">
+                        <button type="submit" name="action" value="save_draft" form="receipt-form" class="btn btn-ghost btn-sm">{{ __('Save Draft') }}</button>
+                        <button type="submit" name="action" value="save" form="receipt-form" class="btn btn-sec">{{ $submitLabel }}</button>
+                        <button type="submit" name="action" value="save_and_post" form="receipt-form" class="btn btn-cta">
+                            {{ __('Save & Post') }} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                @endif
+            </div>
         </div>
-    </form>
 
-    @if($isEdit && $salesReceipt->created_by && (int) $salesReceipt->created_by !== (int) auth()->id())
-    <form id="receipt-delete-form" method="POST" action="{{ route('accounting.sales-receipts.destroy', $salesReceipt) }}" onsubmit="return fbConfirmSubmit(event, 'Delete this draft receipt? This cannot be undone.', { type: 'danger' })">
-        @csrf
-        @method('DELETE')
-    </form>
-    @endif
+        <form method="POST" action="{{ $formAction }}" id="receipt-form" class="sr-form" novalidate data-customer-name="{{ $selectedCustomer?->name ?? '' }}">
+            @csrf
+            @if ($formMethod === 'PUT')
+                @method('PUT')
+            @endif
+
+            <x-input-error :messages="$errors->get('error')" class="mb-4" />
+
+            <div class="shell">
+                <section class="card">
+
+                    {{-- §2/§3 receipt details --}}
+                    <div class="card-sec">
+                        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Receipt Details') }}</h2><span class="rule"></span></div>
+                        <div class="g4" style="margin-top:1.25rem">
+                            <div class="field sp2">
+                                <label>{{ __('Customer (optional)') }}</label>
+                                <x-scoped-search-field
+                                    name="customer_id"
+                                    entity="customer"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
+                                    :value="old('customer_id', $oldCustomerId)"
+                                    :label="old('customer_name', $selectedCustomer?->name ?? '')"
+                                    placeholder="{{ __('Search customers…') }}"
+                                    on-select="srCustomerSelected"
+                                />
+                                <x-input-error :messages="$errors->get('customer_id')" />
+                                <div class="hint">{{ __('Leave empty for walk-in cash sales.') }}</div>
+                            </div>
+                            <div class="field">
+                                <label>{{ __('Receipt Date') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                                <input id="receipt_date" name="receipt_date" type="date" class="input h44" value="{{ old('receipt_date', $salesReceipt?->receipt_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
+                                <x-input-error :messages="$errors->get('receipt_date')" />
+                            </div>
+                            <div class="field">
+                                <label>{{ __('Reference') }}</label>
+                                <input id="reference" name="reference" type="text" class="input h44" value="{{ old('reference', $salesReceipt?->reference ?? '') }}" placeholder="{{ __('Optional reference') }}" />
+                                <x-input-error :messages="$errors->get('reference')" />
+                            </div>
+                            <div class="field">
+                                <label>{{ __('Branch') }}</label>
+                                <x-scoped-search-field
+                                    name="branch_id"
+                                    entity="branch"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                    :value="old('branch_id', $selectedBranchId)"
+                                    :label="old('branch_id', $selectedBranchLabel)"
+                                    placeholder="{{ __('None') }}"
+                                />
+                                <x-input-error :messages="$errors->get('branch_id')" />
+                            </div>
+                            <div class="field sp3">
+                                <label>{{ __('Description') }}</label>
+                                <input id="memo" name="memo" type="text" class="input h44" value="{{ old('memo', $salesReceipt?->memo ?? '') }}" placeholder="{{ __('Optional memo') }}" />
+                                <x-input-error :messages="$errors->get('memo')" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- §2/§3 payments (ABOVE line items per mockup) --}}
+                    <div class="card-sec">
+                        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Payments') }}</h2><span class="rule"></span>
+                            <button type="button" id="sr-add-payment" class="btn btn-ghost btn-sm" style="margin-left:12px">＋ {{ __('Add Payment') }}</button></div>
+                        <div id="sr-payments-body" style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1.25rem"></div>
+                        <x-input-error :messages="$errors->get('payments')" class="mt-2" />
+                    </div>
+
+                    {{-- §2/§3 line items --}}
+                    <div class="card-sec">
+                        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Line Items') }}</h2><span class="rule"></span>
+                            <button type="button" id="sr-add-line" class="btn btn-ghost btn-sm" style="margin-left:12px">＋ {{ __('Add Line') }}</button></div>
+                        <div class="li-wrap" style="margin-top:1rem">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width:7rem">{{ __('Code') }}</th>
+                                        <th style="min-width:11rem">{{ __('Product') }}</th>
+                                        <th style="min-width:10rem">{{ __('Description') }}</th>
+                                        <th class="num" style="width:5.5rem">{{ __('Qty') }}</th>
+                                        <th class="num" style="width:6.5rem">{{ __('Price') }} ({{ $cs }})</th>
+                                        <th class="num" style="width:5.5rem">{{ __('Disc %') }}</th>
+                                        <th style="min-width:11rem">{{ __('Income Account') }}</th>
+                                        <th class="num" style="width:6.5rem">{{ __('Line Total') }}</th>
+                                        <th style="width:3.5rem"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sr-lines-body"></tbody>
+                            </table>
+                        </div>
+                        <x-input-error :messages="$errors->get('lines')" class="mt-2" />
+                    </div>
+
+                    {{-- §2/§3 totals --}}
+                    <div class="card-sec">
+                        <div class="li-totals" style="margin-top:0"><div class="box">
+                            <div class="trow"><span>{{ __('Subtotal') }}</span><span class="v" id="v-sub">0.00</span></div>
+                            <div class="trow" id="r-disc" style="display:none"><span>{{ __('Discount') }}</span><span class="v" id="v-disc">0.00</span></div>
+                            <div class="trow" id="r-tax" style="display:none"><span>{{ __('Tax') }}</span><span class="v" id="v-tax">0.00</span></div>
+                            <div class="trow"><span>{{ __('Total Payments') }}</span><span class="v" id="v-pay">0.00</span></div>
+                            <div class="trow total"><span>{{ __('Total') }}</span><span class="v" id="v-gt">{{ $cs }}0.00</span></div>
+                        </div></div>
+                    </div>
+                </section>
+
+                {{-- §2/§3 rail --}}
+                <aside class="railsum">
+                    <section class="card">
+                        <div class="rail-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ $isEdit ? __('Breakdown') : __('Summary') }}</h2></div>
+                            <div style="margin-top:8px">
+                                <div class="srow"><span class="l">{{ __('Customer') }}</span><span class="v" id="p-cust">{{ $selectedCustomer?->name ?? __('Walk-in') }}</span></div>
+                                <div class="srow"><span class="l">{{ __('Date') }}</span><span class="v" id="p-date">{{ $salesReceipt?->receipt_date?->format('M d, Y') ?? now()->format('M d, Y') }}</span></div>
+                                <div style="height:6px"></div>
+                                <div class="srow"><span class="l">{{ __('Subtotal') }}</span><span class="v" id="p-sub">0.00</span></div>
+                                @if($isEdit)
+                                    <div class="srow"><span class="l">{{ __('Tax') }}</span><span class="v" id="p-tax">0.00</span></div>
+                                    <div class="srow strong"><span class="l">{{ __('Total') }}</span><span class="v" id="p-total">0.00</span></div>
+                                    <div class="srow"><span class="l">{{ __('Received') }}</span><span class="v" id="p-received">0.00</span></div>
+                                @else
+                                    <div class="srow"><span class="l">{{ __('Payments') }}</span><span class="v" id="p-pay">0.00</span></div>
+                                @endif
+                            </div>
+                            <div class="gt"><span class="l">{{ $isEdit ? __('Total Received') : __('Total') }}</span><span class="v" id="p-gt">{{ $cs }}0.00</span></div>
+                        </div>
+
+                        <div class="rail-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>{{ __('Quick Nav') }}</h2></div>
+                            <div class="vlist">
+                                @if ($isEdit)
+                                    <a href="{{ route('accounting.sales-receipts.show', $salesReceipt) }}" class="vitem">
+                                        <span class="ic">👤</span>{{ __('View Receipt') }}
+                                    </a>
+                                    @if($salesReceipt->status === 'draft' && auth()->user()->can('sales-receipts.post'))
+                                        <a href="{{ route('accounting.sales-receipts.post-page', $salesReceipt) }}" class="vitem">
+                                            <span class="ic">📤</span>{{ __('Post Receipt') }}
+                                        </a>
+                                    @endif
+                                    <a href="{{ route('accounting.sales-receipts.print', $salesReceipt) }}" target="_blank" rel="noopener" class="vitem">
+                                        <span class="ic">🖨</span>{{ __('Print / PDF') }}
+                                    </a>
+                                    @if ($salesReceipt?->customer?->email)
+                                        <form method="POST" action="{{ route('accounting.sales-receipts.email', $salesReceipt) }}">
+                                            @csrf
+                                            <button type="submit" class="vitem">
+                                                <span class="ic">✉</span>{{ __('Email Receipt') }}
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <a href="{{ route('accounting.sales-receipts.index') }}" class="vitem">
+                                        <span class="ic">←</span>{{ __('All Receipts') }}
+                                    </a>
+                                @else
+                                    <a href="{{ route('accounting.sales-receipts.index') }}" class="vitem">
+                                        <span class="ic">📒</span>{{ __('Receipts List') }}
+                                    </a>
+                                    <a href="{{ route('accounting.customers.create') }}" class="vitem">
+                                        <span class="ic">👤</span>{{ __('New Customer') }}
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </form>
+
+        @if($isEdit && $salesReceipt->created_by && (int) $salesReceipt->created_by !== (int) auth()->id())
+        <form id="receipt-delete-form" method="POST" action="{{ route('accounting.sales-receipts.destroy', $salesReceipt) }}" onsubmit="return fbConfirmSubmit(event, 'Delete this draft receipt? This cannot be undone.', { type: 'danger' })">
+            @csrf
+            @method('DELETE')
+        </form>
+        @endif
+    </div>
 </div>
 
 <script>
@@ -656,4 +647,26 @@
     (SR_LINES.length ? SR_LINES : [{}]).forEach(d => srAddLine(d));
     (SR_PAYMENTS.length ? SR_PAYMENTS : [{}]).forEach(d => srAddPayment(d));
     srSync();
+
+    /* ── rail mirror: copy canonical li-totals into the rail summary ── */
+    (function () {
+        const form = document.getElementById('receipt-form');
+        const map = { 'v-sub': 'p-sub', 'v-tax': 'p-tax', 'v-pay': 'p-received', 'v-gt': 'p-total' };
+        if (!form) return;
+        const mirror = () => {
+            for (const srcId in map) {
+                const src = document.getElementById(srcId);
+                const dst = document.getElementById(map[srcId]);
+                if (src && dst) dst.textContent = src.textContent;
+            }
+            const gt = document.getElementById('p-gt');
+            const vgt = document.getElementById('v-gt');
+            if (gt && vgt) gt.textContent = vgt.textContent;
+        };
+        form.addEventListener('input', mirror);
+        form.addEventListener('change', mirror);
+        form.addEventListener('submit', mirror);
+        form.addEventListener('item-selected', mirror);
+        mirror();
+    })();
 </script>

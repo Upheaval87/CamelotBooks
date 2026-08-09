@@ -3,125 +3,113 @@
         $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
         $balanced = abs((float) $totalDebits - (float) $totalCredits) < 0.01;
         $paymentMethods = $salesReceipt->payments->map(fn ($p) => $p->paymentMethod->name ?? '—')->unique()->implode(', ');
+        $narration = __('Being receipt :num', ['num' => $salesReceipt->receipt_number]);
     @endphp
 
-    <div class="q2 py-6">
+    <div class="sr-suite py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
             {{-- §5 sticky page head --}}
-            <div class="q2-head q2-head--sticky">
+            <div class="sticky-head">
                 <div>
-                    <div class="flex items-center gap-2.5 flex-wrap">
-                        <h1 class="q2-title" style="font-size:1.375rem">{{ __('Post Sales Receipt') }} <span class="q2-mono-chip">{{ $salesReceipt->receipt_number }}</span></h1>
-                    </div>
-                    <p class="q2-sub">{{ __('Posting writes this receipt to the ledger and locks it for editing.') }}</p>
+                    <h1>{{ __('Post Sales Receipt') }} <span class="mono-chip">{{ $salesReceipt->receipt_number }}</span></h1>
+                    <div class="sub">{{ __('Posting writes this receipt to the ledger and locks it for editing.') }}</div>
                 </div>
-                <div class="q2-head-actions">
-                    <a href="{{ route('accounting.sales-receipts.show', $salesReceipt) }}" class="q2-btn q2-btn--ghost">{{ __('Cancel') }}</a>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <a href="{{ route('accounting.sales-receipts.show', $salesReceipt) }}" class="btn btn-ghost btn-sm">{{ __('Cancel') }}</a>
                     <form method="POST" action="{{ route('accounting.sales-receipts.post', $salesReceipt) }}" class="inline">
                         @csrf
-                        <button type="submit" class="q2-btn q2-btn--cta">{{ __('Post Receipt') }}</button>
+                        <button type="submit" class="btn btn-cta">{{ __('Post Receipt') }} ✓</button>
                     </form>
                 </div>
             </div>
 
-            <div class="q2-shell">
-                <div class="q2-main">
+            <div class="shell">
+                <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
 
                     {{-- §5 posting summary --}}
-                    <div class="q2-sec">
-                        <div class="q2-sec-head">
-                            <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                            <h2 class="q2-sec-title">{{ __('Posting Summary') }}</h2>
-                        </div>
-                        <div class="q2-ro-grid mt-5">
-                            <div class="q2-ro">
-                                <div class="q2-ro-lbl">{{ __('Receipt №') }}</div>
-                                <div class="q2-ro-val q2-mono">{{ $salesReceipt->receipt_number }}</div>
-                            </div>
-                            <div class="q2-ro">
-                                <div class="q2-ro-lbl">{{ __('Customer') }}</div>
-                                <div class="q2-ro-val" style="font-weight:600">{{ $salesReceipt->customer->name ?? __('Walk-in') }}</div>
-                            </div>
-                            <div class="q2-ro">
-                                <div class="q2-ro-lbl">{{ __('Status') }}</div>
-                                <div class="q2-ro-val"><span class="q2-badge q2-badge--draft"><span class="q2-dot"></span>{{ __('Draft') }}</span></div>
-                            </div>
-                            <div class="q2-ro">
-                                <div class="q2-ro-lbl">{{ __('Receipt Date') }}</div>
-                                <div class="q2-ro-val" style="font-weight:600">{{ $salesReceipt->receipt_date?->format('M d, Y') ?? '—' }}</div>
-                            </div>
-                            <div class="q2-ro">
-                                <div class="q2-ro-lbl">{{ __('Method') }}</div>
-                                <div class="q2-ro-val" style="font-weight:600">{{ $paymentMethods ?: '—' }}</div>
-                            </div>
-                            <div class="q2-ro">
-                                <div class="q2-ro-lbl">{{ __('Total') }}</div>
-                                <div class="q2-ro-val" style="font-weight:800">{{ $cs }}{{ format_number($salesReceipt->total) }}</div>
+                    <section class="card">
+                        <div class="card-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Posting Summary') }}</h2><span class="rule"></span></div>
+                            <div class="ro-grid">
+                                <div class="ro"><div class="l">{{ __('Receipt №') }}</div><div class="v mono">{{ $salesReceipt->receipt_number }}</div></div>
+                                <div class="ro"><div class="l">{{ __('Customer') }}</div><div class="v">{{ $salesReceipt->customer->name ?? __('Walk-in') }}</div></div>
+                                <div class="ro"><div class="l">{{ __('Status') }}</div><div class="v"><span class="badge b-draft"><span class="bdot"></span>{{ __('Draft') }}</span></div></div>
+                                <div class="ro"><div class="l">{{ __('Receipt Date') }}</div><div class="v">{{ $salesReceipt->receipt_date?->format('M d, Y') ?? '—' }}</div></div>
+                                <div class="ro"><div class="l">{{ __('Method') }}</div><div class="v">{{ $paymentMethods ?: '—' }}</div></div>
+                                <div class="ro"><div class="l">{{ __('Total') }}</div><div class="v">{{ $cs }}{{ format_number($salesReceipt->total) }}</div></div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
                     {{-- §5 journal preview --}}
-                    <div class="q2-sec">
-                        <div class="q2-sec-head">
-                            <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                            <h2 class="q2-sec-title">{{ __('Journal Entry Preview') }}</h2>
-                            <span class="q2-chip-t">{{ $balanced ? __('Balanced ✓') : __('Unbalanced!') }}</span>
-                        </div>
-                        <div class="q2-card q2-card--list mt-4">
-                            <div class="q2-tbl-wrap" style="border:none;border-radius:0">
-                                <table class="q2-tbl">
+                    <section class="card">
+                        <div class="card-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Journal Entry Preview') }}</h2><span class="chip-t">{{ $balanced ? __('Balanced ✓') : __('Unbalanced!') }}</span><span class="rule"></span></div>
+                            <div class="li-wrap">
+                                <table>
                                     <thead><tr>
-                                        <th>{{ __('Account Code') }}</th>
-                                        <th>{{ __('Account') }}</th>
-                                        <th class="q2-right">{{ __('Debit') }} ({{ $cs }})</th>
-                                        <th class="q2-right">{{ __('Credit') }} ({{ $cs }})</th>
+                                        <th style="width:14%">{{ __('Account Code') }}</th>
+                                        <th style="width:46%">{{ __('Account') }}</th>
+                                        <th class="num" style="width:20%">{{ __('Debit') }} ({{ $cs }})</th>
+                                        <th class="num" style="width:20%">{{ __('Credit') }} ({{ $cs }})</th>
                                     </tr></thead>
                                     <tbody>
                                         @foreach($jeLines as $jl)
                                             @php $account = $accounts[$jl['account_id']] ?? null; @endphp
                                             <tr>
-                                                <td class="q2-mono">{{ $account->code ?? '—' }}</td>
+                                                <td class="mono">{{ $account->code ?? '—' }}</td>
                                                 <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $account->name ?? '—' }}</td>
-                                                <td class="q2-right q2-amt">{{ $jl['debit'] ? format_number($jl['debit']) : '—' }}</td>
-                                                <td class="q2-right q2-amt">{{ $jl['credit'] ? format_number($jl['credit']) : '—' }}</td>
+                                                <td class="numr">{{ $jl['debit'] ? format_number($jl['debit']) : '—' }}</td>
+                                                <td class="numr">{{ $jl['credit'] ? format_number($jl['credit']) : '—' }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="q2-jfoot">
-                                <span>{{ __('Total Debits') }} {{ format_number($totalDebits) }}</span>
-                                <span style="color:var(--faint,#8AA5A7)">=</span>
-                                <span>{{ __('Total Credits') }} {{ format_number($totalCredits) }}</span>
-                            </div>
+                            <div class="jfoot"><span>{{ __('Total Debits') }} {{ format_number($totalDebits) }}</span><span style="color:var(--faint,#8AA5A7)">=</span><span>{{ __('Total Credits') }} {{ format_number($totalCredits) }}</span></div>
                         </div>
-                        @if(!$balanced)
-                            <div class="q2-note-info mt-4">{{ __('This journal entry is not balanced. Check the receipt lines and payments before posting.') }}</div>
-                        @endif
-                    </div>
+                    </section>
+
+                    {{-- §5 posting details --}}
+                    <section class="card">
+                        <div class="card-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Posting Details') }}</h2><span class="rule"></span></div>
+                            <div class="g4">
+                                <div class="field"><label>{{ __('Posting Date') }}</label><input type="date" class="input h44" value="{{ now()->format('Y-m-d') }}" disabled></div>
+                                <div class="field"><label>{{ __('Period') }}</label><select class="input h44" disabled><option>{{ $salesReceipt->receipt_date?->format('M Y') ?? now()->format('M Y') }}</option></select></div>
+                                <div class="field"><label>{{ __('Posted By') }}</label><input type="text" class="input h44" value="{{ auth()->user()?->name ?? '' }}" disabled></div>
+                                <div class="field"><label>{{ __('Narration') }}</label><input type="text" class="input h44" value="{{ $narration }}" disabled></div>
+                            </div>
+                            <div class="note-info"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:none;margin-top:2px" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                {{ __('Posting locks the receipt against edits. To amend afterwards you will need to void and re-issue it per your audit trail settings.') }}</div>
+                        </div>
+                    </section>
                 </div>
 
                 {{-- §5 rail --}}
-                <aside class="q2-rail">
-                    <div class="q2-railcard">
-                        <div class="q2-rail-group">{{ __('Receipt Summary') }}</div>
-                        <div class="q2-railsum" style="padding:0 4px">
-                            <div class="q2-srow"><span>{{ __('Subtotal') }}</span><span class="q2-sval">{{ format_number($salesReceipt->subtotal) }}</span></div>
-                            <div class="q2-srow"><span>{{ __('Tax') }}</span><span class="q2-sval">{{ format_number($salesReceipt->tax_total) }}</span></div>
-                            <div class="q2-srow gt"><span>{{ __('Total') }}</span><span class="q2-sval">{{ format_number($salesReceipt->total) }}</span></div>
+                <aside class="railsum">
+                    <section class="card">
+                        <div class="rail-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><h2>{{ __('Ledger Impact') }}</h2></div>
+                            <div style="margin-top:8px">
+                                @foreach($jeLines as $jl)
+                                    @php $account = $accounts[$jl['account_id']] ?? null; @endphp
+                                    <div class="srow"><span class="l">{{ ($account->name ?? __('Account')) }} <span class="mono" style="color:var(--faint,#8AA5A7)">{{ $account->code ?? '' }}</span></span><span class="v">+{{ format_number($jl['debit'] ?: $jl['credit']) }}</span></div>
+                                @endforeach
+                            </div>
+                            <div class="gt"><span class="l">{{ __('Entry Total') }}</span><span class="v">{{ $cs }}{{ format_number($totalDebits) }}</span></div>
                         </div>
-                        <div class="q2-rule"></div>
-                        <a href="{{ route('accounting.sales-receipts.show', $salesReceipt) }}" class="q2-vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 19l-7-7 7-7M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            {{ __('Back to Receipt') }}
-                        </a>
-                        <a href="{{ route('accounting.sales-receipts.index') }}" class="q2-vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            {{ __('All Receipts') }}
-                        </a>
-                    </div>
+                        <div class="rail-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>{{ __('Quick Nav') }}</h2></div>
+                            <div class="vlist">
+                                <a href="{{ route('accounting.sales-receipts.show', $salesReceipt) }}" class="vitem"><span class="ic">←</span>{{ __('Back to Receipt') }}</a>
+                                <a href="{{ route('accounting.sales-receipts.index') }}" class="vitem"><span class="ic">📒</span>{{ __('Receipts List') }}</a>
+                                <a href="{{ route('accounting.reports.sales-receipts.daily-summary') }}" class="vitem"><span class="ic">📊</span>{{ __('Daily Summary') }}</a>
+                                <a href="{{ route('accounting.reports.sales-receipts.cashbook') }}" class="vitem"><span class="ic">📒</span>{{ __('Cashbook') }}</a>
+                            </div>
+                        </div>
+                    </section>
                 </aside>
             </div>
         </div>

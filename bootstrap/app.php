@@ -11,6 +11,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -34,6 +35,17 @@ return Application::configure(basePath: dirname(__DIR__))
             'superadmin' => SuperAdmin::class,
             'tenant.bind' => BindTenantConnection::class,
         ]);
+
+        // The tenant connection MUST be bound before implicit route model binding
+        // runs. SubstituteBindings lives in the `web` group, which executes before
+        // route-level middleware, so tenant-scoped route models (Customer, Invoice,
+        // ...) resolved against the CENTRAL connection (legacy shared DB) and 404'd
+        // on records that only exist in the tenant DB. Lifting `tenant.bind` into
+        // the middleware priority right before SubstituteBindings fixes the order.
+        $middleware->prependToPriorityList(
+            SubstituteBindings::class,
+            BindTenantConnection::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->renderable(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
