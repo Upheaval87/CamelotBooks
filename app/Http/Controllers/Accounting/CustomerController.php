@@ -12,6 +12,57 @@ class CustomerController extends Controller
     {
         $companyId = session('current_company_id');
 
+        $stats = [
+            'total' => (int) Customer::where('company_id', $companyId)->count(),
+            'active' => (int) Customer::where('company_id', $companyId)->where('is_active', true)->count(),
+            'balance_owed' => (float) \App\Models\Invoice::where('company_id', $companyId)
+                ->whereIn('status', [\App\Models\Invoice::STATUS_SENT, \App\Models\Invoice::STATUS_PARTIALLY_PAID, \App\Models\Invoice::STATUS_OVERDUE])
+                ->selectRaw('COALESCE(SUM(amount), 0) - COALESCE(SUM(amount_paid), 0) as due')
+                ->value('due'),
+        ];
+
+        $customers = $this->baseQuery($request)->orderBy('name')->paginate(15)->withQueryString();
+
+        return view('accounting.customers.index', compact('customers', 'stats'));
+    }
+
+    public function export(Request $request)
+    {
+        $this->requirePermission($request, 'customers.view');
+
+        $customers = $this->baseQuery($request)->orderBy('name')->get();
+
+        $filename = 'customers-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($customers) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Name', 'Display Name', 'Email', 'Phone', 'Payment Terms', 'Payment Terms Days', 'Balance', 'Status', 'Billing Address', 'Shipping Address']);
+            foreach ($customers as $customer) {
+                fputcsv($out, [
+                    $customer->name,
+                    $customer->display_name,
+                    $customer->email,
+                    $customer->phone,
+                    $customer->payment_terms,
+                    $customer->payment_terms_days,
+                    number_format((float) $customer->balance_due, 2, '.', ''),
+                    $customer->is_active ? 'Active' : 'Inactive',
+                    $customer->billing_address,
+                    $customer->shipping_address,
+                ]);
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * Shared filtered query for the list and the CSV export.
+     * Keeps the exact search/status/terms params used by the list page.
+     */
+    private function baseQuery(Request $request)
+    {
+        $companyId = session('current_company_id');
+
         $query = Customer::where('company_id', $companyId);
 
         if ($request->filled('search')) {
@@ -30,18 +81,7 @@ class CustomerController extends Controller
             $query->where('payment_terms', $request->terms);
         }
 
-        $stats = [
-            'total' => (int) Customer::where('company_id', $companyId)->count(),
-            'active' => (int) Customer::where('company_id', $companyId)->where('is_active', true)->count(),
-            'balance_owed' => (float) \App\Models\Invoice::where('company_id', $companyId)
-                ->whereIn('status', [\App\Models\Invoice::STATUS_SENT, \App\Models\Invoice::STATUS_PARTIALLY_PAID, \App\Models\Invoice::STATUS_OVERDUE])
-                ->selectRaw('COALESCE(SUM(amount), 0) - COALESCE(SUM(amount_paid), 0) as due')
-                ->value('due'),
-        ];
-
-        $customers = $query->orderBy('name')->paginate(15)->withQueryString();
-
-        return view('accounting.customers.index', compact('customers', 'stats'));
+        return $query;
     }
 
     public function create()

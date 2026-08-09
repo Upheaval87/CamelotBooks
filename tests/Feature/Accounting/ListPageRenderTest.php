@@ -65,7 +65,10 @@ class ListPageRenderTest extends TestCase
         $r->assertSee('Manage customer records, terms and balances.');
         $r->assertSee('1 customers');
         $r->assertSee('Since ' . $customer->created_at->format('M Y'));
-        $r->assertSee('list-filter-count');
+        $r->assertSee('cs-suite');
+        $r->assertSee('sbox');
+        $r->assertSee('li-wrap');
+        $r->assertSee('b-act');
         $r->assertSee('aria-current="page"', false);
     }
 
@@ -83,8 +86,8 @@ class ListPageRenderTest extends TestCase
         $r = $this->actingAs($this->user)->get(route('accounting.customers.index'));
         $r->assertOk();
         $r->assertSee('Showing 1–15 of 20 customers', false);
-        $r->assertSee('list-pagination-nav');
-        $r->assertSee('list-pagination-btn is-current');
+        $r->assertSee('pagi');
+        $r->assertSee('pgbtn cur');
         $r->assertSee('aria-label="Next"', false);
     }
 
@@ -101,7 +104,7 @@ class ListPageRenderTest extends TestCase
         SalesReceipt::create(['company_id' => $this->company->id, 'customer_id' => $customer->id, 'receipt_number' => 'SR-1', 'receipt_date' => now(), 'status' => 'draft', 'amount' => 10, 'created_by' => $this->user->id]);
 
         $routes = [
-            'accounting.customers.index' => 'list-table',
+            'accounting.customers.index' => 'li-wrap',
             'accounting.vendors.index' => 'list-table',
             'accounting.products.index' => 'list-table',
             'accounting.employees.index' => 'list-table',
