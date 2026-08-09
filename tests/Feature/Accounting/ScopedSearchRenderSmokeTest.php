@@ -201,6 +201,80 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'total' => 116.50,
             'created_by' => $this->user->id,
         ]);
+        $quotDraft = \App\Models\Quotation::create([
+            'company_id' => $this->company->id,
+            'customer_id' => $customer->id,
+            'quotation_number' => 'Q-0002',
+            'quotation_date' => now(),
+            'valid_until' => now()->addDays(14),
+            'status' => \App\Models\Quotation::STATUS_DRAFT,
+            'amount' => 116.50,
+            'tax_total' => 16.50,
+            'total' => 116.50,
+            'created_by' => $this->user->id,
+        ]);
+
+        $payMethod = \App\Models\PosPaymentMethod::create([
+            'company_id' => $this->company->id,
+            'name' => 'Cash',
+            'type' => 'cash',
+            'clearing_account_id' => $bank->id,
+            'settlement_bank_account_id' => $bank->id,
+            'requires_reference' => false,
+            'is_active' => true,
+        ]);
+        $srDraft = \App\Models\SalesReceipt::create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'cost_center_id' => $costCenter->id,
+            'customer_id' => $customer->id,
+            'receipt_number' => 'RCT-0001',
+            'receipt_date' => now(),
+            'status' => \App\Models\SalesReceipt::STATUS_DRAFT,
+            'subtotal' => 100.00,
+            'discount_total' => 0.00,
+            'tax_total' => 0.00,
+            'total' => 100.00,
+            'currency' => 'MWK',
+            'created_by' => $this->user->id,
+        ]);
+        \App\Models\SalesReceiptLine::create([
+            'sales_receipt_id' => $srDraft->id,
+            'product_id' => $product->id,
+            'description' => 'Widget 3000',
+            'quantity' => 1,
+            'unit_price' => 100,
+            'discount' => 0,
+            'tax_rate' => 0,
+            'amount' => 100,
+            'tax_amount' => 0,
+            'line_total' => 100,
+            'income_account_id' => $this->incomeAccount->id,
+            'cost_center_id' => $costCenter->id,
+        ]);
+        \App\Models\SalesReceiptPayment::create([
+            'sales_receipt_id' => $srDraft->id,
+            'payment_method_id' => $payMethod->id,
+            'amount' => 100,
+            'cash_tendered' => 100,
+            'change_given' => 0,
+            'reference_number' => null,
+        ]);
+        $srPosted = \App\Models\SalesReceipt::create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'cost_center_id' => $costCenter->id,
+            'customer_id' => $customer->id,
+            'receipt_number' => 'RCT-0002',
+            'receipt_date' => now(),
+            'status' => \App\Models\SalesReceipt::STATUS_POSTED,
+            'subtotal' => 100.00,
+            'discount_total' => 0.00,
+            'tax_total' => 0.00,
+            'total' => 100.00,
+            'currency' => 'MWK',
+            'created_by' => $this->user->id,
+        ]);
 
         $routes = [
             'bills.create' => route('accounting.bills.create'),
@@ -231,6 +305,10 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'accounts.index' => route('accounting.accounts.index'),
             'credit-notes.index' => route('accounting.credit-notes.index'),
             'quotations.index' => route('accounting.quotations.index'),
+            'quotations.create' => route('accounting.quotations.create'),
+            'quotations.edit' => route('accounting.quotations.edit', $quotDraft),
+            'quotations.show' => route('accounting.quotations.show', $quot),
+            'quotations.print' => route('accounting.quotations.print', $quot),
             'vendor-credits.index' => route('accounting.vendor-credits.index'),
             'bank-reconciliation.index' => route('accounting.bank-reconciliation.index', $bank->id),
             'audit-log.index' => route('admin.audit-log.index'),
@@ -247,6 +325,14 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'invoices.edit' => route('accounting.invoices.edit', $invoice),
             'invoices.show' => route('accounting.invoices.show', $invoice),
             'invoices.copy-quote' => route('accounting.invoices.copy-quote', ['quotation' => $quot->id]),
+            'sales-receipts.index' => route('accounting.sales-receipts.index'),
+            'sales-receipts.create' => route('accounting.sales-receipts.create'),
+            'sales-receipts.edit' => route('accounting.sales-receipts.edit', $srDraft),
+            'sales-receipts.show' => route('accounting.sales-receipts.show', $srDraft),
+            'sales-receipts.post-page' => route('accounting.sales-receipts.post-page', $srDraft),
+            'sales-receipts.print' => route('accounting.sales-receipts.print', $srPosted),
+            'reports.sales-receipts.daily-summary' => route('accounting.reports.sales-receipts.daily-summary'),
+            'reports.sales-receipts.cashbook' => route('accounting.reports.sales-receipts.cashbook'),
         ];
 
         foreach ($routes as $name => $url) {

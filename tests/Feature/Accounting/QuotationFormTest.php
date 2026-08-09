@@ -136,7 +136,7 @@ class QuotationFormTest extends TestCase
         $this->get(route('accounting.quotations.create'))
             ->assertOk()
             ->assertSee('Create Quotation', false)
-            ->assertSee('Live Document Preview')
+            ->assertSee('Summary')
             ->assertSee('Add Line')
             ->assertSee('quot-dropzone')
             ->assertSee('valid_until')
@@ -153,7 +153,7 @@ class QuotationFormTest extends TestCase
             ->assertSee('Edit Quotation', false)
             ->assertSee($quotation->quotation_number, false)
             ->assertSee('Ergonomic Chair')
-            ->assertSee('Live Document Preview')
+            ->assertSee('Breakdown')
             ->assertSee('Save Changes', false);
     }
 
@@ -339,5 +339,29 @@ class QuotationFormTest extends TestCase
             ->assertOk()
             ->assertSee('Attachments')
             ->assertSee('quote.pdf');
+    }
+
+    public function test_destroy_deletes_draft_quotation(): void
+    {
+        $creator = \App\Models\User::factory()->create();
+        $quotation = app(QuotationService::class)->create($this->payload(), $creator->id);
+
+        $response = $this->delete(route('accounting.quotations.destroy', $quotation));
+
+        $response->assertRedirect(route('accounting.quotations.index'));
+        $this->assertDatabaseMissing('quotations', ['id' => $quotation->id]);
+    }
+
+    public function test_destroy_rejects_non_draft(): void
+    {
+        $creator = \App\Models\User::factory()->create();
+        $quotation = app(QuotationService::class)->create($this->payload(), $creator->id);
+        $quotation->update(['status' => Quotation::STATUS_SENT]);
+
+        $this->delete(route('accounting.quotations.destroy', $quotation))
+            ->assertRedirect(route('accounting.quotations.show', $quotation))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('quotations', ['id' => $quotation->id]);
     }
 }

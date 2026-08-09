@@ -19,7 +19,7 @@ return [
         // ── Financial Transactions ──
         'invoices'        => ['view', 'create', 'edit', 'void', 'approve', 'post'],
         'credit-notes'    => ['view', 'create', 'void', 'post'],
-        'sales-receipts'  => ['view', 'create', 'void', 'post'],
+        'sales-receipts'  => ['view', 'create', 'edit', 'void', 'post'],
         'quotations'      => ['view', 'create', 'edit', 'void', 'approve', 'send', 'convert', 'email'],
         'bills'           => ['view', 'create', 'edit', 'void', 'approve', 'post'],
         'vendor-credits'  => ['view', 'create', 'void', 'post'],

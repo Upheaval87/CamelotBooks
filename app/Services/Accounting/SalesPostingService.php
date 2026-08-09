@@ -40,13 +40,20 @@ class SalesPostingService
      *   ],
      * ]
      */
-    public function postSale(array $context): JournalEntry
+    /**
+     * Build the journal-entry lines for a sale without persisting anything.
+     *
+     * Shared by {@see postSale()} and the Sales Receipt post-page preview so the
+     * journal preview, ledger-impact rail and the actual posting always agree.
+     *
+     * @param array $context Same shape as {@see postSale()}.
+     * @return array<int, array{account_id: int, debit: float, credit: float, description: string}>
+     */
+    public function buildSaleLines(array $context): array
     {
         $companyId = $context['company_id'];
-        $userId = $context['user_id'];
         $sourceModule = $context['source_module'];
         $documentNumber = $context['document_number'];
-        $date = $context['date'] ?? now()->toDateString();
         $memo = $context['memo'] ?? "{$sourceModule} {$documentNumber}";
         $lines = $context['lines'];
         $payments = $context['payments'];
@@ -182,6 +189,20 @@ class SalesPostingService
                 throw new InvalidArgumentException("Journal entry is unbalanced by {$diff}. Maximum rounding adjustment is 0.05.");
             }
         }
+
+        return $jeLines;
+    }
+
+    public function postSale(array $context): JournalEntry
+    {
+        $companyId = $context['company_id'];
+        $userId = $context['user_id'];
+        $sourceModule = $context['source_module'];
+        $documentNumber = $context['document_number'];
+        $date = $context['date'] ?? now()->toDateString();
+        $memo = $context['memo'] ?? "{$sourceModule} {$documentNumber}";
+
+        $jeLines = $this->buildSaleLines($context);
 
         return $this->postingEngine->post([
             'company_id' => $companyId,

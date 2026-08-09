@@ -101,19 +101,19 @@ class ListPageRenderTest extends TestCase
         SalesReceipt::create(['company_id' => $this->company->id, 'customer_id' => $customer->id, 'receipt_number' => 'SR-1', 'receipt_date' => now(), 'status' => 'draft', 'amount' => 10, 'created_by' => $this->user->id]);
 
         $routes = [
-            'accounting.customers.index',
-            'accounting.vendors.index',
-            'accounting.products.index',
-            'accounting.employees.index',
-            'accounting.invoices.index',
-            'accounting.bills.index',
-            'accounting.sales-receipts.index',
+            'accounting.customers.index' => 'list-table',
+            'accounting.vendors.index' => 'list-table',
+            'accounting.products.index' => 'list-table',
+            'accounting.employees.index' => 'list-table',
+            'accounting.invoices.index' => 'list-table',
+            'accounting.bills.index' => 'list-table',
+            'accounting.sales-receipts.index' => 'q2-tbl',
         ];
 
-        foreach ($routes as $route) {
+        foreach ($routes as $route => $marker) {
             $r = $this->actingAs($this->user)->get(route($route));
             $this->assertTrue($r->getStatusCode() === 200, "{$route} returned " . $r->getStatusCode());
-            $r->assertSee('list-table');
+            $r->assertSee($marker);
         }
     }
 }

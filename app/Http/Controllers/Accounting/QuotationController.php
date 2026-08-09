@@ -21,20 +21,80 @@ class QuotationController extends Controller
     public function index(Request $request)
     {
         $companyId = session('current_company_id');
-        $quotations = Quotation::forCompany($companyId)
+        $sort = $request->input('sort', 'date-desc');
+
+        $quotations = $this->baseQuery($request);
+        foreach ($this->orderByFor($sort) as $column => $direction) {
+            $quotations->orderBy($column, $direction);
+        }
+        $quotations = $quotations->paginate(20);
+
+        $stats = Quotation::forCompany($companyId)
+            ->selectRaw('status, COUNT(*) as total, COALESCE(SUM(total), 0) as amount')
+            ->groupBy('status')
+            ->get()
+            ->keyBy('status');
+        $statsTotal = Quotation::forCompany($companyId)->count();
+
+        return view('accounting.quotations.index', compact('quotations', 'stats', 'statsTotal', 'sort'));
+    }
+
+    /**
+     * Shared filtered query for the list and the CSV export.
+     * Keeps the exact search/status/customer params used by the list page.
+     */
+    private function baseQuery(Request $request)
+    {
+        $companyId = session('current_company_id');
+
+        return Quotation::forCompany($companyId)
             ->with(['customer', 'createdByUser', 'postedByUser'])
-            ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->when($request->status === 'open', fn($q) => $q->whereIn('status', [Quotation::STATUS_DRAFT, Quotation::STATUS_SENT]))
+            ->when($request->status && $request->status !== 'open', fn($q, $s) => $q->where('status', $s))
             ->when($request->customer_id, fn($q, $id) => $q->where('customer_id', $id))
             ->when($request->search, fn($q, $s) => $q->where(function ($q2) use ($s) {
                 $q2->where('quotation_number', 'like', "%{$s}%")
                     ->orWhere('reference', 'like', "%{$s}%")
                     ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$s}%"));
-            }))
-            ->orderBy('quotation_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->paginate(20);
+            }));
+    }
 
-        return view('accounting.quotations.index', compact('quotations'));
+    private function orderByFor(string $sort): array
+    {
+        return match ($sort) {
+            'date-asc' => ['quotation_date' => 'asc', 'id' => 'asc'],
+            'amount-desc' => ['total' => 'desc', 'quotation_date' => 'desc'],
+            'amount-asc' => ['total' => 'asc', 'quotation_date' => 'asc'],
+            'status' => ['status' => 'asc', 'quotation_date' => 'desc'],
+            default => ['quotation_date' => 'desc', 'id' => 'desc'],
+        };
+    }
+
+    public function export(Request $request)
+    {
+        $quotations = $this->baseQuery($request);
+        foreach ($this->orderByFor($request->input('sort', 'date-desc')) as $column => $direction) {
+            $quotations->orderBy($column, $direction);
+        }
+        $quotations = $quotations->get();
+
+        $filename = 'quotations-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($quotations) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Quotation #', 'Customer', 'Date', 'Valid Until', 'Total', 'Status']);
+            foreach ($quotations as $q) {
+                fputcsv($out, [
+                    $q->quotation_number,
+                    $q->customer->name ?? '',
+                    $q->quotation_date?->format('Y-m-d') ?? '',
+                    $q->valid_until?->format('Y-m-d') ?? '',
+                    number_format((float) $q->total, 2, '.', ''),
+                    $q->status,
+                ]);
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     public function create()
@@ -93,12 +153,37 @@ class QuotationController extends Controller
                 ->with('success', "Quotation {$quotation->quotation_number} saved. You can add another.");
         }
 
+        if ($request->input('action') === 'save_and_email') {
+            return $this->redirectAfterEmail($quotation, 'created');
+        }
+
         $submitted = $this->handlePostSaveAction($request, $quotation);
 
         return redirect()->route('accounting.quotations.show', $quotation)
             ->with('success', $submitted
                 ? "Quotation {$quotation->quotation_number} created and submitted for approval."
                 : "Quotation {$quotation->quotation_number} created.");
+    }
+
+    public function destroy(Quotation $quotation)
+    {
+        $this->requirePermission('quotations.edit');
+        abort_unless((int) $quotation->company_id === (int) session('current_company_id'), 403);
+
+        if (!$quotation->isDraft()) {
+            return redirect()->route('accounting.quotations.show', $quotation)
+                ->with('error', 'Only draft quotations can be deleted.');
+        }
+
+        foreach ($quotation->attachments as $attachment) {
+            Storage::disk('public')->delete($attachment->file_path);
+        }
+        $quotation->attachments()->delete();
+
+        app(QuotationService::class)->destroy($quotation);
+
+        return redirect()->route('accounting.quotations.index')
+            ->with('success', "Quotation {$quotation->quotation_number} deleted.");
     }
 
     public function show(Quotation $quotation)
@@ -167,12 +252,31 @@ class QuotationController extends Controller
 
         $this->handleAttachments($request, $quotation);
 
+        if ($request->input('action') === 'save_and_email') {
+            return $this->redirectAfterEmail($quotation, 'updated');
+        }
+
         $submitted = $this->handlePostSaveAction($request, $quotation);
 
         return redirect()->route('accounting.quotations.show', $quotation)
             ->with('success', $submitted
                 ? "Quotation {$quotation->quotation_number} updated and submitted for approval."
                 : "Quotation {$quotation->quotation_number} updated.");
+    }
+
+    /**
+     * Redirect after a save-and-email action, distinguishing a missing
+     * customer email from a successful send.
+     */
+    private function redirectAfterEmail(Quotation $quotation, string $verb): \Illuminate\Http\RedirectResponse
+    {
+        if (!$this->emailQuotation($quotation)) {
+            return redirect()->route('accounting.quotations.show', $quotation)
+                ->with('warning', "Quotation {$quotation->quotation_number} {$verb}, but the customer has no email address on file.");
+        }
+
+        return redirect()->route('accounting.quotations.show', $quotation)
+            ->with('success', "Quotation {$quotation->quotation_number} {$verb} and emailed to {$quotation->customer->email}.");
     }
 
     /**
@@ -292,13 +396,33 @@ class QuotationController extends Controller
 
     public function email(Quotation $quotation)
     {
-        $quotation->load(['lines.product', 'customer']);
-
-        $quotationMail = app(\App\Mail\QuotationMail::class, ['quotation' => $quotation]);
-        \Illuminate\Support\Facades\Mail::to($quotation->customer->email)->queue($quotationMail);
+        if (!$this->emailQuotation($quotation)) {
+            return redirect()->route('accounting.quotations.show', $quotation)
+                ->with('error', "Quotation {$quotation->quotation_number} could not be emailed — the customer has no email address on file.");
+        }
 
         return redirect()->route('accounting.quotations.show', $quotation)
             ->with('success', "Quotation {$quotation->quotation_number} emailed to {$quotation->customer->email}.");
+    }
+
+    /**
+     * Queue the quotation email. Returns false when the customer record has
+     * no email address so callers can flash a meaningful warning.
+     */
+    private function emailQuotation(Quotation $quotation): bool
+    {
+        $quotation->load(['lines.product', 'customer']);
+
+        $email = $quotation->customer?->email;
+
+        if (!$email) {
+            return false;
+        }
+
+        $quotationMail = app(\App\Mail\QuotationMail::class, ['quotation' => $quotation]);
+        \Illuminate\Support\Facades\Mail::to($email)->queue($quotationMail);
+
+        return true;
     }
 
     public function print(Quotation $quotation)

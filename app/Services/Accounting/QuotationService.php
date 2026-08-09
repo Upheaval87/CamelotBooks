@@ -150,6 +150,23 @@ class QuotationService
         return $quotation;
     }
 
+    /**
+     * Delete a draft quotation and its line items.
+     * Any non-draft status is rejected so a quoted/approved document can never
+     * be removed after the fact.
+     */
+    public function destroy(Quotation $quotation): void
+    {
+        if ($quotation->status !== Quotation::STATUS_DRAFT) {
+            throw new InvalidArgumentException('Only draft quotations can be deleted.');
+        }
+
+        DB::transaction(function () use ($quotation) {
+            $quotation->lines()->delete();
+            $quotation->delete();
+        });
+    }
+
     public function accept(Quotation $quotation): Quotation
     {
         if ($quotation->status !== Quotation::STATUS_SENT) {

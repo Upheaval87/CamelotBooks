@@ -159,6 +159,42 @@ class ReportRegistry
                 'permission' => 'view_reports',
                 'feature_flag' => null,
             ],
+            'quotation_register' => [
+                'key' => 'quotation_register',
+                'name' => 'Quotation Register',
+                'description' => 'Every quotation for a period with totals and status.',
+                'category' => 'sales',
+                'route' => 'accounting.reports.quotation-register',
+                'permission' => 'view_reports',
+                'feature_flag' => null,
+            ],
+            'sales_pipeline' => [
+                'key' => 'sales_pipeline',
+                'name' => 'Sales Pipeline',
+                'description' => 'Quotation funnel by status with win-rate and open-quote aging.',
+                'category' => 'sales',
+                'route' => 'accounting.reports.sales-pipeline',
+                'permission' => 'view_reports',
+                'feature_flag' => null,
+            ],
+            'sales_receipts_daily_summary' => [
+                'key' => 'sales_receipts_daily_summary',
+                'name' => 'Sales Receipts Daily Summary',
+                'description' => 'Daily totals of posted sales receipts for a period.',
+                'category' => 'sales',
+                'route' => 'accounting.reports.sales-receipts.daily-summary',
+                'permission' => 'view_reports',
+                'feature_flag' => null,
+            ],
+            'sales_receipts_cashbook' => [
+                'key' => 'sales_receipts_cashbook',
+                'name' => 'Sales Receipts Cashbook',
+                'description' => 'Cashbook listing of posted sales receipts with payment method.',
+                'category' => 'sales',
+                'route' => 'accounting.reports.sales-receipts.cashbook',
+                'permission' => 'view_reports',
+                'feature_flag' => null,
+            ],
 
             // ── Purchasing / Accounts Payable ──
             'ap_aging' => [

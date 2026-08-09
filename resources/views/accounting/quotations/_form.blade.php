@@ -5,7 +5,6 @@
     $formMethod = $formMethod ?? ($isEdit ? 'PUT' : 'POST');
     $cancelRoute = $cancelRoute ?? ($isEdit ? route('accounting.quotations.show', $quotation) : route('accounting.quotations.index'));
     $title = $title ?? ($isEdit ? 'Edit Quotation' : 'Create Quotation');
-    $subtitle = $subtitle ?? 'Quote products & services with live document preview.';
     $submitLabel = $submitLabel ?? ($isEdit ? 'Save Changes' : 'Save');
 
     $cs = $cs ?? \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
@@ -22,6 +21,15 @@
     $selectedCostCenterLabel = $selectedCostCenterId ? ($costCenters->firstWhere('id', (int) $selectedCostCenterId)?->name ?? '') : '';
 
     $quotationAttachments = $quotationAttachments ?? ($quotation?->attachments ?? collect());
+
+    if ($isEdit) {
+        $customerLine = $quotation?->customer?->name ?? __('No customer');
+        $quotedDate = $quotation?->quotation_date?->format('M d, Y') ?? '—';
+        $validDate = $quotation?->valid_until?->format('M d, Y') ?? '—';
+        $subtitle = "{$customerLine} · " . __('quoted') . " {$quotedDate} · " . __('valid until') . " {$validDate}";
+    } else {
+        $subtitle = $subtitle ?? __('Quote products & services with a live summary.');
+    }
 
     $linesData = [];
     if (old('lines')) {
@@ -60,39 +68,49 @@
             ];
         })->all();
     }
-
-    $secIc = 'w-7 h-7 rounded-[9px] grid place-items-center text-white bg-[#128F8E] shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_3px_8px_-3px_rgba(10,80,80,.4)]';
-    $secHead = 'flex items-center gap-3';
-    $btnTertiary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-transparent bg-transparent text-gray-600 transition-all duration-150 hover:bg-white/75 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
-    $btnGhost = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-shell bg-white/85 text-gray-700 shadow-sm transition-all duration-150 hover:bg-[rgba(17,69,75,.06)] hover:border-navy-700/25 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
-    $btnPrimary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-white border border-white/25 bg-gradient-to-b from-gold-500 to-gold-600 shadow-new transition-all duration-150 hover:-translate-y-px active:translate-y-0';
-    $btnAccent = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-[#EAFFFF] border border-white/15 bg-gradient-to-b from-[#17565D] via-[#0C3539] to-[#0A2E32] shadow-[0_1px_2px_rgba(6,32,35,.30),0_10px_20px_-10px_rgba(12,53,57,.60),inset_0_1px_0_rgba(255,255,255,.12)] transition-all duration-150 hover:-translate-y-px active:translate-y-0 font-bold';
-    $selectWrap = 'relative';
-    $selectChevron = 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500';
 @endphp
 
-<div>
-    {{-- sticky page head --}}
-    <div class="form-page-head flex items-start justify-between gap-4 flex-wrap pb-4 mb-6 border-b border-line">
-        <div>
-            <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-gray-900">{{ $title }}</h1>
-            <p class="mt-1 text-[13.5px] text-gray-500">{{ $subtitle }}</p>
+<div class="q2">
+    {{-- §2/§3 sticky page head --}}
+    <div class="q2-head q2-head--sticky">
+        <div class="min-w-0">
+            <div class="flex items-center gap-2.5 flex-wrap">
+                <h1 class="q2-title" style="font-size:1.375rem">{{ $title }}</h1>
+                @if ($isEdit)
+                    <span class="q2-mono" style="padding:.25rem .625rem;border:1px solid var(--line,#E2ECEC);border-radius:.5rem;background:#fff">{{ $quotation->quotation_number }}</span>
+                    <span class="q2-badge q2-badge--{{ $quotation->status }}"><span class="q2-dot"></span>{{ __(ucfirst($quotation->status)) }}</span>
+                @endif
+            </div>
+            <p class="q2-sub">{{ $subtitle }}</p>
         </div>
-        <div class="flex gap-2.5 flex-wrap items-center">
-            <a href="{{ $cancelRoute }}" class="{{ $btnTertiary }}">{{ __('Cancel') }}</a>
-            <button type="submit" name="action" value="save_draft" form="quotation-form" class="{{ $btnGhost }}">{{ __('Save Draft') }}</button>
-            @unless ($isEdit)
-                <button type="submit" name="action" value="save_and_new" form="quotation-form" class="{{ $btnGhost }}">{{ __('Save & New') }}</button>
-            @endunless
-            <button type="submit" name="action" value="save" form="quotation-form" class="{{ $btnPrimary }}">{{ $submitLabel }}</button>
-            <button type="submit" name="action" value="submit_for_approval" form="quotation-form" class="{{ $btnAccent }}">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V6M6 12l6-6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                {{ __('Submit for Approval') }}
-            </button>
+        <div class="q2-head-actions">
+            <a href="{{ $cancelRoute }}" class="q2-btn q2-btn--ghost">{{ __('Cancel') }}</a>
+            @if($isEdit)
+                @if($quotation->created_by && (int) $quotation->created_by !== (int) auth()->id())
+                    <button type="submit" form="quotation-delete-form" class="q2-btn q2-btn--danger">{{ __('Delete') }}</button>
+                @endif
+                <div class="q2-seg">
+                    <button type="submit" name="action" value="save" form="quotation-form" class="q2-btn q2-btn--sec">{{ $submitLabel }}</button>
+                    <button type="submit" name="action" value="save_and_email" form="quotation-form" class="q2-btn q2-btn--cta">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20l4-9M4 20h16M8 11l8-8M8 11h7a1 1 0 011 1v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        {{ __('Save & Email') }}
+                    </button>
+                </div>
+            @else
+                <button type="submit" name="action" value="save_and_new" form="quotation-form" class="q2-btn q2-btn--ghost">{{ __('Save & New') }}</button>
+                <div class="q2-seg">
+                    <button type="submit" name="action" value="save_draft" form="quotation-form" class="q2-btn q2-btn--ghost">{{ __('Save Draft') }}</button>
+                    <button type="submit" name="action" value="save" form="quotation-form" class="q2-btn q2-btn--sec">{{ $submitLabel }}</button>
+                    <button type="submit" name="action" value="submit_for_approval" form="quotation-form" class="q2-btn q2-btn--cta">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        {{ __('Submit for Approval') }}
+                    </button>
+                </div>
+            @endif
         </div>
     </div>
 
-    <form method="POST" action="{{ $formAction }}" id="quotation-form" enctype="multipart/form-data" novalidate data-customer-name="{{ $selectedCustomer?->name ?? '' }}">
+    <form method="POST" action="{{ $formAction }}" id="quotation-form" class="q2-form" enctype="multipart/form-data" novalidate data-customer-name="{{ $selectedCustomer?->name ?? '' }}">
         @csrf
         @if ($formMethod === 'PUT')
             @method('PUT')
@@ -100,19 +118,18 @@
 
         <x-input-error :messages="$errors->get('error')" class="mb-4" />
 
-        <div class="grid gap-6 items-start lg:grid-cols-[1fr_340px]">
-            <div class="flex flex-col gap-5 min-w-0">
+        <div class="q2-shell q2-shell--form">
+            <div class="q2-main">
 
-                {{-- customer --}}
-                <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Customer Information') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
+                {{-- (a) customer --}}
+                <section class="q2-sec">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Customer Information') }}</h2>
                     </div>
-                    <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
-                        <div class="col-span-2">
-                            <label for="customer_id" class="input-label">{{ __('Customer') }} <span class="text-red-600">*</span></label>
+                    <div class="q2-g4 mt-5">
+                        <div class="q2-field" style="grid-column: span 2">
+                            <label for="customer_id" class="q2-label">{{ __('Customer') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
                             <x-scoped-search-field
                                 name="customer_id"
                                 entity="customer"
@@ -123,83 +140,76 @@
                                 on-select="quotCustomerSelected"
                                 required
                             />
-                            <x-input-error :messages="$errors->get('customer_id')" class="mt-2" />
+                            <x-input-error :messages="$errors->get('customer_id')" />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Contact Person') }}</label>
-                            <input type="text" class="input" id="quot-contact" value="{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label for="valid_until" class="q2-label">{{ __('Valid Until') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                            <input id="valid_until" name="valid_until" type="date" class="q2-input" value="{{ old('valid_until', $quotation?->valid_until?->format('Y-m-d') ?? '') }}" />
+                            <x-input-error :messages="$errors->get('valid_until')" />
                         </div>
-                        <div>
-                            <label for="valid_until" class="input-label">{{ __('Valid Until') }} <span class="text-red-600">*</span></label>
-                            <input id="valid_until" name="valid_until" type="date" class="input" value="{{ old('valid_until', $quotation?->valid_until?->format('Y-m-d') ?? '') }}" />
-                            <x-input-error :messages="$errors->get('valid_until')" class="mt-2" />
+                        <div class="q2-field">
+                            <label for="currency" class="q2-label">{{ __('Currency') }}</label>
+                            <select id="currency" name="currency" class="q2-select">
+                                @forelse ($currencies as $curOption)
+                                    <option value="{{ $curOption->code }}" @selected($selectedCurrency === $curOption->code)>{{ $curOption->code }} - {{ $curOption->name }}</option>
+                                @empty
+                                    <option value="USD" @selected($selectedCurrency === 'USD')>USD - US Dollar</option>
+                                @endforelse
+                            </select>
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Email') }}</label>
-                            <input type="email" class="input" id="quot-email" value="{{ $selectedCustomer?->email ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Contact Person') }}</label>
+                            <input type="text" class="q2-input" id="quot-contact" value="{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '' }}" readonly />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Phone') }}</label>
-                            <input type="text" class="input" id="quot-phone" value="{{ $selectedCustomer?->phone ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Email') }}</label>
+                            <input type="email" class="q2-input" id="quot-email" value="{{ $selectedCustomer?->email ?? '' }}" readonly />
                         </div>
-                        <div>
-                            <label for="currency" class="input-label">{{ __('Currency') }}</label>
-                            <div class="{{ $selectWrap }}">
-                                <select id="currency" name="currency" class="input appearance-none pr-8">
-                                    @forelse ($currencies as $curOption)
-                                        <option value="{{ $curOption->code }}" @selected($selectedCurrency === $curOption->code)>{{ $curOption->code }} - {{ $curOption->name }}</option>
-                                    @empty
-                                        <option value="USD" @selected($selectedCurrency === 'USD')>USD - US Dollar</option>
-                                    @endforelse
-                                </select>
-                                <svg class="{{ $selectChevron }}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                            </div>
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Phone') }}</label>
+                            <input type="text" class="q2-input" id="quot-phone" value="{{ $selectedCustomer?->phone ?? '' }}" readonly />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Payment Terms') }}</label>
-                            <input type="text" class="input" id="quot-terms" value="{{ $selectedCustomer?->payment_terms ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Payment Terms') }}</label>
+                            <input type="text" class="q2-input" id="quot-terms" value="{{ $selectedCustomer?->payment_terms ?? '' }}" readonly />
                         </div>
                     </div>
-                    <p class="mt-3 text-[11px] text-slate-400">Contact details shown are from the customer record.</p>
+                    <p class="q2-hint mt-4">{{ __('Contact details shown are from the customer record.') }}</p>
                 </section>
 
-                {{-- quotation info --}}
-                <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Quotation Information') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
+                {{-- (b) quotation info --}}
+                <section class="q2-sec">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Quotation Information') }}</h2>
                     </div>
-                    <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
-                        <div>
-                            <label class="input-label">{{ __('Quotation №') }}</label>
-                            <input type="text" class="input" value="{{ $quotation?->quotation_number ?? '' }}" placeholder="{{ __('Auto-assigned on save') }}" readonly />
+                    <div class="q2-g4 mt-5">
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Quotation №') }}</label>
+                            <input type="text" class="q2-input" value="{{ $quotation?->quotation_number ?? '' }}" placeholder="{{ __('Auto-assigned on save') }}" readonly />
                         </div>
-                        <div>
-                            <label for="quotation_date" class="input-label">{{ __('Date') }} <span class="text-red-600">*</span></label>
-                            <input id="quotation_date" name="quotation_date" type="date" class="input" value="{{ old('quotation_date', $quotation?->quotation_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
-                            <x-input-error :messages="$errors->get('quotation_date')" class="mt-2" />
+                        <div class="q2-field">
+                            <label for="quotation_date" class="q2-label">{{ __('Date') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                            <input id="quotation_date" name="quotation_date" type="date" class="q2-input" value="{{ old('quotation_date', $quotation?->quotation_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
+                            <x-input-error :messages="$errors->get('quotation_date')" />
                         </div>
-                        <div>
-                            <label for="reference" class="input-label">{{ __('Reference №') }}</label>
-                            <input id="reference" name="reference" type="text" class="input" value="{{ old('reference', $quotation?->reference ?? '') }}" placeholder="{{ __('Optional') }}" />
-                            <x-input-error :messages="$errors->get('reference')" class="mt-2" />
+                        <div class="q2-field">
+                            <label for="reference" class="q2-label">{{ __('Reference №') }}</label>
+                            <input id="reference" name="reference" type="text" class="q2-input" value="{{ old('reference', $quotation?->reference ?? '') }}" placeholder="{{ __('Optional') }}" />
+                            <x-input-error :messages="$errors->get('reference')" />
                         </div>
-                        <div>
-                            <label for="branch_id" class="input-label">{{ __('Branch') }}</label>
-                            <div class="{{ $selectWrap }}">
-                                <select id="branch_id" name="branch_id" class="input appearance-none pr-8">
-                                    <option value="">-- {{ __('Select branch') }} --</option>
-                                    @foreach ($branches as $branch)
-                                        <option value="{{ $branch->id }}" @selected((string) $selectedBranchId === (string) $branch->id)>{{ $branch->name }}</option>
-                                    @endforeach
-                                </select>
-                                <svg class="{{ $selectChevron }}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                            </div>
-                            <x-input-error :messages="$errors->get('branch_id')" class="mt-2" />
+                        <div class="q2-field">
+                            <label for="branch_id" class="q2-label">{{ __('Branch') }}</label>
+                            <select id="branch_id" name="branch_id" class="q2-select">
+                                <option value="">-- {{ __('Select branch') }} --</option>
+                                @foreach ($branches as $branch)
+                                    <option value="{{ $branch->id }}" @selected((string) $selectedBranchId === (string) $branch->id)>{{ $branch->name }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('branch_id')" />
                         </div>
-                        <div>
-                            <label for="cost_center_id" class="input-label">{{ __('Cost Centre') }}</label>
+                        <div class="q2-field">
+                            <label for="cost_center_id" class="q2-label">{{ __('Cost Centre') }}</label>
                             <x-scoped-search-field
                                 name="cost_center_id"
                                 entity="cost-center"
@@ -209,43 +219,42 @@
                                 placeholder="{{ __('None') }}"
                             />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Department') }}</label>
-                            <input type="text" class="input" placeholder="Operations" />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Department') }}</label>
+                            <input type="text" class="q2-input" placeholder="Operations" readonly />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Prepared By') }}</label>
-                            <input type="text" class="input" value="{{ $quotation?->createdByUser?->name ?? auth()->user()?->name ?? '' }}" readonly />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Prepared By') }}</label>
+                            <input type="text" class="q2-input" value="{{ $quotation?->createdByUser?->name ?? auth()->user()?->name ?? '' }}" readonly />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Project') }}</label>
-                            <input type="text" class="input" placeholder="{{ __('Optional') }}" />
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Project') }}</label>
+                            <input type="text" class="q2-input" placeholder="{{ __('Optional') }}" readonly />
                         </div>
                     </div>
-                    <p class="mt-3 text-[11px] text-slate-400">Quotation № is auto-assigned on save. Department &amp; Project are display-only.</p>
+                    <p class="q2-hint mt-4">{{ __('Quotation № is auto-assigned on save. Department & Project are display-only.') }}</p>
                 </section>
 
-                {{-- line items --}}
-                <section class="card relative z-30 rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Line Items') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
-                        <button type="button" id="quot-add-line" class="{{ $btnGhost }}" style="height:34px;padding:0 13px;font-size:12.5px;border-radius:10px;margin-left:12px;">＋ {{ __('Add Line') }}</button>
+                {{-- (c) line items --}}
+                <section class="q2-sec relative z-30">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Line Items') }}</h2>
+                        <button type="button" id="quot-add-line" class="q2-btn q2-btn--ghost q2-btn--sm" style="margin-left:auto">＋ {{ __('Add Line') }}</button>
                     </div>
 
-                    <div class="mt-4 border border-shell rounded-[14px] overflow-visible round-thead-clip bg-[#fbfcfe]">
-                        <table id="quot-lines-table" class="w-full border-collapse text-[13px] table-fixed">
+                    <div class="mt-4 border border-shell round-thead-clip bg-[#fbfcfe]">
+                        <table id="quot-lines-table" class="q2-tbl w-full text-[13px] table-fixed">
                             <thead>
                                 <tr>
-                                    <th class="w-[13%] py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Item Code') }}</th>
-                                    <th class="w-[17%] py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Item Name') }}</th>
-                                    <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Description') }}</th>
-                                    <th class="w-[8%] py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Qty') }}</th>
-                                    <th class="w-[13%] py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Unit Price') }} ({{ $cs }})</th>
-                                    <th class="w-[8%] py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Disc %') }}</th>
-                                    <th class="w-[12%] py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Amount') }} ({{ $cs }})</th>
-                                    <th class="w-[8%] py-[11px] px-2.5 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead"></th>
+                                    <th style="width:12%">{{ __('Item Code') }}</th>
+                                    <th style="width:24%">{{ __('Item Name') }}</th>
+                                    <th style="width:24%">{{ __('Description') }}</th>
+                                    <th style="width:7%" class="q2-right">{{ __('Qty') }}</th>
+                                    <th style="width:11%" class="q2-right">{{ __('Unit Price') }} ({{ $cs }})</th>
+                                    <th style="width:8%" class="q2-right">{{ __('Disc %') }}</th>
+                                    <th style="width:10%" class="q2-right">{{ __('Amount') }} ({{ $cs }})</th>
+                                    <th style="width:4%"></th>
                                 </tr>
                             </thead>
                             <tbody id="quot-lines-body"></tbody>
@@ -255,58 +264,58 @@
                     <x-input-error :messages="$errors->get('lines')" class="mt-2" />
                 </section>
 
-                {{-- notes --}}
-                <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Notes') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
+                {{-- (d) notes --}}
+                <section class="q2-sec">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Notes') }}</h2>
                     </div>
-                    <div class="grid grid-cols-1 gap-x-5 gap-y-4 mt-5 xl:grid-cols-2">
-                        <div>
-                            <label for="memo" class="input-label">{{ __('Customer Notes') }}</label>
-                            <textarea id="memo" name="memo" class="input" placeholder="Printed on the quotation PDF…">{{ old('memo', $quotation?->memo ?? '') }}</textarea>
-                            <x-input-error :messages="$errors->get('memo')" class="mt-2" />
+                    <div class="q2-g2 mt-5">
+                        <div class="q2-field">
+                            <label for="memo" class="q2-label">{{ __('Customer Notes') }}</label>
+                            <textarea id="memo" name="memo" class="q2-input" style="height:auto;min-height:6rem;padding:.75rem .875rem;resize:vertical" placeholder="{{ __('Printed on the quotation PDF…') }}">{{ old('memo', $quotation?->memo ?? '') }}</textarea>
+                            <x-input-error :messages="$errors->get('memo')" />
                         </div>
-                        <div>
-                            <label class="input-label">{{ __('Internal Notes') }}</label>
-                            <textarea class="input" placeholder="Visible to your team only…"></textarea>
+                        <div class="q2-field">
+                            <label class="q2-label">{{ __('Internal Notes') }}</label>
+                            <textarea class="q2-input" style="height:auto;min-height:6rem;padding:.75rem .875rem;resize:vertical" placeholder="{{ __('Visible to your team only…') }}" readonly></textarea>
                         </div>
                     </div>
                 </section>
 
-                {{-- attachments --}}
-                <section class="card rounded-[20px] p-6 xl:p-[26px]">
-                    <div class="{{ $secHead }}">
-                        <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Attachments') }}</h2>
-                        <span class="flex-1 h-px bg-line"></span>
+                {{-- (e) attachments --}}
+                <section class="q2-sec" id="attachments">
+                    <div class="q2-sec-head">
+                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <h2 class="q2-sec-title">{{ __('Attachments') }}</h2>
                     </div>
 
                     @if(!empty($quotationAttachments))
-                        <ul id="quot-existing-files" class="mt-4 divide-y divide-line border border-shell rounded-[14px] bg-[#fbfcfe]">
+                        <ul id="quot-existing-files" class="q2-li-wrap">
                             @foreach($quotationAttachments as $attachment)
-                                <li data-attachment-id="{{ $attachment->id }}" class="flex items-center gap-3 px-4 py-2.5 text-[13px]">
-                                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                    <span class="flex-1 min-w-0 truncate text-gray-800">{{ $attachment->name }}</span>
-                                    <span class="shrink-0 text-[11px] text-slate-400">{{ format_bytes($attachment->file_size) }}</span>
-                                    <button type="button" class="bill-ibtn bill-ibtn--del" title="{{ __('Remove') }}" aria-label="{{ __('Remove') }}" onclick="quotRemoveExistingFile(this)">🗑</button>
+                                <li data-attachment-id="{{ $attachment->id }}" class="q2-li">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                    <span class="q2-li-name">{{ $attachment->name }}</span>
+                                    <span class="q2-li-size">{{ format_bytes($attachment->file_size) }}</span>
+                                    <button type="button" class="q2-li-rm" title="{{ __('Remove') }}" aria-label="{{ __('Remove') }}" onclick="quotRemoveExistingFile(this)">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    </button>
                                 </li>
                             @endforeach
                         </ul>
                     @endif
 
-                    <label class="bill-drop mt-4" id="quot-dropzone" for="quot-files">
-                        <div class="w-[46px] h-[46px] mx-auto mb-2.5 rounded-full grid place-items-center bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700">
+                    <label class="q2-drop mt-4" id="quot-dropzone" for="quot-files">
+                        <span class="flex items-center justify-center gap-2 text-[13px]">
                             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </div>
-                        <p class="text-[13px] text-slate-500">{{ __('Drag & drop files here, or') }} <b class="text-gold-700">{{ __('browse') }}</b></p>
-                        <div class="mt-2.5 flex gap-1.5 justify-center flex-wrap">
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">PDF</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">IMG</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">XLSX</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">DOCX</span>
-                        </div>
+                            <span>{{ __('Drag & drop files here, or') }} <b style="font-weight:700;color:var(--sec,#128F8E)">{{ __('browse') }}</b></span>
+                        </span>
+                        <span class="mt-1.5 flex items-center justify-center gap-1.5">
+                            <span style="display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:999px;background:#fff;border:1px solid var(--line,#E2ECEC);font-size:.625rem;font-weight:700;letter-spacing:.05em;color:var(--muted,#5F7476)">PDF</span>
+                            <span style="display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:999px;background:#fff;border:1px solid var(--line,#E2ECEC);font-size:.625rem;font-weight:700;letter-spacing:.05em;color:var(--muted,#5F7476)">IMG</span>
+                            <span style="display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:999px;background:#fff;border:1px solid var(--line,#E2ECEC);font-size:.625rem;font-weight:700;letter-spacing:.05em;color:var(--muted,#5F7476)">XLSX</span>
+                            <span style="display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:999px;background:#fff;border:1px solid var(--line,#E2ECEC);font-size:.625rem;font-weight:700;letter-spacing:.05em;color:var(--muted,#5F7476)">DOCX</span>
+                        </span>
                     </label>
 
                     <input type="file" id="quot-files" name="files[]" multiple
@@ -318,34 +327,79 @@
                 </section>
             </div>
 
-            {{-- live preview --}}
-            <aside class="quot-prev">
-                <span class="quot-prev-label">{{ __('Live Document Preview') }}</span>
-                <div class="quot-paper">
-                    <div class="quot-p-head">
-                        <span class="quot-p-title">{{ __('Quotation') }}</span>
-                        <span class="quot-p-num">{{ $quotation?->quotation_number ?? '—' }}</span>
+            {{-- §2/§3 rail: summary + quick nav --}}
+            <aside class="q2-rail">
+                <div class="q2-railcard">
+                    <div class="q2-rail-group">{{ $isEdit ? __('Breakdown') : __('Summary') }}</div>
+                    <div class="q2-railsum">
+                        <div class="q2-srow"><span>{{ __('Customer') }}</span><span class="q2-sval" id="p-cust">{{ $selectedCustomer?->name ?? '—' }}</span></div>
+                        <div class="q2-srow"><span>{{ __('Contact') }}</span><span class="q2-sval" id="p-contact">{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '—' }}</span></div>
+                        <div class="q2-srow"><span>{{ __('Date') }}</span><span class="q2-sval" id="p-date">{{ $quotation?->quotation_date?->format('M d, Y') ?? now()->format('M d, Y') }}</span></div>
+                        <div class="q2-srow"><span>{{ __('Valid Until') }}</span><span class="q2-sval" id="p-valid">{{ $quotation?->valid_until?->format('M d, Y') ?? '—' }}</span></div>
+                        <div style="height:12px"></div>
+                        <div class="q2-srow"><span>{{ __('Subtotal') }}</span><span class="q2-sval" id="v-sub">0.00</span></div>
+                        <div class="q2-srow" id="r-disc" style="display:none"><span>{{ __('Discount') }}</span><span class="q2-sval" id="v-disc">0.00</span></div>
+                        <div class="q2-srow" id="r-tax" style="display:none"><span>{{ __('Tax') }}</span><span class="q2-sval" id="v-tax">0.00</span></div>
+                        <div class="q2-srow gt"><span>{{ __('Grand Total') }}</span><span class="q2-sval" id="v-gt">{{ $cs }}0.00</span></div>
+                        <div id="p-lines"></div>
+                        <p id="p-foot" class="q2-rail-memo" hidden></p>
                     </div>
-                    <div class="quot-p-body">
-                        <div class="quot-p-grid">
-                            <div><div class="quot-p-l">{{ __('Customer') }}</div><div class="quot-p-v" id="p-cust">{{ $selectedCustomer?->name ?? '—' }}</div></div>
-                            <div><div class="quot-p-l">{{ __('Contact') }}</div><div class="quot-p-v" id="p-contact">{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '—' }}</div></div>
-                            <div><div class="quot-p-l">{{ __('Date') }}</div><div class="quot-p-v" id="p-date">{{ $quotation?->quotation_date?->format('M d, Y') ?? now()->format('M d, Y') }}</div></div>
-                            <div><div class="quot-p-l">{{ __('Valid Until') }}</div><div class="quot-p-v" id="p-valid">{{ $quotation?->valid_until?->format('M d, Y') ?? '—' }}</div></div>
-                        </div>
-                        <div class="quot-p-lines" id="p-lines"></div>
-                        <div class="quot-p-totals">
-                            <div class="quot-p-row"><span>{{ __('Subtotal') }}</span><span class="v" id="v-sub">0.00</span></div>
-                            <div class="quot-p-row" id="r-disc" style="display:none"><span>{{ __('Discount') }}</span><span class="v" id="v-disc">0.00</span></div>
-                            <div class="quot-p-row" id="r-tax" style="display:none"><span>{{ __('Tax') }}</span><span class="v" id="v-tax">0.00</span></div>
-                        </div>
-                        <div class="quot-p-gt"><span class="quot-p-gt-label">{{ __('Grand Total') }}</span><span class="quot-p-gt-val" id="v-gt">{{ $cs }}0.00</span></div>
-                        <p class="quot-p-foot" id="p-foot">{{ $quotation?->memo ?? '—' }}</p>
-                    </div>
+                </div>
+
+                <div class="q2-railcard">
+                    <div class="q2-rail-group">{{ __('Quick Nav') }}</div>
+                    @if ($isEdit)
+                        @if (in_array($quotation->status, ['sent', 'accepted'], true))
+                            <form method="POST" action="{{ route('accounting.quotations.convert-to-invoice', $quotation) }}" class="q2-vitem">
+                                @csrf
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12M6 9l6-6 6 6M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>{{ __('Convert to Invoice') }}</span>
+                            </form>
+                        @endif
+                        <a href="{{ route('accounting.quotations.print', $quotation) }}" target="_blank" rel="noopener" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>{{ __('Print / PDF') }}</span>
+                        </a>
+                        @if ($quotation?->customer?->email)
+                            <form method="POST" action="{{ route('accounting.quotations.email', $quotation) }}" class="q2-vitem">
+                                @csrf
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm18 3-10 7L2 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>{{ __('Email') }}</span>
+                            </form>
+                        @endif
+                        <a href="#attachments" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>{{ __('Attach File') }}</span>
+                        </a>
+                        <a href="{{ $cancelRoute }}" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>{{ __('Back') }}</span>
+                        </a>
+                    @else
+                        <a href="{{ route('accounting.quotations.index') }}" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                            <span>{{ __('Quotations List') }}</span>
+                        </a>
+                        <a href="{{ route('accounting.customers.create') }}" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13v5m2.5-2.5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                            <span>{{ __('New Customer') }}</span>
+                        </a>
+                        <a href="{{ route('accounting.journal-entries.index') }}" class="q2-vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 3v18M4 5h10a3 3 0 0 1 3 3v12M4 5a2 2 0 0 0 2 2h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>{{ __('Day Book') }}</span>
+                        </a>
+                    @endif
                 </div>
             </aside>
         </div>
     </form>
+
+    @if($isEdit && $quotation->created_by && (int) $quotation->created_by !== (int) auth()->id())
+    <form id="quotation-delete-form" method="POST" action="{{ route('accounting.quotations.destroy', $quotation) }}" onsubmit="return fbConfirmSubmit(event, 'Delete this draft quotation? This cannot be undone.', { type: 'danger' })">
+        @csrf
+        @method('DELETE')
+    </form>
+    @endif
 </div>
 
 <script>
@@ -409,12 +463,12 @@
                     <input type="number" step="0.01" min="0" max="100" class="bill-ci bill-ci-num bill-disc-pct" value="${pct}" aria-label="Discount percent" />
                 </td>
                 <td class="py-2 px-1.5 border-b border-line align-middle">
-                    <span class="bill-amt bill-line-total">0.00</span>
+                    <span class="bill-amt bill-line-total q-amt">0.00</span>
                 </td>
                 <td class="py-2 px-1.5 border-b border-line align-middle">
                     <div class="flex gap-1 justify-end">
-                        <button type="button" class="bill-ibtn" title="Duplicate line" aria-label="Duplicate line" onclick="quotDuplicateRow(this)">⧉</button>
-                        <button type="button" class="bill-ibtn bill-ibtn--del" title="Delete line" aria-label="Delete line" onclick="quotRemoveLine(this)">🗑</button>
+                        <button type="button" class="bill-ibtn q-ibtn" title="Duplicate line" aria-label="Duplicate line" onclick="quotDuplicateRow(this)">⧉</button>
+                        <button type="button" class="bill-ibtn bill-ibtn--del q-ibtn q-ibtn--del" title="Delete line" aria-label="Delete line" onclick="quotRemoveLine(this)">🗑</button>
                     </div>
                 </td>
                 <input type="hidden" name="lines[${idx}][tax_rate]" class="quot-tax-rate" value="${taxRate}" />
@@ -607,7 +661,7 @@
                 <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                 <span class="flex-1 min-w-0 truncate text-gray-800">${esc(f.name)}</span>
                 <span class="shrink-0 text-[11px] text-slate-400">${quotFmtSize(f.size)}</span>
-                <button type="button" class="bill-ibtn bill-ibtn--del" title="Remove" aria-label="Remove" onclick="quotRemoveNewFile(this)">🗑</button>
+                <button type="button" class="bill-ibtn bill-ibtn--del q-ibtn q-ibtn--del" title="Remove" aria-label="Remove" onclick="quotRemoveNewFile(this)">🗑</button>
             `;
             list.appendChild(li);
         });

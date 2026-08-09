@@ -462,11 +462,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // ── Quotations ──
             Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
+            Route::get('quotations/export', [QuotationController::class, 'export'])->name('quotations.export');
             Route::get('quotations/create', [QuotationController::class, 'create'])->name('quotations.create');
             Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
             Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
             Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
             Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
+            Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy')->middleware(['permission:quotations.edit', 'sod:quotation']);
             Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
             Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept')->middleware(['permission:quotations.approve', 'sod:quotation']);
             Route::post('quotations/{quotation}/decline', [QuotationController::class, 'decline'])->name('quotations.decline')->middleware(['permission:quotations.approve', 'sod:quotation']);
@@ -478,9 +480,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // ── Sales Receipts ──
             Route::get('sales-receipts', [SalesReceiptController::class, 'index'])->name('sales-receipts.index');
+            Route::get('sales-receipts/export', [SalesReceiptController::class, 'export'])->name('sales-receipts.export');
             Route::get('sales-receipts/create', [SalesReceiptController::class, 'create'])->name('sales-receipts.create');
             Route::post('sales-receipts', [SalesReceiptController::class, 'store'])->name('sales-receipts.store');
             Route::get('sales-receipts/{salesReceipt}', [SalesReceiptController::class, 'show'])->name('sales-receipts.show');
+            Route::get('sales-receipts/{salesReceipt}/edit', [SalesReceiptController::class, 'edit'])->name('sales-receipts.edit');
+            Route::put('sales-receipts/{salesReceipt}', [SalesReceiptController::class, 'update'])->name('sales-receipts.update');
+            Route::delete('sales-receipts/{salesReceipt}', [SalesReceiptController::class, 'destroy'])->name('sales-receipts.destroy')->middleware(['permission:sales-receipts.edit', 'sod:salesReceipt']);
+            Route::get('sales-receipts/{salesReceipt}/post-page', [SalesReceiptController::class, 'postPage'])->name('sales-receipts.post-page')->middleware(['permission:sales-receipts.post']);
             Route::post('sales-receipts/{salesReceipt}/post', [SalesReceiptController::class, 'post'])->name('sales-receipts.post')->middleware(['permission:sales-receipts.post', 'sod:salesReceipt']);
             Route::post('sales-receipts/{salesReceipt}/void', [SalesReceiptController::class, 'void'])->name('sales-receipts.void')->middleware(['permission:sales-receipts.void', 'sod:salesReceipt']);
             Route::get('sales-receipts/{salesReceipt}/print', [SalesReceiptController::class, 'print'])->name('sales-receipts.print');
@@ -690,6 +697,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/sales-by-item', [\App\Http\Controllers\Accounting\ReportControllers\SalesByItemController::class, 'index'])->name('reports.sales-by-item');
             Route::get('reports/customer-credit-balance', [\App\Http\Controllers\Accounting\ReportControllers\CustomerCreditBalanceController::class, 'index'])->name('reports.customer-credit-balance');
             Route::get('reports/quotation-status', [\App\Http\Controllers\Accounting\ReportControllers\QuotationStatusController::class, 'index'])->name('reports.quotation-status');
+            Route::get('reports/quotation-register', [\App\Http\Controllers\Accounting\ReportControllers\QuotationRegisterController::class, 'index'])->name('reports.quotation-register');
+            Route::get('reports/sales-pipeline', [\App\Http\Controllers\Accounting\ReportControllers\SalesPipelineController::class, 'index'])->name('reports.sales-pipeline');
+            Route::get('reports/sales-receipts/daily-summary', [\App\Http\Controllers\Accounting\ReportControllers\DailySummaryController::class, 'index'])->name('reports.sales-receipts.daily-summary');
+            Route::get('reports/sales-receipts/cashbook', [\App\Http\Controllers\Accounting\ReportControllers\SalesReceiptsCashbookController::class, 'index'])->name('reports.sales-receipts.cashbook');
 
             // Purchasing
             Route::middleware('feature:purchasing')->group(function () {
