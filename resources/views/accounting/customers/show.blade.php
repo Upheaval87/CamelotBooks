@@ -29,68 +29,13 @@
                 {{-- page head --}}
                 <div class="page-head">
                     <div>
-                        <h1>{{ __('Customer Detail') }} - {{ $customer->name }}</h1>
-                        <div class="sub">
-                            {{ $customer->email ?? 'No email on file' }}
-                            @if ($customer->phone)
-                                · {{ $customer->phone }}
-                            @endif
-                        </div>
+                        <h1>{{ __('Customer Detail') }}</h1>
                     </div>
                     <div class="tbtns">
                         <a href="{{ route('accounting.customers.index') }}" class="btn ghost sm">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                             All Customers
                         </a>
-                    </div>
-                </div>
-
-                {{-- sticky toolbar --}}
-                <div class="sticky-head">
-                    <div class="toolbar">
-                        <div>
-                            <div class="glabel">Create</div>
-                            <div class="tbtns">
-                                <a href="{{ route('accounting.invoices.create', ['customer_id' => $customer->id]) }}" class="btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6"/></svg>
-                                    New Invoice
-                                </a>
-                                <a href="{{ route('accounting.customer-payments.create', ['customer_id' => $customer->id]) }}" class="btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
-                                    New Payment
-                                </a>
-                            </div>
-                        </div>
-                        <span class="tdiv"></span>
-                        <div>
-                            <div class="glabel">Reports</div>
-                            <div class="tbtns">
-                                <a href="{{ route('accounting.invoices.index', ['customer_id' => $customer->id]) }}" class="btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/></svg>
-                                    Transaction History
-                                </a>
-                                <a href="{{ route('accounting.reports.customer-statement', ['customer_id' => $customer->id]) }}" class="btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>
-                                    View Statement
-                                </a>
-                            </div>
-                        </div>
-                        <span class="tdiv"></span>
-                        <div>
-                            <div class="glabel">Document</div>
-                            <div class="tbtns">
-                                <button type="button" class="btn" onclick="window.print()">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10z"/></svg>
-                                    Print
-                                </button>
-                                @if ($customer->email)
-                                    <a href="mailto:{{ $customer->email }}" class="btn">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg>
-                                        Email Statement
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -311,6 +256,16 @@
                                             <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg></span>
                                             View Statement
                                         </a>
+                                        <button type="button" class="vitem" onclick="window.print()">
+                                            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10z"/></svg></span>
+                                            Print
+                                        </button>
+                                        @if ($customer->email)
+                                        <a href="mailto:{{ $customer->email }}" class="vitem">
+                                            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/></svg></span>
+                                            Email Statement
+                                        </a>
+                                        @endif
                                         <a href="{{ route('accounting.customers.index') }}" class="vitem">
                                             <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg></span>
                                             All Customers

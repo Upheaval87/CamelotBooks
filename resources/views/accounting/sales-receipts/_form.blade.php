@@ -89,7 +89,7 @@
     }
 @endphp
 
-<div class="sr-suite py-6">
+<div class="sr-suite pb-6">
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
         {{-- §2/§3 sticky page head --}}
