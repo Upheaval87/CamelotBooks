@@ -4,7 +4,7 @@
         $remaining = (float) $vendorCredit->amount - (float) $vendorCredit->amount_applied;
     @endphp
 
-    <div class="suite py-6">
+    <div class="suite pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
             {{-- sticky head --}}

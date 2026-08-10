@@ -18,7 +18,7 @@
         $methodLabel = fn ($m) => ucfirst(str_replace('_', ' ', $m));
     @endphp
 
-    <div class="suite py-6">
+    <div class="suite pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
             {{-- sticky head --}}

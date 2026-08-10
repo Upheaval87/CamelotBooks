@@ -8,7 +8,7 @@
         $jeRef = $payment->journalEntry ? ($payment->journalEntry->reference ?? ('JE-' . str_pad($payment->journalEntry->id, 4, '0', STR_PAD_LEFT))) : null;
     @endphp
 
-    <div class="suite py-6">
+    <div class="suite pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
             {{-- sticky head --}}
