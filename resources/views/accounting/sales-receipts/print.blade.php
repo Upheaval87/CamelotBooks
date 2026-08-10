@@ -32,6 +32,7 @@
         .paper {
             max-width: 52rem; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden;
             box-shadow: var(--shadow-paper); -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            display: flex; flex-direction: column; min-height: calc(100vh - 88px);
         }
 
         /* head */
@@ -104,7 +105,7 @@
 
         /* foot */
         .p-foot {
-            margin: 1.75rem 2rem 0; padding: .75rem 0 1.25rem; border-top: 1px solid var(--line);
+            margin: auto 2rem 0; padding: .75rem 0 1.25rem; border-top: 1px solid var(--line);
             display: flex; align-items: center; justify-content: space-between; gap: .75rem;
             font-size: .625rem; color: var(--faint);
         }
@@ -115,7 +116,7 @@
         @media print {
             body { background: none; }
             .stage-pdf { padding: 0; background: none; border-radius: 0; }
-            .paper { box-shadow: none; border-radius: 0; max-width: none; }
+            .paper { box-shadow: none; border-radius: 0; max-width: none; min-height: 297mm; }
         }
     </style>
 </head>

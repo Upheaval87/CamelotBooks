@@ -39,8 +39,11 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 1px 2px rgba(10,42,46,.06), 0 24px 64px -16px rgba(10,42,46,.25);
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 48px);
         }
-        @media print { body { background: #fff; padding: 0; } .canvas { max-width: none; box-shadow: none; border-radius: 0; } }
+        @media print { body { background: #fff; padding: 0; } .canvas { max-width: none; box-shadow: none; border-radius: 0; min-height: 297mm; } }
 
         /* §10 header — non-green band, tight top, no blank row above accent */
         .qpdf-head {
@@ -163,7 +166,7 @@
 
         /* §10 footer */
         .qpdf-foot {
-            margin-top: 2rem;
+            margin-top: auto;
             padding: 0.875rem 2rem;
             display: flex;
             justify-content: space-between;

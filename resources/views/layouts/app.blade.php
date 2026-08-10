@@ -47,7 +47,7 @@
                     }
                 @endphp
                 <x-favourites.sidebar :favourite-meta="$favouriteMeta" :favourite-override="isset($favourite) ? true : false" />
-                <main class="flex-1 min-w-0 p-6 lg:p-8 max-w-8xl mx-auto w-full">
+                <main class="flex-1 min-w-0 pb-6 lg:pb-8 max-w-8xl mx-auto w-full">
                     <div class="animate-fade-in-up">
                         @isset($favourite)
                             <div class="shrink-0">
