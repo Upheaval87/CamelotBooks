@@ -15,9 +15,11 @@ class CustomerPaymentController extends Controller
     {
     }
 
-    public function create(?int $customerId = null)
+    public function create(Request $request, ?int $customerId = null)
     {
         $companyId = session('current_company_id');
+
+        $customerId = $customerId ?: ((int) $request->query('customer_id', 0) ?: null);
 
         $customers = Customer::where('company_id', $companyId)
             ->where('is_active', true)
@@ -30,17 +32,32 @@ class CustomerPaymentController extends Controller
             ->orderBy('name')
             ->get();
 
-        $openInvoices = collect();
-        if ($customerId) {
-            $openInvoices = Invoice::where('company_id', $companyId)
-                ->where('customer_id', $customerId)
-                ->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_PARTIALLY_PAID])
-                ->orderByDesc('invoice_date')
-                ->limit(100)
-                ->get();
-        }
+        $openInvoicesByCustomer = Customer::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->with(['invoices' => function ($q) {
+                $q->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_PARTIALLY_PAID])
+                    ->orderByDesc('invoice_date')
+                    ->limit(100);
+            }])
+            ->get()
+            ->mapWithKeys(fn ($customer) => [
+                (string) $customer->id => $customer->invoices->map(fn ($invoice) => [
+                    'id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'invoice_date' => $invoice->invoice_date?->format('Y-m-d'),
+                    'amount' => (float) $invoice->amount,
+                    'balance_due' => (float) $invoice->balance_due,
+                ])->values()->toArray(),
+            ])
+            ->toArray();
 
-        return view('accounting.customer-payments.create', compact('customers', 'bankAccounts', 'openInvoices', 'customerId'));
+        $openInvoices = collect($openInvoicesByCustomer[(string) $customerId] ?? []);
+
+        $preselectCustomer = $customerId ? $customers->firstWhere('id', $customerId) : null;
+
+        return view('accounting.customer-payments.create', compact(
+            'customers', 'bankAccounts', 'openInvoices', 'openInvoicesByCustomer', 'customerId', 'preselectCustomer'
+        ));
     }
 
     public function store(Request $request)

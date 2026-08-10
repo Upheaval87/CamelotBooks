@@ -38,7 +38,23 @@ class VendorCreditController extends Controller
 
         $vendorCredits = $query->orderByDesc('credit_note_date')->paginate(15)->withQueryString();
 
-        return view('accounting.vendor-credits.index', compact('vendorCredits'));
+        $stats = [
+            'total' => (int) VendorCredit::where('company_id', $companyId)->count(),
+            'amount' => (float) VendorCredit::where('company_id', $companyId)
+                ->where('status', '!=', VendorCredit::STATUS_VOID)
+                ->selectRaw('COALESCE(SUM(amount), 0) as amt')
+                ->value('amt'),
+            'applied' => (float) VendorCredit::where('company_id', $companyId)
+                ->selectRaw('COALESCE(SUM(amount_applied), 0) as amt')
+                ->value('amt'),
+            'by_status' => VendorCredit::where('company_id', $companyId)
+                ->selectRaw('status, COUNT(*) as c')
+                ->groupBy('status')
+                ->pluck('c', 'status')
+                ->toArray(),
+        ];
+
+        return view('accounting.vendor-credits.index', compact('vendorCredits', 'stats'));
     }
 
     public function create(Request $request, ?int $billId = null)

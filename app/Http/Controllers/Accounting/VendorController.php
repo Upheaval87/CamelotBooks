@@ -26,9 +26,18 @@ class VendorController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
+        $stats = [
+            'total' => (int) Vendor::where('company_id', $companyId)->count(),
+            'active' => (int) Vendor::where('company_id', $companyId)->where('is_active', true)->count(),
+            'balance_owed' => (float) \App\Models\Bill::where('company_id', $companyId)
+                ->whereIn('status', [\App\Models\Bill::STATUS_APPROVED, \App\Models\Bill::STATUS_PARTIALLY_PAID, \App\Models\Bill::STATUS_OVERDUE])
+                ->selectRaw('COALESCE(SUM(amount), 0) - COALESCE(SUM(amount_paid), 0) as due')
+                ->value('due'),
+        ];
+
         $vendors = $query->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('accounting.vendors.index', compact('vendors'));
+        return view('accounting.vendors.index', compact('vendors', 'stats'));
     }
 
     public function create()

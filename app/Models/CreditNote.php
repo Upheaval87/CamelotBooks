@@ -94,9 +94,34 @@ class CreditNote extends Model
         return $this->belongsTo(User::class, 'voided_by');
     }
 
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(CreditNoteAllocation::class);
+    }
+
     public function scopeForCompany($query, int $companyId)
     {
         return $query->where('company_id', $companyId);
+    }
+
+    public function getTotalAttribute(): float
+    {
+        return round((float) $this->amount, 2);
+    }
+
+    public function getSubtotalAttribute(): float
+    {
+        return round((float) $this->lines->sum('amount'), 2);
+    }
+
+    public function getTaxTotalAttribute(): float
+    {
+        return round((float) $this->lines->sum('tax_amount'), 2);
+    }
+
+    public function getAvailableAttribute(): float
+    {
+        return round((float) $this->amount - (float) $this->amount_applied - (float) $this->amount_refunded, 2);
     }
 
     public function scopeDraft($query)

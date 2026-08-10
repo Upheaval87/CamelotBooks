@@ -1,181 +1,160 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Customer Payment') }}" />
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+        $paidTotal = (float) $payment->amount;
+        $allocatedTotal = $payment->allocations->sum(fn($a) => (float) $a->amount);
+        $unallocated = round($paidTotal - $allocatedTotal, 2);
+        $methodLabel = ucfirst(str_replace('_', ' ', $payment->payment_method ?? ''));
+        $jeRef = $payment->journalEntry ? ($payment->journalEntry->reference ?? ('JE-' . str_pad($payment->journalEntry->id, 4, '0', STR_PAD_LEFT))) : null;
+    @endphp
 
-    <div class="pb-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <x-record-toolbar>
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Create') }}</span>
-                    <a href="{{ route('accounting.customer-payments.create', ['customer_id' => $payment->customer_id]) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        {{ __('New') }}
-                    </a>
+    <div class="suite py-6">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+
+            {{-- sticky head --}}
+            <div class="sticky-head">
+                <div>
+                    <h1>{{ __('Customer Payment') }} <span class="mono-chip">{{ $payment->payment_number }}</span></h1>
+                    <div class="sub">{{ $payment->customer->name ?? '—' }} · {{ $payment->payment_date?->format('M d, Y') ?? '—' }}</div>
                 </div>
-
-                <div class="tr-divider"></div>
-
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Reference') }}</span>
-                    @if($payment->invoices->isNotEmpty())
-                        <a href="{{ route('accounting.invoices.show', $payment->invoices->first()) }}" class="tr-item">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            {{ __('Lookup Invoice') }}
-                        </a>
-                    @else
-                        <button type="button" disabled class="tr-item opacity-40 cursor-not-allowed">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            {{ __('Lookup Invoice') }}
-                        </button>
-                    @endif
-                    <a href="{{ route('accounting.customer-payments.create', ['customer_id' => $payment->customer_id]) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        {{ __('Apply to Invoice') }}
-                    </a>
+                <div class="tbtns">
+                    <a href="{{ route('accounting.customer-payments.create', ['customer_id' => $payment->customer_id]) }}" class="btn btn-sec">{{ __('New Payment') }}</a>
+                    <button type="button" onclick="window.print()" class="btn btn-ghost">{{ __('Print') }}</button>
+                    <a href="{{ route('accounting.customers.show', $payment->customer) }}" class="btn btn-ghost">{{ __('Back') }}</a>
                 </div>
+            </div>
 
-                <div class="tr-divider"></div>
+            <div class="shell">
+                <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
 
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Document') }}</span>
-                    <button onclick="window.print()" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        {{ __('Print') }}
-                    </button>
-                    <button type="button" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                        {{ __('Attach File') }}
-                    </button>
-                    @if($payment->customer && $payment->customer->email)
-                        <a href="mailto:{{ $payment->customer->email }}?subject=Payment Receipt - {{ $payment->reference ?? $payment->id }}" class="tr-item">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            {{ __('Email Receipt') }}
-                        </a>
-                    @else
-                        <button type="button" disabled title="{{ __('No email on file') }}" class="tr-item opacity-40 cursor-not-allowed">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            {{ __('Email Receipt') }}
-                        </button>
-                    @endif
-                </div>
-
-                <div class="tr-spacer"></div>
-
-                @if($payment->status !== 'void')
-                    <form method="POST" action="{{ route('accounting.customer-payments.void', $payment) }}" class="inline">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to void this payment?') }}', { type: 'danger' })">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            {{ __('Void Payment') }}
-                        </button>
-                    </form>
-                @endif
-
-                <x-dropdown align="left" width="56">
-                    <x-slot name="trigger">
-                        <button type="button" class="tr-more" aria-label="{{ __('More actions') }}">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        <div class="py-1">
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                {{ __('Duplicate Payment') }}
-                            </button>
-                            <a href="{{ route('accounting.customers.show', $payment->customer) }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                {{ __('View Customer') }}
-                            </a>
+                    {{-- profile header --}}
+                    <section class="card">
+                        <div class="prof">
+                            <span class="ava-xl"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M2 10h20M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                            <div>
+                                <div class="n">{{ __('Customer Payment') }} {{ $payment->payment_number }} <span class="badge b-act"><span class="bdot"></span>{{ __('Received') }}</span></div>
+                                <div class="c">
+                                    <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ $payment->customer->name ?? '—' }}</span>
+                                    <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</span>
+                                    @if($methodLabel)
+                                        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ $methodLabel }}</span>
+                                    @endif
+                                    @if($payment->reference)
+                                        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>{{ $payment->reference }}</span>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
-                    </x-slot>
-                </x-dropdown>
-            </x-record-toolbar>
+                    </section>
 
-            <div class="detail-page">
-                <div class="detail-page-main">
+                    {{-- stat grid --}}
+                    <div class="statgrid">
+                        <div class="sbox ic"><span class="t"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M15 9.5c-.6-1-1.7-1.5-3-1.5-1.8 0-3 .9-3 2.2 0 2.8 6 1.6 6 4.3 0 1.3-1.2 2.2-3 2.2-1.3 0-2.4-.5-3-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                            <div><div class="l">{{ __('Amount') }} ({{ $cs }})</div><div class="v">{{ format_number($paidTotal) }}</div></div></div>
+                        <div class="sbox ic"><span class="t"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                            <div><div class="l">{{ __('Allocated') }} ({{ $cs }})</div><div class="v mint">{{ format_number($allocatedTotal) }}</div></div></div>
+                        <div class="sbox ic"><span class="t"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                            <div><div class="l">{{ __('Unallocated') }} ({{ $cs }})</div><div class="v">{{ format_number($unallocated) }}</div></div></div>
+                        <div class="sbox ic"><span class="t"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M2 10h20" stroke="currentColor" stroke-width="2"/></svg></span>
+                            <div><div class="l">{{ __('Method') }}</div><div class="v" style="font-size:.9rem">{{ $methodLabel ?: '—' }}</div></div></div>
+                    </div>
 
-            
+                    {{-- tabs --}}
+                    <section class="card">
+                        <div class="card-sec" style="padding-bottom:8px">
+                            <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Contents') }}</h2><span class="rule"></span></div>
+                            <div class="tabs" role="tablist">
+                                <button type="button" class="tab on" data-target="tab-overview" role="tab">{{ __('Overview') }}</button>
+                                <button type="button" class="tab" data-target="tab-allocations" role="tab">{{ __('Allocations') }}</button>
+                            </div>
 
-            
+                            <div class="tab-panel" id="tab-overview">
+                                <div class="g4">
+                                    <div class="field"><label>{{ __('Customer') }}</label><a href="{{ route('accounting.customers.show', $payment->customer) }}" style="font-weight:600;color:var(--sec,#128F8E)">{{ $payment->customer->name ?? '—' }}</a></div>
+                                    <div class="field"><label>{{ __('Payment Date') }}</label><span style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</span></div>
+                                    <div class="field"><label>{{ __('Payment Method') }}</label><span style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $methodLabel ?: '—' }}</span></div>
+                                    <div class="field"><label>{{ __('Bank Account') }}</label><span style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $payment->bankAccount->name ?? '—' }}</span></div>
+                                    @if($payment->reference)
+                                        <div class="field"><label>{{ __('Reference') }}</label><span class="mono">{{ $payment->reference }}</span></div>
+                                    @endif
+                                    @if($payment->memo)
+                                        <div class="field sp2"><label>{{ __('Description') }}</label><span class="em" style="font-size:.8125rem">{{ $payment->memo }}</span></div>
+                                    @endif
+                                    @if($jeRef)
+                                        <div class="field"><label>{{ __('Journal Entry') }}</label><a href="{{ route('accounting.journal-entries.show', $payment->journalEntry) }}" class="mono" style="color:var(--sec,#128F8E)">{{ $jeRef }}</a></div>
+                                    @endif
+                                    <div class="field"><label>{{ __('Created By') }}</label><span style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $payment->createdBy?->name ?? '—' }}</span></div>
+                                </div>
+                            </div>
 
-            <div class="card p-6">
-                <div class="detail-grid">
-                    <x-detail-field :label="__('Customer')" :value="$payment->customer->name ?? '—'" />
-                    <x-detail-field :label="__('Status')" noBorder>
-                        @if($payment->status === 'void')
-                            <span class="status-pill neutral">{{ __('Void') }}</span>
-                        @else
-                            <span class="status-pill positive">{{ __('Completed') }}</span>
-                        @endif
-                    </x-detail-field>
-                    <x-detail-field :label="__('Payment Date')" :value="$payment->payment_date?->format('M d, Y') ?? '—'" />
-                    <x-detail-field :label="__('Amount')" value-class="text-2xl font-bold text-ink">
-                        {{ format_money($payment->amount) }}
-                    </x-detail-field>
-                    <x-detail-field :label="__('Payment Method')" :value="ucfirst(str_replace('_', ' ', $payment->payment_method))" />
-                    <x-detail-field :label="__('Bank Account')" :value="$payment->bankAccount->name ?? '—'" />
-                    @if($payment->reference)
-                        <x-detail-field :label="__('Reference')" :value="$payment->reference" />
-                    @endif
-                    @if($payment->memo)
-                        <x-detail-field :label="__('Description')" :value="$payment->memo" />
-                    @endif
+                            <div class="tab-panel" id="tab-allocations" style="display:none">
+                                <div class="li-wrap">
+                                    <table>
+                                        <thead><tr>
+                                            <th style="width:26%">{{ __('Invoice #') }}</th>
+                                            <th style="width:24%">{{ __('Date') }}</th>
+                                            <th class="num" style="width:25%">{{ __('Invoice Amount') }} ({{ $cs }})</th>
+                                            <th class="num" style="width:25%">{{ __('Allocated') }} ({{ $cs }})</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            @forelse($payment->allocations as $allocation)
+                                                <tr>
+                                                    <td><a href="{{ route('accounting.invoices.show', $allocation->invoice) }}" class="link mono">{{ $allocation->invoice->invoice_number ?? '—' }}</a></td>
+                                                    <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $allocation->invoice?->invoice_date?->format('M d, Y') ?? '—' }}</td>
+                                                    <td class="numr">{{ format_number($allocation->invoice?->amount ?? 0) }}</td>
+                                                    <td class="numr" style="font-weight:800">{{ format_number($allocation->amount) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="em" style="padding:22px;text-align:center">{{ __('No allocations on this payment.') }}</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="li-totals" style="margin-top:12px"><div class="box">
+                                    <div class="trow"><span>{{ __('Total Allocated') }}</span><span class="v">{{ format_number($allocatedTotal) }}</span></div>
+                                    <div class="trow total"><span>{{ __('Payment Amount') }}</span><span class="v">{{ format_number($paidTotal) }}</span></div>
+                                </div></div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-            </div>
 
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Invoice Allocations') }}</p>
-                <div class="overflow-x-auto">
-                    <table class="record-datasheet">
-                        <thead>
-                            <tr>
-                                <th>{{ __('Invoice #') }}</th>
-                                <th>{{ __('Date') }}</th>
-                                <th class="text-right">{{ __('Invoice Total') }}</th>
-                                <th class="text-right">{{ __('Amount Allocated') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($payment->invoices as $invoice)
-                                <tr>
-                                    <td>
-                                        <a href="{{ route('accounting.invoices.show', $invoice) }}" class="text-ink hover:text-gold">
-                                            {{ $invoice->invoice_number }}
-                                        </a>
-                                    </td>
-                                    <td>
-                                        {{ $invoice->invoice_date?->format('M d, Y') ?? '—' }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ format_money($invoice->total) }}
-                                    </td>
-                                    <td class="numeric">
-                                        {{ format_money($invoice->pivot->amount) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center">
-                                        {{ __('No allocations found.') }}
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-                </div>
-                <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => [
-                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
-                        ['route' => $payment->customer && $payment->customer->email ? 'mailto:'.$payment->customer->email.'?subject=Payment Receipt - '.($payment->reference ?? $payment->id) : '#', 'icon' => 'email', 'title' => __('Email Receipt')],
-                    ]],
-                    ['label' => __('Navigation'), 'links' => [
-                        ['route' => $payment->customer ? route('accounting.customers.show', $payment->customer) : route('accounting.customers.index'), 'icon' => 'back', 'title' => __('Back to Customer')],
-                    ]],
-                ]" />
+                {{-- rail --}}
+                <aside class="railsum">
+                    <section class="card">
+                        <div class="rail-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Summary') }}</h2></div>
+                            <div style="margin-top:8px">
+                                <div class="srow"><span class="l">{{ __('Payment Amount') }}</span><span class="v">{{ format_number($paidTotal) }}</span></div>
+                                <div class="srow"><span class="l">{{ __('Allocated') }}</span><span class="v mint">{{ format_number($allocatedTotal) }}</span></div>
+                                <div class="srow strong"><span class="l">{{ __('Unallocated') }}</span><span class="v">{{ format_number($unallocated) }}</span></div>
+                            </div>
+                            <div class="gt"><span class="l">{{ __('Total Received') }}</span><span class="v">{{ $cs }}{{ format_number($paidTotal) }}</span></div>
+                        </div>
+                        <div class="rail-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>{{ __('Quick Nav') }}</h2></div>
+                            <div class="vlist">
+                                <button type="button" onclick="window.print()" class="vitem" style="width:100%;text-align:left;background:none;border:0;cursor:pointer"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>{{ __('Print') }}</button>
+                                <a href="{{ route('accounting.customer-payments.create', ['customer_id' => $payment->customer_id]) }}" class="vitem"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>{{ __('New Payment') }}</a>
+                                <a href="{{ route('accounting.customers.show', $payment->customer) }}" class="vitem"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>{{ __('View Customer') }}</a>
+                                <a href="{{ route('accounting.customers.index') }}" class="vitem"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 19l-7-7 7-7M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>{{ __('All Customers') }}</a>
+                            </div>
+                        </div>
+                    </section>
+                </aside>
             </div>
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.suite .tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.suite .tab').forEach(t => t.classList.remove('on'));
+                tab.classList.add('on');
+                document.querySelectorAll('.suite .tab-panel').forEach(p => {
+                    p.style.display = (p.id === tab.dataset.target) ? '' : 'none';
+                });
+            });
+        });
+    </script>
 </x-app-layout>

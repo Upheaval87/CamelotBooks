@@ -49,4 +49,9 @@ class VendorCreditLine extends Model
     {
         return $this->belongsTo(Account::class, 'expense_account_id');
     }
+
+    public function getTotalAttribute(): float
+    {
+        return (float) $this->line_total;
+    }
 }

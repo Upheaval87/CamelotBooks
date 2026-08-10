@@ -18,7 +18,7 @@ class VendorPaymentController extends Controller
 
     public function create(Request $request, ?int $vendorId = null)
     {
-        $vendorId = $vendorId ?? $request->input('vendor_id');
+        $vendorId = $vendorId ?: ((int) $request->input('vendor_id', 0) ?: null);
         $companyId = session('current_company_id');
 
         $vendors = Vendor::where('company_id', $companyId)
@@ -32,17 +32,32 @@ class VendorPaymentController extends Controller
             ->orderBy('name')
             ->get();
 
-        $openBills = collect();
-        if ($vendorId) {
-            $openBills = Bill::where('company_id', $companyId)
-                ->where('vendor_id', $vendorId)
-                ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID])
-                ->orderByDesc('bill_date')
-                ->limit(100)
-                ->get();
-        }
+        $openBillsByVendor = Vendor::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->with(['bills' => function ($q) {
+                $q->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID])
+                    ->orderByDesc('bill_date')
+                    ->limit(100);
+            }])
+            ->get()
+            ->mapWithKeys(fn ($vendor) => [
+                (string) $vendor->id => $vendor->bills->map(fn ($bill) => [
+                    'id' => $bill->id,
+                    'bill_number' => $bill->bill_number,
+                    'bill_date' => $bill->bill_date?->format('Y-m-d'),
+                    'amount' => (float) $bill->amount,
+                    'balance_due' => (float) $bill->balance_due,
+                ])->values()->toArray(),
+            ])
+            ->toArray();
 
-        return view('accounting.vendor-payments.create', compact('vendors', 'bankAccounts', 'openBills', 'vendorId'));
+        $openBills = collect($openBillsByVendor[(string) $vendorId] ?? []);
+
+        $preselectVendor = $vendorId ? $vendors->firstWhere('id', $vendorId) : null;
+
+        return view('accounting.vendor-payments.create', compact(
+            'vendors', 'bankAccounts', 'openBills', 'openBillsByVendor', 'vendorId', 'preselectVendor'
+        ));
     }
 
     public function store(Request $request)

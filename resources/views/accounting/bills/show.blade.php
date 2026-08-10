@@ -1,270 +1,310 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Bill') }} #{{ $bill->bill_number }}" />
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+        $billSubtotal = (float) $bill->subtotal;
+        $billTax = (float) $bill->tax_total;
+        $billCharges = $bill->totalCharges();
+        $billTotal = $billSubtotal + $billTax + $billCharges;
+        $billPaid = (float) $bill->amount_paid;
+        $billBalance = max($bill->balance_due, 0);
+        $statusMap = [
+            'draft' => ['draft', __('Draft')],
+            'pending_approval' => ['teal', __('Pending Approval')],
+            'approved' => ['teal', __('Approved')],
+            'partially_paid' => ['mint', __('Partially Paid')],
+            'paid' => ['act', __('Paid')],
+            'overdue' => ['red', __('Overdue')],
+            'void' => ['void', __('Void')],
+        ];
+        [$statusCls, $statusLabel] = $statusMap[$bill->status] ?? ['gray', ucfirst(str_replace('_', ' ', $bill->status))];
+        $methodLabel = fn ($m) => ucfirst(str_replace('_', ' ', $m));
+    @endphp
 
-    <div class="pb-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <x-record-toolbar>
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Create') }}</span>
-                    <a href="{{ route('accounting.bills.create') }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        {{ __('New') }}
-                    </a>
-                    @if($bill->status === 'draft')
-                        <a href="{{ route('accounting.bills.edit', $bill) }}" class="tr-save">{{ __('Save') }}</a>
-                        <form method="POST" action="{{ route('accounting.bills.submit', $bill) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="tr-save">{{ __('Submit for Approval') }}</button>
-                        </form>
-                    @endif
-                </div>
+    <div class="suite py-6">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
-                <div class="tr-divider"></div>
-
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Reference') }}</span>
-                    <a href="{{ route('accounting.vendors.show', $bill->vendor) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        {{ __('Lookup Vendor') }}
-                    </a>
-                    <a href="{{ route('accounting.purchase-orders.index', ['vendor_id' => $bill->vendor_id]) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        {{ __('Copy from PO') }}
-                    </a>
-                    <button type="button" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-                        {{ __('Payment History') }}
-                    </button>
-                </div>
-
-                <div class="tr-divider"></div>
-
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Document') }}</span>
-                    <button onclick="window.print()" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        {{ __('Print') }}
-                    </button>
-                    <button type="button" class="tr-item relative">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                        {{ __('Attach Bill/Receipt') }}
-                        @if(($bill->attachments->count() ?? 0) > 0)
-                            <span class="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-atlas-danger rounded-full">{{ $bill->attachments->count() }}</span>
-                        @endif
-                    </button>
-                    @if($bill->vendor && $bill->vendor->email)
-                        <a href="mailto:{{ $bill->vendor->email }}" class="tr-item">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            {{ __('Email Vendor') }}
-                        </a>
-                    @else
-                        <button type="button" disabled title="{{ __('No email on file') }}" class="tr-item opacity-40 cursor-not-allowed">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            {{ __('Email Vendor') }}
-                        </button>
-                    @endif
-                </div>
-
-                <div class="tr-spacer"></div>
-
-                @if(!in_array($bill->status, ['void', 'paid', 'draft']))
-                    @can('bills.void')
-                        <form method="POST" action="{{ route('accounting.bills.void', $bill) }}" class="inline">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="tr-archive" onclick="return fbConfirmButton(event, '{{ __('Are you sure you want to cancel this bill?') }}', { type: 'danger' })">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                {{ __('Cancel Bill') }}
-                            </button>
-                        </form>
-                    @endcan
-                @endif
-
-                <x-dropdown align="left" width="56">
-                    <x-slot name="trigger">
-                        <button type="button" class="tr-more" aria-label="{{ __('More actions') }}">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        <div class="py-1">
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                {{ __('Duplicate') }}
-                            </button>
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                {{ __('Export') }}
-                            </button>
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                {{ __('Convert to Recurring') }}
-                            </button>
-                            <a href="{{ route('accounting.bills.index') }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                                {{ __('Back to Bills') }}
-                            </a>
-                        </div>
-                    </x-slot>
-                </x-dropdown>
-            </x-record-toolbar>
-
-            
-
-            
-
-            <div class="detail-page">
-                <div class="detail-page-main">
-                    <div class="card p-6">
-                        <div class="detail-grid">
-                            <x-detail-field :label="__('Bill Number')" :value="$bill->bill_number" />
-                            <x-detail-field :label="__('Status')" noBorder>
-                                @switch($bill->status)
-                                    @case('draft') <span class="status-pill neutral">{{ __('Draft') }}</span> @break
-                                    @case('pending') <span class="status-pill neutral">{{ __('Pending Approval') }}</span> @break
-                                    @case('approved') <span class="status-pill neutral">{{ __('Approved') }}</span> @break
-                                    @case('paid') <span class="status-pill positive">{{ __('Paid') }}</span> @break
-                                    @case('overdue') <span class="status-pill negative">{{ __('Overdue') }}</span> @break
-                                    @case('void') <span class="status-pill neutral">{{ __('Void') }}</span> @break
-                                @endswitch
-                            </x-detail-field>
-                            <x-detail-field :label="__('Vendor')" :value="$bill->vendor->name ?? '—'" />
-                            <x-detail-field :label="__('Bill Date')" :value="$bill->bill_date?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Due Date')" :value="$bill->due_date?->format('M d, Y') ?? '—'" />
-                            <x-detail-field :label="__('Reference')" :value="$bill->reference ?? '—'" />
-                            @if($bill->po_number)
-                                <x-detail-field :label="__('Purchase Order')" :value="$bill->po_number" />
-                            @endif
-                            @if($bill->grn_reference)
-                                <x-detail-field :label="__('GRN')" :value="$bill->grn_reference" />
-                            @endif
-                            @if($bill->memo)
-                                <x-detail-field :label="__('Description')" :value="$bill->memo" class="col-span-3" />
-                            @endif
-                            @if($bill->supplier_notes)
-                                <x-detail-field :label="__('Supplier Notes')" :value="$bill->supplier_notes" class="col-span-3" />
-                            @endif
-                            @if($bill->payment_instructions)
-                                <x-detail-field :label="__('Payment Instructions')" :value="$bill->payment_instructions" class="col-span-3" />
-                            @endif
-                        </div>
+            {{-- sticky head --}}
+            <div class="sticky-head">
+                <div>
+                    <h1>{{ __('Bill') }} <span class="mono-chip">{{ $bill->bill_number }}</span></h1>
+                    <div class="sub">{{ $bill->vendor->name ?? __('—') }} · {{ __('billed') }} {{ $bill->bill_date?->format('M d, Y') ?? '—' }}
+                        @if ($bill->due_date) · {{ __('due') }} {{ $bill->due_date->format('M d, Y') }} @endif
                     </div>
+                </div>
+                <div class="tbtns">
+                    @if($bill->status === 'draft')
+                        <a href="{{ route('accounting.bills.edit', $bill) }}" class="btn btn-sec">{{ __('Edit') }}</a>
+                        <form method="POST" action="{{ route('accounting.bills.submit', $bill) }}" class="inline" onsubmit="return fbConfirmButton(event, 'Submit this bill for approval?', { type: 'action' })">
+                            @csrf
+                            <button type="submit" class="btn btn-sec">{{ __('Submit for Approval') }}</button>
+                        </form>
+                    @endif
+                    @if(in_array($bill->status, ['pending_approval', 'approved', 'partially_paid', 'overdue']))
+                        @can('bills.post')
+                            <form method="POST" action="{{ route('accounting.bills.post', $bill) }}" class="inline" onsubmit="return fbConfirmButton(event, 'Post this bill?', { type: 'action' })">
+                                @csrf
+                                <button type="submit" class="btn btn-cta">{{ __('Post Bill') }}</button>
+                            </form>
+                        @endcan
+                    @endif
+                    @if(!in_array($bill->status, ['draft', 'void', 'paid']))
+                        @can('bills.void')
+                            <form method="POST" action="{{ route('accounting.bills.void', $bill) }}" class="inline" onsubmit="return fbConfirmButton(event, '{{ __('Are you sure you want to cancel this bill?') }}', { type: 'danger' })">
+                                @csrf
+                                @method('POST')
+                                <button type="submit" class="btn btn-danger">{{ __('Cancel Bill') }}</button>
+                            </form>
+                        @endcan
+                    @endif
+                    <button type="button" onclick="window.print()" class="btn btn-ghost">{{ __('Print') }}</button>
+                    <a href="{{ route('accounting.bills.index') }}" class="btn btn-ghost">{{ __('Back') }}</a>
+                </div>
+            </div>
 
-                    <div class="card p-6">
-                        <p class="text-base font-semibold text-ink mb-5">{{ __('Line Items') }}</p>
-                        <div class="overflow-x-auto">
-                            <table class="record-datasheet">
-                                <thead>
-                                    <tr>
-                                        <th>{{ __('Product') }}</th>
-                                        <th>{{ __('Description') }}</th>
-                                        <th class="text-right">{{ __('Qty') }}</th>
-                                        <th class="text-right">{{ __('Unit Price') }}</th>
-                                        <th class="text-right">{{ __('Total') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($bill->lines as $line)
-                                        <tr>
-                                            <td>{{ $line->product->name ?? '—' }}</td>
-                                            <td>{{ $line->description }}</td>
-                                            <td class="numeric">{{ $line->quantity }}</td>
-                                            <td class="numeric">{{ format_money($line->unit_price) }}</td>
-                                            <td class="numeric">{{ format_money($line->total) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="flex justify-end mt-4">
-                            <div class="balance-grid">
-                                <div class="balance-row">
-                                    <span class="balance-label">{{ __('Subtotal') }}:</span>
-                                    <span class="balance-value">{{ format_money($bill->subtotal) }}</span>
-                                </div>
-                                @if($bill->tax_total > 0)
-                                    <div class="balance-row">
-                                        <span class="balance-label">{{ __('Tax') }}:</span>
-                                        <span class="balance-value">{{ format_money($bill->tax_total) }}</span>
-                                    </div>
-                                @endif
-                                @if((float) $bill->freight_charges > 0)
-                                    <div class="balance-row">
-                                        <span class="balance-label">{{ __('Freight') }}:</span>
-                                        <span class="balance-value">{{ format_money($bill->freight_charges) }}</span>
-                                    </div>
-                                @endif
-                                @if((float) $bill->insurance_charges > 0)
-                                    <div class="balance-row">
-                                        <span class="balance-label">{{ __('Insurance') }}:</span>
-                                        <span class="balance-value">{{ format_money($bill->insurance_charges) }}</span>
-                                    </div>
-                                @endif
-                                @if((float) $bill->customs_charges > 0)
-                                    <div class="balance-row">
-                                        <span class="balance-label">{{ __('Customs') }}:</span>
-                                        <span class="balance-value">{{ format_money($bill->customs_charges) }}</span>
-                                    </div>
-                                @endif
-                                @if((float) $bill->other_charges > 0)
-                                    <div class="balance-row">
-                                        <span class="balance-label">{{ __('Other Charges') }}:</span>
-                                        <span class="balance-value">{{ format_money($bill->other_charges) }}</span>
-                                    </div>
-                                @endif
-                                <div class="balance-total-row">
-                                    <span class="balance-label">{{ __('Total') }}:</span>
-                                    <span class="balance-value">{{ format_money($bill->total) }}</span>
-                                </div>
-                                <div class="balance-row">
-                                    <span class="balance-label">{{ __('Paid') }}:</span>
-                                    <span class="balance-value">{{ format_money($bill->amount_paid) }}</span>
-                                </div>
-                                <div class="balance-total-row">
-                                    <span class="balance-label">{{ __('Balance Due') }}:</span>
-                                    <span class="balance-value">{{ format_money($bill->balance_due) }}</span>
+            <x-input-error :messages="$errors->get('error')" class="mb-4" />
+
+            <div class="shell">
+                <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+
+                    {{-- profile header --}}
+                    <section class="card">
+                        <div class="prof">
+                            <span class="ava-xl"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                            <div>
+                                <div class="n">{{ __('Bill') }} {{ $bill->bill_number }} <span class="badge b-{{ $statusCls }}"><span class="bdot"></span>{{ $statusLabel }}</span></div>
+                                <div class="c">
+                                    <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ $bill->vendor->name ?? '—' }}</span>
+                                    <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ __('Date') }} · {{ $bill->bill_date?->format('M d, Y') ?? '—' }}</span>
+                                    @if ($bill->due_date)
+                                        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ __('Due') }} · {{ $bill->due_date->format('M d, Y') }}</span>
+                                    @endif
+                                    @if($bill->reference)
+                                        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>{{ $bill->reference }}</span>
+                                    @endif
+                                    @if($bill->po_number)
+                                        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{{ __('PO') }} · {{ $bill->po_number }}</span>
+                                    @endif
+                                    @if($bill->grn_reference)
+                                        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{{ __('GRN') }} · {{ $bill->grn_reference }}</span>
+                                    @endif
                                 </div>
                             </div>
+                            <div class="acts">
+                                <button type="button" onclick="window.print()" class="btn btn-ghost btn-sm">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {{ __('Print') }}
+                                </button>
+                                @if($bill->status === 'draft')
+                                    <a href="{{ route('accounting.bills.edit', $bill) }}" class="btn btn-sec btn-sm">{{ __('Edit') }}</a>
+                                @endif
+                            </div>
                         </div>
+                    </section>
+
+                    {{-- stat grid --}}
+                    <div class="statgrid">
+                        <div class="sbox ic"><span class="t"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v10M15 9.5c-.6-1-1.7-1.5-3-1.5-1.8 0-3 .9-3 2.2 0 2.8 6 1.6 6 4.3 0 1.3-1.2 2.2-3 2.2-1.3 0-2.4-.5-3-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                            <div><div class="l">{{ __('Total') }} ({{ $cs }})</div><div class="v">{{ format_number($billTotal) }}</div></div></div>
+                        <div class="sbox ic"><span class="t"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                            <div><div class="l">{{ __('Paid') }} ({{ $cs }})</div><div class="v mint">{{ format_number($billPaid) }}</div></div></div>
+                        <div class="sbox ic"><span class="t"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                            <div><div class="l">{{ __('Balance Due') }} ({{ $cs }})</div><div class="v @if($billBalance > 0 && $bill->status === 'overdue') red @endif">{{ format_number($billBalance) }}</div></div></div>
+                        <div class="sbox ic"><span class="t"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                            <div><div class="l">{{ __('Tax') }} ({{ $cs }})</div><div class="v">{{ format_number($billTax) }}</div></div></div>
                     </div>
 
-                    @if($bill->attachments->isNotEmpty())
-                        <div class="card p-6">
-                            <p class="text-base font-semibold text-ink mb-5">{{ __('Attachments') }}</p>
-                            <ul class="divide-y divide-line border border-shell rounded-[14px] bg-[#fbfcfe]">
-                                @foreach($bill->attachments as $attachment)
-                                    <li class="flex items-center gap-3 px-4 py-3">
-                                        <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                        <a href="{{ Storage::disk('public')->url($attachment->file_path) }}" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate text-[13px] text-gray-800 hover:text-gold-700">{{ $attachment->name }}</a>
-                                        <span class="shrink-0 text-[11px] text-slate-400">{{ format_bytes($attachment->file_size) }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
+                    {{-- tabs --}}
+                    <section class="card">
+                        <div class="card-sec" style="padding-bottom:8px">
+                            <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Contents') }}</h2><span class="rule"></span></div>
+                            <div class="tabs" role="tablist">
+                                <button type="button" class="tab on" data-target="tab-overview" role="tab">{{ __('Overview') }}</button>
+                                <button type="button" class="tab" data-target="tab-payments" role="tab">{{ __('Payments') }}</button>
+                                <button type="button" class="tab" data-target="tab-lines" role="tab">{{ __('Line Items') }}</button>
+                            </div>
 
-                    @if($bill->journalEntry)
-                        <div class="card p-6">
-                            <p class="text-base font-semibold text-ink mb-5">{{ __('Journal Entry') }}</p>
-                            <a href="{{ route('accounting.journal-entries.show', $bill->journalEntry) }}" class="text-ink hover:text-gold">
-                                {{ $bill->journalEntry->reference }} — {{ __('View Journal Entry') }}
-                            </a>
+                            <div class="tab-panel" id="tab-overview">
+                                <div class="g4">
+                                    <div class="field"><label>{{ __('Vendor') }}</label><a href="{{ route('accounting.vendors.show', $bill->vendor) }}" style="font-weight:600;color:var(--sec,#128F8E)">{{ $bill->vendor->name ?? '—' }}</a></div>
+                                    <div class="field"><label>{{ __('Bill Date') }}</label><span style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $bill->bill_date?->format('M d, Y') ?? '—' }}</span></div>
+                                    <div class="field"><label>{{ __('Due Date') }}</label><span style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $bill->due_date?->format('M d, Y') ?? '—' }}</span></div>
+                                    <div class="field"><label>{{ __('Reference') }}</label><span class="mono">{{ $bill->reference ?? '—' }}</span></div>
+                                    @if($bill->po_number)
+                                        <div class="field"><label>{{ __('Purchase Order') }}</label><span class="mono">{{ $bill->po_number }}</span></div>
+                                    @endif
+                                    @if($bill->grn_reference)
+                                        <div class="field"><label>{{ __('GRN') }}</label><span class="mono">{{ $bill->grn_reference }}</span></div>
+                                    @endif
+                                    <div class="field"><label>{{ __('Created By') }}</label><span style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $bill->createdBy?->name ?? '—' }}</span></div>
+                                    @if ($bill->journalEntry)
+                                        <div class="field"><label>{{ __('Journal Entry') }}</label><a href="{{ route('accounting.journal-entries.show', $bill->journalEntry) }}" class="mono" style="color:var(--sec,#128F8E)">{{ $bill->journalEntry->reference ?? ('JE-' . str_pad($bill->journalEntry->id, 4, '0', STR_PAD_LEFT)) }}</a></div>
+                                    @endif
+                                    @if ($bill->memo)
+                                        <div class="field sp2"><label>{{ __('Description') }}</label><span class="em" style="font-size:.8125rem">{{ $bill->memo }}</span></div>
+                                    @endif
+                                    @if ($bill->supplier_notes)
+                                        <div class="field sp2"><label>{{ __('Supplier Notes') }}</label><span class="em" style="font-size:.8125rem">{{ $bill->supplier_notes }}</span></div>
+                                    @endif
+                                    @if ($bill->payment_instructions)
+                                        <div class="field sp2"><label>{{ __('Payment Instructions') }}</label><span class="em" style="font-size:.8125rem">{{ $bill->payment_instructions }}</span></div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="tab-panel" id="tab-payments" style="display:none">
+                                <div class="li-wrap">
+                                    <table>
+                                        <thead><tr>
+                                            <th style="width:22%">{{ __('Date') }}</th>
+                                            <th style="width:30%">{{ __('Reference') }}</th>
+                                            <th class="num" style="width:24%">{{ __('Amount') }} ({{ $cs }})</th>
+                                            <th style="width:24%">{{ __('Method') }}</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            @forelse($payments as $payment)
+                                                <tr>
+                                                    <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
+                                                    <td class="em mono">{{ $payment->reference ?? '—' }}</td>
+                                                    <td class="numr">{{ format_number($payment->pivot->amount) }}</td>
+                                                    <td class="em">{{ $methodLabel($payment->payment_method) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="4" class="em" style="padding:22px;text-align:center">{{ __('No payments recorded yet.') }}</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if($payments->isNotEmpty())
+                                    <div class="li-totals" style="margin-top:12px"><div class="box">
+                                        <div class="trow"><span>{{ __('Paid') }}</span><span class="v">{{ format_number($billPaid) }}</span></div>
+                                        <div class="trow"><span>{{ __('Balance Due') }}</span><span class="v">{{ format_number($billBalance) }}</span></div>
+                                        <div class="trow total"><span>{{ __('Total') }}</span><span class="v">{{ format_number($billTotal) }}</span></div>
+                                    </div></div>
+                                @endif
+                            </div>
+
+                            <div class="tab-panel" id="tab-lines" style="display:none">
+                                <div class="li-wrap">
+                                    <table>
+                                        <thead><tr>
+                                            <th style="width:10%">{{ __('Item Code') }}</th>
+                                            <th style="width:20%">{{ __('Item') }}</th>
+                                            <th style="width:26%">{{ __('Description') }}</th>
+                                            <th class="num" style="width:6%">{{ __('Qty') }}</th>
+                                            <th class="num" style="width:10%">{{ __('Unit Price') }}</th>
+                                            <th class="num" style="width:6%">{{ __('Disc %') }}</th>
+                                            <th class="num" style="width:6%">{{ __('Tax %') }}</th>
+                                            <th class="num" style="width:12%">{{ __('Amount') }}</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            @forelse($bill->lines as $line)
+                                                <tr>
+                                                    <td class="mono em">{{ $line->product?->sku ?? '—' }}</td>
+                                                    <td style="font-weight:600;color:var(--ink,#0B2A2D)">
+                                                        {{ $line->product?->name ?? '—' }}
+                                                        @if ($line->costCenter?->name)
+                                                            <div style="font-size:11px;font-weight:400;color:var(--muted,#5F7476)">{{ $line->costCenter->code }} - {{ $line->costCenter->name }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td class="em">{{ $line->description }}</td>
+                                                    <td class="numr">{{ number_format((float) $line->quantity, 2) }}</td>
+                                                    <td class="numr">{{ format_number((float) $line->unit_price) }}</td>
+                                                    <td class="numr">{{ $line->discount }}%</td>
+                                                    <td class="numr">{{ $line->tax_rate }}%</td>
+                                                    <td class="numr" style="font-weight:800">{{ format_number((float) $line->total) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr><td colspan="8" class="em" style="padding:22px;text-align:center">{{ __('No line items on this bill.') }}</td></tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="li-totals" style="margin-top:12px"><div class="box">
+                                    <div class="trow"><span>{{ __('Subtotal') }}</span><span class="v">{{ format_number($billSubtotal) }}</span></div>
+                                    @if((float) $bill->tax_total > 0)
+                                        <div class="trow"><span>{{ __('Tax') }}</span><span class="v">{{ format_number($billTax) }}</span></div>
+                                    @endif
+                                    @foreach([['Freight', 'freight_charges'], ['Insurance', 'insurance_charges'], ['Customs', 'customs_charges'], ['Other Charges', 'other_charges']] as [$chargeLabel, $chargeField])
+                                        @if((float) $bill->$chargeField > 0)
+                                            <div class="trow"><span>{{ __($chargeLabel) }}</span><span class="v">{{ format_number((float) $bill->$chargeField) }}</span></div>
+                                        @endif
+                                    @endforeach
+                                    <div class="trow total"><span>{{ __('Total') }}</span><span class="v">{{ format_number($billTotal) }}</span></div>
+                                </div></div>
+                            </div>
                         </div>
+                    </section>
+
+                    @if($bill->attachments->isNotEmpty())
+                        <section class="card">
+                            <div class="card-sec">
+                                <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h2>{{ __('Attachments') }}</h2><span class="rule"></span></div>
+                                <div class="li-wrap">
+                                    <table>
+                                        <thead><tr><th style="width:70%">{{ __('File') }}</th><th class="num" style="width:30%">{{ __('Size') }}</th></tr></thead>
+                                        <tbody>
+                                            @foreach($bill->attachments as $attachment)
+                                                <tr>
+                                                    <td><a href="{{ Storage::disk('public')->url($attachment->file_path) }}" target="_blank" rel="noopener" class="link">{{ $attachment->name }}</a></td>
+                                                    <td class="numr em">{{ format_bytes($attachment->file_size) }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
                     @endif
                 </div>
-                @php
-                    $billInsightLinks = [];
-                    if ($bill->vendor && $bill->vendor->email) {
-                        $billInsightLinks[] = ['route' => 'mailto:' . $bill->vendor->email, 'icon' => 'email', 'title' => __('Email Vendor')];
-                    }
-                @endphp
-                <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => $billInsightLinks],
-                    ['label' => __('Navigation'), 'links' => [
-                        ['route' => route('accounting.bills.index'), 'icon' => 'back', 'title' => __('Back to Bills')],
-                    ]],
-                ]" />
+
+                {{-- rail --}}
+                <aside class="railsum">
+                    <section class="card">
+                        <div class="rail-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Summary') }}</h2></div>
+                            <div style="margin-top:8px">
+                                <div class="srow"><span class="l">{{ __('Subtotal') }}</span><span class="v">{{ format_number($billSubtotal) }}</span></div>
+                                <div class="srow"><span class="l">{{ __('Tax') }}</span><span class="v">{{ format_number($billTax) }}</span></div>
+                                @foreach([['Freight', 'freight_charges'], ['Insurance', 'insurance_charges'], ['Customs', 'customs_charges'], ['Other Charges', 'other_charges']] as [$chargeLabel, $chargeField])
+                                    @if((float) $bill->$chargeField > 0)
+                                        <div class="srow"><span class="l">{{ __($chargeLabel) }}</span><span class="v">{{ format_number((float) $bill->$chargeField) }}</span></div>
+                                    @endif
+                                @endforeach
+                                <div class="srow strong"><span class="l">{{ __('Total') }}</span><span class="v">{{ format_number($billTotal) }}</span></div>
+                                <div class="srow"><span class="l">{{ __('Paid') }}</span><span class="v mint">{{ format_number($billPaid) }}</span></div>
+                                <div class="srow"><span class="l">{{ __('Balance Due') }}</span><span class="v">{{ format_number($billBalance) }}</span></div>
+                            </div>
+                            <div class="gt"><span class="l">{{ __('Balance Due') }}</span><span class="v">{{ $cs }}{{ format_number($billBalance) }}</span></div>
+                        </div>
+                        <div class="rail-sec">
+                            <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>{{ __('Quick Nav') }}</h2></div>
+                            <div class="vlist">
+                                <button type="button" onclick="window.print()" class="vitem" style="width:100%;text-align:left;background:none;border:0;cursor:pointer"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>{{ __('Print') }}</button>
+                                @if($bill->status === 'draft')
+                                    <a href="{{ route('accounting.bills.edit', $bill) }}" class="vitem"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>{{ __('Edit Bill') }}</a>
+                                @endif
+                                @if($bill->vendor)
+                                    <a href="{{ route('accounting.vendors.show', $bill->vendor) }}" class="vitem"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>{{ __('View Vendor') }}</a>
+                                @endif
+                                <a href="{{ route('accounting.bills.create') }}" class="vitem"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>{{ __('New Bill') }}</a>
+                                <a href="{{ route('accounting.bills.index') }}" class="vitem"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 19l-7-7 7-7M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>{{ __('All Bills') }}</a>
+                            </div>
+                        </div>
+                    </section>
+                </aside>
             </div>
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.suite .tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.suite .tab').forEach(t => t.classList.remove('on'));
+                tab.classList.add('on');
+                document.querySelectorAll('.suite .tab-panel').forEach(p => {
+                    p.style.display = (p.id === tab.dataset.target) ? '' : 'none';
+                });
+            });
+        });
+    </script>
 </x-app-layout>

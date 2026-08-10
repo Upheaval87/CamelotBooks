@@ -54,9 +54,26 @@ class BillController extends Controller
             });
         }
 
+        $stats = [
+            'total' => (int) Bill::where('company_id', $companyId)->count(),
+            'amount' => (float) Bill::where('company_id', $companyId)
+                ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE])
+                ->selectRaw('COALESCE(SUM(amount), 0) as amt')
+                ->value('amt'),
+            'due' => (float) Bill::where('company_id', $companyId)
+                ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE])
+                ->selectRaw('COALESCE(SUM(amount), 0) - COALESCE(SUM(amount_paid), 0) as due')
+                ->value('due'),
+            'by_status' => Bill::where('company_id', $companyId)
+                ->selectRaw('status, COUNT(*) as c')
+                ->groupBy('status')
+                ->pluck('c', 'status')
+                ->toArray(),
+        ];
+
         $bills = $query->orderByDesc('bill_date')->paginate(15)->withQueryString();
 
-        return view('accounting.bills.index', compact('bills'));
+        return view('accounting.bills.index', compact('bills', 'stats'));
     }
 
     public function create(Request $request)

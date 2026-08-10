@@ -49,4 +49,9 @@ class CreditNoteLine extends Model
     {
         return $this->belongsTo(Account::class, 'income_account_id');
     }
+
+    public function getTotalAttribute(): float
+    {
+        return round((float) $this->line_total, 2);
+    }
 }

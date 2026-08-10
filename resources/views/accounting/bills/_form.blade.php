@@ -261,16 +261,16 @@
 
                     <div class="mt-4 border border-shell rounded-[14px] overflow-visible round-thead-clip bg-[#fbfcfe]">
                         <table id="bill-lines-table" class="w-full border-collapse text-[13px] table-fixed">
-                            <thead>
+                            <thead class="th-mist">
                                 <tr>
-                                    <th class="w-[13%] py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Item Code') }}</th>
-                                    <th class="w-[16%] py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Item Name') }}</th>
-                                    <th class="py-[11px] px-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Description') }}</th>
-                                    <th class="w-[8%] py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Qty') }}</th>
-                                    <th class="w-[13%] py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Unit Cost') }} ({{ $cs }})</th>
-                                    <th class="w-[8%] py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Disc %') }}</th>
-                                    <th class="w-[12%] py-[11px] px-2.5 text-right text-[10.5px] font-bold uppercase tracking-[0.08em] text-navy-200 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead">{{ __('Amount') }} ({{ $cs }})</th>
-                                    <th class="w-[8%] py-[11px] px-2.5 bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 shadow-thead"></th>
+                                    <th class="w-[13%]">{{ __('Item Code') }}</th>
+                                    <th class="w-[16%]">{{ __('Item Name') }}</th>
+                                    <th>{{ __('Description') }}</th>
+                                    <th class="w-[8%] num">{{ __('Qty') }}</th>
+                                    <th class="w-[13%] num">{{ __('Unit Cost') }} ({{ $cs }})</th>
+                                    <th class="w-[8%] num">{{ __('Disc %') }}</th>
+                                    <th class="w-[12%] num">{{ __('Amount') }} ({{ $cs }})</th>
+                                    <th class="w-[8%]"></th>
                                 </tr>
                             </thead>
                             <tbody id="bill-lines-body"></tbody>

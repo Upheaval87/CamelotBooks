@@ -275,6 +275,68 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'currency' => 'MWK',
             'created_by' => $this->user->id,
         ]);
+        $bill = \App\Models\Bill::create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'cost_center_id' => $costCenter->id,
+            'vendor_id' => $vendor->id,
+            'bill_number' => 'BILL-0001',
+            'bill_date' => now(),
+            'due_date' => now()->addDays(30),
+            'status' => \App\Models\Bill::STATUS_APPROVED,
+            'amount' => 500.00,
+            'amount_paid' => 0,
+            'created_by' => $this->user->id,
+        ]);
+        $invoiceSent = \App\Models\Invoice::create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'cost_center_id' => $costCenter->id,
+            'customer_id' => $customer->id,
+            'invoice_number' => 'INV-0002',
+            'invoice_date' => now(),
+            'due_date' => now()->addDays(30),
+            'status' => \App\Models\Invoice::STATUS_SENT,
+            'amount' => 200.00,
+            'amount_paid' => 0,
+            'created_by' => $this->user->id,
+        ]);
+        $custPay = \App\Models\CustomerPayment::create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'cost_center_id' => $costCenter->id,
+            'customer_id' => $customer->id,
+            'payment_number' => 'RCP-0001',
+            'payment_date' => now(),
+            'amount' => 200.00,
+            'payment_method' => 'bank_transfer',
+            'reference' => 'TX-REF-1',
+            'bank_account_id' => $bank->id,
+            'created_by' => $this->user->id,
+        ]);
+        \App\Models\CustomerPaymentAllocation::create([
+            'customer_payment_id' => $custPay->id,
+            'invoice_id' => $invoiceSent->id,
+            'amount' => 200.00,
+        ]);
+        $vendPay = \App\Models\VendorPayment::create([
+            'company_id' => $this->company->id,
+            'branch_id' => $branch->id,
+            'cost_center_id' => $costCenter->id,
+            'vendor_id' => $vendor->id,
+            'payment_number' => 'PYT-0001',
+            'payment_date' => now(),
+            'amount' => 500.00,
+            'payment_method' => 'bank_transfer',
+            'reference' => 'TX-REF-2',
+            'bank_account_id' => $bank->id,
+            'created_by' => $this->user->id,
+        ]);
+        \App\Models\VendorPaymentAllocation::create([
+            'vendor_payment_id' => $vendPay->id,
+            'bill_id' => $bill->id,
+            'amount' => 500.00,
+        ]);
 
         $routes = [
             'bills.create' => route('accounting.bills.create'),
@@ -288,6 +350,8 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'deposits.create' => route('accounting.deposits.create'),
             'customer-payments.create' => route('accounting.customer-payments.create'),
             'vendor-payments.create' => route('accounting.vendor-payments.create'),
+            'customer-payments.show' => route('accounting.customer-payments.show', $custPay),
+            'vendor-payments.show' => route('accounting.vendor-payments.show', $vendPay),
             'fixed-assets.create' => route('accounting.fixed-assets.create'),
             'goods-received-notes.create' => route('accounting.goods-received-notes.create'),
             'landed-costs.create' => route('accounting.landed-costs.create'),

@@ -69,6 +69,11 @@ class VendorCredit extends Model
         return $this->hasMany(VendorCreditLine::class);
     }
 
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(VendorCreditAllocation::class);
+    }
+
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
@@ -107,5 +112,25 @@ class VendorCredit extends Model
     public function scopePosted($query)
     {
         return $query->where('status', self::STATUS_POSTED);
+    }
+
+    public function getTotalAttribute(): float
+    {
+        return (float) $this->amount;
+    }
+
+    public function getSubtotalAttribute(): float
+    {
+        return (float) $this->lines->sum('amount');
+    }
+
+    public function getTaxTotalAttribute(): float
+    {
+        return (float) $this->lines->sum('tax_amount');
+    }
+
+    public function getAvailableAttribute(): float
+    {
+        return (float) $this->amount - (float) $this->amount_applied - (float) $this->amount_refunded;
     }
 }

@@ -370,6 +370,6 @@ class InvoiceController extends Controller
 
         $invoice->load(['customer', 'lines.product']);
 
-        return view('accounting.invoices.show', compact('invoice'));
+        return view('accounting.invoices.print', compact('invoice'));
     }
 }

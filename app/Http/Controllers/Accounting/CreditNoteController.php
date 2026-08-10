@@ -37,9 +37,25 @@ class CreditNoteController extends Controller
             $query->where('credit_note_date', '<=', $request->to_date);
         }
 
+        $stats = [
+            'total' => (int) CreditNote::where('company_id', $companyId)->count(),
+            'amount' => (float) CreditNote::where('company_id', $companyId)
+                ->where('status', '!=', CreditNote::STATUS_VOID)
+                ->selectRaw('COALESCE(SUM(amount), 0) as amt')
+                ->value('amt'),
+            'applied' => (float) CreditNote::where('company_id', $companyId)
+                ->selectRaw('COALESCE(SUM(amount_applied), 0) as amt')
+                ->value('amt'),
+            'by_status' => CreditNote::where('company_id', $companyId)
+                ->selectRaw('status, COUNT(*) as c')
+                ->groupBy('status')
+                ->pluck('c', 'status')
+                ->toArray(),
+        ];
+
         $creditNotes = $query->orderByDesc('credit_note_date')->paginate(15)->withQueryString();
 
-        return view('accounting.credit-notes.index', compact('creditNotes'));
+        return view('accounting.credit-notes.index', compact('creditNotes', 'stats'));
     }
 
     public function create(?int $invoiceId = null)
