@@ -30,6 +30,12 @@ class AccountController extends Controller
 
         $accounts = $query->orderBy('code')->get();
 
+        $stats = [
+            'total' => (int) $accounts->count(),
+            'active' => (int) $accounts->where('is_active', true)->count(),
+            'inactive' => (int) $accounts->where('is_active', false)->count(),
+        ];
+
         $topLevel = $accounts->whereNull('parent_id')->values();
 
         $grouped = $topLevel->groupBy('type');
@@ -42,7 +48,7 @@ class AccountController extends Controller
             'expense' => 'Expenses',
         ];
 
-        return view('accounting.accounts.index', compact('grouped', 'typeLabels', 'accounts'));
+        return view('accounting.accounts.index', compact('grouped', 'typeLabels', 'accounts', 'stats'));
     }
 
     public function create()

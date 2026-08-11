@@ -1,147 +1,143 @@
 <x-app-layout>
-    @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-list-header title="{{ __('New Journal Entry') }}" />
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+    @endphp
 
-    <div class="py-6">
+    <div class="suite pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            
 
-            <div class="form-page">
-                <div class="form-page-main">
-            <form id="journalForm" method="POST" action="{{ route('accounting.journal-entries.store') }}">
-                @csrf
+            {{-- sticky head --}}
+            <div class="sticky-head">
+                <div>
+                    <h1>{{ __('New Journal Entry') }}</h1>
+                    <div class="sub">{{ __('Post a manual journal entry to the general ledger.') }}</div>
+                </div>
+                <div class="tbtns">
+                    <span id="balanceStatusPill" class="badge"></span>
+                    <a href="{{ route('accounting.journal-entries.index') }}" class="btn ghost">{{ __('Cancel') }}</a>
+                    <button type="submit" form="journalForm" onclick="document.getElementById('actionInput').value='save_draft'" class="btn ghost">{{ __('Save as Draft') }}</button>
+                    <button type="submit" form="journalForm" onclick="document.getElementById('actionInput').value='post'" class="btn cta">{{ __('Post') }}</button>
+                </div>
+            </div>
 
-                <input type="hidden" name="action" id="actionInput" value="">
+            <div class="shell">
+                <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
 
-                <x-toolbar class="mb-6">
-                    <button type="submit" onclick="document.getElementById('actionInput').value='save_draft'" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-atlas-navy/20 text-atlas-navy text-sm font-medium rounded-md hover:bg-gray-50 transition-colors">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                        Save as Draft
-                    </button>
-                    <button type="submit" onclick="document.getElementById('actionInput').value='post'" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-atlas-amber text-atlas-navy text-sm font-medium rounded-md hover:brightness-110 transition-colors">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Post
-                    </button>
+                    <form id="journalForm" method="POST" action="{{ route('accounting.journal-entries.store') }}" novalidate>
+                        @csrf
+                        <input type="hidden" name="action" id="actionInput" value="">
 
-                    <span class="w-px h-5 bg-gray-200 mx-1" role="separator"></span>
+                        <x-input-error :messages="$errors->get('error')" class="mb-4" />
 
-                    <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent text-atlas-navy/70 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                        Attach File
-                    </button>
-
-                    <span class="w-px h-5 bg-gray-200 mx-1" role="separator"></span>
-
-                    <span id="balanceStatusPill" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md">
-                    </span>
-
-                    <x-slot name="right">
-                        <x-dropdown align="right" width="48">
-                            <x-slot name="trigger">
-                                <button type="button" class="inline-flex items-center justify-center w-7 h-7 bg-transparent text-atlas-navy/50 rounded-md hover:bg-gray-100 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                                </button>
-                            </x-slot>
-                            <x-slot name="content">
-                                <div class="py-1">
-                                    <button type="button" onclick="clearAllLines()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        Clear All Lines
-                                    </button>
-                                    <button type="button" onclick="resetForm()" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        Reset Form
-                                    </button>
+                        {{-- entry details --}}
+                        <section class="card card-sec">
+                            <div class="sec-head">
+                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg></span>
+                                <h2>{{ __('Entry Details') }}</h2>
+                                <span class="rule"></span>
+                            </div>
+                            <div class="g4">
+                                <div class="field">
+                                    <label for="date">{{ __('Date') }} <span class="req">*</span></label>
+                                    <input type="date" id="date" name="date" class="input" value="{{ old('date', date('Y-m-d')) }}" required />
+                                    <x-input-error :messages="$errors->get('date')" class="mt-2" />
                                 </div>
-                            </x-slot>
-                        </x-dropdown>
-                    </x-slot>
-                </x-toolbar>
+                                <div class="field">
+                                    <label for="reference">{{ __('Reference') }}</label>
+                                    <input type="text" id="reference" name="reference" class="input" value="{{ old('reference') }}" placeholder="e.g. Invoice #, Receipt #" />
+                                    <x-input-error :messages="$errors->get('reference')" class="mt-2" />
+                                </div>
+                                <div class="field">
+                                    <label for="branch_id">{{ __('Branch') }}</label>
+                                    <x-scoped-search-field
+                                        name="branch_id"
+                                        entity="branch"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                        :value="old('branch_id')"
+                                        :label="old('branch_id') ? ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '') : ''"
+                                        placeholder="{{ __('Search branches...') }}"
+                                    />
+                                    <x-input-error :messages="$errors->get('branch_id')" class="mt-2" />
+                                </div>
+                                <div class="field" style="display:flex;align-items:flex-end">
+                                    <label class="flex items-center" style="margin-bottom:10px;gap:8px;text-transform:none;letter-spacing:0">
+                                        <input type="checkbox" name="is_adjusting_entry" value="1" {{ old('is_adjusting_entry') ? 'checked' : '' }} style="width:15px;height:15px;accent-color:var(--sec,#128F8E)" />
+                                        <span style="font-size:13px;font-weight:600;color:var(--ink,#0B2A2D)">{{ __('Adjusting Entry') }}</span>
+                                    </label>
+                                </div>
+                                <div class="field sp3">
+                                    <label for="memo">{{ __('Description') }}</label>
+                                    <textarea id="memo" name="memo" rows="2" class="input" style="min-height:80px">{{ old('memo') }}</textarea>
+                                    <x-input-error :messages="$errors->get('memo')" class="mt-2" />
+                                </div>
+                            </div>
+                        </section>
 
-                <div class="card p-6 mb-6">
-                    <x-form.section number="01" :title="__('Entry Details')" />
-                    <div class="grid grid-cols-4 gap-6">
-                        <div>
-                            <x-input-label for="date" value="{{ __('Date') }}" />
-                            <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', date('Y-m-d'))" required />
-                            <x-input-error :messages="$errors->get('date')" class="mt-2" />
-                        </div>
-                        <div>
-                            <x-input-label for="reference" value="{{ __('Reference') }}" />
-                            <x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference')" placeholder="e.g. Invoice #, Receipt #" />
-                            <x-input-error :messages="$errors->get('reference')" class="mt-2" />
-                        </div>
-                        <div>
-                            <x-input-label for="branch_id" value="{{ __('Branch') }}" />
-                            <x-scoped-search-field
-                                name="branch_id"
-                                entity="branch"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
-                                :value="old('branch_id')"
-                                :label="old('branch_id') ? ($branches->firstWhere('id', (int) old('branch_id'))?->name ?? '') : ''"
-                                placeholder="{{ __('Search branches...') }}"
-                            />
-                            <x-input-error :messages="$errors->get('branch_id')" class="mt-2" />
-                        </div>
-                        <div class="flex items-end pb-1">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="is_adjusting_entry" value="1" {{ old('is_adjusting_entry') ? 'checked' : '' }} class="rounded border-gray-300 text-gold-700 focus:ring-gold-500" />
-                                <span class="ml-2 text-sm text-gray-600">{{ __('Adjusting Entry') }}</span>
-                            </label>
-                        </div>
-                        <div class="col-span-4">
-                            <x-input-label for="memo" value="{{ __('Description') }}" />
-                            <textarea id="memo" name="memo" rows="2" class="input mt-1">{{ old('memo') }}</textarea>
-                            <x-input-error :messages="$errors->get('memo')" class="mt-2" />
-                        </div>
-                    </div>
+                        {{-- lines --}}
+                        <section class="card card-sec">
+                            <div class="sec-head">
+                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/></svg></span>
+                                <h2>{{ __('Lines') }}</h2>
+                                <span class="rule"></span>
+                                <button type="button" onclick="clearAllLines()" class="btn ghost btn-sm">{{ __('Clear All Lines') }}</button>
+                                <button type="button" onclick="resetForm()" class="btn ghost btn-sm">{{ __('Reset Form') }}</button>
+                                <button type="button" id="addLineBtn" class="btn btn-sec btn-sm">+ {{ __('Add Line') }}</button>
+                            </div>
+
+                            <div class="li-wrap" style="margin-top:16px">
+                                <table id="linesTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:4%">#</th>
+                                            <th style="width:24%">{{ __('Account') }}</th>
+                                            <th class="num" style="width:13%">{{ __('Dr') }} ({{ $cs }})</th>
+                                            <th class="num" style="width:13%">{{ __('Cr') }} ({{ $cs }})</th>
+                                            <th style="width:20%">{{ __('Description') }}</th>
+                                            <th style="width:18%">{{ __('Branch') }}</th>
+                                            <th style="width:8%"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="linesBody">
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2" style="text-align:right;font-weight:700;color:var(--muted,#5F7476)">{{ __('Totals') }}</td>
+                                            <td class="numr" style="font-weight:800" id="totalDebit">0.00</td>
+                                            <td class="numr" style="font-weight:800" id="totalCredit">0.00</td>
+                                            <td colspan="3" style="text-align:right" id="balanceIndicator"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <x-input-error :messages="$errors->get('lines')" class="mt-2" />
+                        </section>
+                    </form>
+
                 </div>
 
-                <div class="card p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <x-form.section number="02" :title="__('Lines')" />
-                        <button type="button" id="addLineBtn" class="inline-flex items-center px-3 py-1 bg-gold-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gold-700 focus:bg-gold-600 active:bg-gold-800 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            + {{ __('Add Line') }}
-                        </button>
+                {{-- rail --}}
+                <aside class="railsum">
+                    <div class="card">
+                        <div class="rail-sec">
+                            <div class="sec-head">
+                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg></span>
+                                <h2>{{ __('Quick Nav') }}</h2>
+                                <span class="rule"></span>
+                            </div>
+                            <div class="vlist">
+                                <a href="{{ route('accounting.accounts.index') }}" class="vitem">
+                                    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/></svg></span>
+                                    {{ __('Chart of Accounts') }}
+                                </a>
+                                <a href="{{ route('accounting.journal-entries.index') }}" class="vitem">
+                                    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+                                    {{ __('Journal Entries List') }}
+                                </a>
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200" id="linesTable">
-                            <thead>
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">#</th>
-                                    <th>Account</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Dr ({{ $cs }})</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Cr ({{ $cs }})</th>
-                                    <th>Description</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Branch</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="linesBody" class="bg-white divide-y divide-gray-200">
-                            </tbody>
-                            <tfoot class="bg-gray-50">
-                                <tr>
-                                    <td colspan="2" class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Totals</td>
-                                    <td class="px-4 py-3 text-right text-sm font-bold text-gray-900" id="totalDebit">0.00</td>
-                                    <td class="px-4 py-3 text-right text-sm font-bold text-gray-900" id="totalCredit">0.00</td>
-                                    <td colspan="3" class="px-4 py-3 text-right text-sm" id="balanceIndicator"></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    <x-input-error :messages="$errors->get('lines')" class="mt-2" />
-                </div>
-            </form>
-                </div>
-
-                <x-form.quick-actions :title="__('Quick Actions')" :groups="[
-                    ['label' => __('View'), 'links' => [
-                        ['title' => __('Chart of Accounts'), 'route' => route('accounting.accounts.index'), 'icon' => 'user'],
-                        ['title' => __('Journal Entries List'), 'route' => route('accounting.journal-entries.index'), 'icon' => 'list'],
-                    ]],
-                ]" />
+                </aside>
             </div>
         </div>
     </div>
@@ -149,6 +145,7 @@
     <script>
         const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
         const BRANCH_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'branch']));
+        const CURRENCY_SYMBOL = @json($cs);
         let lineIndex = 0;
 
         function addLine() {
@@ -156,8 +153,8 @@
             const tr = document.createElement('tr');
             tr.setAttribute('data-index', lineIndex);
             tr.innerHTML =
-                '<td class="text-ink-soft">' + (tbody.rows.length + 1) + '</td>' +
-                '<td class="px-4 py-2">' +
+                '<td style="font-weight:600;color:var(--muted,#5F7476)">' + (tbody.rows.length + 1) + '</td>' +
+                '<td style="padding:10px 6px">' +
                     scopedSearchFieldHtml({
                         name: 'lines[' + lineIndex + '][account_id]',
                         entity: 'account',
@@ -168,16 +165,10 @@
                         required: true,
                     }) +
                 '</td>' +
-                '<td class="px-4 py-2">' +
-                    '<input type="number" name="lines[' + lineIndex + '][debit]" step="0.01" min="0" value="0" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right debit-input" />' +
-                '</td>' +
-                '<td class="px-4 py-2">' +
-                    '<input type="number" name="lines[' + lineIndex + '][credit]" step="0.01" min="0" value="0" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm text-right credit-input" />' +
-                '</td>' +
-                '<td class="px-4 py-2">' +
-                    '<input type="text" name="lines[' + lineIndex + '][memo]" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm" />' +
-                '</td>' +
-                '<td class="px-4 py-2">' +
+                '<td style="padding:10px 6px"><input type="number" name="lines[' + lineIndex + '][debit]" step="0.01" min="0" value="0" class="input text-right debit-input" /></td>' +
+                '<td style="padding:10px 6px"><input type="number" name="lines[' + lineIndex + '][credit]" step="0.01" min="0" value="0" class="input text-right credit-input" /></td>' +
+                '<td style="padding:10px 6px"><input type="text" name="lines[' + lineIndex + '][memo]" class="input" /></td>' +
+                '<td style="padding:10px 6px">' +
                     scopedSearchFieldHtml({
                         name: 'lines[' + lineIndex + '][branch_id]',
                         entity: 'branch',
@@ -187,9 +178,7 @@
                         placeholder: 'Use header branch',
                     }) +
                 '</td>' +
-                '<td class="px-4 py-2 text-center">' +
-                    '<button type="button" onclick="removeLine(this)" class="text-red-600 hover:text-red-900 text-sm">&times;</button>' +
-                '</td>';
+                '<td style="padding:10px 6px;text-align:center"><button type="button" onclick="removeLine(this)" class="ibtn del" title="Remove line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></td>';
             tbody.appendChild(tr);
             lineIndex++;
             attachInputListeners();
@@ -235,15 +224,15 @@
             if (totalDebit === 0 && totalCredit === 0) {
                 indicator.innerHTML = '';
                 pill.innerHTML = '';
-                pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md';
+                pill.className = 'badge';
             } else if (diff < 0.005) {
-                indicator.innerHTML = '<span class="text-green-600 font-semibold">Balanced</span>';
-                pill.innerHTML = '<svg class="w-4 h-4 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Balanced';
-                pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-green-50 text-green-700';
+                indicator.innerHTML = '<span class="badge b-post" style="display:inline-flex;align-items:center;gap:6px"><span class="bdot"></span>Balanced</span>';
+                pill.innerHTML = '<span class="bdot"></span>Balanced';
+                pill.className = 'badge b-post';
             } else {
-                indicator.innerHTML = '<span class="text-red-600 font-semibold">Out of balance: ' + diff.toFixed(2) + '</span>';
-                pill.innerHTML = '<svg class="w-4 h-4 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Out of Balance: ' + window.currencySymbol + diff.toFixed(2);
-                pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-red-50 text-red-700';
+                indicator.innerHTML = '<span class="badge b-red" style="display:inline-flex;align-items:center;gap:6px"><span class="bdot"></span>Out of balance: ' + CURRENCY_SYMBOL + diff.toFixed(2) + '</span>';
+                pill.innerHTML = '<span class="bdot"></span>Out of balance: ' + CURRENCY_SYMBOL + diff.toFixed(2);
+                pill.className = 'badge b-red';
             }
         }
 

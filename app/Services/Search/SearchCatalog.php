@@ -17,6 +17,7 @@ use App\Models\Invoice;
 use App\Models\PayrollRun;
 use App\Models\Product;
 use App\Models\Quotation;
+use App\Models\SalesOrder;
 use App\Models\SalesReceipt;
 use App\Models\User;
 use App\Models\Vendor;
@@ -54,6 +55,7 @@ class SearchCatalog
             $this->bill(),
             $this->salesReceipt(),
             $this->quotation(),
+            $this->salesOrder(),
             $this->creditNote(),
             $this->vendorCredit(),
         ];
@@ -592,6 +594,38 @@ class SearchCatalog
                         'label' => $qo->quotation_number,
                         'subtitle' => collect([$qo->customer?->name, $qo->quotation_date?->format('M d, Y'), $qo->status])->filter()->implode(' · '),
                         'url' => route('accounting.quotations.show', $qo->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function salesOrder(): array
+    {
+        return [
+            'key' => 'sales-order',
+            'label' => 'Sales Orders',
+            'permission' => 'sales-orders.view',
+            'feature' => null,
+            'icon' => 'tag',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return SalesOrder::forCompany($companyId)
+                    ->with('customer:id,name')
+                    ->select(['id', 'sales_order_number', 'order_date', 'status', 'customer_id', 'reference'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('sales_order_number', 'like', "%{$q}%")
+                                ->orWhere('reference', 'like', "%{$q}%")
+                                ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$q}%"));
+                        });
+                    })
+                    ->orderByDesc('order_date')->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (SalesOrder $o) => [
+                        'id' => $o->id,
+                        'label' => $o->sales_order_number,
+                        'subtitle' => collect([$o->customer?->name, $o->order_date?->format('M d, Y'), $o->status])->filter()->implode(' · '),
+                        'url' => route('accounting.sales-orders.show', $o->id),
                     ])->values();
             },
         ];

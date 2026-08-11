@@ -1,104 +1,100 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Bank Reconciliation') }} — {{ $bankAccount->name ?? '' }}">
-        <x-button variant="ghost" href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id ?? '') }}">{{ __('Import Statement') }}</x-button>
-        <x-button variant="ghost" href="{{ route('accounting.bank-accounts.index') }}">{{ __('Back to Accounts') }}</x-button>
-    </x-list-header>
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+        $inProgress = $reconciliations->getCollection()->where('status', 'in_progress')->count();
+        $completed = $reconciliations->getCollection()->where('status', 'completed')->count();
+    @endphp
 
-    <div class="py-6">
+    <div class="suite pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            
 
-            
-
-            @if(!isset($bankAccount) || !$bankAccount)
-                <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <form method="GET" onsubmit="event.preventDefault(); var v = document.querySelector('input[name=&quot;bank_account_id&quot;]').value; if(v) window.location.href = '{{ url('accounting/bank-reconciliation') }}/' + v;" class="flex items-end gap-4">
-                        <div class="flex-1">
-                            <x-input-label for="bank_account_id" value="{{ __('Bank Account') }}" />
-                            <x-scoped-search-field
-                                name="bank_account_id"
-                                entity="bank-account"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
-                                :value="request('bank_account_id')"
-                                :label="request('bank_account_id') ? ($bankAccounts->firstWhere('id', (int) request('bank_account_id'))?->name ?? '') : ''"
-                                placeholder="{{ __('Search bank accounts...') }}"
-                                required
-                            />
-                        </div>
-                        <x-primary-button type="submit">{{ __('Select') }}</x-primary-button>
-                    </form>
+            <div class="page-head">
+                <div>
+                    <h1>{{ __('Bank Reconciliation') }} <span class="mono-chip">{{ $bankAccount->code }}</span></h1>
+                    <div class="sub">{{ $bankAccount->name }}</div>
                 </div>
-            @endif
-
-            @if(isset($bankAccount) && $bankAccount)
-                <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800">{{ __('Start New Reconciliation') }}</h3>
-                            <p class="text-sm text-gray-500 mt-1">Book balance: {{ format_money($bankAccount->current_balance) }}</p>
-                        </div>
-                        <a href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id) }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Start Reconciliation') }}
-                        </a>
-                    </div>
+                <div class="tbtns">
+                    <a href="{{ route('accounting.bank-reconciliation.import-form', $bankAccount->id) }}" class="btn cta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        {{ __('Import Statement') }}
+                    </a>
+                    <a href="{{ route('accounting.bank-accounts.index') }}" class="btn btn-ghost">{{ __('Back to Accounts') }}</a>
                 </div>
+            </div>
 
-                <div class="datasheet-wrap">
-                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                        <h3 class="text-lg font-semibold text-gray-800">{{ __('Reconciliation History') }}</h3>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="datasheet">
-                            <thead>
+            <div class="sgrid">
+                <div class="sbox">
+                    <div class="l">{{ __('Book Balance') }} ({{ $cs }})</div>
+                    <div class="v">{{ format_number($bankAccount->current_balance) }}</div>
+                </div>
+                <div class="sbox">
+                    <div class="l">{{ __('Reconciliations') }}</div>
+                    <div class="v">{{ $reconciliations->total() }}</div>
+                </div>
+                <div class="sbox">
+                    <div class="l">{{ __('In Progress') }}</div>
+                    <div class="v t-teal">{{ $inProgress }}</div>
+                </div>
+                <div class="sbox">
+                    <div class="l">{{ __('Completed') }}</div>
+                    <div class="v t-mint">{{ $completed }}</div>
+                </div>
+            </div>
+
+            <section class="card card-sec" style="margin-top:16px">
+                <div class="sec-head">
+                    <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg></span>
+                    <h2>{{ __('Reconciliation History') }}</h2>
+                    <span class="rule"></span>
+                </div>
+                <div class="li-wrap" style="margin-top:0">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ __('Statement Date') }}</th>
+                                <th class="num">{{ __('Statement Balance') }} ({{ $cs }})</th>
+                                <th class="num">{{ __('Cleared Balance') }} ({{ $cs }})</th>
+                                <th>{{ __('Status') }}</th>
+                                <th class="num">{{ __('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($reconciliations as $reconciliation)
                                 <tr>
-                                    <th>Period</th>
-                                    <th>Statement Date</th>
-                                    <th class="text-right">Statement Balance</th>
-                                    <th class="text-right">Cleared Balance</th>
-                                    <th class="text-center">Status</th>
-                                    <th class="text-right">Actions</th>
+                                    <td class="em">{{ $reconciliation->statement_date?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="numr">{{ format_number($reconciliation->statement_balance) }}</td>
+                                    <td class="numr">{{ format_number($reconciliation->cleared_balance) }}</td>
+                                    <td>
+                                        @if($reconciliation->status === 'completed')
+                                            <span class="badge b-post"><span class="bdot"></span>{{ __('Completed') }}</span>
+                                        @elseif($reconciliation->status === 'in_progress')
+                                            <span class="badge b-teal"><span class="bdot"></span>{{ __('In Progress') }}</span>
+                                        @else
+                                            <span class="badge b-gray"><span class="bdot"></span>{{ ucfirst(str_replace('_', ' ', $reconciliation->status)) }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="num" style="white-space:nowrap">
+                                        <a href="{{ route('accounting.bank-reconciliation.show', $reconciliation) }}" class="btn ghost sm">{{ __('View') }}</a>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($reconciliations as $reconciliation)
-                                    <tr>
-                                        <td>
-                                            {{ $reconciliation->start_date?->format('M d, Y') }} — {{ $reconciliation->end_date?->format('M d, Y') }}
-                                        </td>
-                                        <td class="text-ink-soft">
-                                            {{ $reconciliation->statement_date?->format('M d, Y') ?? '—' }}
-                                        </td>
-                                        <td class="numeric">
-                                            {{ format_money($reconciliation->statement_balance) }}
-                                        </td>
-                                        <td class="numeric">
-                                            {{ format_money($reconciliation->cleared_balance) }}
-                                        </td>
-                                        <td class="text-center">
-                                            @if($reconciliation->status === 'completed')
-                                                <span class="status-pill positive">Completed</span>
-                                            @elseif($reconciliation->status === 'in_progress')
-                                                <span class="status-pill neutral">In Progress</span>
-                                            @else
-                                                <span class="status-pill neutral">{{ ucfirst($reconciliation->status) }}</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-right">
-                                            <a href="{{ route('accounting.bank-reconciliation.show', $reconciliation) }}" class="text-ink hover:text-gold">View</a>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center text-ink-soft">
-                                            No reconciliations found.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                            @empty
+                                <tr>
+                                    <td colspan="6"><div class="empty">No reconciliations found. Import a statement to begin.</div></td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            @endif
+                @if($reconciliations->hasPages())
+                    <div class="pagi">
+                        <span class="t">{{ __('Showing') }} {{ $reconciliations->firstItem() }}–{{ $reconciliations->lastItem() }} {{ __('of') }} {{ $reconciliations->total() }} {{ __('reconciliations') }}</span>
+                        <div style="display:flex;gap:8px">
+                            <a href="{{ $reconciliations->appends(request()->query())->previousPageUrl() }}" class="btn btn-ghost btn-sm @if($reconciliations->onFirstPage())" style="opacity:.45;pointer-events:none" aria-disabled="true @endif" aria-label="{{ __('Previous') }}">← {{ __('Prev') }}</a>
+                            <a href="{{ $reconciliations->appends(request()->query())->nextPageUrl() }}" class="btn btn-ghost btn-sm @if(!$reconciliations->hasMorePages())" style="opacity:.45;pointer-events:none" aria-disabled="true @endif" aria-label="{{ __('Next') }}">{{ __('Next') }} →</a>
+                        </div>
+                    </div>
+                @endif
+            </section>
         </div>
     </div>
 </x-app-layout>

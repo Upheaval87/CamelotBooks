@@ -88,6 +88,17 @@ class GeneralLedgerController extends Controller
             'query' => $request->query(),
         ]);
 
+        $glStats = [
+            'transactions' => count($glData),
+            'accounts' => count($runningBalances),
+            'debit' => 0.0,
+            'credit' => 0.0,
+        ];
+        foreach ($sortedLines as $line) {
+            $glStats['debit'] += (float) $line->debit;
+            $glStats['credit'] += (float) $line->credit;
+        }
+
         $accounts = Account::where('company_id', $companyId)
             ->active()
             ->orderBy('code')
@@ -103,7 +114,7 @@ class GeneralLedgerController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.general-ledger.index', compact('glPaginator', 'accounts', 'branches', 'costCenters'));
+        return view('accounting.general-ledger.index', compact('glPaginator', 'glStats', 'accounts', 'branches', 'costCenters'));
     }
 
     public function account(Request $request, int $accountId)
@@ -154,6 +165,15 @@ class GeneralLedgerController extends Controller
 
         $closingBalance = $runningBalance;
 
+        $accountStats = [
+            'debit' => 0.0,
+            'credit' => 0.0,
+        ];
+        foreach ($lines as $line) {
+            $accountStats['debit'] += (float) $line->debit;
+            $accountStats['credit'] += (float) $line->credit;
+        }
+
         $transactionsPaginator = new LengthAwarePaginator($transactions, count($transactions), 50, $request->page, [
             'path' => $request->url(),
             'query' => $request->query(),
@@ -174,6 +194,7 @@ class GeneralLedgerController extends Controller
             'openingBalance',
             'transactionsPaginator',
             'closingBalance',
+            'accountStats',
             'branches',
             'costCenters'
         ));

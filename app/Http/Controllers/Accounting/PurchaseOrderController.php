@@ -12,11 +12,16 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Models\PurchaseRequisition;
 use App\Models\Vendor;
+use App\Services\Accounting\BillService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderController extends Controller
 {
+    public function __construct(protected BillService $billService)
+    {
+    }
+
     public function index(Request $request)
     {
         $companyId = session('current_company_id');
@@ -30,7 +35,12 @@ class PurchaseOrderController extends Controller
 
         $orders = $query->orderByDesc('date')->paginate(15)->withQueryString();
 
-        return view('accounting.purchase-orders.index', compact('orders'));
+        $stats = PurchaseOrder::where('company_id', $companyId)
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        return view('accounting.purchase-orders.index', compact('orders', 'stats'));
     }
 
     public function create(Request $request)
@@ -305,6 +315,81 @@ class PurchaseOrderController extends Controller
 
         return redirect()->route('accounting.purchase-orders.show', $purchaseOrder)
             ->with('success', 'Purchase order cancelled.');
+    }
+
+    /**
+     * Convert a received purchase order into a draft vendor bill.
+     *
+     * Bills only the received-but-unbilled quantity of each line
+     * (quantity_received - quantity_billed) using the existing BillService,
+     * so the draft bill can be reviewed before posting.
+     */
+    public function convert(PurchaseOrder $purchaseOrder)
+    {
+        $this->requirePermission('bills.create');
+        $companyId = session('current_company_id');
+        abort_unless($purchaseOrder->company_id == $companyId, 403);
+
+        if (!in_array($purchaseOrder->status, [
+            PurchaseOrder::STATUS_SENT,
+            PurchaseOrder::STATUS_PARTIALLY_RECEIVED,
+            PurchaseOrder::STATUS_FULLY_RECEIVED,
+        ])) {
+            return redirect()->route('accounting.purchase-orders.show', $purchaseOrder)
+                ->withErrors(['error' => 'Only sent or received purchase orders can be converted to a bill.']);
+        }
+
+        $purchaseOrder->load(['vendor', 'lines']);
+
+        $lines = [];
+
+        foreach ($purchaseOrder->lines as $line) {
+            $billable = round((float) $line->quantity_received - (float) $line->quantity_billed, 2);
+
+            if ($billable <= 0) {
+                continue;
+            }
+
+            $lines[] = [
+                'product_id' => $line->product_id,
+                'description' => $line->description,
+                'quantity' => $billable,
+                'unit_price' => $line->unit_price,
+                'expense_account_id' => $line->expense_account_id,
+                'cost_center_id' => $line->cost_center_id,
+                'purchase_order_line_id' => $line->id,
+            ];
+        }
+
+        if (empty($lines)) {
+            return redirect()->route('accounting.purchase-orders.show', $purchaseOrder)
+                ->withErrors(['error' => 'There are no received quantities left to bill on this purchase order.']);
+        }
+
+        $days = max(1, (int) ($purchaseOrder->vendor->payment_terms_days ?? 30));
+
+        try {
+            $bill = $this->billService->create([
+                'company_id' => $companyId,
+                'vendor_id' => $purchaseOrder->vendor_id,
+                'purchase_order_id' => $purchaseOrder->id,
+                'branch_id' => $purchaseOrder->branch_id,
+                'cost_center_id' => $purchaseOrder->cost_center_id,
+                'bill_date' => now()->toDateString(),
+                'due_date' => now()->addDays($days)->toDateString(),
+                'po_number' => $purchaseOrder->po_number,
+                'reference' => 'From ' . $purchaseOrder->po_number,
+                'memo' => 'Bill generated from purchase order ' . $purchaseOrder->po_number,
+                'currency' => 'USD',
+                'lines' => $lines,
+            ], auth()->id());
+
+            return redirect()->route('accounting.bills.show', $bill)
+                ->with('success', 'Draft bill created from purchase order. Review it before posting.');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('accounting.purchase-orders.show', $purchaseOrder)
+                ->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
     protected function generatePoNumber(int $companyId): string

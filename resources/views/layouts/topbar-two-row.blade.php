@@ -49,6 +49,7 @@
             'children' => [
                 ['label' => __('Customers'),      'route' => 'accounting.customers.index'],
                 ['label' => __('Quotations'),     'route' => 'accounting.quotations.index'],
+                ['label' => __('Sales Orders'),   'route' => 'accounting.sales-orders.index'],
                 ['label' => __('Invoices'),       'route' => 'accounting.invoices.index'],
                 ['label' => __('Sales Receipts'), 'route' => 'accounting.sales-receipts.index'],
                 ['label' => __('Credit Notes'),   'route' => 'accounting.credit-notes.index'],

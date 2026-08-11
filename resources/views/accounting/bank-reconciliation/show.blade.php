@@ -1,286 +1,247 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Reconciliation') }} — {{ $reconciliation->bankAccount->name ?? '' }}" />
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+        $diff = (float) ($summary['difference'] ?? 0);
+        $completed = $reconciliation->status === 'completed';
+    @endphp
 
-    <div class="pb-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <x-record-toolbar>
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Record') }}</span>
-                    <a href="{{ route('accounting.bank-reconciliation.create', $reconciliation->bank_account_id) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        {{ __('New') }}
-                    </a>
-                    @if($reconciliation->status === 'in_progress')
-                        <form method="POST" action="{{ route('accounting.bank-reconciliation.complete', $reconciliation) }}" class="inline">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="tr-save" {{ $reconciliation->difference != 0 ? 'disabled' : '' }}>
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                {{ __('Save') }}
-                            </button>
-                        </form>
+    <div class="suite pb-6">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+
+            <div class="sticky-head">
+                <div>
+                    <h1>{{ __('Reconciliation') }} <span class="mono-chip">#{{ $reconciliation->id }}</span></h1>
+                    <div class="sub">{{ $reconciliation->bankAccount->name ?? '' }} · {{ $reconciliation->statement_date?->format('M d, Y') ?? '' }}</div>
+                </div>
+                <div class="tbtns">
+                    @if(!$completed)
+                        <button type="button" class="btn btn-sec" onclick="suggestMatches()">{{ __('Suggest Matches') }}</button>
+                        <a href="{{ route('accounting.bank-reconciliation.import-form', $reconciliation->bank_account_id) }}" class="btn btn-ghost">{{ __('Import Statement') }}</a>
+                        <button type="submit" form="complete-form" class="btn cta" {{ $diff != 0 ? 'disabled' : '' }}>{{ __('Complete') }}</button>
                     @endif
-                    <a href="{{ route('accounting.bank-reconciliation.import-form', $reconciliation->bank_account_id) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                        {{ __('Import Statement') }}
-                    </a>
+                    <button onclick="window.print()" class="btn btn-ghost">{{ __('Print') }}</button>
+                    <a href="{{ route('accounting.bank-reconciliation.index', $reconciliation->bank_account_id) }}" class="btn btn-ghost">{{ __('Back') }}</a>
                 </div>
-
-                <div class="tr-divider"></div>
-
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Reference') }}</span>
-                    <a href="{{ route('accounting.accounts.show', $reconciliation->bank_account_id) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                        {{ __('View Register') }}
-                    </a>
-                    <a href="{{ route('accounting.reports.bank-reconciliation-history') }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                        {{ __('Reconciliation Report') }}
-                    </a>
-                </div>
-
-                <div class="tr-divider"></div>
-
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Document') }}</span>
-                    <button onclick="window.print()" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        {{ __('Print') }}
-                    </button>
-                    <button type="button" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        {{ __('Export CSV') }}
-                    </button>
-                </div>
-
-                <div class="tr-spacer"></div>
-
-                <span id="differencePill" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md {{ $reconciliation->difference == 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }}">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    {{ __('Difference') }}: {{ format_money($reconciliation->difference) }}
-                </span>
-                @if($reconciliation->difference != 0)
-                    <p class="text-xs text-ink-soft ml-2">{{ __('Complete when difference is 0.00') }}</p>
-                @endif
-            </x-record-toolbar>
-
-            
-
-            
-
-            <div class="detail-page">
-                <div class="detail-page-main">
-                    <div class="grid grid-cols-4 gap-6">
-                        <div class="card p-4">
-                            <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Statement Balance') }}</p>
-                            <p class="mt-1 text-lg font-bold text-ink">{{ format_money($reconciliation->statement_balance) }}</p>
-                        </div>
-                        <div class="card p-4">
-                            <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Book Balance') }}</p>
-                            <p class="mt-1 text-lg font-bold text-ink">{{ format_money($reconciliation->book_balance) }}</p>
-                        </div>
-                        <div class="card p-4">
-                            <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Cleared Balance') }}</p>
-                            <p class="mt-1 text-lg font-bold text-ink">{{ format_money($reconciliation->cleared_balance) }}</p>
-                        </div>
-                        <div class="card p-4">
-                            <p class="text-xs font-medium text-ink-soft uppercase">{{ __('Difference') }}</p>
-                            <p class="mt-1 text-lg font-bold {{ $reconciliation->difference == 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ format_money($reconciliation->difference) }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-6">
-                        <div class="card overflow-hidden">
-                            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                                <p class="text-base font-semibold text-ink">{{ __('Unmatched Statement Lines') }}</p>
-                            </div>
-                            <div class="overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
-                                <table class="record-datasheet">
-                                    <thead class="sticky top-0">
-                                        <tr>
-                                            <th>{{ __('Date') }}</th>
-                                            <th>{{ __('Description') }}</th>
-                                            <th class="text-right">{{ __('Amount') }}</th>
-                                            <th class="text-center">{{ __('Action') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($unmatchedLines as $line)
-                                            <tr id="statement-line-{{ $line->id }}">
-                                                <td>{{ $line->transaction_date?->format('M d, Y') ?? '—' }}</td>
-                                                <td>{{ $line->description }}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-right {{ $line->amount < 0 ? 'text-red-600' : 'text-green-600' }}">
-                                                    {{ format_money(abs($line->amount)) }}
-                                                </td>
-                                                <td class="text-center">
-                                                    <button type="button" onclick="matchLine({{ $line->id }})" class="text-gold-700 hover:text-gold-800 text-sm font-medium">
-                                                        {{ __('Match') }} →
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="4" class="text-center text-ink-soft">
-                                                    {{ __('All statement lines are matched.') }}
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="card overflow-hidden">
-                            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                                <p class="text-base font-semibold text-ink">{{ __('Unreconciled Book Transactions') }}</p>
-                            </div>
-                            <div class="overflow-x-auto" style="max-height: 500px; overflow-y: auto;">
-                                <table class="record-datasheet">
-                                    <thead class="sticky top-0">
-                                        <tr>
-                                            <th>{{ __('Date') }}</th>
-                                            <th>{{ __('Description') }}</th>
-                                            <th class="text-right">{{ __('Amount') }}</th>
-                                            <th class="text-center">{{ __('Action') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($unreconciledTransactions as $transaction)
-                                            <tr id="book-transaction-{{ $transaction->id }}">
-                                                <td>{{ $transaction->transaction_date?->format('M d, Y') ?? '—' }}</td>
-                                                <td>{{ $transaction->description }}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-right {{ ($transaction->credit - $transaction->debit) < 0 ? 'text-red-600' : 'text-green-600' }}">
-                                                    {{ format_money(abs($transaction->credit - $transaction->debit)) }}
-                                                </td>
-                                                <td class="text-center">
-                                                    <button type="button" onclick="matchTransaction({{ $transaction->id }})" class="text-gold-700 hover:text-gold-800 text-sm font-medium">
-                                                        ← {{ __('Match') }}
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="4" class="text-center text-ink-soft">
-                                                    {{ __('All transactions are reconciled.') }}
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if($matchedLines->count() > 0)
-                        <div class="card overflow-hidden">
-                            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                                <p class="text-base font-semibold text-ink">{{ __('Matched Items') }}</p>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="record-datasheet">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ __('Statement Date') }}</th>
-                                            <th>{{ __('Statement Description') }}</th>
-                                            <th class="text-right">{{ __('Statement Amount') }}</th>
-                                            <th class="text-center">↔</th>
-                                            <th>{{ __('Book Description') }}</th>
-                                            <th class="text-right">{{ __('Book Amount') }}</th>
-                                            <th class="text-center">{{ __('Action') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($matchedLines as $line)
-                                            <tr>
-                                                <td>{{ $line->transaction_date?->format('M d, Y') ?? '—' }}</td>
-                                                <td>{{ $line->description }}</td>
-                                                <td class="numeric">{{ format_money(abs($line->amount)) }}</td>
-                                                <td class="px-6 py-4 text-center text-sm text-gray-400">↔</td>
-                                                <td>{{ $line->bankTransaction->description ?? '—' }}</td>
-                                                <td class="numeric">{{ format_money(abs(($line->bankTransaction->credit ?? 0) - ($line->bankTransaction->debit ?? 0))) }}</td>
-                                                <td class="text-center">
-                                                    <form method="POST" action="{{ route('accounting.bank-reconciliation.unmatch', $reconciliation->id) }}" class="inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="text-red-600 hover:text-red-900 text-sm">{{ __('Unmatch') }}</button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-                <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => [
-                        ['route' => route('accounting.bank-reconciliation.print', $reconciliation), 'icon' => 'print', 'title' => __('Print')],
-                    ]],
-                    ['label' => __('Navigation'), 'links' => [
-                        ['route' => route('accounting.bank-reconciliation.index'), 'icon' => 'back', 'title' => __('Back')],
-                    ]],
-                ]" />
             </div>
+
+            @if(!$completed)
+                <form id="complete-form" method="POST" action="{{ route('accounting.bank-reconciliation.complete', $reconciliation->id) }}" class="hidden">
+                    @csrf
+                </form>
+            @endif
+
+            <div class="sgrid">
+                <div class="sbox">
+                    <div class="l">{{ __('Statement Balance') }} ({{ $cs }})</div>
+                    <div class="v">{{ format_number($reconciliation->statement_balance) }}</div>
+                </div>
+                <div class="sbox">
+                    <div class="l">{{ __('Book Balance') }} ({{ $cs }})</div>
+                    <div class="v">{{ format_number($summary['book_balance'] ?? $reconciliation->book_balance) }}</div>
+                </div>
+                <div class="sbox">
+                    <div class="l">{{ __('Cleared Balance') }} ({{ $cs }})</div>
+                    <div class="v mint">{{ format_number($summary['cleared_balance'] ?? $reconciliation->cleared_balance) }}</div>
+                </div>
+                <div class="sbox">
+                    <div class="l">{{ __('Difference') }} ({{ $cs }})</div>
+                    <div class="v {{ $diff == 0 ? 'mint' : 'red' }}">{{ format_number($diff) }}</div>
+                </div>
+            </div>
+
+            @if($diff != 0 && !$completed)
+                <div class="q2-note-info" style="margin-top:16px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+                    {{ __('Difference must be zero before you can complete.') }} {{ __('Match outstanding statement lines or book transactions.') }}
+                </div>
+            @endif
+
+            <section class="card card-sec">
+                <div class="sec-head">
+                    <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/><path d="M9 21a3 3 0 0 1-3-3v-2h12v2a3 3 0 0 1-3 3H9z"/><path d="M9 21h6"/></svg></span>
+                    <h2>{{ __('Unmatched Statement Lines') }}</h2>
+                    <span class="rule"></span>
+                </div>
+                <div class="li-wrap" style="margin-top:0">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ __('Date') }}</th>
+                                <th>{{ __('Description') }}</th>
+                                <th class="num">{{ __('Amount') }} ({{ $cs }})</th>
+                                <th class="num">{{ __('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($unmatchedStatementLines as $line)
+                                <tr id="statement-line-{{ $line->id }}">
+                                    <td>{{ $line->transaction_date?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="em">{{ $line->description }}</td>
+                                    <td class="numr {{ $line->amount < 0 ? 'red' : '' }}">{{ format_number(abs((float) $line->amount)) }}</td>
+                                    <td class="num" style="white-space:nowrap">
+                                        <button type="button" onclick="matchLine({{ $line->id }})" class="btn ghost sm">{{ __('Match') }} →</button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4"><div class="empty">{{ __('All statement lines are matched.') }}</div></td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card card-sec">
+                <div class="sec-head">
+                    <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+                    <h2>{{ __('Unreconciled Book Transactions') }}</h2>
+                    <span class="rule"></span>
+                </div>
+                <div class="li-wrap" style="margin-top:0">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ __('Date') }}</th>
+                                <th>{{ __('Description') }}</th>
+                                <th class="num">{{ __('Amount') }} ({{ $cs }})</th>
+                                <th class="num">{{ __('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($unreconciledTransactions as $transaction)
+                                <tr id="book-transaction-{{ $transaction->id }}">
+                                    <td>{{ $transaction->date?->format('M d, Y') ?? '—' }}</td>
+                                    <td class="em">{{ $transaction->description }}</td>
+                                    <td class="numr {{ (float) $transaction->amount < 0 ? 'red' : '' }}">{{ format_number(abs((float) $transaction->amount)) }}</td>
+                                    <td class="num" style="white-space:nowrap">
+                                        <button type="button" onclick="matchTransaction({{ $transaction->id }})" class="btn ghost sm">← {{ __('Match') }}</button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4"><div class="empty">{{ __('All book transactions are reconciled.') }}</div></td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            @if($matchedItems->count() > 0)
+                <section class="card card-sec">
+                    <div class="sec-head">
+                        <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-9.33-5"/><path d="M8 6l-1-2H4v4"/><path d="M2 8a6 6 0 0 0 9.33 5"/><path d="M16 14l1 2h3v-4"/></svg></span>
+                        <h2>{{ __('Matched Items') }}</h2>
+                        <span class="rule"></span>
+                    </div>
+                    <div class="li-wrap" style="margin-top:0">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Statement Date') }}</th>
+                                    <th>{{ __('Statement Description') }}</th>
+                                    <th class="num">{{ __('Statement Amount') }} ({{ $cs }})</th>
+                                    <th class="num">↔</th>
+                                    <th>{{ __('Book Description') }}</th>
+                                    <th class="num">{{ __('Book Amount') }} ({{ $cs }})</th>
+                                    <th class="num">{{ __('Action') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($matchedItems as $item)
+                                    @php
+                                        $sLine = $item->statementLine;
+                                        $tx = $item->bankTransaction;
+                                        $txAmount = $tx ? (float) $tx->amount : 0;
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $sLine?->transaction_date?->format('M d, Y') ?? '—' }}</td>
+                                        <td class="em">{{ $sLine?->description ?? '—' }}</td>
+                                        <td class="numr {{ $sLine && $sLine->amount < 0 ? 'red' : '' }}">{{ $sLine ? format_number(abs((float) $sLine->amount)) : '—' }}</td>
+                                        <td class="num em">↔</td>
+                                        <td class="em">{{ $tx->description ?? '—' }}</td>
+                                        <td class="numr {{ $txAmount < 0 ? 'red' : '' }}">{{ format_number(abs($txAmount)) }}</td>
+                                        <td class="num" style="white-space:nowrap">
+                                            <button type="button" onclick="unmatchItem({{ $item->id }})" class="btn danger-o sm">{{ __('Unmatch') }}</button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            @endif
         </div>
     </div>
 
     <script>
+        const recMatchUrl = '{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}';
+        const recUnmatchUrl = '{{ route("accounting.bank-reconciliation.unmatch", $reconciliation->id) }}';
+        const recSuggestUrl = '{{ route("accounting.bank-reconciliation.suggest", $reconciliation->id) }}';
+
         async function matchLine(lineId) {
-            const lineRow = document.getElementById('statement-line-' + lineId);
-            const bookRows = document.querySelectorAll('#book-transaction-');
-            if (bookRows.length === 0) {
-                CB.toast('error', 'No book transactions available to match.');
-                return;
-            }
-            if (!(await CB.confirm({ type: 'action', title: 'Match this statement line with the first available book transaction?' }))) return;
-            fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    matches: [{
-                        bank_statement_line_id: lineId,
-                        amount: 0
-                    }]
-                })
-            }).then(response => response.json()).then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    CB.toast('error', data.message || 'Failed to match.');
-                }
-            });
+            const ok = await CB.confirm({ type: 'action', title: 'Match this statement line with the first available book transaction?' });
+            if (!ok) return;
+            try {
+                const res = await fetch(recMatchUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ matches: [{ bank_statement_line_id: lineId, amount: 0 }] })
+                });
+                const data = await res.json();
+                if (data.success) { location.reload(); } else { CB.toast('error', data.error || 'Failed to match.'); }
+            } catch (e) { CB.toast('error', 'Failed to match.'); }
         }
 
         async function matchTransaction(transactionId) {
-            if (!(await CB.confirm({ type: 'action', title: 'Match this book transaction with the first available statement line?' }))) return;
-            fetch('{{ route("accounting.bank-reconciliation.match", $reconciliation->id) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    matches: [{
-                        bank_transaction_id: transactionId,
-                        amount: 0
-                    }]
-                })
-            }).then(response => response.json()).then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    CB.toast('error', data.message || 'Failed to match.');
-                }
-            });
+            const ok = await CB.confirm({ type: 'action', title: 'Match this book transaction with the first available statement line?' });
+            if (!ok) return;
+            try {
+                const res = await fetch(recMatchUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ matches: [{ bank_transaction_id: transactionId, amount: 0 }] })
+                });
+                const data = await res.json();
+                if (data.success) { location.reload(); } else { CB.toast('error', data.error || 'Failed to match.'); }
+            } catch (e) { CB.toast('error', 'Failed to match.'); }
+        }
+
+        async function unmatchItem(itemId) {
+            const ok = await CB.confirm({ type: 'danger', title: 'Unmatch this pair?' });
+            if (!ok) return;
+            try {
+                const res = await fetch(recUnmatchUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ item_id: itemId })
+                });
+                const data = await res.json();
+                if (data.success) { location.reload(); } else { CB.toast('error', data.error || 'Failed to unmatch.'); }
+            } catch (e) { CB.toast('error', 'Failed to unmatch.'); }
+        }
+
+        async function suggestMatches() {
+            const ok = await CB.confirm({ type: 'action', title: 'Suggest matches for unmatched items?' });
+            if (!ok) return;
+            try {
+                const res = await fetch(recSuggestUrl, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.error) { CB.toast('error', data.error); return; }
+                if (!data.suggestions || data.suggestions.length === 0) { CB.toast('info', 'No matches suggested.'); return; }
+                const matches = data.suggestions.map(s => ({ bank_statement_line_id: s.bank_statement_line_id, bank_transaction_id: s.bank_transaction_id, amount: 0 }));
+                const mRes = await fetch(recMatchUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ matches })
+                });
+                const mData = await mRes.json();
+                if (mData.success) { CB.toast('success', data.suggestions.length + ' suggestion(s) matched.'); location.reload(); }
+                else { CB.toast('error', mData.error || 'Failed to apply suggestions.'); }
+            } catch (e) { CB.toast('error', 'Failed to suggest matches.'); }
         }
     </script>
 </x-app-layout>

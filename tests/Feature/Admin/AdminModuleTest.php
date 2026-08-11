@@ -201,7 +201,7 @@ class AdminModuleTest extends TestCase
         $service->seedDefaults($this->company->id);
 
         $count = NumberingSequence::where('company_id', $this->company->id)->count();
-        $this->assertEquals(22, $count);
+        $this->assertEquals(23, $count);
     }
 
     public function test_unique_constraint_prevents_duplicate_document_type(): void
@@ -523,7 +523,7 @@ class AdminModuleTest extends TestCase
         app(NumberingSequenceService::class)->seedDefaults($company->id);
 
         $count = NumberingSequence::where('company_id', $company->id)->count();
-        $this->assertEquals(22, $count);
+        $this->assertEquals(23, $count);
     }
 
     // =============================================

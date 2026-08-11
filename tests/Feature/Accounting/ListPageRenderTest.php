@@ -106,8 +106,8 @@ class ListPageRenderTest extends TestCase
         $routes = [
             'accounting.customers.index' => 'li-wrap',
             'accounting.vendors.index' => 'li-wrap',
-            'accounting.products.index' => 'list-table',
-            'accounting.employees.index' => 'list-table',
+            'accounting.products.index' => 'li-wrap',
+            'accounting.employees.index' => 'li-wrap',
             'accounting.invoices.index' => 'li-wrap',
             'accounting.bills.index' => 'li-wrap',
             'accounting.sales-receipts.index' => 'li-wrap',

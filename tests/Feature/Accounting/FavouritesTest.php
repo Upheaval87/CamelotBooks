@@ -203,7 +203,8 @@ class FavouritesTest extends TestCase
             ->get(route('accounting.customers.show', $customer->id))
             ->assertOk()
             ->assertSee('favourite-toggle')
-            ->assertSee('Customer Detail - Widget Co')
+            ->assertSee('Customer Detail')
+            ->assertSee('Widget Co')
             ->assertSee('Customer', false);
     }
 

@@ -32,12 +32,18 @@ class ProductController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
+        $stats = [
+            'total' => (int) Product::where('company_id', $companyId)->count(),
+            'active' => (int) Product::where('company_id', $companyId)->where('is_active', true)->count(),
+            'low_stock' => (int) InventoryStock::forCompany($companyId)->lowStock()->count(),
+        ];
+
         $products = $query->with('incomeAccount', 'expenseAccount')
             ->orderBy('name')
             ->paginate(15)
             ->withQueryString();
 
-        return view('accounting.products.index', compact('products'));
+        return view('accounting.products.index', compact('products', 'stats'));
     }
 
     public function create()

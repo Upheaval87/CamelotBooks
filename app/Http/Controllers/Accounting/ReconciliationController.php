@@ -118,7 +118,7 @@ class ReconciliationController extends Controller
             ->get();
 
         $matchedItems = BankReconciliationItem::where('reconciliation_id', $reconciliationId)
-            ->with('bankStatementLine', 'bankTransaction')
+            ->with('statementLine', 'bankTransaction')
             ->get();
 
         $summary = $this->reconciliationService->getReconciliationSummary($reconciliationId);

@@ -1,19 +1,19 @@
 @props(['name' => '', 'label' => '', 'description' => '', 'checked' => false, 'value' => '1'])
 
-<div class="settings-toggle-card">
-    <label class="settings-toggle-row">
+<div class="toggle-row">
+    <label class="toggle-ui">
         <input type="hidden" name="{{ $name }}" value="0">
         <input type="checkbox" name="{{ $name }}" value="{{ $value }}"
             {{ $checked ? 'checked' : '' }}
-            {{ $attributes->merge(['class' => 'settings-toggle-input']) }}>
-        <span class="settings-toggle-track">
-            <span class="settings-toggle-thumb"></span>
+            {{ $attributes->merge(['class' => 'toggle-input']) }}>
+        <span class="toggle-track">
+            <span class="toggle-thumb"></span>
         </span>
-        <div class="settings-toggle-text">
-            <span class="settings-toggle-label">{{ $label }}</span>
-            @if($description)
-            <span class="settings-toggle-desc">{{ $description }}</span>
-            @endif
-        </div>
     </label>
+    <div class="toggle-text">
+        <span class="toggle-label">{{ $label }}</span>
+        @if($description)
+        <span class="toggle-desc">{{ $description }}</span>
+        @endif
+    </div>
 </div>

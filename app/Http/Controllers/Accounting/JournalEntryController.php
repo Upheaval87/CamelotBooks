@@ -42,12 +42,17 @@ class JournalEntryController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $stats = JournalEntry::where('company_id', $companyId)
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
         $branches = Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('accounting.journal-entries.index', compact('journalEntries', 'branches'));
+        return view('accounting.journal-entries.index', compact('journalEntries', 'branches', 'stats'));
     }
 
     public function create()

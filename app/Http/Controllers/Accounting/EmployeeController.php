@@ -19,13 +19,40 @@ class EmployeeController extends Controller
     {
         $companyId = session('current_company_id');
 
-        $employees = Employee::where('company_id', $companyId)
-            ->with(['branch', 'costCenter'])
+        $stats = [
+            'total' => (int) Employee::where('company_id', $companyId)->count(),
+            'active' => (int) Employee::where('company_id', $companyId)->where('is_active', true)->count(),
+            'on_leave' => (int) Employee::where('company_id', $companyId)->where('employment_status', 'on_leave')->count(),
+        ];
+
+        $query = Employee::where('company_id', $companyId);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('employee_number', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('department')) {
+            $query->where('department', 'like', "%{$request->department}%");
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        $employees = $query->with(['branch', 'costCenter'])
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
-        return view('accounting.employees.index', compact('employees'));
+        return view('accounting.employees.index', compact('employees', 'stats'));
     }
 
     public function create()

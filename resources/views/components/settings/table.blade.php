@@ -1,7 +1,7 @@
 @props(['headers' => [], 'rows' => [], 'emptyMessage' => 'No data available.'])
 
-<div class="settings-table-wrapper">
-    <table class="settings-table">
+<div class="li-wrap">
+    <table>
         @if(count($headers) > 0)
         <thead>
             <tr>
@@ -16,7 +16,7 @@
                 {{ $slot }}
             @else
                 <tr>
-                    <td colspan="{{ count($headers) }}" class="settings-table-empty">{{ $emptyMessage }}</td>
+                    <td colspan="{{ count($headers) }}" class="empty">{{ $emptyMessage }}</td>
                 </tr>
             @endif
         </tbody>

@@ -1,76 +1,76 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Transfer Between Accounts') }}" />
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+    @endphp
 
-    <div class="flex items-center justify-end gap-2 mb-4">
-        <x-button variant="ghost" href="{{ route('accounting.bank-accounts.index') }}">{{ __('Back to Accounts') }}</x-button>
-    </div>
-
-    <div class="pb-12">
+    <div class="suite pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            
 
-            
+            <div class="sticky-head">
+                <div>
+                    <h1>{{ __('Transfer Between Accounts') }}</h1>
+                    <div class="sub">Move money from one bank account to another.</div>
+                </div>
+                <div class="tbtns">
+                    <a href="{{ route('accounting.bank-accounts.index') }}" class="btn btn-ghost">{{ __('Cancel') }}</a>
+                    <button type="submit" form="transfer-form" class="btn btn-cta">{{ __('Transfer') }}</button>
+                </div>
+            </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('accounting.bank-accounts.transfer') }}">
+            <section class="card card-sec">
+                <div class="sec-head">
+                    <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6l6 6-6 6"/></svg></span>
+                    <h2>{{ __('Transfer Details') }}</h2>
+                    <span class="rule"></span>
+                </div>
+
+                <form method="POST" action="{{ route('accounting.bank-accounts.transfer') }}" id="transfer-form">
                     @csrf
-
-                    <div class="space-y-6">
-                        <div>
-                            <x-input-label for="from_account_id" value="{{ __('Transfer From') }}" />
+                    <div class="g4">
+                        <div class="field sp2">
+                            <label for="from_account_id">{{ __('Transfer From') }} <span class="req">*</span></label>
                             <x-scoped-search-field
                                 name="from_account_id"
                                 entity="bank-account"
                                 search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
                                 :value="old('from_account_id')"
                                 :label="old('from_account_id') ? ($bankAccounts->firstWhere('id', (int) old('from_account_id'))?->name ?? '') : ''"
-                                placeholder="{{ __('Select Source Account') }}"
+                                placeholder="{{ __('Select source account') }}"
                                 required
                             />
                             <x-input-error :messages="$errors->get('from_account_id')" class="mt-2" />
                         </div>
-
-                        <div>
-                            <x-input-label for="to_account_id" value="{{ __('Transfer To') }}" />
+                        <div class="field sp2">
+                            <label for="to_account_id">{{ __('Transfer To') }} <span class="req">*</span></label>
                             <x-scoped-search-field
                                 name="to_account_id"
                                 entity="bank-account"
                                 search-url="{{ route('accounting.search.entity', ['entity' => 'bank-account']) }}"
                                 :value="old('to_account_id')"
                                 :label="old('to_account_id') ? ($bankAccounts->firstWhere('id', (int) old('to_account_id'))?->name ?? '') : ''"
-                                placeholder="{{ __('Select Destination Account') }}"
+                                placeholder="{{ __('Select destination account') }}"
                                 required
                             />
                             <x-input-error :messages="$errors->get('to_account_id')" class="mt-2" />
                         </div>
-
-                        <div>
-                            <x-input-label for="amount" value="{{ __('Amount') }}" />
-                            <x-text-input id="amount" name="amount" type="number" step="0.01" min="0.01" class="mt-1 block w-full" :value="old('amount')" required />
+                        <div class="field">
+                            <label for="amount">{{ __('Amount') }} ({{ $cs }}) <span class="req">*</span></label>
+                            <input id="amount" name="amount" type="number" step="0.01" min="0.01" class="input" value="{{ old('amount') }}" required />
                             <x-input-error :messages="$errors->get('amount')" class="mt-2" />
                         </div>
-
-                        <div>
-                            <x-input-label for="transfer_date" value="{{ __('Date') }}" />
-                            <x-text-input id="transfer_date" name="transfer_date" type="date" class="mt-1 block w-full" :value="old('transfer_date', now()->format('Y-m-d'))" required />
-                            <x-input-error :messages="$errors->get('transfer_date')" class="mt-2" />
+                        <div class="field">
+                            <label for="date">{{ __('Date') }} <span class="req">*</span></label>
+                            <input id="date" name="date" type="date" class="input" value="{{ old('date', now()->format('Y-m-d')) }}" required />
+                            <x-input-error :messages="$errors->get('date')" class="mt-2" />
                         </div>
-
-                        <div>
-                            <x-input-label for="description" value="{{ __('Description') }}" />
-                            <x-text-input id="description" name="description" type="text" class="mt-1 block w-full" :value="old('description')" placeholder="Transfer description" />
+                        <div class="field sp2">
+                            <label for="description">{{ __('Description') }} <span class="req">*</span></label>
+                            <input id="description" name="description" type="text" class="input" value="{{ old('description') }}" placeholder="{{ __('Transfer description') }}" required />
                             <x-input-error :messages="$errors->get('description')" class="mt-2" />
                         </div>
                     </div>
-
-                    <div class="flex justify-end gap-3 mt-6">
-                        <a href="{{ route('accounting.bank-accounts.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Cancel') }}
-                        </a>
-                        <x-primary-button type="submit">{{ __('Transfer') }}</x-primary-button>
-                    </div>
                 </form>
-            </div>
+            </section>
         </div>
     </div>
 </x-app-layout>

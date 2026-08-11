@@ -43,6 +43,7 @@ use App\Http\Controllers\Accounting\PurchaseRequisitionController;
 use App\Http\Controllers\Accounting\PurchaseOrderController;
 use App\Http\Controllers\Accounting\GoodsReceivedNoteController;
 use App\Http\Controllers\Accounting\QuotationController;
+use App\Http\Controllers\Accounting\SalesOrderController;
 use App\Http\Controllers\Accounting\ReportCenterController;
 use App\Http\Controllers\Accounting\SalesReceiptController;
 use App\Http\Controllers\Accounting\SalesRegisterController;
@@ -479,6 +480,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print');
             Route::post('quotations/{quotation}/email', [QuotationController::class, 'email'])->name('quotations.email');
 
+            // ── Sales Orders ──
+            Route::get('sales-orders', [SalesOrderController::class, 'index'])->name('sales-orders.index');
+            Route::get('sales-orders/export', [SalesOrderController::class, 'export'])->name('sales-orders.export');
+            Route::get('sales-orders/create', [SalesOrderController::class, 'create'])->name('sales-orders.create');
+            Route::post('sales-orders', [SalesOrderController::class, 'store'])->name('sales-orders.store');
+            Route::get('sales-orders/{order}', [SalesOrderController::class, 'show'])->name('sales-orders.show');
+            Route::get('sales-orders/{order}/edit', [SalesOrderController::class, 'edit'])->name('sales-orders.edit');
+            Route::put('sales-orders/{order}', [SalesOrderController::class, 'update'])->name('sales-orders.update');
+            Route::delete('sales-orders/{order}', [SalesOrderController::class, 'destroy'])->name('sales-orders.destroy')->middleware(['permission:sales-orders.edit', 'sod:order']);
+            Route::post('sales-orders/{order}/send', [SalesOrderController::class, 'send'])->name('sales-orders.send');
+            Route::post('sales-orders/{order}/confirm', [SalesOrderController::class, 'confirm'])->name('sales-orders.confirm')->middleware(['permission:sales-orders.confirm', 'sod:order']);
+            Route::post('sales-orders/{order}/fulfill', [SalesOrderController::class, 'markFulfilled'])->name('sales-orders.fulfill')->middleware(['permission:sales-orders.convert', 'sod:order']);
+            Route::post('sales-orders/{order}/cancel', [SalesOrderController::class, 'cancel'])->name('sales-orders.cancel')->middleware(['permission:sales-orders.cancel', 'sod:order']);
+            Route::post('sales-orders/{order}/convert-to-invoice', [SalesOrderController::class, 'convertToInvoice'])->name('sales-orders.convert-to-invoice')->middleware(['permission:sales-orders.convert', 'sod:order']);
+            Route::post('sales-orders/{order}/convert-to-receipt', [SalesOrderController::class, 'convertToSalesReceipt'])->name('sales-orders.convert-to-receipt')->middleware(['permission:sales-orders.convert', 'sod:order']);
+            Route::post('sales-orders/{order}/void', [SalesOrderController::class, 'void'])->name('sales-orders.void')->middleware(['permission:sales-orders.void', 'sod:order']);
+            Route::get('sales-orders/{order}/print', [SalesOrderController::class, 'print'])->name('sales-orders.print');
+
             // ── Sales Receipts ──
             Route::get('sales-receipts', [SalesReceiptController::class, 'index'])->name('sales-receipts.index');
             Route::get('sales-receipts/export', [SalesReceiptController::class, 'export'])->name('sales-receipts.export');
@@ -564,6 +583,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
                 Route::post('purchase-orders/{purchaseOrder}/confirm', [PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm')->middleware(['permission:purchase-orders.confirm', 'sod:purchaseOrder']);
                 Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel')->middleware(['permission:purchase-orders.cancel', 'sod:purchaseOrder']);
+                Route::post('purchase-orders/{purchaseOrder}/convert-to-bill', [PurchaseOrderController::class, 'convert'])->name('purchase-orders.convert')->middleware(['permission:bills.create', 'sod:purchaseOrder']);
 
             // Goods Received Notes
                 Route::get('goods-received-notes', [GoodsReceivedNoteController::class, 'index'])->name('goods-received-notes.index');
@@ -586,7 +606,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('bank-reconciliation/{bankAccountId}', [ReconciliationController::class, 'index'])->name('bank-reconciliation.index');
                 Route::get('bank-reconciliation/{bankAccountId}/import', [ReconciliationController::class, 'importForm'])->name('bank-reconciliation.import-form');
                 Route::post('bank-reconciliation/{bankAccountId}/import', [ReconciliationController::class, 'import'])->name('bank-reconciliation.import');
-                Route::get('bank-reconciliation/{reconciliationId}', [ReconciliationController::class, 'show'])->name('bank-reconciliation.show');
+                Route::get('bank-reconciliation/{reconciliationId}/detail', [ReconciliationController::class, 'show'])->name('bank-reconciliation.show');
                 Route::get('bank-reconciliation/{reconciliationId}/suggest', [ReconciliationController::class, 'suggestMatches'])->name('bank-reconciliation.suggest');
                 Route::post('bank-reconciliation/{reconciliationId}/match', [ReconciliationController::class, 'match'])->name('bank-reconciliation.match');
                 Route::post('bank-reconciliation/{reconciliationId}/unmatch', [ReconciliationController::class, 'unmatch'])->name('bank-reconciliation.unmatch');
