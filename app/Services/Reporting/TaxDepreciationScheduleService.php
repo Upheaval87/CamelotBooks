@@ -37,6 +37,7 @@ class TaxDepreciationScheduleService
                 'category' => $asset->category->name ?? '—',
                 'acquisition_date' => $asset->acquisition_date,
                 'cost' => $cost,
+                'status' => $asset->status,
                 'residual_value' => $taxBook ? (float) $taxBook->residual_value : (float) $asset->residual_value_tax,
                 'useful_life' => $taxBook ? $taxBook->useful_life : $asset->useful_life_tax,
                 'depreciation_method' => $taxBook ? $taxBook->depreciation_method : $asset->depreciation_method_tax,

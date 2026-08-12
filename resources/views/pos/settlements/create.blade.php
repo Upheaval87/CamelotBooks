@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-list-header title="{{ __('Record Payment Settlement') }}" />
 
     <div class="pb-12">
@@ -55,13 +56,13 @@
 
                             <div class="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <x-input-label for="total_amount" value="Total Settled Amount ($)" />
+                                    <x-input-label for="total_amount" value="Total Settled Amount ({{ $cs }})" />
                                     <input type="number" name="total_amount" id="total_amount" step="0.01" min="0.01" value="{{ old('total_amount') }}"
                                         class="input mt-1" required />
                                     @error('total_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                                 </div>
                                 <div>
-                                    <x-input-label for="fee_amount" value="Processing Fee ($)" />
+                                    <x-input-label for="fee_amount" value="Processing Fee ({{ $cs }})" />
                                     <input type="number" name="fee_amount" id="fee_amount" step="0.01" min="0" value="{{ old('fee_amount', '0.00') }}"
                                         class="input mt-1" />
                                     @error('fee_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

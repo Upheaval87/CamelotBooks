@@ -58,7 +58,6 @@ class FavouritesService
         'accounting.deposits.index' => ['deposits', 'Deposits', 'arrow-down-circle'],
         'accounting.cheques.index' => ['cheques', 'Cheques', 'credit-card'],
         'accounting.petty-cash.index' => ['petty-cash', 'Petty Cash', 'cash'],
-        'accounting.cash-position.index' => ['cash-position', 'Cash Position', 'bank'],
         'accounting.accounts.index' => ['chart-of-accounts', 'Chart of Accounts', 'book'],
         'accounting.journal-entries.index' => ['journal-entries', 'Journal Entries', 'book-open'],
         'accounting.general-ledger.index' => ['general-ledger', 'General Ledger', 'scroll'],

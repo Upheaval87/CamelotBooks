@@ -638,6 +638,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Cash Position
                 Route::get('cash-position', [CashPositionController::class, 'index'])->name('cash-position.index');
+                Route::get('cash-position/export/csv', [CashPositionController::class, 'exportCsv'])->name('cash-position.export-csv');
+                Route::get('cash-position/export/pdf', [CashPositionController::class, 'exportPdf'])->name('cash-position.export-pdf');
+                Route::get('cash-position/print', [CashPositionController::class, 'print'])->name('cash-position.print');
             });
 
             // Financial Statements

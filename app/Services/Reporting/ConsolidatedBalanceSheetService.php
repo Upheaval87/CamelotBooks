@@ -39,8 +39,17 @@ class ConsolidatedBalanceSheetService
                     'balance' => $balance,
                 ];
 
-                $companyData[$account->type . 's'][] = $entry;
-                $totals[$account->type] += $balance;
+                $bucket = match ($account->type) {
+                    'asset' => 'assets',
+                    'liability' => 'liabilities',
+                    'equity' => 'equity',
+                    default => null,
+                };
+
+                if ($bucket !== null) {
+                    $companyData[$bucket][] = $entry;
+                    $totals[$bucket] += $balance;
+                }
             }
 
             $results[] = $companyData;

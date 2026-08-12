@@ -1,5 +1,9 @@
 <x-app-layout>
-@php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+@php
+$cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+$total_amount = array_sum(array_column($vendors, 'total'));
+$total_count = array_sum(array_column($vendors, 'count'));
+@endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
     <x-list-header title="Purchases by Vendor" />
     <form method="GET" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6 flex gap-4 items-end">
@@ -16,9 +20,9 @@
                 <th class="text-right">Count</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
-                @forelse($rows as $row)
+                @forelse($vendors as $row)
                 <tr class="hover:bg-gray-50">
-                    <td>{{ $row['vendor'] }}</td>
+                    <td>{{ $row['vendor_name'] }}</td>
                     <td class="numeric">{{ format_number($row['total']) }}</td>
                     <td class="numeric">{{ format_number($row['count']) }}</td>
                 </tr>

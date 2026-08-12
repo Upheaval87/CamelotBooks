@@ -20,7 +20,7 @@ class ItemProfitabilityService
             ->groupBy('product_id')->get();
 
         // COGS from POS lines
-        $posCogs = PosSaleLine::whereHas('posSale', fn($q) => $q->forCompany($companyId)->posted())
+        $posCogs = PosSaleLine::whereHas('sale', fn($q) => $q->forCompany($companyId)->posted())
             ->select('product_id', DB::raw('SUM(cost_of_goods) as cogs'))
             ->groupBy('product_id')->get();
 

@@ -44,8 +44,8 @@ class EquityStatementService
 
         $netIncome = $this->computeNetIncome($companyId, $branchId, $dateFrom, $dateTo);
 
-        $totalOpening = $openingBalances->sum('balance');
-        $totalClosing = $closingBalances->sum('balance');
+        $totalOpening = collect($openingBalances)->sum('balance');
+        $totalClosing = collect($closingBalances)->sum('balance');
 
         return [
             'company' => $company,

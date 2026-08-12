@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-list-header title="{{ __('New POS Return') }}" />
 
     <div class="pb-12">
@@ -77,7 +78,7 @@
                                                 <tr>
                                                     <td x-text="line.product?.name"></td>
                                                     <td class="numeric" x-text="parseFloat(line.quantity).toFixed(4)"></td>
-                                                    <td class="numeric">$<span x-text="parseFloat(line.unit_price).toFixed(2)"></span></td>
+                                                    <td class="numeric">{{ $cs }}<span x-text="parseFloat(line.unit_price).toFixed(2)"></span></td>
                                                     <td class="numeric" x-text="parseFloat(line.tax_rate).toFixed(2) + '%'"></td>
                                                     <td class="text-right">
                                                         <input type="hidden" :name="'lines[' + idx + '][pos_sale_line_id]'" :value="line.id">
@@ -91,7 +92,7 @@
                                         <tfoot>
                                             <tr>
                                                 <td colspan="4" class="text-right font-semibold">Refund Total:</td>
-                                                <td class="numeric font-bold text-red-600">-$<span x-text="refundTotal.toFixed(2)"></span></td>
+                                                <td class="numeric font-bold text-red-600">-{{ $cs }}<span x-text="refundTotal.toFixed(2)"></span></td>
                                             </tr>
                                         </tfoot>
                                     </table>

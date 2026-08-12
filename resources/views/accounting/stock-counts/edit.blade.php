@@ -1,4 +1,5 @@
 <x-app-layout>
+    @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
     <x-list-header title="{{ __('Count') }} {{ $count->count_number }}" />
 
     <div class="pb-12">
@@ -81,7 +82,7 @@
                                             <th class="text-right">Counted</th>
                                             <th class="text-right">Variance</th>
                                             <th class="text-right">Unit Cost</th>
-                                            <th class="text-right">Variance $</th>
+                                            <th class="text-right">Variance ({{ $cs }})</th>
                                         </tr>
                                     </thead>
                                     <tbody>

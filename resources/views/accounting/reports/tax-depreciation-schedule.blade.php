@@ -15,12 +15,12 @@
                 <th>Status</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
-                @forelse($assets as $a)
+                @forelse($schedule as $a)
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2 text-sm font-sans">{{ $a['asset_code'] }}</td>
                     <td>{{ $a['asset_name'] }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $a['depreciation_method'])) }}</td>
-                    <td class="numeric">{{ format_number($a['acquisition_cost']) }}</td>
+                    <td class="numeric">{{ format_number($a['cost']) }}</td>
                     <td class="numeric">{{ number_format($a['depreciation_rate'], 1) }}%</td>
                     <td class="numeric">{{ format_number($a['accumulated_depreciation']) }}</td>
                     <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($a['net_book_value']) }}</td>

@@ -26,14 +26,14 @@
                         <span class="rule"></span>
                     </div>
 
-                    <div class="sgrid">
+                    <div class="sgrid sgrid--4">
                         <div class="sbox">
                             <div class="l">{{ __('Transactions') }}</div>
                             <div class="v">{{ number_format($glStats['transactions']) }}</div>
                         </div>
                         <div class="sbox">
                             <div class="l">{{ __('Accounts') }}</div>
-                            <div class="v t-teal">{{ number_format($glStats['accounts']) }}</div>
+                            <div class="v">{{ number_format($glStats['accounts']) }}</div>
                         </div>
                         <div class="sbox">
                             <div class="l">Debit ({{ $cs }})</div>
@@ -48,24 +48,34 @@
                     {{-- filters --}}
                     <form method="GET" action="{{ route('accounting.general-ledger.index') }}" id="gl-list-form">
                         <div class="controls">
-                            <x-scoped-search-field
-                                name="account_id"
-                                entity="account"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
-                                :value="request('account_id')"
-                                :label="$activeAccountId ? ($accounts->firstWhere('id', (int) $activeAccountId)?->name ?? '') : ''"
-                                placeholder="{{ __('Search accounts...') }}"
-                            />
-                            <input type="date" name="date_from" class="input" value="{{ request('date_from') }}" title="{{ __('Date from') }}" />
-                            <input type="date" name="date_to" class="input" value="{{ request('date_to') }}" title="{{ __('Date to') }}" />
-                            <x-scoped-search-field
-                                name="branch_id"
-                                entity="branch"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
-                                :value="request('branch_id')"
-                                :label="request('branch_id') ? ($branches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
-                                placeholder="{{ __('All Branches') }}"
-                            />
+                            <div class="gl-row">
+                                <x-scoped-search-field
+                                    name="account_id"
+                                    entity="account"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'account']) }}"
+                                    :value="request('account_id')"
+                                    :label="$activeAccountId ? ($accounts->firstWhere('id', (int) $activeAccountId)?->name ?? '') : ''"
+                                    placeholder="{{ __('Search accounts...') }}"
+                                />
+                                <x-scoped-search-field
+                                    name="branch_id"
+                                    entity="branch"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                                    :value="request('branch_id')"
+                                    :label="request('branch_id') ? ($branches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
+                                    placeholder="{{ __('All Branches') }}"
+                                />
+                            </div>
+                            <div class="gl-row">
+                                <label class="field gl-field">
+                                    <span class="label">{{ __('From') }}</span>
+                                    <input type="date" name="date_from" class="input" value="{{ request('date_from') }}" />
+                                </label>
+                                <label class="field gl-field">
+                                    <span class="label">{{ __('To') }}</span>
+                                    <input type="date" name="date_to" class="input" value="{{ request('date_to') }}" />
+                                </label>
+                            </div>
                             <button type="submit" class="btn ghost">{{ __('Filter') }}</button>
                             @if(request()->hasAny('account_id', 'date_from', 'date_to', 'branch_id'))
                                 <a href="{{ route('accounting.general-ledger.index') }}" class="btn ghost">{{ __('Clear') }}</a>

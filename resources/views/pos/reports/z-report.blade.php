@@ -7,8 +7,7 @@
                 <div class="card p-6 text-center text-ink-soft">
                     No closed till sessions found.
                 </div>
-                @return
-            @endif
+            @else
 
             <div class="card p-6 mb-6">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -126,4 +125,5 @@
             </div>
         </div>
     </div>
+    @endif
 </x-app-layout>

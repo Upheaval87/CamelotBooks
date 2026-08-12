@@ -1,5 +1,9 @@
 <x-app-layout>
-@php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+@php
+$cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+$total_qty = array_sum(array_column($items, 'qty'));
+$total_amount = array_sum(array_column($items, 'total'));
+@endphp
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
     <x-list-header title="Purchases by Item" />
     <form method="GET" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6 flex gap-4 items-end">
@@ -17,9 +21,9 @@
                 <th class="text-right">Total ({{ $cs }})</th>
             </tr></thead>
             <tbody class="divide-y divide-gray-200">
-                @forelse($rows as $row)
+                @forelse($items as $row)
                 <tr class="hover:bg-gray-50">
-                    <td>{{ $row['product'] }}</td>
+                    <td>{{ $row['product_name'] }}</td>
                     <td>{{ $row['sku'] }}</td>
                     <td class="numeric">{{ format_number($row['qty']) }}</td>
                     <td class="numeric">{{ format_number($row['total']) }}</td>

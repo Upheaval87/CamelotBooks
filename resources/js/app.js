@@ -7,6 +7,7 @@ import './verify-code';
 import './new-password';
 import './feedback';
 import './favourites';
+import './report-center';
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 

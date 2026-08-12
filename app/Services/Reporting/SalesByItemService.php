@@ -29,7 +29,7 @@ class SalesByItemService
             ->groupBy('product_id')
             ->get();
 
-        $posLines = PosSaleLine::whereHas('posSale', function ($q) use ($companyId) {
+        $posLines = PosSaleLine::whereHas('sale', function ($q) use ($companyId) {
             $q->forCompany($companyId)->posted();
         })->select('product_id', DB::raw('SUM(line_total) as total'), DB::raw('SUM(quantity) as qty'), DB::raw('COUNT(*) as count'))
             ->groupBy('product_id')

@@ -1,5 +1,13 @@
 <x-app-layout>
-    @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+    @php
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+        $total_dr_p1 = $total_debit_1;
+        $total_cr_p1 = $total_credit_1;
+        $total_dr_p2 = $total_debit_2;
+        $total_cr_p2 = $total_credit_2;
+        $total_dr_var = $total_debit_2 - $total_debit_1;
+        $total_cr_var = $total_credit_2 - $total_credit_1;
+    @endphp
     <x-list-header title="{{ __('Trial Balance Comparison') }}" />
 
     <div class="py-6">
@@ -27,16 +35,16 @@
                         <th class="text-right">Cr Var ({{ $cs }})</th>
                     </tr></thead>
                     <tbody class="divide-y divide-gray-200">
-                        @forelse($rows as $row)
+                        @forelse($lines as $row)
                         <tr class="hover:bg-gray-50">
-                            <td>{{ $row['code'] }}</td>
-                            <td>{{ $row['name'] }}</td>
-                            <td class="numeric">{{ format_number($row['dr_p1']) }}</td>
-                            <td class="numeric">{{ format_number($row['cr_p1']) }}</td>
-                            <td class="numeric">{{ format_number($row['dr_p2']) }}</td>
-                            <td class="numeric">{{ format_number($row['cr_p2']) }}</td>
-                            <td class="numeric">{{ format_number($row['dr_var']) }}</td>
-                            <td class="numeric">{{ format_number($row['cr_var']) }}</td>
+                            <td>{{ $row['account']->code }}</td>
+                            <td>{{ $row['account']->name }}</td>
+                            <td class="numeric">{{ format_number($row['debit_1']) }}</td>
+                            <td class="numeric">{{ format_number($row['credit_1']) }}</td>
+                            <td class="numeric">{{ format_number($row['debit_2']) }}</td>
+                            <td class="numeric">{{ format_number($row['credit_2']) }}</td>
+                            <td class="numeric">{{ format_number($row['variance_debit']) }}</td>
+                            <td class="numeric">{{ format_number($row['variance_credit']) }}</td>
                         </tr>
                         @empty
                             <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>

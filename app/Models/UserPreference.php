@@ -20,10 +20,12 @@ class UserPreference extends Model
     protected $fillable = [
         'user_id',
         'sidebar_pinned',
+        'report_favourites',
     ];
 
     protected $casts = [
         'sidebar_pinned' => 'boolean',
+        'report_favourites' => 'array',
     ];
 
     public function user(): BelongsTo

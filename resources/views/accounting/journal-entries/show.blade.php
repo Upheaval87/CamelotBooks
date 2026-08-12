@@ -99,64 +99,6 @@
                             <div><div class="l">{{ __('Lines') }}</div><div class="v">{{ count($journalEntry->lines) }}</div></div></div>
                     </div>
 
-                    @if($journalEntry->status === 'pending_approval')
-                        {{-- decision card --}}
-                        <section class="card card-sec">
-                            <div class="sec-head">
-                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></span>
-                                <h2>{{ __('Review & Decide') }}</h2>
-                                <span class="rule"></span>
-                            </div>
-                            <div class="g4">
-                                <div class="field sp3">
-                                    <label for="rejection_reason">{{ __('Reason for Rejection') }}</label>
-                                    <textarea id="rejection_reason" name="rejection_reason" rows="3" class="input" form="je-reject-form" style="min-height:100px" required></textarea>
-                                    <x-input-error :messages="$errors->get('rejection_reason')" class="mt-2" />
-                                </div>
-                            </div>
-                            <div class="tbtns" style="margin-top:16px">
-                                <button type="submit" form="je-reject-form" class="btn btn-danger-o" onclick="return fbConfirmButton(event, 'Reject this entry? The reason will be recorded.', { type: 'danger' })">{{ __('Reject') }}</button>
-                                <form id="je-approve-form" method="POST" action="{{ route('accounting.journal-entries.approve', $journalEntry) }}" class="inline" onsubmit="return fbConfirmButton(event, 'Approve and post this entry?', { type: 'action' })">
-                                    @csrf
-                                    <button type="submit" class="btn btn-cta">{{ __('Approve & Post') }}</button>
-                                </form>
-                            </div>
-                        </section>
-                    @elseif($journalEntry->status === 'posted')
-                        <section class="card card-sec">
-                            <div class="sec-head">
-                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg></span>
-                                <h2>{{ __('Posted') }}</h2>
-                                <span class="rule"></span>
-                                <span class="badge b-post"><span class="bdot"></span>{{ __('POSTED') }}</span>
-                            </div>
-                            <p class="sub" style="margin:10px 0 0">{{ __('Journal entry approved and posted.') }}
-                                {{ __('Approved by') }} {{ $journalEntry->approvedByUser->name ?? $journalEntry->postedByUser->name ?? '—' }}
-                                @if($journalEntry->approved_at) · {{ \Illuminate\Support\Carbon::parse($journalEntry->approved_at)->format('M d, Y h:i A') }} @endif
-                            </p>
-                        </section>
-                    @elseif($journalEntry->status === 'rejected')
-                        <section class="card card-sec">
-                            <div class="sec-head">
-                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg></span>
-                                <h2>{{ __('Rejected') }}</h2>
-                                <span class="rule"></span>
-                                <span class="badge b-red"><span class="bdot"></span>{{ __('REJECTED') }}</span>
-                            </div>
-                            <p class="sub" style="margin:10px 0 0">{{ $journalEntry->rejection_reason ?: __('The entry was not approved.') }}</p>
-                        </section>
-                    @elseif($journalEntry->status === 'reversed')
-                        <section class="card card-sec">
-                            <div class="sec-head">
-                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v6h6M20 20v-6h-6M5.5 10a7 7 0 0 1 12-3.5L20 9M18.5 14a7 7 0 0 1-12 3.5L4 15" /></svg></span>
-                                <h2>{{ __('Reversed') }}</h2>
-                                <span class="rule"></span>
-                                <span class="badge b-void"><span class="bdot"></span>{{ __('REVERSED') }}</span>
-                            </div>
-                            <p class="sub" style="margin:10px 0 0">{{ __('This entry was reversed and no longer affects the ledger.') }}</p>
-                        </section>
-                    @endif
-
                     {{-- tabs --}}
                     <section class="card">
                         <div class="card-sec" style="padding-bottom:8px">
@@ -253,6 +195,64 @@
                             @endif
                         </div>
                     </section>
+
+                    @if($journalEntry->status === 'pending_approval')
+                        {{-- decision card --}}
+                        <section class="card card-sec">
+                            <div class="sec-head">
+                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></span>
+                                <h2>{{ __('Review & Decide') }}</h2>
+                                <span class="rule"></span>
+                            </div>
+                            <div class="g4">
+                                <div class="field sp3">
+                                    <label for="rejection_reason">{{ __('Reason for Rejection') }}</label>
+                                    <textarea id="rejection_reason" name="rejection_reason" rows="3" class="input" form="je-reject-form" style="min-height:100px" required></textarea>
+                                    <x-input-error :messages="$errors->get('rejection_reason')" class="mt-2" />
+                                </div>
+                            </div>
+                            <div class="tbtns" style="margin-top:16px">
+                                <button type="submit" form="je-reject-form" class="btn btn-danger-o" onclick="return fbConfirmButton(event, 'Reject this entry? The reason will be recorded.', { type: 'danger' })">{{ __('Reject') }}</button>
+                                <form id="je-approve-form" method="POST" action="{{ route('accounting.journal-entries.approve', $journalEntry) }}" class="inline" onsubmit="return fbConfirmButton(event, 'Approve and post this entry?', { type: 'action' })">
+                                    @csrf
+                                    <button type="submit" class="btn btn-cta">{{ __('Approve & Post') }}</button>
+                                </form>
+                            </div>
+                        </section>
+                    @elseif($journalEntry->status === 'posted')
+                        <section class="card card-sec">
+                            <div class="sec-head">
+                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg></span>
+                                <h2>{{ __('Posted') }}</h2>
+                                <span class="rule"></span>
+                                <span class="badge b-post"><span class="bdot"></span>{{ __('POSTED') }}</span>
+                            </div>
+                            <p class="sub" style="margin:10px 0 0">{{ __('Journal entry approved and posted.') }}
+                                {{ __('Approved by') }} {{ $journalEntry->approvedByUser->name ?? $journalEntry->postedByUser->name ?? '—' }}
+                                @if($journalEntry->approved_at) · {{ \Illuminate\Support\Carbon::parse($journalEntry->approved_at)->format('M d, Y h:i A') }} @endif
+                            </p>
+                        </section>
+                    @elseif($journalEntry->status === 'rejected')
+                        <section class="card card-sec">
+                            <div class="sec-head">
+                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg></span>
+                                <h2>{{ __('Rejected') }}</h2>
+                                <span class="rule"></span>
+                                <span class="badge b-red"><span class="bdot"></span>{{ __('REJECTED') }}</span>
+                            </div>
+                            <p class="sub" style="margin:10px 0 0">{{ $journalEntry->rejection_reason ?: __('The entry was not approved.') }}</p>
+                        </section>
+                    @elseif($journalEntry->status === 'reversed')
+                        <section class="card card-sec">
+                            <div class="sec-head">
+                                <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v6h6M20 20v-6h-6M5.5 10a7 7 0 0 1 12-3.5L20 9M18.5 14a7 7 0 0 1-12 3.5L4 15" /></svg></span>
+                                <h2>{{ __('Reversed') }}</h2>
+                                <span class="rule"></span>
+                                <span class="badge b-void"><span class="bdot"></span>{{ __('REVERSED') }}</span>
+                            </div>
+                            <p class="sub" style="margin:10px 0 0">{{ __('This entry was reversed and no longer affects the ledger.') }}</p>
+                        </section>
+                    @endif
                 </div>
 
                 {{-- rail --}}

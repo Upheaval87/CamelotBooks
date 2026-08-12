@@ -28,7 +28,7 @@ class EquityStatementController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('accounting.equity-statement.index', array_merge($statement, compact('branches', 'branchId')));
+        return view('accounting.equity-statement.index', array_merge($statement, compact('branches', 'branchId', 'dateFrom', 'dateTo')));
     }
 
     public function exportCsv(Request $request)
@@ -86,7 +86,7 @@ class EquityStatementController extends Controller
         $statement = $this->service->generate($companyId, $dateFrom, $dateTo, $branchId);
         $company = Company::findOrFail($companyId);
 
-        $content = view('accounting.equity-statement.print', array_merge($statement, compact('company')))->render();
+        $content = view('accounting.equity-statement.print', array_merge($statement, compact('company', 'dateFrom', 'dateTo')))->render();
 
         return response()->view('accounting.print-export', [
             'title' => "Statement of Changes in Equity — {$dateFrom} to {$dateTo}",
