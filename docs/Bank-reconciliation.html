@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Reconciliation Module — Full Mockups</title>
+<style>
+  :root{
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;
+    --sec:#128F8E;--sec-2:#149897;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;
+    --muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;
+    --red:#dc2626;--red-2:#b91c1c;--green:#15803d;--amber:#d97706;--amber-2:#b45309;
+    --shadow-card:0 1px 2px rgba(10,42,46,.05),0 12px 32px -8px rgba(10,42,46,.10),0 32px 64px -24px rgba(8,40,44,.14);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 90px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:6px 14px;margin:56px 0 6px}
+  .opt-sub{font-size:12px;color:var(--muted);margin:0 0 18px;max-width:95ch}
+
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}
+  .spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--ink)}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .navitem.active .ic{color:#fff}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 14px;border-radius:11px;
+    font-weight:600;font-size:12.5px;border:1px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151}
+  .btn-ghost:hover{border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-sec{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));font-weight:700;box-shadow:var(--shadow-cta)}
+  .btn-warn{background:linear-gradient(180deg,#f59e0b,#d97706);color:#fff}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none!important;box-shadow:none}
+  .btn-sm{height:32px;padding:0 12px;font-size:12px;border-radius:9px}
+  .vdiv{width:1px;height:22px;background:var(--border)}
+  .more{position:relative}
+  .more-menu{position:absolute;right:0;top:calc(100% + 6px);width:210px;background:#fff;border:1px solid var(--border);
+    border-radius:12px;box-shadow:0 16px 40px -12px rgba(8,40,44,.3);padding:6px;display:none;z-index:60}
+  .more.open .more-menu{display:block}
+  .more-item{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:none;border-radius:9px;background:none;
+    text-align:left;font-family:inherit;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer}
+  .more-item:hover{background:rgba(17,69,75,.06)}
+
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding:26px 0 14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+  h1{font-size:21px;font-weight:800;color:var(--ink)}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .cluster{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+  .pills{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 14px;scrollbar-width:none}
+  .pills::-webkit-scrollbar{display:none}
+  .pill{flex:none;height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.85);
+    color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+  .pill.on{background:linear-gradient(90deg,var(--sec-2),var(--sec));border-color:transparent;color:#fff}
+
+  .filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.8);border:1px solid var(--border);
+    border-radius:14px;padding:10px 12px;margin-bottom:16px;box-shadow:var(--shadow-card)}
+  .filterbar .lb{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  select.f,input.f{height:36px;border-radius:9px;border:1px solid var(--border);background:#fff;padding:0 10px;font-size:12px;color:var(--ink);font-family:inherit}
+  select.f{padding-right:28px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-rec{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}.b-rec .bdot{background:#22c55e}
+  .b-prog{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-prog .bdot{background:var(--amber)}
+  .b-diff{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-diff .bdot{background:var(--red-2)}
+  .b-draft{background:rgba(138,165,167,.15);border:1px solid rgba(138,165,167,.5);color:var(--muted)}.b-draft .bdot{background:var(--muted)}
+  .mchip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:9.5px;font-weight:800}
+  .m-matched{background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.3);color:var(--green)}
+  .m-out{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}
+  .m-bank{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}
+  .m-book{background:rgba(70,112,140,.10);border:1px solid rgba(70,112,140,.4);color:#46708C}
+  .m-adj{background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);color:var(--sec)}
+
+  .card{background:rgba(255,255,255,.8);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .n{font-size:10px;font-weight:800;color:var(--sec);background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);border-radius:999px;padding:2px 9px}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .card-b{padding:18px}
+
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr) 1.4fr;gap:12px;margin-bottom:16px}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card)}
+  .kpi .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .kpi .v{margin-top:6px;font-size:1.2rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi .n{margin-top:3px;font-size:10.5px;color:var(--faint)}
+  .kpi.hero{border:none;display:flex;flex-direction:column;justify-content:center}
+  .kpi.hero.ok{background:linear-gradient(135deg,var(--sec-2),var(--sec))}
+  .kpi.hero.warn{background:linear-gradient(135deg,#b45309,#d97706)}
+  .kpi.hero .l{color:rgba(255,255,255,.8)}
+  .kpi.hero .v{color:#fff;font-size:1.6rem}
+  @media (max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.kpi.hero{grid-column:1/-1}}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;
+    letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th.num{text-align:right}
+  tbody td{padding:11px 14px;border-top:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink)}
+  .numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+  .numr.neg{color:var(--red-2)}
+  input[type=checkbox]{width:15px;height:15px;accent-color:var(--sec);cursor:pointer}
+  .drill{font-size:11px;font-weight:800;color:var(--sec);text-decoration:none}
+  .drill:hover{text-decoration:underline}
+
+  /* stepper */
+  .stepper{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:4px 0 18px}
+  .stp{display:flex;align-items:center;gap:8px}
+  .stp .d{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;border:2px solid}
+  .stp .d.done{background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:transparent;color:#fff}
+  .stp .d.cur{background:#fff;border-color:var(--amber);color:var(--amber)}
+  .stp .d.todo{background:#fff;border-color:var(--border);color:var(--faint)}
+  .stp .t{font-size:11.5px;font-weight:700;color:var(--muted)}
+  .stp .t.cur{color:var(--ink)}
+  .stp .bar{width:34px;height:2px;background:var(--line);margin:0 8px}
+
+  /* workspace panes */
+  .panes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:1000px){.panes{grid-template-columns:1fr}}
+  .pane-h{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .pane-h .t{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+  .pane.book .pane-h .t{color:var(--deep-1)}
+  .pane.bank .pane-h .t{color:#46708C}
+  .pane-h .n{font-size:10px;font-weight:800;color:var(--faint)}
+  .pane-h .right{margin-left:auto;display:flex;gap:8px}
+  .searchbox{position:relative}
+  .searchbox input{height:32px;width:170px;border-radius:9px;border:1px solid var(--border);padding:0 10px 0 30px;font-size:12px;font-family:inherit}
+  .searchbox svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--faint)}
+
+  .confbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(18,143,142,.07);border:1px dashed rgba(18,143,142,.4);
+    border-radius:12px;padding:10px 14px;margin:0 0 16px;font-size:12px;color:var(--muted)}
+  .conf{font-size:10px;font-weight:800;border-radius:999px;padding:3px 10px}
+  .conf.exact{background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+  .conf.likely{background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.4);color:var(--amber-2)}
+
+  .calcgrid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+  @media (max-width:1000px){.calcgrid{grid-template-columns:1fr}}
+  .calc .row{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px dashed var(--line);font-size:12.5px;color:var(--muted)}
+  .calc .row b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .calc .row.tot{border-bottom:none;border-top:1.5px solid var(--deep-1);margin-top:4px;padding-top:10px;font-weight:800;color:var(--ink)}
+  .calc .row.tot b{font-size:14px}
+  .balanced{display:flex;align-items:center;gap:10px;border-radius:12px;padding:12px 16px;font-weight:800;font-size:13px}
+  .balanced.warn{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.4);color:var(--amber-2)}
+  .balanced.ok{background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+
+  .audit{display:flex;flex-direction:column}
+  .arow{display:flex;gap:12px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:12px}
+  .arow:last-child{border-bottom:none}
+  .arow .when{width:110px;flex:none;color:var(--faint);font-family:ui-monospace,Menlo,monospace;font-size:10.5px}
+  .arow .who{width:60px;flex:none;font-weight:700;color:var(--ink)}
+  .arow .what{color:var(--muted)}
+  .arow .what b{color:var(--ink)}
+
+  .maprow{display:grid;grid-template-columns:1fr auto 1.2fr;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .maprow:last-child{border-bottom:none}
+  .maprow .src{font-weight:700;color:var(--ink)}
+  .maprow .arr{color:var(--sec);font-weight:800}
+  .fmtchips{display:flex;gap:6px;flex-wrap:wrap}
+  .fmt{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--deep-1);background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);border-radius:999px;padding:3px 9px}
+  .fmt.on{background:rgba(18,143,142,.12);border-color:rgba(18,143,142,.4);color:var(--sec)}
+
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:900px){.g3,.g2{grid-template-columns:1fr}}
+  .field label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .field .input{width:100%;height:40px;border-radius:9px;border:1px solid var(--border);background:#fff;padding:0 12px;font-size:13px;font-family:inherit}
+  .field .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+
+  .repcards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:1000px){.repcards{grid-template-columns:1fr 1fr}}
+  @media (max-width:700px){.repcards{grid-template-columns:1fr}}
+  .repcard{border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card);padding:16px;display:flex;flex-direction:column;gap:8px}
+  .repcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+  .repcard .d{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .repcard .foot{margin-top:auto;display:flex;gap:6px;align-items:center}
+</style>
+</head>
+<body>
+
+<header class="tealbar">
+  <div class="row1">
+    <span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div>
+  </div>
+  <div class="row2">
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 7h12l1.5 14h-15L6 7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10V6a3 3 0 0 1 6 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Sales</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 4h2.5l2.2 11h10.1l2-8H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Purchasing</a>
+    <a class="navitem active" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-5.5L21 9M5 9.5V19M9.5 9.5V19M14.5 9.5V19M19 9.5V19M3 19.5h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Banking</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Reports</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ============ 1 · DASHBOARD / LIST ============ -->
+<span class="opt-tag">1 · Bank Reconciliation · Dashboard &amp; List</span>
+<p class="opt-sub">Workflow entry: account + period selectors, six control cards with <b>Difference</b> dominant, and the reconciliation register with status badges (🟢 Reconciled · 🟡 In Progress · 🔴 Difference · ⚪ Draft).</p>
+
+<div class="page-head">
+  <div><h1>Bank Reconciliation</h1><div class="sub">Prove the bank statement agrees with the books — after timing differences and adjustments.</div></div>
+  <div class="cluster">
+    <button class="btn btn-ghost">📥 Import Statement</button>
+    <button class="btn btn-ghost">⟳ Refresh</button>
+    <div class="more"><button class="btn btn-ghost" onclick="this.parentNode.classList.toggle('open')">⋯ More</button>
+      <div class="more-menu">
+        <button class="more-item">📗 Export Excel</button><button class="more-item">📕 Export PDF</button>
+        <button class="more-item">🖨 Print</button><button class="more-item">🕘 Audit Trail</button>
+      </div></div>
+    <span class="vdiv"></span>
+    <button class="btn btn-cta">＋ New Reconciliation</button>
+  </div>
+</div>
+
+<nav class="pills">
+  <a class="pill on" href="#">Reconciliations</a><a class="pill" href="#">Bank Statements</a><a class="pill" href="#">Adjustments</a>
+  <a class="pill" href="#">Outstanding Items</a><a class="pill" href="#">Reports</a><a class="pill" href="#">Audit Trail</a>
+</nav>
+
+<div class="filterbar">
+  <span class="lb">Bank Account</span>
+  <select class="f"><option>Main Bank Account — National Bank</option><option>Savings Account</option><option>Petty Cash</option></select>
+  <span class="lb">Period</span>
+  <input class="f" type="date" value="2026-08-01"> <span style="color:var(--faint)">→</span> <input class="f" type="date" value="2026-08-31">
+</div>
+
+<div class="kpis">
+  <div class="kpi"><div class="l">Statement Balance</div><div class="v">140,750,000</div><div class="n">per bank statement</div></div>
+  <div class="kpi"><div class="l">Book Balance</div><div class="v">140,725,000</div><div class="n">per general ledger</div></div>
+  <div class="kpi"><div class="l">Matched</div><div class="v" style="color:var(--green)">42</div><div class="n">transactions</div></div>
+  <div class="kpi"><div class="l">Unmatched</div><div class="v" style="color:var(--amber-2)">2</div><div class="n">need attention</div></div>
+  <div class="kpi"><div class="l">Adjustments</div><div class="v">1</div><div class="n">pending</div></div>
+  <div class="kpi hero warn"><div class="l">Difference</div><div class="v">MWK 25,000.00</div></div>
+</div>
+
+<div class="card">
+  <div class="card-h"><h2>Reconciliation Register</h2><span class="n">4 periods</span>
+    <div class="right"><a class="drill" href="#">Reconciliation history →</a></div></div>
+  <table>
+    <thead><tr><th>Bank Account</th><th>Statement Date</th><th class="num">Statement Balance</th><th class="num">Book Balance</th>
+      <th class="num">Difference</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:700;color:var(--ink)">Main Bank Account</td><td>31 Aug 2026</td><td class="numr">140,750,000</td><td class="numr">140,725,000</td>
+        <td class="numr" style="color:var(--amber-2);font-weight:800">25,000</td><td><span class="badge b-prog"><span class="bdot"></span>In Progress</span></td>
+        <td><a class="drill" href="#">Continue →</a></td></tr>
+      <tr><td style="font-weight:700;color:var(--ink)">Main Bank Account</td><td>31 Jul 2026</td><td class="numr">125,000,000</td><td class="numr">125,000,000</td>
+        <td class="numr">0.00</td><td><span class="badge b-rec"><span class="bdot"></span>Reconciled</span></td>
+        <td><a class="drill" href="#">View →</a></td></tr>
+      <tr><td style="font-weight:700;color:var(--ink)">Savings Account</td><td>31 Aug 2026</td><td class="numr">85,000,000</td><td class="numr">85,000,000</td>
+        <td class="numr">0.00</td><td><span class="badge b-rec"><span class="bdot"></span>Reconciled</span></td>
+        <td><a class="drill" href="#">View →</a></td></tr>
+      <tr><td style="font-weight:700;color:var(--ink)">Main Bank Account</td><td>30 Jun 2026</td><td class="numr">118,400,000</td><td class="numr">118,900,000</td>
+        <td class="numr neg">−500,000</td><td><span class="badge b-diff"><span class="bdot"></span>Difference</span></td>
+        <td><a class="drill" href="#">Investigate →</a></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============ 2 · NEW RECONCILIATION ============ -->
+<span class="opt-tag">2 · New Reconciliation · Statement details (step 1 of 5)</span>
+<p class="opt-sub">Controlled creation: the statement closing balance must come from the actual bank statement — never a typed "reconciled balance".</p>
+
+<div class="card" style="max-width:860px">
+  <div class="card-h"><h2>New Bank Reconciliation</h2><span class="badge b-draft"><span class="bdot"></span>Draft</span></div>
+  <div class="card-b">
+    <div class="stepper">
+      <div class="stp"><span class="d cur">1</span><span class="t cur">Statement</span></div><span class="bar"></span>
+      <div class="stp"><span class="d todo">2</span><span class="t">Import</span></div><span class="bar"></span>
+      <div class="stp"><span class="d todo">3</span><span class="t">Matching</span></div><span class="bar"></span>
+      <div class="stp"><span class="d todo">4</span><span class="t">Review</span></div><span class="bar"></span>
+      <div class="stp"><span class="d todo">5</span><span class="t">Complete</span></div>
+    </div>
+    <div class="g3">
+      <div class="field"><label>Bank Account *</label><select class="input"><option>National Bank — Current Account</option><option>Savings Account</option></select></div>
+      <div class="field"><label>Statement Date *</label><input class="input" type="date" value="2026-08-31"></div>
+      <div class="field"><label>Statement Number</label><input class="input" value="STMT-2026-08"></div>
+      <div class="field"><label>Opening Balance *</label><input class="input" value="MWK 125,000,000.00"></div>
+      <div class="field"><label>Closing Balance *</label><input class="input" value="MWK 140,750,000.00"></div>
+      <div class="field"><label>Currency</label><select class="input"><option>MWK</option><option>USD</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-cta">Save &amp; Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 3 · IMPORT STATEMENT ============ -->
+<span class="opt-tag">3 · Import Bank Statement · column mapping (step 2 of 5)</span>
+<p class="opt-sub">Start with Excel + CSV; engine architecture allows OFX / MT940 / CAMT.053 later without touching core accounting logic.</p>
+
+<div class="card" style="max-width:860px">
+  <div class="card-h"><h2>Import Bank Statement</h2>
+    <div class="right"><div class="fmtchips"><span class="fmt on">XLSX</span><span class="fmt on">CSV</span><span class="fmt">OFX</span><span class="fmt">QFX</span><span class="fmt">MT940</span><span class="fmt">CAMT.053</span></div></div></div>
+  <div class="card-b">
+    <div class="balanced ok" style="margin-bottom:16px">✓ August_2026_Bank_Statement.xlsx · 47 rows detected · <a class="drill" href="#">Preview import</a></div>
+    <div class="maprow"><span class="src">Date</span><span class="arr">→</span><select class="f" style="width:100%"><option>Transaction Date</option><option>Value Date</option></select></div>
+    <div class="maprow"><span class="src">Reference</span><span class="arr">→</span><select class="f" style="width:100%"><option>Reference</option></select></div>
+    <div class="maprow"><span class="src">Description</span><span class="arr">→</span><select class="f" style="width:100%"><option>Description</option></select></div>
+    <div class="maprow"><span class="src">Debit</span><span class="arr">→</span><select class="f" style="width:100%"><option>Withdrawal</option></select></div>
+    <div class="maprow"><span class="src">Credit</span><span class="arr">→</span><select class="f" style="width:100%"><option>Deposit</option></select></div>
+    <div class="maprow"><span class="src">Balance</span><span class="arr">→</span><select class="f" style="width:100%"><option>Balance</option><option>(skip)</option></select></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-cta">Import Transactions</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 4 · RECONCILIATION WORKSPACE ============ -->
+<span class="opt-tag">4 · Reconciliation Workspace · two-sided matching (steps 3–4)</span>
+<p class="opt-sub">The heart of the module: book transactions ↔ bank statement, auto-match with confidence, manual / one-to-many matching, create-and-match for bank-only items, and a live Difference that gates completion.</p>
+
+<div class="card" style="margin-bottom:16px">
+  <div class="card-h">
+    <h2>Main Bank Account · STMT-2026-08</h2><span class="badge b-prog"><span class="bdot"></span>In Progress</span>
+    <div class="right">
+      <button class="btn btn-sec btn-sm">⚡ Auto Match</button>
+      <button class="btn btn-ghost btn-sm">🔗 Match Selected</button>
+      <button class="btn btn-ghost btn-sm">∑ Match Multiple</button>
+      <button class="btn btn-ghost btn-sm">⤬ Unmatch</button>
+      <div class="more"><button class="btn btn-ghost btn-sm" onclick="this.parentNode.classList.toggle('open')">⋯</button>
+        <div class="more-menu">
+          <button class="more-item">＋ Add Adjustment</button><button class="more-item">🗎 Create Transaction</button>
+          <button class="more-item">✂ Split Transaction</button><button class="more-item">🚫 Ignore</button>
+        </div></div>
+      <span class="vdiv"></span>
+      <button class="btn btn-ghost btn-sm">Validate</button>
+      <button class="btn btn-cta btn-sm" disabled>✓ Complete Reconciliation</button>
+    </div>
+  </div>
+
+  <div class="card-b">
+    <div class="confbar">⚡ Auto Match found <b style="color:var(--ink)">3 exact</b> and <b style="color:var(--ink)">1 likely</b> match.
+      <span class="conf likely">Likely · 94%</span> RCPT-00136 "Member Deposit" ↔ 773005 "MEMBER DEPOSIT" · MWK 150,000
+      <button class="btn btn-sec btn-sm" style="margin-left:auto">Confirm</button><button class="btn btn-ghost btn-sm">Skip</button>
+    </div>
+
+    <div class="panes">
+      <div class="card pane book" style="box-shadow:none">
+        <div class="pane-h"><span class="t">Book Transactions</span><span class="n">accounting system · 45</span>
+          <div class="right"><div class="searchbox"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input placeholder="Search book…"></div></div></div>
+        <table>
+          <thead><tr><th style="width:28px"></th><th>Date</th><th>Reference</th><th>Description</th><th class="num">Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox" checked></td><td>02 Aug</td><td class="mono">RCPT-00125</td><td>Loan Repayment</td><td class="numr">250,000</td><td><span class="mchip m-matched">Matched</span></td></tr>
+            <tr><td><input type="checkbox" checked></td><td>03 Aug</td><td class="mono">PAY-00081</td><td>Supplier Payment</td><td class="numr">125,000</td><td><span class="mchip m-matched">Matched</span></td></tr>
+            <tr><td><input type="checkbox"></td><td>04 Aug</td><td class="mono">TRF-00210</td><td>Bank Transfer</td><td class="numr">500,000</td><td><span class="mchip m-out">Outstanding</span></td></tr>
+            <tr><td><input type="checkbox" checked></td><td>05 Aug</td><td class="mono">RCPT-00131</td><td>Member Deposit</td><td class="numr">150,000</td><td><span class="mchip m-matched">Matched</span></td></tr>
+            <tr><td><input type="checkbox"></td><td>07 Aug</td><td class="mono">RCPT-00136</td><td>Member Deposit</td><td class="numr">150,000</td><td><span class="mchip m-book">Book-only</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card pane bank" style="box-shadow:none">
+        <div class="pane-h"><span class="t">Bank Statement</span><span class="n">imported · 47</span>
+          <div class="right"><div class="searchbox"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input placeholder="Search bank…"></div></div></div>
+        <table>
+          <thead><tr><th style="width:28px"></th><th>Date</th><th>Reference</th><th>Description</th><th class="num">Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox" checked></td><td>02 Aug</td><td class="mono">458821</td><td>LOAN REPAYMENT</td><td class="numr">250,000</td><td><span class="mchip m-matched">Matched</span></td></tr>
+            <tr><td><input type="checkbox" checked></td><td>03 Aug</td><td class="mono">882921</td><td>SUPPLIER PAYMENT</td><td class="numr">125,000</td><td><span class="mchip m-matched">Matched</span></td></tr>
+            <tr><td><input type="checkbox"></td><td>06 Aug</td><td class="mono">991201</td><td>BANK CHARGE</td><td class="numr">25,000</td><td><span class="mchip m-bank">Bank-only</span></td></tr>
+            <tr><td><input type="checkbox" checked></td><td>05 Aug</td><td class="mono">772921</td><td>MEMBER DEPOSIT</td><td class="numr">150,000</td><td><span class="mchip m-matched">Matched</span></td></tr>
+            <tr><td><input type="checkbox"></td><td>07 Aug</td><td class="mono">773005</td><td>MEMBER DEPOSIT</td><td class="numr">150,000</td><td><span class="mchip m-bank">Bank-only</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="calcgrid">
+  <div class="card"><div class="card-h"><h2>Reconciliation Calculation</h2><div class="right"><button class="btn btn-ghost btn-sm">⟳ Recalculate</button></div></div>
+    <div class="card-b calc">
+      <div class="row"><span>Bank statement balance</span><b>140,750,000</b></div>
+      <div class="row"><span>Add: deposits in transit</span><b>+2,000,000</b></div>
+      <div class="row"><span>Less: outstanding cheques / payments</span><b>−1,500,000</b></div>
+      <div class="row"><span>Adjusted bank balance</span><b>141,250,000</b></div>
+      <div class="row"><span>Book balance</span><b>140,725,000</b></div>
+      <div class="row"><span>Add: unrecorded bank charge (pending adjustment)</span><b>−25,000</b></div>
+      <div class="row"><span>Add: unrecorded interest received</span><b>+525,000</b></div>
+      <div class="row tot"><span>Adjusted book balance</span><b>141,250,000</b></div>
+    </div></div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="card"><div class="card-h"><h2>Reconciliation</h2></div>
+      <div class="card-b">
+        <div class="row calc" style="display:flex;justify-content:space-between;padding:6px 2px;font-size:12.5px;color:var(--muted)"><span>Adjusted bank balance</span><b style="color:var(--ink)">141,250,000</b></div>
+        <div class="row calc" style="display:flex;justify-content:space-between;padding:6px 2px;font-size:12.5px;color:var(--muted)"><span>Adjusted book balance</span><b style="color:var(--ink)">141,250,000</b></div>
+        <div class="balanced warn" style="margin-top:10px">⚠ Cannot complete — difference remaining MWK 25,000 (unrecorded bank charge). Record the adjustment or match outstanding items.</div>
+      </div></div>
+    <div class="card"><div class="card-h"><h2>Audit Trail</h2></div>
+      <div class="card-b audit">
+        <div class="arow"><span class="when">12 Aug 09:02</span><span class="who">Elvis</span><span class="what">Created reconciliation <b>STMT-2026-08</b></span></div>
+        <div class="arow"><span class="when">12 Aug 09:10</span><span class="who">Elvis</span><span class="what">Imported <b>47</b> statement lines from August_2026_Bank_Statement.xlsx</span></div>
+        <div class="arow"><span class="when">12 Aug 09:12</span><span class="who">System</span><span class="what">Auto-matched <b>3 exact</b> (100%) · flagged <b>1 likely</b> (94%)</span></div>
+        <div class="arow"><span class="when">12 Aug 09:14</span><span class="who">Elvis</span><span class="what">Matched <b>RCPT-00125 ↔ 458821</b> · MWK 250,000</span></div>
+      </div></div>
+  </div>
+</div>
+
+<!-- ============ 5 · CREATE & MATCH (bank-only item) ============ -->
+<span class="opt-tag">5 · Create Transaction &amp; Match · bank charge resolution</span>
+<p class="opt-sub">Bank-only items are resolved by creating the accounting entry and matching it in one controlled step — never by editing the statement.</p>
+
+<div class="card" style="max-width:760px">
+  <div class="card-h"><h2>Create Transaction — BANK CHARGE</h2><span class="mchip m-bank">Bank-only · MWK 25,000</span></div>
+  <div class="card-b">
+    <div class="g2">
+      <div class="field"><label>Amount</label><input class="input" value="MWK 25,000.00"></div>
+      <div class="field"><label>Date</label><input class="input" type="date" value="2026-08-06"></div>
+      <div class="field"><label>Expense Account</label><select class="input"><option>Bank Charges</option><option>Interest Expense</option></select></div>
+      <div class="field"><label>Tax</label><select class="input"><option>None</option><option>Standard 16.5%</option></select></div>
+    </div>
+    <div class="field" style="margin-top:14px"><label>Description</label><input class="input" value="Monthly bank charges — Aug 2026"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-cta">Create &amp; Match ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 6 · FINALIZATION + REPORTS ============ -->
+<span class="opt-tag">6 · Control layer · finalization &amp; reports</span>
+<p class="opt-sub">Validate → Approve (optional) → Complete → Lock. Completed reconciliations cannot be deleted — only <b>Reversed</b> with reason + user + timestamp (+ approval).</p>
+
+<div class="card" style="margin-bottom:16px">
+  <div class="card-h"><h2>Finalization</h2>
+    <div class="right">
+      <button class="btn btn-ghost btn-sm">Save Draft</button>
+      <button class="btn btn-ghost btn-sm">⟳ Recalculate</button>
+      <button class="btn btn-ghost btn-sm">Validate</button>
+      <span class="vdiv"></span>
+      <button class="btn btn-warn btn-sm">🔓 Reverse Reconciliation</button>
+      <button class="btn btn-cta btn-sm" disabled>✓ Complete Reconciliation</button>
+      <div class="more"><button class="btn btn-ghost btn-sm" onclick="this.parentNode.classList.toggle('open')">⋯</button>
+        <div class="more-menu"><button class="more-item">🖨 Print Report</button><button class="more-item">📕 Export PDF</button><button class="more-item">📗 Export Excel</button></div></div>
+    </div></div>
+  <div class="card-b">
+    <div class="stepper">
+      <div class="stp"><span class="d done">✓</span><span class="t">Statement</span></div><span class="bar"></span>
+      <div class="stp"><span class="d done">✓</span><span class="t">Import</span></div><span class="bar"></span>
+      <div class="stp"><span class="d done">✓</span><span class="t">Matching</span></div><span class="bar"></span>
+      <div class="stp"><span class="d cur">4</span><span class="t cur">Review</span></div><span class="bar"></span>
+      <div class="stp"><span class="d todo">5</span><span class="t">Complete</span></div>
+    </div>
+    <div class="balanced ok">✓ BALANCED state preview — when Difference = MWK 0.00, "Complete Reconciliation" unlocks and the period locks.</div>
+  </div>
+</div>
+
+<div class="repcards">
+  <div class="repcard"><span class="t">Reconciliation Summary</span><span class="d">Statement balance, book balance, adjustments, difference and status per period.</span>
+    <div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="drill" style="margin-left:auto" href="#">Open →</a></div></div>
+  <div class="repcard"><span class="t">Outstanding Transactions</span><span class="d">Outstanding cheques, deposits in transit and pending bank transactions.</span>
+    <div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="drill" style="margin-left:auto" href="#">Open →</a></div></div>
+  <div class="repcard"><span class="t">Unmatched Transactions</span><span class="d">Bank-only and book-only items requiring attention.</span>
+    <div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="drill" style="margin-left:auto" href="#">Open →</a></div></div>
+  <div class="repcard"><span class="t">Reconciliation Detail</span><span class="d">Every matched / unmatched item with match confidence and method.</span>
+    <div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="drill" style="margin-left:auto" href="#">Open →</a></div></div>
+  <div class="repcard"><span class="t">Reconciliation History</span><span class="d">Who reconciled, when, difference, status and reversal history.</span>
+    <div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="drill" style="margin-left:auto" href="#">Open →</a></div></div>
+  <div class="repcard"><span class="t">Reconciliation Exceptions</span><span class="d">Large / old unmatched items, duplicates, bank-only and book-only outliers.</span>
+    <div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="drill" style="margin-left:auto" href="#">Open →</a></div></div>
+</div>
+
+</div>
+<script>
+  document.querySelectorAll('.more > .btn').forEach(function(b){
+    b.addEventListener('click',function(e){e.stopPropagation();b.parentNode.classList.toggle('open');});
+  });
+  document.addEventListener('click',function(){document.querySelectorAll('.more.open').forEach(function(m){m.classList.remove('open');});});
+</script>
+</body>
+</html>
