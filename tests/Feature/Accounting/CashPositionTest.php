@@ -156,6 +156,8 @@ class CashPositionTest extends TestCase
         $response->assertSee('Bank Balance');
         $response->assertSee('Cash on Hand');
         $response->assertSee('Unreconciled');
+        $response->assertSee('View unreconciled');
+        $response->assertSee('class="net', false); // net pill moved into the chips row
         $response->assertSee('Cash Position by Account', false);
         $response->assertSee('Transfers In', false);
         $response->assertSee('Transfers Out', false);
@@ -257,6 +259,60 @@ class CashPositionTest extends TestCase
         $response->assertSee('No receipts in this period.');
         $response->assertSee('No payments in this period.');
         $response->assertSee('No bank transactions in this period.');
+    }
+
+    public function test_advanced_panel_lives_inside_filter_form_scope(): void
+    {
+        $this->bankAccount();
+
+        $response = $this->actingAs($this->user)->get(route('accounting.cash-position.index'));
+
+        $response->assertOk();
+
+        $html = $response->getContent();
+
+        // The Alpine x-data scope is hoisted onto the <form> so the sibling .advpanel
+        // can see `adv` (previously it lived on .filterbar, which left .advpanel out of scope).
+        $this->assertStringContainsString('id="cp2-form" x-data="{ period:', $html);
+
+        // The .advpanel must be a child of that same form (appears before </form>).
+        $formStart = strpos($html, '<form method="GET"');
+        $formEnd = strpos($html, '</form>', $formStart);
+        $formBlock = substr($html, $formStart, $formEnd - $formStart);
+        $this->assertStringContainsString('class="advpanel"', $formBlock);
+        $this->assertStringContainsString('x-show="adv"', $formBlock);
+
+        // Filterbar itself no longer carries its own x-data.
+        $this->assertStringNotContainsString('class="filterbar" x-data=', $html);
+    }
+
+    public function test_ledger_drill_opens_period_aware_account_statement(): void
+    {
+        $bank = $this->bankAccount(['opening_balance' => 1000]);
+
+        // Pre-period entry (last month) + in-period entry (this month).
+        $this->postedEntry($bank->id, 100, now()->subMonth()->toDateString(), 'JE-GL-0001', 'Pre-period inflow');
+        $this->postedEntry($bank->id, 250, now()->toDateString(), 'JE-GL-0002', 'In-period inflow');
+
+        $dateFrom = now()->startOfMonth()->toDateString();
+        $dateTo = now()->endOfMonth()->toDateString();
+
+        $response = $this->actingAs($this->user)->get(
+            route('accounting.general-ledger.account', array_merge([$bank->id], ['date_from' => $dateFrom, 'date_to' => $dateTo]))
+        );
+
+        $response->assertOk();
+        $response->assertSee('Account Statement', false);
+        $response->assertSee('1,100.00'); // opening = opening_balance 1000 + pre-period 100
+        $response->assertSee('250.00');   // period debit
+        $response->assertSee('1,350.00'); // closing = 1100 + 250
+
+        // Cash Position drill links carry the period to the same route.
+        $cp = $this->actingAs($this->user)->get(route('accounting.cash-position.index'));
+        $cp->assertOk();
+        $cp->assertSee('general-ledger/' . $bank->id);
+        $cp->assertSee('date_from=' . $dateFrom);
+        $cp->assertSee('date_to=' . $dateTo);
     }
 
     public function test_export_csv_streams_movement(): void

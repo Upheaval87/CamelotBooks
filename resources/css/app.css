@@ -8728,7 +8728,6 @@ textarea.q-input {
     color: #fff;
     box-shadow: var(--shadow-card, 0 24px 56px -24px rgba(10, 42, 46, 0.45));
 }
-.cp2 .hero-top { display: flex; justify-content: flex-end; margin-bottom: 16px; }
 .cp2 .net {
     display: inline-flex;
     align-items: center;

@@ -48,8 +48,8 @@
                 <a class="pill" href="{{ route('accounting.general-ledger.index', $ledgerParams) }}">General Ledger</a>
             </nav>
 
-            <form method="GET" action="{{ route('accounting.cash-position.index') }}" id="cp2-form">
-                <div class="filterbar" x-data="{ period: '{{ $f['period'] }}', adv: {{ $advOpen }} }">
+            <form method="GET" action="{{ route('accounting.cash-position.index') }}" id="cp2-form" x-data="{ period: '{{ $f['period'] }}', adv: {{ $advOpen }} }">
+                <div class="filterbar">
                     <div class="seg" role="tablist" aria-label="Period">
                         @foreach ($shortPeriods as $val => $label)
                             <button type="button" class="seg-btn" role="tab"
@@ -126,9 +126,6 @@
             </form>
 
             <section class="hero-panel" aria-label="Cash position summary">
-                <div class="hero-top">
-                    <span class="net {{ $totals['net'] < 0 ? 'neg' : '' }}">{{ $totals['net'] >= 0 ? '+' : '&minus;' }} {{ $cs }}{{ format_number(abs($totals['net'])) }} this period</span>
-                </div>
                 <div class="flow">
                     <div class="fstep">
                         <h3>Opening</h3>
@@ -162,6 +159,7 @@
                     <span class="chip"><b>{{ $cs }}{{ format_number($chips['bank']) }}</b> Bank Balance</span>
                     <span class="chip"><b>{{ $cs }}{{ format_number($chips['cash']) }}</b> Cash on Hand</span>
                     <span class="chip warn"><b>{{ $cs }}{{ format_number($chips['unreconciled']) }}</b> Unreconciled &middot; <a href="{{ $reconciliationUrl }}">View unreconciled &rarr;</a></span>
+                    <span class="net {{ $totals['net'] < 0 ? 'neg' : '' }}">{{ $totals['net'] >= 0 ? '+' : '&minus;' }} {{ $cs }}{{ format_number(abs($totals['net'])) }} this period</span>
                 </div>
             </section>
 

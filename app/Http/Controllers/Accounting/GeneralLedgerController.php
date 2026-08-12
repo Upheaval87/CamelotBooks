@@ -147,6 +147,31 @@ class GeneralLedgerController extends Controller
         $lines = $query->orderBy('id')->get();
 
         $openingBalance = (float) $account->opening_balance;
+
+        if ($request->filled('date_from')) {
+            $preQuery = JournalEntryLine::where('account_id', $accountId)
+                ->whereHas('journalEntry', function ($q) use ($companyId, $request) {
+                    $q->where('company_id', $companyId)
+                        ->where('status', JournalEntry::STATUS_POSTED)
+                        ->where('date', '<', $request->date_from);
+                });
+
+            if ($request->filled('branch_id')) {
+                $preQuery->where('branch_id', $request->branch_id);
+            }
+
+            if ($request->filled('cost_center_id')) {
+                $preQuery->where('cost_center_id', $request->cost_center_id);
+            }
+
+            $preDebit = (float) $preQuery->sum('debit');
+            $preCredit = (float) $preQuery->sum('credit');
+
+            $openingBalance += $account->isDebitNormal()
+                ? $preDebit - $preCredit
+                : $preCredit - $preDebit;
+        }
+
         $runningBalance = $openingBalance;
 
         $transactions = [];
@@ -309,6 +334,31 @@ class GeneralLedgerController extends Controller
         $lines = $query->orderBy('id')->get();
 
         $openingBalance = (float) $account->opening_balance;
+
+        if ($request->filled('date_from')) {
+            $preQuery = JournalEntryLine::where('account_id', $accountId)
+                ->whereHas('journalEntry', function ($q) use ($companyId, $request) {
+                    $q->where('company_id', $companyId)
+                        ->where('status', JournalEntry::STATUS_POSTED)
+                        ->where('date', '<', $request->date_from);
+                });
+
+            if ($request->filled('branch_id')) {
+                $preQuery->where('branch_id', $request->branch_id);
+            }
+
+            if ($request->filled('cost_center_id')) {
+                $preQuery->where('cost_center_id', $request->cost_center_id);
+            }
+
+            $preDebit = (float) $preQuery->sum('debit');
+            $preCredit = (float) $preQuery->sum('credit');
+
+            $openingBalance += $account->isDebitNormal()
+                ? $preDebit - $preCredit
+                : $preCredit - $preDebit;
+        }
+
         $runningBalance = $openingBalance;
         $transactions = [];
 
