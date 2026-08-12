@@ -248,6 +248,25 @@ class ExpenseTest extends TestCase
         $this->assertStringStartsWith('EXP-', $e2->expense_number);
     }
 
+    public function test_show_renders_when_no_employee_attached(): void
+    {
+        $user = \App\Models\User::find($this->userId);
+        $user->companies()->attach($this->company->id, ['role' => 'company_admin']);
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+        setPermissionsTeamId($this->company->id);
+        $user->assignRole('company_admin');
+        session(['current_company_id' => $this->company->id]);
+
+        $expense = $this->service->create($this->makeExpenseData(), $this->userId);
+        $this->assertNull($expense->employee_id);
+
+        $response = $this->actingAs($user)->get(route('accounting.expenses.show', $expense));
+
+        $response->assertOk();
+        $response->assertSee('Expense ' . $expense->expense_number);
+        $response->assertDontSee('Lookup Employee');
+    }
+
     public function test_update_expense_in_draft(): void
     {
         $expense = $this->service->create($this->makeExpenseData(), $this->userId);
