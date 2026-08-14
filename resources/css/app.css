@@ -83,8 +83,15 @@ html, body { overflow-x: clip; }
 }
 
 @layer base {
-    html, body {
+    html {
         height: 100%;
+    }
+    body {
+        /* Content-driven height: keep the viewport minimum but never lock the
+           body to exactly 100vh, or sticky children (e.g. the topbar) are
+           dragged out of their containing block once the page scrolls past
+           one viewport height. */
+        min-height: 100%;
         margin: 0;
     }
     body {

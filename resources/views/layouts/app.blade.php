@@ -35,7 +35,7 @@
         @endif
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="h-full font-sans antialiased bg-neutral-50 dark:bg-neutral-950">
+    <body class="font-sans antialiased bg-neutral-50 dark:bg-neutral-950">
 
         @include('layouts.topbar-two-row')
 
