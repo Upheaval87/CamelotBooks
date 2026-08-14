@@ -16,6 +16,8 @@ class BankStatementLine extends Model
 
     protected $fillable = [
         'import_id',
+        'company_id',
+        'reconciliation_id',
         'bank_account_id',
         'transaction_date',
         'description',
@@ -23,6 +25,8 @@ class BankStatementLine extends Model
         'amount',
         'balance',
         'is_matched',
+        'status',
+        'match_id',
     ];
 
     protected $casts = [
@@ -32,19 +36,38 @@ class BankStatementLine extends Model
         'is_matched' => 'boolean',
     ];
 
+    public const STATUS_UNMATCHED = 'unmatched';
+    public const STATUS_MATCHED = 'matched';
+    public const STATUS_OUTSTANDING = 'outstanding';
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_BANK_ONLY = 'bank_only';
+    public const STATUS_BOOK_ONLY = 'book_only';
+    public const STATUS_ADJUSTED = 'adjusted';
+    public const STATUS_RECONCILED = 'reconciled';
+
     public function import(): BelongsTo
     {
         return $this->belongsTo(BankStatementImport::class, 'import_id');
     }
 
+    public function reconciliation(): BelongsTo
+    {
+        return $this->belongsTo(Reconciliation::class, 'reconciliation_id');
+    }
+
+    public function match(): BelongsTo
+    {
+        return $this->belongsTo(ReconciliationMatch::class, 'match_id');
+    }
+
+    public function adjustments(): HasMany
+    {
+        return $this->hasMany(ReconciliationAdjustment::class, 'bank_statement_line_id');
+    }
+
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'bank_account_id');
-    }
-
-    public function items(): HasMany
-    {
-        return $this->hasMany(BankReconciliationItem::class, 'bank_statement_line_id');
     }
 
     public function getCreatedAtAttribute()

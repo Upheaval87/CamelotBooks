@@ -42,4 +42,25 @@ class InventoryItemsController extends Controller
 
         return view('accounting.inventory-items.show', compact('product', 'totalOnHand', 'totalValue'));
     }
+
+    public function print(Product $product)
+    {
+        $companyId = session('current_company_id');
+
+        if ($product->company_id !== $companyId) {
+            abort(404);
+        }
+
+        $product->load(['stock.branch', 'costLayers' => function ($q) {
+            $q->available()->orderBy('date', 'asc');
+        }, 'incomeAccount', 'expenseAccount', 'inventoryAssetAccount', 'uomConversions' => function ($q) {
+            $q->where('is_active', true);
+        }]);
+
+        $totalOnHand = $product->stock->sum('quantity_on_hand');
+        $totalValue = $product->costLayers->where('quantity_remaining', '>', 0)
+            ->sum(fn($layer) => $layer->quantity_remaining * $layer->unit_cost);
+
+        return view('accounting.inventory-items.print', compact('product', 'totalOnHand', 'totalValue'));
+    }
 }

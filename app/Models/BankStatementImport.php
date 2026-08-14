@@ -15,6 +15,7 @@ class BankStatementImport extends Model
     protected $fillable = [
         'company_id',
         'bank_account_id',
+        'reconciliation_id',
         'filename',
         'statement_date',
         'statement_end_balance',
@@ -35,6 +36,11 @@ class BankStatementImport extends Model
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'bank_account_id');
+    }
+
+    public function reconciliation(): BelongsTo
+    {
+        return $this->belongsTo(Reconciliation::class, 'reconciliation_id');
     }
 
     public function lines(): HasMany

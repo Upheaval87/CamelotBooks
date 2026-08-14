@@ -145,6 +145,20 @@ class PurchaseOrderController extends Controller
                 ]);
             }
 
+            if (!empty($validated['requisition_id'])) {
+                $requisition = PurchaseRequisition::forCompany($companyId)
+                    ->where('status', PurchaseRequisition::STATUS_APPROVED)
+                    ->find($validated['requisition_id']);
+
+                if ($requisition) {
+                    $requisition->update([
+                        'status' => PurchaseRequisition::STATUS_CONVERTED,
+                        'converted_to_po_id' => $order->id,
+                        'converted_at' => now(),
+                    ]);
+                }
+            }
+
             DB::commit();
 
             return redirect()->route('accounting.purchase-orders.show', $order)

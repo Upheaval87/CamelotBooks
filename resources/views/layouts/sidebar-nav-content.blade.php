@@ -6,7 +6,7 @@
     $sectionMap = [
         'sales-purchases' => ['accounting.customers', 'accounting.quotations', 'accounting.invoices', 'accounting.sales-receipts', 'accounting.credit-notes', 'accounting.vendors', 'accounting.purchase-orders', 'accounting.goods-received-notes', 'accounting.bills', 'accounting.expenses', 'accounting.vendor-centre', 'accounting.products'],
         'inventory'       => ['accounting.inventory-items', 'accounting.stock-adjustments', 'accounting.stock-transfers', 'accounting.stock-counts', 'accounting.inventory-valuation'],
-        'banking'         => ['accounting.bank-accounts', 'accounting.deposits', 'accounting.cheques', 'accounting.petty-cash', 'accounting.cash-position'],
+        'banking'         => ['accounting.bank-accounts', 'accounting.bank-reconciliation', 'accounting.deposits', 'accounting.cheques', 'accounting.petty-cash', 'accounting.cash-position'],
         'accounting'      => ['accounting.accounts', 'accounting.journal-entries', 'accounting.general-ledger', 'accounting.trial-balance', 'accounting.budgets'],
         'fixed-assets'    => ['accounting.fixed-assets', 'accounting.asset-depreciation', 'accounting.depreciation'],
         'payroll'         => ['accounting.employees', 'accounting.payroll-runs'],
@@ -96,6 +96,7 @@
         </button>
         <div x-show="openSection === 'banking'" x-collapse.duration.300ms>
             <a href="{{ route('accounting.bank-accounts.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.bank-accounts') ? 'active' : '' }}">Bank Accounts</a>
+            <a href="{{ route('accounting.bank-reconciliation.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.bank-reconciliation') ? 'active' : '' }}">Bank Reconciliation</a>
             <a href="{{ route('accounting.deposits.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.deposits') ? 'active' : '' }}">Deposits</a>
             <a href="{{ route('accounting.cheques.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.cheques') ? 'active' : '' }}">Cheques</a>
             <a href="{{ route('accounting.petty-cash.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.petty-cash') ? 'active' : '' }}">Petty Cash</a>

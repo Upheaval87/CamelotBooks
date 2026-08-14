@@ -164,7 +164,6 @@ class FavouritesService
         'accounting.purchase-requisitions.show' => ['purchase-requisition', 'Purchase Requisition', 'clipboard'],
         'accounting.purchase-orders.show' => ['purchase-order', 'Purchase Order', 'shopping-cart'],
         'accounting.goods-received-notes.show' => ['goods-received-note', 'Goods Received Note', 'package-check'],
-        'accounting.bank-reconciliation.show' => ['reconciliation', 'Reconciliation', 'bank'],
         'accounting.cheques.show' => ['cheque', 'Cheque', 'credit-card'],
         'accounting.petty-cash.show' => ['petty-cash-fund', 'Petty Cash Fund', 'cash'],
         'accounting.landed-costs.show' => ['landed-cost', 'Landed Cost', 'anchor'],

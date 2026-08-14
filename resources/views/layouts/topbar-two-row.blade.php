@@ -88,6 +88,7 @@
             'icon' => 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3',
             'children' => [
                 ['label' => __('Bank Accounts'),'route' => 'accounting.bank-accounts.index'],
+                ['label' => __('Bank Reconciliation'),'route' => 'accounting.bank-reconciliation.index'],
                 ['label' => __('Transfer Funds'),'route' => 'accounting.bank-accounts.transfer-form'],
                 ['label' => __('Deposits'),     'route' => 'accounting.deposits.index'],
                 ['label' => __('Cheques'),      'route' => 'accounting.cheques.index'],
@@ -256,6 +257,19 @@
             <div class="flex-1 min-w-0"></div>
 
             <div class="flex items-center gap-3 shrink-0">
+                <button type="button"
+                        class="fav-star-trigger todo-trigger"
+                        x-data
+                        @click="$dispatch('open-modal', 'my-tasks')"
+                        title="{{ __('My Tasks') }}"
+                        aria-haspopup="dialog">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    <span class="hidden lg:inline">{{ __('My Tasks') }}</span>
+                    <span id="todo-trigger-count" class="fav-count">{{ \App\Models\TodoTask::forCompany($companyId)->forUser($user?->id ?? 0)->active()->count() }}</span>
+                </button>
+
                 <x-favourites.dropdown />
 
                 <button type="button"

@@ -349,4 +349,81 @@ class TodoTaskTest extends TestCase
             ->assertSee("title: 'Review Q3 numbers'", false)
             ->assertSee('Widget Co');
     }
+
+    public function test_modal_fragment_renders_for_the_user(): void
+    {
+        $this->createTask($this->user, ['title' => 'Modal task one']);
+        $this->createTask($this->user, [
+            'title' => 'Modal task two',
+            'status' => TodoTask::STATUS_COMPLETED,
+            'completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get(route('todo.modal'))
+            ->assertOk()
+            ->assertSee('data-active-count="1"', false)
+            ->assertSee('Modal task one')
+            ->assertSee('Modal task two');
+
+        // It must be a bare fragment: no layout chrome, and the quick-add
+        // composer + tab bar are present so the topbar modal is self-sufficient.
+        $response->assertDontSee('<x-app-layout>', false)
+            ->assertDontSee('id="topbar-company-area"', false)
+            ->assertSee('@item-selected="onLinkSelected($event)"', false)
+            ->assertSee("tab = 'active'", false)
+            ->assertSee('todo-delete', false);
+    }
+
+    public function test_mutations_return_json_when_requested(): void
+    {
+        $task = $this->createTask($this->user);
+
+        // The topbar modal submits everything with Accept: application/json,
+        // so the controller must answer JSON instead of redirecting.
+        $this->actingAs($this->user)
+            ->postJson(route('todo.store'), [
+                'title' => 'Created via modal',
+                'priority' => TodoTask::PRIORITY_MEDIUM,
+            ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('message', 'Task added.');
+
+        $this->actingAs($this->user)
+            ->postJson(route('todo.complete', $task))
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+
+        $this->actingAs($this->user)
+            ->postJson(route('todo.reopen', $task))
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+
+        $this->actingAs($this->user)
+            ->putJson(route('todo.update', $task), [
+                'title' => 'Renamed via modal',
+                'priority' => TodoTask::PRIORITY_HIGH,
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Task updated.');
+
+        $this->actingAs($this->user)
+            ->deleteJson(route('todo.destroy', $task))
+            ->assertOk()
+            ->assertJsonPath('message', 'Task deleted.');
+
+        $this->assertDatabaseMissing('todo_tasks', ['id' => $task->id]);
+    }
+
+    public function test_json_mutations_keep_task_personal_scope(): void
+    {
+        $task = $this->createTask($this->otherUser);
+
+        $this->actingAs($this->user)
+            ->deleteJson(route('todo.destroy', $task))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('todo_tasks', ['id' => $task->id]);
+    }
 }

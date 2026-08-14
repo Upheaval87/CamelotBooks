@@ -2,6 +2,7 @@ import './bootstrap';
 import './analytics';
 import './global-search-modal';
 import './todo';
+import './todo-modal';
 import './forgot-password';
 import './verify-code';
 import './new-password';

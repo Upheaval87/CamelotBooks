@@ -1,3 +1,39 @@
+import { csrfToken } from './http.js';
+
+/**
+ * Submit a todo mutation form via fetch (no page navigation). The request
+ * carries Accept: application/json so TodoTaskController returns a JSON
+ * payload instead of a redirect. Throws an Error with a friendly message
+ * on 422 (first validation error) and any other non-2xx response.
+ */
+export async function todoSubmitFetch(url, formData) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken(),
+        },
+        body: formData,
+    });
+
+    const text = await res.text();
+    let body = null;
+    if (text) {
+        try { body = JSON.parse(text); } catch (e) { /* non-JSON body */ }
+    }
+
+    if (res.status === 422) {
+        const message = body && body.errors ? Object.values(body.errors)[0][0] : 'Please correct the highlighted fields.';
+        const err = new Error(message);
+        err.status = 422;
+        throw err;
+    }
+    if (!res.ok) {
+        throw new Error((body && body.message) || ('Request failed: ' + res.status));
+    }
+    return body;
+}
+
 function todoResolveLinkFromEvent(event) {
     const detail = (event && event.detail) || {};
     const item = detail.item || {};
@@ -165,6 +201,40 @@ document.addEventListener('alpine:init', () => {
 
         clearLink() {
             Object.assign(this, todoClearLinkValues());
+        },
+
+        async saveUpdate(event) {
+            event.preventDefault();
+            try {
+                await todoSubmitFetch(this.updateUrl, new FormData(event.target));
+                if (window.CB) window.CB.toast('success', 'Task updated.');
+                this.$dispatch('close-modal', 'task-detail');
+                window.dispatchEvent(new CustomEvent('todo-refresh'));
+            } catch (err) {
+                if (window.CB) window.CB.toast('error', err.message || 'Could not save the task.');
+            }
+        },
+
+        async confirmDelete() {
+            let ok = false;
+            if (window.CB) {
+                ok = await window.CB.confirm({ type: 'danger', title: 'Delete this task permanently?' });
+            } else {
+                ok = window.confirm('Delete this task permanently?');
+            }
+            if (!ok) return;
+
+            const fd = new FormData();
+            fd.append('_token', csrfToken());
+            fd.append('_method', 'DELETE');
+            try {
+                await todoSubmitFetch(this.deleteUrl, fd);
+                if (window.CB) window.CB.toast('success', 'Task deleted.');
+                this.$dispatch('close-modal', 'task-detail');
+                window.dispatchEvent(new CustomEvent('todo-refresh'));
+            } catch (err) {
+                if (window.CB) window.CB.toast('error', err.message || 'Could not delete the task.');
+            }
         },
     }));
 });

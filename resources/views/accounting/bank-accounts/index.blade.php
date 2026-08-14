@@ -2,8 +2,8 @@
     @php
         $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
         $cashCount = $bankAccounts->filter(fn ($a) => (bool) $a->is_petty_cash)->count();
-        $reconDates = \App\Models\BankReconciliation::whereIn('bank_account_id', $bankAccounts->pluck('id'))
-            ->where('status', 'completed')
+        $reconDates = \App\Models\Reconciliation::whereIn('bank_account_id', $bankAccounts->pluck('id'))
+            ->where('status', 'reconciled')
             ->get(['bank_account_id', 'completed_at'])
             ->groupBy('bank_account_id')
             ->map(fn ($rows) => $rows->max('completed_at'))
@@ -77,7 +77,7 @@
                                     <td class="mono em">{{ $bankAccount->bank_account_number ?? '—' }}</td>
                                     <td class="em">{{ $bankAccount->bank_name ?? '—' }}</td>
                                     <td class="numr">{{ format_number($bankAccount->current_balance) }}</td>
-                                    <td class="em">{{ $reconDates[$bankAccount->id]?->format('M d, Y') ?? 'Never' }}</td>
+                                    <td class="em">{{ $reconDates->get($bankAccount->id)?->format('M d, Y') ?? 'Never' }}</td>
                                     <td class="num" style="white-space:nowrap">
                                         <a href="{{ route('accounting.bank-accounts.register', $bankAccount) }}" class="btn ghost sm">{{ __('Register') }}</a>
                                         <a href="{{ route('accounting.bank-reconciliation.index', $bankAccount->id) }}" class="btn ghost sm">{{ __('Reconcile') }}</a>

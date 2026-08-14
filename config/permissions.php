@@ -53,10 +53,10 @@ return [
 
         // ── Banking ──
         'bank-accounts' => ['view', 'create', 'edit', 'void'],
-        'reconciliation' => ['view', 'create'],
         'deposits'       => ['view', 'create'],
         'cheques'        => ['view', 'create', 'edit', 'void'],
         'petty-cash'     => ['view', 'create', 'edit', 'void', 'expense', 'replenish', 'establish'],
+        'bank-reconciliations' => ['view', 'create', 'edit', 'import', 'approve', 'complete', 'reverse', 'match', 'adjust'],
 
         // ── Accounting ──
         'chart-of-accounts'  => ['view', 'create', 'edit', 'void'],
@@ -181,7 +181,6 @@ return [
         // Banking Reports
         'bank_balances'              => 'Bank Balances',
         'deposits_in_transit'        => 'Deposits in Transit',
-        'bank_reconciliation_history' => 'Bank Reconciliation History',
         'cheque_register'            => 'Cheque Register',
 
         // Fixed Asset Reports
@@ -278,10 +277,10 @@ return [
                 'customer-payments.*',
                 'vendor-payments.*',
                 'bank-accounts.*',
-                'reconciliation.*',
                 'deposits.*',
                 'cheques.*',
                 'petty-cash.*',
+                'bank-reconciliations.*',
                 'chart-of-accounts.*',
                 'journal-entries.*',
                 'cost-centers.*',
@@ -340,7 +339,6 @@ return [
                 'reports.low_stock.view',
                 'reports.bank_balances.view',
                 'reports.deposits_in_transit.view',
-                'reports.bank_reconciliation_history.view',
                 'reports.cheque_register.view',
                 'reports.asset_revaluation.view',
                 'reports.asset_impairment.view',
@@ -396,6 +394,7 @@ return [
                 'goods-received-notes.view', 'goods-received-notes.create',
                 // Banking (view only)
                 'bank-accounts.view',
+                'bank-reconciliations.view',
                 'cheques.view', 'cheques.create',
                 'petty-cash.view', 'petty-cash.create',
                 // Payments
@@ -456,7 +455,7 @@ return [
                 'landed-costs.view', 'landed-costs.approve',
                 // Banking — view only
                 'bank-accounts.view',
-                'reconciliation.view',
+                'bank-reconciliations.view', 'bank-reconciliations.approve',
                 // Accounting — view only
                 'chart-of-accounts.view',
                 'accounting-periods.view',
@@ -546,10 +545,10 @@ return [
                 'customer-payments.view',
                 'vendor-payments.view',
                 'bank-accounts.view',
-                'reconciliation.view',
                 'deposits.view',
                 'cheques.view',
                 'petty-cash.view',
+                'bank-reconciliations.view',
                 'chart-of-accounts.view',
                 'journal-entries.view',
                 'accounting-periods.view',
@@ -645,6 +644,7 @@ return [
                 'stock-counts.view',
                 'assemblies.view',
                 'bank-accounts.view',
+                'bank-reconciliations.view',
                 'chart-of-accounts.view',
                 'journal-entries.view',
                 'accounting-periods.view',

@@ -29,6 +29,110 @@ class TodoTaskController extends Controller
 
     public function index()
     {
+        $data = $this->gatherData();
+
+        return view('todo.index', $data);
+    }
+
+    /**
+     * Server-rendered list fragment used by the topbar "My Tasks" modal.
+     * Carries the same buckets/tabs as the full page but no layout chrome,
+     * so it can be fetched with fetch() and injected into the modal.
+     */
+    public function modal()
+    {
+        $data = $this->gatherData();
+
+        return view('todo.partials.modal-list', $data);
+    }
+
+    public function store(Request $request)
+    {
+        $companyId = (int) session('current_company_id');
+
+        $validated = $request->validate($this->rules());
+        $validated['company_id'] = $companyId;
+        $validated['user_id'] = auth()->id();
+        $validated['status'] = TodoTask::STATUS_ACTIVE;
+        $validated = $this->normalizeLink($validated);
+
+        TodoTask::create($validated);
+
+        if ($request->wantsJson()) {
+            return $this->jsonOk(__('Task added.'));
+        }
+
+        return redirect()->route('todo.index')
+            ->with('success', __('Task added.'));
+    }
+
+    public function update(Request $request, TodoTask $task)
+    {
+        $this->authorizeAccess($task);
+
+        $validated = $request->validate($this->rules());
+        $validated = $this->normalizeLink($validated);
+
+        $task->update($validated);
+
+        if ($request->wantsJson()) {
+            return $this->jsonOk(__('Task updated.'));
+        }
+
+        return redirect()->route('todo.index')
+            ->with('success', __('Task updated.'));
+    }
+
+    public function complete(Request $request, TodoTask $task)
+    {
+        $this->authorizeAccess($task);
+
+        $task->update([
+            'status' => TodoTask::STATUS_COMPLETED,
+            'completed_at' => now(),
+        ]);
+
+        if ($request->wantsJson()) {
+            return $this->jsonOk(__('Task completed.'));
+        }
+
+        return redirect()->route('todo.index')
+            ->with('success', __('Task completed.'));
+    }
+
+    public function reopen(Request $request, TodoTask $task)
+    {
+        $this->authorizeAccess($task);
+
+        $task->update([
+            'status' => TodoTask::STATUS_ACTIVE,
+            'completed_at' => null,
+        ]);
+
+        if ($request->wantsJson()) {
+            return $this->jsonOk(__('Task reopened.'));
+        }
+
+        return redirect()->route('todo.index')
+            ->with('success', __('Task reopened.'));
+    }
+
+    public function destroy(Request $request, TodoTask $task)
+    {
+        $this->authorizeAccess($task);
+
+        $task->delete();
+
+        if ($request->wantsJson()) {
+            return $this->jsonOk(__('Task deleted.'));
+        }
+
+        return redirect()->route('todo.index')
+            ->with('success', __('Task deleted.'));
+    }
+
+    private function gatherData(): array
+    {
         $now = now();
 
         $groups = [
@@ -54,72 +158,12 @@ class TodoTaskController extends Controller
             ->orderByDesc('completed_at')
             ->get();
 
-        return view('todo.index', compact('groups', 'completed', 'active'));
+        return compact('groups', 'completed', 'active');
     }
 
-    public function store(Request $request)
+    private function jsonOk(string $message)
     {
-        $companyId = (int) session('current_company_id');
-
-        $validated = $request->validate($this->rules());
-        $validated['company_id'] = $companyId;
-        $validated['user_id'] = auth()->id();
-        $validated['status'] = TodoTask::STATUS_ACTIVE;
-        $validated = $this->normalizeLink($validated);
-
-        TodoTask::create($validated);
-
-        return redirect()->route('todo.index')
-            ->with('success', __('Task added.'));
-    }
-
-    public function update(Request $request, TodoTask $task)
-    {
-        $this->authorizeAccess($task);
-
-        $validated = $request->validate($this->rules());
-        $validated = $this->normalizeLink($validated);
-
-        $task->update($validated);
-
-        return redirect()->route('todo.index')
-            ->with('success', __('Task updated.'));
-    }
-
-    public function complete(TodoTask $task)
-    {
-        $this->authorizeAccess($task);
-
-        $task->update([
-            'status' => TodoTask::STATUS_COMPLETED,
-            'completed_at' => now(),
-        ]);
-
-        return redirect()->route('todo.index')
-            ->with('success', __('Task completed.'));
-    }
-
-    public function reopen(TodoTask $task)
-    {
-        $this->authorizeAccess($task);
-
-        $task->update([
-            'status' => TodoTask::STATUS_ACTIVE,
-            'completed_at' => null,
-        ]);
-
-        return redirect()->route('todo.index')
-            ->with('success', __('Task reopened.'));
-    }
-
-    public function destroy(TodoTask $task)
-    {
-        $this->authorizeAccess($task);
-
-        $task->delete();
-
-        return redirect()->route('todo.index')
-            ->with('success', __('Task deleted.'));
+        return response()->json(['ok' => true, 'message' => $message]);
     }
 
     private function rules(): array

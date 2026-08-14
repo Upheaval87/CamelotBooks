@@ -43,7 +43,6 @@ class CompanyDataMigrator
         'attachments',
         'audit_logs',
         'backup_logs',
-        'bank_reconciliations',
         'bank_statement_imports',
         'bank_transactions',
         'bi_digest_schedules',
@@ -118,7 +117,6 @@ class CompanyDataMigrator
      * child table, and every `?` binds the company id.
      */
     public const CHAIN_TABLES = [
-        'bank_reconciliation_items' => 'EXISTS (SELECT 1 FROM {source}.`bank_reconciliations` p WHERE p.id = s.`reconciliation_id` AND p.`company_id` = ?) OR EXISTS (SELECT 1 FROM {source}.`bank_transactions` p WHERE p.id = s.`bank_transaction_id` AND p.`company_id` = ?) OR EXISTS (SELECT 1 FROM {source}.`bank_statement_lines` p WHERE p.id = s.`bank_statement_line_id` AND EXISTS (SELECT 1 FROM {source}.`bank_statement_imports` i WHERE i.id = p.`import_id` AND i.`company_id` = ?))',
         'bill_lines' => 'EXISTS (SELECT 1 FROM {source}.`bills` p WHERE p.id = s.`bill_id` AND p.`company_id` = ?)',
         'bill_of_material_lines' => 'EXISTS (SELECT 1 FROM {source}.`bill_of_materials` p WHERE p.id = s.`bom_id` AND p.`company_id` = ?)',
         'budget_lines' => 'EXISTS (SELECT 1 FROM {source}.`budgets` p WHERE p.id = s.`budget_id` AND p.`company_id` = ?)',
@@ -212,7 +210,6 @@ class CompanyDataMigrator
         'attachments' => ['uploaded_by'],
         'audit_logs' => ['user_id'],
         'backup_logs' => ['user_id'],
-        'bank_reconciliations' => ['completed_by'],
         'bank_statement_imports' => ['imported_by'],
         'bank_transactions' => ['created_by'],
         'bills' => ['approved_by', 'created_by', 'posted_by', 'voided_by'],

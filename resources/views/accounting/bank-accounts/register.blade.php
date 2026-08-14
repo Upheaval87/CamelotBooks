@@ -3,9 +3,9 @@
         $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
         $totalDebit = $transactions->sum(fn ($t) => (float) $t->amount > 0 ? (float) $t->amount : 0);
         $totalCredit = $transactions->sum(fn ($t) => (float) $t->amount < 0 ? abs((float) $t->amount) : 0);
-        $lastReconciledRaw = \App\Models\BankReconciliation::where('bank_account_id', $bankAccount->id)
+        $lastReconciledRaw = \App\Models\Reconciliation::where('bank_account_id', $bankAccount->id)
             ->where('company_id', $bankAccount->company_id)
-            ->where('status', 'completed')
+            ->where('status', 'reconciled')
             ->max('completed_at');
         $lastReconciled = $lastReconciledRaw ? \Illuminate\Support\Carbon::parse($lastReconciledRaw) : null;
     @endphp

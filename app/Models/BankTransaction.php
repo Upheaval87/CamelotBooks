@@ -31,6 +31,7 @@ class BankTransaction extends Model
         'is_reconciled',
         'reconciled_at',
         'bank_reconciliation_id',
+        'reconciliation_status',
         'created_by',
     ];
 
@@ -40,6 +41,14 @@ class BankTransaction extends Model
         'is_reconciled' => 'boolean',
         'reconciled_at' => 'datetime',
     ];
+
+    public const RECON_STATUS_UNMATCHED = 'unmatched';
+    public const RECON_STATUS_MATCHED = 'matched';
+    public const RECON_STATUS_OUTSTANDING = 'outstanding';
+    public const RECON_STATUS_PENDING = 'pending';
+    public const RECON_STATUS_BOOK_ONLY = 'book_only';
+    public const RECON_STATUS_ADJUSTED = 'adjusted';
+    public const RECON_STATUS_RECONCILED = 'reconciled';
 
     public function company(): BelongsTo
     {
@@ -56,6 +65,11 @@ class BankTransaction extends Model
         return $this->belongsTo(Account::class, 'bank_account_id');
     }
 
+    public function reconciliation(): BelongsTo
+    {
+        return $this->belongsTo(Reconciliation::class, 'bank_reconciliation_id');
+    }
+
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
@@ -69,11 +83,6 @@ class BankTransaction extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function reconciliation(): BelongsTo
-    {
-        return $this->belongsTo(BankReconciliation::class, 'bank_reconciliation_id');
     }
 
     public function scopeForCompany($query, int $companyId)

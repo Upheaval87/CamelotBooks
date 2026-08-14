@@ -76,6 +76,7 @@
                         </button>
                         <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
                             <a href="{{ route('accounting.bank-accounts.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Bank Accounts') }}</a>
+                            <a href="{{ route('accounting.bank-reconciliation.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Bank Reconciliation') }}</a>
                             <a href="{{ route('accounting.deposits.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Make Deposits') }}</a>
                             <a href="{{ route('accounting.cheques.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Write Cheques') }}</a>
                             <a href="{{ route('accounting.bank-accounts.transfer-form') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Transfer Funds') }}</a>
@@ -379,6 +380,7 @@
             <x-responsive-nav-link :href="route('accounting.pension-schemes.index')" :active="request()->routeIs('accounting.pension-schemes.*')">{{ __('Pension Schemes') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Banking</div>
             <x-responsive-nav-link :href="route('accounting.bank-accounts.index')" :active="request()->routeIs('accounting.bank-accounts.*')">{{ __('Bank Accounts') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.bank-reconciliation.index')" :active="request()->routeIs('accounting.bank-reconciliation.*')">{{ __('Bank Reconciliation') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Accounting</div>
             <x-responsive-nav-link :href="route('accounting.accounts.index')" :active="request()->routeIs('accounting.accounts.*')">{{ __('Chart of Accounts') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.journal-entries.index')" :active="request()->routeIs('accounting.journal-entries.*')">{{ __('Journal Entries') }}</x-responsive-nav-link>

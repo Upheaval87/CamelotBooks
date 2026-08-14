@@ -8,6 +8,7 @@ use App\Http\Controllers\Accounting\AssemblyController;
 use App\Http\Controllers\Accounting\BalanceSheetController;
 use App\Http\Controllers\Accounting\EquityStatementController;
 use App\Http\Controllers\Accounting\BankController;
+use App\Http\Controllers\Accounting\BankReconciliationController;
 use App\Http\Controllers\Accounting\BillController;
 use App\Http\Controllers\Accounting\CashFlowController;
 use App\Http\Controllers\Accounting\CreditNoteController;
@@ -29,7 +30,6 @@ use App\Http\Controllers\Accounting\LowStockController;
 use App\Http\Controllers\Accounting\PayrollRunController;
 use App\Http\Controllers\Accounting\ProductController;
 use App\Http\Controllers\Accounting\RecurringJournalController;
-use App\Http\Controllers\Accounting\ReconciliationController;
 use App\Http\Controllers\Accounting\StockAdjustmentController;
 use App\Http\Controllers\Accounting\StockCountController;
 use App\Http\Controllers\Accounting\StockTransferController;
@@ -351,6 +351,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::middleware('feature:inventory')->group(function () {
             // Inventory Items
                 Route::get('inventory-items', [InventoryItemsController::class, 'index'])->name('inventory-items.index');
+                Route::get('inventory-items/{product}/print', [InventoryItemsController::class, 'print'])->name('inventory-items.print');
                 Route::get('inventory-items/{product}', [InventoryItemsController::class, 'show'])->name('inventory-items.show');
 
             // Stock Adjustments
@@ -566,11 +567,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Purchase Requisitions
                 Route::get('purchase-requisitions', [PurchaseRequisitionController::class, 'index'])->name('purchase-requisitions.index');
                 Route::get('purchase-requisitions/create', [PurchaseRequisitionController::class, 'create'])->name('purchase-requisitions.create');
+                Route::get('purchase-requisitions/export', [PurchaseRequisitionController::class, 'exportCsv'])->name('purchase-requisitions.export');
                 Route::post('purchase-requisitions', [PurchaseRequisitionController::class, 'store'])->name('purchase-requisitions.store');
+                Route::post('purchase-requisitions/budget-check', [PurchaseRequisitionController::class, 'budgetCheck'])->name('purchase-requisitions.budget-check');
                 Route::get('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'show'])->name('purchase-requisitions.show');
                 Route::get('purchase-requisitions/{purchaseRequisition}/edit', [PurchaseRequisitionController::class, 'edit'])->name('purchase-requisitions.edit');
                 Route::put('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'update'])->name('purchase-requisitions.update');
-                Route::post('purchase-requisitions/{purchaseRequisition}/submit', [PurchaseRequisitionController::class, 'submit'])->name('purchase-requisitions.submit')->middleware(['permission:purchase-requisitions.submit', 'sod:purchaseRequisition']);
+                Route::delete('purchase-requisitions/{purchaseRequisition}', [PurchaseRequisitionController::class, 'destroy'])->name('purchase-requisitions.destroy')->middleware(['permission:purchase-requisitions.edit']);
+                Route::post('purchase-requisitions/{purchaseRequisition}/submit', [PurchaseRequisitionController::class, 'submit'])->name('purchase-requisitions.submit')->middleware(['permission:purchase-requisitions.submit']);
                 Route::post('purchase-requisitions/{purchaseRequisition}/approve', [PurchaseRequisitionController::class, 'approve'])->name('purchase-requisitions.approve')->middleware(['permission:purchase-requisitions.approve', 'sod:purchaseRequisition']);
                 Route::post('purchase-requisitions/{purchaseRequisition}/reject', [PurchaseRequisitionController::class, 'reject'])->name('purchase-requisitions.reject')->middleware(['permission:purchase-requisitions.reject', 'sod:purchaseRequisition']);
 
@@ -603,16 +607,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('bank-accounts/{bankAccountId}/manual', [BankController::class, 'storeManualTransaction'])->name('bank-accounts.store-manual');
 
             // Bank Reconciliation
-                Route::get('bank-reconciliation/{bankAccountId}', [ReconciliationController::class, 'index'])->name('bank-reconciliation.index');
-                Route::get('bank-reconciliation/{bankAccountId}/import', [ReconciliationController::class, 'importForm'])->name('bank-reconciliation.import-form');
-                Route::post('bank-reconciliation/{bankAccountId}/import', [ReconciliationController::class, 'import'])->name('bank-reconciliation.import');
-                Route::get('bank-reconciliation/{reconciliationId}/detail', [ReconciliationController::class, 'show'])->name('bank-reconciliation.show');
-                Route::get('bank-reconciliation/{reconciliationId}/suggest', [ReconciliationController::class, 'suggestMatches'])->name('bank-reconciliation.suggest');
-                Route::post('bank-reconciliation/{reconciliationId}/match', [ReconciliationController::class, 'match'])->name('bank-reconciliation.match');
-                Route::post('bank-reconciliation/{reconciliationId}/unmatch', [ReconciliationController::class, 'unmatch'])->name('bank-reconciliation.unmatch');
-                Route::get('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransactionForm'])->name('bank-reconciliation.create-tx-form');
-                Route::post('bank-reconciliation/{reconciliationId}/create-transaction', [ReconciliationController::class, 'createTransaction'])->name('bank-reconciliation.create-tx');
-                Route::post('bank-reconciliation/{reconciliationId}/complete', [ReconciliationController::class, 'complete'])->name('bank-reconciliation.complete');
+                Route::get('bank-reconciliations/create', [BankReconciliationController::class, 'create'])->name('bank-reconciliation.create');
+                Route::post('bank-reconciliations', [BankReconciliationController::class, 'store'])->name('bank-reconciliation.store');
+                Route::get('bank-reconciliations/export', [BankReconciliationController::class, 'export'])->name('bank-reconciliation.export');
+                Route::get('bank-reconciliations/print', [BankReconciliationController::class, 'print'])->name('bank-reconciliation.print');
+                Route::get('bank-reconciliations/statements', [BankReconciliationController::class, 'statements'])->name('bank-reconciliation.statements');
+                Route::get('bank-reconciliations/adjustments', [BankReconciliationController::class, 'adjustmentsList'])->name('bank-reconciliation.adjustments');
+                Route::get('bank-reconciliations/outstanding', [BankReconciliationController::class, 'outstanding'])->name('bank-reconciliation.outstanding');
+                Route::get('bank-reconciliations/reports', [BankReconciliationController::class, 'reports'])->name('bank-reconciliation.reports');
+                Route::get('bank-reconciliations/audit', [BankReconciliationController::class, 'auditAll'])->name('bank-reconciliation.audit-all');
+                Route::post('bank-reconciliations/approval', [BankReconciliationController::class, 'toggleApproval'])->name('bank-reconciliation.approval');
+                Route::get('bank-reconciliations/reports/{report}/{reconciliation?}', [BankReconciliationController::class, 'report'])->name('bank-reconciliation.report');
+                Route::get('bank-reconciliations/{bankAccountId?}', [BankReconciliationController::class, 'index'])->name('bank-reconciliation.index');
+                Route::get('bank-reconciliations/{reconciliation}/workspace', [BankReconciliationController::class, 'workspace'])->name('bank-reconciliation.workspace');
+                Route::get('bank-reconciliations/{reconciliation}/detail', [BankReconciliationController::class, 'show'])->name('bank-reconciliation.show');
+                Route::get('bank-reconciliations/{reconciliation}/audit', [BankReconciliationController::class, 'audit'])->name('bank-reconciliation.audit');
+                Route::get('bank-reconciliations/{reconciliation}/import', [BankReconciliationController::class, 'importForm'])->name('bank-reconciliation.import');
+                Route::post('bank-reconciliations/{reconciliation}/import/preview', [BankReconciliationController::class, 'previewImport'])->name('bank-reconciliation.import.preview');
+                Route::post('bank-reconciliations/{reconciliation}/import', [BankReconciliationController::class, 'importStatement'])->name('bank-reconciliation.import.submit');
+                Route::post('bank-reconciliations/{reconciliation}/auto-match', [BankReconciliationController::class, 'autoMatch'])->name('bank-reconciliation.auto-match');
+                Route::post('bank-reconciliations/{reconciliation}/match', [BankReconciliationController::class, 'match'])->name('bank-reconciliation.match');
+                Route::post('bank-reconciliations/{reconciliation}/unmatch', [BankReconciliationController::class, 'unmatch'])->name('bank-reconciliation.unmatch');
+                Route::post('bank-reconciliations/{reconciliation}/adjustments', [BankReconciliationController::class, 'addAdjustment'])->name('bank-reconciliation.adjustments.store');
+                Route::delete('bank-reconciliations/{reconciliation}/adjustments/{adjustmentId}', [BankReconciliationController::class, 'removeAdjustment'])->name('bank-reconciliation.adjustments.destroy');
+                Route::post('bank-reconciliations/{reconciliation}/ready', [BankReconciliationController::class, 'markReadyForReview'])->name('bank-reconciliation.ready');
+                Route::post('bank-reconciliations/{reconciliation}/reopen', [BankReconciliationController::class, 'reopen'])->name('bank-reconciliation.reopen');
+                Route::post('bank-reconciliations/{reconciliation}/approve', [BankReconciliationController::class, 'approve'])->name('bank-reconciliation.approve');
+                Route::post('bank-reconciliations/{reconciliation}/complete', [BankReconciliationController::class, 'complete'])->name('bank-reconciliation.complete');
+                Route::post('bank-reconciliations/{reconciliation}/reverse', [BankReconciliationController::class, 'reverse'])->name('bank-reconciliation.reverse');
 
             // Make Deposits
                 Route::get('deposits', [MakeDepositController::class, 'index'])->name('deposits.index');
@@ -770,7 +792,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/customer-statement', [\App\Http\Controllers\Accounting\ReportControllers\CustomerStatementController::class, 'index'])->name('reports.customer-statement');
             Route::get('reports/vendor-statement', [\App\Http\Controllers\Accounting\ReportControllers\VendorStatementController::class, 'index'])->name('reports.vendor-statement');
             Route::get('reports/unbilled-deliveries', [\App\Http\Controllers\Accounting\ReportControllers\UnbilledDeliveriesController::class, 'index'])->name('reports.unbilled-deliveries');
-            Route::get('reports/bank-reconciliation-history', [\App\Http\Controllers\Accounting\ReportControllers\BankReconciliationHistoryController::class, 'index'])->name('reports.bank-reconciliation-history');
             Route::get('reports/cheque-register', [\App\Http\Controllers\Accounting\ReportControllers\ChequeRegisterController::class, 'index'])->name('reports.cheque-register');
 
             Route::middleware('feature:fixed_assets')->group(function () {
@@ -968,6 +989,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer|bookkeeper|cashier|auditor')
             ->group(function () {
                 Route::get('/', [TodoTaskController::class, 'index'])->name('index');
+                Route::get('/modal', [TodoTaskController::class, 'modal'])->name('modal');
                 Route::post('/', [TodoTaskController::class, 'store'])->name('store');
                 Route::put('/{task}', [TodoTaskController::class, 'update'])->name('update');
                 Route::post('/{task}/complete', [TodoTaskController::class, 'complete'])->name('complete');

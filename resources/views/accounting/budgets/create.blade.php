@@ -1,4 +1,14 @@
 <x-app-layout>
+    @php
+        $fiscalYearOptions = $fiscalYears->map(fn ($fy) => [
+            'id' => $fy->id,
+            'label' => $fy->label,
+            'start' => $fy->start_date->format('Y-m-d'),
+            'end' => $fy->end_date->format('Y-m-d'),
+        ])->values();
+        $accountSearchUrl = route('accounting.search.entity', ['entity' => 'account']);
+    @endphp
+
     <x-list-header title="{{ __('Create Budget') }}" />
 
     <div class="pb-12">
@@ -89,13 +99,8 @@
     </div>
 
     <script>
-        const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
-        const fiscalYears = @json($fiscalYears->map(fn ($fy) => [
-            'id' => $fy->id,
-            'label' => $fy->label,
-            'start' => $fy->start_date->format('Y-m-d'),
-            'end' => $fy->end_date->format('Y-m-d'),
-        ]));
+        const ACCOUNT_SEARCH_URL = @json($accountSearchUrl);
+        const fiscalYears = @json($fiscalYearOptions);
         let lineIndex = 0;
 
         const months = [

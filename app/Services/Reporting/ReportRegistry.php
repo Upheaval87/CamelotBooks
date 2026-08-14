@@ -488,15 +488,6 @@ class ReportRegistry
                 'permission' => 'view_reports',
                 'feature_flag' => null,
             ],
-            'bank_reconciliation_history' => [
-                'key' => 'bank_reconciliation_history',
-                'name' => 'Bank Reconciliation History',
-                'description' => 'History of all bank reconciliations with statement vs book balances.',
-                'category' => 'banking',
-                'route' => 'accounting.reports.bank-reconciliation-history',
-                'permission' => 'view_reports',
-                'feature_flag' => ['banking'],
-            ],
             'cheque_register' => [
                 'key' => 'cheque_register',
                 'name' => 'Cheque Register',
