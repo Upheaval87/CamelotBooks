@@ -57,6 +57,7 @@ use App\Http\Controllers\BranchRequestController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavouritesController;
+use App\Http\Controllers\PreferenceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SuperAdmin\AssignmentsController;
 use App\Http\Controllers\SuperAdmin\AuditLogController;
@@ -1013,6 +1014,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // UI text-size preference (A-/A/A+). Lives in the outer auth group (NOT the
+    // tenant group) so it works from tenant pages and the super-admin panel alike;
+    // stored on the central users table.
+    Route::post('/preferences/text-size', [PreferenceController::class, 'updateTextSize'])
+        ->name('preferences.text-size');
 });
 
 require __DIR__.'/auth.php';

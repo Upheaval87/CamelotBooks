@@ -272,6 +272,36 @@
 
                 <x-favourites.dropdown />
 
+                <div class="topbar-text-size hidden md:flex"
+                     x-data="textSizeControl({ current: '{{ $user?->text_size ?? 'md' }}', sizes: @js(\App\Models\User::TEXT_SIZES) })"
+                     role="group"
+                     aria-label="{{ __('Text size') }}">
+                    <button type="button"
+                            class="topbar-text-size-btn"
+                            :class="current === 'sm' ? 'active' : ''"
+                            @click="set('sm')"
+                            title="{{ __('Smaller text') }}"
+                            aria-label="{{ __('Smaller text') }}">
+                        A&minus;
+                    </button>
+                    <button type="button"
+                            class="topbar-text-size-btn"
+                            :class="current === 'md' ? 'active' : ''"
+                            @click="set('md')"
+                            title="{{ __('Default text size') }}"
+                            aria-label="{{ __('Default text size') }}">
+                        A
+                    </button>
+                    <button type="button"
+                            class="topbar-text-size-btn"
+                            :class="current === 'lg' ? 'active' : ''"
+                            @click="set('lg')"
+                            title="{{ __('Larger text') }}"
+                            aria-label="{{ __('Larger text') }}">
+                        A+
+                    </button>
+                </div>
+
                 <button type="button"
                         class="topbar-search-btn"
                         title="{{ __('Global Search (Ctrl+K)') }}"

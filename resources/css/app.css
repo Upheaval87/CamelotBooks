@@ -85,6 +85,10 @@ html, body { overflow-x: clip; }
 @layer base {
     html {
         height: 100%;
+        /* UI text-size preference (A-/A/A+): scales every rem-based value on the
+           page. The factor is set server-side on <html> via --text-scale and
+           adjusted live by the topbar control (resources/js/text-size.js). */
+        font-size: calc(100% * var(--text-scale, 1));
     }
     body {
         /* Content-driven height: keep the viewport minimum but never lock the
@@ -283,6 +287,28 @@ html, body { overflow-x: clip; }
         @apply font-mono text-[10px] leading-none px-1 py-0.5 rounded;
         background: rgba(255,255,255,0.1);
         color: rgba(255,255,255,0.55);
+    }
+
+    /* UI text-size control (A-/A/A+) — segmented pill in Row 1 */
+    .topbar-text-size {
+        @apply inline-flex items-center gap-0.5 h-8 px-1 rounded-md shrink-0;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.06);
+    }
+    .topbar-text-size-btn {
+        @apply inline-flex items-center justify-center min-w-[22px] h-6 px-1 rounded transition-all duration-150;
+        color: rgba(226,244,244,.65);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+    .topbar-text-size-btn:hover {
+        background: rgba(255,255,255,0.10);
+        color: #FFFFFF;
+    }
+    .topbar-text-size-btn.active {
+        background: linear-gradient(90deg, #149897, #128F8E);
+        color: #FFFFFF;
     }
 
     /* Overflow dropdown */

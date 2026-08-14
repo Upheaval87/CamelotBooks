@@ -9,6 +9,7 @@ import './new-password';
 import './feedback';
 import './favourites';
 import './report-center';
+import './text-size';
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 

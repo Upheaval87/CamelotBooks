@@ -12,6 +12,6 @@ class PanelController extends Controller
 {
     public function index(): View
     {
-        return view('panel.index');
+        return view('panel.index', ['user' => request()->user()]);
     }
 }

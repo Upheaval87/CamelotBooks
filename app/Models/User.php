@@ -22,6 +22,16 @@ class User extends Authenticatable
         hasExactRoles as spatieHasExactRoles;
     }
 
+    /**
+     * Supported UI text-size presets mapped to a root font-size scale factor.
+     * 'md' (1.0) is the default; 'sm' and 'lg' scale all rem-based typography.
+     */
+    public const TEXT_SIZES = [
+        'sm' => 0.9,
+        'md' => 1.0,
+        'lg' => 1.15,
+    ];
+
     protected $fillable = [
         'name',
         'email',
@@ -34,6 +44,7 @@ class User extends Authenticatable
         'password_changed_at',
         'failed_login_attempts',
         'locked_until',
+        'text_size',
     ];
 
     protected $hidden = [
