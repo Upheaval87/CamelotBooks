@@ -87,6 +87,20 @@ class EncryptedPayslipService
             'mode' => 'utf-8',
             'format' => 'A4',
             'tempDir' => sys_get_temp_dir() . '/mpdf',
+            'fontDir' => [storage_path('fonts')],
+            'fontdata' => [
+                'inter' => [
+                    'R' => 'inter/Inter-Regular.ttf',
+                    'I' => 'inter/Inter-Italic.ttf',
+                    'B' => 'inter/Inter-Bold.ttf',
+                    'BI' => 'inter/Inter-BoldItalic.ttf',
+                    'M' => 'inter/Inter-Medium.ttf',
+                    'SB' => 'inter/Inter-SemiBold.ttf',
+                    'XB' => 'inter/Inter-ExtraBold.ttf',
+                    'BL' => 'inter/Inter-Black.ttf',
+                ],
+            ],
+            'default_font' => 'inter',
         ]);
 
         $mpdf->SetProtection(
@@ -121,6 +135,7 @@ class EncryptedPayslipService
 
         return <<<HTML
         <style>
+            body { font-family: 'Inter', sans-serif; }
             .payslip-header { text-align: center; margin-bottom: 10px; }
             .payslip-header h2 { font-size: 16pt; margin: 2px 0; }
             .payslip-header h3 { font-size: 12pt; color: #555; margin: 2px 0; }

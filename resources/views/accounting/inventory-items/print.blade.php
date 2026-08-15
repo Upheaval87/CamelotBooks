@@ -41,33 +41,12 @@
         }
         @media print { body { background: #fff; padding: 0; } .canvas { max-width: none; box-shadow: none; border-radius: 0; min-height: 297mm; } }
 
-        .qpdf-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1.5rem;
-            background: #F0F5F5;
-            padding: 1.125rem 2rem 1.75rem;
-        }
-        .qpdf-brand { padding-top: 1.75rem; display: flex; gap: 0.875rem; align-items: center; }
-        .qpdf-logo {
-            width: 3.5rem; height: 3.5rem; border-radius: 14px;
-            display: grid; place-items: center;
-            color: #fff; font-weight: 800; font-size: 0.875rem; letter-spacing: .02em;
-            background: linear-gradient(180deg, var(--acc), var(--acc-2));
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.28);
-        }
-        .qpdf-name { font-size: 1.25rem; font-weight: 800; color: var(--ink); }
-        .qpdf-tag { font-size: 0.75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
-        .qpdf-right { text-align: right; }
-        .qpdf-title { color: var(--acc); font-size: 1.125rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
-        .qpdf-item { margin-top: 6px; font-size: 1.0625rem; font-weight: 800; color: var(--ink); }
-        .qpdf-mgrid { display: grid; grid-template-columns: repeat(2, auto); gap: 0.5rem 1.5rem; margin-top: 0.625rem; justify-content: end; }
-        .qpdf-mgrid .m { display: flex; gap: 0.5rem; align-items: baseline; }
-        .qpdf-mgrid .l { font-size: 0.625rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-        .qpdf-mgrid .v { font-size: 0.71875rem; font-weight: 700; color: var(--ink); white-space: nowrap; }
-
-        .qpdf-accent { height: 4px; background: var(--acc); }
+        /* meta strip under chrome band */
+        .p-meta { display: flex; gap: 1.75rem; padding: 1.25rem 2rem 0; flex-wrap: wrap; }
+        .p-meta .mi { display: flex; flex-direction: column; gap: .1875rem; }
+        .p-meta .l { font-size: .5625rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+        .p-meta .v { font-size: .71875rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+        .p-item { padding: 1.25rem 2rem 0; font-size: 1.0625rem; font-weight: 800; color: var(--ink); }
 
         .qpdf-summary {
             display: grid;
@@ -115,45 +94,24 @@
         .qpdf-detail .d { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4375rem 0; border-bottom: 1px solid var(--line); }
         .qpdf-detail .d .l { font-size: 0.625rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
         .qpdf-detail .d .v { font-size: 0.71875rem; font-weight: 700; color: var(--ink); text-align: right; }
-
-        .qpdf-foot {
-            margin-top: auto;
-            padding: 0.875rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            align-items: center;
-            border-top: 1px solid var(--line);
-            font-size: 0.6875rem;
-            color: var(--faint);
-        }
-        .qpdf-foot .p { font-weight: 700; letter-spacing: .08em; white-space: nowrap; }
     </style>
 </head>
 <body onload="window.print()">
     <div class="canvas">
 
-        <header class="qpdf-head">
-            <div class="qpdf-brand">
-                <span class="qpdf-logo">CB</span>
-                <div>
-                    <div class="qpdf-name">{{ $companyName }}</div>
-                    <div class="qpdf-tag">{{ __('Enterprise Accounting') }}</div>
-                </div>
-            </div>
-            <div class="qpdf-right">
-                <div class="qpdf-title">{{ __('Inventory Item') }}</div>
-                <div class="qpdf-item">{{ $product->name }}</div>
-                <div class="qpdf-mgrid">
-                    <div class="m"><span class="l">{{ __('SKU') }}</span><span class="v">{{ $product->sku ?? '—' }}</span></div>
-                    <div class="m"><span class="l">{{ __('Type') }}</span><span class="v">{{ ucfirst($product->type) }}</span></div>
-                    <div class="m"><span class="l">{{ __('Base UOM') }}</span><span class="v">{{ $product->getBaseUomName() }}</span></div>
-                    <div class="m"><span class="l">{{ __('Printed') }}</span><span class="v">{{ now()->format('M d, Y h:i A') }}</span></div>
-                </div>
-            </div>
-        </header>
+        @include('components.pdf.chrome', [
+            'part' => 'header',
+            'title' => __('Inventory Item'),
+            'number' => $product->sku ?? $product->name,
+            'companyName' => $companyName,
+        ])
 
-        <div class="qpdf-accent"></div>
+        <div class="p-meta">
+            <div class="mi"><span class="l">{{ __('Item') }}</span><span class="v">{{ $product->name }}</span></div>
+            <div class="mi"><span class="l">{{ __('Type') }}</span><span class="v">{{ ucfirst($product->type) }}</span></div>
+            <div class="mi"><span class="l">{{ __('Base UOM') }}</span><span class="v">{{ $product->getBaseUomName() }}</span></div>
+            <div class="mi"><span class="l">{{ __('Printed') }}</span><span class="v">{{ now()->format('M d, Y h:i A') }}</span></div>
+        </div>
 
         <div class="qpdf-summary">
             <div class="sum-card"><div class="l">{{ __('Total On Hand') }}</div><div class="v">{{ format_money($totalOnHand) }}</div></div>
@@ -252,10 +210,11 @@
             </div>
         @endif
 
-        <footer class="qpdf-foot">
-            <span>{{ $companyName }} · {{ __('Generated') }} {{ now()->format('M d, Y \a\t h:i A') }}</span>
-            <span class="p">{{ __('Page 1 of 1') }}</span>
-        </footer>
+        @include('components.pdf.chrome', [
+            'part' => 'footer',
+            'contact' => $companyName . ' · ' . __('Generated') . ' ' . now()->format('M d, Y \a\t h:i A'),
+            'pageLabel' => __('Inventory Item') . ' · ' . __('Page 1 of 1'),
+        ])
 
     </div>
 </body>

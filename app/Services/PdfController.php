@@ -12,8 +12,7 @@ class PdfController extends Controller
         'quotation'   => \App\Models\Quotation::class,
         'bill'        => \App\Models\Bill::class,
         'invoice'     => \App\Models\Invoice::class,
-        'delivery'    => \App\Models\DeliveryNote::class,
-        'receipt'     => \App\Models\Receipt::class,
+        'receipt'     => \App\Models\SalesReceipt::class,
         'grn'         => \App\Models\GoodsReceivedNote::class,
         'credit'      => \App\Models\CreditNote::class,
         'po'          => \App\Models\PurchaseOrder::class,
@@ -32,9 +31,11 @@ class PdfController extends Controller
         $doc = self::resolve($type, $id);
         $payload = PdfPresenter::payload($type, $doc);
         $payload['pdfMode'] = true;                       // fixed footer lock (dompdf)
+        $number = str_replace(['№ ', ' '], ['', '-'], (string) ($payload['number'] ?? ''));
+        $number = preg_replace('/[^A-Za-z0-9._-]/', '', $number);
         return Pdf::loadView('pdf.document', $payload)
             ->setPaper('a4')
-            ->download(strtolower(str_replace(' ', '-', $payload['title'])) . '-' . $doc->number . '.pdf');
+            ->download(strtolower(str_replace(' ', '-', $payload['title'])) . '-' . $number . '.pdf');
     }
 
     private static function resolve(string $type, int $id)

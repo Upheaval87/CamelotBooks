@@ -35,24 +35,11 @@
             display: flex; flex-direction: column; min-height: calc(100vh - 88px);
         }
 
-        /* head */
-        .p-head { display: flex; justify-content: space-between; gap: 1.5rem; background: var(--headbg); padding: 1.125rem 2rem 1.75rem; }
-        .p-brand { display: flex; gap: .875rem; align-items: flex-start; padding-top: 1.75rem; }
-        .p-logo {
-            width: 3.5rem; height: 3.5rem; border-radius: 14px; display: grid; place-items: center;
-            color: #fff; font-weight: 800; font-size: 1.5rem;
-            background: linear-gradient(180deg, var(--acc), var(--acc-2));
-        }
-        .p-brand .n { font-size: 1.25rem; font-weight: 800; color: var(--ink); line-height: 1.2; }
-        .p-brand .tg { margin-top: .25rem; font-size: .75rem; color: var(--muted); }
-        .p-doc { text-align: right; }
-        .p-doc .t { font-size: 1.25rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--acc); line-height: 1.2; }
-        .p-doc .grid { margin-top: .625rem; display: grid; grid-template-columns: auto auto; gap: .25rem 1.125rem; justify-content: end; }
-        .p-doc .l { font-size: .5625rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); text-align: left; }
-        .p-doc .v { font-size: .71875rem; font-weight: 600; color: var(--ink); text-align: right; }
-        .p-doc .v.mono { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; }
-
-        .accent-line { height: 4px; background: var(--acc); }
+        /* meta strip under chrome band */
+        .p-meta { display: flex; gap: 1.75rem; padding: 1.25rem 2rem 0; flex-wrap: wrap; }
+        .p-meta .mi { display: flex; flex-direction: column; gap: .1875rem; }
+        .p-meta .l { font-size: .5625rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+        .p-meta .v { font-size: .71875rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 
         /* parties */
         .parties { display: grid; grid-template-columns: 1fr var(--rcol); gap: 1.75rem; padding: 1.75rem 2rem .25rem; }
@@ -102,16 +89,6 @@
             margin-top: 2.75rem; max-width: 16.25rem; border-top: 1.5px dashed #bfd6d5; padding-top: .375rem;
             font-size: .625rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
         }
-
-        /* foot */
-        .p-foot {
-            margin: auto 2rem 0; padding: .75rem 0 1.25rem; border-top: 1px solid var(--line);
-            display: flex; align-items: center; justify-content: space-between; gap: .75rem;
-            font-size: .625rem; color: var(--faint);
-        }
-        .p-foot .c { display: flex; gap: .5rem; }
-        .p-foot .c span + span::before { content: "\00b7"; margin-right: .5rem; color: var(--line); }
-        .p-foot .pg { font-weight: 700; color: var(--muted); }
 
         @media print {
             body { background: none; }
@@ -169,33 +146,23 @@
 
     <div class="stage-pdf">
         <div class="paper">
-            <div class="p-head">
-                <div class="p-brand">
-                    <span class="p-logo">{{ strtoupper(mb_substr($companyName, 0, 1)) }}</span>
-                    <div>
-                        <div class="n">{{ $companyName }}</div>
-                        <div class="tg">{{ $tagline }}</div>
-                    </div>
-                </div>
-                <div class="p-doc">
-                    <div class="t">{{ __('Invoice') }}</div>
-                    <div class="grid">
-                        <span class="l">{{ __('Invoice No.') }}</span>
-                        <span class="v mono">{{ $invoice->invoice_number }}</span>
-                        <span class="l">{{ __('Date') }}</span>
-                        <span class="v">{{ $invoice->invoice_date?->format('d F Y') ?? '—' }}</span>
-                        @if ($invoice->due_date)
-                            <span class="l">{{ __('Due') }}</span>
-                            <span class="v">{{ $invoice->due_date->format('d F Y') }}</span>
-                        @endif
-                        @if ($invoice->reference)
-                            <span class="l">{{ __('Reference') }}</span>
-                            <span class="v mono">{{ $invoice->reference }}</span>
-                        @endif
-                    </div>
-                </div>
+            @include('components.pdf.chrome', [
+                'part' => 'header',
+                'title' => __('Invoice'),
+                'number' => '№ ' . $invoice->invoice_number,
+                'companyName' => $companyName,
+                'tagline' => $tagline,
+            ])
+
+            <div class="p-meta">
+                <div class="mi"><span class="l">{{ __('Date') }}</span><span class="v">{{ $invoice->invoice_date?->format('d F Y') ?? '—' }}</span></div>
+                @if ($invoice->due_date)
+                    <div class="mi"><span class="l">{{ __('Due') }}</span><span class="v">{{ $invoice->due_date->format('d F Y') }}</span></div>
+                @endif
+                @if ($invoice->reference)
+                    <div class="mi"><span class="l">{{ __('Reference') }}</span><span class="v">{{ $invoice->reference }}</span></div>
+                @endif
             </div>
-            <div class="accent-line"></div>
 
             <div class="parties">
                 <div class="party">
@@ -294,14 +261,11 @@
                 <div class="p-sig">{{ __('Authorised By — Signature & Date') }}</div>
             </div>
 
-            <div class="p-foot">
-                <div class="c">
-                    <span>www.camelotbooks.com</span>
-                    <span>{{ $company?->email ?: 'info@camelotbooks.com' }}</span>
-                    <span>{{ $company?->phone ?: '+265 1 234 567' }}</span>
-                </div>
-                <span class="pg">{{ __('Page 1 of 1') }}</span>
-            </div>
+            @include('components.pdf.chrome', [
+                'part' => 'footer',
+                'contact' => $companyName . ' · ' . ($company?->email ?: 'info@camelotbooks.com') . ' · ' . ($company?->phone ?: '+265 1 234 567'),
+                'pageLabel' => __('Invoice') . ' · ' . __('Page 1 of 1'),
+            ])
         </div>
     </div>
 </body>

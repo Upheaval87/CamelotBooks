@@ -18,6 +18,46 @@
 <title>{{ $title }} {{ $number }} — {{ config('app.name', 'CamelotBooks') }}</title>
 <style>
   @page { size: A4 portrait; margin: 0; }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 400;
+    src: url('{{ $fontDir }}/inter/Inter-Regular.ttf') format('truetype');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 500;
+    src: url('{{ $fontDir }}/inter/Inter-Medium.ttf') format('truetype');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 600;
+    src: url('{{ $fontDir }}/inter/Inter-SemiBold.ttf') format('truetype');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 700;
+    src: url('{{ $fontDir }}/inter/Inter-Bold.ttf') format('truetype');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 800;
+    src: url('{{ $fontDir }}/inter/Inter-ExtraBold.ttf') format('truetype');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal; font-weight: 900;
+    src: url('{{ $fontDir }}/inter/Inter-Black.ttf') format('truetype');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: italic; font-weight: 400;
+    src: url('{{ $fontDir }}/inter/Inter-Italic.ttf') format('truetype');
+  }
+  @font-face {
+    font-family: 'Inter';
+    font-style: italic; font-weight: 700;
+    src: url('{{ $fontDir }}/inter/Inter-BoldItalic.ttf') format('truetype');
+  }
   :root{
     --navy-700:#24384f;--navy-800:#182a3e;--navy-900:#132234;--navy-200:#cdd7e2;
     --gold-500:#b6913f;--gold-600:#96742c;--gold-700:#8f6f2a;
@@ -35,23 +75,8 @@
     display:flex;flex-direction:column;min-height:296mm}
   body:not(.pdf) .sheet{box-shadow:0 1px 2px rgba(16,24,40,.08),0 24px 64px -16px rgba(8,15,26,.35)}
   body.pdf .sheet{width:100%;display:block;min-height:auto;padding-bottom:14mm}
-  .foot{margin-top:auto}
-  body.pdf .foot{position:fixed;bottom:0;left:0;right:0;margin:0}
 
-  /* header */
-  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding:32px 40px 24px;
-    background:linear-gradient(120deg,var(--navy-700) 0%,var(--navy-800) 55%,var(--navy-900) 100%);
-    box-shadow:inset 0 -1px 0 rgba(190,152,72,.5)}
-  .brand{display:flex;gap:14px;align-items:center}
-  .logo{width:44px;height:44px;border-radius:10px;display:block;text-align:center;line-height:44px;color:#fff;
-    font-weight:800;font-size:14px;background:linear-gradient(180deg,var(--gold-500),var(--gold-600));
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.28)}
-  .brand .n{color:#f2f6fa;font-size:16px;font-weight:800}
-  .brand .t{color:#8fa3b8;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
-  .head-right{text-align:right}
-  .doc-title{color:#e2c069;font-size:21px;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
-  .doc-title.sm{font-size:14px;letter-spacing:.16em}
-  .doc-num{margin-top:6px;font-size:12.5px;color:var(--navy-200)}
+  /* header + footer chrome live in components/pdf/chrome.blade.php (.cbp-*) */
 
   /* meta */
   .meta{display:grid;grid-template-columns:.8fr 1.45fr;gap:16px;padding:24px 40px 4px}
@@ -108,29 +133,18 @@
   .sig .n{font-size:10px;font-weight:800;color:var(--ink)}
   .sig .r{font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-top:2px}
 
-  /* footer */
-  .foot{padding:13px 40px;display:flex;justify-content:space-between;gap:16px;align-items:center;
-    background:linear-gradient(90deg,var(--navy-800),var(--navy-900));box-shadow:inset 0 1px 0 rgba(190,152,72,.5)}
-  .foot .c{font-size:9px;color:#8fa3b8}
-  .foot .p{font-size:9px;color:#e2c069;font-weight:700;letter-spacing:.08em;white-space:nowrap}
+  /* footer chrome lives in components/pdf/chrome.blade.php (.cbp-foot) */
 </style>
 </head>
 <body class="{{ ($pdfMode ?? false) ? 'pdf' : '' }}">
 <div class="sheet">
 
-  <header class="head">
-    <div class="brand">
-      <span class="logo">CB</span>
-      <div>
-        <div class="n">{{ config('app.company_name', 'CamelotBooks') }}</div>
-        <div class="t">{{ config('app.company_tagline', 'Enterprise Accounting') }}</div>
-      </div>
-    </div>
-    <div class="head-right">
-      <div class="doc-title{{ ($titleSmall ?? false) ? ' sm' : '' }}">{{ $title }}</div>
-      <div class="doc-num">{{ $number }}</div>
-    </div>
-  </header>
+  @include('components.pdf.chrome', [
+      'part' => 'header',
+      'title' => $title,
+      'number' => $number,
+      'titleSmall' => ($titleSmall ?? false),
+  ])
 
   <div class="meta">
     <div class="mbox">
@@ -209,10 +223,12 @@
     @endforeach
   </div>
 
-  <footer class="foot">
-    <span class="c">{{ config('app.company_name', 'CamelotBooks') }} Ltd · PO Box 123, Lilongwe, Malawi · +265 1 777 222 · accounts@camelotbooks.mw · Reg CS/149593</span>
-    <span class="p">{{ $title }} · PAGE 1 OF 1</span>
-  </footer>
+  @include('components.pdf.chrome', [
+      'part' => 'footer',
+      'contact' => config('app.company_name', 'CamelotBooks') . ' Ltd · PO Box 123, Lilongwe, Malawi · +265 1 777 222 · accounts@camelotbooks.mw · Reg CS/149593',
+      'pageLabel' => $title . ' · PAGE 1 OF 1',
+      'fixed' => ($pdfMode ?? false),
+  ])
 
 </div>
 </body>

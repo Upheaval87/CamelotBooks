@@ -44,45 +44,11 @@
         }
         @media print { body { background: #fff; padding: 0; } .canvas { max-width: none; box-shadow: none; border-radius: 0; min-height: 297mm; } }
 
-        .qpdf-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1.5rem;
-            background: #F0F5F5;
-            padding: 1.125rem 2rem 1.75rem;
-        }
-        .qpdf-brand { padding-top: 1.75rem; display: flex; gap: 0.875rem; align-items: center; }
-        .qpdf-logo {
-            width: 3.5rem;
-            height: 3.5rem;
-            border-radius: 14px;
-            display: grid;
-            place-items: center;
-            color: #fff;
-            font-weight: 800;
-            font-size: 0.875rem;
-            letter-spacing: .02em;
-            background: linear-gradient(180deg, var(--acc), var(--acc-2));
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.28);
-        }
-        .qpdf-name { font-size: 1.25rem; font-weight: 800; color: var(--ink); }
-        .qpdf-tag { font-size: 0.75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-top: 2px; }
-        .qpdf-right { text-align: right; }
-        .qpdf-title {
-            color: var(--acc);
-            font-size: 1.25rem;
-            font-weight: 800;
-            letter-spacing: .18em;
-            text-transform: uppercase;
-        }
-        .qpdf-num { margin-top: 4px; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-size: 0.84375rem; font-weight: 700; color: var(--ink); }
-        .qpdf-mgrid { display: grid; grid-template-columns: repeat(2, auto); gap: 0.5rem 1.5rem; margin-top: 0.625rem; justify-content: end; }
-        .qpdf-mgrid .m { display: flex; gap: 0.5rem; align-items: baseline; }
-        .qpdf-mgrid .l { font-size: 0.625rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-        .qpdf-mgrid .v { font-size: 0.71875rem; font-weight: 700; color: var(--ink); white-space: nowrap; }
-
-        .qpdf-accent { height: 4px; background: var(--acc); }
+        /* meta strip under chrome band */
+        .p-meta { display: flex; gap: 1.75rem; padding: 1.25rem 2rem 0; flex-wrap: wrap; }
+        .p-meta .mi { display: flex; flex-direction: column; gap: .1875rem; }
+        .p-meta .l { font-size: .5625rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+        .p-meta .v { font-size: .71875rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 
         .qpdf-parties {
             display: grid;
@@ -155,45 +121,24 @@
         .qpdf-sigline { margin-top: 2.75rem; max-width: 16.25rem; border-top: 1.5px dashed #BFD6D5; }
         .qpdf-signame { margin-top: 0.625rem; font-size: 0.75rem; font-weight: 800; color: var(--ink); }
         .qpdf-sigrole { font-size: 0.6875rem; color: var(--muted); }
-
-        .qpdf-foot {
-            margin-top: auto;
-            padding: 0.875rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            align-items: center;
-            border-top: 1px solid var(--line);
-            font-size: 0.6875rem;
-            color: var(--faint);
-        }
-        .qpdf-foot .p { font-weight: 700; letter-spacing: .08em; white-space: nowrap; }
     </style>
 </head>
 <body onload="window.print()">
     <div class="canvas">
 
-        <header class="qpdf-head">
-            <div class="qpdf-brand">
-                <span class="qpdf-logo">CB</span>
-                <div>
-                    <div class="qpdf-name">{{ $companyName }}</div>
-                    <div class="qpdf-tag">{{ __('Enterprise Accounting') }}</div>
-                </div>
-            </div>
-            <div class="qpdf-right">
-                <div class="qpdf-title">{{ __('Sales Order') }}</div>
-                <div class="qpdf-num">{{ $order->sales_order_number }}</div>
-                <div class="qpdf-mgrid">
-                    <div class="m"><span class="l">{{ __('Order Date') }}</span><span class="v">{{ $order->order_date?->format('M d, Y') ?? '—' }}</span></div>
-                    <div class="m"><span class="l">{{ __('Expected Delivery') }}</span><span class="v">{{ $order->expected_delivery_date?->format('M d, Y') ?? '—' }}</span></div>
-                    <div class="m"><span class="l">{{ __('Reference') }}</span><span class="v">{{ $order->reference ?? '—' }}</span></div>
-                    <div class="m"><span class="l">{{ __('Currency') }}</span><span class="v">{{ $cur }}</span></div>
-                </div>
-            </div>
-        </header>
+        @include('components.pdf.chrome', [
+            'part' => 'header',
+            'title' => __('Sales Order'),
+            'number' => '№ ' . $order->sales_order_number,
+            'companyName' => $companyName,
+        ])
 
-        <div class="qpdf-accent"></div>
+        <div class="p-meta">
+            <div class="mi"><span class="l">{{ __('Order Date') }}</span><span class="v">{{ $order->order_date?->format('M d, Y') ?? '—' }}</span></div>
+            <div class="mi"><span class="l">{{ __('Expected Delivery') }}</span><span class="v">{{ $order->expected_delivery_date?->format('M d, Y') ?? '—' }}</span></div>
+            <div class="mi"><span class="l">{{ __('Reference') }}</span><span class="v">{{ $order->reference ?? '—' }}</span></div>
+            <div class="mi"><span class="l">{{ __('Currency') }}</span><span class="v">{{ $cur }}</span></div>
+        </div>
 
         <div class="qpdf-parties">
             <div>
@@ -277,10 +222,11 @@
             <div class="qpdf-sigrole">{{ __('Authorised signature') }}</div>
         </div>
 
-        <footer class="qpdf-foot">
-            <span>{{ $companyName }} · {{ __('Generated') }} {{ now()->format('M d, Y \a\t h:i A') }}</span>
-            <span class="p">{{ __('Page 1 of 1') }}</span>
-        </footer>
+        @include('components.pdf.chrome', [
+            'part' => 'footer',
+            'contact' => $companyName . ' · ' . __('Generated') . ' ' . now()->format('M d, Y \a\t h:i A'),
+            'pageLabel' => __('Sales Order') . ' · ' . __('Page 1 of 1'),
+        ])
 
     </div>
 </body>

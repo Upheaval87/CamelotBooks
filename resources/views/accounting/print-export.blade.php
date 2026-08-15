@@ -84,6 +84,9 @@
         font-size: 8px; color: var(--ink-muted); margin-top: 34px;
         padding-top: 14px; border-top: 1px solid #E6E4DC;
     }
+    /* §6.1 shared chrome is brand-only here — the report fragments own
+       their own .report-head (company / title / range). */
+    .report-card-wrap { max-width: 760px; margin: 0 auto; }
     @media print {
         body { background: #fff; padding: 0; }
         .report-toolbar, .report-print-hide { display: none !important; }
@@ -93,13 +96,12 @@
 </style>
 </head>
 <body>
-    <div class="report-card">
-        {!! $content !!}
-    </div>
-    <div class="report-footer">
-        <span>Generated {{ now()->format('M d, Y H:i') }}</span>
-        <span>{{ config('app.name', 'CamelotBooks') }}</span>
-    </div>
+    @include('components.pdf.chrome', ['part' => 'header'])
+    <div class="report-card-wrap">
+        <div class="report-card">
+            {!! $content !!}
+        </div>
+        @include('components.pdf.chrome', ['part' => 'footer', 'pageLabel' => $title ?? config('app.name', 'CamelotBooks')])
     <script>
         function toggleZeroRows() {
             const show = document.getElementById('reportZeroToggle').checked;
