@@ -4,7 +4,7 @@
         $selectedVendor = old('vendor_id') ? $vendors->firstWhere('id', (int) old('vendor_id')) : ($preselectVendor ?? null);
     @endphp
 
-    <div class="suite pb-6">
+    <div class="suite ex-suite stage pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
             {{-- sticky head --}}
@@ -15,7 +15,10 @@
                 </div>
                 <div class="tbtns">
                     <a href="{{ route('accounting.vendors.index') }}" class="btn ghost sm">{{ __('Cancel') }}</a>
-                    <button type="submit" form="vp-form" class="btn cta">{{ __('Record Payment') }}</button>
+                    <span class="seg">
+                        <button type="submit" form="vp-form" name="action" value="save_draft" class="btn ghost sm segbtn">{{ __('Save Draft') }}</button>
+                        <button type="submit" form="vp-form" name="action" value="approve_post" class="btn cta sm segbtn">{{ __('Approve & Post') }}</button>
+                    </span>
                 </div>
             </div>
 
@@ -230,4 +233,6 @@
         loadBills();
         @endif
     </script>
+
+    @include('accounting.vendors._slim-rail', ['active' => 'payments'])
 </x-app-layout>

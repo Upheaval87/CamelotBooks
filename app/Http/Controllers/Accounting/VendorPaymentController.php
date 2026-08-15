@@ -16,6 +16,87 @@ class VendorPaymentController extends Controller
     {
     }
 
+    public function index(Request $request)
+    {
+        $this->requirePermission($request, 'vendor-payments.view');
+        $companyId = session('current_company_id');
+
+        $query = VendorPayment::where('company_id', $companyId)
+            ->with(['vendor', 'bankAccount', 'allocations']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('payment_number', 'like', "%{$search}%")
+                    ->orWhere('reference', 'like', "%{$search}%")
+                    ->orWhereHas('vendor', fn ($v) => $v->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('from_date')) {
+            $query->where('payment_date', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->where('payment_date', '<=', $request->to_date);
+        }
+
+        if ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+
+        $activeStatus = $request->input('status', '');
+
+        if ($activeStatus === 'pending_approval') {
+            $query->where('status', VendorPayment::STATUS_PENDING_APPROVAL);
+        } elseif ($activeStatus === 'reversed') {
+            $query->where('status', VendorPayment::STATUS_REVERSED);
+        } elseif ($activeStatus === 'posted') {
+            $query->where('status', VendorPayment::STATUS_POSTED);
+        } elseif ($activeStatus === 'draft') {
+            $query->where('status', VendorPayment::STATUS_DRAFT);
+        } elseif ($activeStatus === 'rejected') {
+            $query->where('status', VendorPayment::STATUS_REJECTED);
+        }
+
+        $base = VendorPayment::where('company_id', $companyId);
+
+        $monthStart = now()->startOfMonth()->toDateString();
+        $monthEnd = now()->endOfMonth()->toDateString();
+
+        $stats = [
+            'total' => (int) (clone $base)->count(),
+            'amount' => (float) (clone $base)->selectRaw('COALESCE(SUM(amount), 0) as amt')->value('amt'),
+            'pending_approval' => (int) (clone $base)->where('status', VendorPayment::STATUS_PENDING_APPROVAL)->count(),
+            'pending_approval_amount' => (float) (clone $base)
+                ->where('status', VendorPayment::STATUS_PENDING_APPROVAL)
+                ->selectRaw('COALESCE(SUM(amount), 0) as amt')->value('amt'),
+            'posted' => (int) (clone $base)->where('status', VendorPayment::STATUS_POSTED)->count(),
+            'posted_month' => (int) (clone $base)
+                ->where('status', VendorPayment::STATUS_POSTED)
+                ->whereBetween('payment_date', [$monthStart, $monthEnd])
+                ->count(),
+            'posted_month_amount' => (float) (clone $base)
+                ->where('status', VendorPayment::STATUS_POSTED)
+                ->whereBetween('payment_date', [$monthStart, $monthEnd])
+                ->selectRaw('COALESCE(SUM(amount), 0) as amt')->value('amt'),
+            'draft' => (int) (clone $base)->where('status', VendorPayment::STATUS_DRAFT)->count(),
+            'rejected' => (int) (clone $base)->where('status', VendorPayment::STATUS_REJECTED)->count(),
+            'reversed' => (int) (clone $base)->where('status', VendorPayment::STATUS_REVERSED)->count(),
+        ];
+
+        $approvalQueue = VendorPayment::where('company_id', $companyId)
+            ->where('status', VendorPayment::STATUS_PENDING_APPROVAL)
+            ->with(['vendor', 'bankAccount'])
+            ->orderByDesc('payment_date')
+            ->limit(10)
+            ->get();
+
+        $payments = $query->orderByDesc('payment_date')->paginate(15)->withQueryString();
+
+        return view('accounting.vendor-payments.index', compact('payments', 'stats', 'approvalQueue', 'activeStatus'));
+    }
+
     public function create(Request $request, ?int $vendorId = null)
     {
         $vendorId = $vendorId ?: ((int) $request->input('vendor_id', 0) ?: null);
@@ -63,6 +144,7 @@ class VendorPaymentController extends Controller
     public function store(Request $request)
     {
         $companyId = session('current_company_id');
+        $action = $request->input('action', 'save_draft');
 
         $validated = $request->validate([
             'vendor_id' => ['required', 'integer', 'exists:vendors,id'],
@@ -80,13 +162,76 @@ class VendorPaymentController extends Controller
         $validated['company_id'] = $companyId;
 
         try {
-            $payment = $this->paymentService->createVendorPayment($validated, auth()->id());
+            $status = $action === 'approve_post'
+                ? VendorPayment::STATUS_PENDING_APPROVAL
+                : VendorPayment::STATUS_DRAFT;
+
+            $payment = $this->paymentService->createVendorPayment($validated, auth()->id(), $status);
+
+            if ($action === 'approve_post') {
+                $this->paymentService->postVendorPayment($payment, auth()->id());
+                $payment = $payment->fresh();
+
+                return redirect()->route('accounting.vendor-payments.show', $payment)
+                    ->with('success', 'Vendor payment created and posted successfully.');
+            }
+
+            return redirect()->route('accounting.vendor-payments.show', $payment)
+                ->with('success', 'Vendor payment draft saved.');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function submit(VendorPayment $payment)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($payment->company_id == $companyId, 403);
+
+        try {
+            $this->paymentService->submitVendorPayment($payment, auth()->id());
+
+            return redirect()->route('accounting.vendor-payments.show', $payment)
+                ->with('success', 'Vendor payment submitted for approval.');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('accounting.vendor-payments.show', $payment)
+                ->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function approve(VendorPayment $payment)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($payment->company_id == $companyId, 403);
+
+        try {
             $this->paymentService->postVendorPayment($payment, auth()->id());
 
             return redirect()->route('accounting.vendor-payments.show', $payment)
-                ->with('success', 'Vendor payment created and posted successfully.');
+                ->with('success', 'Vendor payment approved and posted.');
         } catch (\InvalidArgumentException $e) {
-            return redirect()->back()->withInput()->withErrors(['error' => $e->getMessage()]);
+            return redirect()->route('accounting.vendor-payments.show', $payment)
+                ->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function reject(Request $request, VendorPayment $payment)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($payment->company_id == $companyId, 403);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $this->paymentService->rejectVendorPayment($payment, auth()->id(), $validated['reason']);
+
+            return redirect()->route('accounting.vendor-payments.show', $payment)
+                ->with('success', 'Vendor payment rejected.');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('accounting.vendor-payments.show', $payment)
+                ->withErrors(['error' => $e->getMessage()]);
         }
     }
 

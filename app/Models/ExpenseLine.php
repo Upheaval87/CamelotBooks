@@ -24,6 +24,7 @@ class ExpenseLine extends Model
         'line_total',
         'expense_account_id',
         'cost_center_id',
+        'department',
     ];
 
     protected $casts = [

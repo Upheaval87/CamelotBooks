@@ -15,7 +15,7 @@
 
                     @if(session('current_company_id'))
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
-                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.customers.*') || request()->routeIs('accounting.vendors.*') || request()->routeIs('accounting.invoices.*') || request()->routeIs('accounting.bills.*') || request()->routeIs('accounting.products.*') || request()->routeIs('accounting.credit-notes.*') || request()->routeIs('accounting.vendor-credits.*') || request()->routeIs('accounting.customer-payments.*') || request()->routeIs('accounting.vendor-payments.*') || request()->routeIs('accounting.purchase-requisitions.*') || request()->routeIs('accounting.purchase-orders.*') || request()->routeIs('accounting.goods-received-notes.*') || request()->routeIs('accounting.expenses.*') || request()->routeIs('accounting.vendor-centre.*') || request()->routeIs('accounting.quotations.*') || request()->routeIs('accounting.sales-receipts.*') ? 'border-gold-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.customers.*') || request()->routeIs('accounting.vendors.*') || request()->routeIs('accounting.invoices.*') || request()->routeIs('accounting.bills.*') || request()->routeIs('accounting.products.*') || request()->routeIs('accounting.credit-notes.*') || request()->routeIs('accounting.vendor-credits.*') || request()->routeIs('accounting.customer-payments.*') || request()->routeIs('accounting.vendor-payments.*') || request()->routeIs('accounting.purchase-requisitions.*') || request()->routeIs('accounting.purchase-orders.*') || request()->routeIs('accounting.goods-received-notes.*') || request()->routeIs('accounting.expenses.*') || request()->routeIs('accounting.quotations.*') || request()->routeIs('accounting.sales-receipts.*') ? 'border-gold-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                             {{ __('Sales & Purchases') }}
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
@@ -42,7 +42,7 @@
                             @if(Route::has('accounting.payment-requests.index'))
                             <a href="{{ route('accounting.payment-requests.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Payment Requests') }}</a>
                             @endif
-                            <a href="{{ route('accounting.vendor-centre.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 font-medium">{{ __('Vendor Centre') }}</a>
+                            <a href="{{ route('accounting.vendors.dashboard') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 font-medium">{{ __('Vendor Centre') }}</a>
                             <div class="border-t border-gray-100 my-1"></div>
                             <a href="{{ route('accounting.products.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Products & Services') }}</a>
                         </div>
@@ -360,7 +360,7 @@
             <x-responsive-nav-link :href="route('accounting.bills.index')" :active="request()->routeIs('accounting.bills.*')">{{ __('Bills') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.vendor-credits.index')" :active="request()->routeIs('accounting.vendor-credits.*')">{{ __('Vendor Credits') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.expenses.index')" :active="request()->routeIs('accounting.expenses.*')">{{ __('Expenses') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.vendor-centre.index')" :active="request()->routeIs('accounting.vendor-centre.*')">{{ __('Vendor Centre') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.vendors.dashboard')" :active="request()->routeIs('accounting.vendors.*')">{{ __('Vendor Centre') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.products.index')" :active="request()->routeIs('accounting.products.*')">{{ __('Products') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Inventory</div>
             <x-responsive-nav-link :href="route('accounting.inventory-items.index')" :active="request()->routeIs('accounting.inventory-items.*')">{{ __('Inventory Items') }}</x-responsive-nav-link>

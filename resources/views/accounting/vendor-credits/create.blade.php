@@ -6,7 +6,7 @@
         $selectedVendor = old('vendor_id', $selectedVendorId ?? '') ? $vendors->firstWhere('id', (int) old('vendor_id', $selectedVendorId ?? '')) : null;
     @endphp
 
-    <div class="suite pb-6">
+    <div class="suite ex-suite stage pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
             {{-- sticky head --}}
@@ -147,6 +147,8 @@
                 </div>
             </form>
         </div>
+
+        @include('accounting.vendors._slim-rail', ['active' => 'credits'])
     </div>
 
     <script>

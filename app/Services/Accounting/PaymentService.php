@@ -177,7 +177,7 @@ class PaymentService
 
     // ─── Vendor Payments ─────────────────────────────────────────────
 
-    public function createVendorPayment(array $data, int $userId): VendorPayment
+    public function createVendorPayment(array $data, int $userId, string $status = VendorPayment::STATUS_DRAFT): VendorPayment
     {
         $companyId = $data['company_id'];
 
@@ -198,7 +198,7 @@ class PaymentService
             );
         }
 
-        return DB::transaction(function () use ($data, $userId, $companyId) {
+        return DB::transaction(function () use ($data, $userId, $companyId, $status) {
             $paymentNumber = $this->generatePaymentNumber($companyId);
 
             $payment = VendorPayment::create([
@@ -212,6 +212,7 @@ class PaymentService
                 'reference' => $data['reference'] ?? null,
                 'memo' => $data['memo'] ?? null,
                 'bank_account_id' => $data['bank_account_id'],
+                'status' => $status,
                 'created_by' => $userId,
             ]);
 
@@ -229,10 +230,49 @@ class PaymentService
         });
     }
 
+    public function submitVendorPayment(VendorPayment $payment, int $userId): VendorPayment
+    {
+        if ($payment->status !== VendorPayment::STATUS_DRAFT) {
+            throw new InvalidArgumentException('Only draft vendor payments can be submitted for approval.');
+        }
+
+        $oldValues = $payment->toArray();
+
+        $payment->update([
+            'status' => VendorPayment::STATUS_PENDING_APPROVAL,
+        ]);
+
+        $this->logPaymentAction($payment, VendorPayment::class, 'submitted_for_approval', $oldValues, $payment->toArray(), $userId);
+
+        return $payment->fresh();
+    }
+
+    public function rejectVendorPayment(VendorPayment $payment, int $userId, ?string $reason = null): VendorPayment
+    {
+        if ($payment->status !== VendorPayment::STATUS_PENDING_APPROVAL) {
+            throw new InvalidArgumentException('Only pending vendor payments can be rejected.');
+        }
+
+        $oldValues = $payment->toArray();
+
+        $payment->update([
+            'status' => VendorPayment::STATUS_REJECTED,
+            'rejection_reason' => $reason,
+        ]);
+
+        $this->logPaymentAction($payment, VendorPayment::class, 'rejected', $oldValues, $payment->toArray(), $userId);
+
+        return $payment->fresh();
+    }
+
     public function postVendorPayment(VendorPayment $payment, int $userId): VendorPayment
     {
         if ($payment->journal_entry_id) {
             throw new InvalidArgumentException('This payment has already been posted.');
+        }
+
+        if (!in_array($payment->status, [VendorPayment::STATUS_DRAFT, VendorPayment::STATUS_PENDING_APPROVAL], true)) {
+            throw new InvalidArgumentException('Only draft or pending vendor payments can be posted.');
         }
 
         $companyId = $payment->company_id;
@@ -296,6 +336,7 @@ class PaymentService
 
             $payment->update([
                 'journal_entry_id' => $journalEntry->id,
+                'status' => VendorPayment::STATUS_POSTED,
             ]);
 
             $allocations = $payment->allocations()->get();

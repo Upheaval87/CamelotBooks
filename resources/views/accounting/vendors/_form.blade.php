@@ -25,7 +25,7 @@
     $balanceDue = $isEdit ? (float) $vendor->balance_due : 0.0;
 @endphp
 
-<div class="suite">
+<div class="suite ex-suite stage">
 
     {{-- sticky page head --}}
     <div class="sticky-head">
@@ -206,4 +206,6 @@
             </aside>
         </div>
     </form>
+
+    @include('accounting.vendors._slim-rail', ['active' => 'vendors'])
 </div>

@@ -12,6 +12,20 @@ class VendorPayment extends Model
 {
     use TenantScoped;
 
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PENDING_APPROVAL = 'pending_approval';
+    public const STATUS_POSTED = 'posted';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_REVERSED = 'reversed';
+
+    public const STATUS_LABELS = [
+        self::STATUS_DRAFT => 'Draft',
+        self::STATUS_PENDING_APPROVAL => 'Pending Approval',
+        self::STATUS_POSTED => 'Posted',
+        self::STATUS_REJECTED => 'Rejected',
+        self::STATUS_REVERSED => 'Reversed',
+    ];
+
     protected $fillable = [
         'company_id',
         'branch_id',
@@ -28,6 +42,8 @@ class VendorPayment extends Model
         'memo',
         'bank_account_id',
         'journal_entry_id',
+        'status',
+        'rejection_reason',
         'created_by',
     ];
 

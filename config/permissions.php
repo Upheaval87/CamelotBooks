@@ -24,12 +24,14 @@ return [
         'sales-orders'    => ['view', 'create', 'edit', 'void', 'send', 'confirm', 'convert', 'cancel'],
         'bills'           => ['view', 'create', 'edit', 'void', 'approve', 'post'],
         'vendor-credits'  => ['view', 'create', 'void', 'post'],
-        'expenses'        => ['view', 'create', 'edit', 'void', 'approve', 'post'],
+        'expenses'        => ['view', 'create', 'edit', 'void', 'approve', 'post', 'submit', 'reject', 'return', 'pay', 'duplicate', 'delete'],
+        'expense-claims'  => ['view', 'create', 'submit', 'approve', 'reject', 'reimburse', 'delete'],
+        'expense-categories' => ['view', 'create', 'edit', 'delete'],
+        'expense-recurring' => ['view', 'create', 'edit', 'delete', 'run'],
 
         // ── Customers & Vendors ──
         'customers'       => ['view', 'create', 'edit', 'void'],
         'vendors'         => ['view', 'create', 'edit', 'void'],
-        'vendor-centre'   => ['view'],
 
         // ── Products & Inventory ──
         'products'        => ['view', 'create', 'edit', 'void'],
@@ -49,7 +51,7 @@ return [
 
         // ── Payments ──
         'customer-payments' => ['view', 'create', 'void'],
-        'vendor-payments'   => ['view', 'create', 'void'],
+        'vendor-payments'   => ['view', 'create', 'void', 'submit', 'approve', 'reject'],
 
         // ── Banking ──
         'bank-accounts' => ['view', 'create', 'edit', 'void'],
@@ -261,6 +263,9 @@ return [
                 'bills.*',
                 'vendor-credits.*',
                 'expenses.*',
+                'expense-claims.*',
+                'expense-categories.*',
+                'expense-recurring.*',
                 'customers.*',
                 'vendors.*',
                 'products.*',
@@ -377,6 +382,9 @@ return [
                 'bills.view', 'bills.create', 'bills.edit',
                 'vendor-credits.view', 'vendor-credits.create',
                 'expenses.view', 'expenses.create', 'expenses.edit',
+                'expense-claims.view', 'expense-claims.create', 'expense-claims.submit',
+                'expense-categories.view',
+                'expense-recurring.view',
                 // Customers & Vendors
                 'customers.view', 'customers.create', 'customers.edit',
                 'vendors.view', 'vendors.create', 'vendors.edit',
@@ -438,6 +446,7 @@ return [
                 'sales-orders.view',
                 'bills.view', 'bills.approve',
                 'expenses.view', 'expenses.approve',
+                'expense-claims.view', 'expense-claims.approve',
                 'stock-counts.view', 'stock-counts.approve',
                 'purchase-requisitions.view', 'purchase-requisitions.approve',
                 'purchase-orders.view', 'purchase-orders.approve',
@@ -527,9 +536,11 @@ return [
                 'bills.view',
                 'vendor-credits.view',
                 'expenses.view',
+                'expense-claims.view',
+                'expense-categories.view',
+                'expense-recurring.view',
                 'customers.view',
                 'vendors.view',
-                'vendor-centre.view',
                 'products.view',
                 'item-categories.view',
                 'inventory-items.view',
@@ -635,6 +646,9 @@ return [
                 'bills.view',
                 'vendor-credits.view',
                 'expenses.view',
+                'expense-claims.view',
+                'expense-categories.view',
+                'expense-recurring.view',
                 'customers.view',
                 'vendors.view',
                 'products.view',

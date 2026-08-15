@@ -31,7 +31,18 @@ class BillController extends Controller
             ->with(['vendor', 'lines']);
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $status = $request->status;
+            if ($status === 'unpaid') {
+                $query->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE])
+                    ->whereRaw('amount > amount_paid');
+            } elseif ($status === 'due_soon') {
+                $query->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID])
+                    ->whereNotNull('due_date')
+                    ->whereBetween('due_date', [now()->toDateString(), now()->addDays(7)->toDateString()])
+                    ->whereRaw('amount > amount_paid');
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         if ($request->filled('from_date')) {
@@ -54,16 +65,43 @@ class BillController extends Controller
             });
         }
 
+        $monthStart = now()->startOfMonth()->toDateString();
+        $monthEnd = now()->endOfMonth()->toDateString();
+        $weekEnd = now()->addDays(7)->toDateString();
+
+        $openStatuses = [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE];
+
         $stats = [
             'total' => (int) Bill::where('company_id', $companyId)->count(),
             'amount' => (float) Bill::where('company_id', $companyId)
-                ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE])
+                ->whereIn('status', $openStatuses)
                 ->selectRaw('COALESCE(SUM(amount), 0) as amt')
                 ->value('amt'),
             'due' => (float) Bill::where('company_id', $companyId)
-                ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE])
+                ->whereIn('status', $openStatuses)
                 ->selectRaw('COALESCE(SUM(amount), 0) - COALESCE(SUM(amount_paid), 0) as due')
                 ->value('due'),
+            'unpaid' => (int) Bill::where('company_id', $companyId)
+                ->whereIn('status', $openStatuses)
+                ->whereRaw('amount > amount_paid')
+                ->count(),
+            'due_soon' => (int) Bill::where('company_id', $companyId)
+                ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID])
+                ->whereNotNull('due_date')
+                ->whereBetween('due_date', [now()->toDateString(), $weekEnd])
+                ->whereRaw('amount > amount_paid')
+                ->count(),
+            'overdue' => (int) Bill::where('company_id', $companyId)
+                ->where('status', Bill::STATUS_OVERDUE)
+                ->whereRaw('amount > amount_paid')
+                ->count(),
+            'pending_approval' => (int) Bill::where('company_id', $companyId)
+                ->where('status', Bill::STATUS_PENDING_APPROVAL)
+                ->count(),
+            'paid_month' => (int) Bill::where('company_id', $companyId)
+                ->where('status', Bill::STATUS_PAID)
+                ->whereBetween('bill_date', [$monthStart, $monthEnd])
+                ->count(),
             'by_status' => Bill::where('company_id', $companyId)
                 ->selectRaw('status, COUNT(*) as c')
                 ->groupBy('status')

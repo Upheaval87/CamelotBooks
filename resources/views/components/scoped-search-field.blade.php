@@ -34,6 +34,7 @@
         allowGlobalSearch: @js($allowGlobalSearch),
     })"
     class="relative"
+    @click.outside="open = false; _dismissed = true"
 >
     <input type="hidden" name="{{ $name }}" :value="selectedId" {{ $required ? 'required' : '' }} />
 
@@ -46,11 +47,12 @@
             type="text"
             x-model="query"
             @input.debounce.200ms="filter()"
+            @input="_dismissed = false"
             @focus="if (query.length > 0) open = true"
             @keydown.down.prevent="moveHighlight(1)"
             @keydown.up.prevent="moveHighlight(-1)"
             @keydown.enter.prevent="confirmHighlight()"
-            @keydown.escape="open = false"
+            @keydown.escape="open = false; _dismissed = true"
             @keydown.tab="open = false"
             placeholder="{{ $placeholder }}"
             autocomplete="off"

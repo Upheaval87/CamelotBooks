@@ -35,7 +35,6 @@ use App\Http\Controllers\Accounting\StockCountController;
 use App\Http\Controllers\Accounting\StockTransferController;
 use App\Http\Controllers\Accounting\TrialBalanceController;
 use App\Http\Controllers\Accounting\ExpenseController;
-use App\Http\Controllers\Accounting\VendorCentreController;
 use App\Http\Controllers\Accounting\VendorController;
 use App\Http\Controllers\Accounting\VendorCreditController;
 use App\Http\Controllers\Accounting\VendorPaymentController;
@@ -322,6 +321,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('customers/{customer}/toggle', [CustomerController::class, 'toggle'])->name('customers.toggle');
 
             // Vendors
+            Route::get('vendors/dashboard', [VendorController::class, 'dashboard'])->name('vendors.dashboard');
+            Route::get('vendors/reports', [VendorController::class, 'reports'])->name('vendors.reports');
+            Route::get('vendors/settings', [VendorController::class, 'settings'])->name('vendors.settings');
+            Route::post('vendors/settings', [VendorController::class, 'updateSettings'])->name('vendors.settings.update');
+            Route::post('vendors/rail-pin', [VendorController::class, 'railPin'])->name('vendors.rail-pin');
+            Route::get('vendors/export', [VendorController::class, 'exportCsv'])->name('vendors.export');
             Route::get('vendors', [VendorController::class, 'index'])->name('vendors.index');
             Route::get('vendors/create', [VendorController::class, 'create'])->name('vendors.create');
             Route::post('vendors', [VendorController::class, 'store'])->name('vendors.store');
@@ -546,23 +551,53 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('vendor-credits/{vendorCredit}/void', [VendorCreditController::class, 'void'])->name('vendor-credits.void')->middleware(['permission:vendor-credits.void', 'sod:vendorCredit']);
 
             // Vendor Payments
+            Route::get('vendor-payments', [VendorPaymentController::class, 'index'])->name('vendor-payments.index');
             Route::get('vendor-payments/create', [VendorPaymentController::class, 'create'])->name('vendor-payments.create');
             Route::post('vendor-payments', [VendorPaymentController::class, 'store'])->name('vendor-payments.store');
             Route::get('vendor-payments/{payment}', [VendorPaymentController::class, 'show'])->name('vendor-payments.show');
+            Route::post('vendor-payments/{payment}/submit', [VendorPaymentController::class, 'submit'])->name('vendor-payments.submit')->middleware(['permission:vendor-payments.submit', 'sod:payment']);
+            Route::post('vendor-payments/{payment}/approve', [VendorPaymentController::class, 'approve'])->name('vendor-payments.approve')->middleware(['permission:vendor-payments.approve', 'sod:payment']);
+            Route::post('vendor-payments/{payment}/reject', [VendorPaymentController::class, 'reject'])->name('vendor-payments.reject')->middleware(['permission:vendor-payments.reject', 'sod:payment']);
 
-            // Expenses (immediate payment, no AP)
+            // ── Expenses ──
+            Route::get('expenses/dashboard', [ExpenseController::class, 'dashboard'])->name('expenses.dashboard');
+            Route::get('expenses/claims', [ExpenseController::class, 'claimsIndex'])->name('expenses.claims.index');
+            Route::get('expenses/claims/create', [ExpenseController::class, 'claimCreate'])->name('expenses.claims.create');
+            Route::post('expenses/claims', [ExpenseController::class, 'claimStore'])->name('expenses.claims.store');
+            Route::post('expenses/claims/{claim}/submit', [ExpenseController::class, 'claimSubmit'])->name('expenses.claims.submit')->middleware(['permission:expense-claims.submit']);
+            Route::post('expenses/claims/{claim}/approve', [ExpenseController::class, 'claimApprove'])->name('expenses.claims.approve')->middleware(['permission:expense-claims.approve', 'sod:claim']);
+            Route::post('expenses/claims/{claim}/reject', [ExpenseController::class, 'claimReject'])->name('expenses.claims.reject')->middleware(['permission:expense-claims.reject', 'sod:claim']);
+            Route::post('expenses/claims/{claim}/reimburse', [ExpenseController::class, 'claimReimburse'])->name('expenses.claims.reimburse')->middleware(['permission:expense-claims.reimburse', 'sod:claim']);
+            Route::delete('expenses/claims/{claim}', [ExpenseController::class, 'claimDestroy'])->name('expenses.claims.destroy')->middleware(['permission:expense-claims.delete', 'sod:claim']);
+            Route::get('expenses/claims/{claim}', [ExpenseController::class, 'claimShow'])->name('expenses.claims.show');
+            Route::get('expenses/recurring', [ExpenseController::class, 'recurringIndex'])->name('expenses.recurring.index');
+            Route::get('expenses/recurring/create', [ExpenseController::class, 'recurringCreate'])->name('expenses.recurring.create');
+            Route::post('expenses/recurring', [ExpenseController::class, 'recurringStore'])->name('expenses.recurring.store');
+            Route::get('expenses/recurring/{template}/edit', [ExpenseController::class, 'recurringEdit'])->name('expenses.recurring.edit');
+            Route::put('expenses/recurring/{template}', [ExpenseController::class, 'recurringUpdate'])->name('expenses.recurring.update');
+            Route::post('expenses/recurring/{template}/toggle', [ExpenseController::class, 'recurringToggle'])->name('expenses.recurring.toggle')->middleware(['permission:expense-recurring.edit', 'sod:template']);
+            Route::delete('expenses/recurring/{template}', [ExpenseController::class, 'recurringDestroy'])->name('expenses.recurring.destroy')->middleware(['permission:expense-recurring.delete', 'sod:template']);
+            Route::get('expenses/categories', [ExpenseController::class, 'categoriesIndex'])->name('expenses.categories.index');
+            Route::post('expenses/categories', [ExpenseController::class, 'categoryStore'])->name('expenses.categories.store');
+            Route::put('expenses/categories/{category}', [ExpenseController::class, 'categoryUpdate'])->name('expenses.categories.update');
+            Route::delete('expenses/categories/{category}', [ExpenseController::class, 'categoryDestroy'])->name('expenses.categories.destroy');
+            Route::get('expenses/reports', [ExpenseController::class, 'reports'])->name('expenses.reports');
             Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
             Route::get('expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
             Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
-            Route::get('expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
             Route::get('expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
             Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+            Route::post('expenses/{expense}/submit', [ExpenseController::class, 'submit'])->name('expenses.submit')->middleware(['permission:expenses.submit']);
+            Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve')->middleware(['permission:expenses.approve', 'sod:expense']);
+            Route::post('expenses/{expense}/reject', [ExpenseController::class, 'reject'])->name('expenses.reject')->middleware(['permission:expenses.reject', 'sod:expense']);
+            Route::post('expenses/{expense}/return', [ExpenseController::class, 'returnForCorrection'])->name('expenses.return')->middleware(['permission:expenses.return', 'sod:expense']);
+            Route::post('expenses/{expense}/budget-authorize', [ExpenseController::class, 'authorizeBudget'])->name('expenses.budget-authorize')->middleware(['permission:expenses.approve', 'sod:expense']);
             Route::post('expenses/{expense}/post', [ExpenseController::class, 'post'])->name('expenses.post')->middleware(['permission:expenses.post', 'sod:expense']);
+            Route::post('expenses/{expense}/pay', [ExpenseController::class, 'recordPayment'])->name('expenses.pay')->middleware(['permission:expenses.pay', 'sod:expense']);
             Route::post('expenses/{expense}/void', [ExpenseController::class, 'void'])->name('expenses.void')->middleware(['permission:expenses.void', 'sod:expense']);
-
-            // Vendor Centre
-            Route::get('vendor-centre', [VendorCentreController::class, 'index'])->name('vendor-centre.index');
-            Route::get('vendor-centre/{vendor}', [VendorCentreController::class, 'show'])->name('vendor-centre.show');
+            Route::post('expenses/{expense}/duplicate', [ExpenseController::class, 'duplicate'])->name('expenses.duplicate')->middleware(['permission:expenses.duplicate']);
+            Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy')->middleware(['permission:expenses.delete', 'sod:expense']);
+            Route::get('expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
 
             Route::middleware('feature:purchasing')->group(function () {
             // Purchase Requisitions

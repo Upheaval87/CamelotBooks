@@ -22,6 +22,7 @@ class ExpenseTest extends TestCase
     protected Account $cashAccount;
     protected Account $expenseAccount;
     protected Account $taxReceivableAccount;
+    protected Account $apAccount;
     protected Vendor $vendor;
     protected AccountingPeriod $period;
     protected int $userId;
@@ -76,6 +77,15 @@ class ExpenseTest extends TestCase
             'is_active' => true,
         ]);
 
+        $this->apAccount = Account::create([
+            'company_id' => $this->company->id,
+            'code' => '2200',
+            'name' => 'Accounts Payable',
+            'type' => 'liability',
+            'sub_type' => 'current_liability',
+            'is_active' => true,
+        ]);
+
         Account::create(['company_id' => $this->company->id, 'code' => '9999', 'name' => 'Rounding Differences', 'type' => 'expense', 'sub_type' => 'non_operating_expense', 'is_active' => true]);
         $accounts = Account::where('company_id', $this->company->id)->get()->keyBy('code');
         $mappingData = [
@@ -83,6 +93,7 @@ class ExpenseTest extends TestCase
             'default_expense' => '6100',
             'tax_receivable' => '1150',
             'rounding' => '9999',
+            'accounts_payable' => '2200',
         ];
         foreach ($mappingData as $key => $code) {
             if (isset($accounts[$code])) {
@@ -178,7 +189,7 @@ class ExpenseTest extends TestCase
         $this->assertEquals(200, $debits->first()->debit);
         $this->assertEquals(200, $credits->first()->credit);
         $this->assertEquals($this->expenseAccount->id, $debits->first()->account_id);
-        $this->assertEquals($this->cashAccount->id, $credits->first()->account_id);
+        $this->assertEquals($this->apAccount->id, $credits->first()->account_id);
     }
 
     public function test_post_expense_with_tax_creates_correct_je(): void
@@ -202,11 +213,11 @@ class ExpenseTest extends TestCase
 
         $expenseLine = $lines->where('account_id', $this->expenseAccount->id)->first();
         $taxLine = $lines->where('account_id', $this->taxReceivableAccount->id)->first();
-        $cashLine = $lines->where('account_id', $this->cashAccount->id)->first();
+        $apLine = $lines->where('account_id', $this->apAccount->id)->first();
 
         $this->assertEquals(100, $expenseLine->debit);
         $this->assertEquals(17.5, $taxLine->debit);
-        $this->assertEquals(117.5, $cashLine->credit);
+        $this->assertEquals(117.5, $apLine->credit);
     }
 
     public function test_cannot_post_non_draft(): void
@@ -263,7 +274,8 @@ class ExpenseTest extends TestCase
         $response = $this->actingAs($user)->get(route('accounting.expenses.show', $expense));
 
         $response->assertOk();
-        $response->assertSee('Expense ' . $expense->expense_number);
+        $response->assertSee($expense->expense_number);
+        $response->assertSee('Allocation');
         $response->assertDontSee('Lookup Employee');
     }
 

@@ -21,9 +21,10 @@
         ['label' => __('Quotation Requests'),'route' => 'accounting.quotations.index'],
         ['label' => __('GRNs'),              'route' => 'accounting.goods-received-notes.index'],
         ['label' => __('Bills'),             'route' => 'accounting.bills.index'],
+        ['label' => __('Payments'),          'route' => 'accounting.vendor-payments.index'],
         ['label' => __('Vendor Credits'),    'route' => 'accounting.vendor-credits.index'],
-        ['label' => __('Expenses'),          'route' => 'accounting.expenses.index'],
-        ['label' => __('Vendor Centre'),     'route' => 'accounting.vendor-centre.index'],
+        ['label' => __('Expenses'),          'route' => 'accounting.expenses.dashboard', 'active' => 'accounting.expenses'],
+        ['label' => __('Vendor Centre'),     'route' => 'accounting.vendors.dashboard'],
     ], 'purchasing');
 
     $accountingChildren = [
@@ -363,7 +364,7 @@
                                  @mouseleave="open = false"
                                  x-cloak>
                                 @foreach($mod->children as $child)
-                                    @php $cActive = $isActiveRoute($child['route']); @endphp
+                                    @php $cActive = $isActiveRoute($child['route']) || (($child['active'] ?? null) && str_starts_with($routeName, $child['active'])); @endphp
                                     <a href="{{ route($child['route']) }}"
                                        class="topbar-nav-dropdown-item @if($cActive) active @endif"
                                        @if($cActive) aria-current="page" @endif>

@@ -4,7 +4,7 @@
     $routeName = $currentRoute ? $currentRoute->getName() : '';
     $companyId = session('current_company_id') ?? 0;
     $sectionMap = [
-        'sales-purchases' => ['accounting.customers', 'accounting.quotations', 'accounting.invoices', 'accounting.sales-receipts', 'accounting.credit-notes', 'accounting.vendors', 'accounting.purchase-orders', 'accounting.goods-received-notes', 'accounting.bills', 'accounting.expenses', 'accounting.vendor-centre', 'accounting.products'],
+        'sales-purchases' => ['accounting.customers', 'accounting.quotations', 'accounting.invoices', 'accounting.sales-receipts', 'accounting.credit-notes', 'accounting.vendors', 'accounting.purchase-orders', 'accounting.goods-received-notes', 'accounting.bills', 'accounting.vendor-payments', 'accounting.expenses', 'accounting.products'],
         'inventory'       => ['accounting.inventory-items', 'accounting.stock-adjustments', 'accounting.stock-transfers', 'accounting.stock-counts', 'accounting.inventory-valuation'],
         'banking'         => ['accounting.bank-accounts', 'accounting.bank-reconciliation', 'accounting.deposits', 'accounting.cheques', 'accounting.petty-cash', 'accounting.cash-position'],
         'accounting'      => ['accounting.accounts', 'accounting.journal-entries', 'accounting.general-ledger', 'accounting.trial-balance', 'accounting.budgets'],
@@ -65,8 +65,9 @@
             <a href="{{ route('accounting.purchase-orders.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.purchase-orders') ? 'active' : '' }}">Purchase Orders</a>
             <a href="{{ route('accounting.goods-received-notes.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.goods-received-notes') ? 'active' : '' }}">GRNs</a>
             <a href="{{ route('accounting.bills.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.bills') ? 'active' : '' }}">Bills</a>
+            <a href="{{ route('accounting.vendor-payments.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.vendor-payments') ? 'active' : '' }}">Payments</a>
             <a href="{{ route('accounting.expenses.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.expenses') ? 'active' : '' }}">Expenses</a>
-            <a href="{{ route('accounting.vendor-centre.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.vendor-centre') ? 'active' : '' }}">Vendor Centre</a>
+            <a href="{{ route('accounting.vendors.dashboard') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.vendors') ? 'active' : '' }}">Vendor Centre</a>
             <a href="{{ route('accounting.products.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.products') ? 'active' : '' }}">Products</a>
         </div>
 

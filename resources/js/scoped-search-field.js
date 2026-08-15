@@ -21,6 +21,7 @@ document.addEventListener('alpine:init', () => {
         loading: false,
         highlightIndex: -1,
         _lastQuery: null,
+        _dismissed: false,
         fieldId: null,
 
         init() {
@@ -96,6 +97,11 @@ document.addEventListener('alpine:init', () => {
                 const r = await fetch(this.searchUrl + '?q=' + encodeURIComponent(q));
                 if (!r.ok) throw new Error('search failed');
                 this.results = await r.json();
+                if (this._dismissed) {
+                    this.open = false;
+                    this.loading = false;
+                    return;
+                }
                 this.open = true;
 
                 if (this.results.length === 1) {
@@ -202,13 +208,13 @@ function escapeAttr(value) {
         const required = cfg.required ? 'required' : '';
 
         return `
-<div x-data="${escapeAttr(xData)}" class="relative">
+<div x-data="${escapeAttr(xData)}" class="relative" @click.outside="open = false; _dismissed = true">
     <input type="hidden" name="${escapeAttr(cfg.name)}" :value="selectedId" ${required} />
     <div class="scoped-search-field">
         <svg class="scoped-search-filter" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
         </svg>
-        <input type="text" x-model="query" @input.debounce.200ms="filter()" @focus="if (query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false" @keydown.tab="open = false" placeholder="${placeholder}" autocomplete="off" />
+        <input type="text" x-model="query" @input.debounce.200ms="filter()" @input="_dismissed = false" @focus="if (query.length > 0) open = true" @keydown.down.prevent="moveHighlight(1)" @keydown.up.prevent="moveHighlight(-1)" @keydown.enter.prevent="confirmHighlight()" @keydown.escape="open = false; _dismissed = true" @keydown.tab="open = false" placeholder="${placeholder}" autocomplete="off" />
         <span class="scoped-search-divider" aria-hidden="true"></span>
         <button type="button" class="scoped-search-open" title="Search" @click="openGlobalSearch()">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

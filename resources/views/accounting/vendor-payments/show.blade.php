@@ -6,9 +6,17 @@
         $unallocated = round($paidTotal - $allocatedTotal, 2);
         $methodLabel = ucfirst(str_replace('_', ' ', $payment->payment_method ?? ''));
         $jeRef = $payment->journalEntry ? ($payment->journalEntry->reference ?? ('JE-' . str_pad($payment->journalEntry->id, 4, '0', STR_PAD_LEFT))) : null;
+        [$statusBadgeCls, $statusBadgeLabel] = match ($payment->status) {
+            'draft' => ['b-draft', __('Draft')],
+            'pending_approval' => ['b-pend', __('Pending Approval')],
+            'posted' => ['b-post', __('Posted')],
+            'rejected' => ['b-rej', __('Rejected')],
+            'reversed' => ['b-rev', __('Reversed')],
+            default => ['b-gray', ucfirst(str_replace('_', ' ', $payment->status ?? 'draft'))],
+        };
     @endphp
 
-    <div class="suite pb-6">
+    <div class="suite ex-suite stage pb-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
 
             {{-- sticky head --}}
@@ -18,11 +26,49 @@
                     <div class="sub">{{ $payment->vendor->name ?? '—' }} · {{ $payment->payment_date?->format('M d, Y') ?? '—' }}</div>
                 </div>
                 <div class="tbtns">
+                    @if($payment->status === 'draft')
+                        @can('vendor-payments.submit')
+                        <form method="POST" action="{{ route('accounting.vendor-payments.submit', $payment) }}" class="inline">
+                            @csrf
+                            <button type="submit" class="btn cta" onclick="return fbConfirmButton(event, 'Submit this payment for approval?', { type: 'action' })">{{ __('Submit for Approval') }}</button>
+                        </form>
+                        @endcan
+                    @endif
+                    @if($payment->status === 'pending_approval')
+                        @can('vendor-payments.approve')
+                        <form method="POST" action="{{ route('accounting.vendor-payments.approve', $payment) }}" class="inline">
+                            @csrf
+                            <button type="submit" class="btn cta" onclick="return fbConfirmButton(event, 'Approve and post this payment?', { type: 'action' })">{{ __('Approve & Post') }}</button>
+                        </form>
+                        @endcan
+                        @can('vendor-payments.reject')
+                        <button type="button" onclick="document.getElementById('reject-panel').style.display = 'block'" class="btn danger-o">{{ __('Reject') }}</button>
+                        @endcan
+                    @endif
                     <a href="{{ route('accounting.vendor-payments.create', ['vendor_id' => $payment->vendor_id]) }}" class="btn btn-sec">{{ __('New Payment') }}</a>
                     <button type="button" onclick="window.print()" class="btn btn-ghost">{{ __('Print') }}</button>
                     <a href="{{ route('accounting.vendors.show', $payment->vendor) }}" class="btn btn-ghost">{{ __('Back') }}</a>
                 </div>
             </div>
+
+            @if($payment->status === 'pending_approval')
+                @can('vendor-payments.reject')
+                <div id="reject-panel" class="card" style="display:none;margin-top:14px;border:1px solid var(--border,#DCEAEA)">
+                    <form method="POST" action="{{ route('accounting.vendor-payments.reject', $payment) }}" class="g4" style="align-items:end">
+                        @csrf
+                        <div class="field sp2" style="margin:0">
+                            <label for="reason">{{ __('Rejection Reason') }} <span class="req">*</span></label>
+                            <input id="reason" name="reason" type="text" class="input" placeholder="Why is this payment being rejected?" required />
+                            <x-input-error :messages="$errors->get('reason')" class="mt-2" />
+                        </div>
+                        <div class="tbtns" style="margin:0">
+                            <button type="button" onclick="document.getElementById('reject-panel').style.display = 'none'" class="btn ghost sm">{{ __('Cancel') }}</button>
+                            <button type="submit" class="btn danger sm" onclick="return fbConfirmButton(event, 'Reject this payment?', { type: 'danger' })">{{ __('Confirm Rejection') }}</button>
+                        </div>
+                    </form>
+                </div>
+                @endcan
+            @endif
 
             <div class="shell">
                 <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
@@ -32,7 +78,7 @@
                         <div class="prof">
                             <span class="ava-xl"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M2 10h20M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
                             <div>
-                                <div class="n">{{ __('Vendor Payment') }} {{ $payment->payment_number }} <span class="badge b-act"><span class="bdot"></span>{{ __('Paid') }}</span></div>
+                                <div class="n">{{ __('Vendor Payment') }} {{ $payment->payment_number }} <span class="badge {{ $statusBadgeCls }}"><span class="bdot"></span>{{ $statusBadgeLabel }}</span></div>
                                 <div class="c">
                                     <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ $payment->vendor->name ?? '—' }}</span>
                                     <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</span>
@@ -46,6 +92,12 @@
                             </div>
                         </div>
                     </section>
+
+                    @if($payment->status === 'rejected' && $payment->rejection_reason)
+                        <div class="note-info note-warn">
+                            <strong>{{ __('Rejection Reason:') }}</strong> {{ $payment->rejection_reason }}
+                        </div>
+                    @endif
 
                     {{-- stat grid --}}
                     <div class="statgrid">
@@ -144,6 +196,8 @@
                 </aside>
             </div>
         </div>
+
+        @include('accounting.vendors._slim-rail', ['active' => 'payments'])
     </div>
 
     <script>
