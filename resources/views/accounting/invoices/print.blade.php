@@ -50,7 +50,7 @@
         .p-doc .grid { margin-top: .625rem; display: grid; grid-template-columns: auto auto; gap: .25rem 1.125rem; justify-content: end; }
         .p-doc .l { font-size: .5625rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); text-align: left; }
         .p-doc .v { font-size: .71875rem; font-weight: 600; color: var(--ink); text-align: right; }
-        .p-doc .v.mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+        .p-doc .v.mono { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; }
 
         .accent-line { height: 4px; background: var(--acc); }
 

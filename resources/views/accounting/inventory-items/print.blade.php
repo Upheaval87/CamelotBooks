@@ -107,7 +107,7 @@
         tbody tr:nth-child(even) td { background: #F5F9F9; }
         tbody tr:last-child td { border-bottom: none; }
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
-        td.ic { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.6875rem; font-weight: 700; color: var(--acc); }
+        td.ic { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-size: 0.6875rem; font-weight: 700; color: var(--acc); }
         td.strong { font-weight: 700; color: var(--ink); }
         td.empty { text-align: center; color: var(--faint); padding: 1.5rem; }
 

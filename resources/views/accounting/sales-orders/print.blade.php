@@ -76,7 +76,7 @@
             letter-spacing: .18em;
             text-transform: uppercase;
         }
-        .qpdf-num { margin-top: 4px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.84375rem; font-weight: 700; color: var(--ink); }
+        .qpdf-num { margin-top: 4px; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-size: 0.84375rem; font-weight: 700; color: var(--ink); }
         .qpdf-mgrid { display: grid; grid-template-columns: repeat(2, auto); gap: 0.5rem 1.5rem; margin-top: 0.625rem; justify-content: end; }
         .qpdf-mgrid .m { display: flex; gap: 0.5rem; align-items: baseline; }
         .qpdf-mgrid .l { font-size: 0.625rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
@@ -123,7 +123,7 @@
         tbody tr:nth-child(even) td { background: #F5F9F9; }
         tbody tr:last-child td { border-bottom: none; }
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
-        td.ic { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.6875rem; font-weight: 700; color: var(--acc); }
+        td.ic { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-size: 0.6875rem; font-weight: 700; color: var(--acc); }
         td.strong { font-weight: 700; color: var(--ink); }
         td.empty { text-align: center; color: var(--faint); padding: 1.5rem; }
 

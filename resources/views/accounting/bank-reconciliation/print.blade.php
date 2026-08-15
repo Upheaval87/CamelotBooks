@@ -24,7 +24,7 @@
         .sum-box.alt .lbl { color: rgba(226,244,244,.8); }
         table { width: 100%; border-collapse: collapse; }
         th { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; text-align: left; padding: 9px 10px; background: #11454B; color: #E2F4F4; }
-        th.num, td.num { text-align: right; }
+        th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
         td { font-size: 12px; padding: 9px 10px; border-bottom: 1px solid #E2ECEC; }
         tr.total td { font-weight: 700; background: #F0F6F6; border-bottom: none; }
         .foot { margin-top: 28px; padding-top: 14px; border-top: 1px solid #DCEAEA; font-size: 10px; color: #8AA5A7; text-align: center; }
