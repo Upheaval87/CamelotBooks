@@ -109,11 +109,12 @@ html, body { overflow-x: clip; }
     }
     /* Global type scale — default element styles. Class-based rules in the
        components/utilities layers (and suite-scoped selectors) override these,
-       so bare <h1>/<h2>/<h3>/<th> inherit a consistent look. */
-    h1, .page-title { @apply text-2xl font-bold text-gray-900; }
-    h2, .section-title { @apply text-lg font-semibold text-gray-900; }
-    h3 { @apply text-base font-semibold text-gray-900; }
-    th { @apply text-xs font-medium uppercase tracking-wide text-gray-500; }
+       so bare <h1>/<h2>/<h3>/<th> inherit a consistent look. Sizes stay on the
+       rem scale (font-scale aware); weights follow the spec (800/800/700/800). */
+    h1, .page-title { @apply text-2xl font-extrabold text-gray-900; letter-spacing: -0.01em; }
+    h2, .section-title { @apply text-lg font-extrabold text-gray-900; }
+    h3 { @apply text-base font-bold text-gray-900; }
+    th { @apply text-xs font-extrabold uppercase tracking-[0.09em] text-[#5f7476]; }
     /* Monetary figures — stable column widths via tabular numerals + medium weight */
     .figure,
     .amount,
@@ -769,7 +770,7 @@ html, body { overflow-x: clip; }
        BUTTONS — four variants: primary, danger, commit, ghost
     ═══════════════════════════════════════════ */
     .btn {
-        @apply inline-flex items-center justify-center gap-1.5 font-medium rounded transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 disabled:opacity-40 disabled:cursor-not-allowed select-none cursor-pointer;
+        @apply inline-flex items-center justify-center gap-1.5 font-semibold rounded transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 disabled:opacity-40 disabled:cursor-not-allowed select-none cursor-pointer;
         font-size: 0.8125rem;
         line-height: 1.25rem;
     }
@@ -983,7 +984,7 @@ html, body { overflow-x: clip; }
         text-transform: uppercase;
     }
     .kpi-value {
-        @apply text-2xl font-mono font-bold text-ink mt-1;
+        @apply text-2xl font-extrabold text-ink mt-1;
     }
     .kpi-trend {
         @apply text-xs font-medium mt-1.5 inline-flex items-center gap-1;
@@ -1037,7 +1038,7 @@ html, body { overflow-x: clip; }
 
     /* Status pill badges — reference badge language */
     .pill-base {
-        @apply inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold leading-4 shadow-badge border;
+        @apply inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-extrabold tracking-[0.05em] leading-4 shadow-badge border;
     }
     .status-pill { @apply pill-base; }
     .status-pill.positive { @apply pill-base border-green-600/30 bg-gradient-to-b from-mint-100 to-mint-200 text-green-700; }
