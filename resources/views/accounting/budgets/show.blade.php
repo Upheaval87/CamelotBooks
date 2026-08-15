@@ -124,7 +124,7 @@
                                         <td>{{ $line->account->name ?? '—' }}</td>
                                         <td class="numeric">{{ format_money($line->budgeted_amount) }}</td>
                                         <td class="numeric">{{ format_money($line->actual_amount ?? 0) }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ ($line->actual_amount - $line->budgeted_amount) > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                        <td class="figure px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ ($line->actual_amount - $line->budgeted_amount) > 0 ? 'text-red-600' : 'text-green-600' }}">
                                             {{ format_money(($line->actual_amount ?? 0) - $line->budgeted_amount) }}
                                         </td>
                                     </tr>

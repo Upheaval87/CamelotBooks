@@ -14,7 +14,7 @@
                     </span>
                 @endif
                 @if($title)
-                    <h3 class="text-[15px] font-extrabold text-gray-900">{{ $title }}</h3>
+                    <h3 class="text-[1.071rem] font-extrabold text-gray-900">{{ $title }}</h3>
                 @endif
             </div>
             @if($hasAction)

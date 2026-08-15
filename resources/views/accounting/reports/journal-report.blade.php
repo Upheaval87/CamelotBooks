@@ -39,8 +39,8 @@
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td colspan="5" class="px-4 py-3 text-sm text-right">Totals</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_debit) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_credit) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_debit) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_credit) }}</td>
                 </tr>
             </tfoot>
         </table>

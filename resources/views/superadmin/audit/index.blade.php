@@ -6,13 +6,13 @@
         <x-superadmin.card>
             <div class="mb-5 flex flex-wrap items-center gap-3">
                 <form method="GET" action="{{ route('superadmin.audit.index') }}" class="flex flex-wrap items-center gap-3">
-                    <select name="company" class="rounded-[10px] border border-shell bg-[rgba(244,246,250,.6)] px-3 py-2 text-[13px] text-gray-700 focus:border-gold-500 focus:outline-none">
+                    <select name="company" class="rounded-[10px] border border-shell bg-[rgba(244,246,250,.6)] px-3 py-2 text-[0.929rem] text-gray-700 focus:border-gold-500 focus:outline-none">
                         <option value="">{{ __('All companies') }}</option>
                         @foreach($companies as $company)
                             <option value="{{ $company->id }}" @selected(request('company') == $company->id)>{{ $company->name }}</option>
                         @endforeach
                     </select>
-                    <select name="action" class="rounded-[10px] border border-shell bg-[rgba(244,246,250,.6)] px-3 py-2 text-[13px] text-gray-700 focus:border-gold-500 focus:outline-none">
+                    <select name="action" class="rounded-[10px] border border-shell bg-[rgba(244,246,250,.6)] px-3 py-2 text-[0.929rem] text-gray-700 focus:border-gold-500 focus:outline-none">
                         <option value="">{{ __('All actions') }}</option>
                         @foreach($actions as $action)
                             <option value="{{ $action }}" @selected(request('action') == $action)>{{ $action }}</option>

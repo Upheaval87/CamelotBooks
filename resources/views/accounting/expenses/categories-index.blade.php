@@ -116,7 +116,7 @@
     <div id="edit-category-modal" class="cb-modal" style="display:none">
         <div class="cb-modal-backdrop" style="position:fixed;inset:0;background:rgba(10,46,50,.45);z-index:120" onclick="document.getElementById('edit-category-modal').style.display='none'"></div>
         <div class="cb-modal-card" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:121;background:#fff;border-radius:16px;padding:24px;width:min(480px,calc(100vw - 32px))">
-            <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">{{ __('Edit Expense Category') }}</h3>
+            <h3 class="section-title" style="margin-bottom:16px">{{ __('Edit Expense Category') }}</h3>
             <form method="POST" action="" id="edit-category-form">
                 @csrf
                 @method('PUT')

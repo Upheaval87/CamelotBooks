@@ -39,7 +39,7 @@
             <tbody class="divide-y divide-gray-200">
                 <tr class="bg-gray-50 font-medium">
                     <td colspan="3" class="px-4 py-2 text-sm">Opening Balance</td>
-                    <td colspan="2" class="px-4 py-2 text-sm text-right">{{ format_number($opening_balance) }}</td>
+                    <td colspan="2" class="figure px-4 py-2 text-sm text-right">{{ format_number($opening_balance) }}</td>
                     <td class="numeric">{{ format_number($opening_balance) }}</td>
                 </tr>
                 @forelse($transactions as $t)
@@ -49,7 +49,7 @@
                     <td class="px-4 py-2 text-sm font-sans">{{ $t['reference'] }}</td>
                     <td class="numeric">{{ $t['debit'] > 0 ? format_number($t['debit']) : '' }}</td>
                     <td class="numeric">{{ $t['credit'] > 0 ? format_number($t['credit']) : '' }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($t['balance']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-medium">{{ format_number($t['balance']) }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">No transactions found.</td></tr>

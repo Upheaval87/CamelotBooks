@@ -41,7 +41,7 @@
                     <td>{{ $b['date'] }}</td>
                     <td class="numeric">{{ format_number($b['quantity']) }}</td>
                     <td class="numeric">{{ format_number($b['unit_cost']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($b['total_component_cost']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-medium">{{ format_number($b['total_component_cost']) }}</td>
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $b['status'] === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($b['status']) }}</span></td>
                     <td class="text-ink-soft">{{ $b['created_by'] }}</td>
                 </tr>

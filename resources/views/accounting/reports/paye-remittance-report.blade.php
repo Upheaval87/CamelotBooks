@@ -26,7 +26,7 @@
                     <td>{{ $r['period_label'] }}</td>
                     <td class="px-4 py-2 text-sm font-sans">{{ $r['run_number'] }}</td>
                     <td>{{ $r['pay_date'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($r['total_paye']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-medium">{{ format_number($r['total_paye']) }}</td>
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $r['status'] === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($r['status']) }}</span></td>
                     <td class="text-ink-soft">{{ $r['approved_by'] ?? '—' }}</td>
                     <td class="text-ink-soft">{{ $r['posted_at'] ?? '—' }}</td>

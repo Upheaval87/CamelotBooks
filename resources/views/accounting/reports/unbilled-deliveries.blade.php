@@ -30,7 +30,7 @@
                     <td>{{ $l['product'] }}</td>
                     <td class="numeric">{{ format_number($l['quantity']) }}</td>
                     <td class="numeric">{{ format_number($l['unit_price']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($l['line_total']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-medium">{{ format_number($l['line_total']) }}</td>
                     <td>{{ $l['status'] }}</td>
                 </tr>
                 @empty

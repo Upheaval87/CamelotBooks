@@ -14,7 +14,7 @@
             <div class="q2-head q2-head--sticky">
                 <div>
                     <div class="flex items-center gap-2.5 flex-wrap">
-                        <h1 class="q2-title" style="font-size:1.375rem">{{ __('Quotation') }} <span class="q2-mono">{{ $quotation->quotation_number }}</span></h1>
+                        <h1 class="q2-title">{{ __('Quotation') }} <span class="q2-mono">{{ $quotation->quotation_number }}</span></h1>
                         <span class="q2-badge q2-badge--{{ $quotation->status }}">
                             @switch($quotation->status)
                                 @case('draft') <span class="q2-dot"></span>{{ __('Draft') }} @break
@@ -207,7 +207,7 @@
                                     @if($quotation->memo)
                                         <div class="q2-field" style="grid-column: span 2">
                                             <span class="q2-label">{{ __('Description') }}</span>
-                                            <p class="q2-rail-memo" style="font-size:.8125rem;color:var(--muted,#5F7476)">{{ $quotation->memo }}</p>
+                                            <p class="q2-rail-memo">{{ $quotation->memo }}</p>
                                         </div>
                                     @endif
                                 </div>

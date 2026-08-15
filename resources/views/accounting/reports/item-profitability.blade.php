@@ -34,7 +34,7 @@ $avg_margin = $total_revenue > 0 ? round(($total_profit / $total_revenue) * 100,
                     <td class="numeric">{{ format_number($row['qty_sold']) }}</td>
                     <td class="numeric">{{ format_number($row['revenue']) }}</td>
                     <td class="numeric">{{ format_number($row['cogs']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['profit']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['profit']) }}</td>
                     <td class="numeric">{{ format_number($row['margin_pct']) }}%</td>
                 </tr>
                 @empty
@@ -44,11 +44,11 @@ $avg_margin = $total_revenue > 0 ? round(($total_profit / $total_revenue) * 100,
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td colspan="2" class="px-4 py-3 text-sm text-right">Totals</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_qty) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_revenue) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_cogs) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_profit) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($avg_margin) }}%</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_qty) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_revenue) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_cogs) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_profit) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($avg_margin) }}%</td>
                 </tr>
             </tfoot>
         </table>

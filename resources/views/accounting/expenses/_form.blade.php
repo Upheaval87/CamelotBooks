@@ -243,7 +243,7 @@
                                 <div class="okchip ok" style="margin-top:12px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 12.5l4 4 8-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>{{ __('Within Budget') }}</div>
                             @else
                                 <div class="okchip warn" style="margin-top:12px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 4 2 20h20L12 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>{{ __('Over Budget') }}</div>
-                                <div class="d" style="margin-top:8px;font-size:12px;color:var(--warn,#d97706)">{{ __('An override (reason and approver) is required before this expense can be posted.') }}</div>
+                                <div class="d" style="margin-top:8px;font-size:0.857rem;color:var(--warn,#d97706)">{{ __('An override (reason and approver) is required before this expense can be posted.') }}</div>
                             @endif
                         </div>
                     @else

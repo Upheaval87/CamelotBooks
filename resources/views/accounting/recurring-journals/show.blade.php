@@ -144,8 +144,8 @@
                                 <tfoot class="bg-gray-50">
                                     <tr>
                                         <td colspan="2" class="px-6 py-4 text-right text-sm font-semibold text-gray-700">{{ __('Totals') }}</td>
-                                        <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($template->templateLines->sum('debit')) }}</td>
-                                        <td class="px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($template->templateLines->sum('credit')) }}</td>
+                                        <td class="figure px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($template->templateLines->sum('debit')) }}</td>
+                                        <td class="figure px-6 py-4 text-right text-sm font-bold text-gray-900">{{ format_number($template->templateLines->sum('credit')) }}</td>
                                         <td colspan="2"></td>
                                     </tr>
                                 </tfoot>

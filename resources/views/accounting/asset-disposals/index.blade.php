@@ -44,7 +44,7 @@
                                     <td class="numeric">
                                         {{ format_money($disposal->proceeds ?? 0) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ ($disposal->gain_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <td class="figure px-6 py-4 whitespace-nowrap text-sm text-right {{ ($disposal->gain_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                         {{ format_money($disposal->gain_loss ?? 0) }}
                                     </td>
                                     <td class="text-center">

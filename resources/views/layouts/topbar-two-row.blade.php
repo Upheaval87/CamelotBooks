@@ -273,32 +273,27 @@
 
                 <x-favourites.dropdown />
 
-                <div class="topbar-text-size hidden md:flex"
-                     x-data="textSizeControl({ current: '{{ $user?->text_size ?? 'md' }}', sizes: @js(\App\Models\User::TEXT_SIZES) })"
+                <div class="topbar-font-scale hidden md:flex"
+                     x-data="fontScaleControl({ current: '{{ $user?->font_scale ?? 1 }}', steps: @js(\App\Models\User::FONT_STEPS), labels: @js(\App\Models\User::FONT_STEP_LABELS) })"
                      role="group"
-                     aria-label="{{ __('Text size') }}">
+                     aria-label="{{ __('Font size') }}">
                     <button type="button"
-                            class="topbar-text-size-btn"
-                            :class="current === 'sm' ? 'active' : ''"
-                            @click="set('sm')"
-                            title="{{ __('Smaller text') }}"
-                            aria-label="{{ __('Smaller text') }}">
+                            class="topbar-font-scale-btn"
+                            :disabled="atMin"
+                            @click="setStep(-1)"
+                            title="{{ __('Decrease font size') }}"
+                            aria-label="{{ __('Decrease font size') }}">
                         A&minus;
                     </button>
+                    <span class="topbar-font-scale-label"
+                          aria-live="polite"
+                          x-text="label"></span>
                     <button type="button"
-                            class="topbar-text-size-btn"
-                            :class="current === 'md' ? 'active' : ''"
-                            @click="set('md')"
-                            title="{{ __('Default text size') }}"
-                            aria-label="{{ __('Default text size') }}">
-                        A
-                    </button>
-                    <button type="button"
-                            class="topbar-text-size-btn"
-                            :class="current === 'lg' ? 'active' : ''"
-                            @click="set('lg')"
-                            title="{{ __('Larger text') }}"
-                            aria-label="{{ __('Larger text') }}">
+                            class="topbar-font-scale-btn"
+                            :disabled="atMax"
+                            @click="setStep(1)"
+                            title="{{ __('Increase font size') }}"
+                            aria-label="{{ __('Increase font size') }}">
                         A+
                     </button>
                 </div>

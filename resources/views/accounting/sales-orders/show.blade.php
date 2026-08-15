@@ -13,7 +13,7 @@
             <div class="q2-head q2-head--sticky">
                 <div>
                     <div class="flex items-center gap-2.5 flex-wrap">
-                        <h1 class="q2-title" style="font-size:1.375rem">{{ __('Sales Order') }} <span class="q2-mono">{{ $order->sales_order_number }}</span></h1>
+                        <h1 class="q2-title">{{ __('Sales Order') }} <span class="q2-mono">{{ $order->sales_order_number }}</span></h1>
                         <span class="q2-badge q2-badge--{{ $order->status }}">
                             @switch($order->status)
                                 @case('draft') <span class="q2-dot"></span>{{ __('Draft') }} @break
@@ -267,13 +267,13 @@
                                     @if($order->void_reason)
                                         <div class="q2-field" style="grid-column: span 2">
                                             <span class="q2-label">{{ __('Void Reason') }}</span>
-                                            <p class="q2-rail-memo" style="font-size:.8125rem;color:var(--muted,#5F7476)">{{ $order->void_reason }}</p>
+                                            <p class="q2-rail-memo">{{ $order->void_reason }}</p>
                                         </div>
                                     @endif
                                     @if($order->memo)
                                         <div class="q2-field" style="grid-column: span 2">
                                             <span class="q2-label">{{ __('Description') }}</span>
-                                            <p class="q2-rail-memo" style="font-size:.8125rem;color:var(--muted,#5F7476)">{{ $order->memo }}</p>
+                                            <p class="q2-rail-memo">{{ $order->memo }}</p>
                                         </div>
                                     @endif
                                 </div>

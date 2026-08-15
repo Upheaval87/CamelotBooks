@@ -60,13 +60,13 @@
                                     <tr>
                                         <td>{{ ucfirst($component->component_type) }}</td>
                                         <td>{{ $component->description }}</td>
-                                        <td class="text-right font-medium">{{ format_money($component->amount) }}</td>
+                                        <td class="figure text-right font-medium">{{ format_money($component->amount) }}</td>
                                         <td>{{ $component->payeeAccount->code ?? '' }} - {{ $component->payeeAccount->name ?? '' }}</td>
                                     </tr>
                                 @endforeach
                                 <tr class="bg-gray-50 font-semibold">
                                     <td colspan="2" class="text-right">{{ __('Total') }}:</td>
-                                    <td class="text-right">{{ format_money($voucher->total_amount) }}</td>
+                                    <td class="figure text-right">{{ format_money($voucher->total_amount) }}</td>
                                     <td></td>
                                 </tr>
                             </tbody>
@@ -100,10 +100,10 @@
                                     @foreach($voucher->journalEntry->lines as $line)
                                         <tr>
                                             <td>{{ $line->account->code ?? '' }} - {{ $line->account->name ?? '' }}</td>
-                                            <td class="text-right text-sm text-gray-900">
+                                            <td class="figure text-right text-sm text-gray-900">
                                                 {{ $line->debit > 0 ? format_number($line->debit) : '' }}
                                             </td>
-                                            <td class="text-right text-sm text-gray-900">
+                                            <td class="figure text-right text-sm text-gray-900">
                                                 {{ $line->credit > 0 ? format_number($line->credit) : '' }}
                                             </td>
                                         </tr>

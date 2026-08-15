@@ -106,7 +106,7 @@
                             <td class="text-ink-soft">{{ $a['sub_type'] ?? '—' }}</td>
                             <td class="text-ink-soft">{{ $a['description'] ?? '—' }}</td>
                             <td class="numeric">{{ format_number($a['opening_balance']) }}</td>
-                            <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($a['current_balance']) }}</td>
+                            <td class="figure px-4 py-2 text-sm text-right font-medium">{{ format_number($a['current_balance']) }}</td>
                         </tr>
                         @empty
                         <tr><td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">No accounts found.</td></tr>

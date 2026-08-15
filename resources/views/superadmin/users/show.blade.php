@@ -5,7 +5,7 @@
             <x-superadmin.card>
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex flex-wrap items-center gap-3">
-                        <span class="text-[26px] font-extrabold tracking-[-0.02em] text-gray-900">{{ $user->name }}</span>
+                        <span class="text-[1.857rem] font-extrabold tracking-[-0.02em] text-gray-900">{{ $user->name }}</span>
                         @if($user->is_super_admin)
                             <x-superadmin.badge variant="accent">{{ __('Super Admin') }}</x-superadmin.badge>
                         @endif
@@ -49,7 +49,7 @@
 
             <x-superadmin.card title="{{ __('Company Assignments') }}">
                 <x-slot name="action">
-                    <a href="{{ route('superadmin.assignments.create') }}?user={{ $user->id }}" class="inline-flex items-center gap-1.5 rounded-[10px] border border-gold-600/35 bg-gradient-to-b from-[#F4FBFB] to-[#DFF7F6] px-4 py-2 text-[13px] font-bold text-gold-700 shadow-edit transition hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+                    <a href="{{ route('superadmin.assignments.create') }}?user={{ $user->id }}" class="inline-flex items-center gap-1.5 rounded-[10px] border border-gold-600/35 bg-gradient-to-b from-[#F4FBFB] to-[#DFF7F6] px-4 py-2 text-[0.929rem] font-bold text-gold-700 shadow-edit transition hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
                         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                         </svg>
@@ -91,7 +91,7 @@
                                     </td>
                                     <td class="px-5 py-[18px] text-center align-middle">
                                         <div class="flex items-center justify-center gap-2">
-                                            <a href="{{ route('superadmin.assignments.edit', $assignment) }}" class="inline-flex items-center gap-1.5 rounded-[10px] border border-gold-600/35 bg-gradient-to-b from-[#F4FBFB] to-[#DFF7F6] px-4 py-2 text-[13px] font-bold text-gold-700 shadow-edit transition hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+                                            <a href="{{ route('superadmin.assignments.edit', $assignment) }}" class="inline-flex items-center gap-1.5 rounded-[10px] border border-gold-600/35 bg-gradient-to-b from-[#F4FBFB] to-[#DFF7F6] px-4 py-2 text-[0.929rem] font-bold text-gold-700 shadow-edit transition hover:-translate-y-px hover:border-gold-600/55 hover:text-gold-800 hover:shadow-edit-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                 </svg>
@@ -100,7 +100,7 @@
                                             <form method="POST" action="{{ route('superadmin.assignments.destroy', $assignment) }}" onsubmit="return fbConfirmSubmit(event, '{{ __('Remove this assignment? The user will lose access to this company.') }}', { type: 'danger' })">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="inline-flex items-center gap-1.5 rounded-[10px] border border-red-300 bg-white px-4 py-2 text-[13px] font-bold text-red-700 transition hover:border-red-400 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500">
+                                                <button type="submit" class="inline-flex items-center gap-1.5 rounded-[10px] border border-red-300 bg-white px-4 py-2 text-[0.929rem] font-bold text-red-700 transition hover:border-red-400 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500">
                                                     {{ __('Remove') }}
                                                 </button>
                                             </form>

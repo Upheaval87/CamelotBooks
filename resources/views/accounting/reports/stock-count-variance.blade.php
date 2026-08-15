@@ -42,7 +42,7 @@
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td colspan="9" class="px-4 py-3 text-sm text-right">Total Variance Cost</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_variance_cost) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_variance_cost) }}</td>
                 </tr>
             </tfoot>
         </table>

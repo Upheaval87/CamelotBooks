@@ -62,9 +62,9 @@
                                     @forelse($table->bands->sortBy('sort_order') as $band)
                                         <tr>
                                             <td>{{ $band->sort_order + 1 }}</td>
-                                            <td>{{ format_money((float) $band->threshold) }}</td>
-                                            <td>{{ $band->upper_limit ? format_money((float) $band->upper_limit) : __('No limit') }}</td>
-                                            <td>{{ format_money((float) $band->rate) }}%</td>
+                                            <td class="figure">{{ format_money((float) $band->threshold) }}</td>
+                                            <td class="figure">{{ $band->upper_limit ? format_money((float) $band->upper_limit) : __('No limit') }}</td>
+                                            <td class="figure">{{ format_money((float) $band->rate) }}%</td>
                                         </tr>
                                     @empty
                                         <tr>

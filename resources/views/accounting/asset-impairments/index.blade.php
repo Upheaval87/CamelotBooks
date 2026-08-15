@@ -44,7 +44,7 @@
                                     <td class="numeric">
                                         {{ format_money($impairment->recoverable_amount ?? 0) }}
                                     </td>
-                                    <td class="text-red-600 text-right font-semibold">
+                                    <td class="figure text-red-600 text-right font-semibold">
                                         {{ format_money($impairment->impairment_loss ?? 0) }}
                                     </td>
                                     <td class="text-center">

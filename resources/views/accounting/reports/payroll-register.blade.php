@@ -35,7 +35,7 @@
                     <td class="numeric">{{ format_number($row['paye']) }}</td>
                     <td class="numeric">{{ format_number($row['pension_ee']) }}</td>
                     <td class="numeric">{{ format_number($row['total_deductions']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['net_pay']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['net_pay']) }}</td>
                     <td class="numeric">{{ format_number($row['pension_er']) }}</td>
                     <td class="numeric">{{ format_number($row['employer_cost']) }}</td>
                 </tr>

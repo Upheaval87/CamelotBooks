@@ -67,13 +67,13 @@
     <div class="sticky-head">
         <div class="min-w-0">
             <div class="flex items-center gap-2.5 flex-wrap">
-                <h1 style="font-size:1.375rem;font-weight:800;color:var(--ink,#0B2A2D);margin:0">{{ $title }}</h1>
+                <h1 class="page-title">{{ $title }}</h1>
                 @if ($isEdit)
                     <span class="mono-chip">{{ $requisition->requisition_number }}</span>
                     <span class="badge b-{{ $requisition->status === 'submitted' ? 'pend' : $requisition->status }}"><span class="bdot"></span>{{ __(ucfirst($requisition->statusLabel())) }}</span>
                 @endif
             </div>
-            <div class="sub" style="margin-top:3px;font-size:12px;color:var(--muted,#5f7476)">{{ $subtitle }}</div>
+            <div class="sub">{{ $subtitle }}</div>
         </div>
         <div class="cluster">
             <a href="{{ $cancelRoute }}" class="btn btn-ghost btn-sm">{{ __('Cancel') }}</a>

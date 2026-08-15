@@ -267,7 +267,7 @@
                                 <span class="l" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ $import->filename }}">{{ $import->filename }}</span>
                                 <span class="v">{{ $import->line_count }} {{ __('lines') }}</span>
                             </div>
-                            <div class="srow" style="border-bottom:none;font-size:11.5px">
+                            <div class="srow" style="border-bottom:none">
                                 <span class="em">{{ $import->created_at?->format('M d, Y g:i A') ?? '—' }}</span>
                                 <span class="em">{{ $import->importedBy?->name ?? '—' }}</span>
                             </div>

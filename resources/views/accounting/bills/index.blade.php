@@ -63,7 +63,7 @@
                         <span style="min-width:0">
                             <span class="l">{{ $box['label'] }}</span>
                             <span class="v">{{ $box['val'] }}</span>
-                            <span class="n" style="font-size:10px;color:var(--faint,#8AA5A7);font-weight:600">{{ $box['hint'] }}</span>
+                            <span class="n">{{ $box['hint'] }}</span>
                         </span>
                     </a>
                 @endforeach

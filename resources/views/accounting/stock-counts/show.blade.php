@@ -61,7 +61,7 @@
                                                 <td>{{ $line->product->sku ?? '' }} {{ $line->product->name ?? '—' }}</td>
                                                 <td class="numeric">{{ format_money($line->expected_quantity) }}</td>
                                                 <td class="numeric">{{ format_money($line->counted_quantity) }}</td>
-                                                <td class="px-4 py-3 text-sm text-right {{ $line->variance_quantity > 0 ? 'text-green-600 font-semibold' : ($line->variance_quantity < 0 ? 'text-red-600 font-semibold' : 'text-gray-500') }}">
+                                                <td class="figure px-4 py-3 text-sm text-right {{ $line->variance_quantity > 0 ? 'text-green-600 font-semibold' : ($line->variance_quantity < 0 ? 'text-red-600 font-semibold' : 'text-gray-500') }}">
                                                     {{ $line->variance_quantity >= 0 ? '+' : '' }}{{ format_money($line->variance_quantity) }}
                                                 </td>
                                                 <td class="numeric">{{ format_money($line->unit_cost, null, 4) }}</td>

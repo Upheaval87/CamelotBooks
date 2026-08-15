@@ -23,7 +23,7 @@
                     <td class="numeric">{{ format_number($a['cost']) }}</td>
                     <td class="numeric">{{ number_format($a['depreciation_rate'], 1) }}%</td>
                     <td class="numeric">{{ format_number($a['accumulated_depreciation']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($a['net_book_value']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-medium">{{ format_number($a['net_book_value']) }}</td>
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $a['status'] === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">{{ ucfirst($a['status']) }}</span></td>
                 </tr>
                 @empty

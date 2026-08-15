@@ -102,7 +102,7 @@
                     @foreach($pendingExpenses as $exp)
                         <div style="display:flex;align-items:center;gap:10px">
                             <span class="mono">{{ $exp->expense_number }}</span>
-                            <span class="em" style="font-size:12px">{{ $exp->category?->name ?? ($exp->vendor?->name ?? 'Expense') }}</span>
+                            <span class="em" style="font-size:0.857rem">{{ $exp->category?->name ?? ($exp->vendor?->name ?? 'Expense') }}</span>
                             <span class="numr bold" style="margin-left:auto">{{ format_number($exp->amount) }}</span>
                             <a class="btn btn-sec btn-xs" href="{{ route('accounting.expenses.show', $exp) }}">{{ __('Approve') }}</a>
                         </div>
@@ -110,7 +110,7 @@
                     @foreach($pendingClaims as $claim)
                         <div style="display:flex;align-items:center;gap:10px">
                             <span class="mono">{{ $claim->claim_number }}</span>
-                            <span class="em" style="font-size:12px">{{ $claim->category?->name ?? ($claim->employee?->full_name ?? 'Claim') }}</span>
+                            <span class="em" style="font-size:0.857rem">{{ $claim->category?->name ?? ($claim->employee?->full_name ?? 'Claim') }}</span>
                             <span class="numr bold" style="margin-left:auto">{{ format_number($claim->amount) }}</span>
                             <a class="btn btn-sec btn-xs" href="{{ route('accounting.expenses.claims.show', $claim) }}">{{ __('Approve') }}</a>
                         </div>

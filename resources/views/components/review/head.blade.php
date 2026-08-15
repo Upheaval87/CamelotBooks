@@ -9,7 +9,7 @@
             @endif
         </div>
         @if($subtitle)
-            <p class="mt-1.5 text-[13.5px] text-gray-500">{{ $subtitle }}</p>
+            <p class="mt-1.5 text-[0.964rem] text-gray-500">{{ $subtitle }}</p>
         @endif
     </div>
     @if($backUrl)

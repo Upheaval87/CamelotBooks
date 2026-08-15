@@ -177,7 +177,7 @@
                                                     <td style="font-weight:600;color:var(--ink,#0B2A2D)">
                                                         {{ $line->product?->name ?? '—' }}
                                                         @if ($line->costCenter?->name)
-                                                            <div style="font-size:11px;font-weight:400;color:var(--muted,#5F7476)">{{ $line->costCenter->code }} - {{ $line->costCenter->name }}</div>
+                                                            <div style="font-size:0.786rem;font-weight:400;color:var(--muted,#5F7476)">{{ $line->costCenter->code }} - {{ $line->costCenter->name }}</div>
                                                         @endif
                                                     </td>
                                                     <td class="em">{{ $line->description }}</td>

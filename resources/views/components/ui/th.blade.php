@@ -8,6 +8,6 @@
     };
 @endphp
 
-<th {{ $attributes->merge(['class' => 'bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 px-5 py-4 ' . $alignClass . ' text-[11px] font-semibold uppercase tracking-[0.09em] text-navy-200 shadow-thead']) }}>
+<th {{ $attributes->merge(['class' => 'bg-gradient-to-b from-navy-700 via-navy-800 to-navy-900 px-5 py-4 ' . $alignClass . ' text-[0.786rem] font-semibold uppercase tracking-[0.09em] text-navy-200 shadow-thead']) }}>
     {{ $slot }}
 </th>

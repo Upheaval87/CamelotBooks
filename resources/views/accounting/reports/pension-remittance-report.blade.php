@@ -28,7 +28,7 @@
                     <td>{{ $r['pay_date'] }}</td>
                     <td class="numeric">{{ format_number($r['total_ee']) }}</td>
                     <td class="numeric">{{ format_number($r['total_er']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($r['total_ee'] + $r['total_er']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-medium">{{ format_number($r['total_ee'] + $r['total_er']) }}</td>
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $r['status'] === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($r['status']) }}</span></td>
                 </tr>
                 @empty

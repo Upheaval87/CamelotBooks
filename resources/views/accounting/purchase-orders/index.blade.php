@@ -99,7 +99,7 @@
                                     @forelse($orders as $order)
                                         @php $total = $order->lines->sum('amount'); @endphp
                                         <tr>
-                                            <td><a href="{{ route('accounting.purchase-orders.show', $order) }}" class="link" style="font-family:ui-monospace,Menlo,monospace;font-size:12px">{{ $order->po_number }}</a></td>
+                                            <td><a href="{{ route('accounting.purchase-orders.show', $order) }}" class="link">{{ $order->po_number }}</a></td>
                                             <td class="em">{{ $order->date?->format('M d, Y') ?? '—' }}</td>
                                             <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $order->vendor->name ?? '—' }}</td>
                                             <td class="numr">{{ format_number($total) }}</td>

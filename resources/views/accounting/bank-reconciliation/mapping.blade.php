@@ -78,7 +78,7 @@
                         <input type="hidden" name="upload" value="{{ $storedName }}" />
 
                         <div style="margin:10px 0 6px">
-                            <label style="display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--ink,#0B2A2D);cursor:pointer">
+                            <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.893rem;font-weight:700;color:var(--ink,#0B2A2D);cursor:pointer">
                                 <input type="hidden" name="has_header" value="0" />
                                 <input type="checkbox" name="has_header" value="1" style="width:15px;height:15px;accent-color:var(--sec,#128F8E)" @checked(old('has_header', $hasHeader ?? true)) />
                                 {{ __('This file has a header row (skip the first row)') }}
@@ -126,7 +126,7 @@
                             {{ __('Dates and amounts are parsed automatically. When no single Amount column is mapped, the amount is derived from Credit minus Debit. Debit columns are stored as negative amounts.') }}
                         </p>
 
-                        <div style="margin-top:18px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#5F7476)">
+                        <div style="margin-top:18px;font-size:0.786rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#5F7476)">
                             {{ __('File preview') }}
                         </div>
                         <div class="li-wrap" style="margin-top:8px">

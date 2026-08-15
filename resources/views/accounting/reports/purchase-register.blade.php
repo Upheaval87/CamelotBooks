@@ -37,8 +37,8 @@
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td colspan="4" class="px-4 py-3 text-sm text-right">Totals</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_amount) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_tax) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_amount) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_tax) }}</td>
                     <td></td>
                 </tr>
             </tfoot>

@@ -182,7 +182,7 @@
                             </div>
                         @elseif($requisition->status === 'submitted' && auth()->user()->can('purchase-requisitions.approve'))
                             <div class="appr-actions" style="border-top:none;padding-top:8px">
-                                <span style="font-size:11.5px;color:var(--faint,#8aa5a7)">{{ __('Waiting for a different approver (you cannot decide on your own requisition).') }}</span>
+                                <span style="font-size:0.821rem;color:var(--faint,#8aa5a7)">{{ __('Waiting for a different approver (you cannot decide on your own requisition).') }}</span>
                             </div>
                         @endif
                     </div>

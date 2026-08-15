@@ -102,9 +102,9 @@
                     <div class="field"><div class="label">Opening Balance</div><div class="val">{{ $cs }} {{ format_number($account->opening_balance) }}</div></div>
                     <div class="field"><div class="label">Opening Balance Date</div><div class="val">{{ $account->opening_balance_date?->format('M d, Y') ?? '—' }}</div></div>
                 </div>
-                <div class="gt-row" style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--line, #E2ECEC)">
-                    <span class="gt-lbl" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted, #5F7476)">Current Balance</span>
-                    <span class="gt-val" style="font-size:16px;font-weight:800;color:var(--ink, #0B2A2D)">{{ $cs }} {{ format_number($balance) }}</span>
+                <div class="gt-row">
+                    <span class="gt-lbl">Current Balance</span>
+                    <span class="gt-val">{{ $cs }} {{ format_number($balance) }}</span>
                 </div>
             </section>
 

@@ -44,7 +44,7 @@
                                     <td class="numeric">
                                         {{ format_money($revaluation->revalued_amount ?? 0) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ ($revaluation->revaluation_surplus ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <td class="figure px-6 py-4 whitespace-nowrap text-sm text-right {{ ($revaluation->revaluation_surplus ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                         {{ format_money($revaluation->revaluation_surplus ?? 0) }}
                                     </td>
                                     <td class="text-center">

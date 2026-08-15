@@ -49,7 +49,7 @@
                                     <td class="numeric">
                                         {{ format_money($line['actual']) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold {{ $line['variance'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <td class="figure px-6 py-4 whitespace-nowrap text-sm text-right font-semibold {{ $line['variance'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                         {{ $line['variance'] >= 0 ? '+' : '' }}{{ format_money($line['variance']) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right {{ $line['variance'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
@@ -67,9 +67,9 @@
                         <tfoot class="bg-gray-50">
                             <tr>
                                 <td class="px-6 py-4 text-sm font-semibold text-gray-900">Total</td>
-                                <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ format_money($total_budget) }}</td>
-                                <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ format_money($total_actual) }}</td>
-                                <td class="px-6 py-4 text-sm font-bold text-right {{ $total_variance >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <td class="figure px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ format_money($total_budget) }}</td>
+                                <td class="figure px-6 py-4 text-sm font-semibold text-gray-900 text-right">{{ format_money($total_actual) }}</td>
+                                <td class="figure px-6 py-4 text-sm font-bold text-right {{ $total_variance >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $total_variance >= 0 ? '+' : '' }}{{ format_money($total_variance) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-right {{ $total_variance >= 0 ? 'text-green-600' : 'text-red-600' }}">

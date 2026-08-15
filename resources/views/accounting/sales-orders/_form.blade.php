@@ -75,7 +75,7 @@
     <div class="q2-head q2-head--sticky">
         <div class="min-w-0">
             <div class="flex items-center gap-2.5 flex-wrap">
-                <h1 class="q2-title" style="font-size:1.375rem">{{ $title }}</h1>
+                <h1 class="q2-title">{{ $title }}</h1>
                 @if ($isEdit)
                     <span class="q2-mono" style="padding:.25rem .625rem;border:1px solid var(--line,#E2ECEC);border-radius:.5rem;background:#fff">{{ $order->sales_order_number }}</span>
                     <span class="q2-badge q2-badge--{{ $order->status }}"><span class="q2-dot"></span>{{ __(ucfirst($order->status)) }}</span>
@@ -244,7 +244,7 @@
                     </div>
 
                     <div class="mt-4 border border-shell round-thead-clip bg-[#fbfcfe]">
-                        <table id="so-lines-table" class="q2-tbl w-full text-[13px] table-fixed">
+                        <table id="so-lines-table" class="q2-tbl w-full text-[0.929rem] table-fixed">
                             <thead>
                                 <tr>
                                     <th style="width:12%">{{ __('Item Code') }}</th>
@@ -306,15 +306,15 @@
                     @endif
 
                     <label class="q2-drop mt-4" id="so-dropzone" for="so-files">
-                        <span class="flex items-center justify-center gap-2 text-[13px]">
+                        <span class="flex items-center justify-center gap-2 text-[0.929rem]">
                             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             <span>{{ __('Drag & drop files here, or') }} <b style="font-weight:700;color:var(--sec,#128F8E)">{{ __('browse') }}</b></span>
                         </span>
                         <span class="mt-1.5 flex items-center justify-center gap-1.5">
-                            <span style="display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:999px;background:#fff;border:1px solid var(--line,#E2ECEC);font-size:.625rem;font-weight:700;letter-spacing:.05em;color:var(--muted,#5F7476)">PDF</span>
-                            <span style="display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:999px;background:#fff;border:1px solid var(--line,#E2ECEC);font-size:.625rem;font-weight:700;letter-spacing:.05em;color:var(--muted,#5F7476)">IMG</span>
-                            <span style="display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:999px;background:#fff;border:1px solid var(--line,#E2ECEC);font-size:.625rem;font-weight:700;letter-spacing:.05em;color:var(--muted,#5F7476)">XLSX</span>
-                            <span style="display:inline-flex;align-items:center;padding:.125rem .5rem;border-radius:999px;background:#fff;border:1px solid var(--line,#E2ECEC);font-size:.625rem;font-weight:700;letter-spacing:.05em;color:var(--muted,#5F7476)">DOCX</span>
+                            <span class="q2-fchip">PDF</span>
+                            <span class="q2-fchip">IMG</span>
+                            <span class="q2-fchip">XLSX</span>
+                            <span class="q2-fchip">DOCX</span>
                         </span>
                     </label>
 
@@ -642,11 +642,11 @@
         soNewFiles.forEach((f, i) => {
             const li = document.createElement('li');
             li.dataset.i = i;
-            li.className = 'flex items-center gap-3 px-4 py-2.5 text-[13px]';
+            li.className = 'flex items-center gap-3 px-4 py-2.5 text-[0.929rem]';
             li.innerHTML = `
                 <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                 <span class="flex-1 min-w-0 truncate text-gray-800">${esc(f.name)}</span>
-                <span class="shrink-0 text-[11px] text-slate-400">${soFmtSize(f.size)}</span>
+                <span class="shrink-0 text-[0.786rem] text-slate-400">${soFmtSize(f.size)}</span>
                 <button type="button" class="bill-ibtn bill-ibtn--del q-ibtn q-ibtn--del" title="Remove" aria-label="Remove" onclick="soRemoveNewFile(this)">🗑</button>
             `;
             list.appendChild(li);

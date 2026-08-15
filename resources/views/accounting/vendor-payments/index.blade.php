@@ -63,7 +63,7 @@
                                         <td>{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
                                         <td class="numr">{{ format_number($payment->amount) }}</td>
                                         <td>{{ str_replace('_', ' ', ucfirst($payment->payment_method ?? 'bank_transfer')) }}</td>
-                                        <td>
+                                        <td class="figure">
                                             <div class="row-act">
                                                 @can('vendor-payments.approve')
                                                 <form method="POST" action="{{ route('accounting.vendor-payments.approve', $payment) }}" class="inline">
@@ -98,7 +98,7 @@
                     <span style="min-width:0">
                         <span class="l">{{ __('All') }}</span>
                         <span class="v">{{ number_format($stats['total']) }}</span>
-                        <span class="n" style="font-size:10px;color:var(--faint,#8AA5A7);font-weight:600">{{ format_number($stats['amount']) }} {{ $cs }}</span>
+                        <span class="n">{{ format_number($stats['amount']) }} {{ $cs }}</span>
                     </span>
                 </a>
                 <a href="{{ route('accounting.vendor-payments.index', ['status' => 'pending_approval']) }}" class="fbox @if($activeStatus === 'pending_approval') on @endif">
@@ -106,7 +106,7 @@
                     <span style="min-width:0">
                         <span class="l">{{ __('Pending Approval') }}</span>
                         <span class="v">{{ number_format($stats['pending_approval']) }}</span>
-                        <span class="n" style="font-size:10px;color:var(--faint,#8AA5A7);font-weight:600">{{ format_number($stats['pending_approval_amount']) }} {{ $cs }}</span>
+                        <span class="n">{{ format_number($stats['pending_approval_amount']) }} {{ $cs }}</span>
                     </span>
                 </a>
                 <a href="{{ route('accounting.vendor-payments.index', ['status' => 'posted']) }}" class="fbox @if($activeStatus === 'posted') on @endif">
@@ -114,7 +114,7 @@
                     <span style="min-width:0">
                         <span class="l">{{ __('Posted') }} <em style="font-style:normal;font-weight:600;opacity:.6">({{ __('month') }})</em></span>
                         <span class="v">{{ number_format($stats['posted_month']) }}</span>
-                        <span class="n" style="font-size:10px;color:var(--faint,#8AA5A7);font-weight:600">{{ format_number($stats['posted_month_amount']) }} {{ $cs }}</span>
+                        <span class="n">{{ format_number($stats['posted_month_amount']) }} {{ $cs }}</span>
                     </span>
                 </a>
                 <a href="{{ route('accounting.vendor-payments.index', ['status' => 'reversed']) }}" class="fbox @if($activeStatus === 'reversed') on @endif">
@@ -122,7 +122,7 @@
                     <span style="min-width:0">
                         <span class="l">{{ __('Reversed') }}</span>
                         <span class="v">{{ number_format($stats['reversed']) }}</span>
-                        <span class="n" style="font-size:10px;color:var(--faint,#8AA5A7);font-weight:600">{{ __('cancelled') }}</span>
+                        <span class="n">{{ __('cancelled') }}</span>
                     </span>
                 </a>
             </div>

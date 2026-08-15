@@ -180,7 +180,7 @@
                                     <tbody>
                                         @foreach($order->grns as $grn)
                                             <tr>
-                                                <td><a href="{{ route('accounting.goods-received-notes.show', $grn) }}" class="link" style="font-family:ui-monospace,Menlo,monospace;font-size:12px">{{ $grn->grn_number }}</a></td>
+                                                <td><a href="{{ route('accounting.goods-received-notes.show', $grn) }}" class="link">{{ $grn->grn_number }}</a></td>
                                                 <td class="em">{{ $grn->date?->format('M d, Y') ?? '—' }}</td>
                                                 <td>
                                                     @if($grn->status === 'posted')

@@ -7,7 +7,7 @@
             <x-superadmin.card>
                 <div class="flex flex-wrap items-start justify-between gap-5">
                     <div class="flex flex-wrap items-center gap-3">
-                        <span class="text-[26px] font-extrabold tracking-[-0.02em] text-gray-900">{{ $company->name }}</span>
+                        <span class="text-[1.857rem] font-extrabold tracking-[-0.02em] text-gray-900">{{ $company->name }}</span>
                         @if(!$company->is_active)
                             <x-superadmin.badge variant="danger">{{ __('Suspended') }}</x-superadmin.badge>
                         @endif
@@ -83,55 +83,55 @@
 
                 <div class="mt-[22px] grid grid-cols-1 gap-x-8 gap-y-[22px] border-t border-line pt-[22px] md:grid-cols-2 xl:grid-cols-3">
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Company Code') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Company Code') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->company_code ?? '—' }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Legal Name') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Legal Name') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->legal_name ?? '—' }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Base Currency') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Base Currency') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->base_currency }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Tax ID') }}</div>
-                        <div class="font-mono text-[13px] font-medium text-gray-900">{{ $company->tax_id ?? '—' }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Tax ID') }}</div>
+                        <div class="font-mono text-[0.929rem] font-medium text-gray-900">{{ $company->tax_id ?? '—' }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Fiscal Year Start') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Fiscal Year Start') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ \Carbon\Carbon::create()->month($company->fiscal_year_start_month)->format('F') }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Email') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Email') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->email ?? '—' }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Phone') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Phone') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->phone ?? '—' }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Address') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Address') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->address ?? '—' }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('City') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('City') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->city ?? '—' }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Country') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Country') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->country ?? '—' }}</div>
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Database Name') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Database Name') }}</div>
                         @if($company->db_name)
-                            <code class="font-mono text-[13px] font-medium text-gray-900">{{ $company->db_name }}</code>
+                            <code class="font-mono text-[0.929rem] font-medium text-gray-900">{{ $company->db_name }}</code>
                         @else
-                            <div class="font-mono text-[13px] font-medium text-gray-900">—</div>
+                            <div class="font-mono text-[0.929rem] font-medium text-gray-900">—</div>
                         @endif
                     </div>
                     <div>
-                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Provisioned At') }}</div>
+                        <div class="mb-1.5 text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Provisioned At') }}</div>
                         <div class="text-sm font-semibold text-gray-900">{{ $company->provisioned_at?->format('M j, Y g:i A') ?? '—' }}</div>
                     </div>
                 </div>
@@ -142,15 +142,15 @@
                 <x-slot name="action">
                     <div class="flex items-center gap-2">
                         @if($branchUsage['branch_limit'] === null)
-                            <span class="inline-flex items-center rounded-full border border-navy-700/[.22] bg-navy-700/[.08] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-navy-700">{{ __('Unlimited') }}</span>
+                            <span class="inline-flex items-center rounded-full border border-navy-700/[.22] bg-navy-700/[.08] px-3 py-1 text-[0.786rem] font-bold uppercase tracking-[0.06em] text-navy-700">{{ __('Unlimited') }}</span>
                         @elseif($branchUsage['branch_count'] > $branchUsage['branch_limit'])
-                            <span class="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-red-700">{{ __('Over limit') }}</span>
+                            <span class="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-3 py-1 text-[0.786rem] font-bold uppercase tracking-[0.06em] text-red-700">{{ __('Over limit') }}</span>
                         @else
-                            <span class="inline-flex items-center rounded-full border border-shell bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-gray-500">{{ $branchUsage['branch_count'] }} {{ __('of') }} {{ $branchUsage['branch_limit'] }} {{ __('used') }}</span>
+                            <span class="inline-flex items-center rounded-full border border-shell bg-white px-3 py-1 text-[0.786rem] font-bold uppercase tracking-[0.06em] text-gray-500">{{ $branchUsage['branch_count'] }} {{ __('of') }} {{ $branchUsage['branch_limit'] }} {{ __('used') }}</span>
                         @endif
                     </div>
                 </x-slot>
-                <p class="max-w-[880px] text-[13.5px] leading-relaxed text-gray-500">
+                <p class="max-w-[880px] text-[0.964rem] leading-relaxed text-gray-500">
                     {{ __('The company can create up to its limit of active branches; creation beyond it is blocked (the Company Manager keeps the ability, the system enforces the count).') }}
                     @if($branchUsage['branch_limit'] === null)
                         {{ __('No limit is currently enforced.') }}
@@ -163,7 +163,7 @@
                     @csrf
                     @method('PATCH')
                     <div>
-                        <label for="branch_limit" class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Limit') }}</label>
+                        <label for="branch_limit" class="mb-1.5 block text-[0.786rem] font-semibold uppercase tracking-[0.08em] text-gray-500">{{ __('Limit') }}</label>
                         <input id="branch_limit" name="branch_limit" type="number" min="0"
                                value="{{ $branchUsage['branch_limit'] }}" x-bind:disabled="unlimited"
                                class="w-[130px] rounded-[10px] border border-shell bg-[rgba(244,246,250,.6)] px-3 py-2 text-sm text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50" />
@@ -189,7 +189,7 @@
             <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <x-superadmin.card title="{{ __('Assigned Users') }}">
                     <x-slot name="action">
-                        <a href="{{ route('superadmin.assignments.create') }}" class="text-[13px] font-semibold text-gold-700 hover:text-gold-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">{{ __('Assign a user') }}</a>
+                        <a href="{{ route('superadmin.assignments.create') }}" class="text-[0.929rem] font-semibold text-gold-700 hover:text-gold-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">{{ __('Assign a user') }}</a>
                     </x-slot>
                     <div class="overflow-x-auto rounded-[12px] border border-shell bg-row">
                         <table class="w-full min-w-[560px] border-collapse text-sm">
@@ -222,7 +222,7 @@
 
                 <x-superadmin.card title="{{ __('Active Modules') }}">
                     <x-slot name="action">
-                        <a href="{{ route('superadmin.companies.modules', $company) }}" class="text-[13px] font-semibold text-gold-700 hover:text-gold-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">{{ __('Manage') }}</a>
+                        <a href="{{ route('superadmin.companies.modules', $company) }}" class="text-[0.929rem] font-semibold text-gold-700 hover:text-gold-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">{{ __('Manage') }}</a>
                     </x-slot>
                     <div class="flex flex-wrap gap-2">
                         @forelse($modules->filter(fn ($m) => ($moduleStates[$m->id]?->is_active ?? false) || $m->is_core) as $module)
@@ -292,9 +292,9 @@
                         <li class="flex items-start gap-3 py-3.5">
                             <span class="mt-[5px] h-[7px] w-[7px] shrink-0 rounded-full {{ $dotClass }}"></span>
                             <div class="min-w-0 flex-1">
-                                <p class="text-[13.5px] leading-relaxed text-gray-700">
+                                <p class="text-[0.964rem] leading-relaxed text-gray-700">
                                     <strong class="font-bold text-gray-900">{{ $log->user?->name ?? 'System' }}</strong>
-                                    <code class="mx-1 rounded border border-slate-200 bg-slate-100 px-1.5 py-[1px] font-mono text-[10.5px] uppercase tracking-wide text-slate-500">{{ $log->action }}</code>
+                                    <code class="mx-1 rounded border border-slate-200 bg-slate-100 px-1.5 py-[1px] font-mono text-[0.75rem] uppercase tracking-wide text-slate-500">{{ $log->action }}</code>
                                     <span class="text-gray-600">{{ $log->description }}</span>
                                 </p>
                             </div>

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full"
-      style="--text-scale: {{ \App\Models\User::TEXT_SIZES[Auth::user()?->text_size ?? 'md'] ?? 1 }}">
+      style="--font-scale: {{ Auth::user()?->font_scale ?? 1 }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -28,7 +28,7 @@
             window.favouritesPagesUrl = "{{ route('favourites.pages') }}";
             window.todoIndexUrl = "{{ route('todo.index') }}";
             window.todoModalUrl = "{{ route('todo.modal') }}";
-            window.textSizeUrl = "{{ route('preferences.text-size') }}";
+            window.fontScaleUrl = "{{ route('preferences.font-scale') }}";
             window.TODO_LINKABLE_CLASS_MAP = @json(\App\Models\TodoTask::LINKABLE_CLASS_MAP);
         </script>
 

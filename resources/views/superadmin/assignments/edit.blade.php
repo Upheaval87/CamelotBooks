@@ -12,11 +12,11 @@
                     <div class="form-section-grid" style="--sa-cols: 2;">
                         <div class="form-field">
                             <label class="sa-label">{{ __('User') }}</label>
-                            <p style="font-size: 14px; font-weight: 500; color: var(--ink);">{{ $assignment->user->name }}</p>
+                            <p style="font-size:1rem; font-weight: 500; color: var(--ink);">{{ $assignment->user->name }}</p>
                         </div>
                         <div class="form-field">
                             <label class="sa-label">{{ __('Company') }}</label>
-                            <p style="font-size: 14px; font-weight: 500; color: var(--ink);">{{ $assignment->company->name }}</p>
+                            <p style="font-size:1rem; font-weight: 500; color: var(--ink);">{{ $assignment->company->name }}</p>
                         </div>
                     </div>
 
@@ -42,7 +42,7 @@
 
                     <div style="margin-top: 20px;">
                         <p class="sa-label">{{ __('Branch Access') }}</p>
-                        <p style="font-size: 11.5px; color: var(--sa-muted); margin-top: 2px; margin-bottom: 10px;">
+                        <p style="font-size:0.821rem; color: var(--sa-muted); margin-top: 2px; margin-bottom: 10px;">
                             {{ __('Leave none selected for access to all branches.') }}
                         </p>
 
@@ -57,7 +57,7 @@
                                 @endforeach
                             </div>
                         @else
-                            <p style="font-size: 12.5px; color: #9aa1ae;">{{ __('No branches found for this company (or it is not provisioned).') }}</p>
+                            <p style="font-size:0.893rem; color: #9aa1ae;">{{ __('No branches found for this company (or it is not provisioned).') }}</p>
                         @endif
                         <x-input-error :messages="$errors->get('branch_ids')" class="mt-1" />
                     </div>

@@ -243,7 +243,7 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-neutral-300 truncate">{{ Auth::user()?->name ?? 'User' }}</p>
-                <p class="text-[11px] text-neutral-500">{{ Auth::user()?->role_in_current_company ?? 'accountant' }}</p>
+                <p class="text-[0.786rem] text-neutral-500">{{ Auth::user()?->role_in_current_company ?? 'accountant' }}</p>
             </div>
         </div>
     </div>

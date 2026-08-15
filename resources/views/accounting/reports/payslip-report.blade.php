@@ -48,10 +48,10 @@
                     <td>{{ $i['period_label'] }}</td>
                     <td class="numeric">{{ format_number($i['basic_pay']) }}</td>
                     <td class="numeric">{{ format_number($i['total_allowances']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['paye']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['pension_ee']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['total_deductions']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-bold text-green-700">{{ format_number($i['net_pay']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['paye']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['pension_ee']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right text-red-600">{{ format_number($i['total_deductions']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-bold text-green-700">{{ format_number($i['net_pay']) }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">No payslips found.</td></tr>

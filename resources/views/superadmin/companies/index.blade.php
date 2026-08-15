@@ -34,7 +34,7 @@
                             <tr>
                                 <td class="px-5 py-[18px] align-middle">
                                     <a href="{{ route('superadmin.companies.show', $company) }}" class="font-bold text-gray-900">{{ $company->name }}</a>
-                                    <span class="mt-1 block text-[12.5px] text-gray-400">{{ $company->base_currency }}{{ $company->company_code ? ' · ' . $company->company_code : '' }}</span>
+                                    <span class="mt-1 block text-[0.893rem] text-gray-400">{{ $company->base_currency }}{{ $company->company_code ? ' · ' . $company->company_code : '' }}</span>
                                 </td>
                                 <td class="px-5 py-[18px] align-middle">
                                     @if($company->db_name)

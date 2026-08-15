@@ -62,7 +62,7 @@
                                 <div class="field" style="display:flex;align-items:flex-end">
                                     <label class="flex items-center" style="margin-bottom:10px;gap:8px;text-transform:none;letter-spacing:0">
                                         <input type="checkbox" name="is_adjusting_entry" value="1" {{ old('is_adjusting_entry') ? 'checked' : '' }} style="width:15px;height:15px;accent-color:var(--sec,#128F8E)" />
-                                        <span style="font-size:13px;font-weight:600;color:var(--ink,#0B2A2D)">{{ __('Adjusting Entry') }}</span>
+                                        <span style="font-size:0.929rem;font-weight:600;color:var(--ink,#0B2A2D)">{{ __('Adjusting Entry') }}</span>
                                     </label>
                                 </div>
                                 <div class="field sp3">

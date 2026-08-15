@@ -24,7 +24,7 @@
                     <td><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">{{ ucfirst($i['type']) }}</span></td>
                     <td class="px-4 py-2 text-sm font-sans">{{ $i['reference'] }}</td>
                     <td class="px-4 py-2 text-sm text-gray-600">{{ $i['vendor_or_employee'] ?? '—' }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-medium">{{ format_number($i['amount']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-medium">{{ format_number($i['amount']) }}</td>
                     <td>{{ $i['date'] }}</td>
                     <td class="text-ink-soft">{{ $i['vendor_or_employee'] }}</td>
                     <td class="numeric">{{ $days }}</td>

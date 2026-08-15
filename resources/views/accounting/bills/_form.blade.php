@@ -75,10 +75,10 @@
 
     $secIc = 'w-7 h-7 rounded-[9px] grid place-items-center text-white bg-[#128F8E] shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_3px_8px_-3px_rgba(10,80,80,.4)]';
     $secHead = 'flex items-center gap-3';
-    $btnTertiary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-transparent bg-transparent text-gray-600 transition-all duration-150 hover:bg-white/75 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
-    $btnGhost = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] border border-shell bg-white/85 text-gray-700 shadow-sm transition-all duration-150 hover:bg-[rgba(17,69,75,.06)] hover:border-navy-700/25 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
-    $btnPrimary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-white border border-white/25 bg-gradient-to-b from-gold-500 to-gold-600 shadow-new transition-all duration-150 hover:-translate-y-px active:translate-y-0';
-    $btnAccent = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[13.5px] text-[#EAFFFF] border border-white/15 bg-gradient-to-b from-[#17565D] via-[#0C3539] to-[#0A2E32] shadow-[0_1px_2px_rgba(6,32,35,.30),0_10px_20px_-10px_rgba(12,53,57,.60),inset_0_1px_0_rgba(255,255,255,.12)] transition-all duration-150 hover:-translate-y-px active:translate-y-0 font-bold';
+    $btnTertiary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[0.964rem] border border-transparent bg-transparent text-gray-600 transition-all duration-150 hover:bg-white/75 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
+    $btnGhost = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[0.964rem] border border-shell bg-white/85 text-gray-700 shadow-sm transition-all duration-150 hover:bg-[rgba(17,69,75,.06)] hover:border-navy-700/25 hover:text-[#0B2A2D] hover:-translate-y-px active:translate-y-0';
+    $btnPrimary = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[0.964rem] text-white border border-white/25 bg-gradient-to-b from-gold-500 to-gold-600 shadow-new transition-all duration-150 hover:-translate-y-px active:translate-y-0';
+    $btnAccent = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl font-semibold text-[0.964rem] text-[#EAFFFF] border border-white/15 bg-gradient-to-b from-[#17565D] via-[#0C3539] to-[#0A2E32] shadow-[0_1px_2px_rgba(6,32,35,.30),0_10px_20px_-10px_rgba(12,53,57,.60),inset_0_1px_0_rgba(255,255,255,.12)] transition-all duration-150 hover:-translate-y-px active:translate-y-0 font-bold';
     $selectWrap = 'relative';
     $selectChevron = 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500';
 @endphp
@@ -88,7 +88,7 @@
     <div class="form-page-head pb-4 mb-6 border-b border-line flex items-start justify-between gap-4 flex-wrap">
         <div>
             <h1 class="text-2xl font-extrabold tracking-[-0.02em] text-gray-900">{{ $title }}</h1>
-            <p class="mt-1 text-[13.5px] text-gray-500">{{ $subtitle }}</p>
+            <p class="mt-1 text-[0.964rem] text-gray-500">{{ $subtitle }}</p>
         </div>
         <div class="flex gap-2.5 flex-wrap items-center">
             <a href="{{ $cancelRoute }}" class="{{ $btnTertiary }}">{{ __('Cancel') }}</a>
@@ -119,7 +119,7 @@
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 9l9-6 9 6M5 9v11M19 9v11M9 9v11M15 9v11M3 20h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Supplier Information') }}</h2>
+                        <h2 class="text-[1.071rem] font-extrabold text-[#128F8E]">{{ __('Supplier Information') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
                     <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
@@ -176,14 +176,14 @@
                             <input type="text" class="input" id="vendor-address" value="{{ $selectedVendor?->billing_address ?: $selectedVendor?->remit_to_address ?? '' }}" readonly />
                         </div>
                     </div>
-                    <p class="mt-3 text-[11px] text-slate-400">Contact details shown are from the supplier record.</p>
+                    <p class="mt-3 text-[0.786rem] text-slate-400">Contact details shown are from the supplier record.</p>
                 </section>
 
                 {{-- bill info --}}
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Bill Information') }}</h2>
+                        <h2 class="text-[1.071rem] font-extrabold text-[#128F8E]">{{ __('Bill Information') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
                     <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
@@ -204,7 +204,7 @@
                         <div>
                             <label for="due_date" class="input-label">{{ __('Due Date') }} <span class="text-red-600">*</span></label>
                             <input id="due_date" name="due_date" type="date" class="input" value="{{ old('due_date', $bill?->due_date?->format('Y-m-d') ?? '') }}" required />
-                            <div id="bill-due-error" class="mt-1.5 text-[11.5px] font-semibold text-red-600" style="display:none">Due date must be on or after bill date.</div>
+                            <div id="bill-due-error" class="mt-1.5 text-[0.821rem] font-semibold text-red-600" style="display:none">Due date must be on or after bill date.</div>
                             <x-input-error :messages="$errors->get('due_date')" class="mt-2" />
                         </div>
                         <div>
@@ -254,13 +254,13 @@
                 <section class="card relative z-30 rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Line Items') }}</h2>
+                        <h2 class="text-[1.071rem] font-extrabold text-[#128F8E]">{{ __('Line Items') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
-                        <button type="button" id="bill-add-line" class="{{ $btnGhost }}" style="height:34px;padding:0 13px;font-size:12.5px;border-radius:10px;">＋ {{ __('Add Line') }}</button>
+                        <button type="button" id="bill-add-line" class="{{ $btnGhost }}" style="height:34px;padding:0 13px;font-size:0.893rem;border-radius:10px;">＋ {{ __('Add Line') }}</button>
                     </div>
 
                     <div class="mt-4 border border-shell rounded-[14px] overflow-visible round-thead-clip bg-[#fbfcfe]">
-                        <table id="bill-lines-table" class="w-full border-collapse text-[13px] table-fixed">
+                        <table id="bill-lines-table" class="w-full border-collapse text-[0.929rem] table-fixed">
                             <thead class="th-mist">
                                 <tr>
                                     <th class="w-[13%]">{{ __('Item Code') }}</th>
@@ -284,7 +284,7 @@
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Additional Charges') }}</h2>
+                        <h2 class="text-[1.071rem] font-extrabold text-[#128F8E]">{{ __('Additional Charges') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
                     <div class="grid grid-cols-2 gap-x-5 gap-y-4 mt-5 xl:grid-cols-4">
@@ -315,7 +315,7 @@
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Notes') }}</h2>
+                        <h2 class="text-[1.071rem] font-extrabold text-[#128F8E]">{{ __('Notes') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
                     <div class="grid grid-cols-1 gap-x-5 gap-y-4 mt-5 xl:grid-cols-3">
@@ -341,17 +341,17 @@
                 <section class="card rounded-[20px] p-6 xl:p-[26px]">
                     <div class="{{ $secHead }}">
                         <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Attachments') }}</h2>
+                        <h2 class="text-[1.071rem] font-extrabold text-[#128F8E]">{{ __('Attachments') }}</h2>
                         <span class="flex-1 h-px bg-line"></span>
                     </div>
 
                     @if(!empty($billAttachments))
                         <ul id="bill-existing-files" class="mt-4 divide-y divide-line border border-shell rounded-[14px] bg-[#fbfcfe]">
                             @foreach($billAttachments as $attachment)
-                                <li data-attachment-id="{{ $attachment->id }}" class="flex items-center gap-3 px-4 py-2.5 text-[13px]">
+                                <li data-attachment-id="{{ $attachment->id }}" class="flex items-center gap-3 px-4 py-2.5 text-[0.929rem]">
                                     <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                                     <span class="flex-1 min-w-0 truncate text-gray-800">{{ $attachment->name }}</span>
-                                    <span class="shrink-0 text-[11px] text-slate-400">{{ format_bytes($attachment->file_size) }}</span>
+                                    <span class="shrink-0 text-[0.786rem] text-slate-400">{{ format_bytes($attachment->file_size) }}</span>
                                     <button type="button" class="bill-ibtn bill-ibtn--del" title="{{ __('Remove') }}" aria-label="{{ __('Remove') }}" onclick="billRemoveExistingFile(this)">🗑</button>
                                 </li>
                             @endforeach
@@ -362,12 +362,12 @@
                         <div class="w-[46px] h-[46px] mx-auto mb-2.5 rounded-full grid place-items-center bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700">
                             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
-                        <p class="text-[13px] text-slate-500">{{ __('Drag & drop files here, or') }} <b class="text-gold-700">{{ __('browse') }}</b></p>
+                        <p class="text-[0.929rem] text-slate-500">{{ __('Drag & drop files here, or') }} <b class="text-gold-700">{{ __('browse') }}</b></p>
                         <div class="mt-2.5 flex gap-1.5 justify-center flex-wrap">
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">PDF</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">IMG</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">XLSX</span>
-                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[10.5px] font-extrabold tracking-[0.06em]">DOCX</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[0.75rem] font-extrabold tracking-[0.06em]">PDF</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[0.75rem] font-extrabold tracking-[0.06em]">IMG</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[0.75rem] font-extrabold tracking-[0.06em]">XLSX</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-[rgba(17,69,75,.06)] border border-navy-700/15 text-navy-700 text-[0.75rem] font-extrabold tracking-[0.06em]">DOCX</span>
                         </div>
                     </label>
 
@@ -385,49 +385,49 @@
                    style="top: calc(var(--topbar-h, 106px) + 94px); z-index: 10;">
                 <div class="{{ $secHead }}">
                     <span class="{{ $secIc }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 15.5h.01M12 15.5h.01M15.5 15.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                    <h2 class="text-[15px] font-extrabold text-[#128F8E]">{{ __('Summary') }}</h2>
+                    <h2 class="text-[1.071rem] font-extrabold text-[#128F8E]">{{ __('Summary') }}</h2>
                 </div>
 
                 <div class="mt-3.5">
-                    <div class="flex justify-between gap-4 py-2 border-b border-line text-[13px]">
+                    <div class="flex justify-between gap-4 py-2 border-b border-line text-[0.929rem]">
                         <span class="text-slate-500">{{ __('Subtotal') }}</span>
                         <span class="font-semibold text-gray-900 tabular-nums" id="bill-sub">0.00</span>
                     </div>
-                    <div class="flex justify-between gap-4 py-2 border-b border-line text-[13px]">
+                    <div class="flex justify-between gap-4 py-2 border-b border-line text-[0.929rem]">
                         <span class="text-slate-500">{{ __('Discount') }}</span>
                         <span class="font-semibold text-gray-900 tabular-nums" id="bill-discount">0.00</span>
                     </div>
-                    <div class="flex justify-between gap-4 py-2 border-b border-line text-[13px]">
+                    <div class="flex justify-between gap-4 py-2 border-b border-line text-[0.929rem]">
                         <span class="text-slate-500">{{ __('Tax') }}</span>
                         <span class="font-semibold text-gray-900 tabular-nums" id="bill-tax">0.00</span>
                     </div>
-                    <div class="bill-sum-row flex justify-between gap-4 py-2 border-b border-line text-[13px]" data-charge="freight" style="display:none">
+                    <div class="bill-sum-row flex justify-between gap-4 py-2 border-b border-line text-[0.929rem]" data-charge="freight" style="display:none">
                         <span class="text-slate-500">{{ __('Freight') }}</span>
                         <span class="font-semibold text-gray-900 tabular-nums">0.00</span>
                     </div>
-                    <div class="bill-sum-row flex justify-between gap-4 py-2 border-b border-line text-[13px]" data-charge="insurance" style="display:none">
+                    <div class="bill-sum-row flex justify-between gap-4 py-2 border-b border-line text-[0.929rem]" data-charge="insurance" style="display:none">
                         <span class="text-slate-500">{{ __('Insurance') }}</span>
                         <span class="font-semibold text-gray-900 tabular-nums">0.00</span>
                     </div>
-                    <div class="bill-sum-row flex justify-between gap-4 py-2 border-b border-line text-[13px]" data-charge="customs" style="display:none">
+                    <div class="bill-sum-row flex justify-between gap-4 py-2 border-b border-line text-[0.929rem]" data-charge="customs" style="display:none">
                         <span class="text-slate-500">{{ __('Customs') }}</span>
                         <span class="font-semibold text-gray-900 tabular-nums">0.00</span>
                     </div>
-                    <div class="bill-sum-row flex justify-between gap-4 py-2 border-b border-line text-[13px]" data-charge="other" style="display:none">
+                    <div class="bill-sum-row flex justify-between gap-4 py-2 border-b border-line text-[0.929rem]" data-charge="other" style="display:none">
                         <span class="text-slate-500">{{ __('Other Charges') }}</span>
                         <span class="font-semibold text-gray-900 tabular-nums">0.00</span>
                     </div>
-                    <div class="flex justify-between gap-4 py-2 text-[13px]">
+                    <div class="flex justify-between gap-4 py-2 text-[0.929rem]">
                         <span class="text-slate-500">{{ __('Rounding') }}</span>
                         <span class="font-semibold text-gray-900 tabular-nums" id="bill-rounding">0.00</span>
                     </div>
                 </div>
 
                 <div class="mt-3.5 flex justify-between items-center px-4 py-4 rounded-[14px] bg-gradient-to-r from-[#149897] via-[#128F8E] to-[#107C7B] shadow-[inset_0_1px_0_rgba(255,255,255,.2),inset_0_-1px_0_rgba(11,42,45,.35),0_10px_24px_-10px_rgba(10,80,80,.5)]">
-                    <span class="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#DFF7F6]">{{ __('Grand Total') }}</span>
+                    <span class="text-[0.786rem] font-extrabold uppercase tracking-[0.1em] text-[#DFF7F6]">{{ __('Grand Total') }}</span>
                     <span class="text-2xl font-extrabold text-white tabular-nums" id="bill-gt">{{ $cs }}0.00</span>
                 </div>
-                <p class="mt-2.5 text-[11.5px] text-slate-400 text-center">Zero charges are hidden · totals update instantly.</p>
+                <p class="mt-2.5 text-[0.821rem] text-slate-400 text-center">Zero charges are hidden · totals update instantly.</p>
             </aside>
         </div>
     </form>
@@ -680,11 +680,11 @@
         billNewFiles.forEach((f, i) => {
             const li = document.createElement('li');
             li.dataset.i = i;
-            li.className = 'flex items-center gap-3 px-4 py-2.5 text-[13px]';
+            li.className = 'flex items-center gap-3 px-4 py-2.5 text-[0.929rem]';
             li.innerHTML = `
                 <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                 <span class="flex-1 min-w-0 truncate text-gray-800">${esc(f.name)}</span>
-                <span class="shrink-0 text-[11px] text-slate-400">${billFmtSize(f.size)}</span>
+                <span class="shrink-0 text-[0.786rem] text-slate-400">${billFmtSize(f.size)}</span>
                 <button type="button" class="bill-ibtn bill-ibtn--del" title="Remove" aria-label="Remove" onclick="billRemoveNewFile(this)">🗑</button>
             `;
             list.appendChild(li);

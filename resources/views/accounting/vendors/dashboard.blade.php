@@ -92,7 +92,7 @@
                         <h2>Overview</h2>
                         <span class="rule"></span>
                     </div>
-                    <h3 style="margin:0 0 2px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint,#8aa5a7)">Payables Aging</h3>
+                    <h3 class="vc-aging-lbl">Payables Aging</h3>
                     <div class="vc-aging-grid" style="margin-top:8px">
                         @foreach($agingBuckets as $key => $bucket)
                             <div class="vc-aging-cell">

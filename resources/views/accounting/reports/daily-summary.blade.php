@@ -60,7 +60,7 @@
                         <tr>
                             <td class="q2-lbl">{{ __('Total') }}</td>
                             <td class="q2-right">{{ number_format($receipt_count) }}</td>
-                            <td class="q2-right" style="font-weight:800;color:var(--deep-3,#0A2E32)">{{ format_number($total) }}</td>
+                            <td class="figure q2-right" style="font-weight:800;color:var(--deep-3,#0A2E32)">{{ format_number($total) }}</td>
                         </tr>
                     </tfoot>
                 </table>

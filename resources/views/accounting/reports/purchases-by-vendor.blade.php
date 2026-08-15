@@ -33,8 +33,8 @@ $total_count = array_sum(array_column($vendors, 'count'));
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td class="px-4 py-3 text-sm text-right">Totals</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_amount) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_count) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_amount) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_count) }}</td>
                 </tr>
             </tfoot>
         </table>

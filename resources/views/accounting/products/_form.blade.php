@@ -120,7 +120,7 @@
                             <div class="val" style="padding-top:11px">
                                 <label class="chk-inline" style="display:flex;align-items:center;gap:8px">
                                     <input type="checkbox" name="is_taxable" value="1" {{ $isEdit ? (old('is_taxable', $product->is_taxable) ? 'checked' : '') : (old('is_taxable') ? 'checked' : 'checked') }} class="rounded border-gray-300 text-gold-700 focus:ring-gold-500" />
-                                    <span class="hint" style="margin-top:0;font-size:12.5px;font-weight:500;color:var(--muted,#5F7476)">Charge sales tax on this product</span>
+                                    <span class="hint" style="margin-top:0;font-weight:500;color:var(--muted,#5F7476)">Charge sales tax on this product</span>
                                 </label>
                             </div>
                             <x-input-error :messages="$errors->get('is_taxable')" class="mt-2" />

@@ -29,7 +29,7 @@
                     <td>{{ $row['category'] }}</td>
                     <td class="numeric">{{ format_number($row['carrying_amount']) }}</td>
                     <td class="numeric">{{ format_number($row['recoverable_amount']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['amount']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['amount']) }}</td>
                     <td>{{ $row['is_reversal'] ? 'Reversal' : 'Impairment' }}</td>
                 </tr>
                 @empty
@@ -39,7 +39,7 @@
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td colspan="6" class="px-4 py-3 text-sm text-right">Total Impairment / Total Reversal</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_impairment) }} / {{ format_number($total_reversal) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_impairment) }} / {{ format_number($total_reversal) }}</td>
                     <td></td>
                 </tr>
             </tfoot>

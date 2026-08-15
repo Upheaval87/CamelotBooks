@@ -33,7 +33,7 @@ $total_grand = array_sum(array_column($customers, 'grand_total'));
                     <td class="numeric">{{ format_number($row['invoices_count']) }}</td>
                     <td class="numeric">{{ format_number($row['receipts_total']) }}</td>
                     <td class="numeric">{{ format_number($row['pos_total']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['grand_total']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['grand_total']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="6" class="px-4 py-8 text-center text-sm text-gray-500">No data found.</td></tr>
@@ -42,11 +42,11 @@ $total_grand = array_sum(array_column($customers, 'grand_total'));
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td class="px-4 py-3 text-sm text-right">Totals</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_invoice) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_invoices) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_receipt) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_pos) }}</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_grand) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_invoice) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_invoices) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_receipt) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_pos) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_grand) }}</td>
                 </tr>
             </tfoot>
         </table>

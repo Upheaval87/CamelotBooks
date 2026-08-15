@@ -53,12 +53,12 @@
                     <tfoot class="bg-gray-50 font-semibold">
                         <tr>
                             <td colspan="2" class="px-4 py-3 text-sm text-right">Totals</td>
-                            <td class="px-4 py-3 text-sm text-right">{{ format_number($total_dr_p1) }}</td>
-                            <td class="px-4 py-3 text-sm text-right">{{ format_number($total_cr_p1) }}</td>
-                            <td class="px-4 py-3 text-sm text-right">{{ format_number($total_dr_p2) }}</td>
-                            <td class="px-4 py-3 text-sm text-right">{{ format_number($total_cr_p2) }}</td>
-                            <td class="px-4 py-3 text-sm text-right">{{ format_number($total_dr_var) }}</td>
-                            <td class="px-4 py-3 text-sm text-right">{{ format_number($total_cr_var) }}</td>
+                            <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_dr_p1) }}</td>
+                            <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_cr_p1) }}</td>
+                            <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_dr_p2) }}</td>
+                            <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_cr_p2) }}</td>
+                            <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_dr_var) }}</td>
+                            <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_cr_var) }}</td>
                         </tr>
                     </tfoot>
                 </table>

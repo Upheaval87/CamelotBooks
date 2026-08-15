@@ -139,17 +139,18 @@ export default {
                 mono: ['Inter', ...defaultTheme.fontFamily.sans],
             },
             fontSize: {
-                'xs': ['0.75rem', { lineHeight: '1rem' }],
-                'sm': ['0.8125rem', { lineHeight: '1.25rem' }],
-                'base': ['0.875rem', { lineHeight: '1.375rem' }],
-                'lg': ['1rem', { lineHeight: '1.5rem' }],
-                'xl': ['1.125rem', { lineHeight: '1.625rem' }],
-                '2xl': ['1.25rem', { lineHeight: '1.75rem' }],
-                '3xl': ['1.5rem', { lineHeight: '1.875rem' }],
-                'heading': ['1.5rem', { lineHeight: '1.2', fontWeight: '600' }],
-                'subheading': ['1.125rem', { lineHeight: '1.4', fontWeight: '500' }],
-                'card-title': ['0.8125rem', { lineHeight: '1.4', fontWeight: '500' }],
-                'meta': ['0.6875rem', { lineHeight: '1.25', fontWeight: '400' }],
+                // Typography scale — values are rem so the UI font-scale
+                // preference (--font-scale on <html>) scales them proportionally.
+                // Each rem = px / 15 (the 15px accounting base root):
+                //   xs 12px, sm 13px, base 14px, md 15px, lg 18px, xl 20px, 2xl 24px, 3xl 30px.
+                'xs': ['0.8rem', { lineHeight: '1.0667rem' }],
+                'sm': ['0.8667rem', { lineHeight: '1.2rem' }],
+                'base': ['0.9333rem', { lineHeight: '1.3333rem' }],
+                'md': ['1rem', { lineHeight: '1.4667rem' }],
+                'lg': ['1.2rem', { lineHeight: '1.7333rem' }],
+                'xl': ['1.3333rem', { lineHeight: '1.8667rem' }],
+                '2xl': ['1.6rem', { lineHeight: '2.1333rem' }],
+                '3xl': ['2rem', { lineHeight: '2.5333rem' }],
             },
             borderRadius: {
                 'sm': '4px',

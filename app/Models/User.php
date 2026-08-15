@@ -23,14 +23,16 @@ class User extends Authenticatable
     }
 
     /**
-     * Supported UI text-size presets mapped to a root font-size scale factor.
-     * 'md' (1.0) is the default; 'sm' and 'lg' scale all rem-based typography.
+     * Supported UI font-scale steps (multiplicative on the 15px root base).
+     * 1.00 is the default; the topbar control steps through these in order.
      */
-    public const TEXT_SIZES = [
-        'sm' => 0.9,
-        'md' => 1.0,
-        'lg' => 1.15,
-    ];
+    public const FONT_STEPS = [0.85, 1.00, 1.15, 1.30, 1.50];
+
+    /**
+     * Human-readable labels for FONT_STEPS, index-aligned (0.85 => 'Small' ...).
+     * Keys are deliberately omitted: float array keys would be cast to int.
+     */
+    public const FONT_STEP_LABELS = ['Small', 'Normal', 'Large', 'Larger', 'Largest'];
 
     protected $fillable = [
         'name',
@@ -44,7 +46,7 @@ class User extends Authenticatable
         'password_changed_at',
         'failed_login_attempts',
         'locked_until',
-        'text_size',
+        'font_scale',
     ];
 
     protected $hidden = [
@@ -63,6 +65,7 @@ class User extends Authenticatable
             'two_factor_enabled' => 'boolean',
             'password_changed_at' => 'datetime',
             'locked_until' => 'datetime',
+            'font_scale' => 'float',
         ];
     }
 

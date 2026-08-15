@@ -28,7 +28,7 @@
                     <td>{{ $row['category'] }}</td>
                     <td class="numeric">{{ format_number($row['previous_fair_value']) }}</td>
                     <td class="numeric">{{ format_number($row['new_fair_value']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['surplus_amount']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['surplus_amount']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">No revaluation data found.</td></tr>
@@ -37,7 +37,7 @@
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td colspan="6" class="px-4 py-3 text-sm text-right">Total Surplus</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_surplus) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_surplus) }}</td>
                 </tr>
             </tfoot>
         </table>

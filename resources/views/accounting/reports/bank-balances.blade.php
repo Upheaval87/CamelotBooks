@@ -25,7 +25,7 @@
             <tfoot class="bg-gray-50 font-semibold">
                 <tr>
                     <td colspan="3" class="px-4 py-3 text-sm text-right">Total Balance</td>
-                    <td class="px-4 py-3 text-sm text-right">{{ format_number($total_balance) }}</td>
+                    <td class="figure px-4 py-3 text-sm text-right">{{ format_number($total_balance) }}</td>
                 </tr>
             </tfoot>
         </table>

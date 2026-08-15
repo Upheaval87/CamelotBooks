@@ -9,7 +9,7 @@
     ];
     $sizes = [
         'lg' => 'rounded-[12px] gap-2 px-5 py-3 text-sm font-semibold',
-        'md' => 'rounded-[10px] gap-1.5 px-4 py-2 text-[13px] font-bold',
+        'md' => 'rounded-[10px] gap-1.5 px-4 py-2 text-[0.929rem] font-bold',
     ];
     $classes = 'inline-flex items-center justify-center transition ' . $sizes[$size] . ' ' . $variants[$variant];
     if ($disabled) {

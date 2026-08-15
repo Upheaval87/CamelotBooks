@@ -21,9 +21,9 @@
                 </span>
             @endif
             @if($titleBind)
-                <h2 class="text-[15px] font-extrabold text-gray-900" x-text="{{ $titleBind }}"></h2>
+                <h2 class="text-[1.071rem] font-extrabold text-gray-900" x-text="{{ $titleBind }}"></h2>
             @else
-                <h2 class="text-[15px] font-extrabold text-gray-900">{{ $title }}</h2>
+                <h2 class="text-[1.071rem] font-extrabold text-gray-900">{{ $title }}</h2>
             @endif
             <span class="h-px flex-1 bg-line"></span>
             @if($hasActions)

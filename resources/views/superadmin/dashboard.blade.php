@@ -14,19 +14,19 @@
             <x-superadmin.card>
                 <p class="kpi-label">{{ __('Companies') }}</p>
                 <p class="kpi-value">{{ $companyCount }}</p>
-                <p class="mt-1 text-[13px] text-gray-500">{{ $activeCompanyCount }} {{ __('active') }}</p>
+                <p class="mt-1 text-[0.929rem] text-gray-500">{{ $activeCompanyCount }} {{ __('active') }}</p>
             </x-superadmin.card>
 
             <x-superadmin.card>
                 <p class="kpi-label">{{ __('Platform Users') }}</p>
                 <p class="kpi-value">{{ $userCount }}</p>
-                <p class="mt-1 text-[13px] text-gray-500">{{ __('Across all companies') }}</p>
+                <p class="mt-1 text-[0.929rem] text-gray-500">{{ __('Across all companies') }}</p>
             </x-superadmin.card>
 
             <x-superadmin.card>
                 <p class="kpi-label">{{ __('Modules') }}</p>
                 <p class="kpi-value">{{ \App\Models\Module::query()->count() }}</p>
-                <p class="mt-1 text-[13px] text-gray-500">{{ __('Activation is per company') }}</p>
+                <p class="mt-1 text-[0.929rem] text-gray-500">{{ __('Activation is per company') }}</p>
             </x-superadmin.card>
         </div>
 

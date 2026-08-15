@@ -39,7 +39,7 @@
                                         <td class="text-ink-soft">
                                             {{ $scheme->employer_rate }}%
                                         </td>
-                                        <td class="text-ink-soft">
+                                        <td class="figure text-ink-soft">
                                             {{ $scheme->max_contributory_salary ? format_money($scheme->max_contributory_salary) : '—' }}
                                         </td>
                                         <td class="text-ink-soft">

@@ -23,7 +23,7 @@
                     <td>{{ ucfirst(str_replace('_', ' ', $d['disposal_method'])) }}</td>
                     <td class="numeric">{{ format_number($d['acquisition_cost']) }}</td>
                     <td class="numeric">{{ format_number($d['proceeds_amount']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-medium {{ $d['gain_loss_amount'] >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ format_number($d['gain_loss_amount']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-medium {{ $d['gain_loss_amount'] >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ format_number($d['gain_loss_amount']) }}</td>
                     <td class="text-ink-soft">{{ $d['memo'] ?? '—' }}</td>
                 </tr>
                 @empty

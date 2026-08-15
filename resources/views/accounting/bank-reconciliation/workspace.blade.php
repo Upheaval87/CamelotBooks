@@ -202,7 +202,7 @@
                                                 </td>
                                                 <td>
                                                     @if($line->match)
-                                                        <span class="em" style="font-size:11px">{{ $line->match->bankTransaction?->reference ?? '#' . $line->match->bank_transaction_id }}</span>
+                                                        <span class="em">{{ $line->match->bankTransaction?->reference ?? '#' . $line->match->bank_transaction_id }}</span>
                                                     @elseif(!$locked)
                                                         <form method="POST" action="{{ route('accounting.bank-reconciliation.match', $reconciliation->id) }}" style="display:inline-flex;gap:4px;width:100%;justify-content:flex-end">
                                                             @csrf
@@ -284,7 +284,7 @@
                                             </span>
                                             <span class="conf {{ $bucketLabel === 'Exact' ? 'exact' : ($bucketLabel === 'Likely' ? 'likely' : '') }}">{{ $suggestion->label }}</span>
                                         </div>
-                                        <div class="srow" style="border-bottom:none;font-size:11.5px">
+                                        <div class="srow" style="border-bottom:none">
                                             <span class="em" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ $suggestion->transaction->description }}">
                                                 → {{ $suggestion->transaction->reference ?? '#' . $suggestion->transaction->id }} · {{ $suggestion->transaction->description }}
                                             </span>
@@ -318,7 +318,7 @@
                                     <span class="l" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ $import->filename }}">{{ $import->filename }}</span>
                                     <span class="v">{{ $import->line_count }} {{ __('lines') }}</span>
                                 </div>
-                                <div class="srow" style="border-bottom:none;font-size:11.5px">
+                                <div class="srow" style="border-bottom:none">
                                     <span class="em">{{ $import->created_at?->format('M d, Y g:i A') ?? '—' }}</span>
                                     <span class="em">{{ $import->importedBy?->name ?? '—' }}</span>
                                 </div>

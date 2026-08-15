@@ -28,7 +28,7 @@
                     <td class="px-4 py-2 text-sm font-sans">{{ $ch['cheque_number'] }}</td>
                     <td>{{ $ch['payee'] }}</td>
                     <td>{{ $ch['bank_account'] }}</td>
-                    <td class="px-4 py-2 text-sm text-right {{ $ch['type'] === 'payment' ? 'text-red-600' : 'text-green-600' }}">{{ format_number($ch['amount']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right {{ $ch['type'] === 'payment' ? 'text-red-600' : 'text-green-600' }}">{{ format_number($ch['amount']) }}</td>
                     <td>{{ ucfirst($ch['type']) }}</td>
                     <td>{{ $ch['is_reconciled'] ? 'Yes' : 'No' }}</td>
                     <td class="text-ink-soft">{{ $ch['created_by'] }}</td>

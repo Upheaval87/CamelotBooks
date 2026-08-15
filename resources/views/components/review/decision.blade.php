@@ -11,7 +11,7 @@
             <span class="flex h-10 w-10 items-center justify-center rounded-[12px] bg-gradient-to-b from-[#17565D] to-[#0C3539] text-[#DFF7F6] shadow-edit">
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{!! $icon ?? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>' !!}</svg>
             </span>
-            <h3 class="text-[15px] font-extrabold text-gray-900">{{ $title ?? __('Review & Decide') }}</h3>
+            <h3 class="text-[1.071rem] font-extrabold text-gray-900">{{ $title ?? __('Review & Decide') }}</h3>
         </div>
     </div>
 

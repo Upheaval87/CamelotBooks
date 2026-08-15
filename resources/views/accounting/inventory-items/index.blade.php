@@ -38,7 +38,7 @@
                                             {{ format_money($onHand) }}
                                         </span>
                                     </td>
-                                    <td class="text-ink-soft text-right">
+                                    <td class="figure text-ink-soft text-right">
                                         {{ $product->reorder_point ? format_money($product->reorder_point) : '—' }}
                                     </td>
                                     <td class="numeric">

@@ -8,7 +8,7 @@
     @if($title || $hasAction)
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             @if($title)
-                <h3 class="text-[15px] font-extrabold text-gray-900">{{ $title }}</h3>
+                <h3 class="text-[1.071rem] font-extrabold text-gray-900">{{ $title }}</h3>
             @else
                 <span></span>
             @endif

@@ -137,8 +137,8 @@
                 </div>
                 <div class="card-sec">
                     <div class="g2">
-                        <div class="field"><label>{{ __('Total Spend') }}</label><div class="val numr bold" style="font-size:20px">{{ $cs }}{{ format_number($total) }}</div></div>
-                        <div class="field"><label>{{ __('Expenses') }}</label><div class="val numr bold" style="font-size:20px">{{ $count }}</div></div>
+                        <div class="field"><label>{{ __('Total Spend') }}</label><div class="val numr bold" style="font-size:1.429rem">{{ $cs }}{{ format_number($total) }}</div></div>
+                        <div class="field"><label>{{ __('Expenses') }}</label><div class="val numr bold" style="font-size:1.429rem">{{ $count }}</div></div>
                     </div>
                 </div>
             </div>

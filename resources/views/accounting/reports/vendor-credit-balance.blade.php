@@ -22,7 +22,7 @@
                     <td class="numeric">{{ format_number($row['amount']) }}</td>
                     <td class="numeric">{{ format_number($row['applied']) }}</td>
                     <td class="numeric">{{ format_number($row['refunded']) }}</td>
-                    <td class="px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['unapplied']) }}</td>
+                    <td class="figure px-4 py-2 text-sm text-right font-semibold">{{ format_number($row['unapplied']) }}</td>
                 </tr>
                 @empty
                     <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">No credit balances found.</td></tr>

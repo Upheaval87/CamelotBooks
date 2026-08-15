@@ -145,10 +145,10 @@
                                             <td class="numeric">{{ format_money($item->basic_pay) }}</td>
                                             <td class="numeric">{{ format_money($item->allowances) }}</td>
                                             <td class="numeric">{{ format_money($item->gross_pay) }}</td>
-                                            <td class="text-brick text-right">{{ format_money($item->paye) }}</td>
-                                            <td class="text-gold text-right">{{ format_money($item->pension_ee) }}</td>
-                                            <td class="text-gold text-right">{{ format_money($item->other_deductions) }}</td>
-                                            <td class="text-forest text-right font-bold">{{ format_money($item->net_pay) }}</td>
+                                            <td class="figure text-brick text-right">{{ format_money($item->paye) }}</td>
+                                            <td class="figure text-gold text-right">{{ format_money($item->pension_ee) }}</td>
+                                            <td class="figure text-gold text-right">{{ format_money($item->other_deductions) }}</td>
+                                            <td class="figure text-forest text-right font-bold">{{ format_money($item->net_pay) }}</td>
                                             <td class="text-right">
                                                 @if(in_array($run->status, ['posted', 'partially_paid', 'fully_paid']) && !$item->is_paid)
                                                     <button type="button" @click="openPaymentModal({{ $item->employee_id }}, '{{ addslashes($item->employee->name ?? '') }}', {{ $item->net_pay }})" class="text-forest hover:text-forest/80">

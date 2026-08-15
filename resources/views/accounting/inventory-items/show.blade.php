@@ -85,7 +85,7 @@
                                         @foreach($product->stock as $stock)
                                             <tr>
                                                 <td class="px-3 py-2 text-sm text-ink">{{ $stock->branch->name ?? 'Main' }}</td>
-                                                <td class="px-3 py-2 text-sm text-ink text-right font-medium">{{ format_money($stock->quantity_on_hand) }}</td>
+                                                <td class="figure px-3 py-2 text-sm text-ink text-right font-medium">{{ format_money($stock->quantity_on_hand) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -115,7 +115,7 @@
                                             <tr class="{{ $layer->quantity_remaining <= 0 ? 'text-gray-400' : '' }}">
                                                 <td>{{ $layer->date->format('M d, Y') }}</td>
                                                 <td class="text-ink-soft">{{ $layer->source_type ?? '—' }}</td>
-                                                <td class="px-4 py-3 text-sm text-ink text-right font-medium">{{ format_money($layer->quantity_remaining) }}</td>
+                                                <td class="figure px-4 py-3 text-sm text-ink text-right font-medium">{{ format_money($layer->quantity_remaining) }}</td>
                                                 <td class="numeric">{{ format_money($layer->unit_cost, null, 4) }}</td>
                                                 <td class="numeric">@money($layer->quantity_remaining * $layer->unit_cost)</td>
                                             </tr>

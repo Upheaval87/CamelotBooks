@@ -11,9 +11,9 @@
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{!! $iconPath !!}</svg>
     </span>
     <div class="min-w-0 flex-1">
-        <p class="text-[15px] font-bold text-white">{{ $title }}</p>
+        <p class="text-[1.071rem] font-bold text-white">{{ $title }}</p>
         @if($description)
-            <p class="mt-0.5 text-[13.5px] text-navy-200">{{ $description }}</p>
+            <p class="mt-0.5 text-[0.964rem] text-navy-200">{{ $description }}</p>
         @endif
     </div>
     <span class="rounded-full border border-[#DFF7F6]/30 bg-[#DFF7F6]/10 px-3 py-1.5 font-mono text-xs font-bold tracking-[0.08em] text-[#DFF7F6]">{{ $chip }}</span>
