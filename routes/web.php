@@ -325,7 +325,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('vendors/reports', [VendorController::class, 'reports'])->name('vendors.reports');
             Route::get('vendors/settings', [VendorController::class, 'settings'])->name('vendors.settings');
             Route::post('vendors/settings', [VendorController::class, 'updateSettings'])->name('vendors.settings.update');
-            Route::post('vendors/rail-pin', [VendorController::class, 'railPin'])->name('vendors.rail-pin');
             Route::get('vendors/export', [VendorController::class, 'exportCsv'])->name('vendors.export');
             Route::get('vendors', [VendorController::class, 'index'])->name('vendors.index');
             Route::get('vendors/create', [VendorController::class, 'create'])->name('vendors.create');

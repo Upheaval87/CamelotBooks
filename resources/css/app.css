@@ -9836,49 +9836,6 @@ textarea.q-input {
 .ex-suite .bulkbar .bbtn.plain{background:transparent;border:none;color:#dff7f6}
 .ex-suite .bulkbar .spacer{flex:1}
 
-/* --- slim right rail (§8) --- */
-.ex-suite .slim-rail, .ex-suite ~ .slim-rail{position:fixed;right:0;top:var(--topbar-h,106px);bottom:0;width:48px;z-index:45;
-  background:var(--sec-bg,#E6EEEE);border-left:1px solid rgba(255,255,255,.6);
-  display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 0;box-sizing:border-box}
-.ex-suite .slim-rail .s-ic, .ex-suite ~ .slim-rail .s-ic{position:relative;width:34px;height:34px;border-radius:10px;border:none;background:transparent;color:var(--muted,#52696B);
-  display:grid;place-items:center;cursor:pointer;flex:none;text-decoration:none}
-.ex-suite .slim-rail .s-ic:hover, .ex-suite ~ .slim-rail .s-ic:hover{background:rgba(17,69,75,.08);color:var(--deep-1,#17565d)}
-.ex-suite .slim-rail .s-ic.on, .ex-suite ~ .slim-rail .s-ic.on{background:linear-gradient(90deg,var(--sec-2,#0C7E7D),var(--sec,#107C7B));color:#fff;box-shadow:0 4px 10px -4px rgba(18,143,142,.5)}
-.ex-suite .slim-rail .s-ic .ndot, .ex-suite ~ .slim-rail .s-ic .ndot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--red,#dc2626);border:1.5px solid var(--sec-bg,#E6EEEE)}
-.ex-suite .slim-rail .s-div, .ex-suite ~ .slim-rail .s-div{width:26px;height:1px;background:rgba(17,69,75,.12);margin:5px 0;flex:none}
-/* tooltip on hover via title-like attr */
-.ex-suite .slim-rail .s-ic::after, .ex-suite ~ .slim-rail .s-ic::after{content:attr(data-tip);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%) translateX(-4px);
-  background:var(--deep-1,#17565d);color:#fff;font-size:0.786rem;font-weight:600;padding:4px 9px;border-radius:7px;white-space:nowrap;
-  opacity:0;pointer-events:none;transition:opacity .12s,transform .12s;z-index:70}
-.ex-suite .slim-rail .s-ic:hover::after, .ex-suite ~ .slim-rail .s-ic:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
-@media (max-width:900px){.ex-suite .slim-rail .s-ic::after, .ex-suite ~ .slim-rail .s-ic::after{display:none}}
-
-/* --- quick-link drawer (§8) --- */
-.ex-suite .ql-drawer, .ex-suite ~ .ql-drawer{position:fixed;right:48px;top:var(--topbar-h,106px);bottom:0;width:300px;z-index:44;
-  background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-left:1px solid var(--border,#dceaea);
-  box-shadow:-16px 0 40px -20px rgba(8,40,44,.25);
-  transform:translateX(105%);transition:transform .24s cubic-bezier(.22,.61,.36,1);overflow-y:auto;box-sizing:border-box}
-.ex-suite .ql-drawer.open, .ex-suite ~ .ql-drawer.open{transform:translateX(0)}
-.ex-suite .ql-drawer .rail-block, .ex-suite ~ .ql-drawer .rail-block{padding:16px 18px;border-bottom:1px solid var(--line,#e2ecec)}
-.ex-suite .ql-drawer .rail-block:last-child, .ex-suite ~ .ql-drawer .rail-block:last-child{border-bottom:none}
-.ex-suite .ql-drawer .rail-head, .ex-suite ~ .ql-drawer .rail-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.ex-suite .ql-drawer .rail-head h3, .ex-suite ~ .ql-drawer .rail-head h3{font-size:0.893rem;font-weight:800;color:var(--ink,#0B2A2D);margin:0}
-.ex-suite .ql-drawer .rail-head .rail-x, .ex-suite ~ .ql-drawer .rail-head .rail-x{margin-left:auto;width:28px;height:28px;border-radius:8px;border:none;background:transparent;color:var(--faint,#5F7A7C);cursor:pointer;display:grid;place-items:center}
-.ex-suite .ql-drawer .rail-head .rail-x:hover, .ex-suite ~ .ql-drawer .rail-head .rail-x:hover{background:rgba(17,69,75,.06);color:var(--red,#dc2626)}
-.ex-suite .ql-drawer .rail-head .rail-pin, .ex-suite ~ .ql-drawer .rail-head .rail-pin{width:28px;height:28px;border-radius:8px;border:none;background:transparent;color:var(--faint,#5F7A7C);cursor:pointer;display:grid;place-items:center}
-.ex-suite .ql-drawer .rail-head .rail-pin:hover, .ex-suite ~ .ql-drawer .rail-head .rail-pin:hover{background:rgba(17,69,75,.06);color:var(--ink,#0B2A2D)}
-.ex-suite .ql-drawer .rail-pin.on, .ex-suite ~ .ql-drawer .rail-pin.on{color:var(--sec,#107C7B)}
-.ex-suite .ql-drawer .rlink, .ex-suite ~ .ql-drawer .rlink{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:none;border-radius:9px;background:none;
-  text-align:left;font-family:inherit;font-size:0.893rem;font-weight:600;color:#374151;cursor:pointer;text-decoration:none}
-.ex-suite .ql-drawer .rlink:hover, .ex-suite ~ .ql-drawer .rlink:hover{background:rgba(17,69,75,.06)}
-.ex-suite .ql-drawer .rlink .ic, .ex-suite ~ .ql-drawer .rlink .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;background:rgba(17,69,75,.06);color:var(--deep-1,#17565d)}
-.ex-suite .ql-drawer .rlink .ic svg, .ex-suite ~ .ql-drawer .rlink .ic svg{width:14px;height:14px}
-/* stage shift when drawer is pinned open */
-body.vc-ql-pinned .ex-suite .stage{margin-right:316px}
-body.vc-ql-pinned .ex-suite.stage{margin-right:316px}
-@media (max-width:1100px){body.vc-ql-pinned .ex-suite .stage{margin-right:0}}
-@media (max-width:1100px){body.vc-ql-pinned .ex-suite.stage{margin-right:0}}
-
 /* --- vendor dashboard bits --- */
 .ex-suite .dashgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px}
 .ex-suite .dashgrid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}

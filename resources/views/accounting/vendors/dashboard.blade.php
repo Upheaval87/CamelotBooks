@@ -218,8 +218,6 @@
                     </div>
                 </section>
             </div>
-
-            @include('accounting.vendors._slim-rail', ['active' => 'dashboard'])
         </div>
     </div>
 </x-app-layout>

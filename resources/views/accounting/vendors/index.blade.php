@@ -214,8 +214,6 @@
                     </div>
                 </section>
             </div>
-
-            @include('accounting.vendors._slim-rail', ['active' => 'vendors'])
         </div>
     </div>
 

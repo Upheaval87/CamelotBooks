@@ -183,8 +183,6 @@
                 </aside>
             </div>
         </div>
-
-        @include('accounting.vendors._slim-rail', ['active' => 'credits'])
     </div>
 
     <script>

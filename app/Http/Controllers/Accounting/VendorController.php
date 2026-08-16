@@ -184,14 +184,6 @@ class VendorController extends Controller
             ->with('success', 'Vendor Centre settings updated successfully.');
     }
 
-    public function railPin(Request $request)
-    {
-        $request->validate(['pinned' => ['required', 'boolean']]);
-        session(['vc_rail_pinned' => $request->boolean('pinned')]);
-
-        return response()->json(['ok' => true, 'pinned' => $request->boolean('pinned')]);
-    }
-
     public function exportCsv(Request $request)
     {
         $this->requirePermission($request, 'vendors.view');

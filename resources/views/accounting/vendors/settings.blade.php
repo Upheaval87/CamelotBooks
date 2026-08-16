@@ -52,8 +52,6 @@
                     </div>
                 </form>
             </div>
-
-            @include('accounting.vendors._slim-rail', ['active' => 'settings'])
         </div>
     </div>
 </x-app-layout>

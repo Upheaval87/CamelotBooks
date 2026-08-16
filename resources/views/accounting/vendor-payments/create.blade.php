@@ -233,6 +233,4 @@
         loadBills();
         @endif
     </script>
-
-    @include('accounting.vendors._slim-rail', ['active' => 'payments'])
 </x-app-layout>

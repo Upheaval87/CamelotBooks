@@ -217,7 +217,5 @@
                 </div>
             </div>
         </div>
-
-        @include('accounting.vendors._slim-rail', ['active' => 'reports'])
     </div>
 </x-app-layout>

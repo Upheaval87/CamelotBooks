@@ -206,6 +206,4 @@
             </aside>
         </div>
     </form>
-
-    @include('accounting.vendors._slim-rail', ['active' => 'vendors'])
 </div>

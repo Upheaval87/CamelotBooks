@@ -294,8 +294,6 @@
                 </aside>
             </div>
         </div>
-
-        @include('accounting.vendors._slim-rail', ['active' => 'bills'])
     </div>
 
     <script>
