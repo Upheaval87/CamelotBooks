@@ -10,7 +10,16 @@
         $prepared = $order->createdByUser?->name ?? '';
     @endphp
     <style>
-        @page { size: A4 portrait; margin: 0; }
+        @page {
+            size: A4 portrait;
+            margin: 0 0 12mm 0;
+            @bottom-right {
+                content: "{{ __('Sales Order') }} · PAGE " counter(page) " OF " counter(pages);
+                font-family: 'Inter', system-ui, sans-serif;
+                font-size: 8px; font-weight: 700; letter-spacing: .08em;
+                color: #128f8e; font-variant-numeric: tabular-nums; padding-right: 40px;
+            }
+        }
         :root {
             --acc: #0E7473;
             --acc-2: #0b5c5b;
@@ -42,7 +51,7 @@
             flex-direction: column;
             min-height: calc(100vh - 48px);
         }
-        @media print { body { background: #fff; padding: 0; } .canvas { max-width: none; box-shadow: none; border-radius: 0; min-height: 297mm; } }
+        @media print { body { background: #fff; padding: 0; } .canvas { max-width: none; box-shadow: none; border-radius: 0; min-height: calc(297mm - 12mm); } .cbp-foot .cbp-fr { display: none; } }
 
         /* meta strip under chrome band */
         .p-meta { display: flex; gap: 1.75rem; padding: 1.25rem 2rem 0; flex-wrap: wrap; }

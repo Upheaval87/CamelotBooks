@@ -27,7 +27,16 @@
             background: #eef4f4;
             -webkit-font-smoothing: antialiased;
         }
-        @page { size: A4 portrait; margin: 0; }
+        @page {
+            size: A4 portrait;
+            margin: 0 0 12mm 0;
+            @bottom-right {
+                content: "{{ __('Invoice') }} · PAGE " counter(page) " OF " counter(pages);
+                font-family: 'Inter', system-ui, sans-serif;
+                font-size: 8px; font-weight: 700; letter-spacing: .08em;
+                color: #128f8e; font-variant-numeric: tabular-nums; padding-right: 40px;
+            }
+        }
         .stage-pdf { background: #dfe9e9; border-radius: 24px; padding: 44px 18px; min-height: 100vh; }
         .paper {
             max-width: 52rem; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden;
@@ -93,7 +102,8 @@
         @media print {
             body { background: none; }
             .stage-pdf { padding: 0; background: none; border-radius: 0; }
-            .paper { box-shadow: none; border-radius: 0; max-width: none; min-height: 297mm; }
+            .paper { box-shadow: none; border-radius: 0; max-width: none; min-height: calc(297mm - 12mm); }
+            .cbp-foot .cbp-fr { display: none; }
         }
     </style>
 </head>

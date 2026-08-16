@@ -226,10 +226,22 @@
   @include('components.pdf.chrome', [
       'part' => 'footer',
       'contact' => config('app.company_name', 'CamelotBooks') . ' Ltd · PO Box 123, Lilongwe, Malawi · +265 1 777 222 · accounts@camelotbooks.mw · Reg CS/149593',
-      'pageLabel' => $title . ' · PAGE 1 OF 1',
+      'pageLabel' => ($pdfMode ?? false) ? '' : ($title . ' · PAGE 1 OF 1'),
       'fixed' => ($pdfMode ?? false),
   ])
 
 </div>
+
+@if(($pdfMode ?? false))
+<script type="text/php">
+    $font = $fontMetrics->getFont('inter', 'bold');
+    $size = 6;
+    $label = '{{ addslashes($title) }} · PAGE {PAGE_NUM} OF {PAGE_COUNT}';
+    $width = $fontMetrics->getTextWidth($label, $font, $size);
+    $x = $pdf->get_width() - 30 - $width;
+    $y = $pdf->get_height() - 11 - $pdf->get_font_height($font, $size);
+    $pdf->page_text($x, $y, $label, $font, $size, [18, 143, 142]);
+</script>
+@endif
 </body>
 </html>
