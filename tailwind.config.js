@@ -26,12 +26,12 @@ export default {
                     DEFAULT: 'rgba(244,248,248,<alpha-value>)',
                 },
                 gold: {
-                    DEFAULT: 'rgba(18,143,142,<alpha-value>)',
+                    DEFAULT: 'rgba(16,124,123,<alpha-value>)',
                     soft: 'rgba(223,247,246,<alpha-value>)',
                     line: 'rgba(71,95,97,<alpha-value>)',
-                    500: '#149897',
-                    600: '#128F8E',
-                    700: '#107C7B',
+                    500: '#107C7B',
+                    600: '#0C6B6A',
+                    700: '#0B5C5B',
                     800: '#0C3539',
                 },
                 navy: {

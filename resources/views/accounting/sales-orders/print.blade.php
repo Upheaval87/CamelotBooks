@@ -17,15 +17,15 @@
                 content: "{{ __('Sales Order') }} · PAGE " counter(page) " OF " counter(pages);
                 font-family: 'Inter', system-ui, sans-serif;
                 font-size: 8px; font-weight: 700; letter-spacing: .08em;
-                color: #128f8e; font-variant-numeric: tabular-nums; padding-right: 40px;
+                color: #107c7b; font-variant-numeric: tabular-nums; padding-right: 40px;
             }
         }
         :root {
             --acc: #0E7473;
             --acc-2: #0b5c5b;
             --ink: #0B2A2D;
-            --muted: #5F7476;
-            --faint: #8AA5A7;
+            --muted: #52696B;
+            --faint: #5F7A7C;
             --line: #DCEAEA;
             --rcol: 300px;
         }
@@ -106,7 +106,7 @@
         .totals { display: flex; flex-direction: column; }
         .trow { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4375rem 0; border-bottom: 1px solid var(--line); font-size: 0.75rem; color: var(--muted); }
         .trow .v { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
-        .gt { margin-top: 0.625rem; display: flex; justify-content: space-between; align-items: center; padding: 0.625rem 0.875rem; border-radius: 8px; background: linear-gradient(90deg, #128F8E, var(--acc) 60%, var(--acc-2)); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+        .gt { margin-top: 0.625rem; display: flex; justify-content: space-between; align-items: center; padding: 0.625rem 0.875rem; border-radius: 8px; background: linear-gradient(90deg, #107C7B, var(--acc) 60%, var(--acc-2)); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
         .gt .gl { font-size: 0.625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #DFF7F6; }
         .gt .gv { font-size: 0.9375rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
 

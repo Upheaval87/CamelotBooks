@@ -240,7 +240,7 @@
     $width = $fontMetrics->getTextWidth($label, $font, $size);
     $x = $pdf->get_width() - 30 - $width;
     $y = $pdf->get_height() - 11 - $pdf->get_font_height($font, $size);
-    $pdf->page_text($x, $y, $label, $font, $size, [18, 143, 142]);
+    $pdf->page_text($x, $y, $label, $font, $size, [16, 124, 123]);
 </script>
 @endif
 </body>

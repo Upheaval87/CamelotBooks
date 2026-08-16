@@ -10,24 +10,24 @@
         .page { padding: 40px 48px; }
         .head { background: linear-gradient(135deg, #17565D, #0C3539 60%, #0A2E32); border-radius: 14px; padding: 28px 32px; color: #fff; display: flex; align-items: center; justify-content: space-between; margin-bottom: 26px; }
         .brand { display: flex; align-items: center; gap: 12px; }
-        .logo { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #149897, #128F8E); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: #EAFFFF; }
+        .logo { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #0C7E7D, #107C7B); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: #EAFFFF; }
         .brand-name { font-weight: 700; font-size: 15px; letter-spacing: .02em; }
         .doc { text-align: right; }
         .doc-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
         .doc-meta { font-size: 11px; color: rgba(226,244,244,.75); margin-top: 4px; }
-        h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #5F7476; margin: 24px 0 10px; }
+        h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #52696B; margin: 24px 0 10px; }
         .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
         .sum-box { border: 1px solid #DCEAEA; border-radius: 10px; padding: 14px 16px; }
-        .sum-box .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #5F7476; margin-bottom: 6px; }
+        .sum-box .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #52696B; margin-bottom: 6px; }
         .sum-box .val { font-size: 15px; font-weight: 700; }
-        .sum-box.alt { background: linear-gradient(135deg, #149897, #128F8E); border: none; color: #fff; }
+        .sum-box.alt { background: linear-gradient(135deg, #0C7E7D, #107C7B); border: none; color: #fff; }
         .sum-box.alt .lbl { color: rgba(226,244,244,.8); }
         table { width: 100%; border-collapse: collapse; }
         th { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; text-align: left; padding: 9px 10px; background: #11454B; color: #E2F4F4; }
         th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
         td { font-size: 12px; padding: 9px 10px; border-bottom: 1px solid #E2ECEC; }
         tr.total td { font-weight: 700; background: #F0F6F6; border-bottom: none; }
-        .foot { margin-top: 28px; padding-top: 14px; border-top: 1px solid #DCEAEA; font-size: 10px; color: #8AA5A7; text-align: center; }
+        .foot { margin-top: 28px; padding-top: 14px; border-top: 1px solid #DCEAEA; font-size: 10px; color: #5F7A7C; text-align: center; }
     </style>
 </head>
 <body onload="window.print()">

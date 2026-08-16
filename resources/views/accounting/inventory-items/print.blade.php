@@ -15,15 +15,15 @@
                 content: "{{ __('Inventory Item') }} · PAGE " counter(page) " OF " counter(pages);
                 font-family: 'Inter', system-ui, sans-serif;
                 font-size: 8px; font-weight: 700; letter-spacing: .08em;
-                color: #128f8e; font-variant-numeric: tabular-nums; padding-right: 40px;
+                color: #107c7b; font-variant-numeric: tabular-nums; padding-right: 40px;
             }
         }
         :root {
-            --acc: #128F8E;
+            --acc: #107C7B;
             --acc-2: #0C3539;
             --ink: #0B2A2D;
-            --muted: #5F7476;
-            --faint: #8AA5A7;
+            --muted: #52696B;
+            --faint: #5F7A7C;
             --line: #DCEAEA;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
