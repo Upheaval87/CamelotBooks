@@ -10,6 +10,8 @@
             </div>
         </div>
 
+        <x-budgeting-subnav active-tab="dashboard" />
+
         <div class="bu-card" style="margin-bottom:16px">
             <div class="bu-pad">
                 <form method="GET" action="{{ route('accounting.budgets.vsactual') }}" class="bu-toolbar">

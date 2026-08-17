@@ -6,6 +6,7 @@
                 <div class="sub">Global budgeting configuration for your company.</div>
             </div>
         </div>
+        <x-budgeting-subnav active-tab="settings" />
 
         <form method="POST" action="{{ route('accounting.budgets.settings') }}" id="budget-settings-form">
             @csrf

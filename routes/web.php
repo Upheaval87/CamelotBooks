@@ -758,6 +758,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/templates', [BudgetController::class, 'templates'])->name('templates');
                 Route::post('/templates', [BudgetController::class, 'storeTemplate'])->name('templates.store');
                 Route::get('/reports/index', [BudgetController::class, 'reports'])->name('reports');
+                Route::post('/reports/save-view', [BudgetController::class, 'saveView'])->name('reports.save-view');
 
                 // Parameter routes LAST
                 Route::get('/{budget}', [BudgetController::class, 'show'])->name('show');

@@ -1,11 +1,13 @@
 <x-app-layout>
-    <div class="bu-wrap max-w-8xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div class="page-head">
+    <div class="bu-wrap">
+        <div class="bu-page-head">
             <div>
                 <h1 style="font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--ink)">Budget Templates</h1>
                 <div class="sub">Reusable budget templates to speed up budget creation.</div>
             </div>
         </div>
+
+        <x-budgeting-subnav active-tab="dashboard" />
 
         <div class="bu-g3" style="margin-top:20px">
             <div class="bu-card" style="grid-column:1/-1">

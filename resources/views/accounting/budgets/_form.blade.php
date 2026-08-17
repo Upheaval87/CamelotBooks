@@ -15,6 +15,9 @@
     <!-- Page head -->
     <div class="bu-page-head" style="padding-top:6px"><div><h1>{{ $isEdit ? 'Edit Budget' : 'Create Budget' }}</h1><div class="sub">{{ $isEdit ? 'Update budget details and line items.' : 'Create a new budget with line items.' }}</div></div></div>
 
+    @php $__subnavTab = $isEdit ? 'index' : 'create'; @endphp
+    <x-budgeting-subnav :active-tab="$__subnavTab" />
+
     <!-- Budget Information card -->
     <div class="bu-card" style="margin-bottom:16px">
       <div class="bu-card-h"><h2>Budget Information</h2></div>

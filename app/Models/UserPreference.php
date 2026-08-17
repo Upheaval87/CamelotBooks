@@ -21,11 +21,13 @@ class UserPreference extends Model
         'user_id',
         'sidebar_pinned',
         'report_favourites',
+        'budget_report_prefs',
     ];
 
     protected $casts = [
         'sidebar_pinned' => 'boolean',
         'report_favourites' => 'array',
+        'budget_report_prefs' => 'array',
     ];
 
     public function user(): BelongsTo

@@ -10,6 +10,7 @@
                 <a href="{{ route('accounting.budgets.create') }}" class="bu-btn bu-btn-cta">+ New Budget</a>
             </div>
         </div>
+        <x-budgeting-subnav active-tab="index" />
 
         <div class="bu-card" style="margin-bottom:16px">
             <div class="bu-pad">

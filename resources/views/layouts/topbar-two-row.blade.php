@@ -40,10 +40,14 @@
         ['label' => __('Account Classification'),'route' => 'accounting.account-classification.index'],
     ];
 
+    if ($feat('budgets')) {
+        $accountingChildren[] = ['label' => __('Budgeting'), 'route' => 'accounting.budgets.dashboard', 'active' => 'accounting.budgets.'];
+    }
+
     $modules = [
         (object)[
             'label' => __('Sales'),
-            'icon' => 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z',
+            'icon' => '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',
             'children' => [
                 ['label' => __('Customers'),      'route' => 'accounting.customers.index'],
                 ['label' => __('Quotations'),     'route' => 'accounting.quotations.index'],
@@ -56,7 +60,7 @@
         ],
         (object)[
             'label' => __('Purchasing'),
-            'icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
+            'icon' => '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
             'children' => $purchasingChildren,
         ],
     ];
@@ -64,7 +68,7 @@
     if ($feat('inventory')) {
         $modules[] = (object)[
             'label' => __('Inventory'),
-            'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+            'icon' => '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
             'children' => [
                 ['label' => __('Items'),           'route' => 'accounting.inventory-items.index'],
                 ['label' => __('Item Categories'), 'route' => 'accounting.item-categories.index'],
@@ -83,7 +87,7 @@
     if ($feat('banking')) {
         $modules[] = (object)[
             'label' => __('Banking'),
-            'icon' => 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3',
+            'icon' => '<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
             'children' => [
                 ['label' => __('Banking Centre'),'route' => 'accounting.banking.dashboard'],
                 ['label' => __('Bank Accounts'),  'route' => 'accounting.banking.accounts'],
@@ -96,28 +100,14 @@
 
     $modules[] = (object)[
         'label' => __('Accounting'),
-        'icon' => 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+        'icon' => '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
         'children' => $accountingChildren,
     ];
-
-    if ($feat('budgets')) {
-        $modules[] = (object)[
-            'label' => __('Budgeting'),
-            'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-            'children' => [
-                ['label' => __('Budget Dashboard'), 'route' => 'accounting.budgets.dashboard'],
-                ['label' => __('All Budgets'),      'route' => 'accounting.budgets.index'],
-                ['label' => __('Create Budget'),    'route' => 'accounting.budgets.create'],
-                ['label' => __('Settings'),         'route' => 'accounting.budgets.settings'],
-                ['label' => __('Reports'),          'route' => 'accounting.budgets.reports'],
-            ],
-        ];
-    }
 
     if ($feat('fixed_assets')) {
         $modules[] = (object)[
             'label' => __('Assets'),
-            'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+            'icon' => '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
             'children' => [
                 ['label' => __('Asset Categories'),'route' => 'accounting.asset-categories.index'],
                 ['label' => __('Asset Register'),  'route' => 'accounting.fixed-assets.index'],
@@ -134,7 +124,7 @@
     if ($feat('payroll')) {
         $modules[] = (object)[
             'label' => __('Payroll'),
-            'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+            'icon' => '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
             'children' => [
                 ['label' => __('Employees'),      'route' => 'accounting.employees.index'],
                 ['label' => __('Payroll Runs'),    'route' => 'accounting.payroll-runs.index'],
@@ -146,7 +136,7 @@
 
     $modules[] = (object)[
         'label' => __('Reports'),
-        'icon' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+        'icon' => '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
         'children' => [
             ['label' => __('Report Center'),    'route' => 'accounting.report-center.index'],
             ['label' => __('Income Statement'), 'route' => 'accounting.income-statement.index'],
@@ -173,7 +163,7 @@
         }
         $modules[] = (object)[
             'label' => __('Analytics'),
-            'icon' => 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z',
+            'icon' => '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
             'children' => $analyticsChildren,
         ];
     }
@@ -181,7 +171,7 @@
     if ($feat('bi')) {
         $modules[] = (object)[
             'label' => __('BI'),
-            'icon' => 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
+            'icon' => '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
             'children' => [
                 ['label' => __('True Total Cost'),      'route' => 'bi.true-total-cost'],
                 ['label' => __('Customer LTV'),         'route' => 'bi.customer-lifetime-value'],
@@ -194,7 +184,7 @@
     if ($feat('pos')) {
         $modules[] = (object)[
             'label' => __('POS'),
-            'icon' => 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z',
+            'icon' => '<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
             'children' => [
                 ['label' => __('Terminals'),       'route' => 'pos.terminals.index'],
                 ['label' => __('Payment Methods'), 'route' => 'pos.payment-methods.index'],
@@ -215,7 +205,7 @@
     if ($isAdmin) {
         $modules[] = (object)[
             'label' => __('System'),
-            'icon' => 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
+            'icon' => '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
             'children' => [
                 ['label' => __('System Settings'),       'route' => 'system-settings.index'],
                 ['label' => __('Features'),              'route' => 'system-settings.features'],
@@ -340,15 +330,16 @@
                     @if($hasChildren)
                         <div class="topbar-nav-dropdown-root"
                              x-data="{ open: false }"
+                             :class="open ? 'open' : ''"
                              @mouseenter="open = true"
                              @mouseleave="open = false">
                             <button type="button"
                                     class="topbar-nav-link"
                                     :class="open ? 'active' : ''"
                                     @click.prevent="open = !open">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $mod->icon }}"/></svg>
-                                <span>{{ $mod->label }}</span>
-                                <svg class="w-3 h-3 ml-0.5 opacity-50 transition-transform duration-150" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                 <svg class="ni" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $mod->icon !!}</svg>
+                                 <span>{{ $mod->label }}</span>
+                                 <svg class="nc" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                             </button>
                             <div x-show="open"
                                  x-transition:enter="transition ease-out duration-100"
@@ -363,10 +354,16 @@
                                  x-cloak>
                                 @foreach($mod->children as $child)
                                     @php $cActive = $isActiveRoute($child['route']) || (($child['active'] ?? null) && str_starts_with($routeName, $child['active'])); @endphp
+                                    @if($child['moved'] ?? false)
+                                        <div class="dd-sep"></div>
+                                    @endif
                                     <a href="{{ route($child['route']) }}"
-                                       class="topbar-nav-dropdown-item @if($cActive) active @endif"
+                                       class="topbar-nav-dropdown-item @if($cActive) active @endif @if($child['moved'] ?? false) moved @endif"
                                        @if($cActive) aria-current="page" @endif>
-                                        <span>{{ $child['label'] }}</span>
+                                        <span>{{ $child['label'] }}{!! ($child['moved'] ?? false) ? ' &#8594;' : '' !!}</span>
+                                        @if($child['moved'] ?? false)
+                                            <span class="tagnew">MOVED</span>
+                                        @endif
                                     </a>
                                 @endforeach
                             </div>
@@ -376,7 +373,7 @@
                         <a href="{{ route($mod->route) }}"
                            class="topbar-nav-link @if($mActive) active @endif"
                            @if($mActive) aria-current="page" @endif>
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="{{ $mod->icon }}"/></svg>
+                             <svg class="ni" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $mod->icon !!}</svg>
                             <span>{{ $mod->label }}</span>
                         </a>
                     @endif

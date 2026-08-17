@@ -1,16 +1,20 @@
 <x-app-layout>
-    <div class="bu-wrap max-w-8xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div class="bu-wrap">
         <nav class="bu-crumbs" aria-label="Breadcrumb">
             <a href="{{ route('accounting.budgets.index') }}">Budgets</a>
             <span>›</span>
             <span class="here">{{ $budget->name }}</span>
         </nav>
 
-        <div class="page-head" style="margin-top:12px">
+        <div class="bu-page-head">
             <div>
                 <h1 style="font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--ink)">{{ $budget->name }}</h1>
                 <div class="sub">{{ $budget->code }} · {{ $budget->typeLabel() }} · {{ $budget->fiscalYear?->label ?? $budget->fiscalYear?->name }}</div>
             </div>
+        </div>
+
+        <x-budgeting-subnav active-tab="index" />
+
             <div style="display:flex;gap:10px;flex-wrap:wrap">
                 <span class="bu-badge bu-b-{{ $budget->statusColor() }}">{{ $budget->statusLabel() }}</span>
                 @if($budget->isEditable())

@@ -244,5 +244,6 @@
                 navigator.serviceWorker.register('/sw.js').catch(function(){});
             }
         </script>
+        @stack('scripts')
     </body>
 </html>

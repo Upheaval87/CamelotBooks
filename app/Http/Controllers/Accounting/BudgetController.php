@@ -17,6 +17,7 @@ use App\Models\CostCenter;
 use App\Models\Currency;
 use App\Models\FiscalYear;
 use App\Models\SystemSetting;
+use App\Models\UserPreference;
 use App\Services\Accounting\ActualsService;
 use App\Services\Accounting\BudgetService;
 use Illuminate\Http\Request;
@@ -593,6 +594,7 @@ class BudgetController extends Controller
     public function reports(Request $request): \Illuminate\View\View
     {
         $companyId = session('current_company_id');
+        $userId = auth()->id();
 
         $fiscalYears = FiscalYear::where('company_id', $companyId)->orderByDesc('start_date')->get();
         $currentFiscalYear = FiscalYear::where('company_id', $companyId)->where('status', 'open')->first()
@@ -600,11 +602,14 @@ class BudgetController extends Controller
         $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $cs = SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
 
-        $reportType = $request->query('report_type', 'vs_actual');
-        $fiscalYearId = $request->query('fiscal_year_id', $currentFiscalYear?->id);
-        $period = $request->query('period', 'annual');
-        $department = $request->query('department');
-        $branchId = $request->query('branch_id');
+        // Load saved view prefs as defaults
+        $savedPrefs = UserPreference::where('user_id', $userId)->value('budget_report_prefs') ?? [];
+
+        $reportType = $request->query('report_type') ?? $savedPrefs['report_type'] ?? 'vs_actual';
+        $fiscalYearId = $request->query('fiscal_year_id') ?? $savedPrefs['fiscal_year_id'] ?? $currentFiscalYear?->id;
+        $period = $request->query('period') ?? $savedPrefs['period'] ?? 'annual';
+        $department = $request->query('department') ?? $savedPrefs['department'] ?? null;
+        $branchId = $request->query('branch_id') ?? $savedPrefs['branch_id'] ?? null;
 
         $fiscalYear = $fiscalYears->firstWhere('id', $fiscalYearId);
 
@@ -666,6 +671,7 @@ class BudgetController extends Controller
                     'account_code'  => $bl->account?->code ?? '',
                     'account_name'  => $bl->account?->name ?? '',
                     'line_type'     => $bl->line_type,
+                    'department'    => $budget->department ?? 'Unassigned',
                     'budgeted'      => $budgeted,
                     'actual'        => $actual,
                     'variance'      => $variance,
@@ -721,6 +727,21 @@ class BudgetController extends Controller
             'warnings'          => $warnings,
             'overCount'         => $overCount,
             'chartData'         => $chartData,
+            'deptSummary'       => collect($lines)->groupBy('department')->map(function ($group) {
+                $budgeted = $group->sum('budgeted');
+                $actual = $group->sum('actual');
+                $variance = $budgeted - $actual;
+                $util = $budgeted > 0 ? round(($actual / $budgeted) * 100, 0) : 0;
+                return [
+                    'budgeted' => $budgeted,
+                    'actual'   => $actual,
+                    'variance' => $variance,
+                    'varPct'   => $budgeted > 0 ? round(abs($variance) / $budgeted * 100, 1) : 0,
+                    'util'     => $util,
+                    'lineCount'=> $group->count(),
+                    'status'   => $util <= 84 ? 'ok' : ($util <= 94 ? 'warn' : 'crit'),
+                ];
+            })->sortByDesc(fn($d) => abs($d['variance']))->all(),
         ];
 
         // Department options (unique from budgets)
@@ -739,7 +760,7 @@ class BudgetController extends Controller
 
         return view('accounting.budgets.reports', compact(
             'fiscalYears', 'currentFiscalYear', 'branches', 'departments',
-            'reportType', 'period', 'department', 'branchId', 'fiscalYear',
+            'reportType', 'fiscalYearId', 'period', 'department', 'branchId', 'fiscalYear',
             'reportData', 'cs'
         ));
     }
@@ -809,5 +830,28 @@ class BudgetController extends Controller
         if ($budget->company_id !== $companyId) {
             abort(403, 'Unauthorized access to this budget.');
         }
+    }
+
+    // ── Save View ───────────────────────────────────────────
+
+    public function saveView(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $userId = auth()->id();
+
+        $prefs = $request->only([
+            'report_type',
+            'fiscal_year_id',
+            'period',
+            'department',
+            'branch_id',
+        ]);
+
+        UserPreference::updateOrCreate(
+            ['user_id' => $userId],
+            ['budget_report_prefs' => $prefs]
+        );
+
+        return redirect()->route('accounting.budgets.reports', $prefs)
+            ->with('success', 'View saved.');
     }
 }

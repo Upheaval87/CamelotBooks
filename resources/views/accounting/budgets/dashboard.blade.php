@@ -8,6 +8,7 @@
         <a href="{{ route('accounting.budgets.create') }}" class="bu-btn bu-btn-cta">＋ New Budget</a>
       </div>
     </div>
+    <x-budgeting-subnav active-tab="dashboard" />
 
     <div class="bu-kpis" style="margin-bottom:16px">
       <div class="bu-kpi"><div class="l">Total Budgets</div><div class="v">{{ $kpis['total_budgets'] }}</div><div class="n">{{ $kpis['approved_budgets'] }} approved</div></div>
