@@ -268,6 +268,6 @@ class ReportRenderSmokeTest extends TestCase
         }
 
         $this->assertEmpty($failures, implode("\n", $failures));
-        $this->assertCount(77, $routes);
+        $this->assertCount(74, $routes);
     }
 }

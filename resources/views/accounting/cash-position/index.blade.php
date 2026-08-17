@@ -17,7 +17,7 @@
                 <p class="sub">{{ $periodLabel }} &middot; {{ $from }} &ndash; {{ $to }} &middot; How much cash we hold, where, and what moved.</p>
                 <div class="cluster">
                     <a class="btn-ghost" href="{{ $reconciliationUrl }}" aria-label="Reconcile">&#9881; Reconcile</a>
-                    <a class="btn-ghost" href="{{ route('accounting.bank-accounts.transfer-form') }}" aria-label="Transfer">&#8646; Transfer</a>
+                    <a class="btn-ghost" href="{{ route('accounting.banking.transfers') }}" aria-label="Transfer">&#8646; Transfer</a>
                     <span class="vdiv" aria-hidden="true"></span>
                     <a class="btn-cta" href="{{ $manualTransactionUrl }}">&#43; New Cash Transaction</a>
                     <div class="more" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
@@ -39,9 +39,9 @@
                 <a class="pill on" href="{{ route('accounting.cash-position.index') }}" aria-current="page">Cash Position</a>
                 <a class="pill" href="{{ route('accounting.sales-receipts.index', $exportParams) }}">Cash Receipts</a>
                 <a class="pill" href="{{ route('accounting.expenses.index', $exportParams) }}">Cash Payments</a>
-                <a class="pill" href="{{ route('accounting.bank-accounts.index', $exportParams) }}">Bank Accounts</a>
-                <a class="pill" href="{{ route('accounting.petty-cash.index', $exportParams) }}">Cash Accounts</a>
-                <a class="pill" href="{{ route('accounting.bank-accounts.transfer-form') }}">Transfers</a>
+                <a class="pill" href="{{ route('accounting.banking.accounts', $exportParams) }}">Bank Accounts</a>
+                <a class="pill" href="{{ route('accounting.banking.petty', $exportParams) }}">Cash Accounts</a>
+                <a class="pill" href="{{ route('accounting.banking.transfers') }}">Transfers</a>
                 <a class="pill" href="{{ $reconciliationUrl }}">Bank Reconciliation</a>
                 <a class="pill" href="{{ route('analytics.cash-flow-trend') }}">Cash Forecast</a>
                 <a class="pill" href="{{ route('accounting.cash-flow.index') }}">Cash Flow Statement</a>

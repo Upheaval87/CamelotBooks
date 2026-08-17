@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Asset;
 use App\Models\AssetCategory;
 use App\Models\Bill;
+use App\Models\Budget;
 use App\Models\Branch;
 use App\Models\CostCenter;
 use App\Models\CreditNote;
@@ -58,6 +59,7 @@ class SearchCatalog
             $this->salesOrder(),
             $this->creditNote(),
             $this->vendorCredit(),
+            $this->budget(),
         ];
     }
 
@@ -363,7 +365,7 @@ class SearchCatalog
                         'id' => $a->id,
                         'label' => $a->name,
                         'subtitle' => $a->code,
-                        'url' => route('accounting.bank-accounts.register', $a->id),
+                        'url' => route('accounting.banking.register', $a->id),
                     ])->values();
             },
         ];
@@ -690,6 +692,37 @@ class SearchCatalog
                         'label' => $vc->credit_note_number,
                         'subtitle' => collect([$vc->vendor?->name, $vc->credit_note_date?->format('M d, Y'), $vc->status])->filter()->implode(' · '),
                         'url' => route('accounting.vendor-credits.show', $vc->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function budget(): array
+    {
+        return [
+            'key' => 'budget',
+            'label' => 'Budgets',
+            'permission' => 'budgets.view',
+            'feature' => 'budgets',
+            'icon' => 'piggy-bank',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return Budget::forCompany($companyId)
+                    ->with('fiscalYear:id,label')
+                    ->select(['id', 'code', 'name', 'status', 'fiscal_year_id'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('code', 'like', "%{$q}%")
+                                ->orWhere('name', 'like', "%{$q}%");
+                        });
+                    })
+                    ->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (Budget $b) => [
+                        'id' => $b->id,
+                        'label' => "{$b->code} — {$b->name}",
+                        'subtitle' => collect([$b->fiscalYear?->label, $b->status])->filter()->implode(' · '),
+                        'url' => route('accounting.budgets.show', $b->id),
                     ])->values();
             },
         ];

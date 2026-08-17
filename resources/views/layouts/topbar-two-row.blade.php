@@ -39,9 +39,6 @@
         ['label' => __('Exchange Rates'),      'route' => 'accounting.exchange-rates.index'],
         ['label' => __('Account Classification'),'route' => 'accounting.account-classification.index'],
     ];
-    if ($feat('budgets')) {
-        $accountingChildren[] = ['label' => __('Budgets'), 'route' => 'accounting.budgets.index'];
-    }
 
     $modules = [
         (object)[
@@ -88,12 +85,10 @@
             'label' => __('Banking'),
             'icon' => 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3',
             'children' => [
-                ['label' => __('Bank Accounts'),'route' => 'accounting.bank-accounts.index'],
+                ['label' => __('Banking Centre'),'route' => 'accounting.banking.dashboard'],
+                ['label' => __('Bank Accounts'),  'route' => 'accounting.banking.accounts'],
+                ['label' => __('Petty Cash'),     'route' => 'accounting.banking.petty'],
                 ['label' => __('Bank Reconciliation'),'route' => 'accounting.bank-reconciliation.index'],
-                ['label' => __('Transfer Funds'),'route' => 'accounting.bank-accounts.transfer-form'],
-                ['label' => __('Deposits'),     'route' => 'accounting.deposits.index'],
-                ['label' => __('Cheques'),      'route' => 'accounting.cheques.index'],
-                ['label' => __('Petty Cash'),   'route' => 'accounting.petty-cash.index'],
                 ['label' => __('Cash Position'),'route' => 'accounting.cash-position.index'],
             ],
         ];
@@ -104,6 +99,20 @@
         'icon' => 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
         'children' => $accountingChildren,
     ];
+
+    if ($feat('budgets')) {
+        $modules[] = (object)[
+            'label' => __('Budgeting'),
+            'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+            'children' => [
+                ['label' => __('Budget Dashboard'), 'route' => 'accounting.budgets.dashboard'],
+                ['label' => __('All Budgets'),      'route' => 'accounting.budgets.index'],
+                ['label' => __('Create Budget'),    'route' => 'accounting.budgets.create'],
+                ['label' => __('Settings'),         'route' => 'accounting.budgets.settings'],
+                ['label' => __('Reports'),          'route' => 'accounting.budgets.reports'],
+            ],
+        ];
+    }
 
     if ($feat('fixed_assets')) {
         $modules[] = (object)[
@@ -161,9 +170,6 @@
         }
         if ($feat('inventory')) {
             $analyticsChildren[] = ['label' => __('Inventory Analytics'), 'route' => 'analytics.inventory'];
-        }
-        if ($feat('budgets')) {
-            $analyticsChildren[] = ['label' => __('Budget vs Actual'), 'route' => 'analytics.budget-vs-actual-trend'];
         }
         $modules[] = (object)[
             'label' => __('Analytics'),
@@ -285,9 +291,6 @@
                             aria-label="{{ __('Decrease font size') }}">
                         A&minus;
                     </button>
-                    <span class="topbar-font-scale-label"
-                          aria-live="polite"
-                          x-text="label"></span>
                     <button type="button"
                             class="topbar-font-scale-btn"
                             :disabled="atMax"

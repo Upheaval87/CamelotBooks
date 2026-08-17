@@ -175,13 +175,13 @@ class FavouritesTest extends TestCase
 
     public function test_meta_for_record_builds_stable_keys(): void
     {
-        $route = \Illuminate\Support\Facades\Route::getRoutes()->getByName('accounting.cheques.show');
-        $request = \Illuminate\Http\Request::create('/accounting/cheques/7', 'GET', ['chequeId' => 7]);
+        $route = \Illuminate\Support\Facades\Route::getRoutes()->getByName('accounting.banking.cheques.show');
+        $request = \Illuminate\Http\Request::create('/accounting/banking/cheques/7', 'GET', ['cheque' => 7]);
         $route->bind($request);
         $request->setRouteResolver(fn () => $route);
         $this->app->instance('request', $request);
 
-        $meta = FavouritesService::metaForRecord('accounting.cheques.show', 'Cheque #000007');
+        $meta = FavouritesService::metaForRecord('accounting.banking.cheques.show', 'Cheque #000007');
 
         $this->assertSame('cheque:7', $meta['key']);
         $this->assertSame('Cheque #000007', $meta['label']);

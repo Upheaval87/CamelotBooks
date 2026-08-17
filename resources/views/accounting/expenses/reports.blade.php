@@ -92,7 +92,8 @@
                 <span class="d">{{ __('Budget vs actual by category with variances and over-budget flags.') }}</span>
                 <div class="foot">
                     <span class="fmt">PDF</span><span class="fmt">Excel</span>
-                    <a class="open-l" href="{{ route('accounting.budgets.index') }}">{{ __('Open') }} →</a>
+                    <a class="open-l" href="#">{{ __('Open') }} →</a>
+                    {{-- TODO: Restore link to accounting.budgets.index when budgeting module is rebuilt --}}
                 </div>
             </div>
             <div class="repcard">

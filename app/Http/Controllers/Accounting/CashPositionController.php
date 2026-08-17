@@ -223,11 +223,11 @@ class CashPositionController extends Controller
             ->first();
         $reconciliationUrl = $firstBankAccount
             ? route('accounting.bank-reconciliation.index', $firstBankAccount->id)
-            : route('accounting.bank-accounts.index');
+            : route('accounting.banking.accounts');
 
         $manualTransactionUrl = $firstBankAccount
-            ? route('accounting.bank-accounts.manual-form', $firstBankAccount->id)
-            : route('accounting.bank-accounts.index');
+            ? route('accounting.banking.new-transaction', $firstBankAccount->id)
+            : route('accounting.banking.accounts');
 
         return view('accounting.cash-position.index', compact(
             'accounts',

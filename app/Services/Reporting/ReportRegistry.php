@@ -423,13 +423,31 @@ class ReportRegistry
             ],
 
             // ── Budgeting ──
-            'budget_variance' => [
-                'key' => 'budget_variance',
+            'budget_vs_actual' => [
+                'key' => 'budget_vs_actual',
                 'name' => 'Budget vs Actual',
-                'description' => 'Budget amounts compared to actuals with variance.',
+                'description' => 'Compare budgeted amounts against GL actuals by account and period.',
                 'category' => 'budgeting',
-                'route' => 'accounting.budgets.index',
-                'permission' => 'view_budgets',
+                'route' => 'accounting.budgets.vsactual',
+                'permission' => 'view_reports',
+                'feature_flag' => ['budgets'],
+            ],
+            'budget_forecast' => [
+                'key' => 'budget_forecast',
+                'name' => 'Budget Forecast',
+                'description' => 'Project year-end budget performance from current period trends.',
+                'category' => 'budgeting',
+                'route' => 'accounting.budgets.forecast',
+                'permission' => 'view_reports',
+                'feature_flag' => ['budgets'],
+            ],
+            'budget_adjustments' => [
+                'key' => 'budget_adjustments',
+                'name' => 'Budget Adjustments',
+                'description' => 'History of budget increases, reductions, and transfers.',
+                'category' => 'budgeting',
+                'route' => 'accounting.budgets.adjustments',
+                'permission' => 'view_reports',
                 'feature_flag' => ['budgets'],
             ],
 
@@ -642,15 +660,6 @@ class ReportRegistry
                 'route' => 'analytics.profitability',
                 'permission' => 'view_reports',
                 'feature_flag' => 'analytics',
-            ],
-            'budget_vs_actual_trend' => [
-                'key' => 'budget_vs_actual_trend',
-                'name' => 'Budget vs Actual Trend',
-                'description' => 'Budget vs actual trend over time.',
-                'category' => 'analytics',
-                'route' => 'analytics.budget-vs-actual-trend',
-                'permission' => 'view_budgets',
-                'feature_flag' => ['analytics', 'budgets'],
             ],
             'cash_flow_trend' => [
                 'key' => 'cash_flow_trend',

@@ -1,149 +1,208 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Budget') }}: {{ $budget->name }}" />
+    <div class="bu-wrap max-w-8xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <nav class="bu-crumbs" aria-label="Breadcrumb">
+            <a href="{{ route('accounting.budgets.index') }}">Budgets</a>
+            <span>›</span>
+            <span class="here">{{ $budget->name }}</span>
+        </nav>
 
-    <div class="pb-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <x-record-toolbar>
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Record') }}</span>
-                    <a href="{{ route('accounting.budgets.create') }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        {{ __('New') }}
-                    </a>
+        <div class="page-head" style="margin-top:12px">
+            <div>
+                <h1 style="font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--ink)">{{ $budget->name }}</h1>
+                <div class="sub">{{ $budget->code }} · {{ $budget->typeLabel() }} · {{ $budget->fiscalYear?->label ?? $budget->fiscalYear?->name }}</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <span class="bu-badge bu-b-{{ $budget->statusColor() }}">{{ $budget->statusLabel() }}</span>
+                @if($budget->isEditable())
+                    <a href="{{ route('accounting.budgets.edit', $budget) }}" class="bu-btn">Edit</a>
                     @if($budget->status === 'draft')
-                        <a href="{{ route('accounting.budgets.edit', $budget) }}" class="tr-save">{{ __('Save') }}</a>
+                        <form method="POST" action="{{ route('accounting.budgets.submit', $budget) }}" style="display:inline">
+                            @csrf
+                            <button type="submit" class="bu-btn bu-btn-cta">Submit for Approval</button>
+                        </form>
                     @endif
-                </div>
+                    @if($budget->status === 'pending_approval')
+                        <form method="POST" action="{{ route('accounting.budgets.approve', $budget) }}" style="display:inline">
+                            @csrf
+                            <button type="submit" class="bu-btn bu-btn-cta">Approve</button>
+                        </form>
+                        <form method="POST" action="{{ route('accounting.budgets.reject', $budget) }}" style="display:inline">
+                            @csrf
+                            <button type="submit" class="bu-btn bu-btn-danger-o">Reject</button>
+                        </form>
+                    @endif
+                    @if($budget->status === 'approved')
+                        <form method="POST" action="{{ route('accounting.budgets.lock', $budget) }}" style="display:inline">
+                            @csrf
+                            <button type="submit" class="bu-btn bu-btn-ghost">Lock Budget</button>
+                        </form>
+                    @endif
+                    @if($budget->status === 'locked')
+                        <form method="POST" action="{{ route('accounting.budgets.unlock', $budget) }}" style="display:inline">
+                            @csrf
+                            <button type="submit" class="bu-btn bu-btn-ghost">Unlock</button>
+                        </form>
+                    @endif
+                @endif
+            </div>
+        </div>
 
-                <div class="tr-divider"></div>
+        {{-- Tab navigation --}}
+        <div class="bu-tabs" style="margin-top:16px">
+            <a href="#" class="bu-tab on" onclick="showTab('overview');return false">Overview</a>
+            <a href="#" class="bu-tab" onclick="showTab('lines');return false">Lines</a>
+            <a href="#" class="bu-tab" onclick="showTab('actuals');return false">Actuals</a>
+            <a href="#" class="bu-tab" onclick="showTab('breakdown');return false">Monthly Breakdown</a>
+            <a href="#" class="bu-tab" onclick="showTab('audit');return false">Audit Trail</a>
+        </div>
 
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Reference') }}</span>
-                    <button type="button" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        {{ __('Copy from Prior Year') }}
-                    </button>
-                    <a href="{{ route('accounting.budgets.variance', $budget) }}" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                        {{ __('Compare to Actuals') }}
-                    </a>
-                </div>
-
-                <div class="tr-divider"></div>
-
-                <div class="tr-group">
-                    <span class="tr-group-label">{{ __('Document') }}</span>
-                    <button onclick="window.print()" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        {{ __('Print') }}
-                    </button>
-                    <button type="button" class="tr-item">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        {{ __('Export') }}
-                    </button>
-                </div>
-
-                <div class="tr-spacer"></div>
-
-                <button type="button" class="tr-archive" onclick="CB.confirm({ type: 'action', title: '{{ __('Lock this budget?') }}' })">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                    {{ __('Lock Budget') }}
-                </button>
-
-                <x-dropdown align="left" width="56">
-                    <x-slot name="trigger">
-                        <button type="button" class="tr-more">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
-                        <div class="py-1">
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                {{ __('Duplicate') }}
-                            </button>
-                            <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                                {{ __('Import from Spreadsheet') }}
-                            </button>
-                            <a href="{{ route('accounting.budgets.index') }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                                {{ __('Back to Budgets') }}
-                            </a>
+        {{-- Overview tab --}}
+        <div id="tab-overview" class="bu-pane on">
+            <div class="bu-g3" style="margin-top:16px">
+                <div class="bu-card">
+                    <div class="bu-card-h">Summary</div>
+                    <div class="bu-pad">
+                        <div class="bu-g3">
+                            <div class="bu-f"><label>Total Income</label><div class="bu-num" style="font-size:16px;font-weight:700;color:var(--mint-fg,#22c55e)">{{ number_format($budget->total_income, 2) }}</div></div>
+                            <div class="bu-f"><label>Total Expenses</label><div class="bu-num" style="font-size:16px;font-weight:700;color:var(--red-2,#b91c1c)">{{ number_format($budget->total_expenses, 2) }}</div></div>
+                            <div class="bu-f"><label>Net</label><div class="bu-num" style="font-size:16px;font-weight:700;color:var(--ink)">{{ number_format($budget->net_amount, 2) }}</div></div>
+                            <div class="bu-f"><label>Lines</label><div style="font-size:16px;font-weight:700;color:var(--ink)">{{ $budget->lines->count() }}</div></div>
                         </div>
-                    </x-slot>
-                </x-dropdown>
-            </x-record-toolbar>
-
-            <div class="detail-page">
-                <div class="detail-page-main">
-
-            <div class="card p-6">
-                <p class="text-base font-semibold text-ink mb-5">{{ __('Budget Overview') }}</p>
-                <div class="detail-grid">
-                    <x-detail-field :label="__('Fiscal Year')" :value="$budget->fiscalYear->name ?? '—'" />
-                    <x-detail-field :label="__('Status')" noBorder>
-                        @if($budget->status === 'draft')
-                            <span class="status-pill neutral">{{ __('Draft') }}</span>
-                        @elseif($budget->status === 'approved')
-                            <span class="status-pill positive">{{ __('Approved') }}</span>
-                        @elseif($budget->status === 'locked')
-                            <span class="status-pill neutral">{{ __('Locked') }}</span>
-                        @else
-                            <span class="status-pill neutral">{{ ucfirst($budget->status) }}</span>
-                        @endif
-                    </x-detail-field>
-                    <x-detail-field :label="__('Total Budget')" value-class="text-lg font-bold text-ink">
-                        {{ format_money($budget->total_amount ?? 0) }}
-                    </x-detail-field>
-                    <x-detail-field :label="__('Total Actual')" value-class="text-lg font-bold text-ink">
-                        {{ format_money($budget->total_actual ?? 0) }}
-                    </x-detail-field>
-                    @if($budget->description)
-                        <x-detail-field :label="__('Description')" :value="$budget->description" class="col-span-3" />
-                    @endif
+                    </div>
+                </div>
+                <div class="bu-card">
+                    <div class="bu-card-h">Details</div>
+                    <div class="bu-pad">
+                        <div class="bu-g3">
+                            <div class="bu-f"><label>Prepared By</label><div style="font-size:13px;color:var(--ink)">{{ $budget->preparedByUser?->name ?? '—' }}</div></div>
+                            <div class="bu-f"><label>Period</label><div style="font-size:13px;color:var(--ink)">{{ $budget->periodLabel() }}</div></div>
+                            <div class="bu-f"><label>Currency</label><div style="font-size:13px;color:var(--ink)">{{ $budget->currency }}</div></div>
+                            <div class="bu-f"><label>Department</label><div style="font-size:13px;color:var(--ink)">{{ $budget->department ?? '—' }}</div></div>
+                            <div class="bu-f"><label>Branch</label><div style="font-size:13px;color:var(--ink)">{{ $budget->branch?->name ?? '—' }}</div></div>
+                            <div class="bu-f"><label>Project</label><div style="font-size:13px;color:var(--ink)">{{ $budget->project ?? '—' }}</div></div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            @if(isset($budget->lines) && $budget->lines->count() > 0)
-                <div class="card p-6">
-                    <p class="text-base font-semibold text-ink mb-5">{{ __('Budget Lines') }}</p>
-                    <div class="overflow-x-auto">
-                        <table class="record-datasheet">
-                            <thead>
-                                <tr>
-                                    <th>{{ __('Account') }}</th>
-                                    <th class="text-right">{{ __('Budgeted') }}</th>
-                                    <th class="text-right">{{ __('Actual') }}</th>
-                                    <th class="text-right">{{ __('Variance') }}</th>
-                                </tr>
-                            </thead>
+        {{-- Lines tab --}}
+        <div id="tab-lines" class="bu-pane" style="margin-top:16px">
+            <div class="bu-card">
+                <div class="bu-pad">
+                    <div class="bu-li-wrap">
+                        <table>
+                            <thead><tr><th>Type</th><th>Account</th><th class="num">Annual</th><th class="num">Monthly</th><th>Utilization</th></tr></thead>
                             <tbody>
-                                @foreach($budget->lines as $line)
+                                @forelse($budget->lines as $line)
                                     <tr>
-                                        <td>{{ $line->account->name ?? '—' }}</td>
-                                        <td class="numeric">{{ format_money($line->budgeted_amount) }}</td>
-                                        <td class="numeric">{{ format_money($line->actual_amount ?? 0) }}</td>
-                                        <td class="figure px-6 py-4 whitespace-nowrap text-sm text-right font-medium {{ ($line->actual_amount - $line->budgeted_amount) > 0 ? 'text-red-600' : 'text-green-600' }}">
-                                            {{ format_money(($line->actual_amount ?? 0) - $line->budgeted_amount) }}
+                                        <td><span class="bu-badge bu-b-{{ $line->line_type === 'income' ? 'app' : 'pend' }}">{{ $line->line_type }}</span></td>
+                                        <td>{{ $line->account?->code }} — {{ $line->account?->name }}</td>
+                                        <td class="num">{{ number_format($line->annual_amount, 2) }}</td>
+                                        <td class="num">{{ number_format($line->annual_amount / 12, 2) }}</td>
+                                        <td>
+                                            <div class="bu-util"><div class="bu-ubar"><i class="bu-u-ok" style="width:{{ min(100, $line->utilization_pct ?? 0) }}%"></i></div></div>
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr><td colspan="5" class="bu-empty">No lines added yet.</td></tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
                 </div>
-            @endif
+            </div>
+        </div>
+
+        {{-- Actuals tab --}}
+        <div id="tab-actuals" class="bu-pane" style="margin-top:16px">
+            <div class="bu-card">
+                <div class="bu-pad">
+                    <div class="bu-li-wrap">
+                        <table>
+                            <thead><tr><th>Account</th><th class="num">Budget</th><th class="num">Actual</th><th class="num">Variance</th><th>Variance %</th></tr></thead>
+                            <tbody>
+                                @forelse($budget->lines as $line)
+                                    @php
+                                        $actual = $actuals[$line->account_id] ?? 0;
+                                        $variance = $line->annual_amount - $actual;
+                                        $varPct = $line->annual_amount > 0 ? round(abs($variance) / $line->annual_amount * 100, 1) : 0;
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $line->account?->code }} — {{ $line->account?->name }}</td>
+                                        <td class="num">{{ number_format($line->annual_amount, 2) }}</td>
+                                        <td class="num">{{ number_format($actual, 2) }}</td>
+                                        <td class="num"><span class="bu-vch {{ $variance >= 0 ? 'bu-vch-ok' : 'bu-vch-crit' }}">{{ number_format($variance, 2) }}</span></td>
+                                        <td><span class="bu-vch {{ $varPct <= 10 ? 'bu-vch-ok' : ($varPct <= 25 ? 'bu-vch-warn' : 'bu-vch-crit') }}">{{ $varPct }}%</span></td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="5" class="bu-empty">No lines to compare.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <x-detail-quick-actions :groups="[
-                    ['label' => __('Insights'), 'links' => [
-                        ['route' => 'javascript:window.print()', 'icon' => 'print', 'title' => __('Print')],
-                    ]],
-                    ['label' => __('Navigation'), 'links' => [
-                        ['route' => route('accounting.budgets.index'), 'icon' => 'back', 'title' => __('Back to Budgets')],
-                    ]],
-                ]" />
+            </div>
+        </div>
+
+        {{-- Monthly Breakdown tab --}}
+        <div id="tab-breakdown" class="bu-pane" style="margin-top:16px">
+            <div class="bu-card">
+                <div class="bu-pad">
+                    <div class="bu-li-wrap">
+                        <table>
+                            <thead><tr><th>Account</th><th class="num">Jan</th><th class="num">Feb</th><th class="num">Mar</th><th class="num">Apr</th><th class="num">May</th><th class="num">Jun</th><th class="num">Jul</th><th class="num">Aug</th><th class="num">Sep</th><th class="num">Oct</th><th class="num">Nov</th><th class="num">Dec</th></tr></thead>
+                            <tbody>
+                                @forelse($budget->lines as $line)
+                                    @php $breakdown = $line->monthlyBreakdown(); @endphp
+                                    <tr>
+                                        <td>{{ $line->account?->code }}</td>
+                                        @for($m = 1; $m <= 12; $m++)
+                                            <td class="num">{{ number_format($breakdown[$m] ?? 0, 0) }}</td>
+                                        @endfor
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="13" class="bu-empty">No lines to break down.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Audit Trail tab --}}
+        <div id="tab-audit" class="bu-pane" style="margin-top:16px">
+            <div class="bu-card">
+                <div class="bu-pad">
+                    <div class="bu-li-wrap">
+                        <table>
+                            <thead><tr><th>Date</th><th>Action</th><th>User</th><th>Details</th></tr></thead>
+                            <tbody>
+                                @forelse($auditLogs as $log)
+                                    <tr>
+                                        <td>{{ $log->created_at?->format('M d, Y H:i') ?? '—' }}</td>
+                                        <td><span class="bu-badge bu-b-app">{{ $log->action }}</span></td>
+                                        <td>{{ $log->user?->name ?? '—' }}</td>
+                                        <td style="font-size:12px;color:var(--muted);max-width:300px">{{ $log->description ?? '—' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="4" class="bu-empty">No audit entries yet.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+    function showTab(name) {
+        document.querySelectorAll('.bu-pane').forEach(p => p.classList.remove('on'));
+        document.querySelectorAll('.bu-tab').forEach(t => t.classList.remove('on'));
+        document.getElementById('tab-' + name).classList.add('on');
+        event.target.classList.add('on');
+    }
+    </script>
 </x-app-layout>

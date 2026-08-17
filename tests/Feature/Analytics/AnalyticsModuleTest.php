@@ -13,7 +13,6 @@ use App\Services\Reporting\Analytics\SalesAnalyticsService;
 use App\Services\Reporting\Analytics\PurchasingAnalyticsService;
 use App\Services\Reporting\Analytics\InventoryAnalyticsService;
 use App\Services\Reporting\Analytics\ProfitabilityAnalyticsService;
-use App\Services\Reporting\Analytics\BudgetVsActualTrendService;
 use App\Services\Reporting\Analytics\CashFlowProjectionService;
 use App\Services\Reporting\ReportRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -117,7 +116,7 @@ class AnalyticsModuleTest extends TestCase
     public function test_report_registry_returns_analytics_reports(): void
     {
         $reports = ReportRegistry::getAnalyticsReports();
-        $this->assertCount(8, $reports);
+        $this->assertCount(7, $reports);
         $this->assertArrayHasKey('financial_ratios', $reports);
         $this->assertArrayHasKey('cash_flow_trend', $reports);
     }
@@ -175,12 +174,6 @@ class AnalyticsModuleTest extends TestCase
     public function test_profitability_analytics_view_loads(): void
     {
         $this->get(route('analytics.profitability'))->assertOk();
-    }
-
-    public function test_budget_vs_actual_trend_view_loads(): void
-    {
-        FeatureManagement::enable($this->company->id, 'budgets');
-        $this->get(route('analytics.budget-vs-actual-trend'))->assertOk();
     }
 
     public function test_cash_flow_trend_view_loads(): void
@@ -407,17 +400,6 @@ class AnalyticsModuleTest extends TestCase
     }
 
     // =============================================
-    // BUDGET VS ACTUAL TREND SERVICE
-    // =============================================
-
-    public function test_budget_vs_actual_trend_no_fiscal_year(): void
-    {
-        $service = new BudgetVsActualTrendService();
-        $data = $service->calculate($this->company->id);
-
-        $this->assertArrayHasKey('error', $data);
-    }
-
     // =============================================
     // NAVIGATION INTEGRATION
     // =============================================

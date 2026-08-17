@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Customer;
+use App\Models\Cheque;
 use App\Models\Employee;
 use App\Models\PayrollRun;
 use App\Models\User;
@@ -41,7 +42,7 @@ class ScopedSearchRenderSmokeTest extends TestCase
         $this->user->assignRole('company_admin');
         session(['current_company_id' => $this->company->id]);
 
-        foreach (['banking', 'fixed_assets', 'inventory', 'payroll', 'pos', 'purchasing'] as $feature) {
+        foreach (['banking', 'fixed_assets', 'inventory', 'payroll', 'pos', 'purchasing', 'budgets'] as $feature) {
             FeatureManagement::enable($this->company->id, $feature);
         }
 
@@ -75,6 +76,16 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'sub_type' => 'current_asset',
             'is_active' => true,
             'is_petty_cash' => true,
+        ]);
+        $cheque = Cheque::create([
+            'company_id' => $this->company->id,
+            'bank_account_id' => $bank->id,
+            'cheque_number' => 1,
+            'date' => now()->format('Y-m-d'),
+            'payee' => 'Test Payee',
+            'amount' => 100.00,
+            'status' => 'outstanding',
+            'created_by' => $this->user->id,
         ]);
         $vendor = Vendor::create(['company_id' => $this->company->id, 'name' => 'ACME Corp']);
         $branch = Branch::create(['company_id' => $this->company->id, 'name' => 'Main Branch', 'code' => 'BR01']);
@@ -569,6 +580,72 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'cost_center_id' => $costCenter->id,
         ]);
 
+        $fy = \App\Models\FiscalYear::create([
+            'company_id' => $this->company->id,
+            'name' => 'FY 2026',
+            'label' => 'FY 2026',
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'status' => 'open',
+        ]);
+
+        $expenseAccount = Account::create([
+            'company_id' => $this->company->id,
+            'code' => '5000',
+            'name' => 'Cost of Goods Sold',
+            'type' => 'expense',
+            'sub_type' => 'cost_of_goods_sold',
+            'is_active' => true,
+        ]);
+
+        $budget = \App\Models\Budget::create([
+            'company_id' => $this->company->id,
+            'name' => 'Operating Budget 2026',
+            'code' => 'BUD-0001',
+            'type' => 'operating',
+            'fiscal_year_id' => $fy->id,
+            'period' => 'annual',
+            'currency' => 'USD',
+            'status' => 'draft',
+            'total_income' => 100000,
+            'total_expenses' => 80000,
+            'prepared_by' => $this->user->id,
+        ]);
+
+        \App\Models\BudgetLine::create([
+            'company_id' => $this->company->id,
+            'budget_id' => $budget->id,
+            'line_type' => 'income',
+            'account_id' => $this->incomeAccount->id,
+            'annual_amount' => 100000,
+            'distribution' => 'even',
+        ]);
+
+        \App\Models\BudgetLine::create([
+            'company_id' => $this->company->id,
+            'budget_id' => $budget->id,
+            'line_type' => 'expense',
+            'account_id' => $expenseAccount->id,
+            'annual_amount' => 80000,
+            'distribution' => 'even',
+        ]);
+
+        $budgetApproved = \App\Models\Budget::create([
+            'company_id' => $this->company->id,
+            'name' => 'Capital Budget 2026',
+            'code' => 'BUD-0002',
+            'type' => 'capital',
+            'fiscal_year_id' => $fy->id,
+            'period' => 'annual',
+            'currency' => 'USD',
+            'status' => 'approved',
+            'total_income' => 50000,
+            'total_expenses' => 30000,
+            'prepared_by' => $this->user->id,
+            'approved_by' => $this->user->id,
+            'approved_at' => now(),
+        ]);
+
         $routes = [
             'purchase-requisitions.index' => route('accounting.purchase-requisitions.index'),
             'purchase-requisitions.create' => route('accounting.purchase-requisitions.create'),
@@ -589,11 +666,10 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'expenses.reports' => route('accounting.expenses.reports'),
             'general-ledger.index' => route('accounting.general-ledger.index'),
             'general-ledger.account' => route('accounting.general-ledger.account', $bank->id),
-            'cheques.create' => route('accounting.cheques.create'),
-            'cheques.index' => route('accounting.cheques.index'),
-            'cheques.register' => route('accounting.cheques.register'),
+            'cheques.create' => route('accounting.banking.cheques.create'),
+            'cheques.index' => route('accounting.banking.cheques'),
             'settlements.create' => route('pos.settlements.create'),
-            'deposits.create' => route('accounting.deposits.create'),
+            'deposits.create' => route('accounting.banking.deposits.create'),
             'customer-payments.create' => route('accounting.customer-payments.create'),
             'vendor-payments.create' => route('accounting.vendor-payments.create'),
             'vendor-payments.index' => route('accounting.vendor-payments.index'),
@@ -635,7 +711,7 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'inventory-items.print' => route('accounting.inventory-items.print', $product),
             'report-center.index' => route('accounting.report-center.index'),
             'payroll-runs.show' => route('accounting.payroll-runs.show', $run),
-            'petty-cash.show' => route('accounting.petty-cash.show', $pettyCash->id),
+            'petty-cash.show' => route('accounting.banking.petty.show', $pettyCash->id),
             'customers.index' => route('accounting.customers.index'),
             'customers.create' => route('accounting.customers.create'),
             'customers.edit' => route('accounting.customers.edit', $customer),
@@ -663,10 +739,26 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'journal-entries.create' => route('accounting.journal-entries.create'),
             'journal-entries.show' => route('accounting.journal-entries.show', $je),
             'journal-entries.show-pending' => route('accounting.journal-entries.show', $jePending),
-            'bank-accounts.index' => route('accounting.bank-accounts.index'),
-            'bank-accounts.register' => route('accounting.bank-accounts.register', $bank->id),
-            'bank-accounts.transfer-form' => route('accounting.bank-accounts.transfer-form'),
-            'bank-accounts.manual-form' => route('accounting.bank-accounts.manual-form', $bank->id),
+            'bank-accounts.index' => route('accounting.banking.accounts'),
+            'bank-accounts.register' => route('accounting.banking.register', $bank->id),
+            'bank-accounts.transfer-form' => route('accounting.banking.transfers.create'),
+            'bank-accounts.manual-form' => route('accounting.banking.new-transaction', $bank->id),
+            'banking.dashboard' => route('accounting.banking.dashboard'),
+            'banking.accounts.create' => route('accounting.banking.accounts.create'),
+            'banking.cheques.show' => route('accounting.banking.cheques.show', $cheque->id),
+            'banking.reports' => route('accounting.banking.reports'),
+            'budgets.dashboard' => route('accounting.budgets.dashboard'),
+            'budgets.index' => route('accounting.budgets.index'),
+            'budgets.create' => route('accounting.budgets.create'),
+            'budgets.show' => route('accounting.budgets.show', $budget),
+            'budgets.edit' => route('accounting.budgets.edit', $budget),
+            'budgets.vsactual' => route('accounting.budgets.vsactual'),
+            'budgets.forecast' => route('accounting.budgets.forecast'),
+            'budgets.adjustments' => route('accounting.budgets.adjustments'),
+            'budgets.alerts' => route('accounting.budgets.alerts'),
+            'budgets.settings' => route('accounting.budgets.settings'),
+            'budgets.templates' => route('accounting.budgets.templates'),
+            'budgets.reports' => route('accounting.budgets.reports'),
             'system-settings.company' => route('system-settings.index', 'company'),
             'system-settings.regional' => route('system-settings.index', 'regional'),
             'system-settings.currency' => route('system-settings.index', 'currency'),

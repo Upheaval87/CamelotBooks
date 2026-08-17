@@ -152,7 +152,7 @@ class ReportCenterTest extends TestCase
 
         $content = $response->getContent();
 
-        $this->assertSame(77, substr_count($content, '\\u0022description\\u0022'));
+        $this->assertSame(74, substr_count($content, '\\u0022description\\u0022'));
 
         foreach ([
             'Financial Statements',
@@ -162,7 +162,6 @@ class ReportCenterTest extends TestCase
             'Banking',
             'Fixed Assets',
             'Payroll',
-            'Budgeting',
             'Compliance & Audit',
             'Analytics',
             'Business Intelligence',
@@ -175,7 +174,6 @@ class ReportCenterTest extends TestCase
 
         foreach ([
             'financial_ratios',
-            'budget_variance',
             'true_total_cost',
             'pos_x_report',
             'purchase_register',

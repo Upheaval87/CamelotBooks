@@ -4,7 +4,6 @@ namespace App\Services\Reporting;
 
 use App\Models\Bill;
 use App\Models\PurchaseRequisition;
-use App\Models\Budget;
 use Carbon\Carbon;
 
 class PendingApprovalsAgingService
@@ -46,23 +45,6 @@ class PendingApprovalsAgingService
                 'amount' => (float) ($pr->estimated_total ?? 0),
                 'days_pending' => $age,
                 'created_at' => $pr->created_at,
-            ];
-        }
-
-        $budgets = Budget::where('company_id', $companyId)
-            ->where('status', 'pending_approval')
-            ->get();
-
-        foreach ($budgets as $budget) {
-            $age = $budget->created_at->diffInDays($now);
-            $results[] = [
-                'type' => 'Budget',
-                'reference' => $budget->budget_name ?? (string) $budget->id,
-                'date' => $budget->created_at->format('Y-m-d'),
-                'vendor_or_employee' => '—',
-                'amount' => (float) ($budget->total_amount ?? 0),
-                'days_pending' => $age,
-                'created_at' => $budget->created_at,
             ];
         }
 

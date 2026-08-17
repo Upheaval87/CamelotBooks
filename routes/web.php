@@ -7,9 +7,17 @@ use App\Http\Controllers\Accounting\AgingReportController;
 use App\Http\Controllers\Accounting\AssemblyController;
 use App\Http\Controllers\Accounting\BalanceSheetController;
 use App\Http\Controllers\Accounting\EquityStatementController;
-use App\Http\Controllers\Accounting\BankController;
+use App\Http\Controllers\Accounting\BankingCentreController;
+use App\Http\Controllers\Accounting\BankingAccountController;
+use App\Http\Controllers\Accounting\BankingRegisterController;
+use App\Http\Controllers\Accounting\BankingTransferController;
+use App\Http\Controllers\Accounting\BankingDepositController;
+use App\Http\Controllers\Accounting\BankingChequeController;
+use App\Http\Controllers\Accounting\BankingPettyCashController;
+use App\Http\Controllers\Accounting\BankingReportsController;
 use App\Http\Controllers\Accounting\BankReconciliationController;
 use App\Http\Controllers\Accounting\BillController;
+use App\Http\Controllers\Accounting\BudgetController;
 use App\Http\Controllers\Accounting\CashFlowController;
 use App\Http\Controllers\Accounting\CreditNoteController;
 use App\Http\Controllers\Accounting\CostCenterController;
@@ -46,9 +54,7 @@ use App\Http\Controllers\Accounting\SalesOrderController;
 use App\Http\Controllers\Accounting\ReportCenterController;
 use App\Http\Controllers\Accounting\SalesReceiptController;
 use App\Http\Controllers\Accounting\SalesRegisterController;
-use App\Http\Controllers\Accounting\MakeDepositController;
-use App\Http\Controllers\Accounting\ChequeController;
-use App\Http\Controllers\Accounting\PettyCashController;
+
 use App\Http\Controllers\Accounting\CashPositionController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchPaymentController;
@@ -633,13 +639,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
 
             Route::middleware('feature:banking')->group(function () {
-            // Banking
-                Route::get('bank-accounts', [BankController::class, 'index'])->name('bank-accounts.index');
-                Route::get('bank-accounts/{bankAccountId}/register', [BankController::class, 'register'])->name('bank-accounts.register');
-                Route::get('bank-accounts/transfer', [BankController::class, 'transferForm'])->name('bank-accounts.transfer-form');
-                Route::post('bank-accounts/transfer', [BankController::class, 'transfer'])->name('bank-accounts.transfer');
-                Route::get('bank-accounts/{bankAccountId}/manual', [BankController::class, 'manualTransactionForm'])->name('bank-accounts.manual-form');
-                Route::post('bank-accounts/{bankAccountId}/manual', [BankController::class, 'storeManualTransaction'])->name('bank-accounts.store-manual');
+            // Banking Centre
+                Route::get('banking', [BankingCentreController::class, 'index'])->name('banking.dashboard');
+                Route::get('banking/accounts', [BankingAccountController::class, 'index'])->name('banking.accounts');
+                Route::get('banking/accounts/create', [BankingAccountController::class, 'create'])->name('banking.accounts.create');
+                Route::post('banking/accounts', [BankingAccountController::class, 'store'])->name('banking.accounts.store');
+                Route::get('banking/accounts/{bankAccountId}/edit', [BankingAccountController::class, 'edit'])->name('banking.accounts.edit');
+                Route::put('banking/accounts/{bankAccountId}', [BankingAccountController::class, 'update'])->name('banking.accounts.update');
+                Route::post('banking/accounts/{bankAccountId}/toggle', [BankingAccountController::class, 'toggle'])->name('banking.accounts.toggle');
+                Route::get('banking/accounts/{bankAccountId}/register', [BankingRegisterController::class, 'index'])->name('banking.register');
+                Route::get('banking/accounts/{bankAccountId}/register/new', [BankingRegisterController::class, 'newTransaction'])->name('banking.new-transaction');
+                Route::post('banking/accounts/{bankAccountId}/register', [BankingRegisterController::class, 'storeTransaction'])->name('banking.store-transaction');
+                Route::get('banking/transfers', [BankingTransferController::class, 'index'])->name('banking.transfers');
+                Route::get('banking/transfers/create', [BankingTransferController::class, 'create'])->name('banking.transfers.create');
+                Route::post('banking/transfers', [BankingTransferController::class, 'store'])->name('banking.transfers.store');
+                Route::get('banking/deposits', [BankingDepositController::class, 'index'])->name('banking.deposits');
+                Route::get('banking/deposits/create', [BankingDepositController::class, 'create'])->name('banking.deposits.create');
+                Route::post('banking/deposits', [BankingDepositController::class, 'store'])->name('banking.deposits.store');
+                Route::get('banking/cheques', [BankingChequeController::class, 'index'])->name('banking.cheques');
+                Route::get('banking/cheques/create', [BankingChequeController::class, 'create'])->name('banking.cheques.create');
+                Route::post('banking/cheques', [BankingChequeController::class, 'store'])->name('banking.cheques.store');
+                Route::get('banking/cheques/{cheque}', [BankingChequeController::class, 'show'])->name('banking.cheques.show');
+                Route::post('banking/cheques/{cheque}/void', [BankingChequeController::class, 'void'])->name('banking.cheques.void')->middleware('sod:cheque');
+                Route::post('banking/cheques/{cheque}/clear', [BankingChequeController::class, 'clear'])->name('banking.cheques.clear')->middleware('sod:cheque');
+                Route::get('banking/petty', [BankingPettyCashController::class, 'index'])->name('banking.petty');
+                Route::get('banking/petty/create', [BankingPettyCashController::class, 'create'])->name('banking.petty.create');
+                Route::post('banking/petty', [BankingPettyCashController::class, 'store'])->name('banking.petty.store');
+                Route::get('banking/petty/{fund}', [BankingPettyCashController::class, 'show'])->name('banking.petty.show');
+                Route::post('banking/petty/{fund}/establish', [BankingPettyCashController::class, 'establish'])->name('banking.petty.establish')->middleware('sod:fund');
+                Route::post('banking/petty/{fund}/expense', [BankingPettyCashController::class, 'expense'])->name('banking.petty.expense')->middleware('sod:fund');
+                Route::post('banking/petty/{fund}/replenish', [BankingPettyCashController::class, 'replenish'])->name('banking.petty.replenish')->middleware('sod:fund');
+                Route::get('banking/reports', [BankingReportsController::class, 'index'])->name('banking.reports');
 
             // Bank Reconciliation
                 Route::get('bank-reconciliations/create', [BankReconciliationController::class, 'create'])->name('bank-reconciliation.create');
@@ -671,33 +701,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('bank-reconciliations/{reconciliation}/complete', [BankReconciliationController::class, 'complete'])->name('bank-reconciliation.complete');
                 Route::post('bank-reconciliations/{reconciliation}/reverse', [BankReconciliationController::class, 'reverse'])->name('bank-reconciliation.reverse');
 
-            // Make Deposits
-                Route::get('deposits', [MakeDepositController::class, 'index'])->name('deposits.index');
-                Route::get('deposits/create', [MakeDepositController::class, 'create'])->name('deposits.create');
-                Route::post('deposits', [MakeDepositController::class, 'store'])->name('deposits.store');
-
-            // Cheques
-                Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
-                Route::get('cheques/create', [ChequeController::class, 'create'])->name('cheques.create');
-                Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
-                Route::get('cheques/{chequeId}', [ChequeController::class, 'show'])->name('cheques.show');
-                Route::post('cheques/{chequeId}/void', [ChequeController::class, 'voidCheque'])->name('cheques.void')->middleware(['permission:cheques.void', 'sod:chequeId']);
-                Route::get('cheques-register', [ChequeController::class, 'register'])->name('cheques.register');
-
-            // Petty Cash
-                Route::get('petty-cash', [PettyCashController::class, 'index'])->name('petty-cash.index');
-                Route::get('petty-cash/create', [PettyCashController::class, 'createFund'])->name('petty-cash.create-fund');
-                Route::post('petty-cash', [PettyCashController::class, 'storeFund'])->name('petty-cash.store-fund');
-                Route::get('petty-cash/{fundId}', [PettyCashController::class, 'show'])->name('petty-cash.show');
-                Route::post('petty-cash/establish', [PettyCashController::class, 'establish'])->name('petty-cash.establish')->middleware(['permission:petty-cash.establish', 'sod:fundId']);
-                Route::post('petty-cash/expense', [PettyCashController::class, 'recordExpense'])->name('petty-cash.expense')->middleware('permission:petty-cash.expense');
-                Route::post('petty-cash/replenish', [PettyCashController::class, 'replenish'])->name('petty-cash.replenish')->middleware('permission:petty-cash.replenish');
-
             // Cash Position
                 Route::get('cash-position', [CashPositionController::class, 'index'])->name('cash-position.index');
                 Route::get('cash-position/export/csv', [CashPositionController::class, 'exportCsv'])->name('cash-position.export-csv');
                 Route::get('cash-position/export/pdf', [CashPositionController::class, 'exportPdf'])->name('cash-position.export-pdf');
                 Route::get('cash-position/print', [CashPositionController::class, 'print'])->name('cash-position.print');
+
+            // Legacy aliases (CP + BR still reference these route names)
+                Route::get('bank-accounts', [BankingAccountController::class, 'index'])->name('bank-accounts.index');
+                Route::get('bank-accounts/{bankAccountId}/register', [BankingRegisterController::class, 'index'])->name('bank-accounts.register');
+                Route::get('bank-accounts/transfer', [BankingTransferController::class, 'create'])->name('bank-accounts.transfer-form');
+                Route::post('bank-accounts/transfer', [BankingTransferController::class, 'store'])->name('bank-accounts.transfer');
+                Route::get('bank-accounts/{bankAccountId}/manual', [BankingRegisterController::class, 'newTransaction'])->name('bank-accounts.manual-form');
+                Route::post('bank-accounts/{bankAccountId}/manual', [BankingRegisterController::class, 'storeTransaction'])->name('bank-accounts.store-manual');
+                Route::get('petty-cash', [BankingPettyCashController::class, 'index'])->name('petty-cash.index');
             });
 
             // Financial Statements
@@ -724,11 +741,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('aging/ap-detail', [AgingReportController::class, 'apDetail'])->name('aging.ap-detail');
             Route::get('aging/export/csv', [AgingReportController::class, 'exportCsv'])->name('aging.export-csv');
 
-            Route::middleware('feature:budgets')->group(function () {
-            // Budgets
-                Route::resource('budgets', \App\Http\Controllers\Accounting\BudgetController::class);
-                Route::get('budgets/{budget}/variance', [\App\Http\Controllers\Accounting\BudgetController::class, 'variance'])->name('budgets.variance');
-                Route::post('budgets/{budget}/approve', [\App\Http\Controllers\Accounting\BudgetController::class, 'approve'])->name('budgets.approve')->middleware('sod:budget');
+            // Budgeting module
+            Route::middleware('feature:budgets')->prefix('budgeting')->name('budgets.')->group(function () {
+                // Literal routes FIRST — before /{budget} to avoid param-route shadowing
+                Route::get('/', [BudgetController::class, 'dashboard'])->name('dashboard');
+                Route::get('/list', [BudgetController::class, 'index'])->name('index');
+                Route::get('/create', [BudgetController::class, 'create'])->name('create');
+                Route::post('/', [BudgetController::class, 'store'])->name('store');
+                Route::get('/vs-actual/report', [BudgetController::class, 'vsActual'])->name('vsactual');
+                Route::get('/forecast/report', [BudgetController::class, 'forecast'])->name('forecast');
+                Route::get('/adjustments/list', [BudgetController::class, 'adjustments'])->name('adjustments');
+                Route::post('/adjustments', [BudgetController::class, 'storeAdjustment'])->name('adjustments.store');
+                Route::get('/alerts/list', [BudgetController::class, 'alerts'])->name('alerts');
+                Route::post('/alert-rules', [BudgetController::class, 'storeAlertRule'])->name('alert-rules.store');
+                Route::get('/settings', [BudgetController::class, 'settings'])->name('settings');
+                Route::get('/templates', [BudgetController::class, 'templates'])->name('templates');
+                Route::post('/templates', [BudgetController::class, 'storeTemplate'])->name('templates.store');
+                Route::get('/reports/index', [BudgetController::class, 'reports'])->name('reports');
+
+                // Parameter routes LAST
+                Route::get('/{budget}', [BudgetController::class, 'show'])->name('show');
+                Route::get('/{budget}/edit', [BudgetController::class, 'edit'])->name('edit');
+                Route::put('/{budget}', [BudgetController::class, 'update'])->name('update');
+                Route::post('/{budget}/submit', [BudgetController::class, 'submit'])->name('submit');
+                Route::post('/{budget}/approve', [BudgetController::class, 'approve'])->name('approve');
+                Route::post('/{budget}/reject', [BudgetController::class, 'reject'])->name('reject');
+                Route::post('/{budget}/lock', [BudgetController::class, 'lock'])->name('lock');
+                Route::post('/{budget}/unlock', [BudgetController::class, 'unlock'])->name('unlock');
+                Route::post('/adjustments/{adjustment}/approve', [BudgetController::class, 'approveAdjustment'])->name('adjustments.approve');
+                Route::post('/adjustments/{adjustment}/reject', [BudgetController::class, 'rejectAdjustment'])->name('adjustments.reject');
+                Route::post('/alerts/{alert}/read', [BudgetController::class, 'markAlertRead'])->name('alerts.read');
             });
 
             Route::middleware('feature:fixed_assets')->group(function () {
@@ -935,7 +977,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('purchasing', [\App\Http\Controllers\AnalyticsController::class, 'purchasing'])->name('purchasing');
             Route::get('inventory', [\App\Http\Controllers\AnalyticsController::class, 'inventory'])->name('inventory');
             Route::get('profitability', [\App\Http\Controllers\AnalyticsController::class, 'profitability'])->name('profitability');
-            Route::get('budget-vs-actual-trend', [\App\Http\Controllers\AnalyticsController::class, 'budgetVsActualTrend'])->name('budget-vs-actual-trend');
+            // Budget vs Actual analytics route removed — will be rebuilt with budgeting module
             Route::get('cash-flow-trend', [\App\Http\Controllers\AnalyticsController::class, 'cashFlowTrend'])->name('cash-flow-trend');
         });
 
