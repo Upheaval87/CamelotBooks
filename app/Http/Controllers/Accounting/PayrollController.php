@@ -35,8 +35,8 @@ class PayrollController extends Controller
         $companyId = (int) session('current_company_id');
 
         $totalEmployees = Employee::forCompany($companyId)->count();
-        $activeEmployees = Employee::forCompany($companyId)->where('status', 'active')->count();
-        $onLeaveEmployees = Employee::forCompany($companyId)->where('status', 'on_leave')->count();
+        $activeEmployees = Employee::forCompany($companyId)->where('employment_status', 'active')->count();
+        $onLeaveEmployees = Employee::forCompany($companyId)->where('employment_status', 'on_leave')->count();
 
         $lastRun = PayrollRun::forCompany($companyId)->latest()->first();
         $pendingApprovals = PayrollRun::forCompany($companyId)->where('status', 'pending_approval')->count();
@@ -73,7 +73,7 @@ class PayrollController extends Controller
             ->with('currentSalaryStructure');
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('employment_status', $request->status);
         }
 
         if ($request->filled('department')) {
@@ -157,7 +157,8 @@ class PayrollController extends Controller
         ]);
 
         $validated['company_id'] = $companyId;
-        $validated['status'] = 'active';
+        $validated['employment_status'] = 'active';
+        $validated['is_active'] = true;
         $validated['employee_number'] = $this->generateEmployeeNumber($companyId);
 
         $employee = Employee::create($validated);
@@ -279,7 +280,7 @@ class PayrollController extends Controller
             'department'            => 'nullable|string|max:255',
             'job_title'             => 'nullable|string|max:255',
             'branch_id'             => 'nullable|exists:branches,id',
-            'status'                => ['nullable', 'string', Rule::in(['active', 'inactive', 'on_leave', 'terminated'])],
+            'employment_status'    => ['nullable', 'string', Rule::in(['active', 'inactive', 'on_leave', 'terminated'])],
             'employment_type'       => 'nullable|string|in:full_time,part_time,contract,intern',
             'bank_name'             => 'nullable|string|max:255',
             'bank_account_number'   => 'nullable|string|max:50',

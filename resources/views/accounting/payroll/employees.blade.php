@@ -1,5 +1,5 @@
 @php
-    $statusCounts = \App\Models\Employee::forCompany($companyId)->selectRaw('status, count(*) as cnt')->groupBy('status')->pluck('cnt', 'status');
+    $statusCounts = \App\Models\Employee::forCompany($companyId)->selectRaw('employment_status, count(*) as cnt')->groupBy('employment_status')->pluck('cnt', 'employment_status');
     $totalAll = $statusCounts->sum();
     $activeCount = $statusCounts->get('active', 0);
     $onLeaveCount = $statusCounts->get('on_leave', 0);
@@ -123,7 +123,7 @@
                                 </td>
                                 <td class="pr-em">{{ $emp->hire_date?->format('d M Y') ?? '—' }}</td>
                                 <td class="pr-numr bold">{{ format_number($emp->currentSalaryStructure?->basic_salary ?? 0) }}</td>
-                                <td><x-payroll::badge :status="$emp->status ?? 'active'" type="employee" /></td>
+                                <td><x-payroll::badge :status="$emp->employment_status ?? ($emp->is_active ? 'active' : 'terminated')" type="employee" /></td>
                                 <td>
                                     <div class="pr-row-act">
                                         <a href="{{ route('payroll.employees.show', $emp) }}" class="pr-ibtn" title="{{ __('View') }}">
