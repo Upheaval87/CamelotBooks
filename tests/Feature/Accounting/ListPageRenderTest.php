@@ -6,7 +6,6 @@ use App\Models\AccountingPeriod;
 use App\Models\Bill;
 use App\Models\Company;
 use App\Models\Customer;
-use App\Models\Employee;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\SalesReceipt;
@@ -101,7 +100,6 @@ class ListPageRenderTest extends TestCase
         $income = \App\Models\Account::create(['company_id' => $this->company->id, 'name' => 'Sales Income', 'type' => 'revenue', 'sub_type' => 'revenue', 'code' => '4000']);
         $expense = \App\Models\Account::create(['company_id' => $this->company->id, 'name' => 'General Expense', 'type' => 'expense', 'sub_type' => 'operating_expense', 'code' => '5000']);
         $product = Product::create(['company_id' => $this->company->id, 'name' => 'Widget', 'sku' => 'W1', 'sales_price' => 10, 'income_account_id' => $income->id, 'expense_account_id' => $expense->id, 'is_active' => true]);
-        $employee = Employee::create(['company_id' => $this->company->id, 'first_name' => 'Jane', 'last_name' => 'Doe', 'employee_number' => 'E1', 'hire_date' => '2026-01-01', 'is_active' => true]);
         Invoice::create(['company_id' => $this->company->id, 'customer_id' => $customer->id, 'invoice_number' => 'INV-1', 'invoice_date' => now(), 'due_date' => now()->addDays(30), 'status' => 'draft', 'amount' => 10, 'created_by' => $this->user->id]);
         Bill::create(['company_id' => $this->company->id, 'vendor_id' => $vendor->id, 'bill_number' => 'BILL-1', 'bill_date' => now(), 'due_date' => now()->addDays(30), 'status' => 'draft', 'amount' => 10, 'created_by' => $this->user->id]);
         SalesReceipt::create(['company_id' => $this->company->id, 'customer_id' => $customer->id, 'receipt_number' => 'SR-1', 'receipt_date' => now(), 'status' => 'draft', 'amount' => 10, 'created_by' => $this->user->id]);
@@ -110,7 +108,6 @@ class ListPageRenderTest extends TestCase
             'accounting.customers.index' => 'li-wrap',
             'accounting.vendors.index' => 'li-wrap',
             'accounting.inventory.items' => 'inv-wrap',
-            'accounting.employees.index' => 'li-wrap',
             'accounting.invoices.index' => 'li-wrap',
             'accounting.bills.index' => 'li-wrap',
             'accounting.sales-receipts.index' => 'li-wrap',

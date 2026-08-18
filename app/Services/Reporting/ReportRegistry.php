@@ -15,7 +15,6 @@ class ReportRegistry
         'inventory' => 'Inventory',
         'banking' => 'Banking',
         'fixed_assets' => 'Fixed Assets',
-        'payroll' => 'Payroll',
         'budgeting' => 'Budgeting',
         'compliance' => 'Compliance & Audit',
         'analytics' => 'Analytics',
@@ -393,35 +392,6 @@ class ReportRegistry
                 'feature_flag' => ['fixed_assets'],
             ],
 
-            // ── Payroll ──
-            'payroll_register' => [
-                'key' => 'payroll_register',
-                'name' => 'Payroll Register',
-                'description' => 'Full detail per employee per run: gross, deductions, net.',
-                'category' => 'payroll',
-                'route' => 'accounting.reports.payroll-register',
-                'permission' => 'view_reports',
-                'feature_flag' => ['payroll'],
-            ],
-            'payroll_summary' => [
-                'key' => 'payroll_summary',
-                'name' => 'Payroll Summary',
-                'description' => 'Totals by period: gross, PAYE, pension, net, employer cost.',
-                'category' => 'payroll',
-                'route' => 'accounting.reports.payroll-summary',
-                'permission' => 'view_reports',
-                'feature_flag' => ['payroll'],
-            ],
-            'employee_cost_by_branch' => [
-                'key' => 'employee_cost_by_branch',
-                'name' => 'Employee Cost by Branch',
-                'description' => 'Payroll expense grouped by branch/cost center.',
-                'category' => 'payroll',
-                'route' => 'accounting.reports.employee-cost-by-branch',
-                'permission' => 'view_reports',
-                'feature_flag' => ['payroll'],
-            ],
-
             // ── Budgeting ──
             'budget_vs_actual' => [
                 'key' => 'budget_vs_actual',
@@ -532,33 +502,6 @@ class ReportRegistry
                 'route' => 'accounting.reports.tax-depreciation-schedule',
                 'permission' => 'view_reports',
                 'feature_flag' => ['fixed_assets'],
-            ],
-            'paye_remittance_report' => [
-                'key' => 'paye_remittance_report',
-                'name' => 'PAYE Remittance Report',
-                'description' => 'PAYE tax amounts per payroll run for remittance to tax authorities.',
-                'category' => 'payroll',
-                'route' => 'accounting.reports.paye-remittance-report',
-                'permission' => 'view_reports',
-                'feature_flag' => ['payroll'],
-            ],
-            'pension_remittance_report' => [
-                'key' => 'pension_remittance_report',
-                'name' => 'Pension Remittance Report',
-                'description' => 'EE and ER pension contributions per run for remittance to pension fund.',
-                'category' => 'payroll',
-                'route' => 'accounting.reports.pension-remittance-report',
-                'permission' => 'view_reports',
-                'feature_flag' => ['payroll'],
-            ],
-            'payslip_report' => [
-                'key' => 'payslip_report',
-                'name' => 'Payslip Report',
-                'description' => 'Detailed payslip data per employee per payroll run.',
-                'category' => 'payroll',
-                'route' => 'accounting.reports.payslip-report',
-                'permission' => 'view_reports',
-                'feature_flag' => ['payroll'],
             ],
             'consolidated_balance_sheet' => [
                 'key' => 'consolidated_balance_sheet',

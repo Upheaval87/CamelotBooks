@@ -11,11 +11,9 @@ use App\Models\Branch;
 use App\Models\CostCenter;
 use App\Models\CreditNote;
 use App\Models\Customer;
-use App\Models\Employee;
 use App\Models\FiscalYear;
 use App\Models\InventoryStock;
 use App\Models\Invoice;
-use App\Models\PayrollRun;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\SalesOrder;
@@ -45,12 +43,10 @@ class SearchCatalog
             $this->vendor(),
             $this->branch(),
             $this->costCenter(),
-            $this->employee(),
             $this->user(),
             $this->bankAccount(),
             $this->asset(),
             $this->assetCategory(),
-            $this->payrollRun(),
             $this->fiscalYear(),
             $this->invoice(),
             $this->bill(),
@@ -293,32 +289,6 @@ class SearchCatalog
         ];
     }
 
-    private function employee(): array
-    {
-        return [
-            'key' => 'employee',
-            'label' => 'Employees',
-            'permission' => 'employees.view',
-            'feature' => null,
-            'icon' => 'user',
-            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
-                return $this->matchColumns(
-                    Employee::forCompany($companyId)
-                        ->active()
-                        ->select(['id', 'first_name', 'last_name', 'employee_number', 'email']),
-                    ['first_name', 'last_name', 'employee_number', 'email'],
-                    $q
-                )->orderBy('first_name')->orderBy('last_name')->limit($limit)->get()
-                    ->map(fn (Employee $e) => [
-                        'id' => $e->id,
-                        'label' => trim($e->first_name.' '.$e->last_name),
-                        'subtitle' => collect([$e->employee_number, $e->email])->filter()->implode(' · '),
-                        'url' => route('accounting.employees.show', $e->id),
-                    ])->values();
-            },
-        ];
-    }
-
     private function user(): array
     {
         return [
@@ -418,31 +388,6 @@ class SearchCatalog
                         'label' => $c->name,
                         'subtitle' => $c->code,
                         'url' => route('accounting.asset-categories.show', $c->id),
-                    ])->values();
-            },
-        ];
-    }
-
-    private function payrollRun(): array
-    {
-        return [
-            'key' => 'payroll-run',
-            'label' => 'Payroll Runs',
-            'permission' => 'payroll-runs.view',
-            'feature' => 'payroll',
-            'icon' => 'currency',
-            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
-                return $this->matchColumns(
-                    PayrollRun::forCompany($companyId)
-                        ->select(['id', 'run_number', 'period_label', 'status']),
-                    ['run_number', 'period_label'],
-                    $q
-                )->orderBy('run_number')->limit($limit)->get()
-                    ->map(fn (PayrollRun $r) => [
-                        'id' => $r->id,
-                        'label' => $r->run_number,
-                        'subtitle' => collect([$r->period_label, $r->status])->filter()->implode(' · '),
-                        'url' => route('accounting.payroll-runs.show', $r->id),
                     ])->values();
             },
         ];

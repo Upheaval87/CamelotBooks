@@ -10,7 +10,6 @@ use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\Cheque;
 use App\Models\Employee;
-use App\Models\PayrollRun;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Services\FeatureManagement;
@@ -42,7 +41,7 @@ class ScopedSearchRenderSmokeTest extends TestCase
         $this->user->assignRole('company_admin');
         session(['current_company_id' => $this->company->id]);
 
-        foreach (['banking', 'fixed_assets', 'inventory', 'payroll', 'pos', 'purchasing', 'budgets'] as $feature) {
+        foreach (['banking', 'fixed_assets', 'inventory', 'pos', 'purchasing', 'budgets'] as $feature) {
             FeatureManagement::enable($this->company->id, $feature);
         }
 
@@ -175,16 +174,6 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'is_active' => true,
             'branch_id' => $branch->id,
         ]);
-        $run = PayrollRun::create([
-            'company_id' => $this->company->id,
-            'run_number' => 'PR-0001',
-            'period_label' => 'January 2024',
-            'pay_date' => '2024-01-31',
-            'period_start' => '2024-01-01',
-            'period_end' => '2024-01-31',
-            'status' => 'draft',
-        ]);
-
         $itemCategory = \App\Models\ItemCategory::create([
             'company_id' => $this->company->id,
             'code' => 'CAT-01',
@@ -690,7 +679,6 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'asset-disposals.create' => route('accounting.asset-disposals.create'),
             'customer-statement' => route('accounting.reports.customer-statement'),
             'vendor-statement' => route('accounting.reports.vendor-statement'),
-            'payslip-report' => route('accounting.reports.payslip-report'),
             'stock-movement' => route('accounting.reports.stock-movement'),
             'accounts.index' => route('accounting.accounts.index'),
             'credit-notes.index' => route('accounting.credit-notes.index'),
@@ -719,7 +707,6 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'invsetup.valuation' => route('accounting.invsetup.valuation'),
             'invsetup.lowstock' => route('accounting.invsetup.lowstock'),
             'report-center.index' => route('accounting.report-center.index'),
-            'payroll-runs.show' => route('accounting.payroll-runs.show', $run),
             'petty-cash.show' => route('accounting.banking.petty.show', $pettyCash->id),
             'customers.index' => route('accounting.customers.index'),
             'customers.create' => route('accounting.customers.create'),

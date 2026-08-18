@@ -23,7 +23,7 @@ use App\Http\Controllers\Accounting\CreditNoteController;
 use App\Http\Controllers\Accounting\CostCenterController;
 use App\Http\Controllers\Accounting\CustomerController;
 use App\Http\Controllers\Accounting\CustomerPaymentController;
-use App\Http\Controllers\Accounting\EmployeeController;
+
 use App\Http\Controllers\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Accounting\FiscalYearController;
 use App\Http\Controllers\Accounting\GlobalSearchController;
@@ -35,7 +35,6 @@ use App\Http\Controllers\Accounting\InvoiceController;
 
 use App\Http\Controllers\Accounting\JournalEntryController;
 
-use App\Http\Controllers\Accounting\PayrollRunController;
 
 use App\Http\Controllers\Accounting\RecurringJournalController;
 
@@ -347,50 +346,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('vendors/{vendor}/toggle', [VendorController::class, 'toggle'])->name('vendors.toggle');
 
 
-
-            // Employees
-            Route::get('employees', [EmployeeController::class, 'index'])->name('employees.index');
-            Route::get('employees/create', [EmployeeController::class, 'create'])->name('employees.create');
-            Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
-            Route::get('employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
-            Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
-            Route::put('employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
-            Route::patch('employees/{employee}/toggle', [EmployeeController::class, 'toggle'])->name('employees.toggle');
-
-            Route::middleware('feature:payroll')->group(function () {
-            // Payroll Runs
-                Route::get('payroll-runs', [PayrollRunController::class, 'index'])->name('payroll-runs.index');
-                Route::get('payroll-runs/create', [PayrollRunController::class, 'create'])->name('payroll-runs.create');
-                Route::post('payroll-runs', [PayrollRunController::class, 'store'])->name('payroll-runs.store');
-                Route::get('payroll-runs/{run}', [PayrollRunController::class, 'show'])->name('payroll-runs.show');
-                Route::post('payroll-runs/{run}/approve', [PayrollRunController::class, 'approve'])->name('payroll-runs.approve')->middleware('sod:run');
-                Route::post('payroll-runs/{run}/post', [PayrollRunController::class, 'post'])->name('payroll-runs.post')->middleware('sod:run');
-                Route::post('payroll-runs/{run}/send-payslips', [PayrollRunController::class, 'sendPayslips'])->name('payroll-runs.send-payslips');
-                Route::post('payroll-runs/{run}/pay-employee/{employeeId}', [PayrollRunController::class, 'payEmployee'])->name('payroll-runs.pay-employee');
-                Route::post('payroll-runs/{run}/remit-paye', [PayrollRunController::class, 'remitPaye'])->name('payroll-runs.remit-paye');
-                Route::post('payroll-runs/{run}/remit-pension', [PayrollRunController::class, 'remitPension'])->name('payroll-runs.remit-pension');
-                Route::get('payroll-runs/{run}/payslip/{itemId}', [PayrollRunController::class, 'payslip'])->name('payroll-runs.payslip');
-                Route::get('payroll-runs/{run}/payslips', [PayrollRunController::class, 'payslips'])->name('payroll-runs.payslips');
-                Route::get('payroll-runs/{run}/paye-schedule', [PayrollRunController::class, 'payeRemittanceSchedule'])->name('payroll-runs.paye-schedule');
-                Route::get('payroll-runs/{run}/pension-schedule', [PayrollRunController::class, 'pensionRemittanceSchedule'])->name('payroll-runs.pension-schedule');
-                Route::get('paye-tables', [\App\Http\Controllers\Accounting\PayeTableController::class, 'index'])->name('paye-tables.index');
-                Route::get('paye-tables/create', [\App\Http\Controllers\Accounting\PayeTableController::class, 'create'])->name('paye-tables.create');
-                Route::post('paye-tables', [\App\Http\Controllers\Accounting\PayeTableController::class, 'store'])->name('paye-tables.store');
-                Route::get('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'show'])->name('paye-tables.show');
-                Route::get('paye-tables/{payeTable}/edit', [\App\Http\Controllers\Accounting\PayeTableController::class, 'edit'])->name('paye-tables.edit');
-                Route::patch('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'update'])->name('paye-tables.update');
-                Route::post('paye-tables/{payeTable}/activate', [\App\Http\Controllers\Accounting\PayeTableController::class, 'activate'])->name('paye-tables.activate');
-                Route::delete('paye-tables/{payeTable}', [\App\Http\Controllers\Accounting\PayeTableController::class, 'destroy'])->name('paye-tables.destroy');
-
-            // Pension Schemes
-                Route::get('pension-schemes', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'index'])->name('pension-schemes.index');
-                Route::get('pension-schemes/create', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'create'])->name('pension-schemes.create');
-                Route::post('pension-schemes', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'store'])->name('pension-schemes.store');
-                Route::get('pension-schemes/{scheme}', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'show'])->name('pension-schemes.show');
-                Route::get('pension-schemes/{scheme}/edit', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'edit'])->name('pension-schemes.edit');
-                Route::put('pension-schemes/{scheme}', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'update'])->name('pension-schemes.update');
-                Route::patch('pension-schemes/{scheme}/toggle', [\App\Http\Controllers\Accounting\PensionSchemeController::class, 'toggle'])->name('pension-schemes.toggle');
-            });
 
             // Sales Invoices
             Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
@@ -819,13 +774,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('reports/asset-impairment', [\App\Http\Controllers\Accounting\ReportControllers\AssetImpairmentReportController::class, 'index'])->name('reports.asset-impairment');
             });
 
-            // Payroll
-            Route::middleware('feature:payroll')->group(function () {
-                Route::get('reports/payroll-register', [\App\Http\Controllers\Accounting\ReportControllers\PayrollRegisterController::class, 'index'])->name('reports.payroll-register');
-                Route::get('reports/payroll-summary', [\App\Http\Controllers\Accounting\ReportControllers\PayrollSummaryController::class, 'index'])->name('reports.payroll-summary');
-                Route::get('reports/employee-cost-by-branch', [\App\Http\Controllers\Accounting\ReportControllers\EmployeeCostByBranchController::class, 'index'])->name('reports.employee-cost-by-branch');
-            });
-
             // Compliance
             Route::get('reports/period-lock-status', [\App\Http\Controllers\Accounting\ReportControllers\PeriodLockStatusController::class, 'index'])->name('reports.period-lock-status');
 
@@ -840,13 +788,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Fixed Assets
                 Route::get('reports/asset-disposal-report', [\App\Http\Controllers\Accounting\ReportControllers\AssetDisposalReportController::class, 'index'])->name('reports.asset-disposal-report');
                 Route::get('reports/tax-depreciation-schedule', [\App\Http\Controllers\Accounting\ReportControllers\TaxDepreciationScheduleController::class, 'index'])->name('reports.tax-depreciation-schedule');
-            });
-
-            // Payroll
-            Route::middleware('feature:payroll')->group(function () {
-                Route::get('reports/paye-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PayeRemittanceReportController::class, 'index'])->name('reports.paye-remittance-report');
-                Route::get('reports/pension-remittance-report', [\App\Http\Controllers\Accounting\ReportControllers\PensionRemittanceReportController::class, 'index'])->name('reports.pension-remittance-report');
-                Route::get('reports/payslip-report', [\App\Http\Controllers\Accounting\ReportControllers\PayslipReportController::class, 'index'])->name('reports.payslip-report');
             });
 
             // Consolidated
