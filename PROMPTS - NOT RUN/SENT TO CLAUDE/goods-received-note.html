@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goods Received Notes — Redesigned Module</title>
+<style>
+  :root{
+    --rw:300px;--sw:48px;--gap:20px;--gap-slim:12px;
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;
+    --sec:#128F8E;--sec-2:#149897;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;
+    --muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;
+    --red:#dc2626;--red-2:#b91c1c;--green:#15803d;--amber:#d97706;--amber-2:#b45309;--steel:#46708C;
+    --shadow-card:0 1px 2px rgba(10,42,46,.05),0 12px 32px -8px rgba(10,42,46,.10),0 32px 64px -24px rgba(8,40,44,.14);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 72px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}
+  .spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--ink)}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .navitem.active .ic{color:#fff}
+
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding:26px 0 16px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .sticky-head{position:sticky;top:0;z-index:30;background:rgba(238,244,244,.88);backdrop-filter:blur(12px);
+    padding:12px 0;border-bottom:1px solid var(--line);margin:22px 0;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  h1{font-size:21px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .mono-chip{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--deep-1);
+    background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);border-radius:8px;padding:4px 10px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-draft{background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);color:#11454b}.b-draft .bdot{background:#11454b}
+  .b-insp{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-insp .bdot{background:var(--amber)}
+  .b-post{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}.b-post .bdot{background:#22c55e}
+  .b-part{background:rgba(70,112,140,.10);border:1px solid rgba(70,112,140,.4);color:var(--steel)}.b-part .bdot{background:var(--steel)}
+  .b-rej{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-rej .bdot{background:var(--red-2)}
+  .b-ret{background:rgba(138,165,167,.15);border:1px solid rgba(138,165,167,.5);color:var(--muted)}.b-ret .bdot{background:var(--muted)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:12px;
+    font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151}
+  .btn-ghost:hover{background:rgba(17,69,75,.06);border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-sec{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-danger-o{background:#fff;border-color:rgba(220,38,38,.35);color:var(--red)}
+  .btn-sm{height:34px;padding:0 13px;font-size:12.5px;border-radius:10px}
+  .btn-xs{height:30px;padding:0 11px;font-size:11.5px;border-radius:9px}
+  .seg{display:inline-flex;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--border)}
+  .seg .btn{height:34px;border-radius:10px;box-shadow:none}
+  .icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.85);
+    display:grid;place-items:center;color:var(--muted);cursor:pointer;flex:none}
+  .icon-btn:hover{color:var(--ink);border-color:rgba(17,69,75,.3)}
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+  .crumbs a{color:var(--muted);text-decoration:none}
+  .crumbs a:hover{color:var(--ink)}
+  .crumbs .here{color:var(--ink);font-weight:800;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+  .cluster{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .vdiv{width:1px;height:22px;background:var(--border)}
+  .more{position:relative}
+  .more-menu{position:absolute;right:0;top:calc(100% + 6px);width:230px;background:#fff;border:1px solid var(--border);
+    border-radius:12px;box-shadow:0 16px 40px -12px rgba(8,40,44,.3);padding:6px;display:none;z-index:60}
+  .more.open .more-menu{display:block}
+  .more-item{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:none;border-radius:9px;background:none;
+    text-align:left;font-family:inherit;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer}
+  .more-item:hover{background:rgba(17,69,75,.06)}
+  .more-item.danger{color:var(--red)}
+
+  .card{background:rgba(255,255,255,.75);backdrop-filter:blur(14px);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-sec{padding:20px 24px}
+  .card-sec + .card-sec{border-top:1px solid var(--line)}
+  .sec-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;background:var(--sec);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px -3px rgba(10,80,80,.4)}
+  .sec-head h2{font-size:14px;font-weight:600;color:var(--muted)}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .statgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .fbox{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;
+    background:rgba(255,255,255,.85);cursor:pointer;text-align:left;transition:all .14s}
+  .fbox:hover{border-color:rgba(17,69,75,.3)}
+  .fbox.on{border-color:rgba(18,143,142,.55);box-shadow:0 0 0 3px rgba(18,143,142,.12)}
+  .fbox .t{width:2rem;height:2rem;border-radius:.625rem;display:grid;place-items:center;color:#fff;flex:none}
+  .t-ink{background:linear-gradient(180deg,#17565d,#0a2e32)}
+  .t-teal{background:linear-gradient(180deg,#149897,#128F8E)}
+  .t-mint{background:#7FD1C0;color:#0c3539}
+  .t-red{background:#dc2626}
+  .t-amber{background:#d97706}
+  .t-steel{background:#46708C}
+  .fbox .l{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .fbox .v{font-size:15px;font-weight:800;color:var(--ink)}
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .chip{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.85);
+    border:1px solid var(--border);font-size:11.5px;font-weight:700;color:var(--muted)}
+  .chip b{color:var(--ink)}
+  .chip .a{color:var(--sec);font-size:10.5px;font-weight:800}
+  .chip.warn b{color:var(--amber-2)}
+
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  .search{position:relative;flex:1;min-width:220px;max-width:420px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .input{width:100%;height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 12px;
+    font-size:13px;color:var(--ink);font-family:inherit;transition:all .15s}
+  .search .input{padding-left:36px}
+  .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  .input:disabled{background:rgba(238,244,244,.7);color:var(--muted)}
+  select.input{width:auto;padding-right:30px;appearance:none;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center}
+  .input.h44{height:44px}
+  textarea.input{height:auto;min-height:5rem;padding:.75rem;border-style:dashed;background:rgba(238,244,244,.5);border-radius:10px;resize:vertical}
+  .combo{display:flex}
+  .combo .in-wrap{flex:1;position:relative}
+  .combo .in-wrap svg.m{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .combo .in-wrap .input{padding-left:36px}
+  .combo .input{border-radius:8px 0 0 8px}
+  .combo button{width:42px;border:1px solid var(--border);border-left:none;border-radius:0 8px 8px 0;background:rgba(240,248,248,.9);color:var(--sec);cursor:pointer;display:grid;place-items:center}
+
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 20px;margin-top:16px}
+  .sp2{grid-column:span 2}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .field .hint{margin-top:6px;font-size:10.5px;color:var(--faint)}
+
+  .sumbar{display:grid;grid-template-columns:1fr 1fr 1fr 1.25fr;border:1px solid var(--border);border-radius:16px;
+    overflow:hidden;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);box-shadow:var(--shadow-card)}
+  .sumbar .cell{padding:14px 18px;border-right:1px solid var(--line);min-width:0}
+  .sumbar .cell .l{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .sumbar .cell .v{margin-top:4px;font-size:1.125rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .sumbar .cell .n{margin-top:2px;font-size:10px;color:var(--faint)}
+  .sumbar .cell.hero{border-right:none;background:linear-gradient(90deg,var(--sec-2),var(--sec) 60%,#107c7b);
+    display:flex;flex-direction:column;justify-content:center}
+  .sumbar .cell.hero .l{color:#dff7f6}.sumbar .cell.hero .v{color:#fff;font-size:1.25rem}
+  @media (max-width:900px){.sumbar{grid-template-columns:1fr 1fr}.sumbar .cell.hero{grid-column:1/-1;border-top:1px solid var(--line)}}
+
+  .li-wrap{margin-top:16px;border:1px solid var(--border);border-radius:14px;background:#fafdfd;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:860px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;
+    letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th:first-child{border-radius:13px 0 0 0}thead th:last-child{border-radius:0 13px 0 0}
+  thead th.num{text-align:right}
+  tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{padding:12px;border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink);background:rgba(17,69,75,.03)}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:500;color:var(--ink)}
+  .em{color:var(--muted)}.dash{color:var(--faint)}
+  .numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  .numr.bold{font-weight:800}
+  .numr.red{color:var(--red-2);font-weight:700}
+  .numr.green{color:var(--green);font-weight:700}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .ibtn.del:hover{background:rgba(220,38,38,.08);color:var(--red)}
+  .pagi{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--line)}
+  .pagi .t{font-size:12px;color:var(--muted)}
+  .ci{height:36px;border-radius:7px;border:1px solid var(--border);background:#fff;padding:0 9px;font-size:12.5px;width:100%;font-family:inherit;color:var(--ink)}
+  td.num .ci{text-align:right}
+  select.ci{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%235f7476' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center;padding-right:22px}
+  .li-totals{margin-top:12px;display:flex;justify-content:flex-end}
+  .li-totals .box{width:320px}
+  .trow{display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+  .trow .v{font-weight:600;color:var(--ink)}
+  .trow.total{border-bottom:none;border-top:1.5px solid var(--deep-1);margin-top:4px;padding-top:9px;font-weight:800;color:var(--deep-1)}
+  .warnbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.4);
+    border-radius:10px;padding:9px 12px;margin:8px 12px;font-size:12px;color:var(--amber-2);font-weight:600}
+  .warnbar .input{width:220px;height:32px;font-size:12px}
+
+  .prof{display:flex;align-items:center;gap:16px;padding:20px 24px}
+  .ava-xl{width:3.5rem;height:3.5rem;border-radius:1rem;display:grid;place-items:center;flex:none;
+    background:linear-gradient(180deg,rgba(18,143,142,.16),rgba(18,143,142,.08));border:1px solid rgba(18,143,142,.3);color:var(--sec)}
+  .prof .n{font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .prof .c{margin-top:5px;display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+  .prof .c span{display:inline-flex;align-items:center;gap:6px}
+
+  .steps{display:flex;flex-direction:column;margin-top:16px}
+  .step{display:flex;gap:14px;position:relative;padding-bottom:20px}
+  .step::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--line)}
+  .step:last-child{padding-bottom:0}.step:last-child::before{display:none}
+  .sdot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;z-index:1;border:2px solid}
+  .sdot.done{background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:transparent;color:#fff}
+  .sdot.cur{background:#fff;border-color:var(--amber);color:var(--amber)}
+  .sdot.todo{background:#fff;border-color:var(--border);color:var(--faint)}
+  .step .tt{font-size:13px;font-weight:700;color:var(--ink)}
+  .step .mm{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .step .when{margin-left:auto;font-size:11px;color:var(--faint);white-space:nowrap}
+
+  .chain{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chain a{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.9);
+    border:1px solid var(--border);font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:var(--deep-1);text-decoration:none}
+  .chain a:hover{border-color:rgba(18,143,142,.5);color:var(--sec)}
+  .chain a.here{background:linear-gradient(90deg,var(--sec-2),var(--sec));border-color:transparent;color:#fff}
+  .chain .arr{color:var(--faint)}
+  .matchgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}
+  @media (max-width:900px){.matchgrid{grid-template-columns:1fr}}
+  .mcol{border:1px solid var(--border);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.85)}
+  .mcol .h{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+  .mcol .r{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:3px 0}
+  .mcol .r b{color:var(--ink)}
+  .match-ok{margin-top:12px;display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;
+    background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green);font-size:12px;font-weight:800}
+  .attchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .att{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:10px;background:rgba(255,255,255,.9);
+    border:1px solid var(--border);font-size:11.5px;font-weight:600;color:#374151}
+  .audit{display:flex;flex-direction:column}
+  .arow{display:flex;gap:12px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:12px}
+  .arow:last-child{border-bottom:none}
+  .arow .when{width:110px;flex:none;color:var(--faint);font-family:ui-monospace,Menlo,monospace;font-size:10.5px}
+  .arow .who{width:80px;flex:none;font-weight:700;color:var(--ink)}
+  .arow .what{color:var(--muted)}
+  .arow .what b{color:var(--ink)}
+
+  .repcards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:1000px){.repcards{grid-template-columns:1fr 1fr}}
+  @media (max-width:700px){.repcards{grid-template-columns:1fr}}
+  .repcard{border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card);padding:16px;display:flex;flex-direction:column;gap:8px}
+  .repcard .t{font-size:14px;font-weight:800;color:var(--ink)}
+  .repcard .d{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .repcard .foot{margin-top:auto;display:flex;gap:6px;align-items:center;padding-top:6px}
+  .fmt{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--deep-1);background:rgba(17,69,75,.06);
+    border:1px solid rgba(17,69,75,.16);border-radius:999px;padding:2px 8px}
+  .open-l{margin-left:auto;font-size:11px;font-weight:800;color:var(--sec);text-decoration:none}
+  .open-l:hover{text-decoration:underline}
+  .filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.8);border:1px solid var(--border);
+    border-radius:14px;padding:10px 12px;margin-bottom:16px;box-shadow:var(--shadow-card)}
+  .seg2{display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:rgba(238,244,244,.9);border:1px solid var(--border)}
+  .seg2 button{height:30px;padding:0 12px;border:none;border-radius:8px;background:none;font-family:inherit;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .seg2 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(10,42,46,.12)}
+
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + var(--gap-slim));transition:margin-right .35s cubic-bezier(.4,0,.2,1)}
+  body.ql-open .stage-body{margin-right:calc(var(--rw) + var(--gap))}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:none;
+    flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  body:not(.ql-open) .stage.in-view .slim-rail{display:flex}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;
+    background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);
+    background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;
+    box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-ic .ndot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--amber);border:1.5px solid #fff}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  .s-ic.expand:hover{background:linear-gradient(180deg,#107c7b,#128F8E);filter:brightness(1.1)}
+  .ql-drawer{position:fixed;top:50%;right:0;width:var(--rw);z-index:40;
+    transform:translate(103%,-50%);visibility:hidden;
+    transition:transform .35s cubic-bezier(.4,0,.2,1), visibility 0s linear .35s}
+  body.ql-open .stage.in-view .ql-drawer{transform:translate(0,-50%);visibility:visible;
+    transition:transform .35s cubic-bezier(.4,0,.2,1)}
+  .rail-block{position:relative;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.65);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-card)}
+  .rail-x{position:absolute;top:10px;right:10px;z-index:2;width:28px;height:28px;border:none;border-radius:8px;
+    display:grid;place-items:center;background:rgba(255,255,255,.92);color:var(--muted);cursor:pointer}
+  .rail-pin{position:absolute;top:10px;right:44px;z-index:2;width:28px;height:28px;border:none;border-radius:8px;
+    display:grid;place-items:center;background:rgba(255,255,255,.92);color:var(--muted);cursor:pointer}
+  .rail-pin.on{background:rgba(18,143,142,.14);color:var(--sec)}
+  .rail-sec{padding:14px 14px 16px}
+  .rail-sec + .rail-sec{border-top:1px solid var(--line)}
+  .rail-sec .sec-head{padding:0 4px;padding-right:58px}
+  .rail-sec .sec-head h2{font-size:12px}
+  .vlist{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+  .vitem{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:11px;border:none;background:none;width:100%;
+    text-align:left;font-size:12.5px;font-weight:700;color:#374151;cursor:pointer;font-family:inherit;transition:all .14s}
+  .vitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .vitem:hover{background:rgba(17,69,75,.06)}
+  .vitem.on{background:linear-gradient(90deg,var(--sec-2),var(--sec));color:#fff}
+  .vitem.on .ic{background:rgba(255,255,255,.16);color:#fff}
+  @media (max-width:1100px){.statgrid{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}.statgrid{grid-template-columns:repeat(2,1fr)}.g4{grid-template-columns:1fr 1fr}.sp2{grid-column:1/-1}}
+</style>
+</head>
+<body>
+
+<header class="tealbar">
+  <div class="row1">
+    <span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div>
+  </div>
+  <div class="row2">
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 7h12l1.5 14h-15L6 7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10V6a3 3 0 0 1 6 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Sales</a>
+    <a class="navitem active" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 4h2.5l2.2 11h10.1l2-8H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Purchasing</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-5.5L21 9M5 9.5V19M9.5 9.5V19M14.5 9.5V19M19 9.5V19M3 19.5h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Banking</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Reports</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ================= 1 · LIST ================= -->
+<div class="stage" id="st1">
+  <div class="stage-body">
+    <span class="opt-tag">1 · Goods Received Notes · List</span>
+    <div class="page-head">
+      <div><h1>Goods Received Notes</h1><div class="sub">Record what was delivered, inspect it, and confirm receipt against the Purchase Order.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="more"><button class="btn btn-ghost btn-sm" onclick="this.parentNode.classList.toggle('open')">⋯ More</button>
+          <div class="more-menu">
+            <button class="more-item">📥 Import</button><button class="more-item">⇩ Export</button>
+            <button class="more-item">🖨 Print</button><button class="more-item">⟳ Refresh</button>
+          </div></div>
+        <button class="btn btn-sec btn-sm">📄 From Purchase Order</button>
+        <button class="btn btn-cta btn-sm">＋ New GRN</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-sec">
+        <div class="statgrid">
+          <button class="fbox on"><span class="t t-ink"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span><span class="l">Draft</span><span class="v" style="display:block">6</span></span></button>
+          <button class="fbox"><span class="t t-amber"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span><span class="l">Pending Insp.</span><span class="v" style="display:block">4</span></span></button>
+          <button class="fbox"><span class="t t-mint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="l">Posted</span><span class="v" style="display:block">82</span></span></button>
+          <button class="fbox"><span class="t t-steel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 1 0 9 9h-9V3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><span><span class="l">Partial</span><span class="v" style="display:block">3</span></span></button>
+          <button class="fbox"><span class="t t-red"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span><span class="l">Rejected</span><span class="v" style="display:block">2</span></span></button>
+        </div>
+        <div class="chips">
+          <span class="chip">Goods received this month <b>MWK 7.45M</b></span>
+          <span class="chip warn">Pending inspection <b>4</b> <span class="a">Review →</span></span>
+          <span class="chip">Partial receipts <b>3</b> <span class="a">View →</span></span>
+        </div>
+        <div class="controls">
+          <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input class="input" placeholder="GRN #, PO #, supplier…"></div>
+          <select class="input"><option>All Warehouses</option><option>Main Warehouse</option><option>Branch 01</option></select>
+          <select class="input"><option>Sort: Newest</option><option>Sort: Value high→low</option></select>
+        </div>
+      </div>
+      <div class="card-sec" style="padding-top:6px">
+        <div class="li-wrap">
+          <table>
+            <thead><tr><th style="width:11%">GRN №</th><th style="width:9%">Date</th><th style="width:11%">PO №</th>
+              <th style="width:15%">Supplier</th><th style="width:12%">Warehouse</th><th class="num" style="width:5%">Items</th>
+              <th class="num" style="width:10%">Value (K)</th><th style="width:13%">Status</th><th style="width:8%"></th></tr></thead>
+            <tbody>
+              <tr><td class="mono">GRN-000452</td><td class="em">Aug 13</td><td class="mono">PO-000783</td><td class="em">XYZ Ltd</td><td class="em">Branch 01</td>
+                <td class="numr">4</td><td class="numr">850.00</td><td><span class="badge b-insp"><span class="bdot"></span>Pending Inspection</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn">⋯</button></div></td></tr>
+              <tr><td class="mono">GRN-000451</td><td class="em">Aug 13</td><td class="mono">PO-000782</td><td class="em">ABC Supplies</td><td class="em">Main Warehouse</td>
+                <td class="numr">8</td><td class="numr">4,500.00</td><td><span class="badge b-post"><span class="bdot"></span>Posted</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button>
+                <span class="more"><button class="ibtn" onclick="this.parentNode.classList.toggle('open')"></button>
+                  <div class="more-menu">
+                    <button class="more-item">👁 View</button><button class="more-item">🖨 Print</button><button class="more-item">📕 Download PDF</button>
+                    <button class="more-item">📄 View Purchase Order</button><button class="more-item">🧾 View Supplier Invoice</button>
+                    <button class="more-item">📦 View Inventory Movement</button><button class="more-item">🕘 View Audit Trail</button>
+                    <button class="more-item">↩ Create Return</button>
+                  </div></span></div></td></tr>
+              <tr><td class="mono">GRN-000453</td><td class="em">Aug 12</td><td class="mono">PO-000779</td><td class="em">Tech World</td><td class="em">Main Warehouse</td>
+                <td class="numr">3</td><td class="numr">2,100.00</td><td><span class="badge b-part"><span class="bdot"></span>Partially Received</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn">⋯</button></div></td></tr>
+              <tr><td class="mono">GRN-000450</td><td class="em">Aug 12</td><td class="dash">—</td><td class="em">AHL Group</td><td class="em">Stores</td>
+                <td class="numr">2</td><td class="numr">42.00</td><td><span class="badge b-draft"><span class="bdot"></span>Draft</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn">⋯</button></div></td></tr>
+              <tr><td class="mono">GRN-000449</td><td class="em">Aug 10</td><td class="mono">PO-000775</td><td class="em">ABC Supplies</td><td class="em">Main Warehouse</td>
+                <td class="numr">5</td><td class="numr">640.00</td><td><span class="badge b-rej"><span class="bdot"></span>Rejected</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn">⋯</button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pagi"><span class="t">Showing 5 of 97 GRNs</span>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" disabled style="opacity:.45">← Prev</button><button class="btn btn-ghost btn-sm">Next →</button></div></div>
+    </section>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="All GRNs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Pending inspection — 4"><span class="ndot"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Posted"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic" data-tip="GRN Register"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-pin" title="Pin rail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 4h6l-1 7 3 2v2H7v-2l3-2-1-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 15v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Views</h2></div>
+      <div class="vlist">
+        <button class="vitem on"><span class="ic">📒</span>All GRNs</button>
+        <button class="vitem"><span class="ic">✎</span>Draft</button>
+        <button class="vitem"><span class="ic">⏳</span>Pending Inspection</button>
+        <button class="vitem"><span class="ic">✓</span>Posted</button>
+        <button class="vitem"><span class="ic">◔</span>Partially Received</button>
+        <button class="vitem"><span class="ic">✕</span>Rejected</button>
+      </div></div>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><h2>Reports</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📒</span>GRN Register</button>
+        <button class="vitem"><span class="ic">🚚</span>Supplier Delivery Performance</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 2 · SELECT PO ================= -->
+<div class="stage" id="st2">
+  <div class="stage-body">
+    <span class="opt-tag">2 · Create From Purchase Order — only eligible POs shown</span>
+    <div class="card" style="max-width:980px">
+      <div class="card-h" style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
+        <h2 style="font-size:14px;font-weight:800;color:var(--ink)">Select Purchase Order</h2>
+        <span class="fmt" style="margin-left:auto">open / partial only</span></div>
+      <div class="card-sec">
+        <div class="search" style="max-width:100%;margin-bottom:14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input class="input" placeholder="Search PO / supplier…"></div>
+        <div class="li-wrap" style="margin-top:0">
+          <table>
+            <thead><tr><th style="width:14%">PO №</th><th style="width:22%">Supplier</th><th style="width:12%">Date</th>
+              <th class="num" style="width:14%">Ordered (K)</th><th class="num" style="width:14%">Received (K)</th>
+              <th style="width:12%">Status</th><th style="width:12%"></th></tr></thead>
+            <tbody>
+              <tr><td class="mono">PO-000782</td><td class="em">ABC Supplies</td><td class="em">Aug 10</td><td class="numr">4,500.00</td><td class="numr">0.00</td>
+                <td><span class="badge b-post" style="background:rgba(18,143,142,.10);border-color:rgba(18,143,142,.35);color:var(--sec)"><span class="bdot"></span>Open</span></td>
+                <td><button class="btn btn-sec btn-xs">Select</button></td></tr>
+              <tr><td class="mono">PO-000783</td><td class="em">XYZ Ltd</td><td class="em">Aug 11</td><td class="numr">850.00</td><td class="numr">400.00</td>
+                <td><span class="badge b-part"><span class="bdot"></span>Partial</span></td>
+                <td><button class="btn btn-sec btn-xs">Select</button></td></tr>
+              <tr><td class="mono">PO-000785</td><td class="em">Tech World</td><td class="em">Aug 12</td><td class="numr">2,100.00</td><td class="numr">0.00</td>
+                <td><span class="badge b-post" style="background:rgba(18,143,142,.10);border-color:rgba(18,143,142,.35);color:var(--sec)"><span class="bdot"></span>Open</span></td>
+                <td><button class="btn btn-sec btn-xs">Select</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="GRN List"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Purchase Orders"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📒</span>GRN List</button>
+        <button class="vitem"><span class="ic">📄</span>Purchase Orders</button>
+        <button class="vitem"><span class="ic">🚚</span>Suppliers</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 3 · CREATE (FROM PO) ================= -->
+<div class="stage" id="st3">
+  <div class="stage-body">
+    <span class="opt-tag">3 · GRN · Create from PO-000782 — received items are the heart</span>
+    <div class="sticky-head">
+      <div><h1>Create Goods Received Note <span class="mono-chip">PO-000782</span></h1>
+        <div class="sub">ABC Supplies Ltd · ordered MWK 4,500.00 · received MWK 0.00</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">Cancel</button>
+        <div class="seg">
+          <button class="btn btn-ghost">Save Draft</button>
+          <button class="btn btn-cta">Save &amp; Submit ⤴</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="sumbar" aria-label="GRN summary">
+        <div class="cell"><div class="l">Ordered (PO)</div><div class="v">4,500.00</div><div class="n">3 lines</div></div>
+        <div class="cell"><div class="l">This Receipt</div><div class="v" style="color:var(--sec)">3,650.00</div><div class="n">live</div></div>
+        <div class="cell"><div class="l">Rejected</div><div class="v" style="color:var(--red-2)">300.00</div><div class="n">2 laptops damaged</div></div>
+        <div class="cell hero"><div class="l">GRN Total</div><div class="v">K3,650.00</div></div>
+      </div>
+
+      <section class="card">
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><h2>GRN Details</h2><span class="rule"></span></div>
+          <div class="g4">
+            <div class="field"><label>Supplier</label><input class="input h44" value="ABC Supplies Ltd" disabled></div>
+            <div class="field"><label>Purchase Order</label><input class="input h44" value="PO-000782 · 10 Aug 2026" disabled></div>
+            <div class="field"><label>Receipt Date</label><input class="input h44" type="date" value="2026-08-13"></div>
+            <div class="field"><label>Warehouse</label><select class="input h44"><option>Main Warehouse</option><option>Branch 01</option><option>Stores</option></select></div>
+            <div class="field"><label>Received By</label><input class="input h44" value="John Banda"></div>
+            <div class="field"><label>Delivery Note №</label><input class="input h44" value="DN-98231"></div>
+            <div class="field"><label>Invoice № (optional)</label><input class="input h44" placeholder="Supplier invoice ref"></div>
+            <div class="field"><label>Vehicle № (optional)</label><input class="input h44" placeholder="e.g. MW-45-21"></div>
+          </div>
+        </div>
+
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 8l8-5 8 5v8l-8 5-8-5V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8l8 5 8-5M12 13v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><h2>Received Items</h2><span class="rule"></span>
+            <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-xs">＋ Add Item</button><button class="btn btn-ghost btn-xs">⌨ Scan Barcode</button>
+              <button class="btn btn-ghost btn-xs"># Serial Numbers</button><button class="btn btn-ghost btn-xs">🧪 Add Batch</button>
+              <button class="btn btn-ghost btn-xs">📎 Add Attachment</button>
+            </div></div>
+          <div class="li-wrap">
+            <table>
+              <thead><tr><th style="width:20%">Item</th><th class="num" style="width:8%">Ordered</th><th class="num" style="width:9%">Prev. Rec.</th>
+                <th class="num" style="width:9%">This Receipt</th><th class="num" style="width:9%">Total Rec.</th><th class="num" style="width:8%">Remaining</th>
+                <th style="width:13%">Condition</th><th style="width:14%">Acceptance</th><th style="width:10%"></th></tr></thead>
+              <tbody>
+                <tr><td style="font-weight:600;color:var(--ink)">Laptop</td><td class="numr">10</td><td class="numr">0</td>
+                  <td class="num"><input class="ci" value="12"></td><td class="numr">12</td><td class="numr red">−2</td>
+                  <td><select class="ci"><option>Good</option><option>Damaged</option><option>Defective</option><option>Wrong Item</option><option>Expired</option><option>Short Delivered</option></select></td>
+                  <td><select class="ci"><option>Accepted</option><option>Partially Accepted</option><option>Rejected</option></select></td>
+                  <td><div class="row-act"><button class="ibtn" title="Serial numbers">#</button><button class="ibtn del">🗑</button></div></td></tr>
+                <tr><td colspan="9"><div class="warnbar">⚠ Received quantity exceeds outstanding quantity by 2 units.
+                  <input class="input" placeholder="Over-receipt reason (required)">
+                  <button class="btn btn-ghost btn-xs">Allow Over-Receipt</button>
+                  <button class="btn btn-ghost btn-xs">Block</button></div></td></tr>
+                <tr><td style="font-weight:600;color:var(--ink)">Laptop Bag</td><td class="numr">10</td><td class="numr">0</td>
+                  <td class="num"><input class="ci" value="10"></td><td class="numr">10</td><td class="numr">0</td>
+                  <td><select class="ci"><option>Good</option></select></td>
+                  <td><select class="ci"><option>Accepted</option></select></td>
+                  <td><div class="row-act"><button class="ibtn" title="Serial numbers">#</button><button class="ibtn del">🗑</button></div></td></tr>
+                <tr><td style="font-weight:600;color:var(--ink)">Mouse</td><td class="numr">10</td><td class="numr">0</td>
+                  <td class="num"><input class="ci" value="7"></td><td class="numr">7</td><td class="numr">3</td>
+                  <td><select class="ci"><option>Good</option></select></td>
+                  <td><select class="ci"><option>Accepted</option></select></td>
+                  <td><div class="row-act"><button class="ibtn" title="Serial numbers">#</button><button class="ibtn del">🗑</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="li-totals"><div class="box">
+            <div class="trow"><span>This Receipt Value</span><span class="v">3,650.00</span></div>
+            <div class="trow"><span>Rejected Value</span><span class="v">300.00</span></div>
+            <div class="trow total"><span>GRN Total</span><span class="v">K3,650.00</span></div>
+          </div></div>
+        </div>
+
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Delivery Discrepancies</h2><span class="rule"></span></div>
+          <div class="g4" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="field"><label>Ordered Qty</label><input class="input h44" value="30" disabled></div>
+            <div class="field"><label>Received Qty</label><input class="input h44" value="29" disabled></div>
+            <div class="field"><label>Shortage</label><input class="input h44" value="3 (Mouse)" disabled></div>
+            <div class="field sp2"><label>Discrepancy Type</label><select class="input h44"><option>Short delivery</option><option>Over delivery</option><option>Damaged goods</option><option>Wrong item</option><option>Missing item</option><option>Wrong specification</option><option>Expired goods</option></select></div>
+            <div class="field"><label>Action</label><select class="input h44"><option>Receive Remaining Later</option><option>Cancel Remaining</option><option>Return to Supplier</option></select></div>
+            <div class="field" style="grid-column:1/-1"><label>Reason</label><textarea class="input" style="min-height:3.5rem">Supplier delivered partial quantity; 2 laptops with damaged screens rejected at inspection.</textarea></div>
+          </div>
+        </div>
+
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h2>Attachments &amp; Receiving Notes</h2><span class="rule"></span></div>
+          <div class="attchips">
+            <span class="att">📎 Delivery_Note_DN98231.pdf</span><span class="att">📎 Inspection_Report.pdf</span><span class="att">🖼 Damaged_Items.jpg</span>
+            <button class="btn btn-ghost btn-xs">＋ Add Attachment</button>
+          </div>
+          <div class="field" style="margin-top:14px"><label>Receiving Notes</label><textarea class="input">8 laptops received. Two units had damaged screens and were rejected.</textarea></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="GRN List"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="View PO"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📒</span>GRN List</button>
+        <button class="vitem"><span class="ic">📄</span>View PO-000782</button>
+        <button class="vitem"><span class="ic">🚚</span>ABC Supplies</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 4 · DETAIL ================= -->
+<div class="stage" id="st4">
+  <div class="stage-body">
+    <span class="opt-tag">4 · GRN · Detail — professional document with chain, 3-way match, audit</span>
+    <div class="sticky-head">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="icon-btn" aria-label="Back to GRNs"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <nav class="crumbs"><a href="#">Purchasing</a> › <a href="#">Goods Received Notes</a> › <span class="here">GRN-000451</span></nav>
+      </div>
+      <div class="cluster">
+        <button class="btn btn-ghost btn-sm">🖨 Print</button>
+        <div class="more"><button class="btn btn-ghost btn-sm" onclick="this.parentNode.classList.toggle('open')">⋯ More</button>
+          <div class="more-menu">
+            <button class="more-item">📕 Download PDF</button>
+            <button class="more-item">🧾 Create Supplier Invoice</button>
+            <button class="more-item">📄 View Purchase Order</button>
+            <button class="more-item">📦 View Inventory Movement</button>
+            <button class="more-item">🕘 View Audit Trail</button>
+            <button class="more-item">↩ Create Return</button>
+            <button class="more-item danger">🔓 Reverse GRN</button>
+          </div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <section class="card">
+        <div class="prof">
+          <span class="ava-xl"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 8l8-5 8 5v8l-8 5-8-5V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8l8 5 8-5M12 13v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+          <div>
+            <div class="n">Goods Received Note <span class="mono-chip">GRN-000451</span> <span class="badge b-post"><span class="bdot"></span>Posted</span></div>
+            <div class="c">
+              <span>ABC Supplies Ltd</span><span>PO-000782</span><span>Main Warehouse</span><span>Received by John Banda</span><span>DN-98231</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="sumbar" aria-label="GRN summary">
+        <div class="cell"><div class="l">Ordered (PO)</div><div class="v">4,500.00</div><div class="n">3 lines</div></div>
+        <div class="cell"><div class="l">Received</div><div class="v" style="color:var(--sec)">4,200.00</div><div class="n">27 of 30 units</div></div>
+        <div class="cell"><div class="l">Rejected</div><div class="v" style="color:var(--red-2)">300.00</div><div class="n">2 laptops</div></div>
+        <div class="cell hero"><div class="l">Posted Value</div><div class="v">K4,200.00</div></div>
+      </div>
+
+      <section class="card">
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 8l8-5 8 5v8l-8 5-8-5V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8l8 5 8-5M12 13v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><h2>Received Items</h2><span class="rule"></span></div>
+          <div class="li-wrap">
+            <table>
+              <thead><tr><th style="width:22%">Item</th><th class="num" style="width:9%">Ordered</th><th class="num" style="width:10%">Received</th>
+                <th class="num" style="width:10%">Rejected</th><th style="width:14%">Condition</th><th style="width:16%">Acceptance</th><th style="width:12%">Status</th></tr></thead>
+              <tbody>
+                <tr><td style="font-weight:600;color:var(--ink)">Laptop</td><td class="numr">10</td><td class="numr">8</td><td class="numr red">2</td>
+                  <td class="em">2 damaged</td><td><span class="badge b-part"><span class="bdot"></span>Partially Accepted</span></td><td><span class="badge b-part"><span class="bdot"></span>Partial</span></td></tr>
+                <tr><td style="font-weight:600;color:var(--ink)">Laptop Bag</td><td class="numr">10</td><td class="numr">10</td><td class="numr">0</td>
+                  <td class="em">Good</td><td><span class="badge b-post"><span class="bdot"></span>Accepted</span></td><td><span class="badge b-post"><span class="bdot"></span>Complete</span></td></tr>
+                <tr><td style="font-weight:600;color:var(--ink)">Mouse</td><td class="numr">10</td><td class="numr">7</td><td class="numr">0</td>
+                  <td class="em">Good · 3 short</td><td><span class="badge b-post"><span class="bdot"></span>Accepted</span></td><td><span class="badge b-part"><span class="bdot"></span>Partial</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg></span><h2>Three-Way Match</h2><span class="rule"></span></div>
+          <div class="matchgrid">
+            <div class="mcol"><div class="h">Purchase Order</div>
+              <div class="r"><span>Laptops</span><b>10</b></div><div class="r"><span>Unit price</span><b>K150.00</b></div><div class="r"><span>Total</span><b>4,500.00</b></div></div>
+            <div class="mcol"><div class="h">GRN-000451</div>
+              <div class="r"><span>Laptops received</span><b>8</b></div><div class="r"><span>Rejected</span><b>2</b></div><div class="r"><span>Received value</span><b>4,200.00</b></div></div>
+            <div class="mcol"><div class="h">Supplier Invoice</div>
+              <div class="r"><span>Laptops invoiced</span><b>8</b></div><div class="r"><span>Unit price</span><b>K150.00</b></div><div class="r"><span>Invoice total</span><b>4,200.00</b></div></div>
+          </div>
+          <span class="match-ok">✓ MATCH — invoice agrees with received quantities (8 of 10)</span>
+        </div>
+
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg></span><h2>Workflow</h2><span class="rule"></span>
+            <span class="fmt" style="margin-left:auto">locked · posted</span></div>
+          <div class="steps">
+            <div class="step"><span class="sdot done"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <div><div class="tt">Goods Received</div><div class="mm">John Banda · Main Warehouse</div></div><span class="when">13 Aug 09:15</span></div>
+            <div class="step"><span class="sdot done"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <div><div class="tt">Inspected</div><div class="mm">Peter Phiri · 2 laptops rejected (damaged)</div></div><span class="when">13 Aug 09:42</span></div>
+            <div class="step"><span class="sdot done"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <div><div class="tt">Approved</div><div class="mm">Procurement Manager</div></div><span class="when">13 Aug 10:05</span></div>
+            <div class="step"><span class="sdot done"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <div><div class="tt">Posted to Inventory</div><div class="mm">Stock movement RECEIPT · +8 Laptops, +10 Bags, +7 Mouse</div></div><span class="when">13 Aug 10:06</span></div>
+          </div>
+        </div>
+
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><h2>Related Documents</h2><span class="rule"></span></div>
+          <div class="chain">
+            <a href="#">PR-000125</a><span class="arr">→</span>
+            <a href="#">PO-000782</a><span class="arr">→</span>
+            <a href="#" class="here">GRN-000451</a><span class="arr">→</span>
+            <a href="#">INV-000982</a><span class="arr">→</span>
+            <a href="#">PMT-000210</a>
+          </div>
+        </div>
+
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Audit Trail</h2><span class="rule"></span></div>
+          <div class="audit">
+            <div class="arow"><span class="when">13 Aug 09:15</span><span class="who">John Banda</span><span class="what">Created GRN from <b>PO-000782</b> · 3 lines</span></div>
+            <div class="arow"><span class="when">13 Aug 09:42</span><span class="who">Peter Phiri</span><span class="what">Inspected · rejected <b>2 laptops</b> (damaged screens)</span></div>
+            <div class="arow"><span class="when">13 Aug 10:05</span><span class="who">M. Phiri</span><span class="what">Approved for posting</span></div>
+            <div class="arow"><span class="when">13 Aug 10:06</span><span class="who">System</span><span class="what">Posted · inventory movement <b>RCPT GRN-000451</b> · GRN locked</span></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Create Supplier Invoice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="View PO"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Inventory Movement"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 8l8-5 8 5v8l-8 5-8-5V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8l8 5 8-5M12 13v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="Create Return"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 14l-4-4 4-4M5 10h9a5 5 0 0 1 0 10h-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">🧾</span>Create Supplier Invoice</button>
+        <button class="vitem"><span class="ic">📄</span>View PO-000782</button>
+        <button class="vitem"><span class="ic">📦</span>Inventory Movement</button>
+        <button class="vitem"><span class="ic">↩</span>Create Return</button>
+        <button class="vitem"><span class="ic">🖨</span>Print</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 5 · REPORTS ================= -->
+<div class="stage" id="st5">
+  <div class="stage-body">
+    <span class="opt-tag">5 · Goods Received Reports</span>
+    <div class="page-head">
+      <div><h1>Goods Received Reports</h1><div class="sub">Receipts, supplier performance, outstanding POs and GRN aging.</div></div>
+      <button class="btn btn-ghost btn-sm">⇩ Export All</button>
+    </div>
+
+    <div class="filterbar">
+      <div class="seg2"><button class="on">This Month</button><button>This Quarter</button><button>This Year</button><button>Custom</button></div>
+      <select class="input" style="width:auto"><option>All Suppliers</option><option>ABC Supplies</option><option>XYZ Ltd</option><option>Tech World</option></select>
+      <select class="input" style="width:auto"><option>All Warehouses</option><option>Main Warehouse</option><option>Branch 01</option></select>
+    </div>
+
+    <div class="repcards" style="margin-bottom:16px">
+      <div class="repcard"><span class="t">GRN Register</span><span class="d">All GRNs by date with PO, supplier, warehouse, value and status.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><span class="t">Goods Received by Supplier</span><span class="d">Supplier delivery history: value, lines, on-time vs late.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><span class="t">Outstanding Purchase Orders</span><span class="d">POs with items still not received, by age and value.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><span class="t">Partial Receipts</span><span class="d">Partially fulfilled POs with remaining quantities.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><span class="t">Rejected Goods</span><span class="d">Rejected / damaged goods by supplier, item and reason.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><span class="t">GRN Aging</span><span class="d">Receipts waiting for inspection, approval, invoice or posting.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h" style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
+        <h2 style="font-size:14px;font-weight:800;color:var(--ink)">Supplier Delivery Performance — Aug 2026</h2>
+        <span class="fmt" style="margin-left:auto">sample</span></div>
+      <div class="li-wrap" style="margin-top:0;border:none;border-radius:0">
+        <table>
+          <thead><tr><th style="width:26%">Supplier</th><th class="num" style="width:14%">Ordered</th><th class="num" style="width:14%">Received</th>
+            <th class="num" style="width:12%">Short</th><th class="num" style="width:14%">Rejected</th><th class="num" style="width:12%">On Time</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600;color:var(--ink)">ABC Supplies</td><td class="numr">500</td><td class="numr">480</td><td class="numr red">20</td><td class="numr red">5</td><td class="numr green">92%</td></tr>
+            <tr><td style="font-weight:600;color:var(--ink)">XYZ Ltd</td><td class="numr">300</td><td class="numr">300</td><td class="numr">0</td><td class="numr red">2</td><td class="numr green">98%</td></tr>
+            <tr><td style="font-weight:600;color:var(--ink)">Tech World</td><td class="numr">120</td><td class="numr">96</td><td class="numr red">24</td><td class="numr">0</td><td class="numr" style="color:var(--amber-2);font-weight:700">81%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="GRN List"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Outstanding POs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📒</span>GRN List</button>
+        <button class="vitem"><span class="ic">📄</span>Purchase Orders</button>
+        <button class="vitem"><span class="ic">📒</span>GRN Register</button>
+      </div></div>
+  </div></aside>
+</div>
+
+</div>
+
+<script>
+  var stages=[].slice.call(document.querySelectorAll('.stage'));
+  function isOpen(){return document.body.classList.contains('ql-open');}
+  function setOpen(o){document.body.classList.toggle('ql-open',o);}
+  stages.forEach(function(st){
+    var x=st.querySelector('.rail-x'); if(x)x.addEventListener('click',function(){setOpen(false);});
+    st.querySelectorAll('.s-ic.expand').forEach(function(b){b.addEventListener('click',function(){setOpen(true);});});
+    var p=st.querySelector('.rail-pin'); if(p)p.addEventListener('click',function(){p.classList.toggle('on');});
+  });
+  document.addEventListener('click',function(e){
+    if(e.target.closest('.ql-drawer')||e.target.closest('.slim-rail')||e.target.closest('.more'))return;
+    document.querySelectorAll('.more.open').forEach(function(m){m.classList.remove('open');});
+    setOpen(false);
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){setOpen(false);document.querySelectorAll('.more.open').forEach(function(m){m.classList.remove('open');});}});
+  function updateInView(){
+    var mid=window.innerHeight/2,best=null,bs=Infinity;
+    stages.forEach(function(s){
+      var r=s.getBoundingClientRect(),sc;
+      if(r.top<=mid&&r.bottom>=mid)sc=0;else sc=Math.min(Math.abs(r.top-mid),Math.abs(r.bottom-mid));
+      if(sc<bs){bs=sc;best=s;}
+    });
+    stages.forEach(function(s){s.classList.toggle('in-view',s===best);});
+  }
+  window.addEventListener('scroll',updateInView,{passive:true});
+  window.addEventListener('resize',updateInView);
+  updateInView();
+</script>
+</body>
+</html>

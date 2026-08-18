@@ -26,6 +26,11 @@ class FiscalYearController extends Controller
         return view('accounting.fiscal-years.index', compact('fiscalYears'));
     }
 
+    public function create()
+    {
+        return view('accounting.fiscal-years.create');
+    }
+
     public function show(FiscalYear $fiscalYear)
     {
         $fiscalYear->load(['periods.closedByUser', 'closedByUser', 'closingEntry']);
@@ -40,6 +45,9 @@ class FiscalYearController extends Controller
         $validated = $request->validate([
             'label' => 'required|string|max:50',
             'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'generate_periods' => 'sometimes|boolean',
+            'add_adjustment' => 'sometimes|boolean',
         ]);
 
         try {
@@ -54,6 +62,20 @@ class FiscalYearController extends Controller
         } catch (\InvalidArgumentException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
+    }
+
+    public function update(Request $request, FiscalYear $fiscalYear)
+    {
+        $validated = $request->validate([
+            'label' => 'required|string|max:50',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+        ]);
+
+        $fiscalYear->update($validated);
+
+        return redirect()->route('accounting.fiscal-years.show', $fiscalYear)
+            ->with('success', 'Fiscal year updated successfully.');
     }
 
     public function close(FiscalYear $fiscalYear)

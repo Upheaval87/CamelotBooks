@@ -1,154 +1,88 @@
-@php
-    $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
-@endphp
 <x-app-layout>
-    <div class="pb-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="suite">
+    <div class="ac-wrap">
+        <div class="ac-page-head">
+            <nav class="ac-crumbs">
+                <a href="{{ route('accounting.general-ledger.index') }}">General Ledger</a> <span>›</span> <span class="here">{{ $account->code }} — {{ $account->name }}</span>
+            </nav>
+        </div>
 
-                {{-- page head --}}
-                <div class="page-head">
-                    <div>
-                        <h1>{{ __('Account Statement') }} <span class="mono-chip">{{ $account->code }}</span></h1>
-                        <div class="sub">{{ $account->name }} · {{ ucfirst($account->type) }}</div>
+        <div class="ac-card" style="margin-bottom:22px">
+            <div class="ac-pad">
+                <form method="GET" class="ac-g4">
+                    <div class="ac-f">
+                        <label>Account</label>
+                        <input class="in" value="{{ $account->code }} — {{ $account->name }}" disabled>
                     </div>
-                    <div class="tbtns">
-                        <a href="{{ route('accounting.general-ledger.account-export-csv', array_merge(['accountId' => $account->id], request()->query())) }}" class="btn btn-ghost btn-sm">⇩ {{ __('Export CSV') }}</a>
-                        <a href="{{ route('accounting.general-ledger.account-export-pdf', array_merge(['accountId' => $account->id], request()->query())) }}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">🖨 {{ __('Export PDF') }}</a>
-                        <a href="{{ route('accounting.general-ledger.index') }}" class="btn btn-ghost btn-sm">← {{ __('Back') }}</a>
+                    <div class="ac-f">
+                        <label>From</label>
+                        <input class="in" type="date" name="date_from" value="{{ request('date_from') }}">
                     </div>
+                    <div class="ac-f">
+                        <label>To</label>
+                        <input class="in" type="date" name="date_to" value="{{ request('date_to') }}">
+                    </div>
+                    <div class="ac-f">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="ac-btn ac-btn-ghost ac-btn-sm">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="ac-card">
+            <div class="ac-card-h">
+                <h2>Transactions</h2>
+                <div class="right">
+                    <span class="ac-tchip">Dr {{ number_format($accountStats['debit'], 2) }} · Cr {{ number_format($accountStats['credit'], 2) }}</span>
                 </div>
-
-                {{-- stats --}}
-                <section class="card card-sec">
-                    <div class="sec-head">
-                        <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
-                        <h2>{{ __('Statement') }}</h2>
-                        <span class="rule"></span>
-                    </div>
-
-                    <div class="sgrid">
-                        <div class="sbox">
-                            <div class="l">{{ __('Opening Balance') }}</div>
-                            <div class="v">{{ format_number($openingBalance) }}</div>
-                        </div>
-                        <div class="sbox">
-                            <div class="l">Debit ({{ $cs }})</div>
-                            <div class="v">{{ format_number($accountStats['debit']) }}</div>
-                        </div>
-                        <div class="sbox">
-                            <div class="l">Credit ({{ $cs }})</div>
-                            <div class="v">{{ format_number($accountStats['credit']) }}</div>
-                        </div>
-                        <div class="sbox">
-                            <div class="l">{{ __('Closing Balance') }}</div>
-                            <div class="v t-teal">{{ format_number($closingBalance) }}</div>
-                        </div>
-                    </div>
-
-                    {{-- filters --}}
-                    <form method="GET" action="{{ route('accounting.general-ledger.account', $account) }}" id="gl-account-form">
-                        <div class="controls">
-                            <input type="date" name="date_from" class="input" value="{{ request('date_from') }}" title="{{ __('Date from') }}" />
-                            <input type="date" name="date_to" class="input" value="{{ request('date_to') }}" title="{{ __('Date to') }}" />
-                            <x-scoped-search-field
-                                name="branch_id"
-                                entity="branch"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
-                                :value="request('branch_id')"
-                                :label="request('branch_id') ? ($branches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
-                                placeholder="{{ __('All Branches') }}"
-                            />
-                            <button type="submit" class="btn ghost">{{ __('Filter') }}</button>
-                            @if(request()->hasAny('date_from', 'date_to', 'branch_id'))
-                                <a href="{{ route('accounting.general-ledger.account', $account) }}" class="btn ghost">{{ __('Clear') }}</a>
-                            @endif
-                            <span class="chip-t">{{ $transactionsPaginator->total() }} {{ __('lines') }}</span>
-                        </div>
-                    </form>
-                </section>
-
-                {{-- transactions --}}
-                <section class="card" style="padding:20px 24px; margin-top:16px">
-                    <div class="li-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="width:11%">{{ __('Date') }}</th>
-                                    <th style="width:13%">{{ __('Journal #') }}</th>
-                                    <th style="width:14%">{{ __('Branch') }}</th>
-                                    <th style="width:26%">{{ __('Description') }}</th>
-                                    <th class="num" style="width:10%">Debit ({{ $cs }})</th>
-                                    <th class="num" style="width:10%">Credit ({{ $cs }})</th>
-                                    <th class="num" style="width:10%">{{ __('Running Balance') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($transactionsPaginator as $txn)
-                                    <tr>
-                                        <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $txn['line']->journalEntry->date->format('M d, Y') }}</td>
-                                        <td><a href="{{ route('accounting.journal-entries.show', $txn['line']->journalEntry) }}" class="mono" style="color:var(--sec,#128F8E)">{{ $txn['line']->journalEntry->journal_number }}</a></td>
-                                        <td class="em">{{ $txn['line']->journalEntry->branch->name ?? '—' }}</td>
-                                        <td class="em">{{ $txn['line']->memo ?? $txn['line']->journalEntry->memo ?? '—' }}</td>
-                                        <td class="numr">{{ (float) $txn['line']->debit > 0 ? format_number($txn['line']->debit) : '—' }}</td>
-                                        <td class="numr">{{ (float) $txn['line']->credit > 0 ? format_number($txn['line']->credit) : '—' }}</td>
-                                        <td class="numr">{{ format_number($txn['running_balance']) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="7"><div class="empty">{{ __('No transactions found.') }}</div></td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        @if($transactionsPaginator->hasPages())
-                            @php
-                                $paginator = $transactionsPaginator->appends(request()->query());
-                                $last = $paginator->lastPage();
-                                $cur = $paginator->currentPage();
-                                $winStart = max(1, $cur - 2);
-                                $winEnd = min($last, $cur + 2);
-                                $firstItem = $paginator->firstItem() ?: 0;
-                                $lastItem = $paginator->lastItem() ?: 0;
-                            @endphp
-                            <div class="pagi">
-                                <span class="t">{{ __('Showing') }} {{ $firstItem }}–{{ $lastItem }} {{ __('of') }} {{ $paginator->total() }} {{ __('lines') }}</span>
-                                <span class="pg">
-                                    @if($paginator->onFirstPage())
-                                        <span class="pgbtn" aria-disabled="true" aria-label="{{ __('Previous') }}">‹</span>
-                                    @else
-                                        <a href="{{ $paginator->previousPageUrl() }}" aria-label="{{ __('Previous') }}">‹</a>
-                                    @endif
-
-                                    @if($winStart > 1)
-                                        <a href="{{ $paginator->url(1) }}">1</a>
-                                        @if($winStart > 2)<span class="pgbtn dots" aria-hidden="true">…</span>@endif
-                                    @endif
-
-                                    @for($page = $winStart; $page <= $winEnd; $page++)
-                                        @if($page === $cur)
-                                            <span class="pgbtn cur" aria-current="page">{{ $page }}</span>
-                                        @else
-                                            <a href="{{ $paginator->url($page) }}">{{ $page }}</a>
-                                        @endif
-                                    @endfor
-
-                                    @if($winEnd < $last)
-                                        @if($winEnd < $last - 1)<span class="pgbtn dots" aria-hidden="true">…</span>@endif
-                                        <a href="{{ $paginator->url($last) }}">{{ $last }}</a>
-                                    @endif
-
-                                    @if($paginator->hasMorePages())
-                                        <a href="{{ $paginator->nextPageUrl() }}" aria-label="{{ __('Next') }}">›</a>
-                                    @else
-                                        <span class="pgbtn" aria-disabled="true" aria-label="{{ __('Next') }}">›</span>
-                                    @endif
-                                </span>
-                            </div>
-                        @endif
-                    </div>
-                </section>
+            </div>
+            <div class="ac-li-wrap">
+                <table class="ac-table">
+                    <thead>
+                        <tr>
+                            <th style="width:11%">Date</th>
+                            <th style="width:10%">Journal</th>
+                            <th style="width:12%">Account</th>
+                            <th style="width:22%">Description</th>
+                            <th class="num" style="width:12%">Debit</th>
+                            <th class="num" style="width:12%">Credit</th>
+                            <th class="num" style="width:12%">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background:rgba(17,69,75,.04)">
+                            <td class="ac-em" colspan="5">Opening Balance</td>
+                            <td class="ac-numr bold" colspan="2">{{ number_format($openingBalance, 2) }}</td>
+                        </tr>
+                        @forelse($transactionsPaginator as $entry)
+                        @php
+                            $line = $entry['line'];
+                            $rb = $entry['running_balance'];
+                        @endphp
+                        <tr>
+                            <td class="ac-em">{{ $line->journalEntry?->date?->format('d M Y') ?? '—' }}</td>
+                            <td class="ac-mono"><a href="{{ route('accounting.journal-entries.show', $line->journalEntry) }}" style="color:var(--ac-deep-1);text-decoration:none;font-weight:600;font-size:12.5px">{{ $line->journalEntry?->journal_number ?? '—' }}</a></td>
+                            <td class="ac-mono">{{ $line->account?->code ?? '—' }}</td>
+                            <td class="ac-em">{{ $line->memo ?? '—' }}</td>
+                            <td class="ac-numr">{{ $line->debit > 0 ? number_format($line->debit, 2) : '—' }}</td>
+                            <td class="ac-numr">{{ $line->credit > 0 ? number_format($line->credit, 2) : '—' }}</td>
+                            <td class="ac-numr bold">{{ number_format($rb, 2) }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="ac-em" style="text-align:center;padding:40px">No entries for this account.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" style="font-weight:800">Total</td>
+                            <td class="ac-numr bold">{{ number_format($accountStats['debit'], 2) }}</td>
+                            <td class="ac-numr bold">{{ number_format($accountStats['credit'], 2) }}</td>
+                            <td class="ac-numr bold">{{ number_format($closingBalance, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>

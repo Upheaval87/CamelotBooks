@@ -80,6 +80,16 @@ class Product extends Model
         return $this->hasMany(InventoryStock::class);
     }
 
+    public function itemCategory(): BelongsTo
+    {
+        return $this->belongsTo(ItemCategory::class, 'category_id');
+    }
+
+    public function getStockQtyAttribute(): float
+    {
+        return (float) $this->stock()->sum('quantity_on_hand');
+    }
+
     public function invoiceLines(): HasMany
     {
         return $this->hasMany(InvoiceLine::class);

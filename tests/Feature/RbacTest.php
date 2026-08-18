@@ -209,7 +209,7 @@ class RbacTest extends TestCase
 
         \App\Services\FeatureManagement::disable($this->company->id, 'inventory');
 
-        $this->get(route('accounting.inventory-items.index'))
+        $this->get(route('accounting.inventory.items'))
             ->assertStatus(404);
     }
 
@@ -219,7 +219,7 @@ class RbacTest extends TestCase
 
         \App\Services\FeatureManagement::enable($this->company->id, 'inventory');
 
-        $this->get(route('accounting.inventory-items.index'))
+        $this->get(route('accounting.inventory.items'))
             ->assertOk();
     }
 }

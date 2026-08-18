@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchase Requisitions — Redesigned Module</title>
+<style>
+  :root{
+    --rw:300px;--sw:48px;--gap:20px;--gap-slim:12px;
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;
+    --sec:#128F8E;--sec-2:#149897;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;
+    --muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;
+    --red:#dc2626;--red-2:#b91c1c;--green:#15803d;--amber:#d97706;--amber-2:#b45309;
+    --shadow-card:0 1px 2px rgba(10,42,46,.05),0 12px 32px -8px rgba(10,42,46,.10),0 32px 64px -24px rgba(8,40,44,.14);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 72px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}
+  .spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55)}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none}
+  .navitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--ink)}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .navitem.active .ic{color:#fff}
+
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding:26px 0 16px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .sticky-head{position:sticky;top:0;z-index:30;background:rgba(238,244,244,.88);backdrop-filter:blur(12px);
+    padding:12px 0;border-bottom:1px solid var(--line);margin:22px 0;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  h1{font-size:21px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .mono-chip{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--deep-1);
+    background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);border-radius:8px;padding:4px 10px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-draft{background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);color:#11454b}.b-draft .bdot{background:#11454b}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:var(--amber)}
+  .b-app{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}.b-app .bdot{background:#22c55e}
+  .b-rej{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-rej .bdot{background:var(--red-2)}
+  .b-conv{background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);color:var(--sec)}.b-conv .bdot{background:var(--sec)}
+  .prio{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800}
+  .prio.norm{background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .prio.urg{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:12px;
+    font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151}
+  .btn-ghost:hover{background:rgba(17,69,75,.06);border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-sec{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-danger-o{background:#fff;border-color:rgba(220,38,38,.35);color:var(--red)}
+  .btn-danger-o:hover{background:#fef2f2}
+  .btn-sm{height:34px;padding:0 13px;font-size:12.5px;border-radius:10px}
+  .seg{display:inline-flex;gap:4px;padding:4px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--border)}
+  .seg .btn{height:34px;border-radius:10px;box-shadow:none}
+  .icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.85);
+    display:grid;place-items:center;color:var(--muted);cursor:pointer;flex:none}
+  .icon-btn:hover{color:var(--ink);border-color:rgba(17,69,75,.3)}
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+  .crumbs a{color:var(--muted);text-decoration:none}
+  .crumbs a:hover{color:var(--ink)}
+  .crumbs .here{color:var(--ink);font-weight:800;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+  .cluster{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .vdiv{width:1px;height:22px;background:var(--border)}
+
+  .card{background:rgba(255,255,255,.75);backdrop-filter:blur(14px);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-sec{padding:20px 24px}
+  .card-sec + .card-sec{border-top:1px solid var(--line)}
+  .sec-head{display:flex;align-items:center;gap:12px}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;background:var(--sec);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px -3px rgba(10,80,80,.4)}
+  .sec-head h2{font-size:14px;font-weight:600;color:var(--muted)}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .statgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .fbox{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;
+    background:rgba(255,255,255,.85);cursor:pointer;text-align:left;transition:all .14s}
+  .fbox:hover{border-color:rgba(17,69,75,.3)}
+  .fbox.on{border-color:rgba(18,143,142,.55);box-shadow:0 0 0 3px rgba(18,143,142,.12)}
+  .fbox .t{width:2rem;height:2rem;border-radius:.625rem;display:grid;place-items:center;color:#fff;flex:none}
+  .t-ink{background:linear-gradient(180deg,#17565d,#0a2e32)}
+  .t-teal{background:linear-gradient(180deg,#149897,#128F8E)}
+  .t-mint{background:#7FD1C0;color:#0c3539}
+  .t-red{background:#dc2626}
+  .t-amber{background:#d97706}
+  .fbox .l{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .fbox .v{font-size:15px;font-weight:800;color:var(--ink)}
+
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  .search{position:relative;flex:1;min-width:220px;max-width:420px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .input{width:100%;height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 12px;
+    font-size:13px;color:var(--ink);font-family:inherit;transition:all .15s}
+  .search .input{padding-left:36px}
+  .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  select.input{width:auto;padding-right:30px;appearance:none;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center}
+  .input.h44{height:44px}
+  textarea.input{height:auto;min-height:5.5rem;padding:.75rem;border-style:dashed;background:rgba(238,244,244,.5);border-radius:10px;resize:vertical}
+
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 20px;margin-top:16px}
+  .sp2{grid-column:span 2}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .field .hint{margin-top:6px;font-size:10.5px;color:var(--faint)}
+  .combo{display:flex}
+  .combo .in-wrap{flex:1;position:relative}
+  .combo .in-wrap svg.m{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .combo .in-wrap .input{padding-left:36px}
+  .combo .input{border-radius:8px 0 0 8px}
+  .combo button{width:42px;border:1px solid var(--border);border-left:none;border-radius:0 8px 8px 0;background:rgba(240,248,248,.9);color:var(--sec);cursor:pointer;display:grid;place-items:center}
+
+  .sumbar{display:grid;grid-template-columns:1fr 1fr 1fr 1.25fr;border:1px solid var(--border);border-radius:16px;
+    overflow:hidden;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);box-shadow:var(--shadow-card)}
+  .sumbar .cell{padding:14px 18px;border-right:1px solid var(--line);min-width:0}
+  .sumbar .cell .l{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .sumbar .cell .v{margin-top:4px;font-size:1.125rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .sumbar .cell .n{margin-top:2px;font-size:10px;color:var(--faint)}
+  .sumbar .cell.hero{border-right:none;background:linear-gradient(90deg,var(--sec-2),var(--sec) 60%,#107c7b);
+    display:flex;flex-direction:column;justify-content:center}
+  .sumbar .cell.hero .l{color:#dff7f6}
+  .sumbar .cell.hero .v{color:#fff;font-size:1.25rem}
+  .sumbar .cell.hero.amber{background:linear-gradient(90deg,#b45309,#d97706)}
+  .sumbar .cell.hero.amber .l{color:#ffedd5}
+  @media (max-width:900px){.sumbar{grid-template-columns:1fr 1fr}.sumbar .cell.hero{grid-column:1/-1;border-top:1px solid var(--line)}}
+
+  .li-wrap{margin-top:16px;border:1px solid var(--border);border-radius:14px;background:#fafdfd}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;
+    letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th:first-child{border-radius:13px 0 0 0}thead th:last-child{border-radius:0 13px 0 0}
+  thead th.num{text-align:right}
+  tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{padding:12px;border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink);background:rgba(17,69,75,.03)}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:500;color:var(--ink)}
+  .em{color:var(--muted)}.dash{color:var(--faint)}
+  .numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  .numr.bold{font-weight:800}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .ibtn.del:hover{background:rgba(220,38,38,.08);color:var(--red)}
+  .pagi{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--line)}
+  .pagi .t{font-size:12px;color:var(--muted)}
+  .ci{height:36px;border-radius:7px;border:1px solid var(--border);background:#fff;padding:0 9px;font-size:12.5px;width:100%;font-family:inherit;color:var(--ink)}
+  td.num .ci{text-align:right}
+  .amt{display:block;text-align:right;font-weight:500;color:var(--ink);padding-right:6px}
+  .li-totals{margin-top:12px;display:flex;justify-content:flex-end}
+  .li-totals .box{width:300px}
+  .trow{display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+  .trow .v{font-weight:600;color:var(--ink)}
+  .trow.total{border-bottom:none;border-top:1.5px solid var(--deep-1);margin-top:4px;padding-top:9px;font-weight:800;color:var(--deep-1)}
+
+  .prof{display:flex;align-items:center;gap:16px;padding:20px 24px}
+  .ava-xl{width:3.5rem;height:3.5rem;border-radius:1rem;display:grid;place-items:center;flex:none;
+    background:linear-gradient(180deg,rgba(18,143,142,.16),rgba(18,143,142,.08));border:1px solid rgba(18,143,142,.3);color:var(--sec)}
+  .prof .n{font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .prof .c{margin-top:5px;display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+  .prof .c span{display:inline-flex;align-items:center;gap:6px}
+
+  .steps{display:flex;flex-direction:column;margin-top:16px}
+  .step{display:flex;gap:14px;position:relative;padding-bottom:20px}
+  .step::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--line)}
+  .step:last-child{padding-bottom:0}.step:last-child::before{display:none}
+  .sdot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;z-index:1;border:2px solid}
+  .sdot.done{background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:transparent;color:#fff}
+  .sdot.cur{background:#fff;border-color:var(--amber);color:var(--amber)}
+  .sdot.todo{background:#fff;border-color:var(--border);color:var(--faint)}
+  .step .tt{font-size:13px;font-weight:700;color:var(--ink)}
+  .step .mm{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .step .when{margin-left:auto;font-size:11px;color:var(--faint);white-space:nowrap}
+  .appr-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+
+  .repcards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:1000px){.repcards{grid-template-columns:1fr 1fr}}
+  @media (max-width:700px){.repcards{grid-template-columns:1fr}}
+  .repcard{border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card);padding:16px;display:flex;flex-direction:column;gap:8px}
+  .repcard .top{display:flex;justify-content:space-between;align-items:flex-start}
+  .tile{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:rgba(18,143,142,.10);color:var(--sec)}
+  .repcard .t{font-size:14px;font-weight:800;color:var(--ink)}
+  .repcard .d{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .repcard .foot{margin-top:auto;display:flex;gap:6px;align-items:center;padding-top:6px}
+  .fmt{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--deep-1);background:rgba(17,69,75,.06);
+    border:1px solid rgba(17,69,75,.16);border-radius:999px;padding:2px 8px}
+  .open-l{margin-left:auto;font-size:11px;font-weight:800;color:var(--sec);text-decoration:none}
+  .open-l:hover{text-decoration:underline}
+  .filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.8);border:1px solid var(--border);
+    border-radius:14px;padding:10px 12px;margin-bottom:16px;box-shadow:var(--shadow-card)}
+  .seg2{display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:rgba(238,244,244,.9);border:1px solid var(--border)}
+  .seg2 button{height:30px;padding:0 12px;border:none;border-radius:8px;background:none;font-family:inherit;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .seg2 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(10,42,46,.12)}
+
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + var(--gap-slim));transition:margin-right .35s cubic-bezier(.4,0,.2,1)}
+  body.ql-open .stage-body{margin-right:calc(var(--rw) + var(--gap))}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:none;
+    flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  body:not(.ql-open) .stage.in-view .slim-rail{display:flex}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;
+    background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);
+    background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;
+    box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-ic .ndot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--amber);border:1.5px solid #fff}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  .s-ic.expand:hover{background:linear-gradient(180deg,#107c7b,#128F8E);filter:brightness(1.1)}
+  .ql-drawer{position:fixed;top:50%;right:0;width:var(--rw);z-index:40;
+    transform:translate(103%,-50%);visibility:hidden;
+    transition:transform .35s cubic-bezier(.4,0,.2,1), visibility 0s linear .35s}
+  body.ql-open .stage.in-view .ql-drawer{transform:translate(0,-50%);visibility:visible;
+    transition:transform .35s cubic-bezier(.4,0,.2,1)}
+  .rail-block{position:relative;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.65);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-card)}
+  .rail-x{position:absolute;top:10px;right:10px;z-index:2;width:28px;height:28px;border:none;border-radius:8px;
+    display:grid;place-items:center;background:rgba(255,255,255,.92);color:var(--muted);cursor:pointer}
+  .rail-pin{position:absolute;top:10px;right:44px;z-index:2;width:28px;height:28px;border:none;border-radius:8px;
+    display:grid;place-items:center;background:rgba(255,255,255,.92);color:var(--muted);cursor:pointer}
+  .rail-pin.on{background:rgba(18,143,142,.14);color:var(--sec)}
+  .rail-sec{padding:14px 14px 16px}
+  .rail-sec + .rail-sec{border-top:1px solid var(--line)}
+  .rail-sec .sec-head{padding:0 4px;padding-right:58px}
+  .rail-sec .sec-head h2{font-size:12px}
+  .vlist{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+  .vitem{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:11px;border:none;background:none;width:100%;
+    text-align:left;font-size:12.5px;font-weight:700;color:#374151;cursor:pointer;font-family:inherit;transition:all .14s}
+  .vitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .vitem:hover{background:rgba(17,69,75,.06)}
+  .vitem.on{background:linear-gradient(90deg,var(--sec-2),var(--sec));color:#fff}
+  .vitem.on .ic{background:rgba(255,255,255,.16);color:#fff}
+  @media (max-width:1100px){.statgrid{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}.statgrid{grid-template-columns:repeat(2,1fr)}.g4{grid-template-columns:1fr 1fr}.sp2{grid-column:1/-1}}
+</style>
+</head>
+<body>
+
+<header class="tealbar">
+  <div class="row1">
+    <span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div>
+  </div>
+  <div class="row2">
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 7h12l1.5 14h-15L6 7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10V6a3 3 0 0 1 6 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Sales</a>
+    <a class="navitem active" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 4h2.5l2.2 11h10.1l2-8H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Purchasing</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-5.5L21 9M5 9.5V19M9.5 9.5V19M14.5 9.5V19M19 9.5V19M3 19.5h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Banking</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Reports</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ================= 1 · LIST ================= -->
+<div class="stage" id="st1">
+  <div class="stage-body">
+    <span class="opt-tag">1 · Purchase Requisitions · List</span>
+    <div class="page-head">
+      <div><h1>Purchase Requisitions</h1><div class="sub">Raise, approve and track internal purchase requests.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">⇩ Export</button>
+        <button class="btn btn-cta">＋ Create Requisition</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-sec">
+        <div class="statgrid">
+          <button class="fbox on"><span class="t t-ink"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9h18" stroke="currentColor" stroke-width="2"/></svg></span><span><span class="l">Total</span><span class="v" style="display:block">5</span></span></button>
+          <button class="fbox"><span class="t t-amber"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span><span class="l">Pending</span><span class="v" style="display:block">1</span></span></button>
+          <button class="fbox"><span class="t t-mint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="l">Approved</span><span class="v" style="display:block">1</span></span></button>
+          <button class="fbox"><span class="t t-red"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span><span class="l">Rejected</span><span class="v" style="display:block">1</span></span></button>
+          <button class="fbox"><span class="t t-teal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M7 7h10v10H7z" stroke="currentColor" stroke-width="2"/><path d="M7 12l-4-4M7 12l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="l">Converted</span><span class="v" style="display:block">1</span></span></button>
+        </div>
+        <div class="controls">
+          <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input class="input" placeholder="Requisition #, requester…"></div>
+          <select class="input"><option>Sort: Newest</option><option>Sort: Total high→low</option><option>Sort: Needed by soonest</option></select>
+        </div>
+      </div>
+      <div class="card-sec" style="padding-top:6px">
+        <div class="li-wrap">
+          <table>
+            <thead><tr><th style="width:13%">Requisition #</th><th style="width:11%">Date</th><th style="width:16%">Requested By</th>
+              <th style="width:12%">Department</th><th style="width:11%">Needed By</th><th class="num" style="width:11%">Total (K)</th>
+              <th style="width:9%">Priority</th><th style="width:10%">Status</th><th style="width:8%"></th></tr></thead>
+            <tbody>
+              <tr><td class="mono">REQ-2026-0002</td><td class="em">Aug 06, 2026</td><td class="em">Elvis Seyama</td><td class="em">Operations</td>
+                <td class="em">Aug 20, 2026</td><td class="numr">2,450.00</td><td><span class="prio urg">Urgent</span></td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L20 8l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button><button class="ibtn del"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td></tr>
+              <tr><td class="mono">REQ-2026-0001</td><td class="em">Jul 25, 2026</td><td class="em">Elvis Seyama</td><td class="em">Operations</td>
+                <td class="em">Aug 10, 2026</td><td class="numr">4,800.00</td><td><span class="prio norm">Normal</span></td><td><span class="badge b-app"><span class="bdot"></span>Approved</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L20 8l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button><button class="ibtn del"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td></tr>
+              <tr><td class="mono">REQ-2026-0003</td><td class="em">Aug 08, 2026</td><td class="em">Mary Phiri</td><td class="em">Admin</td>
+                <td class="em">Aug 30, 2026</td><td class="numr">860.00</td><td><span class="prio norm">Normal</span></td><td><span class="badge b-draft"><span class="bdot"></span>Draft</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L20 8l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button><button class="ibtn del"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td></tr>
+              <tr><td class="mono">REQ-2026-0004</td><td class="em">Jul 30, 2026</td><td class="em">John Banda</td><td class="em">Sales</td>
+                <td class="em">Aug 15, 2026</td><td class="numr">4,200.00</td><td><span class="prio norm">Normal</span></td><td><span class="badge b-rej"><span class="bdot"></span>Rejected</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L20 8l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button><button class="ibtn del"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td></tr>
+              <tr><td class="mono">REQ-2026-0000</td><td class="em">Jul 12, 2026</td><td class="em">Mary Phiri</td><td class="em">Admin</td>
+                <td class="em">Jul 28, 2026</td><td class="numr">1,350.00</td><td><span class="prio norm">Normal</span></td><td><span class="badge b-conv"><span class="bdot"></span>Converted</span></td>
+                <td><div class="row-act"><button class="ibtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button><button class="ibtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L20 8l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button><button class="ibtn del"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pagi"><span class="t">Showing 5 of 5 requisitions</span>
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm" disabled style="opacity:.45">← Prev</button><button class="btn btn-ghost btn-sm" disabled style="opacity:.45">Next →</button></div></div>
+    </section>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="All Requisitions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Pending — 1 awaiting"><span class="ndot"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Approved"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic" data-tip="Requisition Register"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-pin" title="Pin rail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 4h6l-1 7 3 2v2H7v-2l3-2-1-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 15v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Views</h2></div>
+      <div class="vlist">
+        <button class="vitem on"><span class="ic">📒</span>All Requisitions</button>
+        <button class="vitem"><span class="ic">⏳</span>Pending</button>
+        <button class="vitem"><span class="ic">✓</span>Approved</button>
+        <button class="vitem"><span class="ic">✕</span>Rejected</button>
+        <button class="vitem"><span class="ic">⚙</span>Converted</button>
+      </div></div>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><h2>Reports</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📒</span>Requisition Register</button>
+        <button class="vitem"><span class="ic">⏳</span>Approval Queue</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 2 · CREATE ================= -->
+<div class="stage" id="st2">
+  <div class="stage-body">
+    <span class="opt-tag">2 · Requisition · Create</span>
+    <div class="sticky-head">
+      <div><h1>Create Requisition</h1><div class="sub">Request goods or services for internal approval.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">Cancel</button>
+        <div class="seg">
+          <button class="btn btn-ghost">Save Draft</button>
+          <button class="btn btn-sec">Save</button>
+          <button class="btn btn-cta">Submit for Approval ⤴</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="sumbar" aria-label="Requisition summary">
+        <div class="cell"><div class="l">Subtotal</div><div class="v">0.00</div><div class="n">0 lines</div></div>
+        <div class="cell"><div class="l">Est. Tax</div><div class="v">0.00</div><div class="n">—</div></div>
+        <div class="cell"><div class="l">Budget Check</div><div class="v">—</div><div class="n">on submit</div></div>
+        <div class="cell hero"><div class="l">Grand Total</div><div class="v">K0.00</div></div>
+      </div>
+
+      <section class="card">
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Requisition Details</h2><span class="rule"></span></div>
+          <div class="g4">
+            <div class="field"><label>Requested By</label><input class="input h44" value="Elvis Seyama"></div>
+            <div class="field"><label>Department</label><select class="input h44"><option>Operations</option><option>Admin</option><option>Sales</option></select></div>
+            <div class="field"><label>Cost Centre</label>
+              <div class="combo"><div class="in-wrap"><input class="input h44" placeholder="None" style="padding-left:12px"></div>
+                <button aria-label="Search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div></div>
+            <div class="field"><label>Needed By</label><input class="input h44" type="date"></div>
+            <div class="field"><label>Priority</label><select class="input h44"><option>Normal</option><option>Urgent</option></select></div>
+            <div class="field sp2"><label>Suggested Supplier (optional)</label>
+              <div class="combo"><div class="in-wrap"><svg class="m" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <input class="input h44" placeholder="Search suppliers…"></div>
+                <button aria-label="Search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div></div>
+            <div class="field"><label>Reference</label><input class="input h44" placeholder="Optional"></div>
+          </div>
+        </div>
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Line Items</h2><span class="rule"></span>
+            <button class="btn btn-ghost btn-sm" style="margin-left:12px">＋ Add Line</button></div>
+          <div class="li-wrap">
+            <table>
+              <thead><tr><th style="width:10%">Code</th><th style="width:20%">Item</th><th style="width:24%">Description</th>
+                <th class="num" style="width:7%">Qty</th><th style="width:8%">Unit</th><th class="num" style="width:12%">Est. Unit Price</th>
+                <th class="num" style="width:11%">Amount (K)</th><th style="width:8%"></th></tr></thead>
+              <tbody><tr>
+                <td><input class="ci" placeholder="Code"></td>
+                <td><div class="combo"><div class="in-wrap"><input class="ci" placeholder="Search item…" style="border-radius:7px 0 0 7px;padding-left:26px"></div>
+                  <button style="width:30px;border:1px solid #dceaea;border-left:none;border-radius:0 7px 7px 0;background:#f0f8f8;color:#128F8E"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div></td>
+                <td><input class="ci" placeholder="Description"></td>
+                <td class="num"><input class="ci" value="1"></td>
+                <td><select class="ci"><option>pcs</option><option>kg</option><option>box</option><option>hrs</option></select></td>
+                <td class="num"><input class="ci" value="0"></td>
+                <td><span class="amt">0.00</span></td>
+                <td><div class="row-act"><button class="ibtn">⧉</button><button class="ibtn del">🗑</button></div></td>
+              </tr></tbody>
+            </table>
+          </div>
+          <div class="li-totals"><div class="box">
+            <div class="trow"><span>Subtotal</span><span class="v">0.00</span></div>
+            <div class="trow"><span>Est. Tax</span><span class="v">0.00</span></div>
+            <div class="trow total"><span>Grand Total</span><span class="v">K0.00</span></div>
+          </div></div>
+        </div>
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M8 3h8l4 4v14H4V3h4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 11h8M8 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Notes &amp; Attachments</h2><span class="rule"></span></div>
+          <div class="g4" style="grid-template-columns:1fr 1fr">
+            <div class="field"><label>Justification / Notes</label><textarea class="input" placeholder="Why is this purchase needed?"></textarea></div>
+            <div class="field"><label>Attachments</label><textarea class="input" placeholder="Drag & drop or paste file links…"></textarea></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Requisitions List"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Suppliers"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 4h2.5l2.2 11h10.1l2-8H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="Day Book"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-pin" title="Pin rail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 4h6l-1 7 3 2v2H7v-2l3-2-1-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 15v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📒</span>Requisitions List</button>
+        <button class="vitem"><span class="ic">🚚</span>Suppliers</button>
+        <button class="vitem"><span class="ic">📒</span>Day Book</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 3 · EDIT ================= -->
+<div class="stage" id="st3">
+  <div class="stage-body">
+    <span class="opt-tag">3 · Requisition · Edit</span>
+    <div class="sticky-head">
+      <div><h1>Edit Requisition <span class="mono-chip">REQ-2026-0003</span> <span class="badge b-draft"><span class="bdot"></span>Draft</span></h1>
+        <div class="sub">Mary Phiri · Aug 08, 2026 · needed by Aug 30, 2026</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">Cancel</button>
+        <button class="btn btn-danger-o btn-sm">Delete</button>
+        <div class="seg">
+          <button class="btn btn-sec">Save Changes</button>
+          <button class="btn btn-cta">Submit for Approval ⤴</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="sumbar" aria-label="Requisition summary">
+        <div class="cell"><div class="l">Subtotal</div><div class="v">860.00</div><div class="n">2 lines</div></div>
+        <div class="cell"><div class="l">Est. Tax</div><div class="v">0.00</div><div class="n">—</div></div>
+        <div class="cell"><div class="l">Budget Check</div><div class="v">—</div><div class="n">on submit</div></div>
+        <div class="cell hero"><div class="l">Grand Total</div><div class="v">K860.00</div></div>
+      </div>
+
+      <section class="card">
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Requisition Details</h2><span class="rule"></span></div>
+          <div class="g4">
+            <div class="field"><label>Requested By</label><input class="input h44" value="Mary Phiri"></div>
+            <div class="field"><label>Department</label><select class="input h44"><option>Admin</option></select></div>
+            <div class="field"><label>Cost Centre</label><input class="input h44" value="ADM-01"></div>
+            <div class="field"><label>Needed By</label><input class="input h44" type="date" value="2026-08-30"></div>
+            <div class="field"><label>Priority</label><select class="input h44"><option>Normal</option></select></div>
+            <div class="field sp2"><label>Suggested Supplier</label><input class="input h44" value="Office Supplies Co"></div>
+            <div class="field"><label>Reference</label><input class="input h44" value="OFF-118"></div>
+          </div>
+        </div>
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Line Items</h2><span class="rule"></span>
+            <button class="btn btn-ghost btn-sm" style="margin-left:12px">＋ Add Line</button></div>
+          <div class="li-wrap">
+            <table>
+              <thead><tr><th style="width:10%">Code</th><th style="width:20%">Item</th><th style="width:24%">Description</th>
+                <th class="num" style="width:7%">Qty</th><th style="width:8%">Unit</th><th class="num" style="width:12%">Est. Unit Price</th>
+                <th class="num" style="width:11%">Amount (K)</th><th style="width:8%"></th></tr></thead>
+              <tbody>
+                <tr><td class="mono">PAP-A4</td><td style="font-weight:600;color:var(--ink)">Paper A4</td><td class="em">80gsm reams</td>
+                  <td class="num">20</td><td class="em">box</td><td class="numr">38.00</td><td><span class="amt">760.00</span></td>
+                  <td><div class="row-act"><button class="ibtn">⧉</button><button class="ibtn del">🗑</button></div></td></tr>
+                <tr><td class="mono">TON-HP</td><td style="font-weight:600;color:var(--ink)">Toner HP 26A</td><td class="em">black cartridge</td>
+                  <td class="num">2</td><td class="em">pcs</td><td class="numr">50.00</td><td><span class="amt">100.00</span></td>
+                  <td><div class="row-act"><button class="ibtn">⧉</button><button class="ibtn del">🗑</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="li-totals"><div class="box">
+            <div class="trow"><span>Subtotal</span><span class="v">860.00</span></div>
+            <div class="trow"><span>Est. Tax</span><span class="v">0.00</span></div>
+            <div class="trow total"><span>Grand Total</span><span class="v">K860.00</span></div>
+          </div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="View Requisition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    <button class="s-ic" data-tip="Convert to PO"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 7h10v10H7z" stroke="currentColor" stroke-width="2"/><path d="M7 12l-4-4M7 12l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="Print / PDF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 8V4h10v4M7 16H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="14" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-pin" title="Pin rail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 4h6l-1 7 3 2v2H7v-2l3-2-1-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 15v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">👁</span>View Requisition</button>
+        <button class="vitem"><span class="ic">⚙</span>Convert to PO</button>
+        <button class="vitem"><span class="ic">🖨</span>Print / PDF</button>
+        <button class="vitem"><span class="ic">←</span>Back to Requisitions</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 4 · DETAIL ================= -->
+<div class="stage" id="st4">
+  <div class="stage-body">
+    <span class="opt-tag">4 · Requisition · Detail — breadcrumb + clean cluster; identity-only profile</span>
+    <div class="sticky-head">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="icon-btn" aria-label="Back to requisitions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <nav class="crumbs"><a href="#">Purchasing</a> › <a href="#">Requisitions</a> › <span class="here">REQ-2026-0002</span></nav>
+      </div>
+      <div class="cluster">
+        <button class="btn btn-ghost btn-sm">✎ Edit</button>
+        <button class="btn btn-ghost btn-sm">🖨 Print / PDF</button>
+        <button class="btn btn-ghost btn-sm">⚙ Convert to PO</button>
+        <span class="vdiv"></span>
+        <button class="btn btn-sec btn-sm">✓ Approve</button>
+        <button class="btn btn-danger-o btn-sm">Reject</button>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <section class="card">
+        <div class="prof">
+          <span class="ava-xl"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <div>
+            <div class="n">Requisition <span class="mono-chip">REQ-2026-0002</span> <span class="badge b-pend"><span class="bdot"></span>Pending Approval</span> <span class="prio urg">Urgent</span></div>
+            <div class="c">
+              <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Elvis Seyama</span>
+              <span>Operations · CC OPS-02</span>
+              <span>Needed by Aug 20, 2026</span>
+              <span>Suggested · Office Supplies Co</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="sumbar" aria-label="Requisition summary">
+        <div class="cell"><div class="l">Subtotal</div><div class="v">2,450.00</div><div class="n">3 lines</div></div>
+        <div class="cell"><div class="l">Est. Tax</div><div class="v">0.00</div><div class="n">—</div></div>
+        <div class="cell"><div class="l">Budget Check</div><div class="v">Within budget</div><div class="n">OPS-02</div></div>
+        <div class="cell hero amber"><div class="l">Awaiting Approval</div><div class="v">K2,450.00</div></div>
+      </div>
+
+      <section class="card">
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg></span><h2>Approval Workflow</h2><span class="rule"></span></div>
+          <div class="steps">
+            <div class="step"><span class="sdot done"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <div><div class="tt">Submitted</div><div class="mm">Elvis Seyama raised the requisition</div></div><span class="when">Aug 06, 09:14</span></div>
+            <div class="step"><span class="sdot cur"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg></span>
+              <div><div class="tt">Manager Approval</div><div class="mm">Waiting for Mary Phiri (Operations Manager)</div></div><span class="when">in review</span></div>
+            <div class="step"><span class="sdot todo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/></svg></span>
+              <div><div class="tt">Finance Review</div><div class="mm">Budget &amp; cost-centre validation</div></div><span class="when">queued</span></div>
+            <div class="step"><span class="sdot todo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/></svg></span>
+              <div><div class="tt">Convert to Purchase Order</div><div class="mm">Auto-suggested PO on final approval</div></div><span class="when">queued</span></div>
+          </div>
+          <div class="appr-actions">
+            <input class="input" style="flex:1;min-width:220px" placeholder="Add an approval comment (optional)…">
+            <button class="btn btn-sec btn-sm">✓ Approve</button>
+            <button class="btn btn-danger-o btn-sm">Reject</button>
+          </div>
+        </div>
+        <div class="card-sec">
+          <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>Line Items</h2><span class="rule"></span></div>
+          <div class="li-wrap">
+            <table>
+              <thead><tr><th style="width:10%">Code</th><th style="width:24%">Item</th><th style="width:27%">Description</th>
+                <th class="num" style="width:7%">Qty</th><th style="width:8%">Unit</th><th class="num" style="width:12%">Est. Unit Price</th>
+                <th class="num" style="width:12%">Amount (K)</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">PAP-A4</td><td style="font-weight:600;color:var(--ink)">Paper A4</td><td class="em">80gsm reams</td>
+                  <td class="numr">50</td><td class="em">box</td><td class="numr">38.00</td><td class="numr">1,900.00</td></tr>
+                <tr><td class="mono">TON-HP</td><td style="font-weight:600;color:var(--ink)">Toner HP 26A</td><td class="em">black cartridges</td>
+                  <td class="numr">6</td><td class="em">pcs</td><td class="numr">50.00</td><td class="numr">300.00</td></tr>
+                <tr><td class="mono">CHR-OF</td><td style="font-weight:600;color:var(--ink)">Office Chairs</td><td class="em">ergonomic, mesh back</td>
+                  <td class="numr">5</td><td class="em">pcs</td><td class="numr">50.00</td><td class="numr">250.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="li-totals"><div class="box">
+            <div class="trow"><span>Subtotal</span><span class="v">2,450.00</span></div>
+            <div class="trow"><span>Est. Tax</span><span class="v">0.00</span></div>
+            <div class="trow total"><span>Grand Total</span><span class="v">K2,450.00</span></div>
+          </div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Approve"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8.5 12.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="Convert to PO"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 7h10v10H7z" stroke="currentColor" stroke-width="2"/><path d="M7 12l-4-4M7 12l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="Print / PDF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 8V4h10v4M7 16H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="14" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-pin" title="Pin rail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 4h6l-1 7 3 2v2H7v-2l3-2-1-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 15v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">✓</span>Approve</button>
+        <button class="vitem"><span class="ic">⚙</span>Convert to PO</button>
+        <button class="vitem"><span class="ic">🖨</span>Print / PDF</button>
+        <button class="vitem"><span class="ic">←</span>Back to Requisitions</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 5 · REPORTS ================= -->
+<div class="stage" id="st5">
+  <div class="stage-body">
+    <span class="opt-tag">5 · Requisition Reports</span>
+    <div class="page-head">
+      <div><h1>Requisition Reports</h1><div class="sub">Register, approvals, aging, conversion and spend analysis for the module.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">⇩ Export All</button>
+      </div>
+    </div>
+
+    <div class="filterbar">
+      <div class="seg2"><button class="on">This Month</button><button>This Quarter</button><button>This Year</button><button>Custom</button></div>
+      <select class="input" style="width:auto"><option>All Departments</option><option>Operations</option><option>Admin</option><option>Sales</option></select>
+      <select class="input" style="width:auto"><option>All Statuses</option><option>Pending</option><option>Approved</option><option>Rejected</option><option>Converted</option></select>
+    </div>
+
+    <div class="repcards" style="margin-bottom:16px">
+      <div class="repcard"><div class="top"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></div>
+        <span class="t">Requisition Register</span><span class="d">Every requisition for the period with totals, status and PO conversion.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><div class="top"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></div>
+        <span class="t">Approval Queue / Pending</span><span class="d">Requisitions awaiting approval, by approver, with days waiting.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><div class="top"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 1 0 9 9h-9V3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15V3.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span></div>
+        <span class="t">Status Summary</span><span class="d">Counts and value by status: Draft, Pending, Approved, Rejected, Converted.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><div class="top"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></div>
+        <span class="t">Requisition Aging</span><span class="d">Open requisitions by age bracket (0–7 / 8–14 / 15+ days) with priority.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><div class="top"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M7 7h10v10H7z" stroke="currentColor" stroke-width="1.8"/><path d="M7 12l-4-4M7 12l4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+        <span class="t">Conversion to PO</span><span class="d">Approved requisitions converted vs unconverted, with PO numbers and variance.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+      <div class="repcard"><div class="top"><span class="tile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></div>
+        <span class="t">Spend by Department / Cost Centre</span><span class="d">Requested value grouped by department and cost centre vs budget.</span>
+        <div class="foot"><span class="fmt">PDF</span><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h" style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)">
+        <h2 style="font-size:14px;font-weight:800;color:var(--ink)">Requisition Register — Aug 2026</h2>
+        <span class="fmt" style="margin-left:auto">sample</span></div>
+      <table>
+        <thead><tr><th style="width:13%">Requisition #</th><th style="width:11%">Date</th><th style="width:15%">Requested By</th>
+          <th style="width:12%">Department</th><th class="num" style="width:11%">Total (K)</th><th style="width:10%">Status</th>
+          <th style="width:12%">PO #</th><th style="width:7%"></th></tr></thead>
+        <tbody>
+          <tr><td class="mono">REQ-2026-0002</td><td class="em">Aug 06</td><td class="em">Elvis Seyama</td><td class="em">Operations</td>
+            <td class="numr">2,450.00</td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td><td class="dash">—</td><td><a class="open-l" href="#">View →</a></td></tr>
+          <tr><td class="mono">REQ-2026-0003</td><td class="em">Aug 08</td><td class="em">Mary Phiri</td><td class="em">Admin</td>
+            <td class="numr">860.00</td><td><span class="badge b-draft"><span class="bdot"></span>Draft</span></td><td class="dash">—</td><td><a class="open-l" href="#">View →</a></td></tr>
+          <tr><td class="mono">REQ-2026-0001</td><td class="em">Jul 25</td><td class="em">Elvis Seyama</td><td class="em">Operations</td>
+            <td class="numr">4,800.00</td><td><span class="badge b-app"><span class="bdot"></span>Approved</span></td><td class="dash">—</td><td><a class="open-l" href="#">View →</a></td></tr>
+          <tr><td class="mono">REQ-2026-0000</td><td class="em">Jul 12</td><td class="em">Mary Phiri</td><td class="em">Admin</td>
+            <td class="numr">1,350.00</td><td><span class="badge b-conv"><span class="bdot"></span>Converted</span></td><td class="mono">PO-2026-0031</td><td><a class="open-l" href="#">View →</a></td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="4">TOTAL</td><td class="numr">9,460.00</td><td colspan="3"></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Requisitions List"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Approval Queue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Day Book"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-pin" title="Pin rail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 4h6l-1 7 3 2v2H7v-2l3-2-1-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 15v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📒</span>Requisitions List</button>
+        <button class="vitem"><span class="ic">⏳</span>Pending Approvals</button>
+        <button class="vitem"><span class="ic">📒</span>Day Book</button>
+      </div></div>
+  </div></aside>
+</div>
+
+</div>
+
+<script>
+  var stages=[].slice.call(document.querySelectorAll('.stage'));
+  var current=null;
+  function isOpen(){return document.body.classList.contains('ql-open');}
+  function setOpen(o){document.body.classList.toggle('ql-open',o);}
+  stages.forEach(function(st){
+    st.querySelector('.rail-x').addEventListener('click',function(){setOpen(false);});
+    st.querySelectorAll('.s-ic.expand').forEach(function(b){b.addEventListener('click',function(){setOpen(true);});});
+    var p=st.querySelector('.rail-pin');
+    if(p)p.addEventListener('click',function(){p.classList.toggle('on');});
+  });
+  document.addEventListener('click',function(e){
+    if(e.target.closest('.ql-drawer')||e.target.closest('.slim-rail'))return;
+    setOpen(false);
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')setOpen(false);});
+  function updateInView(){
+    var mid=window.innerHeight/2,best=null,bs=Infinity;
+    stages.forEach(function(s){
+      var r=s.getBoundingClientRect(),sc;
+      if(r.top<=mid&&r.bottom>=mid)sc=0;else sc=Math.min(Math.abs(r.top-mid),Math.abs(r.bottom-mid));
+      if(sc<bs){bs=sc;best=s;}
+    });
+    current=best;
+    stages.forEach(function(s){s.classList.toggle('in-view',s===best);});
+  }
+  window.addEventListener('scroll',updateInView,{passive:true});
+  window.addEventListener('resize',updateInView);
+  updateInView();
+</script>
+</body>
+</html>

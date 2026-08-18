@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Reports Centre + PDF Engine</title>
+<style>
+  :root{--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;--sec:#128F8E;--sec-2:#149897;--ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;--red-2:#b91c1c;--green:#15803d;
+    --pdeep:#0c3539;--pteal:#128F8E;--pink:#111827;--pbody:#374151;--pmut:#6b7280;--pfaint:#9ca3af;--phair:#e5e7eb;--phair2:#f3f4f6;--pred:#b91c1c;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);
+    --pshadow:0 1px 2px rgba(16,24,40,.06),0 12px 28px -12px rgba(16,24,40,.18);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}.spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background-color:#e8f0f0;border-color:var(--border);color:var(--ink)}
+  .btn-sec{color:#fff;background-color:var(--sec);background-image:linear-gradient(180deg,var(--sec-2),var(--sec));box-shadow:var(--shadow-teal)}
+  .btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:24px 0 14px}
+  .page-head h1{font-size:21px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .pad{padding:22px 26px}
+  .f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .f .in{width:100%;height:40px;border-radius:10px;border:1px solid var(--border);background:#fff;padding:0 12px;font-size:13px;color:var(--ink);font-family:inherit}
+  .f select.in{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:30px}
+  .filters{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+  @media (max-width:1000px){.filters{grid-template-columns:repeat(3,1fr)}}
+  .okchip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:800;background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.9);box-shadow:var(--shadow-card)}
+  .kpi .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .kpi .v{margin-top:6px;font-size:1.2rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi.hero{border:none;background-color:var(--sec);background-image:linear-gradient(135deg,var(--sec-2),var(--sec) 60%,#0c7a79)}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}
+  @media (max-width:1000px){.kpis{grid-template-columns:1fr 1fr}}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:860px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  th.num,td.num{text-align:right}
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-weight:400;color:#374151}
+  td.num,th.num{font-variant-numeric:tabular-nums}
+  td .neg{color:var(--red-2)}td .pos{color:var(--green)}
+  tr.grp td{background:rgba(17,69,75,.06);font-weight:700;color:var(--ink)}
+  tr.grp2 td{background:rgba(17,69,75,.03);font-weight:600;color:var(--ink)}
+  tr.sub td{font-weight:700;color:var(--ink);background:rgba(18,143,142,.06)}
+  tr.net td{border-top:2px double var(--deep-1);font-weight:800;color:var(--deep-1);background:rgba(18,143,142,.10)}
+  tr.margin td{color:var(--muted);font-style:italic;background:rgba(17,69,75,.03)}
+  tr.spacer td{border-bottom:none;padding:4px 12px;background:transparent}
+  table.flat tr.child td:first-child{padding-left:26px}
+  table.flat tr.child2 td:first-child{padding-left:44px}
+  .balcheck{display:flex;align-items:center;gap:10px;margin:14px 26px 22px;padding:12px 16px;border-radius:12px;background:rgba(22,163,74,.10);border:1.5px solid rgba(22,163,74,.4);color:var(--green);font-weight:800;font-size:13px}
+  .drill{border:1px dashed rgba(18,143,142,.5);border-radius:14px;background:rgba(18,143,142,.05)}
+  .drill .h{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:12.5px;font-weight:800;color:var(--sec)}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:90px;padding:10px 4px 0}
+  .bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .bars .b i{width:100%;max-width:44px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--sec-2),var(--sec))}
+  .bars .b span{font-size:9px;font-weight:700;color:var(--faint)}
+  .tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-over{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-over .bdot{background:var(--red-2)}
+  .b-warn{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-warn .bdot{background:var(--amber)}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  /* ===== clean PDF docs ===== */
+  .pdfgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media (max-width:1100px){.pdfgrid{grid-template-columns:1fr 1fr}}@media (max-width:700px){.pdfgrid{grid-template-columns:1fr}}
+  .doc{background:#fff;border-top:3px solid var(--pdeep);box-shadow:var(--pshadow);border-radius:2px;padding:30px 34px 22px;font-size:10px;color:var(--pbody);display:flex;flex-direction:column;min-height:540px}
+  .doc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--phair)}
+  .doc-brand{display:flex;gap:10px;align-items:center}
+  .doc-mark{width:30px;height:30px;border-radius:8px;background:var(--pdeep);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+  .doc-co{font-size:12px;font-weight:700;color:var(--pink)}
+  .doc-tag{font-size:7.5px;color:var(--pmut);margin-top:1px;letter-spacing:.04em}
+  .doc-id{text-align:right}
+  .doc-title{font-size:11px;font-weight:700;color:var(--pink);letter-spacing:.22em;text-transform:uppercase}
+  .doc-period{font-size:8.5px;color:var(--pmut);margin-top:3px}
+  .doc-accent{width:26px;height:3px;background:var(--pteal);margin-left:auto;margin-top:6px;border-radius:2px}
+  .dtable{width:100%;border-collapse:collapse;margin-top:18px;font-size:9.5px}
+  .dtable th{font-size:7.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--pmut);text-align:left;padding:0 0 7px;border-bottom:1px solid var(--phair)}
+  .dtable th.num,.dtable td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .dtable th.yr{color:var(--pink)}
+  .dtable td{padding:6px 0;border-bottom:1px solid var(--phair2);color:var(--pbody)}
+  .dtable td.num{color:var(--pink);font-weight:500}
+  .dtable td .neg{color:var(--pmut)}
+  .dtable tr.h td{padding-top:12px;border-bottom:none;font-weight:700;color:var(--pink);font-size:9px;letter-spacing:.06em;text-transform:uppercase}
+  .dtable tr.h td:first-child{position:relative;padding-left:10px}
+  .dtable tr.h td:first-child::before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:2px;background:var(--pteal);border-radius:1px}
+  .dtable tr.st td{border-bottom:none;border-top:1px solid var(--phair);font-weight:600;color:var(--pink);padding-top:7px}
+  .dtable tr.gt td{border-bottom:none;border-top:2px solid var(--pink);font-weight:700;color:var(--pink);padding-top:8px;font-size:10px}
+  .dtable tr.gt td.num{color:var(--pdeep)}
+  .check{display:flex;gap:6px;align-items:center;margin-top:12px;font-size:8.5px;color:var(--pmut)}
+  .check b{color:var(--pteal);font-weight:800}
+  .sign{display:flex;gap:26px;margin-top:auto;padding-top:22px}
+  .sign .s{flex:1;border-top:1px solid var(--phair);padding-top:5px;font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--pfaint);font-weight:700}
+  .doc-foot{display:flex;justify-content:space-between;gap:10px;margin-top:16px;padding-top:10px;border-top:1px solid var(--phair);font-size:8px;color:var(--pfaint)}
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + 12px)}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background-color:var(--sec);background-image:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+<header class="tealbar">
+  <div class="row1"><span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div></div>
+  <div class="row2"><a class="navitem" href="#">Sales</a><a class="navitem" href="#">Purchasing</a><a class="navitem" href="#">Banking</a><a class="navitem active" href="#">Reports</a></div>
+</header>
+<div class="wrap">
+
+<!-- 1 · INCOME STATEMENT -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">1 · Income Statement</span>
+  <div class="page-head"><div><h1>Income Statement</h1><div class="sub">Current Period vs Previous Period · MWK</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">Refresh</button><button class="btn btn-sec btn-sm">Compare</button><button class="btn btn-ghost btn-sm">Drill Down</button><button class="btn btn-ghost btn-sm">Print</button><button class="btn btn-ghost btn-sm">PDF</button><button class="btn btn-ghost btn-sm">Excel</button></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="pad"><div class="filters">
+    <div class="f"><label>Current Period</label><select class="in"><option>Jan – Aug 2026</option></select></div>
+    <div class="f"><label>Previous Period</label><select class="in"><option>Jan – Aug 2025</option></select></div>
+    <div class="f"><label>Branch</label><select class="in"><option>All</option></select></div>
+    <div class="f"><label>Department</label><select class="in"><option>All</option></select></div>
+    <div class="f"><label>Cost Centre</label><select class="in"><option>All</option></select></div>
+    <div class="f"><label>Currency</label><select class="in"><option>MWK</option></select></div>
+  </div></div></div>
+  <div class="card"><div class="li-wrap"><table class="flat">
+    <thead><tr><th style="width:40%">Description</th><th class="num">Current Period</th><th class="num">Previous Period</th><th class="num">Variance</th><th class="num">%</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td>REVENUE</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+      <tr class="child"><td>Sales Revenue</td><td class="num">125,000,000</td><td class="num">110,000,000</td><td class="num pos">15,000,000</td><td class="num">13.64%</td></tr>
+      <tr class="child"><td>Service Revenue</td><td class="num">25,000,000</td><td class="num">20,000,000</td><td class="num pos">5,000,000</td><td class="num">25.00%</td></tr>
+      <tr class="child"><td>Other Operating Revenue</td><td class="num">5,000,000</td><td class="num">4,000,000</td><td class="num pos">1,000,000</td><td class="num">25.00%</td></tr>
+      <tr class="sub"><td>TOTAL REVENUE</td><td class="num">155,000,000</td><td class="num">134,000,000</td><td class="num pos">21,000,000</td><td class="num">15.67%</td></tr>
+      <tr class="spacer"><td colspan="5"></td></tr>
+      <tr class="grp"><td>COST OF SALES</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+      <tr class="child"><td>Cost of Goods Sold</td><td class="num neg">(65,000,000)</td><td class="num neg">(58,000,000)</td><td class="num neg">(7,000,000)</td><td class="num">12.07%</td></tr>
+      <tr class="sub"><td>TOTAL COST OF SALES</td><td class="num neg">(65,000,000)</td><td class="num neg">(58,000,000)</td><td class="num neg">(7,000,000)</td><td class="num">12.07%</td></tr>
+      <tr class="spacer"><td colspan="5"></td></tr>
+      <tr class="sub"><td>GROSS PROFIT</td><td class="num">90,000,000</td><td class="num">76,000,000</td><td class="num pos">14,000,000</td><td class="num">18.42%</td></tr>
+      <tr class="margin"><td>Gross Profit Margin</td><td class="num">58.06%</td><td class="num">56.72%</td><td class="num"></td><td class="num"></td></tr>
+      <tr class="spacer"><td colspan="5"></td></tr>
+      <tr class="grp"><td>OPERATING EXPENSES</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+      <tr class="child"><td>Salaries &amp; Wages</td><td class="num neg">(30,000,000)</td><td class="num neg">(27,000,000)</td><td class="num neg">(3,000,000)</td><td class="num">11.11%</td></tr>
+      <tr class="child"><td>Rent &amp; Utilities</td><td class="num neg">(8,000,000)</td><td class="num neg">(7,500,000)</td><td class="num neg">(500,000)</td><td class="num">6.67%</td></tr>
+      <tr class="child"><td>Transport</td><td class="num neg">(4,000,000)</td><td class="num neg">(3,000,000)</td><td class="num neg">(1,000,000)</td><td class="num">33.33%</td></tr>
+      <tr class="child"><td>Marketing</td><td class="num neg">(3,000,000)</td><td class="num neg">(2,500,000)</td><td class="num neg">(500,000)</td><td class="num">20.00%</td></tr>
+      <tr class="child"><td>Depreciation</td><td class="num neg">(2,500,000)</td><td class="num neg">(2,000,000)</td><td class="num neg">(500,000)</td><td class="num">25.00%</td></tr>
+      <tr class="child"><td>Other Operating Expenses</td><td class="num neg">(4,000,000)</td><td class="num neg">(3,500,000)</td><td class="num neg">(500,000)</td><td class="num">14.29%</td></tr>
+      <tr class="sub"><td>TOTAL OPERATING EXPENSES</td><td class="num neg">(51,500,000)</td><td class="num neg">(45,500,000)</td><td class="num neg">(6,000,000)</td><td class="num">13.19%</td></tr>
+      <tr class="spacer"><td colspan="5"></td></tr>
+      <tr class="sub"><td>OPERATING PROFIT</td><td class="num">38,500,000</td><td class="num">30,500,000</td><td class="num pos">8,000,000</td><td class="num">26.23%</td></tr>
+      <tr class="spacer"><td colspan="5"></td></tr>
+      <tr><td>Finance Income</td><td class="num">2,000,000</td><td class="num">1,500,000</td><td class="num pos">500,000</td><td class="num">33.33%</td></tr>
+      <tr><td>Finance Costs</td><td class="num neg">(5,000,000)</td><td class="num neg">(4,000,000)</td><td class="num neg">(1,000,000)</td><td class="num">25.00%</td></tr>
+      <tr class="sub"><td>PROFIT BEFORE TAX</td><td class="num">35,500,000</td><td class="num">28,000,000</td><td class="num pos">7,500,000</td><td class="num">26.79%</td></tr>
+      <tr><td>Income Tax Expense</td><td class="num neg">(8,875,000)</td><td class="num neg">(7,000,000)</td><td class="num neg">(1,875,000)</td><td class="num">26.79%</td></tr>
+      <tr class="net"><td>NET PROFIT</td><td class="num">26,625,000</td><td class="num">21,000,000</td><td class="num pos">5,625,000</td><td class="num">26.79%</td></tr>
+    </tbody></table></div>
+    <div class="pad"><div class="bars">
+      <div class="b"><i style="height:40%"></i><span>Jan</span></div><div class="b"><i style="height:46%"></i><span>Feb</span></div><div class="b"><i style="height:54%"></i><span>Mar</span></div><div class="b"><i style="height:51%"></i><span>Apr</span></div><div class="b"><i style="height:62%"></i><span>May</span></div><div class="b"><i style="height:68%"></i><span>Jun</span></div><div class="b"><i style="height:74%"></i><span>Jul</span></div><div class="b"><i style="height:82%"></i><span>Aug</span></div>
+    </div><div style="font-size:10.5px;margin-top:6px;color:var(--muted)">Monthly net-profit trend · click a bar to drill into the period.</div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Generate">⚡</button><button class="s-ic" data-tip="Compare">⇄</button><button class="s-ic" data-tip="Export">⇩</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 2 · STATEMENT OF FINANCIAL POSITION -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">2 · Statement of Financial Position</span>
+  <div class="page-head"><div><h1>Statement of Financial Position</h1><div class="sub">As at 31 August 2026 · MWK · comparative</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">Expand All</button><button class="btn btn-ghost btn-sm">Collapse All</button><button class="btn btn-ghost btn-sm">Print</button><button class="btn btn-sec btn-sm">PDF</button><button class="btn btn-ghost btn-sm">Excel</button></div></div>
+  <div class="card">
+    <div class="pad" style="padding-bottom:12px">
+      <div class="kpis" style="margin-bottom:12px">
+        <div class="kpi hero"><div class="l">Total Assets</div><div class="v">MWK 632.0M</div></div>
+        <div class="kpi"><div class="l">Total Liabilities</div><div class="v">MWK 330.0M</div></div>
+        <div class="kpi"><div class="l">Total Equity</div><div class="v">MWK 302.0M</div></div>
+        <div class="kpi"><div class="l">Working Capital</div><div class="v">MWK 187.0M</div></div></div>
+      <div class="kpis" style="margin-bottom:16px">
+        <div class="kpi"><div class="l">Current Ratio</div><div class="v">2.56x</div></div>
+        <div class="kpi"><div class="l">Debt-to-Equity</div><div class="v">1.09x</div></div>
+        <div class="kpi"><div class="l">Equity Ratio</div><div class="v">47.78%</div></div>
+        <div class="kpi"><div class="l">Net Assets</div><div class="v">MWK 302.0M</div></div></div>
+      <div class="filters" style="grid-template-columns:repeat(5,1fr)">
+        <div class="f"><label>Period</label><select class="in"><option>As at 31 Aug 2026</option></select></div>
+        <div class="f"><label>Branch</label><select class="in"><option>All</option></select></div>
+        <div class="f"><label>Department</label><select class="in"><option>All</option></select></div>
+        <div class="f"><label>Currency</label><select class="in"><option>MWK</option></select></div>
+        <div class="f" style="align-self:end"><span class="okchip">✓ Balanced · Assets = Liab + Equity</span></div>
+      </div></div>
+    <div class="li-wrap"><table class="flat">
+      <thead><tr><th style="width:40%">Description</th><th class="num">Current Period</th><th class="num">Previous Period</th><th class="num">Variance</th><th class="num">%</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td>ASSETS</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+        <tr class="grp2"><td>NON-CURRENT ASSETS</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+        <tr class="child2"><td>Land &amp; Buildings</td><td class="num">250,000,000</td><td class="num">250,000,000</td><td class="num">—</td><td class="num">0.00%</td></tr>
+        <tr class="child2"><td>Motor Vehicles</td><td class="num">80,000,000</td><td class="num">70,000,000</td><td class="num pos">10,000,000</td><td class="num">14.29%</td></tr>
+        <tr class="child2"><td>Office Equipment</td><td class="num">25,000,000</td><td class="num">22,000,000</td><td class="num pos">3,000,000</td><td class="num">13.64%</td></tr>
+        <tr class="child2"><td>Accumulated Depreciation</td><td class="num neg">(45,000,000)</td><td class="num neg">(38,000,000)</td><td class="num neg">(7,000,000)</td><td class="num">18.42%</td></tr>
+        <tr class="sub"><td>Total Property, Plant &amp; Equipment</td><td class="num">310,000,000</td><td class="num">304,000,000</td><td class="num pos">6,000,000</td><td class="num">1.97%</td></tr>
+        <tr class="child"><td>Intangible Assets</td><td class="num">15,000,000</td><td class="num">12,000,000</td><td class="num pos">3,000,000</td><td class="num">25.00%</td></tr>
+        <tr class="sub"><td>TOTAL NON-CURRENT ASSETS</td><td class="num">325,000,000</td><td class="num">316,000,000</td><td class="num pos">9,000,000</td><td class="num">2.85%</td></tr>
+        <tr class="grp2"><td>CURRENT ASSETS</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+        <tr class="child"><td>Inventory</td><td class="num">95,000,000</td><td class="num">82,000,000</td><td class="num pos">13,000,000</td><td class="num">15.85%</td></tr>
+        <tr class="child"><td>Trade Receivables</td><td class="num">75,000,000</td><td class="num">68,000,000</td><td class="num pos">7,000,000</td><td class="num">10.29%</td></tr>
+        <tr class="child"><td>Other Receivables</td><td class="num">12,000,000</td><td class="num">10,000,000</td><td class="num pos">2,000,000</td><td class="num">20.00%</td></tr>
+        <tr class="child"><td>Cash &amp; Bank Balances</td><td class="num">125,000,000</td><td class="num">105,000,000</td><td class="num pos">20,000,000</td><td class="num">19.05%</td></tr>
+        <tr class="sub"><td>TOTAL CURRENT ASSETS</td><td class="num">307,000,000</td><td class="num">265,000,000</td><td class="num pos">42,000,000</td><td class="num">15.85%</td></tr>
+        <tr class="sub"><td>TOTAL ASSETS</td><td class="num">632,000,000</td><td class="num">581,000,000</td><td class="num pos">51,000,000</td><td class="num">8.78%</td></tr>
+        <tr class="spacer"><td colspan="5"></td></tr>
+        <tr class="grp"><td>LIABILITIES</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+        <tr class="grp2"><td>NON-CURRENT LIABILITIES</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+        <tr class="child"><td>Long-Term Loans</td><td class="num">180,000,000</td><td class="num">195,000,000</td><td class="num neg">(15,000,000)</td><td class="num neg">(7.69%)</td></tr>
+        <tr class="child"><td>Lease Liabilities</td><td class="num">30,000,000</td><td class="num">32,000,000</td><td class="num neg">(2,000,000)</td><td class="num neg">(6.25%)</td></tr>
+        <tr class="sub"><td>TOTAL NON-CURRENT LIABILITIES</td><td class="num">210,000,000</td><td class="num">227,000,000</td><td class="num neg">(17,000,000)</td><td class="num neg">(7.49%)</td></tr>
+        <tr class="grp2"><td>CURRENT LIABILITIES</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+        <tr class="child"><td>Trade Payables</td><td class="num">55,000,000</td><td class="num">48,000,000</td><td class="num pos">7,000,000</td><td class="num">14.58%</td></tr>
+        <tr class="child"><td>Short-Term Loans</td><td class="num">35,000,000</td><td class="num">30,000,000</td><td class="num pos">5,000,000</td><td class="num">16.67%</td></tr>
+        <tr class="child"><td>Accrued Expenses</td><td class="num">18,000,000</td><td class="num">15,000,000</td><td class="num pos">3,000,000</td><td class="num">20.00%</td></tr>
+        <tr class="child"><td>Tax Payable</td><td class="num">12,000,000</td><td class="num">9,000,000</td><td class="num pos">3,000,000</td><td class="num">33.33%</td></tr>
+        <tr class="sub"><td>TOTAL CURRENT LIABILITIES</td><td class="num">120,000,000</td><td class="num">102,000,000</td><td class="num pos">18,000,000</td><td class="num">17.65%</td></tr>
+        <tr class="sub"><td>TOTAL LIABILITIES</td><td class="num">330,000,000</td><td class="num">329,000,000</td><td class="num pos">1,000,000</td><td class="num">0.30%</td></tr>
+        <tr class="spacer"><td colspan="5"></td></tr>
+        <tr class="grp"><td>EQUITY</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+        <tr class="child"><td>Share Capital</td><td class="num">200,000,000</td><td class="num">200,000,000</td><td class="num">—</td><td class="num">0.00%</td></tr>
+        <tr class="child"><td>Retained Earnings</td><td class="num">75,000,000</td><td class="num">52,000,000</td><td class="num pos">23,000,000</td><td class="num">44.23%</td></tr>
+        <tr class="child"><td>Current Year Profit</td><td class="num">27,000,000</td><td class="num">—</td><td class="num pos">27,000,000</td><td class="num">—</td></tr>
+        <tr class="sub"><td>TOTAL EQUITY</td><td class="num">302,000,000</td><td class="num">252,000,000</td><td class="num pos">50,000,000</td><td class="num">19.84%</td></tr>
+        <tr class="net"><td>TOTAL LIABILITIES &amp; EQUITY</td><td class="num">632,000,000</td><td class="num">581,000,000</td><td class="num pos">51,000,000</td><td class="num">8.78%</td></tr>
+      </tbody></table></div>
+    <div class="balcheck">✓ BALANCED — Total Assets (632,000,000) = Total Liabilities (330,000,000) + Total Equity (302,000,000)</div>
+    <div class="pad" style="padding-top:0">
+      <div class="drill"><div class="h">⤵ Drill-down — Trade Receivables · MWK 75,000,000</div>
+        <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Customer</th><th class="num">Balance</th></tr></thead>
+          <tbody><tr><td>ABC Limited</td><td class="num">25,000,000</td></tr><tr><td>XYZ Limited</td><td class="num">18,000,000</td></tr><tr><td>Other</td><td class="num">32,000,000</td></tr>
+          <tr class="sub"><td>TOTAL</td><td class="num">75,000,000</td></tr></tbody></table></div></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Generate">⚡</button><button class="s-ic" data-tip="PDF">📕</button><button class="s-ic" data-tip="Drill">⤵</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 3 · CASH FLOW -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">3 · Cash Flow Statement</span>
+  <div class="page-head"><div><h1>Cash Flow Statement</h1><div class="sub">01 Jan – 31 Aug 2026 · MWK · Opening + Net Movement = Closing</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sec btn-sm">Forecast</button><button class="btn btn-ghost btn-sm">Drill Down</button><button class="btn btn-ghost btn-sm">Print</button><button class="btn btn-ghost btn-sm">PDF</button><button class="btn btn-ghost btn-sm">Excel</button></div></div>
+  <div class="card"><div class="li-wrap"><table>
+    <thead><tr><th style="width:52%">Activity</th><th class="num">In (K)</th><th class="num">Out (K)</th><th class="num">Net (K)</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td>▾ Operating Activities</td><td class="num">186,000,000</td><td class="num neg">(158,000,000)</td><td class="num">28,000,000</td></tr>
+      <tr class="child"><td>Customer receipts</td><td class="num">186,000,000</td><td class="dash">—</td><td class="num pos">186,000,000</td></tr>
+      <tr class="child"><td>Supplier payments</td><td class="dash">—</td><td class="num neg">(104,000,000)</td><td class="num neg">(104,000,000)</td></tr>
+      <tr class="child"><td>Payroll payments</td><td class="dash">—</td><td class="num neg">(24,000,000)</td><td class="num neg">(24,000,000)</td></tr>
+      <tr class="child"><td>Operating expenses</td><td class="dash">—</td><td class="num neg">(30,000,000)</td><td class="num neg">(30,000,000)</td></tr>
+      <tr class="grp"><td>▾ Investing Activities</td><td class="num">500,000</td><td class="num neg">(8,000,000)</td><td class="num neg">(7,500,000)</td></tr>
+      <tr class="grp"><td>▾ Financing Activities</td><td class="num">5,000,000</td><td class="num neg">(7,000,000)</td><td class="num neg">(2,000,000)</td></tr>
+      <tr class="sub"><td>Net Cash Movement</td><td class="num">191,500,000</td><td class="num neg">(173,000,000)</td><td class="num">18,500,000</td></tr>
+      <tr class="child"><td>Opening Cash Balance</td><td class="num" colspan="3">93,300,000</td></tr>
+      <tr class="net"><td>Closing Cash Balance</td><td class="num" colspan="3">111,800,000</td></tr>
+    </tbody></table></div>
+    <div class="pad"><div style="font-size:10.5px;color:var(--muted)">Closing = Opening 93,300,000 + Net 18,500,000 = 111,800,000 (Cash 1,550,000 + Bank 110,250,000).</div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Generate">⚡</button><button class="s-ic" data-tip="Forecast">📈</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 4 · A/R AGING -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">4 · Accounts Receivable Aging</span>
+  <div class="page-head"><div><h1>Accounts Receivable Aging</h1><div class="sub">Money owed by customers · overdue invoices · credit exposure · K'000</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sec btn-sm">Send Statements</button><button class="btn btn-ghost btn-sm">Drill Down</button><button class="btn btn-ghost btn-sm">Print</button><button class="btn btn-ghost btn-sm">PDF</button><button class="btn btn-ghost btn-sm">Excel</button></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Summary by Customer</h2><span class="badge b-over" style="margin-left:8px"><span class="bdot"></span>90+ = 1,200</span></div>
+    <div class="li-wrap"><table><thead><tr><th>Customer</th><th class="num">Current</th><th class="num">1–30</th><th class="num">31–60</th><th class="num">61–90</th><th class="num">90+</th><th class="num">Total</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:700;color:var(--ink)">Beta Industries</td><td class="num">4,000</td><td class="num">2,000</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">6,000</td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Alpha Traders</td><td class="num">1,500</td><td class="num">500</td><td class="num">800</td><td class="num">—</td><td class="num">—</td><td class="num">2,800</td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Metro Supplies</td><td class="num">—</td><td class="num">—</td><td class="num">600</td><td class="num">—</td><td class="num neg">1,200</td><td class="num">1,800</td></tr>
+        <tr class="sub"><td>Total</td><td class="num">5,500</td><td class="num">2,500</td><td class="num">1,400</td><td class="num">—</td><td class="num">1,200</td><td class="num">10,600</td></tr>
+      </tbody></table></div></div>
+  <div class="card"><div class="card-h"><h2>Outstanding Invoices</h2></div>
+    <div class="li-wrap"><table><thead><tr><th>Customer</th><th>Invoice №</th><th>Due Date</th><th class="num">Balance</th><th>Aging</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="em">Beta Industries</td><td class="mono">INV-001255</td><td class="em">13 Sep</td><td class="num">2,300</td><td><span class="tchip">Current</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">💰</button><button class="ibtn">✉</button></td></tr>
+        <tr><td class="em">Metro Supplies</td><td class="mono">INV-001101</td><td class="em">09 Jun</td><td class="num neg">1,200</td><td><span class="badge b-over"><span class="bdot"></span>90+</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">💰</button><button class="ibtn">✉</button></td></tr>
+      </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Generate">⚡</button><button class="s-ic" data-tip="Statements">✉</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 5 · A/P AGING -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">5 · Accounts Payable Aging</span>
+  <div class="page-head"><div><h1>Accounts Payable Aging</h1><div class="sub">Money owed to suppliers · payment priority · cash requirement · K'000</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sec btn-sm">Schedule Payments</button><button class="btn btn-ghost btn-sm">Drill Down</button><button class="btn btn-ghost btn-sm">Print</button><button class="btn btn-ghost btn-sm">PDF</button><button class="btn btn-ghost btn-sm">Excel</button></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Summary by Vendor</h2><span class="badge b-warn" style="margin-left:8px"><span class="bdot"></span>Due soon = 8,000</span></div>
+    <div class="li-wrap"><table><thead><tr><th>Vendor</th><th class="num">Current</th><th class="num">1–30</th><th class="num">31–60</th><th class="num">61–90</th><th class="num">90+</th><th class="num">Total</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:700;color:var(--ink)">Kamuzu Estates</td><td class="num">8,000</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">8,000</td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">AHL Group</td><td class="num">1,000</td><td class="num">850</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">1,850</td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Office Supplies Co</td><td class="num">—</td><td class="num">—</td><td class="num neg">320</td><td class="num">—</td><td class="num">—</td><td class="num">320</td></tr>
+        <tr class="sub"><td>Total</td><td class="num">9,000</td><td class="num">850</td><td class="num">320</td><td class="num">—</td><td class="num">—</td><td class="num">10,170</td></tr>
+      </tbody></table></div></div>
+  <div class="card"><div class="card-h"><h2>Outstanding Bills</h2></div>
+    <div class="li-wrap"><table><thead><tr><th>Vendor</th><th>Bill №</th><th>Due Date</th><th class="num">Outstanding</th><th>Aging</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="em">Kamuzu Estates</td><td class="mono">BILL-0830</td><td class="em">01 Sep</td><td class="num">8,000</td><td><span class="tchip">Current</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">💳</button><button class="ibtn">📅</button></td></tr>
+        <tr><td class="em">Office Supplies Co</td><td class="mono">BILL-0861</td><td class="em">08 Aug</td><td class="num neg">320</td><td><span class="badge b-warn"><span class="bdot"></span>31–60</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">💳</button><button class="ibtn">📅</button></td></tr>
+      </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Generate">⚡</button><button class="s-ic" data-tip="Schedule">📅</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 6 · PDF ENGINE -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">6 · PDF Engine — clean · modern · balanced · real year headers</span>
+  <div class="pdfgrid">
+    <div class="doc"><div class="doc-top"><div class="doc-brand"><span class="doc-mark">C</span><div><div class="doc-co">CamelotBooks</div><div class="doc-tag">Enterprise Accounting &amp; Advisory Services</div></div></div>
+      <div class="doc-id"><div class="doc-title">Income Statement</div><div class="doc-period">01 Jan – 31 Aug 2026 · MWK</div><div class="doc-accent"></div></div></div>
+      <table class="dtable"><thead><tr><th></th><th class="num yr">2026</th><th class="num yr">2025</th><th class="num">%</th></tr></thead><tbody>
+        <tr class="h"><td>Revenue</td><td class="num"></td><td class="num"></td><td class="num"></td></tr>
+        <tr><td>Sales Revenue</td><td class="num">125,000,000</td><td class="num">110,000,000</td><td class="num">13.64</td></tr>
+        <tr><td>Service Revenue</td><td class="num">25,000,000</td><td class="num">20,000,000</td><td class="num">25.00</td></tr>
+        <tr class="st"><td>Total Revenue</td><td class="num">155,000,000</td><td class="num">134,000,000</td><td class="num">15.67</td></tr>
+        <tr class="st"><td>Gross Profit</td><td class="num">90,000,000</td><td class="num">76,000,000</td><td class="num">18.42</td></tr>
+        <tr class="st"><td>Operating Profit</td><td class="num">38,500,000</td><td class="num">30,500,000</td><td class="num">26.23</td></tr>
+        <tr><td>Income Tax Expense</td><td class="num"><span class="neg">(8,875,000)</span></td><td class="num"><span class="neg">(7,000,000)</span></td><td class="num">26.79</td></tr>
+        <tr class="gt"><td>Net Profit</td><td class="num">26,625,000</td><td class="num">21,000,000</td><td class="num">26.79</td></tr>
+      </tbody></table>
+      <div class="sign"><div class="s">Prepared By</div><div class="s">Authorised By — Signature &amp; Date</div></div>
+      <div class="doc-foot"><span>www.camelotbooks.com · info@camelotbooks.com · +265 1 234 567</span><span>Page 1 of 1</span></div></div>
+    <div class="doc"><div class="doc-top"><div class="doc-brand"><span class="doc-mark">C</span><div><div class="doc-co">CamelotBooks</div><div class="doc-tag">Enterprise Accounting &amp; Advisory Services</div></div></div>
+      <div class="doc-id"><div class="doc-title">Statement of Financial Position</div><div class="doc-period">As at 31 August 2026 · MWK</div><div class="doc-accent"></div></div></div>
+      <table class="dtable"><thead><tr><th></th><th class="num yr">2026</th><th class="num yr">2025</th></tr></thead><tbody>
+        <tr class="h"><td>Assets</td><td class="num"></td><td class="num"></td></tr>
+        <tr class="st"><td>Non-current Assets</td><td class="num">325,000,000</td><td class="num">316,000,000</td></tr>
+        <tr class="st"><td>Current Assets</td><td class="num">307,000,000</td><td class="num">265,000,000</td></tr>
+        <tr class="gt"><td>Total Assets</td><td class="num">632,000,000</td><td class="num">581,000,000</td></tr>
+        <tr class="h"><td>Liabilities</td><td class="num"></td><td class="num"></td></tr>
+        <tr class="st"><td>Total Liabilities</td><td class="num">330,000,000</td><td class="num">329,000,000</td></tr>
+        <tr class="h"><td>Equity</td><td class="num"></td><td class="num"></td></tr>
+        <tr class="st"><td>Total Equity</td><td class="num">302,000,000</td><td class="num">252,000,000</td></tr>
+        <tr class="gt"><td>Total Liabilities &amp; Equity</td><td class="num">632,000,000</td><td class="num">581,000,000</td></tr>
+      </tbody></table>
+      <div class="check"><b>✓</b> Balances — Total Assets equal Total Liabilities plus Equity (K632,000,000).</div>
+      <div class="sign"><div class="s">Prepared By</div><div class="s">Authorised By — Signature &amp; Date</div></div>
+      <div class="doc-foot"><span>www.camelotbooks.com · info@camelotbooks.com · +265 1 234 567</span><span>Page 1 of 1</span></div></div>
+    <div class="doc"><div class="doc-top"><div class="doc-brand"><span class="doc-mark">C</span><div><div class="doc-co">CamelotBooks</div><div class="doc-tag">Enterprise Accounting &amp; Advisory Services</div></div></div>
+      <div class="doc-id"><div class="doc-title">Cash Flow Statement</div><div class="doc-period">01 Jan – 31 Aug 2026 · MWK</div><div class="doc-accent"></div></div></div>
+      <table class="dtable"><thead><tr><th>Activity</th><th class="num yr">2026</th></tr></thead><tbody>
+        <tr><td>Operating Activities</td><td class="num">28,000,000</td></tr>
+        <tr><td>Investing Activities</td><td class="num"><span class="neg">(7,500,000)</span></td></tr>
+        <tr><td>Financing Activities</td><td class="num"><span class="neg">(2,000,000)</span></td></tr>
+        <tr class="st"><td>Net Increase in Cash</td><td class="num">18,500,000</td></tr>
+        <tr><td>Opening Cash &amp; Bank</td><td class="num">93,300,000</td></tr>
+        <tr class="gt"><td>Closing Cash &amp; Bank</td><td class="num">111,800,000</td></tr>
+      </tbody></table>
+      <div class="sign"><div class="s">Prepared By</div><div class="s">Authorised By — Signature &amp; Date</div></div>
+      <div class="doc-foot"><span>www.camelotbooks.com · info@camelotbooks.com · +265 1 234 567</span><span>Page 1 of 1</span></div></div>
+    <div class="doc"><div class="doc-top"><div class="doc-brand"><span class="doc-mark">C</span><div><div class="doc-co">CamelotBooks</div><div class="doc-tag">Enterprise Accounting &amp; Advisory Services</div></div></div>
+      <div class="doc-id"><div class="doc-title">Receivables Aging</div><div class="doc-period">As at 31 August 2026 · MWK</div><div class="doc-accent"></div></div></div>
+      <table class="dtable"><thead><tr><th>Customer</th><th class="num">Current</th><th class="num">31–60</th><th class="num">61–90</th><th class="num">90+</th><th class="num">Total</th></tr></thead><tbody>
+        <tr><td>Beta Industries</td><td class="num">4,000</td><td class="num">2,000</td><td class="num">—</td><td class="num">—</td><td class="num">6,000</td></tr>
+        <tr><td>Metro Supplies</td><td class="num">—</td><td class="num">600</td><td class="num">—</td><td class="num" style="color:var(--pred)">1,200</td><td class="num">1,800</td></tr>
+        <tr class="gt"><td>Total</td><td class="num">5,500</td><td class="num">3,400</td><td class="num">—</td><td class="num">1,200</td><td class="num">10,100</td></tr>
+      </tbody></table>
+      <div class="sign"><div class="s">Prepared By</div><div class="s">Authorised By — Signature &amp; Date</div></div>
+      <div class="doc-foot"><span>www.camelotbooks.com · info@camelotbooks.com · +265 1 234 567</span><span>Page 1 of 1</span></div></div>
+    <div class="doc"><div class="doc-top"><div class="doc-brand"><span class="doc-mark">C</span><div><div class="doc-co">CamelotBooks</div><div class="doc-tag">Enterprise Accounting &amp; Advisory Services</div></div></div>
+      <div class="doc-id"><div class="doc-title">Payables Aging</div><div class="doc-period">As at 31 August 2026 · MWK</div><div class="doc-accent"></div></div></div>
+      <table class="dtable"><thead><tr><th>Vendor</th><th class="num">Current</th><th class="num">31–60</th><th class="num">61–90</th><th class="num">90+</th><th class="num">Total</th></tr></thead><tbody>
+        <tr><td>Kamuzu Estates</td><td class="num">8,000</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">8,000</td></tr>
+        <tr><td>AHL Group</td><td class="num">1,000</td><td class="num">850</td><td class="num">—</td><td class="num">—</td><td class="num">1,850</td></tr>
+        <tr class="gt"><td>Total</td><td class="num">9,000</td><td class="num">1,170</td><td class="num">—</td><td class="num">—</td><td class="num">10,170</td></tr>
+      </tbody></table>
+      <div class="sign"><div class="s">Prepared By</div><div class="s">Authorised By — Signature &amp; Date</div></div>
+      <div class="doc-foot"><span>www.camelotbooks.com · info@camelotbooks.com · +265 1 234 567</span><span>Page 1 of 1</span></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="PDF">📕</button><button class="s-ic" data-tip="Print">🖨</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+</div>
+<script>
+  document.querySelectorAll('tr.grp,tr.grp2').forEach(function(g){
+    g.addEventListener('click',function(){
+      var open=!g.classList.contains('closed'); g.classList.toggle('closed',open);
+      var n=g.nextElementSibling;
+      while(n && !n.classList.contains('grp') && !n.classList.contains('sub') && !n.classList.contains('net')){
+        if(n.classList.contains('child')||n.classList.contains('child2')) n.style.display=open?'none':'';
+        n=n.nextElementSibling;
+      }
+    });
+  });
+</script>
+</body>
+</html>

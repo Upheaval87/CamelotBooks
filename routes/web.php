@@ -4,7 +4,7 @@ use App\Http\Controllers\Accounting\AccountClassificationController;
 use App\Http\Controllers\Accounting\AccountController;
 use App\Http\Controllers\Accounting\AccountingPeriodController;
 use App\Http\Controllers\Accounting\AgingReportController;
-use App\Http\Controllers\Accounting\AssemblyController;
+
 use App\Http\Controllers\Accounting\BalanceSheetController;
 use App\Http\Controllers\Accounting\EquityStatementController;
 use App\Http\Controllers\Accounting\BankingCentreController;
@@ -29,18 +29,16 @@ use App\Http\Controllers\Accounting\FiscalYearController;
 use App\Http\Controllers\Accounting\GlobalSearchController;
 use App\Http\Controllers\Accounting\ExchangeRateController;
 use App\Http\Controllers\Accounting\IncomeStatementController;
-use App\Http\Controllers\Accounting\InventoryItemsController;
-use App\Http\Controllers\Accounting\InventoryValuationController;
+use App\Http\Controllers\Accounting\InventoryCentreController;
+
 use App\Http\Controllers\Accounting\InvoiceController;
-use App\Http\Controllers\Accounting\ItemCategoryController;
+
 use App\Http\Controllers\Accounting\JournalEntryController;
-use App\Http\Controllers\Accounting\LowStockController;
+
 use App\Http\Controllers\Accounting\PayrollRunController;
-use App\Http\Controllers\Accounting\ProductController;
+
 use App\Http\Controllers\Accounting\RecurringJournalController;
-use App\Http\Controllers\Accounting\StockAdjustmentController;
-use App\Http\Controllers\Accounting\StockCountController;
-use App\Http\Controllers\Accounting\StockTransferController;
+
 use App\Http\Controllers\Accounting\TrialBalanceController;
 use App\Http\Controllers\Accounting\ExpenseController;
 use App\Http\Controllers\Accounting\VendorController;
@@ -261,7 +259,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Journal Entries
             Route::get('journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');
             Route::get('journal-entries/create', [JournalEntryController::class, 'create'])->name('journal-entries.create');
+            Route::get('journal-entries/{journalEntry}/edit', [JournalEntryController::class, 'edit'])->name('journal-entries.edit');
             Route::post('journal-entries', [JournalEntryController::class, 'store'])->name('journal-entries.store');
+            Route::patch('journal-entries/{journalEntry}', [JournalEntryController::class, 'update'])->name('journal-entries.update');
             Route::get('journal-entries/{journalEntry}', [JournalEntryController::class, 'show'])->name('journal-entries.show');
             Route::post('journal-entries/{journalEntry}/submit-for-approval', [JournalEntryController::class, 'submitForApproval'])->name('journal-entries.submit-for-approval')->middleware(['permission:journal-entries.edit', 'sod:journalEntry']);
             Route::post('journal-entries/{journalEntry}/approve', [JournalEntryController::class, 'approve'])->name('journal-entries.approve')->middleware(['permission:journal-entries.approve', 'sod:journalEntry']);
@@ -289,19 +289,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Fiscal Years
             Route::get('fiscal-years', [FiscalYearController::class, 'index'])->name('fiscal-years.index');
+            Route::get('fiscal-years/create', [FiscalYearController::class, 'create'])->name('fiscal-years.create');
             Route::post('fiscal-years', [FiscalYearController::class, 'store'])->name('fiscal-years.store');
             Route::get('fiscal-years/{fiscalYear}', [FiscalYearController::class, 'show'])->name('fiscal-years.show');
+            Route::patch('fiscal-years/{fiscalYear}', [FiscalYearController::class, 'update'])->name('fiscal-years.update');
             Route::post('fiscal-years/{fiscalYear}/close', [FiscalYearController::class, 'close'])->name('fiscal-years.close')->middleware('sod:fiscalYear');
             Route::patch('fiscal-years/{fiscalYear}/reopen', [FiscalYearController::class, 'reopen'])->name('fiscal-years.reopen')->middleware('sod:fiscalYear');
 
             // Cost Centers
             Route::get('cost-centers', [CostCenterController::class, 'index'])->name('cost-centers.index');
+            Route::get('cost-centers/create', [CostCenterController::class, 'create'])->name('cost-centers.create');
             Route::post('cost-centers', [CostCenterController::class, 'store'])->name('cost-centers.store');
+            Route::get('cost-centers/{costCenter}', [CostCenterController::class, 'show'])->name('cost-centers.show');
             Route::patch('cost-centers/{costCenter}', [CostCenterController::class, 'update'])->name('cost-centers.update');
             Route::patch('cost-centers/{costCenter}/toggle', [CostCenterController::class, 'toggle'])->name('cost-centers.toggle');
 
             // Exchange Rates
             Route::get('exchange-rates', [ExchangeRateController::class, 'index'])->name('exchange-rates.index');
+            Route::get('exchange-rates/create', [ExchangeRateController::class, 'create'])->name('exchange-rates.create');
+            Route::get('exchange-rates/{exchangeRate}/edit', [ExchangeRateController::class, 'edit'])->name('exchange-rates.edit');
             Route::post('exchange-rates', [ExchangeRateController::class, 'store'])->name('exchange-rates.store');
             Route::delete('exchange-rates/{exchangeRate}', [ExchangeRateController::class, 'destroy'])->name('exchange-rates.destroy');
             Route::post('exchange-rates/bulk', [ExchangeRateController::class, 'bulkStore'])->name('exchange-rates.bulk');
@@ -340,73 +346,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('vendors/{vendor}', [VendorController::class, 'update'])->name('vendors.update');
             Route::patch('vendors/{vendor}/toggle', [VendorController::class, 'toggle'])->name('vendors.toggle');
 
-            // Item Categories
-            Route::get('item-categories', [ItemCategoryController::class, 'index'])->name('item-categories.index');
-            Route::get('item-categories/create', [ItemCategoryController::class, 'create'])->name('item-categories.create');
-            Route::post('item-categories', [ItemCategoryController::class, 'store'])->name('item-categories.store');
-            Route::get('item-categories/{category}', [ItemCategoryController::class, 'show'])->name('item-categories.show');
-            Route::get('item-categories/{category}/edit', [ItemCategoryController::class, 'edit'])->name('item-categories.edit');
-            Route::put('item-categories/{category}', [ItemCategoryController::class, 'update'])->name('item-categories.update');
-            Route::patch('item-categories/{category}/toggle', [ItemCategoryController::class, 'toggle'])->name('item-categories.toggle');
 
-            // Products
-            Route::get('products', [ProductController::class, 'index'])->name('products.index');
-            Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
-            Route::get('products/create', [ProductController::class, 'create'])->name('products.create');
-            Route::post('products', [ProductController::class, 'store'])->name('products.store');
-            Route::get('products/{product}', [ProductController::class, 'show'])->name('products.show');
-            Route::get('products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
-            Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
-            Route::patch('products/{product}/toggle', [ProductController::class, 'toggle'])->name('products.toggle');
-
-            Route::middleware('feature:inventory')->group(function () {
-            // Inventory Items
-                Route::get('inventory-items', [InventoryItemsController::class, 'index'])->name('inventory-items.index');
-                Route::get('inventory-items/{product}/print', [InventoryItemsController::class, 'print'])->name('inventory-items.print');
-                Route::get('inventory-items/{product}', [InventoryItemsController::class, 'show'])->name('inventory-items.show');
-
-            // Stock Adjustments
-                Route::get('stock-adjustments', [StockAdjustmentController::class, 'index'])->name('stock-adjustments.index');
-                Route::get('stock-adjustments/create', [StockAdjustmentController::class, 'create'])->name('stock-adjustments.create');
-                Route::post('stock-adjustments', [StockAdjustmentController::class, 'store'])->name('stock-adjustments.store');
-                Route::get('stock-adjustments/{adjustment}', [StockAdjustmentController::class, 'show'])->name('stock-adjustments.show');
-
-            // Stock Transfers
-                Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
-                Route::get('stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
-                Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
-                Route::get('stock-transfers/{transfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
-
-            // Assemblies
-                Route::get('assemblies', [AssemblyController::class, 'index'])->name('assemblies.index');
-                Route::get('assemblies/create', [AssemblyController::class, 'create'])->name('assemblies.create');
-                Route::post('assemblies', [AssemblyController::class, 'store'])->name('assemblies.store');
-                Route::get('assemblies/unbuild', [AssemblyController::class, 'createUnbuild'])->name('assemblies.unbuild-form');
-                Route::post('assemblies/unbuild', [AssemblyController::class, 'storeUnbuild'])->name('assemblies.store-unbuild');
-                Route::get('assemblies/history', [AssemblyController::class, 'history'])->name('assemblies.history');
-                Route::get('assemblies/{build}', [AssemblyController::class, 'show'])->name('assemblies.show');
-                Route::get('assemblies-boms', [AssemblyController::class, 'boms'])->name('assemblies.boms');
-                Route::get('assemblies-boms/create', [AssemblyController::class, 'createBom'])->name('assemblies.create-bom');
-                Route::post('assemblies-boms', [AssemblyController::class, 'storeBom'])->name('assemblies.store-bom');
-
-            // Stock Counts
-                Route::get('stock-counts', [StockCountController::class, 'index'])->name('stock-counts.index');
-                Route::get('stock-counts/create', [StockCountController::class, 'create'])->name('stock-counts.create');
-                Route::post('stock-counts', [StockCountController::class, 'store'])->name('stock-counts.store');
-                Route::get('stock-counts/{count}', [StockCountController::class, 'show'])->name('stock-counts.show');
-                Route::get('stock-counts/{count}/edit', [StockCountController::class, 'edit'])->name('stock-counts.edit');
-                Route::put('stock-counts/{count}', [StockCountController::class, 'update'])->name('stock-counts.update');
-
-            // Inventory Valuation
-                Route::get('inventory-valuation', [InventoryValuationController::class, 'index'])->name('inventory-valuation.index');
-                Route::get('inventory-valuation/by-category', [InventoryValuationController::class, 'byCategory'])->name('inventory-valuation.by-category');
-                Route::get('inventory-valuation/export/csv', [InventoryValuationController::class, 'exportCsv'])->name('inventory-valuation.export-csv');
-                Route::get('inventory-valuation/export/pdf', [InventoryValuationController::class, 'exportPdf'])->name('inventory-valuation.export-pdf');
-
-            // Low Stock Report
-                Route::get('low-stock', [LowStockController::class, 'index'])->name('low-stock.index');
-                Route::get('low-stock/export/csv', [LowStockController::class, 'exportCsv'])->name('low-stock.export-csv');
-            });
 
             // Employees
             Route::get('employees', [EmployeeController::class, 'index'])->name('employees.index');
@@ -793,12 +733,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Account Classification
             Route::get('account-classification', [AccountClassificationController::class, 'index'])->name('account-classification.index');
-            Route::post('account-classification', [AccountClassificationController::class, 'update'])->name('account-classification.update');
+            Route::get('account-classification/create', [AccountClassificationController::class, 'create'])->name('account-classification.create');
+            Route::post('account-classification', [AccountClassificationController::class, 'store'])->name('account-classification.store');
+            Route::get('account-classification/{classification}/edit', [AccountClassificationController::class, 'edit'])->name('account-classification.edit');
+            Route::patch('account-classification', [AccountClassificationController::class, 'update'])->name('account-classification.update');
 
-            // UOM Conversions
-            Route::get('uom-conversions', [\App\Http\Controllers\Accounting\UomConversionController::class, 'index'])->name('uom-conversions.index');
-            Route::get('uom-conversions/{product}/edit', [\App\Http\Controllers\Accounting\UomConversionController::class, 'edit'])->name('uom-conversions.edit');
-            Route::put('uom-conversions/{product}', [\App\Http\Controllers\Accounting\UomConversionController::class, 'update'])->name('uom-conversions.update');
+            // ── Inventory Centre ──
+            Route::middleware('feature:inventory')->prefix('inventory')->name('inventory.')->group(function () {
+                Route::get('/', [InventoryCentreController::class, 'dashboard'])->name('dashboard');
+                Route::get('items', [InventoryCentreController::class, 'items'])->name('items');
+                Route::get('items/create', [InventoryCentreController::class, 'itemsCreate'])->name('items.create');
+                Route::post('items', [InventoryCentreController::class, 'itemsStore'])->name('items.store');
+                Route::get('items/{product}', [InventoryCentreController::class, 'itemsShow'])->name('items.show');
+                Route::get('items/{product}/edit', [InventoryCentreController::class, 'itemsEdit'])->name('items.edit');
+                Route::put('items/{product}', [InventoryCentreController::class, 'itemsUpdate'])->name('items.update');
+            });
+
+            // ── Inventory Setup & Control Centre ──
+            Route::middleware('feature:inventory')->prefix('inventory/setup')->name('invsetup.')->group(function () {
+                Route::get('categories', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'categories'])->name('categories');
+                Route::get('assemblies', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'assemblies'])->name('assemblies');
+                Route::get('transfers', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'transfers'])->name('transfers');
+                Route::get('adjustments', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'adjustments'])->name('adjustments');
+                Route::get('stock-count', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'stockCount'])->name('stockcount');
+                Route::get('uom', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'uom'])->name('uom');
+                Route::get('landed-costs', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'landed'])->name('landed');
+                Route::get('valuation', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'valuation'])->name('valuation');
+                Route::get('low-stock', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'lowStock'])->name('lowstock');
+            });
+
+
 
             // Landed Cost
             Route::get('landed-costs', [\App\Http\Controllers\Accounting\LandedCostController::class, 'index'])->name('landed-costs.index');

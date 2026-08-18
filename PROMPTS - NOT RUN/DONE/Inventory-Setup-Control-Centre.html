@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Setup & Control Centre</title>
+<style>
+  :root{
+    --rw:300px;--sw:48px;--gap:20px;--gap-slim:12px;
+    --deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;
+    --sec:#128F8E;--sec-2:#149897;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;
+    --muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;
+    --red:#dc2626;--red-2:#b91c1c;--green:#15803d;--amber:#d97706;--amber-2:#b45309;--steel:#46708C;
+    --shadow-card:0 1px 2px rgba(10,42,46,.05),0 12px 32px -8px rgba(10,42,46,.10),0 32px 64px -24px rgba(8,40,44,.14);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 72px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}
+  .spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--ink)}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .navitem.active .ic{color:#fff}
+
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding:26px 0 16px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  h1{font-size:21px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .mono-chip{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--deep-1);
+    background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);border-radius:8px;padding:4px 10px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-act{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}.b-act .bdot{background:#22c55e}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:var(--amber)}
+  .b-out{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-out .bdot{background:var(--red-2)}
+  .b-sub{background:rgba(70,112,140,.10);border:1px solid rgba(70,112,140,.4);color:var(--steel)}.b-sub .bdot{background:var(--steel)}
+  .b-draft{background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);color:#11454b}.b-draft .bdot{background:#11454b}
+  .b-lock{background:rgba(138,165,167,.15);border:1px solid rgba(138,165,167,.5);color:var(--muted)}.b-lock .bdot{background:var(--muted)}
+  .tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;
+    background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:12px;
+    font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .16s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.85);border-color:var(--border);color:#374151}
+  .btn-ghost:hover{background:rgba(17,69,75,.06);border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-sec{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-danger-o{background:#fff;border-color:rgba(220,38,38,.35);color:var(--red)}
+  .btn-sm{height:34px;padding:0 13px;font-size:12.5px;border-radius:10px}
+  .btn-xs{height:30px;padding:0 11px;font-size:11.5px;border-radius:9px}
+  .icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.85);
+    display:grid;place-items:center;color:var(--muted);cursor:pointer;flex:none}
+  .vdiv{width:1px;height:22px;background:var(--border)}
+  .more{position:relative}
+  .more-menu{position:absolute;right:0;top:calc(100% + 6px);width:230px;background:#fff;border:1px solid var(--border);
+    border-radius:12px;box-shadow:0 16px 40px -12px rgba(8,40,44,.3);padding:6px;display:none;z-index:60}
+  .more.open .more-menu{display:block}
+  .more-item{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:none;border-radius:9px;background:none;
+    text-align:left;font-family:inherit;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer}
+  .more-item:hover{background:rgba(17,69,75,.06)}
+  .more-item.danger{color:var(--red)}
+
+  .card{background:rgba(255,255,255,.75);backdrop-filter:blur(14px);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-sec{padding:20px 24px}
+  .card-sec + .card-sec{border-top:1px solid var(--line)}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .sec-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .sec-ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;background:var(--sec);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px -3px rgba(10,80,80,.4)}
+  .sec-head h2{font-size:14px;font-weight:600;color:var(--muted)}
+  .sec-head .rule{flex:1;height:1px;background:var(--line)}
+
+  .li-wrap{margin-top:16px;border:1px solid var(--border);border-radius:14px;background:#fafdfd;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:760px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;
+    letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th:first-child{border-radius:13px 0 0 0}thead th:last-child{border-radius:0 13px 0 0}
+  thead th.num{text-align:right}
+  tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{padding:12px;border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink);background:rgba(17,69,75,.03)}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:500;color:var(--ink)}
+  .em{color:var(--muted)}.dash{color:var(--faint)}
+  .numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  .numr.bold{font-weight:800}
+  .numr.red{color:var(--red-2);font-weight:700}
+  .numr.amber{color:var(--amber-2);font-weight:700}
+  .numr.green{color:var(--green);font-weight:700}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+
+  .tree{list-style:none;margin-top:6px}
+  .tree li{position:relative;padding:6px 0 6px 22px;font-size:12.5px;font-weight:600;color:#374151}
+  .tree li::before{content:"";position:absolute;left:6px;top:0;bottom:0;width:1.5px;background:var(--line)}
+  .tree li::after{content:"";position:absolute;left:6px;top:16px;width:10px;height:1.5px;background:var(--line)}
+  .tree > li{padding-left:0}.tree > li::before,.tree > li::after{display:none}
+  .tree .cnt{font-size:10px;font-weight:800;color:var(--sec);background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);border-radius:999px;padding:1px 8px;margin-left:6px}
+  .tree .sel{color:var(--sec)}
+
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px}
+  @media (max-width:900px){.g3{grid-template-columns:1fr 1fr}}
+  .fld .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .fld .v{margin-top:4px;font-size:13px;font-weight:600;color:var(--ink)}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .input{width:100%;height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 12px;
+    font-size:13px;color:var(--ink);font-family:inherit;transition:all .15s}
+  .input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(148,163,184,.18)}
+  select.input{width:auto;padding-right:30px;appearance:none;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center}
+
+  .wflow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0 16px}
+  .wf{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:800}
+  .wf.done{background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+  .wf.cur{background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.4);color:var(--amber-2)}
+  .wf.todo{background:rgba(138,165,167,.12);border:1px solid rgba(138,165,167,.4);color:var(--muted)}
+  .wf-arr{color:var(--faint)}
+
+  .mcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:900px){.mcards{grid-template-columns:1fr}}
+  .mcard{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.85)}
+  .mcard.on{border-color:rgba(18,143,142,.55);box-shadow:0 0 0 3px rgba(18,143,142,.12)}
+  .mcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+  .mcard .d{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+
+  .sumbar{display:grid;grid-template-columns:1fr 1fr 1fr 1.25fr;border:1px solid var(--border);border-radius:16px;
+    overflow:hidden;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);box-shadow:var(--shadow-card)}
+  .sumbar .cell{padding:14px 18px;border-right:1px solid var(--line);min-width:0}
+  .sumbar .cell .l{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .sumbar .cell .v{margin-top:4px;font-size:1.125rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .sumbar .cell .n{margin-top:2px;font-size:10px;color:var(--faint)}
+  .sumbar .cell.hero{border-right:none;background:linear-gradient(90deg,var(--sec-2),var(--sec) 60%,#107c7b);
+    display:flex;flex-direction:column;justify-content:center}
+  .sumbar .cell.hero .l{color:#dff7f6}.sumbar .cell.hero .v{color:#fff;font-size:1.25rem}
+  @media (max-width:900px){.sumbar{grid-template-columns:1fr 1fr}.sumbar .cell.hero{grid-column:1/-1;border-top:1px solid var(--line)}}
+
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + var(--gap-slim));transition:margin-right .35s cubic-bezier(.4,0,.2,1)}
+  body.ql-open .stage-body{margin-right:calc(var(--rw) + var(--gap))}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:none;
+    flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  body:not(.ql-open) .stage.in-view .slim-rail{display:flex}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;
+    background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);
+    background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;
+    box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-ic .ndot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--amber);border:1.5px solid #fff}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  .s-ic.expand:hover{background:linear-gradient(180deg,#107c7b,#128F8E);filter:brightness(1.1)}
+  .ql-drawer{position:fixed;top:50%;right:0;width:var(--rw);z-index:40;
+    transform:translate(103%,-50%);visibility:hidden;
+    transition:transform .35s cubic-bezier(.4,0,.2,1), visibility 0s linear .35s}
+  body.ql-open .stage.in-view .ql-drawer{transform:translate(0,-50%);visibility:visible;
+    transition:transform .35s cubic-bezier(.4,0,.2,1)}
+  .rail-block{position:relative;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.65);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-card)}
+  .rail-x{position:absolute;top:10px;right:10px;z-index:2;width:28px;height:28px;border:none;border-radius:8px;
+    display:grid;place-items:center;background:rgba(255,255,255,.92);color:var(--muted);cursor:pointer}
+  .rail-pin{position:absolute;top:10px;right:44px;z-index:2;width:28px;height:28px;border:none;border-radius:8px;
+    display:grid;place-items:center;background:rgba(255,255,255,.92);color:var(--muted);cursor:pointer}
+  .rail-pin.on{background:rgba(18,143,142,.14);color:var(--sec)}
+  .rail-sec{padding:14px 14px 16px}
+  .rail-sec .sec-head{padding:0 4px;padding-right:58px}
+  .rail-sec .sec-head h2{font-size:12px}
+  .vlist{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+  .vitem{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:11px;border:none;background:none;width:100%;
+    text-align:left;font-size:12.5px;font-weight:700;color:#374151;cursor:pointer;font-family:inherit;transition:all .14s}
+  .vitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .vitem:hover{background:rgba(17,69,75,.06)}
+  .vitem.on{background:linear-gradient(90deg,var(--sec-2),var(--sec));color:#fff}
+  .vitem.on .ic{background:rgba(255,255,255,.16);color:#fff}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+
+<header class="tealbar">
+  <div class="row1">
+    <span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div>
+  </div>
+  <div class="row2">
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 7h12l1.5 14h-15L6 7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 10V6a3 3 0 0 1 6 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Sales</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="20" r="1.6" stroke="currentColor" stroke-width="1.8"/><path d="M3 4h2.5l2.2 11h10.1l2-8H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Purchasing</a>
+    <a class="navitem active" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 8l8-5 8 5v8l-8 5-8-5V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8l8 5 8-5M12 13v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>Inventory</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-5.5L21 9M5 9.5V19M9.5 9.5V19M14.5 9.5V19M19 9.5V19M3 19.5h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Banking</a>
+    <a class="navitem" href="#"><span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 20V11M10.5 20V5M16 20v-7M21 20H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>Reports</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ================= 1 · ITEM CATEGORIES ================= -->
+<div class="stage" id="st1">
+  <div class="stage-body">
+    <span class="opt-tag">1 · Item Categories — hierarchy + default accounts &amp; rules</span>
+    <div class="page-head">
+      <div><h1>Item Categories</h1><div class="sub">Organize items into logical groups with default accounts, tax, warehouse and reorder rules.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="more"><button class="btn btn-ghost btn-sm" onclick="this.parentNode.classList.toggle('open')">⋯ More</button>
+          <div class="more-menu"><button class="more-item">⇄ Move Category</button><button class="more-item">📥 Import Categories</button><button class="more-item">📤 Export Categories</button></div></div>
+        <button class="btn btn-cta btn-sm">➕ Add Category</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:16px" class="catgrid">
+      <style>@media (max-width:1000px){.catgrid{grid-template-columns:1fr!important}}</style>
+      <div class="card"><div class="card-h"><h2>Category Hierarchy</h2><span class="fmt" style="margin-left:auto">3 levels</span></div>
+        <div class="card-sec">
+          <ul class="tree">
+            <li><b class="sel">Electronics</b><span class="cnt">42</span>
+              <ul class="tree"><li>Computers<span class="cnt">14</span></li><li>Mobile Phones<span class="cnt">18</span></li><li>Accessories<span class="cnt">10</span></li></ul></li>
+            <li style="margin-top:8px"><b>Supplies</b><span class="cnt">61</span>
+              <ul class="tree"><li>Paper<span class="cnt">22</span></li><li>Toner &amp; Ink<span class="cnt">17</span></li></ul></li>
+            <li style="margin-top:8px"><b>Services</b><span class="cnt">12</span></li>
+          </ul>
+        </div></div>
+
+      <div class="card"><div class="card-h"><h2>Category Details — Electronics</h2>
+        <div style="margin-left:auto;display:flex;gap:8px"><button class="btn btn-ghost btn-xs">✎ Edit</button><button class="btn btn-ghost btn-xs">⇄ Move</button><button class="btn btn-danger-o btn-xs">🗑 Delete</button></div></div>
+        <div class="card-sec">
+          <div class="g3">
+            <div class="fld"><div class="l">Inventory Asset Account</div><div class="v">1300 · Inventory Asset</div></div>
+            <div class="fld"><div class="l">Cost of Goods Sold Account</div><div class="v">5000 · Cost of Goods Sold</div></div>
+            <div class="fld"><div class="l">Sales Revenue Account</div><div class="v">4000 · Sales Revenue</div></div>
+            <div class="fld"><div class="l">Default Tax Rule</div><div class="v">Standard 16.5% VAT</div></div>
+            <div class="fld"><div class="l">Default Warehouse</div><div class="v">Main Warehouse</div></div>
+            <div class="fld"><div class="l">Reorder Rule</div><div class="v">Min 5 · reorder point 8</div></div>
+          </div>
+          <div class="field" style="margin-top:14px"><span style="font-size:10.5px;color:var(--faint)">New items created under this category inherit accounts, tax, warehouse and reorder defaults — all overridable per item.</span></div>
+        </div></div>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Items List"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 8l8-5 8 5v8l-8 5-8-5V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 8l8 5 8-5M12 13v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="UOM Conversions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 18L18 4M8 14l2 2M12 10l2 2M16 6l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-pin" title="Pin rail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 4h6l-1 7 3 2v2H7v-2l3-2-1-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 15v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📒</span>Items List</button>
+        <button class="vitem"><span class="ic">🏷</span>UOM Conversions</button>
+        <button class="vitem"><span class="ic">⚙</span>Inventory Settings</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 2 · ASSEMBLIES / KITS ================= -->
+<div class="stage" id="st2">
+  <div class="stage-body">
+    <span class="opt-tag">2 · Assemblies / Item Kits — build, cost, auto-deduct</span>
+    <div class="page-head">
+      <div><h1>Assemblies / Item Kits</h1><div class="sub">Create finished products from components; build deducts components and adds finished stock.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">🕘 View Assembly History</button>
+        <button class="btn btn-ghost btn-sm">🖨 Print Assembly Sheet</button>
+        <button class="btn btn-cta btn-sm">➕ Create Assembly</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-h"><h2>Assembly — Office Computer Package</h2><span class="mono-chip">ASM-00012</span>
+        <span class="badge b-act"><span class="bdot"></span>Built</span>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-xs">＋ Add Components</button>
+          <button class="btn btn-sec btn-xs">⚙ Build Assembly</button>
+          <button class="btn btn-danger-o btn-xs">↩ Reverse Assembly</button>
+        </div></div>
+      <div class="card-sec" style="padding-top:6px">
+        <div class="li-wrap" style="margin-top:0">
+          <table>
+            <thead><tr><th style="width:30%">Component</th><th class="num" style="width:12%">Qty Required</th>
+              <th class="num" style="width:16%">Unit Cost (K)</th><th class="num" style="width:16%">Total (K)</th><th style="width:14%">Stock After</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600;color:var(--ink)">Monitor 24"</td><td class="numr">1</td><td class="numr">180,000</td><td class="numr">180,000</td><td class="em">9 pcs</td></tr>
+              <tr><td style="font-weight:600;color:var(--ink)">CPU Tower i5</td><td class="numr">1</td><td class="numr">420,000</td><td class="numr">420,000</td><td class="em">6 pcs</td></tr>
+              <tr><td style="font-weight:600;color:var(--ink)">Keyboard</td><td class="numr">1</td><td class="numr">25,000</td><td class="numr">25,000</td><td class="em">21 pcs</td></tr>
+              <tr><td style="font-weight:600;color:var(--ink)">Mouse</td><td class="numr">1</td><td class="numr">15,000</td><td class="numr">15,000</td><td class="em">17 pcs</td></tr>
+              <tr><td style="font-weight:600;color:var(--ink)">OS License</td><td class="numr">1</td><td class="numr">90,000</td><td class="numr">90,000</td><td class="em">4 pcs</td></tr>
+            </tbody>
+            <tfoot><tr><td>Components total</td><td></td><td></td><td class="numr">730,000</td><td></td></tr></tfoot>
+          </table>
+        </div>
+        <div class="sumbar" style="margin-top:16px">
+          <div class="cell"><div class="l">Components</div><div class="v">730,000</div></div>
+          <div class="cell"><div class="l">Labour</div><div class="v">40,000</div></div>
+          <div class="cell"><div class="l">Overhead</div><div class="v">30,000</div></div>
+          <div class="cell hero"><div class="l">Total Assembly Cost</div><div class="v">K800,000</div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Build Assembly"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Assembly History"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">⚙</span>Build Assembly</button>
+        <button class="vitem"><span class="ic">🕘</span>Assembly History</button>
+        <button class="vitem"><span class="ic">📒</span>Items List</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 3 · TRANSFERS + ADJUSTMENTS ================= -->
+<div class="stage" id="st3">
+  <div class="stage-body">
+    <span class="opt-tag">3 · Stock Transfers + Stock Adjustments — controlled movements</span>
+    <div class="page-head">
+      <div><h1>Stock Transfers &amp; Adjustments</h1><div class="sub">Move stock between locations; correct differences with approved, accounted adjustments.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-sec btn-sm">⇄ New Transfer</button>
+        <button class="btn btn-cta btn-sm">⇄ New Adjustment</button>
+      </div>
+    </div>
+
+    <section class="card" style="margin-bottom:16px">
+      <div class="card-h"><h2>Stock Transfers</h2>
+        <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+          <span class="tchip">Draft 2</span><span class="tchip" style="background:rgba(70,112,140,.10);border-color:rgba(70,112,140,.4);color:var(--steel)">Sent 1</span>
+          <span class="tchip" style="background:rgba(22,163,74,.10);border-color:rgba(22,163,74,.35);color:var(--green)">Completed 26</span>
+        </div></div>
+      <div class="li-wrap" style="margin-top:0;border:none;border-radius:0">
+        <table>
+          <thead><tr><th style="width:11%">TRF №</th><th style="width:10%">Date</th><th style="width:20%">From → To</th>
+            <th style="width:18%">Items</th><th class="num" style="width:8%">Qty</th><th style="width:11%">User</th>
+            <th style="width:10%">Status</th><th style="width:14%"></th></tr></thead>
+          <tbody>
+            <tr><td class="mono">TRF-000120</td><td class="em">14 Aug</td><td class="em">Main WH → Branch 01</td><td class="em">Paper A4, Toner 26A</td>
+              <td class="numr">16</td><td class="em">E. Seyama</td><td><span class="badge b-draft"><span class="bdot"></span>Draft</span></td>
+              <td><div class="row-act"><button class="btn btn-sec btn-xs">Approve</button><button class="btn btn-ghost btn-xs">Send</button></div></td></tr>
+            <tr><td class="mono">TRF-000119</td><td class="em">14 Aug</td><td class="em">Main WH → Branch 01</td><td class="em">Paper A4</td>
+              <td class="numr">10</td><td class="em">E. Seyama</td><td><span class="badge b-sub"><span class="bdot"></span>Sent</span></td>
+              <td><div class="row-act"><button class="btn btn-sec btn-xs">Receive</button><button class="btn btn-danger-o btn-xs">Cancel</button></div></td></tr>
+            <tr><td class="mono">TRF-000118</td><td class="em">13 Aug</td><td class="em">Main WH → Branch 01</td><td class="em">Toner 26A</td>
+              <td class="numr">6</td><td class="em">J. Banda</td><td><span class="badge b-act"><span class="bdot"></span>Completed</span></td>
+              <td><div class="row-act"><button class="btn btn-ghost btn-xs">Note</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>Stock Adjustments</h2>
+        <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+          <span class="tchip" style="background:rgba(22,163,74,.10);border-color:rgba(22,163,74,.35);color:var(--green)">Increase</span>
+          <span class="tchip" style="background:rgba(185,28,28,.08);border-color:rgba(185,28,28,.3);color:var(--red-2)">Decrease</span>
+          <span class="tchip">Write-off</span><span class="tchip">Correction</span>
+        </div></div>
+      <div class="li-wrap" style="margin-top:0;border:none;border-radius:0">
+        <table>
+          <thead><tr><th style="width:11%">Adj №</th><th style="width:10%">Date</th><th style="width:20%">Item</th>
+            <th style="width:12%">Type</th><th style="width:15%">Reason</th><th class="num" style="width:8%">Qty</th>
+            <th class="num" style="width:10%">Value (K)</th><th style="width:14%"></th></tr></thead>
+          <tbody>
+            <tr><td class="mono">ADJ-000033</td><td class="em">14 Aug</td><td style="font-weight:600;color:var(--ink)">Mouse Wireless</td>
+              <td><span class="tchip" style="background:rgba(185,28,28,.08);border-color:rgba(185,28,28,.3);color:var(--red-2)">Decrease</span></td>
+              <td class="em">Lost stock</td><td class="numr red">−2</td><td class="numr">50.00</td>
+              <td><div class="row-act"><button class="btn btn-sec btn-xs">Approve</button><button class="btn btn-ghost btn-xs">Voucher</button></div></td></tr>
+            <tr><td class="mono">ADJ-000032</td><td class="em">12 Aug</td><td style="font-weight:600;color:var(--ink)">Yogurt 500ml</td>
+              <td><span class="tchip">Write-off</span></td><td class="em">Expired items</td><td class="numr red">−24</td><td class="numr">96.00</td>
+              <td><div class="row-act"><button class="btn btn-ghost btn-xs">Reverse</button><button class="btn btn-ghost btn-xs">Voucher</button></div></td></tr>
+            <tr><td class="mono">ADJ-000030</td><td class="em">01 Aug</td><td style="font-weight:600;color:var(--ink)">Paper A4 80gsm</td>
+              <td><span class="tchip" style="background:rgba(22,163,74,.10);border-color:rgba(22,163,74,.35);color:var(--green)">Increase</span></td>
+              <td class="em">Opening balance</td><td class="numr green">+40</td><td class="numr">1,520.00</td>
+              <td><div class="row-act"><button class="btn btn-ghost btn-xs">Voucher</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="New Transfer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h13l-3-3M20 17H7l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="New Adjustment"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">⇄</span>New Transfer</button>
+        <button class="vitem"><span class="ic">⇄</span>New Adjustment</button>
+        <button class="vitem"><span class="ic">📒</span>Items List</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 4 · STOCK COUNT ================= -->
+<div class="stage" id="st4">
+  <div class="stage-body">
+    <span class="opt-tag">4 · Stock Count — session workflow with variance review</span>
+    <div class="page-head">
+      <div><h1>Stock Count / Physical Inventory</h1><div class="sub">Compare system stock with physical count; approve and post variances as adjustments.</div></div>
+      <button class="btn btn-cta btn-sm">▶ Start Stock Count</button>
+    </div>
+
+    <div class="wflow">
+      <span class="wf done">✓ Create Count</span><span class="wf-arr">→</span>
+      <span class="wf done">✓ Print Count Sheet</span><span class="wf-arr">→</span>
+      <span class="wf done">✓ Physical Counting</span><span class="wf-arr">→</span>
+      <span class="wf cur">● Enter Results</span><span class="wf-arr">→</span>
+      <span class="wf todo">Review Variance</span><span class="wf-arr">→</span>
+      <span class="wf todo">Approve Count</span><span class="wf-arr">→</span>
+      <span class="wf todo">Post Adjustments</span>
+    </div>
+
+    <section class="card">
+      <div class="card-h"><h2>Count Session — Main Warehouse · Electronics</h2><span class="mono-chip">SC-0007</span>
+        <span class="badge b-lock"><span class="bdot"></span>Inventory frozen</span>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-xs">🖨 Print Count Sheet</button>
+          <button class="btn btn-sec btn-xs">⌨ Enter Count</button>
+          <button class="btn btn-ghost btn-xs">Review Variance</button>
+          <button class="btn btn-ghost btn-xs">Approve Count</button>
+          <button class="btn btn-cta btn-xs">Post Adjustments</button>
+        </div></div>
+      <div class="li-wrap" style="margin-top:0;border:none;border-radius:0">
+        <table>
+          <thead><tr><th style="width:24%">Item</th><th class="num" style="width:12%">System Qty</th>
+            <th class="num" style="width:12%">Counted Qty</th><th class="num" style="width:12%">Variance</th>
+            <th class="num" style="width:14%">Variance Value (K)</th><th style="width:14%">Status</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600;color:var(--ink)">Laptop HP 250 G8</td><td class="numr">14</td><td class="numr">14</td><td class="numr">0</td><td class="numr">0.00</td><td><span class="badge b-act"><span class="bdot"></span>Matched</span></td></tr>
+            <tr><td style="font-weight:600;color:var(--ink)">Mouse Wireless M185</td><td class="numr">5</td><td class="numr">3</td><td class="numr red">−2</td><td class="numr red">−50.00</td><td><span class="badge b-out"><span class="bdot"></span>Variance</span></td></tr>
+            <tr><td style="font-weight:600;color:var(--ink)">Toner HP 26A</td><td class="numr">6</td><td class="numr">7</td><td class="numr green">+1</td><td class="numr green">+50.00</td><td><span class="badge b-out"><span class="bdot"></span>Variance</span></td></tr>
+          </tbody>
+          <tfoot><tr><td>Net variance</td><td></td><td></td><td class="numr">−1</td><td class="numr">0.00</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Start Count"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 4l14 8-14 8V4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="Print Count Sheet"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 8V4h10v4M7 16H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="14" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.8"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">▶</span>Start Stock Count</button>
+        <button class="vitem"><span class="ic">⇄</span>Adjustments</button>
+        <button class="vitem"><span class="ic">📒</span>Items List</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 5 · UOM + LANDED COSTS ================= -->
+<div class="stage" id="st5">
+  <div class="stage-body">
+    <span class="opt-tag">5 · UOM Conversions + Landed Cost Management</span>
+    <div class="page-head">
+      <div><h1>Units of Measure &amp; Landed Costs</h1><div class="sub">Conversions across purchase/sales/stock units; allocate freight, duty and clearing into item cost.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">＋ Add Unit</button>
+        <button class="btn btn-cta btn-sm">＋ Create Landed Cost</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:16px" class="uomgrid">
+      <style>@media (max-width:1000px){.uomgrid{grid-template-columns:1fr!important}}</style>
+      <div class="card"><div class="card-h"><h2>UOM Conversions</h2><button class="btn btn-ghost btn-xs" style="margin-left:auto">Create Conversion</button></div>
+        <div class="li-wrap" style="margin-top:0;border:none;border-radius:0">
+          <table style="min-width:0">
+            <thead><tr><th>Unit</th><th>Conversion</th><th>Purchase</th><th>Sales</th><th>Stock</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600;color:var(--ink)">Piece</td><td class="em">base</td><td class="em">—</td><td class="em">✓</td><td class="em">✓</td></tr>
+              <tr><td style="font-weight:600;color:var(--ink)">Box</td><td class="numr">1 = 12 pcs</td><td class="em">✓</td><td class="em">✓</td><td class="em">—</td></tr>
+              <tr><td style="font-weight:600;color:var(--ink)">Carton</td><td class="numr">1 = 24 pcs</td><td class="em">✓</td><td class="em">—</td><td class="em">✓</td></tr>
+              <tr><td style="font-weight:600;color:var(--ink)">Ton</td><td class="numr">1 = 1,000 kg</td><td class="em">✓</td><td class="em">—</td><td class="em">✓</td></tr>
+              <tr><td style="font-weight:600;color:var(--ink)">Dozen</td><td class="numr">1 = 12 pcs</td><td class="em">—</td><td class="em">✓</td><td class="em">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-sec" style="padding-top:12px"><span style="font-size:10.5px;color:var(--faint)">Example: purchase 10 cartons → stock 240 pieces automatically.</span></div>
+      </div>
+
+      <div class="card"><div class="card-h"><h2>Landed Cost — LC-00031 · PO-000785</h2>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-xs">＋ Add Expenses</button>
+          <button class="btn btn-ghost btn-xs">Allocate Cost</button>
+          <button class="btn btn-sec btn-xs">Post Cost</button>
+          <button class="btn btn-ghost btn-xs">View History</button>
+        </div></div>
+        <div class="card-sec">
+          <div class="g3" style="grid-template-columns:1fr 1fr">
+            <div class="field"><label>Allocation Method</label><select class="input"><option>By Value</option><option>By Quantity</option><option>By Weight</option><option>By Volume</option></select></div>
+            <div class="field"><label>Linked Purchase Bill</label><input class="input" value="BILL-0912 · PO-000785" disabled></div>
+          </div>
+          <div class="li-wrap">
+            <table style="min-width:0">
+              <thead><tr><th>Cost Element</th><th class="num">Amount (K)</th></tr></thead>
+              <tbody>
+                <tr><td style="font-weight:600;color:var(--ink)">Purchase cost</td><td class="numr">10,000,000</td></tr>
+                <tr><td class="em">Shipping</td><td class="numr">1,000,000</td></tr>
+                <tr><td class="em">Import duty</td><td class="numr">500,000</td></tr>
+                <tr><td class="em">Insurance + clearing</td><td class="numr">250,000</td></tr>
+              </tbody>
+              <tfoot><tr><td>Total landed cost</td><td class="numr">11,750,000</td></tr></tfoot>
+            </table>
+          </div>
+          <div class="sumbar" style="margin-top:16px;grid-template-columns:1fr 1fr 1.25fr">
+            <div class="cell"><div class="l">Cost uplift</div><div class="v">+17.5%</div></div>
+            <div class="cell"><div class="l">New avg cost · Laptop</div><div class="v">998,750</div></div>
+            <div class="cell hero"><div class="l">Inventory value update</div><div class="v">+1,750,000</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Add Unit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <button class="s-ic" data-tip="Purchase Bills"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">🧾</span>Purchase Bills</button>
+        <button class="vitem"><span class="ic">📒</span>Items List</button>
+        <button class="vitem"><span class="ic">📊</span>Valuation Report</button>
+      </div></div>
+  </div></aside>
+</div>
+
+<!-- ================= 6 · VALUATION + LOW STOCK ================= -->
+<div class="stage" id="st6">
+  <div class="stage-body">
+    <span class="opt-tag">6 · Inventory Valuation + Low Stock Control</span>
+    <div class="page-head">
+      <div><h1>Valuation &amp; Replenishment</h1><div class="sub">Real-time value by costing method; reorder points with supplier recommendations.</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm">🕘 View History</button>
+        <button class="btn btn-ghost btn-sm">⇩ Export Report</button>
+        <button class="btn btn-sec btn-sm">⚡ Run Valuation</button>
+      </div>
+    </div>
+
+    <div class="mcards" style="margin-bottom:16px">
+      <div class="mcard on"><div class="t">FIFO</div><div class="d">First purchased items sold first. Layered cost tracking per receipt.</div></div>
+      <div class="mcard"><div class="t">Average Cost</div><div class="d">Weighted average purchase cost, recalculated on each receipt.</div></div>
+      <div class="mcard"><div class="t">Standard Cost</div><div class="d">Fixed predetermined cost with variance reporting.</div></div>
+    </div>
+
+    <div class="sumbar" style="margin-bottom:16px">
+      <div class="cell"><div class="l">Inventory Value</div><div class="v">48,600,000</div><div class="n">FIFO · 3 warehouses</div></div>
+      <div class="cell"><div class="l">Item Cost Lines</div><div class="v">128</div><div class="n">12 services excluded</div></div>
+      <div class="cell"><div class="l">Cost Movement (30d)</div><div class="v">31,200,000</div><div class="n">COGS posted</div></div>
+      <div class="cell hero"><div class="l">Stock Profitability</div><div class="v">28.4%</div></div>
+    </div>
+
+    <section class="card">
+      <div class="card-h"><h2>Low Stock — Reorder Recommendations</h2>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-xs">⇩ Export Report</button>
+          <button class="btn btn-ghost btn-xs">🔔 Send Alert</button>
+          <button class="btn btn-sec btn-xs">📄 Create Purchase Order</button>
+        </div></div>
+      <div class="li-wrap" style="margin-top:0;border:none;border-radius:0">
+        <table>
+          <thead><tr><th style="width:11%">Item Code</th><th style="width:22%">Item Name</th><th style="width:12%">Category</th>
+            <th class="num" style="width:9%">Current</th><th class="num" style="width:9%">Min Level</th><th class="num" style="width:10%">Shortage</th>
+            <th style="width:15%">Preferred Supplier</th><th class="num" style="width:12%">Last Price (K)</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">ITM-0003</td><td style="font-weight:600;color:var(--ink)">Toner HP 26A</td><td class="em">Supplies</td>
+              <td class="numr red">0</td><td class="numr">6</td><td class="numr red">6</td><td class="em">AHL Group</td><td class="numr">50,000</td></tr>
+            <tr><td class="mono">ITM-0002</td><td style="font-weight:600;color:var(--ink)">Mouse Wireless M185</td><td class="em">Electronics</td>
+              <td class="numr amber">3</td><td class="numr">10</td><td class="numr red">7</td><td class="em">Tech World</td><td class="numr">25,000</td></tr>
+            <tr><td class="mono">ITM-0009</td><td style="font-weight:600;color:var(--ink)">Paper A4 80gsm</td><td class="em">Supplies</td>
+              <td class="numr amber">18</td><td class="numr">20</td><td class="numr red">2</td><td class="em">AHL Group</td><td class="numr">38,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="slim-rail" role="navigation" aria-label="Quick links">
+    <button class="s-ic" data-tip="Run Valuation"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 7h14M5 7l-3 6a3.5 3.5 0 0 0 6 0l-3-6zM19 7l-3 6a3.5 3.5 0 0 0 6 0l-3-6z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="s-ic" data-tip="Low stock — 3"><span class="ndot"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <div class="s-div"></div>
+    <button class="s-ic expand" data-tip="Expand rail"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <aside class="ql-drawer" aria-label="Links"><div class="rail-block">
+    <button class="rail-x"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <div class="rail-sec"><div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h2>Quick Nav</h2></div>
+      <div class="vlist">
+        <button class="vitem"><span class="ic">📄</span>Create Purchase Order</button>
+        <button class="vitem"><span class="ic">📊</span>Valuation Report</button>
+        <button class="vitem"><span class="ic">📒</span>Items List</button>
+      </div></div>
+  </div></aside>
+</div>
+
+</div>
+
+<script>
+  var stages=[].slice.call(document.querySelectorAll('.stage'));
+  function isOpen(){return document.body.classList.contains('ql-open');}
+  function setOpen(o){document.body.classList.toggle('ql-open',o);}
+  stages.forEach(function(st){
+    var x=st.querySelector('.rail-x'); if(x)x.addEventListener('click',function(){setOpen(false);});
+    st.querySelectorAll('.s-ic.expand').forEach(function(b){b.addEventListener('click',function(){setOpen(true);});});
+    var p=st.querySelector('.rail-pin'); if(p)p.addEventListener('click',function(){p.classList.toggle('on');});
+  });
+  document.addEventListener('click',function(e){
+    if(e.target.closest('.ql-drawer')||e.target.closest('.slim-rail')||e.target.closest('.more'))return;
+    document.querySelectorAll('.more.open').forEach(function(m){m.classList.remove('open');});
+    setOpen(false);
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){setOpen(false);document.querySelectorAll('.more.open').forEach(function(m){m.classList.remove('open');});}});
+  function updateInView(){
+    var mid=window.innerHeight/2,best=null,bs=Infinity;
+    stages.forEach(function(s){
+      var r=s.getBoundingClientRect(),sc;
+      if(r.top<=mid&&r.bottom>=mid)sc=0;else sc=Math.min(Math.abs(r.top-mid),Math.abs(r.bottom-mid));
+      if(sc<bs){bs=sc;best=s;}
+    });
+    stages.forEach(function(s){s.classList.toggle('in-view',s===best);});
+  }
+  window.addEventListener('scroll',updateInView,{passive:true});
+  window.addEventListener('resize',updateInView);
+  updateInView();
+</script>
+</body>
+</html>

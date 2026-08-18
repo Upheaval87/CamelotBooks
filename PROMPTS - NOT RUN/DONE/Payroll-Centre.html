@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll Centre — Consolidated</title>
+<style>
+  :root{--rw:300px;--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;--sec:#128F8E;--sec-2:#149897;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;
+    --red:#dc2626;--red-2:#b91c1c;--green:#15803d;--amber:#d97706;--amber-2:#b45309;--steel:#46708C;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex-none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}.spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--ink)}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}.navitem.active .ic{color:#fff}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.9);border-color:var(--border);color:#374151}
+  .btn-ghost:hover{border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-sec{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-danger-o{background:#fff;border-color:rgba(220,38,38,.35);color:var(--red)}
+  .btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+  .btn-xs{height:30px;padding:0 11px;font-size:11.5px;border-radius:9px}
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+  .crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--ink)}.crumbs .here{color:var(--ink);font-weight:800}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:26px 0 16px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .page-head h1{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-act{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}.b-act .bdot{background:#22c55e}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:var(--amber)}
+  .b-leave{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-leave .bdot{background:var(--amber)}
+  .b-contract{background:rgba(70,112,140,.10);border:1px solid rgba(70,112,140,.4);color:var(--steel)}.b-contract .bdot{background:var(--steel)}
+  .b-term{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-term .bdot{background:var(--red-2)}
+  .tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card)}
+  .kpi .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .kpi .v{margin-top:6px;font-size:1.25rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi .n{margin-top:3px;font-size:10.5px;color:var(--faint)}
+  .kpi.hero{border:none;background:linear-gradient(135deg,var(--sec-2),var(--sec) 60%,#0c7a79)}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}
+  .kpi.warn .v{color:var(--amber-2)}
+  @media (max-width:1000px){.kpis{grid-template-columns:1fr 1fr}}
+  .statgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .fbox{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.85);cursor:pointer;text-align:left}
+  .fbox.on{border-color:rgba(18,143,142,.55);box-shadow:0 0 0 3px rgba(18,143,142,.12)}
+  .fbox .t{width:2rem;height:2rem;border-radius:.625rem;display:grid;place-items:center;color:#fff;flex:none}
+  .t-ink{background:linear-gradient(180deg,#17565d,#0a2e32)}.t-mint{background:#7FD1C0;color:#0c3539}.t-amber{background:#d97706}.t-steel{background:#46708C}.t-red{background:#dc2626}
+  .fbox .l{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .fbox .v{font-size:15px;font-weight:800;color:var(--ink)}
+  @media (max-width:1100px){.statgrid{grid-template-columns:repeat(3,1fr)}}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  .search{position:relative;flex:1;min-width:220px;max-width:420px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .input{width:100%;height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 12px;font-size:13px;color:var(--ink);font-family:inherit}
+  .search .input{padding-left:36px}
+  .input:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  select.input{width:auto;padding-right:30px;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center}
+  .card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .li-wrap{margin-top:0;border:none;border-radius:0;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:820px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th.num{text-align:right}
+  tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{padding:12px;border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink);background:rgba(17,69,75,.03)}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:500;color:var(--ink)}
+  .em{color:var(--muted)}.dash{color:var(--faint)}
+  .numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  .numr.bold{font-weight:800}.numr.red{color:var(--red-2);font-weight:700}.numr.green{color:var(--green);font-weight:700}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .pagi{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--line)}
+  .pagi .t{font-size:12px;color:var(--muted)}
+  /* onboarding */
+  .hsteps{display:flex;align-items:flex-start;margin:6px 0 22px;overflow-x:auto;padding-bottom:4px}
+  .hs{display:flex;align-items:flex-start;gap:10px;min-width:max-content}
+  .hs .dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;border:2px solid var(--border);background:#fff;color:var(--faint);z-index:1}
+  .hs .t{font-size:12px;font-weight:800;color:var(--muted)}.hs .d{font-size:10px;color:var(--faint);margin-top:2px}
+  .hs .bar{width:56px;height:2px;background:var(--line);margin:16px 10px 0}
+  .hs.done .dot{background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:transparent;color:#fff}
+  .hs.done .bar{background:var(--sec)}.hs.done .t{color:var(--ink)}
+  .hs.cur .dot{border-color:var(--sec);color:var(--sec);box-shadow:0 0 0 5px rgba(18,143,142,.15)}.hs.cur .t{color:var(--deep-1)}
+  .formcard{background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:26px;box-shadow:var(--shadow-card);overflow:hidden}
+  .fc-hd{padding:26px 30px 0}
+  .fc-hd .kick{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sec)}
+  .fc-hd h1{font-size:22px;font-weight:800;color:var(--ink);margin-top:6px}
+  .fc-hd .sub{font-size:13px;color:var(--muted);margin-top:6px}
+  .fc-bd{padding:26px 30px}
+  .fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 26px}
+  @media (max-width:1000px){.fgrid{grid-template-columns:1fr 1fr}}@media (max-width:640px){.fgrid{grid-template-columns:1fr}}
+  .f label{display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .f label .req{color:var(--red)}.f label .opt{color:var(--faint)}
+  .f .in{width:100%;height:48px;border-radius:14px;border:1px solid var(--border);background:#fff;padding:0 16px;font-size:14px;color:var(--ink);font-family:inherit}
+  .f .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .f .hint{margin-top:7px;font-size:10.5px;color:var(--faint)}.f .hint b{color:var(--green)}
+  .sug{display:inline-flex;align-items:center;gap:6px;margin-top:8px;height:26px;padding:0 10px;border-radius:999px;background:rgba(18,143,142,.08);border:1px dashed rgba(18,143,142,.5);color:var(--sec);font-size:10.5px;font-weight:800;cursor:pointer}
+  .fc-bar{position:sticky;bottom:12px;margin:0 30px 26px;display:flex;align-items:center;gap:10px;padding:14px 0 0}
+  .fc-bar .lbl{color:var(--muted);font-size:11.5px;font-weight:800;margin-right:auto}
+  .fc-bar .btn{height:40px}
+  .fc-bar .btn-light{background:rgba(255,255,255,.9);border:1px solid var(--border);color:var(--deep-1);font-weight:700}
+  /* profile */
+  .prof{display:flex;align-items:center;gap:16px;padding:20px 24px;flex-wrap:wrap}
+  .ava-xl{width:3.5rem;height:3.5rem;border-radius:1rem;display:grid;place-items:center;flex:none;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--sec-2),var(--sec));box-shadow:var(--shadow-teal)}
+  .prof .n{font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .prof .c{margin-top:5px;display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+  .mono-chip{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:var(--deep-1);background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);border-radius:8px;padding:4px 10px}
+  .sumbar{display:grid;grid-template-columns:1fr 1fr 1fr 1.25fr;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card)}
+  .sumbar .cell{padding:14px 18px;border-right:1px solid var(--line)}
+  .sumbar .cell .l{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .sumbar .cell .v{margin-top:4px;font-size:1.125rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .sumbar .cell .n{margin-top:2px;font-size:10px;color:var(--faint)}
+  .sumbar .cell.hero{border-right:none;background:linear-gradient(90deg,var(--sec-2),var(--sec) 60%,#107c7b);display:flex;flex-direction:column;justify-content:center}
+  .sumbar .cell.hero .l{color:#dff7f6}.sumbar .cell.hero .v{color:#fff;font-size:1.25rem}
+  @media (max-width:900px){.sumbar{grid-template-columns:1fr 1fr}.sumbar .cell.hero{grid-column:1/-1}}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 18px;background:rgba(255,255,255,.6);overflow-x:auto}
+  .tab{padding:12px 14px;border:none;background:none;cursor:pointer;position:relative;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+  .tab::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2.5px;border-radius:3px;background:transparent}
+  .tab.on{color:var(--ink)}.tab.on::after{background:var(--sec)}
+  .pane{display:none}.pane.on{display:block}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px}
+  @media (max-width:900px){.g3{grid-template-columns:1fr 1fr}}
+  .fld .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .fld .v{margin-top:4px;font-size:13px;font-weight:600;color:var(--ink)}
+  .pad{padding:20px 24px}
+  .attchips{display:flex;gap:8px;flex-wrap:wrap}
+  .att{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:10px;background:rgba(255,255,255,.9);border:1px solid var(--border);font-size:11.5px;font-weight:600;color:#374151}
+  .wflow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0 16px}
+  .wf{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:800}
+  .wf.done{background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+  .wf.cur{background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.4);color:var(--amber-2)}
+  .wf.todo{background:rgba(138,165,167,.12);border:1px solid rgba(138,165,167,.4);color:var(--muted)}
+  .wf-arr{color:var(--faint)}
+  /* payslip */
+  .segp{display:inline-flex;background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:12px;padding:4px;gap:2px}
+  .segp button{height:32px;padding:0 12px;border:none;border-radius:9px;background:none;font-family:inherit;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer}
+  .segp button.on{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  .paper{background:#fff;border:1px solid var(--border);border-radius:26px;box-shadow:var(--shadow-card);overflow:hidden;position:relative}
+  .paper .wm{position:absolute;right:28px;bottom:104px;font-size:40px;font-weight:800;color:rgba(17,69,75,.06);letter-spacing:-.02em;pointer-events:none}
+  .pp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:28px 32px;border-bottom:1px solid var(--line)}
+  .pp-logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#0e3a3e;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .pp-title{text-align:right}
+  .pp-title .big{font-size:20px;font-weight:800;letter-spacing:.18em;color:var(--deep-1)}
+  .pp-title .ref{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--muted);margin-top:4px}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800}
+  .tag.paid{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}
+  .tag.conf{background:rgba(138,165,167,.12);border:1px solid rgba(138,165,167,.4);color:var(--muted)}
+  .pp-emp{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:20px 32px;border-bottom:1px solid var(--line);background:rgba(238,244,244,.4)}
+  .pp-ava{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:800;font-size:16px;color:#fff;background:linear-gradient(135deg,var(--sec-2),var(--sec))}
+  .pp-facts{margin-left:auto;display:grid;grid-template-columns:repeat(4,auto);gap:8px 26px}
+  @media (max-width:900px){.pp-facts{margin-left:0;grid-template-columns:repeat(2,auto)}}
+  .pf .l{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .pf .v{font-size:12px;font-weight:700;color:var(--ink);margin-top:3px}
+  .pp-cols{display:grid;grid-template-columns:1fr 1fr}
+  @media (max-width:860px){.pp-cols{grid-template-columns:1fr}}
+  .pp-col{padding:22px 32px}
+  .pp-col + .pp-col{border-left:1px solid var(--line)}
+  .pp-col h4{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+  .pt{width:100%;border-collapse:collapse;font-size:13px;min-width:0;table-layout:auto}
+  .pt th{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-align:left;padding:0 0 8px}
+  .pt th.num{text-align:right}
+  .pt td{padding:9px 0;border-top:1px dashed var(--line);color:var(--muted)}
+  .pt td.b{color:var(--ink);font-weight:600}
+  .pt td.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .pt tr.tot td{border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink);padding-top:11px}
+  .net-card{margin:6px 32px 14px;border-radius:18px;padding:22px 26px;color:#fff;background:linear-gradient(100deg,var(--deep-2) 0%,var(--deep-1) 45%,var(--sec) 115%);box-shadow:var(--shadow-cta);display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+  .nc-net .l{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#dff7f6}
+  .nc-net .v{font-size:2.2rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:4px}
+  .nc-net .s{font-size:11.5px;color:#cfe8e8;margin-top:4px}
+  .nc-stats{margin-left:auto;display:flex;gap:30px;flex-wrap:wrap}
+  .nc .l{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.72)}
+  .nc .v{font-size:15px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+  .nc .v.soft{color:#ffd9d9}
+  .pp-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:0 32px 24px}
+  @media (max-width:900px){.pp-cards{grid-template-columns:1fr}}
+  .pcard{border:1px solid var(--border);border-radius:16px;padding:16px 18px;background:rgba(238,244,244,.5)}
+  .pcard .t{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+  .pcard .r{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:4px 0}
+  .pcard .r b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .pp-foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 32px;border-top:1px solid var(--line);background:rgba(238,244,244,.5);font-size:11.5px;color:var(--muted)}
+  .pp-foot a{color:var(--sec);font-weight:800;text-decoration:none}
+  .qr{width:44px;height:44px;border-radius:8px;border:1px solid var(--border);background:repeating-linear-gradient(0deg,var(--ink) 0 3px,transparent 3px 6px),repeating-linear-gradient(90deg,var(--ink) 0 3px,transparent 3px 6px);opacity:.8}
+  .mcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:1000px){.mcards{grid-template-columns:1fr}}
+  .mcard{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.85);display:flex;flex-direction:column;gap:8px}
+  .mcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+  .mcard .d{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .mcard .foot{margin-top:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .repcards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media (max-width:1100px){.repcards{grid-template-columns:1fr 1fr}}@media (max-width:700px){.repcards{grid-template-columns:1fr}}
+  .repcard{border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card);padding:16px;display:flex;flex-direction:column;gap:8px}
+  .repcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+  .repcard .d{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .repcard .foot{margin-top:auto;display:flex;gap:6px;align-items:center}
+  .fmt{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--deep-1);background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);border-radius:999px;padding:2px 8px}
+  .open-l{margin-left:auto;font-size:11px;font-weight:800;color:var(--sec);text-decoration:none}
+  /* rails */
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + var(--gap-slim));transition:margin-right .35s cubic-bezier(.4,0,.2,1)}
+  body.ql-open .stage-body{margin-right:calc(var(--rw) + var(--gap))}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:none;flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  body:not(.ql-open) .stage.in-view .slim-rail{display:flex}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-ic .ndot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--amber);border:1.5px solid #fff}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  .ql-drawer{position:fixed;top:50%;right:0;width:var(--rw);z-index:40;transform:translate(103%,-50%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1), visibility 0s linear .35s}
+  body.ql-open .stage.in-view .ql-drawer{transform:translate(0,-50%);visibility:visible;transition:transform .35s cubic-bezier(.4,0,.2,1)}
+  .rail-block{position:relative;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-card)}
+  .rail-x{position:absolute;top:10px;right:10px;z-index:2;width:28px;height:28px;border:none;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.92);color:var(--muted);cursor:pointer}
+  .rail-sec{padding:14px 14px 16px}
+  .rail-sec h2{font-size:12px;font-weight:600;color:var(--muted)}
+  .vlist{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+  .vitem{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:11px;border:none;background:none;width:100%;text-align:left;font-size:12.5px;font-weight:700;color:#374151;cursor:pointer;font-family:inherit}
+  .vitem .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .vitem:hover{background:rgba(17,69,75,.06)}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+<header class="tealbar">
+  <div class="row1"><span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div></div>
+  <div class="row2">
+    <a class="navitem" href="#">Sales</a><a class="navitem" href="#">Purchasing</a>
+    <a class="navitem active" href="#">Payroll</a><a class="navitem" href="#">Banking</a><a class="navitem" href="#">Reports</a>
+  </div>
+</header>
+<div class="wrap">
+
+<!-- 1 · DASHBOARD -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">1 · Payroll Dashboard</span>
+  <div class="page-head"><div><h1>Payroll Centre</h1><div class="sub">Employees, runs, statutory deductions, benefits, payslips and reporting.</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">⚙ Settings</button><button class="btn btn-ghost btn-sm">📊 Reports</button><button class="btn btn-ghost btn-sm">📄 Payslips</button><button class="btn btn-sec btn-sm">▶ Run Payroll</button><button class="btn btn-cta btn-sm">➕ Add Employee</button></div></div>
+  <div class="kpis" style="margin-bottom:12px">
+    <div class="kpi hero"><div class="l">Total Gross Pay</div><div class="v">K18.4M</div><div class="n" style="color:#dff7f6">Aug run · 24 employees</div></div>
+    <div class="kpi"><div class="l">Total Net Pay</div><div class="v">12.94M</div><div class="n">after PAYE, pension, loans</div></div>
+    <div class="kpi warn"><div class="l">PAYE Payable</div><div class="v">2.61M</div><div class="n">due 10 Sep</div></div>
+    <div class="kpi"><div class="l">Pension</div><div class="v">736K</div><div class="n">+ employer 920K</div></div></div>
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi"><div class="l">Employees</div><div class="v">24</div><div class="n">22 active · 2 on leave</div></div>
+    <div class="kpi"><div class="l">Active</div><div class="v">22</div><div class="n">20 perm · 4 contract</div></div>
+    <div class="kpi"><div class="l">On Leave</div><div class="v">2</div><div class="n">1 paid · 1 unpaid</div></div>
+    <div class="kpi warn"><div class="l">Pending Approval</div><div class="v">1</div><div class="n">review run →</div></div></div>
+  <div class="card"><div class="card-h"><h2>Last Run — PR-2026-07</h2><span class="badge b-act" style="margin-left:8px"><span class="bdot"></span>Posted</span>
+    <div class="right"><button class="btn btn-ghost btn-xs">📄 Payslips</button><button class="btn btn-ghost btn-xs">🏦 Bank File</button><button class="btn btn-ghost btn-xs">Audit</button></div></div>
+    <div class="pad" style="display:flex;gap:22px;flex-wrap:wrap;font-size:12.5px">
+      <div class="fld"><div class="l">Period</div><div class="v">01–31 Jul 2026</div></div>
+      <div class="fld"><div class="l">Paid</div><div class="v">24 employees</div></div>
+      <div class="fld"><div class="l">Gross</div><div class="v">K18,120,000</div></div>
+      <div class="fld"><div class="l">Net</div><div class="v">K12,760,000</div></div>
+      <div class="fld"><div class="l">Posted To</div><div class="v">JV-009721</div></div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Employees">👥</button><button class="s-ic" data-tip="Run Payroll"><span class="ndot"></span>▶</button><button class="s-ic" data-tip="Payslips">📄</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Quick Nav</h2><div class="vlist"><button class="vitem">👥 Employees</button><button class="vitem">▶ Run Payroll</button><button class="vitem">📄 Payslips</button><button class="vitem">📊 Reports</button></div></div></div></aside></div>
+
+<!-- 2 · EMPLOYEES -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">2 · Employees</span>
+  <div class="page-head"><div><h1>Employees</h1><div class="sub">All employee records with salary, status and payment method.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">⋯ Import / Export</button><button class="btn btn-cta btn-sm">➕ Add Employee</button></div></div>
+  <div class="card"><div class="pad" style="padding-bottom:0">
+    <div class="statgrid">
+      <button class="fbox on"><span class="t t-ink">∑</span><span><span class="l">All</span><span class="v" style="display:block">24</span></span></button>
+      <button class="fbox"><span class="t t-mint">✓</span><span><span class="l">Active</span><span class="v" style="display:block">22</span></span></button>
+      <button class="fbox"><span class="t t-amber">⏳</span><span><span class="l">On Leave</span><span class="v" style="display:block">2</span></span></button>
+      <button class="fbox"><span class="t t-steel">✎</span><span><span class="l">Contract</span><span class="v" style="display:block">4</span></span></button>
+      <button class="fbox"><span class="t t-red">✕</span><span><span class="l">Terminated</span><span class="v" style="display:block">1</span></span></button></div>
+    <div class="controls"><div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="input" placeholder="Employee №, name, NRC…"></div>
+      <select class="input"><option>All Departments</option></select><select class="input"><option>All Branches</option></select><select class="input"><option>All Payroll Groups</option></select></div></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:10%">Emp №</th><th style="width:17%">Name</th><th style="width:12%">Department</th><th style="width:13%">Position</th><th style="width:10%">Type</th><th style="width:10%">Joined</th><th class="num" style="width:10%">Basic (K)</th><th style="width:10%">Status</th><th style="width:8%"></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">EMP-002</td><td style="font-weight:700;color:var(--ink)">John Phiri</td><td class="em">Finance</td><td class="em">Accountant</td><td><span class="tchip">Permanent</span></td><td class="em">15 Jun 2023</td><td class="numr bold">1,200,000</td><td><span class="badge b-act"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">⋯</button></td></tr>
+        <tr><td class="mono">EMP-001</td><td style="font-weight:700;color:var(--ink)">Mary Banda</td><td class="em">Retail</td><td class="em">Sales Associate</td><td><span class="tchip">Permanent</span></td><td class="em">01 Mar 2024</td><td class="numr bold">850,000</td><td><span class="badge b-act"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">⋯</button></td></tr>
+        <tr><td class="mono">EMP-003</td><td style="font-weight:700;color:var(--ink)">Grace Mwale</td><td class="em">Operations</td><td class="em">Storekeeper</td><td><span class="tchip" style="color:var(--amber-2)">Casual</span></td><td class="em">02 Jan 2025</td><td class="numr bold">350,000</td><td><span class="badge b-leave"><span class="bdot"></span>On Leave</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">⋯</button></td></tr>
+        <tr><td class="mono">EMP-004</td><td style="font-weight:700;color:var(--ink)">Peter Chirwa</td><td class="em">Operations</td><td class="em">Driver</td><td><span class="tchip" style="color:var(--steel)">Contract</span></td><td class="em">20 Sep 2024</td><td class="numr bold">500,000</td><td><span class="badge b-act"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">⋯</button></td></tr>
+      </tbody></table></div>
+    <div class="pagi"><span class="t">Showing 4 of 24</span><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-xs">← Prev</button><button class="btn btn-ghost btn-xs">Next →</button></div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Add Employee">＋</button><button class="s-ic" data-tip="Groups">👥</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Views</h2><div class="vlist"><button class="vitem">All Employees</button><button class="vitem">Active</button><button class="vitem">On Leave</button><button class="vitem">Terminated</button></div></div></div></aside></div>
+
+<!-- 3 · ONBOARDING (updated) -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">3 · Onboard Employee — 3-column, transparent action bar</span>
+  <div class="fc-hd" style="padding:26px 0 0"><nav class="crumbs" style="margin-bottom:8px"><a href="#">Payroll</a> › <a href="#">Employees</a> › <span class="here">Onboard</span></nav>
+    <h1 style="font-size:22px;font-weight:800;color:var(--ink)">Onboard a new employee</h1>
+    <div class="sub" style="font-size:13px;color:var(--muted);margin-top:6px">Six short steps with smart defaults — everything saves as you go. <a href="#" style="color:var(--sec);font-weight:800;text-decoration:none">Finish later</a></div></div>
+  <div class="hsteps">
+    <div class="hs done"><span class="dot">✓</span><span><span class="t">Personal</span><div class="d">Identity &amp; contact</div></span><span class="bar"></span></div>
+    <div class="hs cur"><span class="dot">2</span><span><span class="t">Employment</span><div class="d">Role &amp; placement</div></span><span class="bar"></span></div>
+    <div class="hs"><span class="dot">3</span><span><span class="t">Tax &amp; Pension</span><div class="d">Statutory</div></span><span class="bar"></span></div>
+    <div class="hs"><span class="dot">4</span><span><span class="t">Bank &amp; Pay</span><div class="d">Payout</div></span><span class="bar"></span></div>
+    <div class="hs"><span class="dot">5</span><span><span class="t">Compensation</span><div class="d">Salary &amp; benefits</div></span><span class="bar"></span></div>
+    <div class="hs"><span class="dot">6</span><span><span class="t">Review</span><div class="d">Docs &amp; confirm</div></span></div></div>
+  <section class="formcard">
+    <div class="fc-hd"><div class="kick">Step 2 · Employment</div><h1>Where will Mary work?</h1><div class="sub">We pre-filled what we can from the Retail template — adjust anything.</div></div>
+    <div class="fc-bd"><div class="fgrid">
+      <div class="f"><label>Position / job title <span class="req">*</span></label><input class="in" value="Sales Associate"></div>
+      <div class="f"><label>Department <span class="req">*</span></label><input class="in" value="Retail"><span class="sug">✦ Suggested cost centre: CC-RETAIL-01 · apply</span></div>
+      <div class="f"><label>Branch / location</label><input class="in" value="Head Office"></div>
+      <div class="f"><label>Employment type</label><input class="in" value="Permanent · Full-time"></div>
+      <div class="f"><label>Hire date <span class="req">*</span></label><input class="in" type="date" value="2026-09-01"><div class="hint"><b>✓</b> Payroll group auto-set · Monthly — Permanent</div></div>
+      <div class="f"><label>Probation ends <span class="opt">auto</span></label><input class="in" type="date" value="2026-12-01"></div>
+      <div class="f"><label>Supervisor</label><input class="in" placeholder="Search supervisor…"></div>
+      <div class="f"><label>Cost centre</label><input class="in" value="CC-RETAIL-01"></div>
+      <div class="f"><label>Payroll group</label><input class="in" value="Monthly — Permanent"></div></div></div>
+    <div class="fc-bar"><span class="lbl">Step 2 of 6 · 33% complete · draft saved just now</span><button class="btn btn-light">← Back</button><button class="btn btn-sec">Save &amp; continue →</button></div>
+  </section>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Employees">👥</button><button class="s-ic" data-tip="Groups">👥</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Quick Nav</h2><div class="vlist"><button class="vitem">Employees List</button><button class="vitem">Employee Groups</button><button class="vitem">Payroll Settings</button></div></div></div></aside></div>
+
+<!-- 4 · EMPLOYEE PROFILE -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">4 · Employee Profile — 12-tab card</span>
+  <div class="page-head" style="padding-top:10px"><div style="display:flex;align-items:center;gap:10px"><button class="ibtn" style="border:1px solid var(--border);background:#fff">←</button>
+    <nav class="crumbs"><a href="#">Payroll</a> › <a href="#">Employees</a> › <span class="here">EMP-002</span></nav></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">✎ Edit</button><button class="btn btn-ghost btn-sm">💰 Update Salary</button><button class="btn btn-ghost btn-sm">📄 Payslip</button><button class="btn btn-ghost btn-sm">⋯ More</button></div></div>
+  <div class="card" style="margin-bottom:20px"><div class="prof"><span class="ava-xl">JP</span>
+    <div><div class="n">John Phiri <span class="mono-chip">EMP-002</span> <span class="badge b-act"><span class="bdot"></span>Active</span></div>
+      <div class="c"><span>Accountant · Finance</span><span>Permanent · Monthly</span><span>Joined 15 Jun 2023</span><span>Bank · National ****3319</span></div></div></div></div>
+  <div class="sumbar" style="margin-bottom:20px">
+    <div class="cell"><div class="l">Basic</div><div class="v">1,200,000</div><div class="n">per month</div></div>
+    <div class="cell"><div class="l">Gross</div><div class="v">1,450,000</div><div class="n">+ housing + transport</div></div>
+    <div class="cell"><div class="l">Net (Jul)</div><div class="v">902,000</div><div class="n">after PAYE + pension</div></div>
+    <div class="cell hero"><div class="l">YTD Gross</div><div class="v">K10,150,000</div></div></div>
+  <div class="card"><div class="tabs" id="etabs">
+    <button class="tab on" data-pane="p1">Personal</button><button class="tab" data-pane="p2">Employment</button><button class="tab" data-pane="p3">Salary</button><button class="tab" data-pane="p4">Payroll History</button><button class="tab" data-pane="p5">Earnings</button><button class="tab" data-pane="p6">Deductions</button><button class="tab" data-pane="p7">Benefits</button><button class="tab" data-pane="p8">Loans</button><button class="tab" data-pane="p9">Leave</button><button class="tab" data-pane="p10">Attendance</button><button class="tab" data-pane="p11">Documents</button><button class="tab" data-pane="p12">Audit</button></div>
+    <div class="pane on" id="p1"><div class="pad"><div class="g3"><div class="fld"><div class="l">Full Name</div><div class="v">John Phiri</div></div><div class="fld"><div class="l">Gender / DOB</div><div class="v">Male · 12 May 1990</div></div><div class="fld"><div class="l">National ID</div><div class="v">MW-8812345</div></div><div class="fld"><div class="l">Phone / Email</div><div class="v">+265 991 220 314</div></div><div class="fld"><div class="l">Address</div><div class="v">Area 47, Lilongwe</div></div><div class="fld"><div class="l">Emergency</div><div class="v">M. Phiri · 997 000 111</div></div></div></div></div>
+    <div class="pane" id="p2"><div class="pad"><div class="g3"><div class="fld"><div class="l">Dept / Position</div><div class="v">Finance · Accountant</div></div><div class="fld"><div class="l">Branch</div><div class="v">Head Office</div></div><div class="fld"><div class="l">Type</div><div class="v">Permanent</div></div><div class="fld"><div class="l">Joined</div><div class="v">15 Jun 2023</div></div><div class="fld"><div class="l">Supervisor</div><div class="v">Finance Manager</div></div><div class="fld"><div class="l">Status</div><div class="v">Active</div></div></div></div></div>
+    <div class="pane" id="p3"><div class="pad"><div class="g3"><div class="fld"><div class="l">Basic</div><div class="v">K1,200,000 / mo</div></div><div class="fld"><div class="l">Frequency</div><div class="v">Monthly</div></div><div class="fld"><div class="l">Method</div><div class="v">Bank · ****3319</div></div></div></div></div>
+    <div class="pane" id="p4"><div class="pad"><div class="li-wrap"><table style="min-width:0"><thead><tr><th>Period</th><th>Run</th><th class="num">Gross</th><th class="num">PAYE</th><th class="num">Net</th><th>Status</th></tr></thead><tbody><tr><td class="em">Jul 2026</td><td class="mono">PR-2026-07</td><td class="numr">1,450,000</td><td class="numr">363,000</td><td class="numr bold">902,000</td><td><span class="badge b-act"><span class="bdot"></span>Paid</span></td></tr><tr><td class="em">Jun 2026</td><td class="mono">PR-2026-06</td><td class="numr">1,450,000</td><td class="numr">363,000</td><td class="numr bold">902,000</td><td><span class="badge b-act"><span class="bdot"></span>Paid</span></td></tr></tbody></table></div></div></div>
+    <div class="pane" id="p5"><div class="pad"><div class="li-wrap"><table style="min-width:0"><thead><tr><th>Earning</th><th>Basis</th><th>Taxable</th><th class="num">Amount</th></tr></thead><tbody><tr><td class="em">Basic</td><td class="em">Fixed</td><td><span class="tchip" style="color:var(--green)">Taxable</span></td><td class="numr">1,200,000</td></tr><tr><td class="em">Housing</td><td class="em">10%</td><td><span class="tchip" style="color:var(--green)">Taxable</span></td><td class="numr">120,000</td></tr><tr><td class="em">Transport</td><td class="em">Fixed</td><td><span class="tchip" style="color:var(--green)">Taxable</span></td><td class="numr">130,000</td></tr></tbody></table></div></div></div>
+    <div class="pane" id="p6"><div class="pad"><div class="li-wrap"><table style="min-width:0"><thead><tr><th>Deduction</th><th>Basis</th><th class="num">Amount</th></tr></thead><tbody><tr><td class="em">PAYE</td><td class="em">Table</td><td class="numr">363,000</td></tr><tr><td class="em">Pension 5%</td><td class="em">% basic</td><td class="numr">60,000</td></tr><tr><td class="em">Loan LN-0008</td><td class="em">Instalment</td><td class="numr">125,000</td></tr></tbody></table></div></div></div>
+    <div class="pane" id="p7"><div class="pad"><div class="attchips"><span class="att">🏥 Medical — employer-paid</span><span class="att">📱 Phone K30,000 (taxable)</span></div></div></div>
+    <div class="pane" id="p8"><div class="pad"><div class="li-wrap"><table style="min-width:0"><thead><tr><th>Loan</th><th class="num">Principal</th><th class="num">Instalment</th><th class="num">Remaining</th><th>Status</th></tr></thead><tbody><tr><td class="mono">LN-0008</td><td class="numr">1,500,000</td><td class="numr">125,000</td><td class="numr bold">750,000</td><td><span class="badge b-act"><span class="bdot"></span>Active</span></td></tr></tbody></table></div></div></div>
+    <div class="pane" id="p9"><div class="pad"><div class="g3"><div class="fld"><div class="l">Entitlement</div><div class="v">24 days</div></div><div class="fld"><div class="l">Taken</div><div class="v">9</div></div><div class="fld"><div class="l">Balance</div><div class="v" style="color:var(--green)">15</div></div></div></div></div>
+    <div class="pane" id="p10"><div class="pad"><div class="g3"><div class="fld"><div class="l">OT (Aug)</div><div class="v">6h @1.5×</div></div><div class="fld"><div class="l">Late</div><div class="v">1</div></div><div class="fld"><div class="l">Absences</div><div class="v">0</div></div></div></div></div>
+    <div class="pane" id="p11"><div class="pad"><div class="attchips"><span class="att">📎 NRC_copy.pdf</span><span class="att">📎 Contract_signed.pdf</span><span class="att">📎 TPIN.pdf</span></div></div></div>
+    <div class="pane" id="p12"><div class="pad"><div class="fld" style="font-size:12px;color:var(--muted)"><div class="v">01 Jan 2026 · ES · Salary 1,100,000 → 1,200,000 · annual increment</div><div class="v" style="margin-top:6px">15 Jun 2023 · HR · Employee created</div></div></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Update Salary">💰</button><button class="s-ic" data-tip="Payslip">📄</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Quick Nav</h2><div class="vlist"><button class="vitem">Update Salary</button><button class="vitem">Run Payroll</button><button class="vitem">Payslip</button><button class="vitem">Employees List</button></div></div></div></aside></div>
+
+<!-- 5 · PAYROLL RUNS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">5 · Payroll Runs</span>
+  <div class="page-head"><div><h1>Payroll Runs</h1><div class="sub">Calculate, approve, post and generate payslips.</div></div><button class="btn btn-cta btn-sm">➕ New Run</button></div>
+  <div class="wflow"><span class="wf done">✓ Period</span><span class="wf-arr">→</span><span class="wf done">✓ Load</span><span class="wf-arr">→</span><span class="wf done">✓ Earnings</span><span class="wf-arr">→</span><span class="wf done">✓ Deductions</span><span class="wf-arr">→</span><span class="wf done">✓ PAYE</span><span class="wf-arr">→</span><span class="wf cur">● Review</span><span class="wf-arr">→</span><span class="wf todo">Approve</span><span class="wf-arr">→</span><span class="wf todo">Post</span><span class="wf-arr">→</span><span class="wf todo">Payslips</span></div>
+  <div class="card"><div class="card-h"><h2>PR-2026-08 · 01–31 Aug</h2><span class="badge b-pend" style="margin-left:8px"><span class="bdot"></span>Pending Approval</span>
+    <div class="right"><button class="btn btn-ghost btn-xs">⚗ Calculate</button><button class="btn btn-sec btn-xs">✓ Approve</button><button class="btn btn-ghost btn-xs">🔒 Lock</button><button class="btn btn-ghost btn-xs">📓 Post</button><button class="btn btn-ghost btn-xs">📄 Payslips</button><button class="btn btn-ghost btn-xs">🏦 Bank File</button></div></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:9%">Emp</th><th style="width:16%">Employee</th><th class="num" style="width:11%">Basic</th><th class="num" style="width:11%">Allow.</th><th class="num" style="width:10%">Gross</th><th class="num" style="width:10%">PAYE</th><th class="num" style="width:10%">Pension</th><th class="num" style="width:10%">Loan</th><th class="num" style="width:11%">Net</th></tr></thead>
+      <tbody><tr><td class="mono">EMP-002</td><td style="font-weight:700;color:var(--ink)">John Phiri</td><td class="numr">1,200,000</td><td class="numr">250,000</td><td class="numr bold">1,450,000</td><td class="numr red">363,000</td><td class="numr red">60,000</td><td class="numr red">125,000</td><td class="numr green">902,000</td></tr>
+      <tr><td class="mono">EMP-001</td><td style="font-weight:700;color:var(--ink)">Mary Banda</td><td class="numr">850,000</td><td class="numr">140,000</td><td class="numr bold">990,000</td><td class="numr red">208,000</td><td class="numr red">49,500</td><td class="numr">—</td><td class="numr green">732,500</td></tr>
+      <tr><td class="mono">EMP-003</td><td style="font-weight:700;color:var(--ink)">Grace Mwale (unpaid leave)</td><td class="numr">350,000</td><td class="numr">0</td><td class="numr bold">175,000</td><td class="numr red">12,500</td><td class="numr red">8,750</td><td class="numr">—</td><td class="numr green">153,750</td></tr></tbody>
+      <tfoot><tr><td colspan="2">Totals — 24 employees</td><td class="numr">15.6M</td><td class="numr">2.8M</td><td class="numr">18.4M</td><td class="numr">2.61M</td><td class="numr">736K</td><td class="numr">410K</td><td class="numr">12.94M</td></tr></tfoot></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="New Run">＋</button><button class="s-ic" data-tip="Approve"><span class="ndot"></span>✓</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Views</h2><div class="vlist"><button class="vitem">All Runs</button><button class="vitem">Draft</button><button class="vitem">Pending</button><button class="vitem">Posted</button><button class="vitem">Locked</button></div></div></div></aside></div>
+
+<!-- 6 · PAYSLIP (updated) -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">6 · Payslip — net card above memo / YTD / leave</span>
+  <div class="page-head" style="border:none;margin-bottom:12px"><nav class="crumbs"><a href="#">Payroll</a> › <a href="#">Payslips</a> › <span class="here">EMP-002 · Aug 2026</span></nav>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="segp"><button>Jul</button><button class="on">Aug</button><button>Sep</button></div><button class="btn btn-ghost btn-sm">✉ Email</button><button class="btn btn-ghost btn-sm">🖨 Print</button><button class="btn btn-sec btn-sm">📕 PDF</button></div></div>
+  <div class="paper"><div class="wm">PAID</div>
+    <div class="pp-head"><div style="display:flex;gap:12px;align-items:center"><span class="pp-logo">CB</span><div><div style="font-size:16px;font-weight:800;color:var(--ink)">CamelotBooks Ltd</div><div style="font-size:10.5px;color:var(--muted);margin-top:2px">Plot 27, Mchinji Rd, Lilongwe · PAYE PIN P-2210448</div></div></div>
+      <div class="pp-title"><div class="big">PAYSLIP</div><div class="ref">PS-2026-08-002</div><div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><span class="tag paid">● Paid · 29 Aug 2026</span><span class="tag conf">Confidential</span></div></div></div>
+    <div class="pp-emp"><span class="pp-ava">JP</span><div><div style="font-size:16px;font-weight:800;color:var(--ink)">John Phiri</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">Accountant · Finance · EMP-002 · Permanent</div></div>
+      <div class="pp-facts"><div class="pf"><div class="l">Period</div><div class="v">01–31 Aug 2026</div></div><div class="pf"><div class="l">Method</div><div class="v">Bank ****3319</div></div><div class="pf"><div class="l">PAYE PIN</div><div class="v">TX-102838</div></div><div class="pf"><div class="l">Pension №</div><div class="v">NICO-88121</div></div></div></div>
+    <div class="pp-cols">
+      <div class="pp-col"><h4>Earnings</h4><table class="pt"><thead><tr><th>Item</th><th>Basis</th><th class="num">Amount (K)</th></tr></thead><tbody>
+        <tr><td class="b">Basic Salary</td><td>Fixed</td><td class="num">1,200,000.00</td></tr><tr><td class="b">Housing Allowance</td><td>10% of basic</td><td class="num">120,000.00</td></tr><tr><td class="b">Transport Allowance</td><td>Fixed</td><td class="num">130,000.00</td></tr><tr class="tot"><td>Gross Pay</td><td></td><td class="num">1,450,000.00</td></tr></tbody></table></div>
+      <div class="pp-col"><h4>Deductions</h4><table class="pt"><thead><tr><th>Item</th><th>Basis</th><th class="num">Amount (K)</th></tr></thead><tbody>
+        <tr><td class="b">PAYE Tax</td><td>MRA 2026</td><td class="num">363,000.00</td></tr><tr><td class="b">Pension — employee</td><td>5% of basic</td><td class="num">60,000.00</td></tr><tr><td class="b">Loan LN-0008</td><td>Instalment 6/12</td><td class="num">125,000.00</td></tr><tr class="tot"><td>Total Deductions</td><td></td><td class="num">548,000.00</td></tr></tbody></table></div></div>
+    <div class="net-card"><div class="nc-net"><div class="l">Net Pay</div><div class="v">K902,000.00</div><div class="s">62% of gross reaches the employee · paid 29 Aug 2026</div></div>
+      <div class="nc-stats"><div class="nc"><div class="l">Gross</div><div class="v">1,450,000</div></div><div class="nc"><div class="l">Deductions</div><div class="v soft">548,000</div></div><div class="nc"><div class="l">Employer cost</div><div class="v">1,585,000</div></div></div></div>
+    <div class="pp-cards">
+      <div class="pcard"><div class="t">Employer contributions · memo</div><div class="r"><span>Pension 7.5%</span><b>90,000</b></div><div class="r"><span>Medical</span><b>45,000</b></div><div class="r"><span>Total employer cost</span><b>1,585,000</b></div></div>
+      <div class="pcard"><div class="t">Year to date</div><div class="r"><span>YTD Gross</span><b>10,150,000</b></div><div class="r"><span>YTD PAYE</span><b>2,541,000</b></div><div class="r"><span>YTD Pension</span><b>420,000</b></div></div>
+      <div class="pcard"><div class="t">Leave &amp; attendance</div><div class="r"><span>Leave balance</span><b>15 days</b></div><div class="r"><span>Overtime</span><b>0 hrs</b></div><div class="r"><span>Absences</span><b>0</b></div></div></div>
+    <div class="pp-foot"><span class="qr"></span><span>Paid to National Bank ····3319 on 29 Aug 2026 · Ref PAY-0826-002 · System-generated, no signature required.</span><span style="margin-left:auto">Questions? <a href="#">Contact HR →</a></span></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="PDF">📕</button><button class="s-ic" data-tip="Email">✉</button><div class="s-div"></div><button class="s-ic" data-tip="Runs">▶</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Quick Nav</h2><div class="vlist"><button class="vitem">Generate Payslips</button><button class="vitem">Payroll Runs</button><button class="vitem">Employees</button></div></div></div></aside></div>
+
+<!-- 7 · STATUTORY -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">7 · Statutory &amp; Pay Items</span>
+  <div class="page-head"><div><h1>Statutory &amp; Pay Items Setup</h1><div class="sub">Earnings, deductions, tax tables, pension and benefits.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">＋ Deduction</button><button class="btn btn-ghost btn-sm">＋ Earning</button><button class="btn btn-cta btn-sm">＋ Tax Table</button></div></div>
+  <div class="mcards" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+    <div class="mcard"><span class="t">Earnings</span><div class="d">Basic · Housing 10% · Transport · Overtime 1.5× · Bonus — all taxable flags + assignments.</div><div class="foot"><button class="btn btn-ghost btn-xs">Assign Employees</button></div></div>
+    <div class="mcard"><span class="t">Deductions</span><div class="d">PAYE (auto) · Pension 5% · Loan instalments · Medical Aid — statutory/auto/voluntary.</div><div class="foot"><button class="btn btn-ghost btn-xs">Configure Rule</button></div></div>
+    <div class="mcard"><span class="t">PAYE Table — MRA 2026 <span class="badge b-act" style="margin-left:6px"><span class="bdot"></span>Active</span></span><div class="d">First 100K 0% · next 50K 20% · next 350K 25% · next 500K 30% · above 35%.</div><div class="foot"><button class="btn btn-ghost btn-xs">✎ Edit Bracket</button><button class="btn btn-ghost btn-xs">📥 Import</button></div></div>
+    <div class="mcard"><span class="t">Pension &amp; Benefits</span><div class="d">NICO 5%/7.5% · Medical employer-paid · Phone allowance taxable.</div><div class="foot"><button class="btn btn-ghost btn-xs">＋ Scheme</button><button class="btn btn-ghost btn-xs">📊 Pension Report</button></div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Earnings">＋</button><button class="s-ic" data-tip="PAYE">🏛</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Quick Nav</h2><div class="vlist"><button class="vitem">Earnings</button><button class="vitem">Deductions</button><button class="vitem">PAYE Tables</button><button class="vitem">Pension</button></div></div></div></aside></div>
+
+<!-- 8 · PEOPLE OPS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">8 · Loans · Attendance · Leave</span>
+  <div class="page-head"><div><h1>People Operations</h1><div class="sub">Loans with auto-deduction, attendance inputs and leave control.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">🌴 Approve Leave</button><button class="btn btn-ghost btn-sm">Approve OT</button><button class="btn btn-cta btn-sm">💳 Issue Loan</button></div></div>
+  <div class="mcards">
+    <div class="mcard"><span class="t">Loans &amp; Advances</span><div class="d">LN-0008 · J. Phiri · 1.5M · 125K instalment · 6/12 paid · auto-deducts each run.</div><div class="foot"><button class="btn btn-ghost btn-xs">Schedule</button><button class="btn btn-ghost btn-xs">Record Payment</button></div></div>
+    <div class="mcard"><span class="t">Attendance — Aug</span><div class="d">Biometric import · 6h OT pending · 1 late (below threshold).</div><div class="foot"><button class="btn btn-ghost btn-xs">📥 Import</button><button class="btn btn-ghost btn-xs">Calculate Pay</button></div></div>
+    <div class="mcard"><span class="t">Leave — Grace Mwale</span><div class="d">Unpaid 01–31 Aug · balance 15 days · payroll deducts unpaid days.</div><div class="foot"><button class="btn btn-ghost btn-xs">Balance</button><button class="btn btn-ghost btn-xs">Adjust</button></div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Issue Loan">💳</button><button class="s-ic" data-tip="Attendance">🕑</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Quick Nav</h2><div class="vlist"><button class="vitem">Issue Loan</button><button class="vitem">Attendance</button><button class="vitem">Leave</button></div></div></div></aside></div>
+
+<!-- 9 · REPORTS + SETTINGS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">9 · Reports + Settings</span>
+  <div class="page-head"><div><h1>Payroll Reports &amp; Settings</h1><div class="sub">Employee, payroll, statutory and accounting reports.</div></div><button class="btn btn-ghost btn-sm">⇩ Export All</button></div>
+  <div class="repcards" style="margin-bottom:16px">
+    <div class="repcard"><span class="t">Employee Register</span><span class="d">All employees with salary &amp; status.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Salary History</span><span class="d">Adjustments &amp; progression.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Employee Cost</span><span class="d">Gross + employer contributions.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Payroll Summary</span><span class="d">Gross/PAYE/pension/loans/net by run.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Gross-to-Net</span><span class="d">Bridge per employee.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Payslip Register</span><span class="d">All payslips + delivery status.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">PAYE Report</span><span class="d">Statutory filing-ready.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Pension Report</span><span class="d">Employee + employer by scheme.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Payroll Journal</span><span class="d">Posted journals with GL mapping.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Dept Payroll Cost</span><span class="d">By department/branch/cost centre.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Variance Report</span><span class="d">Run-over-run anomaly flags.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Bank Salary Upload</span><span class="d">Bank-compatible bulk file.</span><div class="foot"><span class="fmt">CSV</span><a class="open-l" href="#">Open →</a></div></div></div>
+  <div class="card"><div class="card-h"><h2>Payroll Settings</h2><span class="fmt" style="margin-left:auto">admin</span></div>
+    <div class="pad"><div class="g3"><div class="fld"><div class="l">Periods</div><div class="v">Monthly · 1st–last</div></div><div class="fld"><div class="l">Currency</div><div class="v">MWK</div></div><div class="fld"><div class="l">Calc rules</div><div class="v">OT 1.5× · late &gt;3 deduct</div></div><div class="fld"><div class="l">Tax</div><div class="v">MRA 2026 · auto</div></div><div class="fld"><div class="l">Pension</div><div class="v">5% / 7.5%</div></div><div class="fld"><div class="l">Approvals</div><div class="v">Runs &gt; 5M → FinMgr</div></div><div class="fld"><div class="l">Templates</div><div class="v">Standard · Executive</div></div><div class="fld"><div class="l">Numbering</div><div class="v">PR-{yyyy}-{mm}</div></div><div class="fld"><div class="l">Permissions</div><div class="v">HR edit · Fin approve · MD view</div></div></div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Summary">📊</button><button class="s-ic" data-tip="PAYE">🏛</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div>
+<aside class="ql-drawer"><div class="rail-block"><button class="rail-x">✕</button><div class="rail-sec"><h2>Quick Nav</h2><div class="vlist"><button class="vitem">Payroll Summary</button><button class="vitem">PAYE Report</button><button class="vitem">Payroll Journal</button></div></div></div></aside></div>
+
+</div>
+<script>
+  var stages=[].slice.call(document.querySelectorAll('.stage'));
+  function setOpen(o){document.body.classList.toggle('ql-open',o);}
+  stages.forEach(function(st){
+    var x=st.querySelector('.rail-x'); if(x)x.addEventListener('click',function(){setOpen(false);});
+    var e=st.querySelector('.s-ic.expand'); if(e)e.addEventListener('click',function(){setOpen(true);});
+  });
+  document.addEventListener('click',function(ev){ if(!ev.target.closest('.ql-drawer')&&!ev.target.closest('.slim-rail')) setOpen(false); });
+  document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') setOpen(false); });
+  var tabs=[].slice.call(document.querySelectorAll('#etabs .tab'));
+  tabs.forEach(function(t){t.addEventListener('click',function(){
+    tabs.forEach(function(x){x.classList.remove('on');}); t.classList.add('on');
+    [].slice.call(document.querySelectorAll('#etabs .pane, #etabs ~ .pane, .pane')).forEach(function(p){ if(p.closest('.stage')===t.closest('.stage')) p.classList.remove('on'); });
+    document.getElementById(t.getAttribute('data-pane')).classList.add('on');
+  });});
+  function updateInView(){
+    var mid=innerHeight/2,best=null,bs=1e9;
+    stages.forEach(function(s){var r=s.getBoundingClientRect(),sc=(r.top<=mid&&r.bottom>=mid)?0:Math.min(Math.abs(r.top-mid),Math.abs(r.bottom-mid)); if(sc<bs){bs=sc;best=s;}});
+    stages.forEach(function(s){s.classList.toggle('in-view',s===best);});
+  }
+  addEventListener('scroll',updateInView,{passive:true}); addEventListener('resize',updateInView); updateInView();
+</script>
+</body>
+</html>

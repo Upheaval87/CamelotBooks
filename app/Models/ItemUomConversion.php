@@ -39,4 +39,9 @@ class ItemUomConversion extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function scopeForCompany($query, int $companyId)
+    {
+        return $query->where('company_id', $companyId);
+    }
 }

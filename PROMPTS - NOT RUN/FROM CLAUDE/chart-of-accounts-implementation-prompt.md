@@ -1,0 +1,1044 @@
+# CHART OF ACCOUNTS CENTRE — FULL REBUILD SPEC (design + functionality, "as designed in the mockup")
+
+Build the Chart of Accounts as the classification engine every other module
+posts through: hierarchical X-XX-XXX codes, structure setup (with accounting
+method INHERITED from the company, never re-asked here), account list/add/
+edit, tree + validation rules, mapping/linkages to built modules, opening
+balances + register, account budgets + journals, and import/export + audit +
+reports + settings — replacing the existing, less-comprehensive Chart of
+Accounts module. ALL DESIGN VALUES BELOW ARE INLINE, EXTRACTED DIRECTLY FROM
+THE MOCKUP FILE. **Do not open, parse, or infer from any mockup/HTML file —
+everything needed is already extracted into this document.** No mockup
+dependency at build time.
+
+---
+
+## -1 · SCOPE DISCIPLINE (read first — this governs every phase below)
+
+- Touch ONLY: the Chart of Accounts module (its routes, controllers, views/
+  components, its own migrations/tables, its module-menu entry, and the
+  rails registry entries listed in §19 for its own pages).
+- Do NOT touch, refactor, or "improve while you're in there": other modules
+  (Sales, Purchasing, Banking, Payroll, Budgeting, Recurring Journals), the
+  rails feature's core implementation, the app-wide header/nav chrome,
+  global CSS tokens/typography (already applied system-wide — reuse them,
+  don't redefine them), the journal posting engine, period locking, the
+  approval engine, or auth/permissions.
+- Posting reaches the ledger ONLY through the EXISTING journal posting
+  handler. Budgeting, Recurring Journals, Payroll, and Banking are LINKED
+  from this module (§10, §12), never rebuilt — this spec adds "Open
+  Budgeting →" style links and read-only mapping displays, not duplicate
+  functionality.
+- The company's accounting method (`companies.accounting_method`) is set
+  once at Company Creation. This module READS it and shows it as an
+  inherited, non-editable chip (§7) — it never presents a method selector,
+  under any circumstance, on any page.
+- If implementing this module reveals a genuine need to change something
+  outside this boundary, STOP and report it rather than modifying the
+  shared component unilaterally.
+- Create a dedicated branch (e.g. `feature/coa-rebuild`) before starting. Do
+  not work on `main`/`master`.
+- Work in phases in the order given. Commit after each phase with a message
+  naming the phase. If a test suite exists, capture a baseline before §1
+  (removal) and re-run after every subsequent phase — a new failure means
+  STOP and report, not "fix around it."
+
+---
+
+## 0 · DISCOVERY — OLD MODULE (before removing anything)
+
+0.1 Inventory the CURRENT Chart of Accounts module in full: every route,
+    controller, view/component, model, migration/table, menu entry, and
+    every place other modules reference it — this will be extensive, since
+    every posting module depends on account references.
+0.2 Determine which tables are **COA-specific** (safe to reshape — COA UI
+    config, structure-setup preferences, saved report definitions) vs which
+    are **the ledger's own foundational tables** (`chart_of_accounts`
+    itself, `accounting_settings`, `method_conversions`, and anything other
+    modules hold foreign keys into). The `chart_of_accounts` table and its
+    `account_id` references are NOT safe to drop or renumber — every other
+    module's journal lines point at `account_id`, not at a display code
+    (§16.7). Rebuilding this module's UI must never require re-keying
+    existing accounts.
+0.3 If COA-specific config tables hold real data, don't silently drop it —
+    migrate or flag data loss and stop for confirmation, per the same rule
+    as every other module in this project.
+0.4 Record this inventory in your final report (§22) as the "before"
+    picture.
+
+## 1 · REMOVAL — delete the old module
+
+1.1 Remove the old module's routes, controllers, views/components, and menu
+    entry.
+1.2 Remove or migrate old COA-specific UI/config tables per §0.3 — never
+    `chart_of_accounts`, `accounting_settings`, `method_conversions`, or any
+    table another module references by `account_id`.
+1.3 Remove any now-orphaned assets (old CSS/JS/blade partials) only used by
+    the old module. Leave anything shared with other modules alone.
+1.4 Confirm nothing else in the app still links to or depends on the
+    removed routes/views before moving on — grep for the old route names.
+    Given how many modules link into COA (Sales, Purchasing, Payroll,
+    Banking, Budgeting, Recurring Journals), this check matters more here
+    than in most modules — a broken cross-module link is easy to miss.
+
+## 2 · DISCOVERY — SHARED ENGINE (what the new module plugs into)
+
+2.1 Locate `companies.accounting_method` and `companies.reporting_preference`
+    (§17).
+2.2 Locate `accounting_settings` (`gl_code_format`, `separator`,
+    `segment_*_length`, `auto_generate_codes`) and `chart_of_accounts`
+    itself (`account_code` dash-less, `parent_id`, `level`, `is_group`,
+    `allow_posting`, `is_system_account`, `normal_balance`,
+    `posting_behaviour`, `allow_adjustments`, plus dimension columns).
+2.3 Locate `method_conversions` and admin/user-role tables (structure setup
+    and manual code entry are admin-gated).
+2.4 Locate the existing journal posting handler, period-locking mechanism,
+    and approval engine — this module calls all three, never reimplements
+    them.
+2.5 Locate the Budgeting, Recurring Journals, Payroll, and Banking modules'
+    existing entry points/routes for the linkage cards in §10 and §12 —
+    confirm the "Open Budgeting →" / "Open Recurring →" style links target
+    real existing routes, not placeholders.
+2.6 Locate user-preference storage (rail pin/expand prefs live there) and
+    the header Favorites menu (rails feature — already implemented
+    system-wide, per §-1 do not modify it).
+
+---
+
+## 3 · DESIGN SYSTEM — extracted verbatim from the mockup
+
+This is the **complete** CSS from the mockup file. Reuse the app's existing
+global tokens/typography where they already match (font stack, base sizing)
+— this block is provided so component-level classes below (chips, tree,
+option cards, KPIs, tables, rails) can be implemented exactly without
+needing to open the mockup. Do not re-derive colors/spacing from scratch;
+use these values.
+
+```css
+:root{--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--sec-2:#149897;
+  --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;
+  --red-2:#b91c1c;--green:#15803d;--amber-2:#b45309;--steel:#46708C;
+  --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+  --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+  --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);}
+*{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit}
+.btn:hover{transform:translateY(-1px)}
+.btn-ghost{background:rgba(255,255,255,.9);border-color:var(--border);color:#374151}
+.btn-ghost:hover{border-color:rgba(17,69,75,.3);color:var(--ink)}
+.btn-sec{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-teal)}
+.btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+.btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+.btn-xs{height:30px;padding:0 11px;font-size:11.5px;border-radius:9px}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+.crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--ink)}.crumbs .here{color:var(--ink);font-weight:800}
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:26px 0 16px}
+.page-head h1{font-size:22px;font-weight:800;color:var(--ink)}
+.page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+.card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+.card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+.card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pad{padding:24px 30px}
+.mono{font-family:ui-monospace,Menlo,monospace}
+
+/* Form grids */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 26px}
+@media (max-width:1000px){.g4{grid-template-columns:1fr 1fr}}@media (max-width:640px){.g4{grid-template-columns:1fr}}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px}
+@media (max-width:900px){.g3{grid-template-columns:1fr 1fr}}
+.f label{display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.f label .req{color:var(--red)}
+.f .in{width:100%;height:48px;border-radius:14px;border:1px solid var(--border);background:#fff;padding:0 16px;font-size:14px;color:var(--ink);font-family:inherit}
+.f .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+.f .in:disabled{background:rgba(238,244,244,.7);color:var(--muted)}
+.f select.in{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:34px}
+.f .hint{margin-top:7px;font-size:10.5px;color:var(--faint)}.f .hint b{color:var(--green)}
+.tog{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:12.5px;font-weight:700;color:var(--ink)}
+.sw{width:38px;height:22px;border-radius:999px;background:rgba(17,69,75,.15);position:relative;cursor:pointer;transition:background .2s;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s}
+.sw.on{background:var(--sec)}.sw.on::after{left:19px}
+.segc{display:inline-flex;background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:13px;padding:4px;gap:4px;width:100%}
+.segc button{height:40px;flex:1;padding:0 12px;border:none;border-radius:10px;background:none;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.segc button.on{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff;box-shadow:var(--shadow-teal)}
+.segc button:disabled{opacity:.5;cursor:not-allowed}
+.msg{margin-top:8px;font-size:11px;font-weight:700;line-height:1.5}
+.msg.ok{color:var(--green)}.msg.err{color:var(--red-2)}.msg.neutral{color:var(--faint);font-weight:600}
+.fld .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.fld .v{margin-top:4px;font-size:13px;font-weight:600;color:var(--ink)}
+
+/* Type / level / posting / behaviour chips */
+.tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+.tchip.grp{background:rgba(70,112,140,.10);border-color:rgba(70,112,140,.4);color:var(--steel)}
+.tchip.post{background:rgba(22,163,74,.10);border-color:rgba(22,163,74,.35);color:var(--green)}
+.tchip.sys{background:rgba(185,28,28,.08);border-color:rgba(185,28,28,.3);color:var(--red-2)}
+.tchip.dr{background:rgba(217,119,6,.10);border-color:rgba(217,119,6,.35);color:var(--amber-2)}
+.tchip.cr{background:rgba(70,112,140,.10);border-color:rgba(70,112,140,.4);color:var(--steel)}
+.tchip.mix{background:rgba(18,143,142,.10);border-color:rgba(18,143,142,.35);color:var(--sec)}
+.tchip.lv{background:rgba(17,69,75,.05);border-color:var(--line);color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border-radius:999px;font-size:10.5px;font-weight:800;background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.3);color:var(--sec)}
+
+/* Account tree */
+.tree{list-style:none}
+.trow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;cursor:pointer}
+.trow:hover{background:rgba(17,69,75,.05)}
+.trow .car{width:16px;color:var(--faint);transition:transform .15s;flex:none}
+li.closed>.trow .car{transform:rotate(-90deg)}li.closed>ul{display:none}
+.tcode{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;font-weight:700;color:var(--deep-1);min-width:76px}
+.tname{font-size:13px;font-weight:600;color:var(--ink)}
+.tree ul{list-style:none;padding-left:26px;border-left:1.5px solid var(--line);margin-left:17px}
+
+/* Validation / status callouts */
+.errcard{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(185,28,28,.3);background:rgba(185,28,28,.06);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--red-2);font-weight:600;line-height:1.5}
+.okchip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:800;background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+.warn{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(217,119,6,.4);background:rgba(217,119,6,.07);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--amber-2);font-weight:600;line-height:1.5}
+.lockcard{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(185,28,28,.3);background:rgba(185,28,28,.06);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--red-2);font-weight:600;line-height:1.5}
+
+/* Structure setup: option cards, segment rows, result preview, stepper */
+.optcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:900px){.optcards{grid-template-columns:1fr}}
+.optcard{border:1.5px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;background:#fff;position:relative}
+.optcard:hover{border-color:rgba(17,69,75,.35)}
+.optcard.sel{border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+.optcard .rd{position:absolute;top:14px;right:14px;width:18px;height:18px;border-radius:50%;border:2px solid var(--border)}
+.optcard.sel .rd{border-color:var(--sec);background:var(--sec);box-shadow:inset 0 0 0 3px #fff}
+.optcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+.optcard .d{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+.optcard .ex{margin-top:10px;display:flex;flex-direction:column;gap:4px}
+.optcard .ex span{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--deep-1);background:rgba(17,69,75,.05);border:1px solid var(--line);border-radius:6px;padding:3px 8px;width:max-content}
+.segrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.segrow:last-child{border-bottom:none}
+.segrow .nm{flex:1;font-weight:600;color:var(--ink)}
+.segrow input{width:70px;height:38px;border-radius:10px;border:1px solid var(--border);text-align:center;font-size:13px;font-family:inherit}
+.result{margin-top:12px;display:inline-flex;align-items:center;gap:10px;border-radius:12px;padding:10px 16px;background:rgba(18,143,142,.08);border:1px dashed rgba(18,143,142,.5);font-size:12px;font-weight:700;color:var(--sec)}
+.result .mono{font-size:15px;font-weight:800}
+.stepper{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+.st{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:800;background:rgba(18,143,142,.12);border:1px solid rgba(18,143,142,.5);color:var(--sec)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card)}
+.kpi .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.kpi .v{margin-top:6px;font-size:1.25rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.kpi .n{margin-top:3px;font-size:10.5px;color:var(--faint)}
+.kpi.hero{border:none;background:linear-gradient(135deg,var(--sec-2),var(--sec) 60%,#0c7a79)}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}
+.kpi.warn .v{color:var(--amber-2)}
+@media (max-width:1000px){.kpis{grid-template-columns:1fr 1fr}}
+
+/* Type filter boxes (6-wide) */
+.statgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.fbox{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.85);cursor:pointer;text-align:left}
+.fbox.on{border-color:rgba(18,143,142,.55);box-shadow:0 0 0 3px rgba(18,143,142,.12)}
+.fbox .t{width:2rem;height:2rem;border-radius:.625rem;display:grid;place-items:center;color:#fff;flex:none}
+.t-ink{background:linear-gradient(180deg,#17565d,#0a2e32)}.t-mint{background:#7FD1C0;color:#0c3539}.t-amber{background:#d97706}.t-steel{background:#46708C}.t-red{background:#dc2626}.t-teal{background:linear-gradient(180deg,#149897,#128F8E)}
+.fbox .l{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.fbox .v{font-size:15px;font-weight:800;color:var(--ink)}
+@media (max-width:1100px){.statgrid{grid-template-columns:repeat(3,1fr)}}
+
+/* Controls / search */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+.search{position:relative;flex:1;min-width:220px;max-width:420px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.search .in2{width:100%;height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 12px 0 36px;font-size:13px;color:var(--ink);font-family:inherit}
+select.sel{height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 30px 0 12px;font-size:13px;color:var(--ink);font-family:inherit;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+
+/* Tables */
+.li-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:860px}
+thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+thead th.num{text-align:right}
+tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:hover td{background:rgba(17,69,75,.04)}
+tbody tr:last-child td{border-bottom:none}
+tfoot td{padding:12px;border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink);background:rgba(17,69,75,.03)}
+.em{color:var(--muted)}.dash{color:var(--faint)}
+.numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+.numr.bold{font-weight:800}.numr.red{color:var(--red-2);font-weight:700}.numr.green{color:var(--green);font-weight:700}
+.row-act{display:flex;gap:4px;justify-content:flex-end}
+.ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+.ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+.pagi{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--line)}
+.pagi .t{font-size:12px;color:var(--muted)}
+
+/* Two-column layout, mapping cards, report cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:1000px){.grid2{grid-template-columns:1fr}}
+.mapcard{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.85);padding:16px 18px}
+.mapcard .t{font-size:13px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px}
+.maprow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:12px;color:var(--muted)}
+.maprow:last-child{border-bottom:none}
+.maprow .acc{font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:var(--deep-1);background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);border-radius:999px;padding:3px 10px}
+.repcards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:1100px){.repcards{grid-template-columns:1fr 1fr}}@media (max-width:700px){.repcards{grid-template-columns:1fr}}
+.repcard{border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card);padding:16px;display:flex;flex-direction:column;gap:8px}
+.repcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+.repcard .d{font-size:11.5px;color:var(--muted);line-height:1.5}
+.repcard .foot{margin-top:auto;display:flex;gap:6px;align-items:center}
+.fmt{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--deep-1);background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);border-radius:999px;padding:2px 8px}
+.open-l{margin-left:auto;font-size:11px;font-weight:800;color:var(--sec);text-decoration:none}
+
+@media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+```
+
+**Rails feature CSS (slim rail + drawer)** is already implemented system-wide
+per rails.html — reuse the existing classes (`.stage`, `.stage-body`,
+`.slim-rail`, `.s-ic`, drawer/pin classes) rather than redefining them,
+including the rule that the drawer stays hidden whenever the full rail isn't
+displayed. §19 tells you which entries each page needs, not how the rail
+mechanism itself works.
+
+**App-wide header/nav** (the teal top bar with Sales/Purchasing/Banking/
+Accounts/Reports tabs) is existing app chrome — do not rebuild it. It's
+shown in the mockup only for context; just ensure the "Accounts" tab
+highlights correctly when any COA page is active.
+
+---
+
+## 4 · BADGES / CHIPS — semantics
+
+4.1 Type chips: Asset = teal (`.tchip.mix` in the account-list context) /
+    Liability = steel (`.tchip.cr`) / Equity = gray / Income = green
+    (`.tchip.post`) / Expense = amber (`.tchip.dr`) — see the extracted CSS
+    above for the exact class-to-color mapping per context; the mockup uses
+    slightly different chip classes for "type" in different tables (account
+    list vs account types card) — match each table's own reference markup
+    below rather than inventing one universal type-chip mapping.
+4.2 Level chips: `.tchip.lv` — L1/L2/L3 shown plainly.
+4.3 Posting chips: `.tchip.grp` Group (steel, non-posting) / `.tchip.post`
+    Posting (green) / `.tchip.sys` System (red, locked — hides edit/delete
+    per §16.2).
+4.4 Behaviour chips: `.tchip.dr` Debit only (amber) / `.tchip.cr` Credit
+    only (steel) / `.tchip.mix` Dr·Cr (teal).
+4.5 Status: Active = green text on `.tchip`; Inactive = gray.
+4.6 Inherited-method chip: `.chip` (teal outline) — used only on
+    `coa.setup`, never implies an editable selector.
+
+---
+
+## 5 · PAGE INVENTORY — BUILD ALL TEN, EACH A SEPARATE ROUTE
+
+DO NOT SKIP ANY PAGE.
+
+| Route | Title | Mockup source | Spec |
+|---|---|---|---|
+| `coa.dashboard` | Chart of Accounts (dashboard) | Stage 1 | §6 |
+| `coa.setup` | COA Structure Setup (method inherited) | Stage 2 | §7 |
+| `coa.index` | Account List | Stage 3 | §8 |
+| `coa.create` | Add Account | Stage 4 | §9 |
+| `coa.edit` | Edit Account | Stage 5 | §10 |
+| `coa.tree` | Tree + Types + Validation | Stage 6 | §11 |
+| `coa.mapping` | Mapping + Linkages | Stage 7 | §12 |
+| `coa.opening` | Opening Balances + Register | Stage 8 | §13 |
+| `coa.budgets` | Account Budgets + Journals | Stage 9 | §14 |
+| `coa.reports` | Import/Export + Audit + Reports + Settings | Stage 10 | §15 |
+
+Module menu lists all ten in this order.
+
+---
+
+## 6 · DASHBOARD (`coa.dashboard`)
+
+**Structure reference** (Stage 1 — wire every value to live data):
+
+```html
+<div class="page-head">
+  <div><h1>Chart of Accounts</h1><div class="sub">Hierarchical X-XX-XXX · the classification engine every module posts through.</div></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn btn-ghost btn-sm">📁 Manage Groups</button>
+    <button class="btn btn-ghost btn-sm">📥 Import</button>
+    <button class="btn btn-ghost btn-sm">📤 Export COA</button>
+    <button class="btn btn-ghost btn-sm">📊 Reports</button>
+    <button class="btn btn-cta btn-sm">➕ Add Account</button>
+  </div>
+</div>
+<div class="kpis" style="margin-bottom:12px">
+  <div class="kpi hero"><div class="l">Total Accounts</div><div class="v">{n}</div><div class="n" style="color:#dff7f6">{active} active · {inactive} inactive</div></div>
+  <div class="kpi"><div class="l">Assets</div><div class="v">{n}</div><div class="n">1xxx · debit</div></div>
+  <div class="kpi"><div class="l">Liabilities</div><div class="v">{n}</div><div class="n">2xxx · credit</div></div>
+  <div class="kpi"><div class="l">Equity</div><div class="v">{n}</div><div class="n">3xxx · credit</div></div>
+</div>
+<div class="kpis" style="margin-bottom:16px">
+  <div class="kpi"><div class="l">Income</div><div class="v">{n}</div><div class="n">4xxx · credit</div></div>
+  <div class="kpi"><div class="l">Expenses</div><div class="v">{n}</div><div class="n">5xxx · debit</div></div>
+  <div class="kpi warn"><div class="l">Without Mapping</div><div class="v">{n}</div><div class="n"><a class="open-l" href="{coa.mapping}">Fix mappings →</a></div></div>
+  <div class="kpi"><div class="l">Groups (non-posting)</div><div class="v">{n}</div><div class="n">Level 1 &amp; 2</div></div>
+</div>
+<div class="card"><div class="card-h"><h2>Recent Account Changes</h2><a class="open-l" href="{coa.reports}#audit" style="margin-left:auto">Audit trail →</a></div>
+  <div class="li-wrap"><table>
+    <thead><tr><th>When</th><th>User</th><th>Account</th><th>Change</th><th>Type</th><th>Action</th></tr></thead>
+    <tbody><tr><td class="em">{date}</td><td class="em">{user}</td><td class="mono">{dashed_code}</td><td class="em">{change_description}</td>
+      <td><span class="tchip {dr|post|...}">{type}</span></td><td class="em">{Create|Map|Link}</td></tr></tbody>
+  </table></div>
+</div>
+```
+
+Functional spec: right actions [📁 Manage Groups][📥 Import →
+`coa.reports` import section][📤 Export COA][📊 Reports ghost →
+`coa.reports`][➕ Add Account CTA → `coa.create`]. KPI row 1: hero Total
+Accounts, Assets, Liabilities, Equity. KPI row 2: Income, Expenses, Without
+Mapping (amber, links to `coa.mapping`), Groups non-posting (L1&2). Recent
+Changes table links to the full audit trail on `coa.reports`.
+
+---
+
+## 7 · STRUCTURE SETUP (`coa.setup`) — METHOD INHERITED, never re-asked
+
+**Structure reference** (Stage 2):
+
+```html
+<div class="page-head"><nav class="crumbs"><a href="{coa.dashboard}">Accounts</a> › <span class="here">Structure Setup</span></nav>
+  <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Customize</button><button class="btn btn-cta btn-sm">Activate &amp; Lock Format</button></div>
+</div>
+<div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Accounting method</h2>
+  <span class="chip" style="margin-left:8px">Inherited · {Accrual|Cash} (from company)</span>
+  <div class="right"><button class="btn btn-ghost btn-xs">Change at company level</button></div>
+</div>
+  <div class="pad"><div class="warn">ⓘ <span>The method (accrual/cash) is set once at <b>Company Creation</b> and drives which accounts/modules are active. The coding structure below is independent of it.</span></div></div>
+</div>
+<div class="card"><div class="card-h"><h2>Code structure · segments · generation · activate</h2></div>
+  <div class="pad">
+    <div class="stepper"><span class="st">1 · Code structure</span><span class="st">2 · Levels &amp; segments</span><span class="st">3 · Generation</span><span class="st">4 · Generate &amp; activate</span></div>
+    <div class="optcards" id="sfmt" style="margin-top:12px">
+      <div class="optcard" data-f="simple"><span class="rd"></span><div class="t">Simple Numeric (4-digit)</div><div class="ex"><span>1000 Cash</span><span>4000 Sales</span><span>5000 Salaries</span></div></div>
+      <div class="optcard" data-f="num"><span class="rd"></span><div class="t">Hierarchical Numeric</div><div class="ex"><span>101001 Cash</span><span>501001 Salaries</span></div></div>
+      <div class="optcard sel" data-f="sep"><span class="rd"></span><div class="t">Hierarchical With Separators</div><div class="ex"><span>1-01-001 Cash</span><span>5-01-001 Salaries</span></div></div>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <div>
+        <div class="segrow"><span class="nm">Number of levels</span><select id="slv"><option>2</option><option selected>3</option><option>4</option></select></div>
+        <div id="sseg">
+          <div class="segrow"><span class="nm">Seg 1 · Class</span><input data-s="0" value="1"></div>
+          <div class="segrow"><span class="nm">Seg 2 · Group</span><input data-s="1" value="2"></div>
+          <div class="segrow"><span class="nm">Seg 3 · Detail</span><input data-s="2" value="3"></div>
+        </div>
+        <div class="segrow"><span class="nm">Separator</span><input id="ssep" value="-" style="width:50px"></div>
+        <div class="result">Result <span class="mono" id="sres">5-01-001</span></div>
+      </div>
+      <div>
+        <div class="optcards" id="sgen" style="grid-template-columns:1fr">
+          <div class="optcard sel" data-g="auto"><span class="rd"></span><div class="t">Automatic (Recommended)</div><div class="d">System generates next available code.</div></div>
+          <div class="optcard" data-g="manual"><span class="rd"></span><div class="t">Manual (Admin only)</div></div>
+          <div class="optcard" data-g="hybrid"><span class="rd"></span><div class="t">Hybrid (suggest + edit)</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pad" style="border-top:1px solid var(--line)">
+      <table><thead><tr><th>Code</th><th>Account</th><th>Type</th><th>Level</th></tr></thead>
+        <tbody id="scoa">
+          <tr><td class="mono codecell" data-k="cash">{live_code}</td><td>Cash</td><td>Asset</td><td>Posting</td></tr>
+          <!-- rows re-render live on format/segment/separator/level change -->
+        </tbody>
+      </table>
+      <div class="warn" style="margin-top:12px">⚠ <span><b>Format lock:</b> once transactions exist the format can no longer be changed freely; a controlled migration is required.</span></div>
+    </div>
+  </div>
+</div>
+```
+
+**Live-preview algorithm** (extracted from the mockup's script — implement
+this exact logic, not a re-derived version):
+
+```js
+// state: st = { f: 'sep'|'num'|'simple', g: 'auto'|'manual'|'hybrid', seg: [classLen, groupLen, detailLen], sep: '-', lv: 2|3|4 }
+// sample seed data per row key (existing accounts used only for the LIVE PREVIEW table, not real data):
+//   CLS  = { cash:'1', bank:'1', sales:'4', sal:'5' }   (class digit)
+//   GRP  = { cash:'01', bank:'01', sales:'01', sal:'01' } (group/category digits)
+//   DET  = { cash:'001', bank:'002', sales:'001', sal:'001' } (detail digits)
+function pad(v, len) { v = String(v); while (v.length < len) v = '0' + v; return v.slice(0, len); }
+
+function scode(rowKey) {
+  if (st.f === 'simple') return SIMPLE_CODES[rowKey]; // e.g. {cash:'1000', bank:'1100', sales:'4000', sal:'5000'}
+  var parts = [pad(CLS[rowKey], st.seg[0]), pad(GRP[rowKey], st.seg[1]), pad(DET[rowKey], st.seg[2])].slice(0, st.lv);
+  return st.f === 'sep' ? parts.join(st.sep) : parts.join('');
+}
+
+// on any control change (format card, generation card, level select, separator input, segment-length inputs):
+//   re-render every row's displayed code via scode(), AND re-render the "Result" preview
+//   using a fixed example ['5','01','001'] sliced to st.lv, padded per segment, joined per format.
+```
+
+Functional spec: header breadcrumb + [Customize][Activate & Lock Format
+CTA]. Method card: chip "Inherited · {Accrual|Cash} (from company)" (never
+a selector) + [Change at company level] (admin-only, links to the company
+edit page — this module does not implement that page, only links to it) +
+the note line stating the method is independent of the coding structure
+below. Stepper chips are visual progress labels (Code structure → Levels &
+segments → Generation → Generate & activate) — not necessarily a hard
+wizard gate, but should reflect where the admin is in the flow. Format
+option cards (Simple Numeric / Hierarchical Numeric / Hierarchical With
+Separators) are selectable, single-choice (`role=radio` per §18). Levels +
+segments: level select (2/3/4), per-segment length inputs, separator input,
+all driving the live "Result" preview and the live-re-formatting default-COA
+table exactly per the algorithm above. Generation option cards: Automatic
+(recommended) / Manual (admin only — disabled for non-admins, same pattern
+as §9's mode toggle) / Hybrid. Format lock: once real transactions exist
+against this company's accounts, the format can no longer change freely — a
+[Start Controlled Migration] action must appear in place of free editing,
+covering §16.8's migration process (map old→new codes, re-post references,
+preserve audit trail).
+
+---
+
+## 8 · ACCOUNT LIST (`coa.index`)
+
+**Structure reference** (Stage 3):
+
+```html
+<div class="page-head">
+  <div><h1>Accounts</h1><div class="sub">Stored dash-less · displayed dashed · groups non-posting.</div></div>
+  <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">⇩ Export</button><button class="btn btn-cta btn-sm">➕ New Account</button></div>
+</div>
+<div class="card"><div class="pad" style="padding-bottom:0">
+  <div class="statgrid">
+    <button class="fbox on"><span class="t t-ink">[icon]</span><span><span class="l">All</span><span class="v" style="display:block">{n}</span></span></button>
+    <button class="fbox"><span class="t t-teal">1</span><span><span class="l">Assets</span><span class="v" style="display:block">{n}</span></span></button>
+    <button class="fbox"><span class="t t-steel">2</span><span><span class="l">Liabilities</span><span class="v" style="display:block">{n}</span></span></button>
+    <button class="fbox"><span class="t t-mint">3</span><span><span class="l">Equity</span><span class="v" style="display:block">{n}</span></span></button>
+    <button class="fbox"><span class="t t-mint">4</span><span><span class="l">Income</span><span class="v" style="display:block">{n}</span></span></button>
+    <button class="fbox"><span class="t t-amber">5</span><span><span class="l">Expenses</span><span class="v" style="display:block">{n}</span></span></button>
+  </div>
+  <div class="controls">
+    <div class="search">[search icon]<input class="in2" placeholder="Name or code (1-01-001)…"></div>
+    <select class="sel"><option>All Types</option></select><select class="sel"><option>All Levels</option></select><select class="sel"><option>Active + Inactive</option></select>
+  </div>
+</div>
+<div class="li-wrap"><table>
+  <thead><tr><th>Code</th><th>Account Name</th><th>Type</th><th>Level</th><th>Posting</th><th>Behaviour</th><th class="num">Balance</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    <tr><td class="mono">{dashed_code}</td><td style="font-weight:700;color:var(--ink)">{name}</td><td><span class="tchip {type_class}">{type}</span></td>
+      <td><span class="tchip lv">L{n}</span></td><td><span class="tchip {grp|post|sys}">{Group|Posting|System}</span></td>
+      <td>{dash if group}<span class="tchip {dr|cr|mix}">{Dr only|Cr only|Dr·Cr}</span></td>
+      <td class="numr bold">{balance}</td><td><span class="tchip" style="color:{green|gray}">{Active|Inactive}</span></td>
+      <td class="row-act"><button class="ibtn">👁</button>
+        <!-- group rows: view only. posting rows: view + edit. system rows: view only, edit/delete hidden entirely -->
+        <button class="ibtn">✎</button></td></tr>
+  </tbody>
+</table></div>
+<div class="pagi"><span class="t">Showing {n} of {total}</span><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-xs">← Prev</button><button class="btn btn-ghost btn-xs">Next →</button></div></div>
+</div>
+```
+
+Functional spec: 6 type boxes (All / 1 Assets / 2 Liabilities / 3 Equity /
+4 Income / 5 Expenses), live counts, click sets the existing filter param.
+Controls: search by name or dashed code + Type + Level + Active/Inactive
+selects. Table: dashed mono code, bold name, type/level/posting/behaviour
+chips, bold balance, status, actions. **Group rows** (L1/L2) show
+`Posting=Group` and `Behaviour=—`; they get view-only actions (no edit —
+group accounts are structural, not editable line items). **System accounts**
+hide the ✎ edit and delete actions entirely, per §16.2 — this is enforced
+both in the UI and, per §16, must also be enforced server-side. Pagination
+uses the existing mechanism.
+
+---
+
+## 9 · ADD ACCOUNT (`coa.create`)
+
+**Structure reference** (Stage 4):
+
+```html
+<div class="page-head"><nav class="crumbs"><a href="{coa.index}">Accounts</a> › <span class="here">New Account</span></nav>
+  <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-ghost btn-sm">Save &amp; New</button><button class="btn btn-cta btn-sm">Save Account</button></div>
+</div>
+<div class="card"><div class="pad"><div class="g4">
+  <div class="f" style="grid-column:1/-1"><label>Account Code Creation Mode</label>
+    <div class="segc"><button class="{on if auto}">✅ Auto Generate (Recommended)</button><button {disabled unless admin}>🔒 Manual Entry (Admin only)</button></div>
+    <div class="msg neutral">Format X-XX-XXX · stored dash-less · L1/L2 groups non-posting · L3 posting.</div>
+  </div>
+  <div class="f"><label>Account Number</label><input class="in mono" id="addCode" {disabled in Auto mode}><div class="msg ok" id="addMsg">✓ Auto-generated · stored {6digit} · displays {dashed} · Level 3 posting.</div></div>
+  <div class="f"><label>Account Type (Class) <span class="req">*</span></label><select class="in" id="addClass"><option value="1">1 · Assets</option><!-- ... --></select></div>
+  <div class="f"><label>Parent (Category) <span class="req">*</span></label><select class="in" id="addCat"><!-- filtered by selected class --></select></div>
+  <div class="f"><label>Account Name <span class="req">*</span></label><input class="in"></div>
+  <div class="f"><label>Account Level</label><input class="in" value="Level 3 · Posting" disabled></div>
+  <div class="f"><label>Normal Balance</label><select class="in"><option>Debit</option><option>Credit</option></select></div>
+  <div class="f"><label>Posting Behaviour</label><select class="in"><option>Both (Mixed)</option><option>Debit only</option><option>Credit only</option></select></div>
+  <div class="f"><label>Currency</label><select class="in"></select></div>
+  <div class="f"><label>Branch</label><select class="in"><option>All</option></select></div>
+  <div class="f"><label>Department</label><select class="in"><option>—</option></select></div>
+  <div class="f"><label>Cost Centre</label><select class="in"><option>—</option></select></div>
+  <div class="f"><label>Project</label><select class="in"><option>—</option></select></div>
+  <div class="f"><label>Tax Category</label><select class="in"></select></div>
+  <div class="f"><div class="tog"><span class="sw on"></span>Tax applicable</div></div>
+  <div class="f"><div class="tog"><span class="sw on"></span>Reconciliation required</div></div>
+  <div class="f"><div class="tog"><span class="sw on"></span>Allow journal adjustments</div><div class="hint">Off = manual adjustment journals blocked. <b>Bank reconciliation postings always allowed.</b></div></div>
+  <div class="f"><div class="tog"><span class="sw"></span>Cost centre required</div></div>
+</div></div></div>
+```
+
+**Auto-generation algorithm** (extracted from the mockup's script — this
+defines "next available code" exactly):
+
+```js
+function nextAvailable(classDigit, categoryDigits) {
+  var prefix = classDigit + categoryDigits, max = 0;
+  existingAccounts.forEach(function (code) {
+    if (code.indexOf(prefix) === 0 && +code > max) max = +code;
+  });
+  var next = max ? max + 1 : +(prefix + '001');
+  return String(next).padStart(6, '0'); // stored, dash-less
+}
+function toDashed(stored6) {
+  return stored6[0] + '-' + stored6.slice(1, 3) + '-' + stored6.slice(3);
+}
+// on Account Type (Class) or Parent (Category) change, in Auto mode:
+//   stored = nextAvailable(class, category)
+//   Account Number field shows toDashed(stored), disabled
+//   message: "✓ Auto-generated · stored {stored} · displays {toDashed(stored)} · Level 3 posting."
+```
+
+Functional spec: header breadcrumb + [Cancel][Save & New][Save Account
+CTA]. Mode segmented control: Auto Generate (recommended, default) / Manual
+Entry (disabled unless the current user is admin — per §16.4). Helper
+message states the format rule. Account Number field is disabled and
+auto-populated in Auto mode per the algorithm above; editable in Manual
+mode (admin only) with the same live-validation rules as §10's edit page.
+Fields per the reference markup: Type (Class)*, Parent (Category, filtered
+to the selected class)*, Name*, Level (always disabled, computed), Normal
+Balance, Posting Behaviour, Currency, Branch, Department, Cost Centre,
+Project, Tax Category. Four toggles, preserved exactly: Tax applicable ·
+Reconciliation required · Allow journal adjustments (hint: "Off = manual
+adjustment journals blocked. Bank reconciliation postings always allowed.")
+· Cost centre required.
+
+---
+
+## 10 · EDIT ACCOUNT (`coa.edit`)
+
+**Structure reference** (Stage 5):
+
+```html
+<div class="page-head"><nav class="crumbs"><a href="{coa.index}">Accounts</a> › <a href="{coa.show_or_index}">{dashed_code}</a> › <span class="here">Edit</span></nav>
+  <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-cta btn-sm">Save Changes</button></div>
+</div>
+<div class="card"><div class="pad"><div class="g4">
+  <div class="f"><label>Account Number (display)</label><input class="in mono" id="editCode" value="{current_dashed}"><div class="msg ok" id="editMsg">✓ {current_dashed} is the current code (stored {current_stored}).</div></div>
+  <div class="f"><label>Account Name <span class="req">*</span></label><input class="in" value="{name}"></div>
+  <div class="f"><label>Account Type (Class)</label><select class="in" id="editClass"></select></div>
+  <div class="f"><label>Parent (Category)</label><select class="in" id="editCat"></select></div>
+  <div class="f"><label>Posting Behaviour</label><select class="in"></select></div>
+  <div class="f"><div class="tog"><span class="sw {on|off}"></span>Tax applicable</div></div>
+  <div class="f"><div class="tog"><span class="sw {on|off}"></span>Allow journal adjustments</div><div class="hint">Off = manual adjustment journals blocked. <b>Bank reconciliation postings always allowed.</b></div></div>
+  <div class="f"><div class="tog"><span class="sw {on|off}"></span>Cost centre required</div></div>
+</div>
+<div class="pad" style="border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)">
+  Try <b class="mono" style="color:var(--ink)">{existing_code}</b> (exists → blocked), <b class="mono" style="color:var(--ink)">{mismatched_prefix_code}</b> (parent mismatch → blocked) or <b class="mono" style="color:var(--ink)">{available_code}</b> (available).
+</div></div>
+```
+
+**Live-validation algorithm** (extracted from the mockup's script — this
+defines the exact validation sequence, in order):
+
+```js
+function checkEdit(inputValue, currentStoredCode, selectedClass, selectedCategory) {
+  var stored = inputValue.replace(/-/g, '');
+  if (!stored) return { state: 'neutral', message: 'Enter a code in X-XX-XXX format.' };
+  if (!/^\d{6}$/.test(stored)) return { state: 'err', message: '✗ Must be 6 digits (X-XX-XXX).' };
+  if (stored === currentStoredCode) return { state: 'ok', message: '✓ ' + toDashed(stored) + ' is the current code (stored ' + stored + ').' };
+  if (accountExists(stored)) return { state: 'err', message: '✗ ' + toDashed(stored) + ' already exists — ' + accountNameFor(stored) + '.' };
+  var prefix = selectedClass + selectedCategory;
+  if (stored.indexOf(prefix) !== 0) return { state: 'err', message: '✗ ' + toDashed(stored) + ' does not match class/parent.' };
+  return { state: 'ok', message: '✓ ' + toDashed(stored) + ' is available (stored ' + stored + ').' };
+}
+// runs on every keystroke in the Account Number field, and on class/category select change
+```
+
+Functional spec: header breadcrumb `Accounts › {dashed_code} › Edit` +
+[Cancel][Save Changes CTA]. Account Number (display) is EDITABLE with live
+validation exactly per the algorithm above — the current code is always
+accepted as "unchanged" even though it technically "exists" (it's this
+account's own code). Remaining fields (Name*, Type, Parent, Posting
+Behaviour) plus the toggles preserved from §9 (Tax applicable, Allow
+journal adjustments with the bank-reconciliation exemption hint, Cost
+centre required). Helper strip demonstrates the three validation outcomes
+with real example codes drawn from the actual data (exists → blocked,
+parent mismatch → blocked, available) — not hardcoded demo codes.
+
+---
+
+## 11 · TREE + TYPES + VALIDATION (`coa.tree`)
+
+**Structure reference** (Stage 6):
+
+```html
+<div class="grid2">
+  <div class="card"><div class="card-h"><h2>Chart of Accounts — Tree</h2><div class="right"><button class="btn btn-ghost btn-xs">Expand</button><button class="btn btn-cta btn-xs">＋ Add</button></div></div>
+    <div class="pad"><ul class="tree" id="tree" role="tree">
+      <li><div class="trow grp" role="treeitem" aria-expanded="true"><span class="car">▾</span><span class="tcode">{code}</span><span class="tname">{name}</span><span class="tchip grp">Group</span></div>
+        <ul>
+          <li><div class="trow" role="treeitem"><span class="car"></span><span class="tcode">{code}</span><span class="tname">{name}</span><span class="tchip post">Posting·{Dr|Cr}</span></div></li>
+          <!-- system rows: <span class="tchip sys">System·locked</span> instead of Posting chip -->
+        </ul>
+      </li>
+      <!-- fully nested per parent_id, arbitrary depth, collapsible via .trow.grp click toggling li.closed -->
+    </ul></div>
+    <div class="pad" style="border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px">
+      <div class="errcard">❌ <span><b>Post to "{L1_or_L2_account}"</b> — blocked (L1/2 groups, allow_posting=false).</span></div>
+      <div class="errcard">❌ <span><b>Delete "{system_account}"</b> — blocked (is_system_account=true).</span></div>
+      <div class="errcard">❌ <span><b>{Expense}under {Assets}</b> — blocked (class must match parent's class).</span></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-h"><h2>Account Types</h2><div class="right"><button class="btn btn-ghost btn-xs">＋ Add Type</button></div></div>
+    <div class="li-wrap"><table style="min-width:0">
+      <thead><tr><th>Type</th><th>Class</th><th>Statement</th><th>Normal</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:700;color:var(--ink)">Asset</td><td class="mono">1</td><td class="em">Balance Sheet</td><td><span class="tchip dr">Debit</span></td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Liability</td><td class="mono">2</td><td class="em">Balance Sheet</td><td><span class="tchip cr">Credit</span></td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Equity</td><td class="mono">3</td><td class="em">Balance Sheet</td><td><span class="tchip cr">Credit</span></td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Income</td><td class="mono">4</td><td class="em">Income Stmt</td><td><span class="tchip cr">Credit</span></td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Expense</td><td class="mono">5</td><td class="em">Income Stmt</td><td><span class="tchip dr">Debit</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</div>
+```
+
+Functional spec: Tree card — collapsible nested list built from the real
+`parent_id` hierarchy (not a fixed depth); group rows carry the "Group"
+chip, posting rows carry "Posting·Dr/Cr", system rows carry
+"System·locked"; codes shown dashed; [Expand] toggles all nodes,
+[＋ Add] → `coa.create`. Below the tree, three example validation error
+cards demonstrating the three blocking rules — these should reflect real
+attempted-action messaging (the same messages the system actually shows
+when a user tries these actions elsewhere), not decorative copy. Account
+Types card: the five fixed types (Asset/Liability/Equity/Income/Expense)
+with their class digit, financial-statement section, and normal balance;
+[＋ Add Type] only if the system's data model actually supports adding new
+top-level types — if the five types are structurally fixed, this button
+should be omitted or disabled with an explanatory tooltip rather than
+opening a form that can't work.
+
+---
+
+## 12 · MAPPING + LINKAGES (`coa.mapping`)
+
+**Structure reference** (Stage 7):
+
+```html
+<div class="page-head" style="border:none;margin-bottom:12px">
+  <div><h1>Account Mapping</h1><div class="sub">Validate before posting; built modules linked, not rebuilt.</div></div>
+  <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">✓ Validate Mapping</button><button class="btn btn-cta btn-sm">🔗 Map Account</button></div>
+</div>
+<div class="grid2">
+  <div class="mapcard"><div class="t">Sales</div>
+    <div class="maprow"><span>Sales Revenue</span><span class="acc">{dashed_code}</span></div>
+    <div class="maprow"><span>Customer Receivable</span><span class="acc">{dashed_code}</span></div></div>
+  <div class="mapcard"><div class="t">Purchasing</div>
+    <div class="maprow"><span>Purchase Expense</span><span class="acc">{dashed_code}</span></div>
+    <div class="maprow"><span>Supplier Payable</span><span class="acc">{dashed_code}</span></div></div>
+  <div class="mapcard"><div class="t">Payroll <span class="tchip">built</span></div>
+    <div class="maprow"><span>Salary Expense</span><span class="acc">{dashed_code}</span></div>
+    <div class="maprow"><span>PAYE Payable</span><span class="acc">{dashed_code}</span></div></div>
+  <div class="mapcard" style="border-color:rgba(18,143,142,.4)"><div class="t">Budgeting <span class="tchip">built — linkage</span></div>
+    <div class="maprow"><span>Expense ↔ budget lines</span><span class="acc">{dashed_codes}</span></div>
+    <div class="maprow"><span>Variance</span><a class="open-l" href="{budgets.vsactual}">Open Budgeting →</a></div></div>
+  <!-- Banking and Recurring Journals get the same two card treatments as their respective category (module mapping vs linkage) -->
+</div>
+```
+
+Functional spec: [✓ Validate Mapping] runs a real check against
+`chart_of_accounts` for accounts referenced by other modules that lack a
+mapping, surfacing results inline (this feeds the dashboard's "Without
+Mapping" KPI). [🔗 Map Account] opens a mapping editor. **Module mapping
+cards** (Sales, Purchasing, Payroll, Banking) show the built module's
+account assignments read-only, with a "built" tag where the module already
+exists — these are direct account references, editable here since COA owns
+the mapping. **Linkage cards** (Budgeting, Recurring Journals) are teal-
+bordered and carry an "Open {Module} →" link to the actual existing route in
+that module — COA shows the relationship (which accounts a budget line or
+recurring journal touches) but the budget/recurring-journal record itself is
+edited only in its own module, never here.
+
+---
+
+## 13 · OPENING BALANCES + REGISTER (`coa.opening`)
+
+**Structure reference** (Stage 8):
+
+```html
+<div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Opening Balances — FY{yyyy}</h2>
+  <div class="right"><span class="okchip">✓ Balanced · Dr = Cr</span><button class="btn btn-ghost btn-xs">📥 Import</button><button class="btn btn-sec btn-xs">Post Opening</button></div>
+</div>
+  <div class="li-wrap"><table>
+    <thead><tr><th>Code</th><th>Account</th><th>Class</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+    <tbody><tr><td class="mono">{dashed_code}</td><td class="em">{name}</td><td><span class="tchip {type_class}">{type}</span></td>
+      <td class="numr">{debit|—}</td><td class="numr">{credit|—}</td></tr></tbody>
+    <tfoot><tr><td colspan="3">Totals</td><td class="numr">{total_debit}</td><td class="numr">{total_credit}</td></tr></tfoot>
+  </table></div>
+</div>
+<div class="card"><div class="card-h"><h2>Register — {dashed_code} · {account_name}</h2>
+  <div class="right"><button class="btn btn-ghost btn-xs">🖨 Print</button><button class="btn btn-ghost btn-xs">⇩ Export</button></div>
+</div>
+  <div class="li-wrap"><table>
+    <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead>
+    <tbody><tr><td class="em">{date}</td><td class="mono">{reference}</td><td class="em">{description}</td>
+      <td class="numr">{debit|—}</td><td class="numr">{credit|—}</td><td class="numr bold">{running_balance}</td></tr></tbody>
+  </table></div>
+</div>
+```
+
+Functional spec: Opening card — [✓ Balanced chip] reflects the real
+Dr=Cr check on the entered opening balances, not a static label; [📥
+Import]; [Post Opening secondary] only enabled once balanced, posts via the
+existing journal handler; `tfoot` totals must equal and drive the balanced
+chip. Register card — account selector (search by name/code) + [🖨
+Print][⇩ Export]; table shows running balance (bold) and **includes
+cross-module postings** — a register for a bank account, for example, must
+show entries originating from Sales, Purchasing, Payroll, and Banking
+modules alike, since COA is the single ledger view.
+
+---
+
+## 14 · ACCOUNT BUDGETS + JOURNALS (`coa.budgets`)
+
+**Structure reference** (Stage 9):
+
+```html
+<div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Account Budgets — FY{yyyy}</h2><span class="tchip" style="margin-left:8px">links to built Budgeting</span>
+  <div class="right"><button class="btn btn-ghost btn-xs">Set Budget</button><a class="open-l" href="{budgets.dashboard}">Open Budgeting →</a></div>
+</div>
+  <div class="li-wrap"><table>
+    <thead><tr><th>Code</th><th>Account</th><th class="num">Budget</th><th class="num">Actual YTD</th><th class="num">Variance</th><th>Util</th></tr></thead>
+    <tbody><tr><td class="mono">{dashed_code}</td><td class="em">{name}</td><td class="numr">{budget}</td><td class="numr">{actual}</td>
+      <td class="numr green">{variance}</td><td><span class="tchip dr">{pct}%</span></td></tr></tbody>
+  </table></div>
+</div>
+<div class="card"><div class="card-h"><h2>Journal Entries</h2>
+  <div class="right"><button class="btn btn-ghost btn-xs">↩ Reverse</button><button class="btn btn-sec btn-xs">＋ New Journal</button></div>
+</div>
+  <div class="li-wrap"><table>
+    <thead><tr><th>Journal</th><th>Date</th><th>Description</th><th class="num">Debit</th><th class="num">Credit</th><th>Status</th></tr></thead>
+    <tbody><tr><td class="mono">{JV-ref}</td><td class="em">{date}</td><td class="em">{description with dashed DR/CR codes}</td>
+      <td class="numr">{debit}</td><td class="numr">{credit}</td><td><span class="tchip post">{status}</span></td></tr></tbody>
+  </table></div>
+</div>
+```
+
+Functional spec: Budgets card is a read view sourced from the Budgeting
+module (per §12's linkage principle) — [Set Budget] opens the budget-line
+editor there, [Open Budgeting →] links to `budgets.dashboard` (or the
+account's specific budget). This module does not store or calculate budget
+figures itself. Journals card lists journal entries touching accounts,
+including ones originating from Recurring Journals and Payroll — [↩
+Reverse] and [＋ New Journal secondary] call the EXISTING journal handler,
+never a COA-local implementation.
+
+---
+
+## 15 · IMPORT/EXPORT + AUDIT + REPORTS + SETTINGS (`coa.reports`)
+
+**Structure reference** (Stage 10):
+
+```html
+<div class="grid2" style="margin-bottom:16px">
+  <div class="card"><div class="card-h"><h2>Import / Export</h2></div>
+    <div class="pad" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-xs">📥 Import COA</button>
+      <button class="btn btn-ghost btn-xs">📥 Opening Balances</button>
+      <button class="btn btn-ghost btn-xs">📥 Mappings</button>
+      <button class="btn btn-ghost btn-xs">📤 Export COA</button>
+      <button class="btn btn-ghost btn-xs">📤 Balances</button>
+    </div></div>
+  <div class="card" id="audit"><div class="card-h"><h2>Audit Trail</h2><a class="open-l" href="#" style="margin-left:auto">Export →</a></div>
+    <div class="pad" style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:8px">
+      <div><b style="color:var(--ink)">{date} · {user}</b> — {action, e.g. created {dashed_code} {name}}</div>
+      <!-- includes create/rename/auto-link events -->
+    </div></div>
+</div>
+<div class="repcards" style="margin-bottom:16px">
+  <div class="repcard"><span class="t">Chart of Accounts</span><span class="d">Full COA with codes, levels, parents, balances.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+  <div class="repcard"><span class="t">Trial Balance</span><span class="d">Dr/Cr balances by account for a period.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+  <div class="repcard"><span class="t">General Ledger</span><span class="d">Full history per account with running balance.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+  <div class="repcard"><span class="t">Account Balance</span><span class="d">Closing balances by account and currency.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+</div>
+<div class="card"><div class="card-h"><h2>COA Settings</h2><span class="fmt" style="margin-left:auto">admin</span></div>
+  <div class="pad"><div class="g3">
+    <div class="fld"><div class="l">Numbering</div><div class="v">X-XX-XXX hierarchical · stored dash-less</div></div>
+    <div class="fld"><div class="l">Method</div><div class="v">Inherited from company ({Accrual|Cash})</div></div>
+    <div class="fld"><div class="l">Depth</div><div class="v">{n} default · unlimited via parent_id</div></div>
+    <div class="fld"><div class="l">Manual codes</div><div class="v">Admin only</div></div>
+    <div class="fld"><div class="l">Period locking</div><div class="v">{status}</div></div>
+    <div class="fld"><div class="l">Approvals</div><div class="v">{threshold}</div></div>
+  </div></div>
+</div>
+```
+
+Functional spec: Import/Export card — [📥 Import COA][📥 Opening
+Balances][📥 Mappings][📤 Export COA][📤 Balances]; reuse existing import/
+export handlers where present. Audit card — rows are date · user — action,
+including create/rename/auto-link events, matching the dashboard's Recent
+Changes feed but as the full history; [Export →]. Report cards (existing
+pages if present, else minimal pages using the system report pattern):
+Chart of Accounts, Trial Balance, General Ledger, Account Balance (+
+Account Activity per §14.1's parenthetical) — each PDF+Excel, Open →.
+Settings card: Numbering (fixed description of the X-XX-XXX scheme),
+Method ("Inherited from company" — always read-only here, per §-1), Depth,
+Manual codes (Admin only), Period locking, Approvals. Use existing settings
+handlers; create a minimal page only if none exists.
+
+---
+
+## 16 · CODE MODEL + GENERATION + VALIDATION (ENGINE)
+
+16.1 **Storage**: `account_code` is 6 digits, no dashes. `display_code` is
+     computed as dashed X-XX-XXX (digit 1 = class, digits 2–3 = category/
+     parent, digits 4–6 = detail) — see §9 and §10's algorithms for the
+     exact transform.
+16.2 **Levels**: L1/L2 have `is_group=true`, `allow_posting=false`; L3 has
+     `allow_posting=true`. `is_system_account` protects critical accounts
+     from edit and delete, enforced in the UI (§8, §11) AND server-side —
+     a system account must reject a delete attempt even if someone bypasses
+     the UI.
+16.3 **Auto-generation**: next detail = max existing detail under the
+     class+category prefix, +1, zero-padded to 3 digits; regenerates
+     automatically on class/parent change while in Auto mode (§9's
+     algorithm).
+16.4 **Manual mode**: admin only. **Hybrid mode**: suggests the next code
+     but leaves it editable.
+16.5 **Live validation**: format (6-digit), uniqueness, class-parent prefix
+     match — block save on any error; the edit page's own current code is
+     always accepted as "unchanged" (§10's algorithm, exact validation
+     order).
+16.6 **Posting rules**: block posting to any group account (L1/L2); enforce
+     the account's `posting_behaviour` (debit-only/credit-only/mixed) on
+     every posting attempt; when `allow_adjustments=false`, block MANUAL
+     adjustment journals but ALWAYS permit Bank-Reconciliation postings —
+     this exemption is not optional and must hold even when adjustments are
+     otherwise locked down.
+16.7 **References are by `account_id`, never by code** — this is what
+     makes controlled code migration (§16.8) possible without breaking
+     historical journal lines. Keep `legacy_code` for migration/audit
+     purposes.
+16.8 **Format lock**: once transactions exist against a company's chart,
+     the code format can't change freely. A format change after that point
+     requires the [Start Controlled Migration] path: map every old code to
+     its new code, re-point references (still by `account_id`, so this is
+     a display-code remap, not a re-key), and preserve the full audit
+     trail of the migration itself.
+
+---
+
+## 17 · METHOD INHERITANCE
+
+17.1 `coa.setup` reads `companies.accounting_method` and shows the inherited
+     chip; the default COA template and which accounts/modules are active
+     reflect that method (accrual: AR/AP/inventory accounts active; cash:
+     those stay inactive). "Change at company level" is admin-only and
+     links out to the company edit page — it is never a control inside this
+     module.
+17.2 Reporting throughout this module (Trial Balance, General Ledger, etc.)
+     honours `companies.reporting_preference` and the periods' basis
+     labeling — consistent with how the rest of the system already reports
+     under the company's chosen method.
+
+---
+
+## 18 · ACCESSIBILITY / RESPONSIVE
+
+18.1 ARIA: option cards use `role=radio` / `aria-checked`; type filter boxes
+     `aria-pressed`; the tree uses `role=tree` with `aria-expanded` on
+     group nodes; ⋯ menus `aria-haspopup`; balanced/live-validation
+     messages `aria-live`; focus rings `#94a3b8`; table `th` uses `scope`.
+18.2 ≤1100px: `.statgrid` 3-col. ≤1000px: `.kpis`/`.g4`/`.grid2`/
+     `.optcards` collapse per their own breakpoints (see §3 CSS). ≤768px:
+     slim rail hidden; tables horizontal-scroll inside cards; no horizontal
+     PAGE scrollbar at 1280/1024/768.
+
+---
+
+## 19 · RAILS REGISTRY (per page — rails feature itself unchanged)
+
+- `coa.dashboard` → Quick Nav: Account List, Add Account, Structure Setup,
+  Reports.
+- `coa.setup` → Quick Nav: Company Setup, Chart of Accounts, Account List.
+- `coa.index` → Views: All (active), Assets, Liabilities, Equity, Income,
+  Expenses · Reports: Trial Balance, General Ledger.
+- `coa.create` → Quick Nav: Account List, Account Tree, Structure Setup.
+- `coa.edit` → Quick Nav: Account List, Register, Audit.
+- `coa.tree` → Quick Nav: Account Tree, Account Types, Add Account.
+- `coa.mapping` → Quick Nav: Validate Mapping, Account List, Settings.
+- `coa.opening` → Quick Nav: Verify Balance, Post Opening, Account List.
+- `coa.budgets` → Quick Nav: New Journal, Set Budget, Open Budgeting.
+- `coa.reports` → Quick Nav: Trial Balance, General Ledger, Chart of
+  Accounts.
+
+The drawer stays hidden whenever the full rail isn't displayed, on every
+page — a global rails behavior, not per-page configuration.
+
+---
+
+## 20 · CONSTRAINTS (recap of §-1, don't lose these under load)
+
+- No changes to the rails feature itself or to any other module.
+- No changes to journal posting, period-locking, or approval-engine
+  handler internals — this module calls them, never reimplements them.
+- No new packages unless something here is genuinely impossible without
+  one — flag it and ask first.
+- ONE shared component/CSS per pattern (one chip partial, one table
+  partial, one tree partial reused across all ten pages — not ten copies).
+- No hardcoded sample data anywhere — live registry only. Every
+  `{placeholder}` above is a real data binding, not a literal string to
+  ship. The structure-setup preview table (§7) is the one deliberate
+  exception — it's a live-computed preview, not real accounts, and should
+  be clearly a preview, not indistinguishable from real data.
+- References are by `account_id`, never by display code (§16.7).
+- DO NOT re-ask the accounting method anywhere in this module (§-1, §17).
+- Old module fully removed per §1 before new pages are wired into the menu.
+
+---
+
+## 21 · VERIFY (every page — all ten)
+
+21.1 **Route check:** all ten routes exist, render, and are reachable from
+     the module menu; dashboard and structure setup both present; structure
+     setup shows the inherited chip and NO method selector anywhere on the
+     page.
+21.2 **Action audit:** every button listed in §6–§15 triggers the SAME
+     handler/route as the equivalent old-module control did where one
+     existed (spot-click each) — dashboard's actions, setup's Customize/
+     Activate/migration/change-at-company, list's view/edit/export, add's
+     save/save & new/mode toggle, edit's save + live check, tree's
+     expand/add, mapping's validate/map + Open Budgeting/Open Recurring,
+     opening's import/verify/post, register's print/export, budgets' set/
+     open, journals' new/reverse, import/export, audit's export, reports'
+     Opens, settings' edits.
+21.3 **Code math:** auto-gen produces the correct next detail per prefix
+     (§16.3); dashed display always equals the stored dash-less code
+     transformed per §9/§10's algorithms; live validation blocks
+     duplicate/out-of-prefix/bad-format codes; edit accepts its own
+     current code; the structure-setup preview re-formats correctly on
+     every format/segment/level/separator change.
+21.4 **Posting rules:** posting to a group account is blocked; deleting a
+     system account is blocked; a class/parent mismatch is blocked;
+     `posting_behaviour` is enforced; `allow_adjustments=false` blocks
+     manual adjustments while still allowing bank-reconciliation postings.
+21.5 **Method:** the inherited chip is correct for the company; the default
+     COA template matches the company's method; the format lock and
+     controlled-migration path are enforced once transactions exist.
+21.6 **Rails:** slim rail + drawer + per-page pins + global pin behave
+     exactly as the existing rails implementation on these and every other
+     page; pages render the §19 registries.
+21.7 Text-size matrix 90/100/110/125: no clipping; no console/build errors.
+
+## 22 · REPORT
+
+Produce, in this order:
+1. Old-module inventory (§0) and what was removed vs migrated (§1) —
+   including confirmation that `chart_of_accounts`, `accounting_settings`,
+   and `method_conversions` were never touched by the removal.
+2. Files touched for the new module, grouped by page/route.
+3. Page-route table — all ten, confirmed built, old routes confirmed gone.
+4. Action-mapping table: old control → new location → handler confirmed
+   same.
+5. Chip/badge table (type/level/posting/behaviour/status classes used per
+   state, matching §4).
+6. Rails registry per page (§19), confirmed rendered.
+7. Confirmation that all cross-module links (Sales/Purchasing/Payroll/
+   Banking mapping cards, Budgeting/Recurring Journals linkage cards) point
+   at real, working routes.
+8. Explicit confirmation: rails feature and all other modules unchanged,
+   the accounting method is asked only at Company Creation and never
+   re-presented here, references remain by `account_id`, and no page was
+   skipped.

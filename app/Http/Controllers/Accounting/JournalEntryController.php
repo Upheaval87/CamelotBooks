@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Branch;
+use App\Models\CostCenter;
+use App\Models\Currency;
 use App\Models\JournalEntry;
 use App\Services\Accounting\JournalPostingEngine;
 use Illuminate\Http\Request;
@@ -29,8 +31,29 @@ class JournalEntryController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->forDateRange($request->date_from, $request->date_to);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('journal_number', 'like', "%{$search}%")
+                  ->orWhere('memo', 'like', "%{$search}%")
+                  ->orWhere('reference', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            if ($request->type === 'adjusting') {
+                $query->where('is_adjusting_entry', true);
+            } else {
+                $query->where('is_adjusting_entry', false);
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->date_to);
         }
 
         if ($request->filled('branch_id')) {
@@ -69,7 +92,9 @@ class JournalEntryController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('accounting.journal-entries.create', compact('accounts', 'branches'));
+        $costCenters = CostCenter::where('company_id', $companyId)->active()->orderBy('code')->get();
+
+        return view('accounting.journal-entries.create', compact('accounts', 'branches', 'costCenters'));
     }
 
     public function store(Request $request)
@@ -90,6 +115,7 @@ class JournalEntryController extends Controller
             'lines.*.credit' => 'nullable|numeric|min:0',
             'lines.*.memo' => 'nullable|string|max:500',
             'lines.*.branch_id' => 'nullable|exists:branches,id',
+            'lines.*.cost_center_id' => 'nullable|exists:cost_centers,id',
         ]);
 
         $data = [
@@ -107,6 +133,7 @@ class JournalEntryController extends Controller
                     'credit' => $line['credit'] ?? 0,
                     'memo' => $line['memo'] ?? null,
                     'branch_id' => $line['branch_id'] ?? null,
+                    'cost_center_id' => $line['cost_center_id'] ?? null,
                 ];
             }, $validated['lines']),
         ];
@@ -121,6 +148,75 @@ class JournalEntryController extends Controller
             return redirect()->route('accounting.journal-entries.show', $entry)
                 ->with('success', 'Journal entry created successfully.');
         } catch (\InvalidArgumentException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
+    public function edit(JournalEntry $journalEntry)
+    {
+        if (!$journalEntry->isDraft()) {
+            return redirect()->route('accounting.journal-entries.show', $journalEntry)
+                ->with('error', 'Only draft journal entries can be edited. Posted entries must be reversed.');
+        }
+
+        $companyId = session('current_company_id');
+        $journalEntry->load('lines.account', 'lines.costCenter', 'lines.branch');
+
+        $accounts = Account::where('company_id', $companyId)->active()->orderBy('code')->get();
+        $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
+        $costCenters = CostCenter::where('company_id', $companyId)->active()->orderBy('code')->get();
+        $currencies = Currency::query()->active()->ordered()->get();
+
+        return view('accounting.journal-entries.edit', compact('journalEntry', 'accounts', 'branches', 'costCenters', 'currencies'));
+    }
+
+    public function update(Request $request, JournalEntry $journalEntry)
+    {
+        if (!$journalEntry->isDraft()) {
+            return redirect()->route('accounting.journal-entries.show', $journalEntry)
+                ->with('error', 'Only draft journal entries can be edited.');
+        }
+
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'reference' => 'nullable|string|max:255',
+            'memo' => 'nullable|string|max:1000',
+            'branch_id' => 'nullable|exists:branches,id',
+            'is_adjusting_entry' => 'sometimes|boolean',
+            'lines' => 'required|array|min:2',
+            'lines.*.account_id' => 'required|exists:accounts,id',
+            'lines.*.debit' => 'nullable|numeric|min:0',
+            'lines.*.credit' => 'nullable|numeric|min:0',
+            'lines.*.memo' => 'nullable|string|max:500',
+            'lines.*.branch_id' => 'nullable|exists:branches,id',
+            'lines.*.cost_center_id' => 'nullable|exists:cost_centers,id',
+        ]);
+
+        try {
+            $journalEntry->update([
+                'date' => $validated['date'],
+                'reference' => $validated['reference'] ?? null,
+                'memo' => $validated['memo'] ?? null,
+                'branch_id' => $validated['branch_id'] ?? null,
+                'is_adjusting_entry' => $validated['is_adjusting_entry'] ?? false,
+            ]);
+
+            $journalEntry->lines()->delete();
+            foreach ($validated['lines'] as $line) {
+                $journalEntry->lines()->create([
+                    'company_id' => session('current_company_id'),
+                    'account_id' => $line['account_id'],
+                    'debit' => $line['debit'] ?? 0,
+                    'credit' => $line['credit'] ?? 0,
+                    'memo' => $line['memo'] ?? null,
+                    'branch_id' => $line['branch_id'] ?? null,
+                    'cost_center_id' => $line['cost_center_id'] ?? null,
+                ]);
+            }
+
+            return redirect()->route('accounting.journal-entries.show', $journalEntry)
+                ->with('success', 'Journal entry updated successfully.');
+        } catch (\Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
     }

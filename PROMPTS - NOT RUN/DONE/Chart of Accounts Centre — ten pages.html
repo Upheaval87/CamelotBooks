@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chart of Accounts Centre — Consolidated + Structure Setup</title>
+<style>
+  :root{--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--sec-2:#149897;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;
+    --red-2:#b91c1c;--green:#15803d;--amber-2:#b45309;--steel:#46708C;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}.spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.9);border-color:var(--border);color:#374151}
+  .btn-ghost:hover{border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-sec{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+  .btn-xs{height:30px;padding:0 11px;font-size:11.5px;border-radius:9px}
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+  .crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--ink)}.crumbs .here{color:var(--ink);font-weight:800}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:26px 0 16px}
+  .page-head h1{font-size:22px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .pad{padding:24px 30px}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 26px}
+  @media (max-width:1000px){.g4{grid-template-columns:1fr 1fr}}@media (max-width:640px){.g4{grid-template-columns:1fr}}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px}
+  @media (max-width:900px){.g3{grid-template-columns:1fr 1fr}}
+  .f label{display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .f label .req{color:var(--red)}
+  .f .in{width:100%;height:48px;border-radius:14px;border:1px solid var(--border);background:#fff;padding:0 16px;font-size:14px;color:var(--ink);font-family:inherit}
+  .f .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .f .in:disabled{background:rgba(238,244,244,.7);color:var(--muted)}
+  .f select.in{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:34px}
+  .f .hint{margin-top:7px;font-size:10.5px;color:var(--faint)}.f .hint b{color:var(--green)}
+  .tog{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:12.5px;font-weight:700;color:var(--ink)}
+  .sw{width:38px;height:22px;border-radius:999px;background:rgba(17,69,75,.15);position:relative;cursor:pointer;transition:background .2s;flex:none}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s}
+  .sw.on{background:var(--sec)}.sw.on::after{left:19px}
+  .segc{display:inline-flex;background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:13px;padding:4px;gap:4px;width:100%}
+  .segc button{height:40px;flex:1;padding:0 12px;border:none;border-radius:10px;background:none;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .segc button.on{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff;box-shadow:var(--shadow-teal)}
+  .segc button:disabled{opacity:.5;cursor:not-allowed}
+  .msg{margin-top:8px;font-size:11px;font-weight:700;line-height:1.5}
+  .msg.ok{color:var(--green)}.msg.err{color:var(--red-2)}.msg.neutral{color:var(--faint);font-weight:600}
+  .fld .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .fld .v{margin-top:4px;font-size:13px;font-weight:600;color:var(--ink)}
+  .tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .tchip.grp{background:rgba(70,112,140,.10);border-color:rgba(70,112,140,.4);color:var(--steel)}
+  .tchip.post{background:rgba(22,163,74,.10);border-color:rgba(22,163,74,.35);color:var(--green)}
+  .tchip.sys{background:rgba(185,28,28,.08);border-color:rgba(185,28,28,.3);color:var(--red-2)}
+  .tchip.dr{background:rgba(217,119,6,.10);border-color:rgba(217,119,6,.35);color:var(--amber-2)}
+  .tchip.cr{background:rgba(70,112,140,.10);border-color:rgba(70,112,140,.4);color:var(--steel)}
+  .tchip.mix{background:rgba(18,143,142,.10);border-color:rgba(18,143,142,.35);color:var(--sec)}
+  .tchip.lv{background:rgba(17,69,75,.05);border-color:var(--line);color:var(--muted)}
+  .chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border-radius:999px;font-size:10.5px;font-weight:800;background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.3);color:var(--sec)}
+  .tree{list-style:none}
+  .trow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;cursor:pointer}
+  .trow:hover{background:rgba(17,69,75,.05)}
+  .trow .car{width:16px;color:var(--faint);transition:transform .15s;flex:none}
+  li.closed>.trow .car{transform:rotate(-90deg)}li.closed>ul{display:none}
+  .tcode{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;font-weight:700;color:var(--deep-1);min-width:76px}
+  .tname{font-size:13px;font-weight:600;color:var(--ink)}
+  .tree ul{list-style:none;padding-left:26px;border-left:1.5px solid var(--line);margin-left:17px}
+  .errcard{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(185,28,28,.3);background:rgba(185,28,28,.06);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--red-2);font-weight:600;line-height:1.5}
+  .okchip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:800;background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+  .warn{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(217,119,6,.4);background:rgba(217,119,6,.07);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--amber-2);font-weight:600;line-height:1.5}
+  .lockcard{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(185,28,28,.3);background:rgba(185,28,28,.06);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--red-2);font-weight:600;line-height:1.5}
+  .optcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:900px){.optcards{grid-template-columns:1fr}}
+  .optcard{border:1.5px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;background:#fff;position:relative}
+  .optcard:hover{border-color:rgba(17,69,75,.35)}
+  .optcard.sel{border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .optcard .rd{position:absolute;top:14px;right:14px;width:18px;height:18px;border-radius:50%;border:2px solid var(--border)}
+  .optcard.sel .rd{border-color:var(--sec);background:var(--sec);box-shadow:inset 0 0 0 3px #fff}
+  .optcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+  .optcard .d{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .optcard .ex{margin-top:10px;display:flex;flex-direction:column;gap:4px}
+  .optcard .ex span{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--deep-1);background:rgba(17,69,75,.05);border:1px solid var(--line);border-radius:6px;padding:3px 8px;width:max-content}
+  .segrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .segrow:last-child{border-bottom:none}
+  .segrow .nm{flex:1;font-weight:600;color:var(--ink)}
+  .segrow input{width:70px;height:38px;border-radius:10px;border:1px solid var(--border);text-align:center;font-size:13px;font-family:inherit}
+  .result{margin-top:12px;display:inline-flex;align-items:center;gap:10px;border-radius:12px;padding:10px 16px;background:rgba(18,143,142,.08);border:1px dashed rgba(18,143,142,.5);font-size:12px;font-weight:700;color:var(--sec)}
+  .result .mono{font-size:15px;font-weight:800}
+  .stepper{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+  .st{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:800;background:rgba(18,143,142,.12);border:1px solid rgba(18,143,142,.5);color:var(--sec)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card)}
+  .kpi .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .kpi .v{margin-top:6px;font-size:1.25rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi .n{margin-top:3px;font-size:10.5px;color:var(--faint)}
+  .kpi.hero{border:none;background:linear-gradient(135deg,var(--sec-2),var(--sec) 60%,#0c7a79)}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}
+  .kpi.warn .v{color:var(--amber-2)}
+  @media (max-width:1000px){.kpis{grid-template-columns:1fr 1fr}}
+  .statgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .fbox{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.85);cursor:pointer;text-align:left}
+  .fbox.on{border-color:rgba(18,143,142,.55);box-shadow:0 0 0 3px rgba(18,143,142,.12)}
+  .fbox .t{width:2rem;height:2rem;border-radius:.625rem;display:grid;place-items:center;color:#fff;flex:none}
+  .t-ink{background:linear-gradient(180deg,#17565d,#0a2e32)}.t-mint{background:#7FD1C0;color:#0c3539}.t-amber{background:#d97706}.t-steel{background:#46708C}.t-red{background:#dc2626}.t-teal{background:linear-gradient(180deg,#149897,#128F8E)}
+  .fbox .l{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .fbox .v{font-size:15px;font-weight:800;color:var(--ink)}
+  @media (max-width:1100px){.statgrid{grid-template-columns:repeat(3,1fr)}}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  .search{position:relative;flex:1;min-width:220px;max-width:420px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .search .in2{width:100%;height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 12px 0 36px;font-size:13px;color:var(--ink);font-family:inherit}
+  select.sel{height:40px;border-radius:8px;border:1px solid var(--border);background:#fff;padding:0 30px 0 12px;font-size:13px;color:var(--ink);font-family:inherit;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:860px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th.num{text-align:right}
+  tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{padding:12px;border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink);background:rgba(17,69,75,.03)}
+  .em{color:var(--muted)}.dash{color:var(--faint)}
+  .numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  .numr.bold{font-weight:800}.numr.red{color:var(--red-2);font-weight:700}.numr.green{color:var(--green);font-weight:700}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .pagi{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--line)}
+  .pagi .t{font-size:12px;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:1000px){.grid2{grid-template-columns:1fr}}
+  .mapcard{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.85);padding:16px 18px}
+  .mapcard .t{font-size:13px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .maprow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:12px;color:var(--muted)}
+  .maprow:last-child{border-bottom:none}
+  .maprow .acc{font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;color:var(--deep-1);background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);border-radius:999px;padding:3px 10px}
+  .repcards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media (max-width:1100px){.repcards{grid-template-columns:1fr 1fr}}@media (max-width:700px){.repcards{grid-template-columns:1fr}}
+  .repcard{border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card);padding:16px;display:flex;flex-direction:column;gap:8px}
+  .repcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+  .repcard .d{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .repcard .foot{margin-top:auto;display:flex;gap:6px;align-items:center}
+  .fmt{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--deep-1);background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);border-radius:999px;padding:2px 8px}
+  .open-l{margin-left:auto;font-size:11px;font-weight:800;color:var(--sec);text-decoration:none}
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + 12px)}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+<header class="tealbar">
+  <div class="row1"><span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div></div>
+  <div class="row2"><a class="navitem" href="#">Sales</a><a class="navitem" href="#">Purchasing</a><a class="navitem" href="#">Banking</a><a class="navitem active" href="#">Accounts</a><a class="navitem" href="#">Reports</a></div>
+</header>
+<div class="wrap">
+
+<!-- 1 · DASHBOARD -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">1 · COA Dashboard</span>
+  <div class="page-head"><div><h1>Chart of Accounts</h1><div class="sub">Hierarchical X-XX-XXX · the classification engine every module posts through.</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">📁 Manage Groups</button><button class="btn btn-ghost btn-sm">📥 Import</button><button class="btn btn-ghost btn-sm">📤 Export COA</button><button class="btn btn-ghost btn-sm">📊 Reports</button><button class="btn btn-cta btn-sm">➕ Add Account</button></div></div>
+  <div class="kpis" style="margin-bottom:12px">
+    <div class="kpi hero"><div class="l">Total Accounts</div><div class="v">186</div><div class="n" style="color:#dff7f6">178 active · 8 inactive</div></div>
+    <div class="kpi"><div class="l">Assets</div><div class="v">52</div><div class="n">1xxx · debit</div></div>
+    <div class="kpi"><div class="l">Liabilities</div><div class="v">38</div><div class="n">2xxx · credit</div></div>
+    <div class="kpi"><div class="l">Equity</div><div class="v">12</div><div class="n">3xxx · credit</div></div></div>
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi"><div class="l">Income</div><div class="v">34</div><div class="n">4xxx · credit</div></div>
+    <div class="kpi"><div class="l">Expenses</div><div class="v">72</div><div class="n">5xxx · debit</div></div>
+    <div class="kpi warn"><div class="l">Without Mapping</div><div class="v">3</div><div class="n"><a class="open-l" href="#">Fix mappings →</a></div></div>
+    <div class="kpi"><div class="l">Groups (non-posting)</div><div class="v">28</div><div class="n">Level 1 &amp; 2</div></div></div>
+  <div class="card"><div class="card-h"><h2>Recent Account Changes</h2><a class="open-l" href="#" style="margin-left:auto">Audit trail →</a></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:12%">When</th><th style="width:12%">User</th><th style="width:14%">Account</th><th style="width:30%">Change</th><th style="width:12%">Type</th><th style="width:10%">Action</th></tr></thead>
+      <tbody>
+        <tr><td class="em">12 Aug</td><td class="em">ES</td><td class="mono">5-02-010</td><td class="em">Created “Software Subscriptions” under 5-02</td><td><span class="tchip dr">Expense</span></td><td class="em">Create</td></tr>
+        <tr><td class="em">10 Aug</td><td class="em">ES</td><td class="mono">5-01-002</td><td class="em">Mapped to Budget line “Rent”</td><td><span class="tchip dr">Expense</span></td><td class="em">Map</td></tr>
+        <tr><td class="em">01 Aug</td><td class="em">SYS</td><td class="mono">5-03-001</td><td class="em">Auto-linked to Recurring “Depreciation”</td><td><span class="tchip dr">Expense</span></td><td class="em">Link</td></tr>
+      </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Account List">📒</button><button class="s-ic" data-tip="Add Account">＋</button><button class="s-ic" data-tip="Structure Setup">🧩</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 2 · STRUCTURE SETUP (method inherited) -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">2 · COA Structure Setup — method inherited from company</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Accounts</a> › <span class="here">Structure Setup</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Customize</button><button class="btn btn-cta btn-sm">Activate &amp; Lock Format</button></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Accounting method</h2><span class="chip" style="margin-left:8px">Inherited · Accrual (from company)</span>
+    <div class="right"><button class="btn btn-ghost btn-xs">Change at company level</button></div></div>
+    <div class="pad"><div class="warn">ⓘ <span>The method (accrual/cash) is set once at <b>Company Creation</b> and drives which accounts/modules are active. The coding structure below is independent of it.</span></div></div></div>
+  <div class="card"><div class="card-h"><h2>Code structure · segments · generation · activate</h2></div>
+    <div class="pad">
+      <div class="stepper"><span class="st">1 · Code structure</span><span class="st">2 · Levels &amp; segments</span><span class="st">3 · Generation</span><span class="st">4 · Generate &amp; activate</span></div>
+      <div class="optcards" id="sfmt" style="margin-top:12px">
+        <div class="optcard" data-f="simple"><span class="rd"></span><div class="t">Simple Numeric (4-digit)</div><div class="ex"><span>1000 Cash</span><span>4000 Sales</span><span>5000 Salaries</span></div></div>
+        <div class="optcard" data-f="num"><span class="rd"></span><div class="t">Hierarchical Numeric</div><div class="ex"><span>101001 Cash</span><span>501001 Salaries</span></div></div>
+        <div class="optcard sel" data-f="sep"><span class="rd"></span><div class="t">Hierarchical With Separators</div><div class="ex"><span>1-01-001 Cash</span><span>5-01-001 Salaries</span></div></div></div>
+      <div class="grid2" style="margin-top:16px">
+        <div>
+          <div class="segrow"><span class="nm">Number of levels</span><select id="slv" style="height:38px;border-radius:10px;border:1px solid var(--border);padding:0 10px;font-family:inherit"><option>2</option><option selected>3</option><option>4</option></select></div>
+          <div id="sseg"><div class="segrow"><span class="nm">Seg 1 · Class</span><input data-s="0" value="1"></div>
+            <div class="segrow"><span class="nm">Seg 2 · Group</span><input data-s="1" value="2"></div>
+            <div class="segrow"><span class="nm">Seg 3 · Detail</span><input data-s="2" value="3"></div></div>
+          <div class="segrow"><span class="nm">Separator</span><input id="ssep" value="-" style="width:50px"></div>
+          <div class="result">Result <span class="mono" id="sres">5-01-001</span></div></div>
+        <div>
+          <div class="optcards" id="sgen" style="grid-template-columns:1fr">
+            <div class="optcard sel" data-g="auto"><span class="rd"></span><div class="t">Automatic (Recommended)</div><div class="d">System generates next available code.</div></div>
+            <div class="optcard" data-g="manual"><span class="rd"></span><div class="t">Manual (Admin only)</div></div>
+            <div class="optcard" data-g="hybrid"><span class="rd"></span><div class="t">Hybrid (suggest + edit)</div></div></div></div>
+      </div>
+      <div class="pad" style="border-top:1px solid var(--line)">
+        <table><thead><tr><th style="width:24%">Code</th><th>Account</th><th style="width:16%">Type</th><th style="width:16%">Level</th></tr></thead>
+          <tbody id="scoa">
+            <tr><td class="mono codecell" data-k="cash">1-01-001</td><td>Cash</td><td>Asset</td><td>Posting</td></tr>
+            <tr><td class="mono codecell" data-k="bank">1-01-002</td><td>Bank</td><td>Asset</td><td>Posting</td></tr>
+            <tr><td class="mono codecell" data-k="sales">4-01-001</td><td>Sales Revenue</td><td>Income</td><td>Posting</td></tr>
+            <tr><td class="mono codecell" data-k="sal">5-01-001</td><td>Salaries Expense</td><td>Expense</td><td>Posting</td></tr>
+          </tbody></table>
+        <div class="warn" style="margin-top:12px">⚠ <span><b>Format lock:</b> once transactions exist the format can no longer be changed freely; a controlled migration is required.</span></div>
+      </div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Account List">📒</button><button class="s-ic" data-tip="Company Setup">⚙</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 3 · ACCOUNT LIST -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">3 · Account List — hierarchical codes, level + posting columns</span>
+  <div class="page-head"><div><h1>Accounts</h1><div class="sub">Stored dash-less · displayed dashed · groups non-posting.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">⇩ Export</button><button class="btn btn-cta btn-sm">➕ New Account</button></div></div>
+  <div class="card"><div class="pad" style="padding-bottom:0">
+    <div class="statgrid">
+      <button class="fbox on"><span class="t t-ink">∑</span><span><span class="l">All</span><span class="v" style="display:block">186</span></span></button>
+      <button class="fbox"><span class="t t-teal">1</span><span><span class="l">Assets</span><span class="v" style="display:block">52</span></span></button>
+      <button class="fbox"><span class="t t-steel">2</span><span><span class="l">Liabilities</span><span class="v" style="display:block">38</span></span></button>
+      <button class="fbox"><span class="t t-mint">3</span><span><span class="l">Equity</span><span class="v" style="display:block">12</span></span></button>
+      <button class="fbox"><span class="t t-mint">4</span><span><span class="l">Income</span><span class="v" style="display:block">34</span></span></button>
+      <button class="fbox"><span class="t t-amber">5</span><span><span class="l">Expenses</span><span class="v" style="display:block">72</span></span></button></div>
+    <div class="controls"><div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in2" placeholder="Name or code (1-01-001)…"></div>
+      <select class="sel"><option>All Types</option></select><select class="sel"><option>All Levels</option></select><select class="sel"><option>Active + Inactive</option></select></div></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:11%">Code</th><th style="width:20%">Account Name</th><th style="width:9%">Type</th><th style="width:9%">Level</th><th style="width:10%">Posting</th><th style="width:10%">Behaviour</th><th class="num" style="width:12%">Balance (K)</th><th style="width:8%">Status</th><th style="width:9%"></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1</td><td style="font-weight:700;color:var(--ink)">Assets</td><td><span class="tchip mix">Asset</span></td><td><span class="tchip lv">L1</span></td><td><span class="tchip grp">Group</span></td><td class="dash">—</td><td class="numr bold">160,400,000</td><td><span class="tchip" style="color:var(--green)">Active</span></td><td class="row-act"><button class="ibtn">👁</button></td></tr>
+        <tr><td class="mono">1-01-002</td><td style="font-weight:700;color:var(--ink)">Bank Account</td><td><span class="tchip mix">Asset</span></td><td><span class="tchip lv">L3</span></td><td><span class="tchip post">Posting</span></td><td><span class="tchip mix">Dr·Cr</span></td><td class="numr bold">110,250,000</td><td><span class="tchip" style="color:var(--green)">Active</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button></td></tr>
+        <tr><td class="mono">4-01-001</td><td style="font-weight:700;color:var(--ink)">Product Sales</td><td><span class="tchip post">Income</span></td><td><span class="tchip lv">L3</span></td><td><span class="tchip post">Posting</span></td><td><span class="tchip cr">Cr only</span></td><td class="numr bold">168,400,000</td><td><span class="tchip" style="color:var(--green)">Active</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button></td></tr>
+        <tr><td class="mono">5-01-001</td><td style="font-weight:700;color:var(--ink)">Salaries</td><td><span class="tchip dr">Expense</span></td><td><span class="tchip lv">L3</span></td><td><span class="tchip post">Posting</span></td><td><span class="tchip dr">Dr only</span></td><td class="numr bold">64,000,000</td><td><span class="tchip" style="color:var(--green)">Active</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button></td></tr>
+        <tr><td class="mono">3-02-001</td><td style="font-weight:700;color:var(--ink)">Retained Earnings</td><td><span class="tchip cr">Equity</span></td><td><span class="tchip lv">L3</span></td><td><span class="tchip sys">System</span></td><td><span class="tchip mix">Dr·Cr</span></td><td class="numr bold">131,400,000</td><td><span class="tchip" style="color:var(--green)">Active</span></td><td class="row-act"><button class="ibtn">👁</button></td></tr>
+      </tbody></table></div>
+    <div class="pagi"><span class="t">Showing 5 of 186</span><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-xs">← Prev</button><button class="btn btn-ghost btn-xs">Next →</button></div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="New Account">＋</button><button class="s-ic" data-tip="Tree">🌲</button><button class="s-ic" data-tip="Register">📄</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 4 · ADD ACCOUNT -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">4 · Add Account — auto-gen X-XX-XXX + dimensions + toggles</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Accounts</a> › <span class="here">New Account</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-ghost btn-sm">Save &amp; New</button><button class="btn btn-cta btn-sm">Save Account</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f" style="grid-column:1/-1"><label>Account Code Creation Mode</label>
+      <div class="segc"><button class="on">✅ Auto Generate (Recommended)</button><button disabled>🔒 Manual Entry (Admin only)</button></div>
+      <div class="msg neutral">Format X-XX-XXX · stored dash-less · L1/L2 groups non-posting · L3 posting.</div></div>
+    <div class="f"><label>Account Number</label><input class="in mono" id="addCode" value="1-01-003" disabled><div class="msg ok" id="addMsg">✓ Auto-generated · stored 101003 · displays 1-01-003 · Level 3 posting.</div></div>
+    <div class="f"><label>Account Type (Class) <span class="req">*</span></label><select class="in" id="addClass"><option value="1">1 · Assets</option><option value="5">5 · Expenses</option></select></div>
+    <div class="f"><label>Parent (Category) <span class="req">*</span></label><select class="in" id="addCat"><option value="01">01 · Current Assets</option></select></div>
+    <div class="f"><label>Account Name <span class="req">*</span></label><input class="in" value="Savings Bank Account"></div>
+    <div class="f"><label>Account Level</label><input class="in" value="Level 3 · Posting" disabled></div>
+    <div class="f"><label>Normal Balance</label><select class="in"><option>Debit</option><option>Credit</option></select></div>
+    <div class="f"><label>Posting Behaviour</label><select class="in"><option>Both (Mixed)</option><option>Debit only</option><option>Credit only</option></select></div>
+    <div class="f"><label>Branch</label><select class="in"><option>All</option></select></div>
+    <div class="f"><label>Department</label><select class="in"><option>—</option></select></div>
+    <div class="f"><label>Cost Centre</label><select class="in"><option>—</option></select></div>
+    <div class="f"><label>Tax Category</label><select class="in"><option>Standard 16.5%</option></select></div>
+    <div class="f"><div class="tog"><span class="sw on"></span>Tax applicable</div></div>
+    <div class="f"><div class="tog"><span class="sw on"></span>Reconciliation required</div></div>
+    <div class="f"><div class="tog"><span class="sw on"></span>Allow journal adjustments</div><div class="hint">Off = manual adjustment journals blocked. <b>Bank reconciliation postings always allowed.</b></div></div>
+    <div class="f"><div class="tog"><span class="sw"></span>Cost centre required</div></div>
+  </div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Account List">📒</button><button class="s-ic" data-tip="Tree">🌲</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 5 · EDIT ACCOUNT -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">5 · Edit Account — live X-XX-XXX validation</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Accounts</a> › <a href="#">5-01-001</a> › <span class="here">Edit</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-cta btn-sm">Save Changes</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Account Number (display)</label><input class="in mono" id="editCode" value="5-01-001"><div class="msg ok" id="editMsg">✓ 5-01-001 is the current code (stored 501001).</div></div>
+    <div class="f"><label>Account Name <span class="req">*</span></label><input class="in" value="Salaries"></div>
+    <div class="f"><label>Account Type (Class)</label><select class="in" id="editClass"><option value="5">5 · Expenses</option><option value="1">1 · Assets</option></select></div>
+    <div class="f"><label>Parent (Category)</label><select class="in" id="editCat"><option value="01">01 · Operating Expenses</option></select></div>
+    <div class="f"><label>Posting Behaviour</label><select class="in"><option>Both (Mixed)</option></select></div>
+    <div class="f"><div class="tog"><span class="sw on"></span>Tax applicable</div></div>
+    <div class="f"><div class="tog"><span class="sw"></span>Allow journal adjustments</div><div class="hint">Off = manual adjustment journals blocked. <b>Bank reconciliation postings always allowed.</b></div></div>
+    <div class="f"><div class="tog"><span class="sw"></span>Cost centre required</div></div>
+  </div>
+  <div class="pad" style="border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)">Try <b class="mono" style="color:var(--ink)">5-01-002</b> (exists → blocked), <b class="mono" style="color:var(--ink)">5-02-010</b> (parent mismatch → blocked) or <b class="mono" style="color:var(--ink)">5-01-010</b> (available).</div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Account List">📒</button><button class="s-ic" data-tip="Register">📄</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 6 · TREE + TYPES + VALIDATION -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">6 · Account Tree + Types + validation rules</span>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><h2>Chart of Accounts — Tree</h2><div class="right"><button class="btn btn-ghost btn-xs">Expand</button><button class="btn btn-cta btn-xs">＋ Add</button></div></div>
+      <div class="pad"><ul class="tree" id="tree">
+        <li><div class="trow grp"><span class="car">▾</span><span class="tcode">1</span><span class="tname">Assets</span><span class="tchip grp">Group</span></div>
+          <ul><li><div class="trow grp"><span class="car">▾</span><span class="tcode">1-01</span><span class="tname">Current Assets</span><span class="tchip grp">Group</span></div>
+            <ul><li><div class="trow"><span class="car"></span><span class="tcode">1-01-001</span><span class="tname">Cash</span><span class="tchip post">Posting·Dr</span></div></li>
+              <li><div class="trow"><span class="car"></span><span class="tcode">1-01-002</span><span class="tname">Bank</span><span class="tchip post">Posting·Dr</span></div></li></ul></li></ul></li>
+        <li><div class="trow grp"><span class="car">▾</span><span class="tcode">5</span><span class="tname">Expenses</span><span class="tchip grp">Group</span></div>
+          <ul><li><div class="trow grp"><span class="car">▾</span><span class="tcode">5-01</span><span class="tname">Operating</span><span class="tchip grp">Group</span></div>
+            <ul><li><div class="trow"><span class="car"></span><span class="tcode">5-01-001</span><span class="tname">Salaries</span><span class="tchip post">Posting·Dr</span></div></li>
+              <li><div class="trow"><span class="car"></span><span class="tcode">5-01-002</span><span class="tname">Rent</span><span class="tchip post">Posting·Dr</span></div></li></ul></li></ul></li>
+      </ul></div>
+      <div class="pad" style="border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px">
+        <div class="errcard">❌ <span><b>Post to “1 · Assets”</b> — blocked (L1/2 groups, allow_posting=false).</span></div>
+        <div class="errcard">❌ <span><b>Delete “3-02 · Retained Earnings”</b> — blocked (is_system_account=true).</span></div>
+        <div class="errcard">❌ <span><b>Expense under Assets</b> — blocked (class must match parent’s class).</span></div>
+      </div></div>
+    <div class="card"><div class="card-h"><h2>Account Types</h2><div class="right"><button class="btn btn-ghost btn-xs">＋ Add Type</button></div></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Type</th><th>Class</th><th>Statement</th><th>Normal</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:700;color:var(--ink)">Asset</td><td class="mono">1</td><td class="em">Balance Sheet</td><td><span class="tchip dr">Debit</span></td></tr>
+          <tr><td style="font-weight:700;color:var(--ink)">Liability</td><td class="mono">2</td><td class="em">Balance Sheet</td><td><span class="tchip cr">Credit</span></td></tr>
+          <tr><td style="font-weight:700;color:var(--ink)">Equity</td><td class="mono">3</td><td class="em">Balance Sheet</td><td><span class="tchip cr">Credit</span></td></tr>
+          <tr><td style="font-weight:700;color:var(--ink)">Income</td><td class="mono">4</td><td class="em">Income Stmt</td><td><span class="tchip cr">Credit</span></td></tr>
+          <tr><td style="font-weight:700;color:var(--ink)">Expense</td><td class="mono">5</td><td class="em">Income Stmt</td><td><span class="tchip dr">Debit</span></td></tr>
+        </tbody></table></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Tree">🌲</button><button class="s-ic" data-tip="Types">🏷</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 7 · MAPPING -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">7 · Account Mapping — modules post through COA (linkages only)</span>
+  <div class="page-head" style="border:none;margin-bottom:12px"><div><h1>Account Mapping</h1><div class="sub">Validate before posting; built modules linked, not rebuilt.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">✓ Validate Mapping</button><button class="btn btn-cta btn-sm">🔗 Map Account</button></div></div>
+  <div class="grid2">
+    <div class="mapcard"><div class="t">Sales</div><div class="maprow"><span>Sales Revenue</span><span class="acc">4-01-001</span></div><div class="maprow"><span>Customer Receivable</span><span class="acc">1-02-001</span></div></div>
+    <div class="mapcard"><div class="t">Purchasing</div><div class="maprow"><span>Purchase Expense</span><span class="acc">5-02-001</span></div><div class="maprow"><span>Supplier Payable</span><span class="acc">2-01-001</span></div></div>
+    <div class="mapcard"><div class="t">Payroll <span class="tchip">built</span></div><div class="maprow"><span>Salary Expense</span><span class="acc">5-01-001</span></div><div class="maprow"><span>PAYE Payable</span><span class="acc">2-02-002</span></div></div>
+    <div class="mapcard" style="border-color:rgba(18,143,142,.4)"><div class="t">Budgeting <span class="tchip">built — linkage</span></div><div class="maprow"><span>Expense ↔ budget lines</span><span class="acc">5-01-001·002</span></div><div class="maprow"><span>Variance</span><a class="open-l" href="#">Open Budgeting →</a></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Validate">✓</button><button class="s-ic" data-tip="Account List">📒</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 8 · OPENING + REGISTER -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">8 · Opening Balances + Account Register</span>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Opening Balances — FY2026</h2>
+    <div class="right"><span class="okchip">✓ Balanced · Dr = Cr</span><button class="btn btn-ghost btn-xs">📥 Import</button><button class="btn btn-sec btn-xs">Post Opening</button></div></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:12%">Code</th><th style="width:30%">Account</th><th style="width:12%">Class</th><th class="num" style="width:14%">Debit (K)</th><th class="num" style="width:14%">Credit (K)</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1-01-001</td><td class="em">Cash</td><td><span class="tchip mix">Asset</span></td><td class="numr">98,000,000</td><td class="dash">—</td></tr>
+        <tr><td class="mono">2-01-001</td><td class="em">Accounts Payable</td><td><span class="tchip cr">Liability</span></td><td class="dash">—</td><td class="numr">7,800,000</td></tr>
+        <tr><td class="mono">3-01-001</td><td class="em">Share Capital</td><td><span class="tchip cr">Equity</span></td><td class="dash">—</td><td class="numr">131,400,000</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="3">Totals</td><td class="numr">139,200,000</td><td class="numr">139,200,000</td></tr></tfoot></table></div></div>
+  <div class="card"><div class="card-h"><h2>Register — 1-01-002 · Bank Account</h2>
+    <div class="right"><button class="btn btn-ghost btn-xs">🖨 Print</button><button class="btn btn-ghost btn-xs">⇩ Export</button></div></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:10%">Date</th><th style="width:14%">Reference</th><th style="width:32%">Description</th><th class="num" style="width:12%">Debit</th><th class="num" style="width:12%">Credit</th><th class="num" style="width:14%">Balance</th></tr></thead>
+      <tbody>
+        <tr><td class="em">14 Aug</td><td class="mono">DEP-00112</td><td class="em">Customer payment — Beta</td><td class="numr">2,500,000</td><td class="dash">—</td><td class="numr bold">110,250,000</td></tr>
+        <tr><td class="em">13 Aug</td><td class="mono">CHQ-000112</td><td class="em">Supplier — AHL</td><td class="dash">—</td><td class="numr">850,000</td><td class="numr bold">107,750,000</td></tr>
+      </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Opening">⚖</button><button class="s-ic" data-tip="Register">📄</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 9 · BUDGETS + JOURNALS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">9 · Account Budgets (→ Budgeting) + Journal Entries</span>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Account Budgets — FY2026</h2><span class="tchip" style="margin-left:8px">links to built Budgeting</span>
+    <div class="right"><button class="btn btn-ghost btn-xs">Set Budget</button><a class="open-l" href="#">Open Budgeting →</a></div></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:12%">Code</th><th style="width:30%">Account</th><th class="num" style="width:15%">Budget (K)</th><th class="num" style="width:15%">Actual YTD</th><th class="num" style="width:13%">Variance</th><th style="width:12%">Util</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">5-01-002</td><td class="em">Rent</td><td class="numr">24,000,000</td><td class="numr">16,000,000</td><td class="numr green">8,000,000</td><td><span class="tchip dr">67%</span></td></tr>
+        <tr><td class="mono">5-01-001</td><td class="em">Salaries</td><td class="numr">96,000,000</td><td class="numr">64,000,000</td><td class="numr green">32,000,000</td><td><span class="tchip dr">67%</span></td></tr>
+      </tbody></table></div></div>
+  <div class="card"><div class="card-h"><h2>Journal Entries</h2>
+    <div class="right"><button class="btn btn-ghost btn-xs">↩ Reverse</button><button class="btn btn-sec btn-xs">＋ New Journal</button></div></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:13%">Journal</th><th style="width:10%">Date</th><th style="width:40%">Description</th><th class="num" style="width:13%">Debit</th><th class="num" style="width:13%">Credit</th><th style="width:10%">Status</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">JV-009821</td><td class="em">31 Jul</td><td class="em">Payroll — DR 5-01-001 · CR 2-02-002/1-01-002</td><td class="numr">18,120,000</td><td class="numr">18,120,000</td><td><span class="tchip post">Posted</span></td></tr>
+        <tr><td class="mono">JV-009822</td><td class="em">01 Aug</td><td class="em">Depreciation — DR 5-03-001 · CR 1-03-002 (Recurring)</td><td class="numr">486,500</td><td class="numr">486,500</td><td><span class="tchip post">Posted</span></td></tr>
+      </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="New Journal">＋</button><button class="s-ic" data-tip="Budgets">📊</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 10 · IMPORT/EXPORT + AUDIT + REPORTS + SETTINGS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">10 · Import/Export · Audit · Reports · Settings</span>
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card"><div class="card-h"><h2>Import / Export</h2></div>
+      <div class="pad" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-xs">📥 Import COA</button><button class="btn btn-ghost btn-xs">📥 Opening Balances</button><button class="btn btn-ghost btn-xs">📤 Export COA</button><button class="btn btn-ghost btn-xs">📤 Balances</button></div></div>
+    <div class="card"><div class="card-h"><h2>Audit Trail</h2><a class="open-l" href="#" style="margin-left:auto">Export →</a></div>
+      <div class="pad" style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:8px">
+        <div><b style="color:var(--ink)">12 Aug · ES</b> — created 5-02-010 Software Subscriptions</div>
+        <div><b style="color:var(--ink)">01 Aug · SYS</b> — auto-linked 5-03-001 to Recurring “Depreciation”</div></div></div>
+  </div>
+  <div class="repcards" style="margin-bottom:16px">
+    <div class="repcard"><span class="t">Chart of Accounts</span><span class="d">Full COA with codes, levels, parents, balances.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Trial Balance</span><span class="d">Dr/Cr balances by account for a period.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">General Ledger</span><span class="d">Full history per account with running balance.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+    <div class="repcard"><span class="t">Account Balance</span><span class="d">Closing balances by account and currency.</span><div class="foot"><span class="fmt">PDF</span><span class="fmt">Excel</span><a class="open-l" href="#">Open →</a></div></div>
+  </div>
+  <div class="card"><div class="card-h"><h2>COA Settings</h2><span class="fmt" style="margin-left:auto">admin</span></div>
+    <div class="pad"><div class="g3">
+      <div class="fld"><div class="l">Numbering</div><div class="v">X-XX-XXX hierarchical · stored dash-less</div></div>
+      <div class="fld"><div class="l">Method</div><div class="v">Inherited from company (Accrual)</div></div>
+      <div class="fld"><div class="l">Depth</div><div class="v">3 default · unlimited via parent_id</div></div>
+      <div class="fld"><div class="l">Manual codes</div><div class="v">Admin only</div></div>
+      <div class="fld"><div class="l">Period locking</div><div class="v">Closed through Jul 2026</div></div>
+      <div class="fld"><div class="l">Approvals</div><div class="v">Journals &gt; 1M → FinMgr</div></div>
+    </div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Import">📥</button><button class="s-ic" data-tip="Audit">🕘</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+</div>
+<script>
+  var EXIST={'101001':'Cash','101002':'Bank','102001':'Customer Receivables','401001':'Product Sales','501001':'Salaries','501002':'Rent'};
+  function fmt(s){return s[0]+'-'+s.slice(1,3)+'-'+s.slice(3);}
+  function norm(v){return v.replace(/-/g,'');}
+  function nextAvail(c,cat){var pre=c+cat,max=0;Object.keys(EXIST).forEach(function(k){if(k.indexOf(pre)===0&&+k>max)max=+k;});var d=max?max+1:+(pre+'001');return String(d).padStart(6,'0');}
+  function paint(el,r){el.className='msg '+(r.e?'err':(r.o?'ok':'neutral'));el.textContent=r.m;}
+  /* add */
+  var aC=addCode,aM=addMsg,aCl=addClass,aCa=addCat;
+  function setAuto(){var s=nextAvail(aCl.value,aCa.value);aC.value=fmt(s);paint(aM,{o:1,m:'✓ Auto-generated · stored '+s+' · displays '+fmt(s)+' · Level 3 posting.'});}
+  aCl.onchange=setAuto;aCa.onchange=setAuto;setAuto();
+  /* edit live */
+  function checkEdit(){var s=norm(editCode.value),cur='501001';
+    if(!s)return paint(editMsg,{n:1,m:'Enter a code in X-XX-XXX format.'});
+    if(!/^\d{6}$/.test(s))return paint(editMsg,{e:1,m:'✗ Must be 6 digits (X-XX-XXX).'});
+    if(s===cur)return paint(editMsg,{o:1,m:'✓ '+fmt(s)+' is the current code (stored '+s+').'});
+    if(EXIST[s])return paint(editMsg,{e:1,m:'✗ '+fmt(s)+' already exists — '+EXIST[s]+'.'});
+    var pre=editClass.value+editCat.value;
+    if(s.indexOf(pre)!==0)return paint(editMsg,{e:1,m:'✗ '+fmt(s)+' does not match class/parent.'});
+    paint(editMsg,{o:1,m:'✓ '+fmt(s)+' is available (stored '+s+').'});}
+  editCode.oninput=checkEdit;editClass.onchange=checkEdit;editCat.onchange=checkEdit;
+  /* structure setup */
+  var st={f:'sep',g:'auto',seg:[1,2,3],sep:'-',lv:3};
+  var CLS={cash:'1',bank:'1',sales:'4',sal:'5'},GRP={cash:'01',bank:'01',sales:'01',sal:'01'},DET={cash:'001',bank:'002',sales:'001',sal:'001'};
+  function pad(v,l){v=String(v);while(v.length<l)v='0'+v;return v.slice(0,l);}
+  function scode(k){if(st.f==='simple')return{cash:'1000',bank:'1100',sales:'4000',sal:'5000'}[k];
+    var p=[pad(CLS[k],st.seg[0]),pad(GRP[k],st.seg[1]),pad(DET[k],st.seg[2])].slice(0,st.lv);
+    return st.f==='sep'?p.join(st.sep):p.join('');}
+  function srender(){document.querySelectorAll('#scoa .codecell').forEach(function(c){c.textContent=scode(c.dataset.k);});
+    var r=st.f==='simple'?'5000':(['5','01','001'].slice(0,st.lv).map(function(p,i){return pad(p,st.seg[i]);}).join(st.f==='sep'?st.sep:''));
+    sres.textContent=r;}
+  function pick(c,attr,cb){c.querySelectorAll('.optcard').forEach(function(o){o.onclick=function(){c.querySelectorAll('.optcard').forEach(function(x){x.classList.remove('sel');});o.classList.add('sel');cb(o.dataset[attr]);srender();};});}
+  pick(sfmt,'f',function(v){st.f=v;});pick(sgen,'g',function(v){st.g=v;});
+  slv.onchange=function(){st.lv=+slv.value;srender();};
+  ssep.oninput=function(){st.sep=ssep.value||'-';srender();};
+  document.querySelectorAll('#sseg input').forEach(function(i){i.oninput=function(){st.seg[+i.dataset.s]=+i.value||1;srender();};});
+  srender();
+  /* tree + toggles */
+  document.querySelectorAll('#tree .grp').forEach(function(g){g.onclick=function(){g.parentElement.classList.toggle('closed');};});
+  document.querySelectorAll('.sw').forEach(function(s){s.onclick=function(){s.classList.toggle('on');};});
+</script>
+</body>
+</html>

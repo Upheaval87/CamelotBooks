@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Point of Sale Centre</title>
+<style>
+  :root{--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--sec-2:#149897;--ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;--red-2:#b91c1c;--green:#15803d;--amber-2:#b45309;--steel:#46708C;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;font-size:14px;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}.spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background-color:#e8f0f0;border-color:var(--border);color:var(--ink)}
+  .btn-sec{color:#fff;background-color:var(--sec);background-image:linear-gradient(180deg,var(--sec-2),var(--sec));box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#fff;background-color:var(--deep-2);background-image:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-danger-o{background:#fff;border-color:rgba(220,38,38,.35);color:var(--red-2)}
+  .btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+  .btn-xs{height:30px;padding:0 11px;font-size:11.5px;border-radius:9px}
+  .btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:24px 0 14px}
+  .page-head h1{font-size:22px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .step{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--sec);text-transform:uppercase}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .pad{padding:20px 24px}
+  .f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .f .in{width:100%;height:42px;border-radius:10px;border:1px solid var(--border);background:#fff;padding:0 12px;font-size:13.5px;color:var(--ink);font-family:inherit}
+  .f .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .search{position:relative}
+  .search .in{padding-left:34px}
+  .search svg.mag{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .search .go{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--sec);display:grid;place-items:center;cursor:pointer}
+  .filters{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media (max-width:1000px){.filters{grid-template-columns:1fr 1fr}}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-open{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}.b-open .bdot{background:#22c55e}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:var(--amber)}
+  .b-rev{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-rev .bdot{background:var(--red-2)}
+  .b-mut{background:rgba(138,165,167,.15);border:1px solid rgba(138,165,167,.5);color:var(--muted)}.b-mut .bdot{background:var(--muted)}
+  .tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .tchip.pay{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.3);color:var(--green)}
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+  @media (max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}@media (max-width:700px){.kpis{grid-template-columns:1fr 1fr}}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:13px 15px;background:rgba(255,255,255,.9);box-shadow:var(--shadow-card)}
+  .kpi .l{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .kpi .v{margin-top:5px;font-size:1.15rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi .n{margin-top:2px;font-size:10px;color:var(--faint)}
+  .kpi.hero{border:none;background-color:var(--sec);background-image:linear-gradient(135deg,var(--sec-2),var(--sec) 60%,#0c7a79)}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:820px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  th.num,td.num{text-align:right}
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-weight:400}
+  td.num{font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{padding:11px 12px;border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink)}
+  .em{color:var(--muted)}.dash{color:var(--faint)}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+  @media (max-width:1000px){.grid2{grid-template-columns:1fr}}
+  .pmchips{display:flex;gap:8px;flex-wrap:wrap}
+  .pm{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer}
+  .pm.on{border-color:var(--sec);color:var(--sec);background:rgba(18,143,142,.08)}
+  .totrow{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--muted)}
+  .totrow.big{font-size:17px;font-weight:800;color:var(--ink);border-top:1px solid var(--line);margin-top:6px;padding-top:10px}
+  .totrow.big .v{color:var(--sec)}
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + 12px)}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background-color:var(--sec);background-image:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+<header class="tealbar">
+  <div class="row1"><span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div></div>
+  <div class="row2"><a class="navitem" href="#">Sales</a><a class="navitem active" href="#">POS</a><a class="navitem" href="#">Inventory</a><a class="navitem" href="#">Banking</a><a class="navitem" href="#">Reports</a></div>
+</header>
+<div class="wrap">
+
+<!-- 1 · DASHBOARD -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">1 · POS Dashboard</span>
+  <div class="page-head"><div><h1>POS Dashboard</h1><div class="sub">Today's sales performance · Fri 15 Aug 2026</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-cta btn-sm">➕ New Sale</button><button class="btn btn-sec btn-sm">Open Register</button><button class="btn btn-ghost btn-sm">Close Register</button><button class="btn btn-ghost btn-sm">View Reports</button><button class="btn btn-ghost btn-sm">Manage Products</button><button class="btn btn-ghost btn-sm">Transactions</button></div></div>
+  <div class="kpis" style="margin-bottom:12px">
+    <div class="kpi hero"><div class="l">Today's Sales</div><div class="v">K486,500</div><div class="n" style="color:#dff7f6">+12% vs yesterday</div></div>
+    <div class="kpi"><div class="l">Transactions</div><div class="v">64</div><div class="n">62 completed · 2 void</div></div>
+    <div class="kpi"><div class="l">Avg Sale Value</div><div class="v">K7,602</div><div class="n">per transaction</div></div>
+    <div class="kpi"><div class="l">Cash Collected</div><div class="v">K212,000</div><div class="n">drawer 1 + 2</div></div>
+    <div class="kpi"><div class="l">Card / Mobile</div><div class="v">K198,500</div><div class="n">card 121K · mobile 77.5K</div></div>
+    <div class="kpi"><div class="l">Outstanding Credit</div><div class="v">K76,000</div><div class="n">4 credit sales</div></div></div>
+  <div class="grid2" style="grid-template-columns:1fr 1fr">
+    <div class="card"><div class="card-h"><h2>Top Selling Items</h2></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Revenue</th></tr></thead><tbody>
+        <tr><td style="font-weight:700;color:var(--ink)">Maize Flour 10kg</td><td class="num">48</td><td class="num">432,000</td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Cooking Oil 2L</td><td class="num">35</td><td class="num">315,000</td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Sugar 2kg</td><td class="num">30</td><td class="num">180,000</td></tr></tbody></table></div></div>
+    <div class="card"><div class="card-h"><h2>Low Stock &amp; Sales by Cashier</h2></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Item / Cashier</th><th class="num">Stock / Sales</th></tr></thead><tbody>
+        <tr><td class="em">Bread Loaf</td><td class="num" style="color:var(--red-2)">6 left</td></tr>
+        <tr><td class="em">Milk 1L</td><td class="num" style="color:var(--red-2)">9 left</td></tr>
+        <tr><td class="em">Cashier M. Banda</td><td class="num">212,000</td></tr>
+        <tr><td class="em">Cashier P. Phiri</td><td class="num">198,500</td></tr></tbody></table></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="New Sale">＋</button><button class="s-ic" data-tip="Registers">🗄</button><button class="s-ic" data-tip="Reports">📊</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 2 · SALES SCREEN (search preserved) -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">2 · POS Sales Screen — existing search kept, extended payments</span>
+  <div class="page-head"><div><h1>POS Checkout — TILL-01</h1><div class="sub">Shift open · Cashier E. Seyama · Register 1</div></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm">⏸ Hold Sale</button><button class="btn btn-ghost btn-sm">📷 Scan Barcode</button></div></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><span class="step">1 · Add Items</span><div class="right"><span class="tchip">↑/↓ navigate · Enter select</span></div></div>
+      <div class="pad">
+        <div class="f"><label>Product</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="Type to search products… (Up/Down to navigate, Enter to select)"><button class="go">🔍</button></div></div>
+        <div style="display:flex;gap:8px;align-items:flex-end;margin:10px 0"><div class="f" style="width:90px;margin:0"><label>Qty</label><input class="in" value="1"></div><button class="btn btn-sec btn-sm">Add</button>
+          <span class="pm" style="margin-left:auto">★ Favourites</span><span class="pm">🕘 Recent</span></div>
+        <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Product</th><th>UOM</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Discount</th><th class="num">Tax</th><th class="num">Total</th><th></th></tr></thead><tbody>
+          <tr><td style="font-weight:700;color:var(--ink)">Maize Flour 10kg</td><td class="em">bag</td><td class="num">2</td><td class="num">9,000</td><td class="num">0</td><td class="num">0</td><td class="num">18,000</td><td class="row-act"><button class="ibtn">✎</button><button class="ibtn">🗑</button></td></tr>
+          <tr><td style="font-weight:700;color:var(--ink)">Cooking Oil 2L</td><td class="em">bt</td><td class="num">1</td><td class="num">9,000</td><td class="num">500</td><td class="num">0</td><td class="num">8,500</td><td class="row-act"><button class="ibtn">✎</button><button class="ibtn">🗑</button></td></tr>
+        </tbody></table></div>
+      </div></div>
+    <div class="card"><div class="card-h"><span class="step">2 · Payment</span></div>
+      <div class="pad">
+        <div class="f"><label>Customer</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="Search customers…"><button class="go">🔍</button></div>
+          <div class="em" style="font-size:11px;margin-top:5px">Walk-in Customer · <a href="#" style="color:var(--sec);font-weight:700;text-decoration:none">＋ Add Customer</a> · <a href="#" style="color:var(--sec);font-weight:700;text-decoration:none">History</a></div></div>
+        <div class="f" style="margin-top:10px"><label>Payment Method</label><div class="pmchips">
+          <span class="pm on">Cash</span><span class="pm">Card</span><span class="pm">Mobile Money</span><span class="pm">Bank Transfer</span><span class="pm">Credit</span><span class="pm">Split</span></div></div>
+        <div class="f" style="margin-top:10px"><label>Reference</label><input class="in" placeholder="Optional"></div>
+        <div style="margin-top:12px">
+          <div class="totrow"><span>Subtotal</span><span>K27,000</span></div>
+          <div class="totrow"><span>Discount</span><span>−K500</span></div>
+          <div class="totrow"><span>Tax</span><span>K0</span></div>
+          <div class="totrow big"><span>Total Due</span><span class="v">K26,500</span></div></div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-cta" style="flex:1">Complete Sale</button><button class="btn btn-ghost btn-sm">🖨</button><button class="btn btn-ghost btn-sm">✉</button></div>
+      </div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Scan">📷</button><button class="s-ic" data-tip="Hold">⏸</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 3 · RECEIPTS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">3 · Sales Receipts</span>
+  <div class="page-head"><div><h1>Sales Receipts</h1><div class="sub">Completed sales · reprint · refund · void</div></div>
+    <div class="search" style="max-width:340px"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="Search receipt № / customer…"></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>Receipt №</th><th>Date</th><th>Customer</th><th>Cashier</th><th class="num">Amount</th><th>Method</th><th>Status</th><th></th></tr></thead><tbody>
+    <tr><td class="em" style="font-family:ui-monospace,Menlo,monospace">RCP-006412</td><td class="em">15 Aug 10:42</td><td class="em">Walk-in</td><td class="em">M. Banda</td><td class="num">26,500</td><td><span class="tchip pay">Cash</span></td><td><span class="badge b-open"><span class="bdot"></span>Completed</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">🖨</button><button class="ibtn">↩</button></td></tr>
+    <tr><td class="em" style="font-family:ui-monospace,Menlo,monospace">RCP-006411</td><td class="em">15 Aug 10:15</td><td class="em">Beta Industries</td><td class="em">P. Phiri</td><td class="num">76,000</td><td><span class="tchip pay">Credit</span></td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">🖨</button><button class="ibtn">↩</button></td></tr>
+    <tr><td class="em" style="font-family:ui-monospace,Menlo,monospace">RCP-006410</td><td class="em">15 Aug 09:58</td><td class="em">Walk-in</td><td class="em">M. Banda</td><td class="num">18,000</td><td><span class="tchip pay">Mobile</span></td><td><span class="badge b-rev"><span class="bdot"></span>Refunded</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">🖨</button></td></tr>
+  </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Receipts">🧾</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 4 · RETURNS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">4 · Sales Returns / Refunds</span>
+  <div class="page-head"><div><h1>Sales Returns</h1><div class="sub">Return items · restock · refund via cash / credit note / exchange</div></div>
+    <button class="btn btn-cta btn-sm">New Return</button></div>
+  <div class="grid2" style="grid-template-columns:1fr 1fr">
+    <div class="card"><div class="card-h"><span class="step">1 · Original Sale</span></div>
+      <div class="pad"><div class="f"><label>Search original sale</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="Receipt №…"><button class="go">🔍</button></div></div>
+        <div class="f" style="margin-top:10px"><label>Return Reason</label><select class="in"><option>Damaged</option><option>Wrong item</option><option>Customer changed mind</option></select></div>
+        <div class="f" style="margin-top:10px"><label>Return Type</label><div class="pmchips"><span class="pm on">Cash refund</span><span class="pm">Credit note</span><span class="pm">Exchange</span></div></div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-sec btn-sm">Approve Return</button><button class="btn btn-ghost btn-sm">Process Refund</button><button class="btn btn-ghost btn-sm">Print Return Receipt</button></div></div></div>
+    <div class="card"><div class="card-h"><span class="step">2 · Returned Items</span></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Item</th><th class="num">Sold</th><th class="num">Return</th><th>Restock</th></tr></thead><tbody>
+        <tr><td class="em">Cooking Oil 2L</td><td class="num">1</td><td class="num">1</td><td><span class="badge b-open"><span class="bdot"></span>Yes</span></td></tr>
+      </tbody></table></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="New Return">↩</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 5 · CUSTOMERS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">5 · Customers</span>
+  <div class="page-head"><div><h1>POS Customers</h1><div class="sub">Profiles · credit limits · history · statements</div></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm">Export</button><button class="btn btn-cta btn-sm">Add Customer</button></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>Customer</th><th>Phone</th><th class="num">Credit Limit</th><th class="num">Balance</th><th>Status</th><th></th></tr></thead><tbody>
+    <tr><td style="font-weight:700;color:var(--ink)">Beta Industries</td><td class="em">+265 991 000 111</td><td class="num">500,000</td><td class="num">76,000</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button><button class="ibtn">💰</button></td></tr>
+    <tr><td style="font-weight:700;color:var(--ink)">Walk-in Customer</td><td class="dash">—</td><td class="num">0</td><td class="num">0</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="ibtn">👁</button></td></tr>
+  </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Add Customer">＋</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 6 · PRODUCTS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">6 · Products / Items</span>
+  <div class="page-head"><div><h1>Products / Inventory Items</h1><div class="sub">SKU · barcode · pricing · stock · movement</div></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm">Adjust Stock</button><button class="btn btn-cta btn-sm">Add Product</button></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th class="num">Cost</th><th class="num">Price</th><th class="num">Stock</th><th></th></tr></thead><tbody>
+    <tr><td class="em" style="font-family:ui-monospace,Menlo,monospace">SKU-0001</td><td style="font-weight:700;color:var(--ink)">Maize Flour 10kg</td><td class="em">Staples</td><td class="num">7,000</td><td class="num">9,000</td><td class="num">120</td><td class="row-act"><button class="ibtn">✎</button><button class="ibtn">🏷</button><button class="ibtn">📦</button></td></tr>
+    <tr><td class="em" style="font-family:ui-monospace,Menlo,monospace">SKU-0002</td><td style="font-weight:700;color:var(--ink)">Bread Loaf</td><td class="em">Bakery</td><td class="num">1,200</td><td class="num">1,800</td><td class="num" style="color:var(--red-2)">6</td><td class="row-act"><button class="ibtn">✎</button><button class="ibtn">🏷</button><button class="ibtn">📦</button></td></tr>
+  </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Add Product">＋</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 7 · PRICE LISTS + PROMOTIONS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">7 · Price Lists + Discounts &amp; Promotions</span>
+  <div class="grid2" style="grid-template-columns:1fr 1fr">
+    <div class="card"><div class="card-h"><h2>Price Lists</h2><div class="right"><button class="btn btn-ghost btn-xs">Import</button><button class="btn btn-cta btn-xs">Create Price List</button></div></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>List</th><th>Applies To</th><th class="num">Maize 10kg</th><th>Status</th></tr></thead><tbody>
+        <tr><td style="font-weight:700;color:var(--ink)">Retail</td><td class="em">All customers</td><td class="num">9,000</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Wholesale</td><td class="em">Min qty 10</td><td class="num">8,200</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">VIP</td><td class="em">VIP group</td><td class="num">8,600</td><td><span class="badge b-mut"><span class="bdot"></span>Scheduled</span></td></tr>
+      </tbody></table></div></div>
+    <div class="card"><div class="card-h"><h2>Discounts &amp; Promotions</h2><div class="right"><button class="btn btn-cta btn-xs">Create Promotion</button></div></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Promotion</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>
+        <tr><td style="font-weight:700;color:var(--ink)">Weekend 5% off</td><td><span class="tchip">Percentage</span></td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-ghost btn-xs">Pause</button></td></tr>
+        <tr><td style="font-weight:700;color:var(--ink)">Buy 2 Get 1 Bread</td><td><span class="tchip">Buy X Get Y</span></td><td><span class="badge b-mut"><span class="bdot"></span>Paused</span></td><td class="row-act"><button class="btn btn-ghost btn-xs">Activate</button></td></tr>
+      </tbody></table></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Price Lists">🏷</button><button class="s-ic" data-tip="Promotions">%</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 8 · PAYMENT METHODS (existing kept) -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">8 · Payment Methods — existing four kept + credit/split, GL-linked</span>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><span class="step">1 · Add Payment Method</span></div>
+    <div class="pad"><div class="filters">
+      <div class="f"><label>Name</label><input class="in" placeholder="e.g. Cash, Visa, Airtel Money"></div>
+      <div class="f"><label>Type</label><select class="in"><option>Cash</option><option>Card</option><option>Mobile Money</option><option>Bank Transfer</option><option>Customer Credit</option></select></div>
+      <div class="f"><label>Clearing Account</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="None"><button class="go">🔍</button></div></div>
+      <div class="f"><label>Settlement Bank Account</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="None"><button class="go">🔍</button></div></div>
+    </div>
+    <div style="display:flex;gap:14px;align-items:center;margin-top:12px"><label style="display:flex;gap:8px;align-items:center;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)"><input type="checkbox" style="width:15px;height:15px;accent-color:var(--sec)"> Requires Reference Number</label><button class="btn btn-sec btn-sm">Add</button></div></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>Clearing Account</th><th>Settlement Account</th><th>Ref Required</th><th>Fee</th><th>Status</th><th></th></tr></thead><tbody>
+    <tr><td style="font-weight:700;color:var(--ink)">Bank Transfer</td><td><span class="tchip pay">Bank Transfer</span></td><td class="em">1010 · Petty Cash</td><td class="dash">—</td><td class="em">Yes</td><td class="num">0</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-danger-o btn-xs">Deactivate</button></td></tr>
+    <tr><td style="font-weight:700;color:var(--ink)">Cash</td><td><span class="tchip pay">Cash</span></td><td class="em">1060 · Cash-in-Drawer</td><td class="dash">—</td><td class="em">No</td><td class="num">0</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-danger-o btn-xs">Deactivate</button></td></tr>
+    <tr><td style="font-weight:700;color:var(--ink)">Card</td><td><span class="tchip pay">Card</span></td><td class="em">1070 · Card Clearing</td><td class="dash">—</td><td class="em">Yes</td><td class="num">2.5%</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-danger-o btn-xs">Deactivate</button></td></tr>
+    <tr><td style="font-weight:700;color:var(--ink)">Mobile Money</td><td><span class="tchip pay">Mobile Money</span></td><td class="em">1080 · Mobile Money Clearing</td><td class="dash">—</td><td class="em">Yes</td><td class="num">1%</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-danger-o btn-xs">Deactivate</button></td></tr>
+    <tr><td style="font-weight:700;color:var(--ink)">Customer Credit</td><td><span class="tchip pay">Credit</span></td><td class="em">1100 · Accounts Receivable</td><td class="dash">—</td><td class="em">No</td><td class="num">0</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-danger-o btn-xs">Deactivate</button></td></tr>
+  </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Add Method">＋</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 9 · REGISTERS + SHIFTS + CASHIERS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">9 · Registers (Terminals) + Shifts + Cashiers</span>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><span class="step">1 · Add Terminal</span><div class="right"><button class="btn btn-sec btn-xs">Add</button></div></div>
+    <div class="pad"><div class="filters">
+      <div class="f"><label>Identifier</label><input class="in" placeholder="e.g. T1, REGISTER-01"></div>
+      <div class="f"><label>Name</label><input class="in" placeholder="e.g. Front Counter"></div>
+      <div class="f"><label>Branch</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="No branch"><button class="go">🔍</button></div></div>
+      <div class="f"><label>PIN Timeout (min)</label><input class="in" value="0"></div>
+    </div></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Registers / Terminals</h2></div>
+    <div class="li-wrap"><table><thead><tr><th>Identifier</th><th>Name</th><th>Branch</th><th class="num">PIN Timeout</th><th>Status</th><th></th></tr></thead><tbody>
+      <tr><td class="em" style="font-family:ui-monospace,Menlo,monospace">TILL-01</td><td class="em">Front Counter</td><td class="em">Headquarters</td><td class="num">10 min</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-ghost btn-xs">Open</button><button class="btn btn-ghost btn-xs">Cash Count</button><button class="btn btn-danger-o btn-xs">Deactivate</button></td></tr>
+    </tbody></table></div></div>
+  <div class="grid2" style="grid-template-columns:1fr 1fr">
+    <div class="card"><div class="card-h"><h2>Shifts</h2><div class="right"><button class="btn btn-sec btn-xs">Start Shift</button><button class="btn btn-ghost btn-xs">End Shift</button></div></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Cashier</th><th>Opened</th><th class="num">Opening</th><th class="num">Sales</th><th class="num">Variance</th></tr></thead><tbody>
+        <tr><td class="em">M. Banda</td><td class="em">08:00</td><td class="num">50,000</td><td class="num">212,000</td><td class="num" style="color:var(--green)">0</td></tr>
+        <tr><td class="em">P. Phiri</td><td class="em">08:00</td><td class="num">50,000</td><td class="num">198,500</td><td class="num" style="color:var(--red-2)">(500)</td></tr>
+      </tbody></table></div></div>
+    <div class="card"><div class="card-h"><h2>Cashiers &amp; Permissions</h2><div class="right"><button class="btn btn-cta btn-xs">Add Cashier</button></div></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Cashier</th><th>Discounts</th><th>Refunds</th><th>Void</th><th></th></tr></thead><tbody>
+        <tr><td class="em">M. Banda</td><td><span class="badge b-open"><span class="bdot"></span>Yes</span></td><td><span class="badge b-mut"><span class="bdot"></span>No</span></td><td><span class="badge b-mut"><span class="bdot"></span>No</span></td><td class="row-act"><button class="ibtn">⚙</button></td></tr>
+        <tr><td class="em">P. Phiri</td><td><span class="badge b-open"><span class="bdot"></span>Yes</span></td><td><span class="badge b-open"><span class="bdot"></span>Yes</span></td><td><span class="badge b-mut"><span class="bdot"></span>No</span></td><td class="row-act"><button class="ibtn">⚙</button></td></tr>
+      </tbody></table></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Registers">🗄</button><button class="s-ic" data-tip="Shifts">⏱</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 10 · OFFLINE + REPORTS + SETTINGS -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">10 · Offline Sales + POS Reports + Settings</span>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Offline Sales Mode</h2><div class="right"><span class="badge b-open"><span class="bdot"></span>Online</span><button class="btn btn-ghost btn-xs">Enable Offline Mode</button><button class="btn btn-sec btn-xs">Sync Transactions</button></div></div>
+    <div class="pad" style="font-size:12.5px;color:var(--muted)">Pending sync: <b style="color:var(--ink)">0</b> transactions · locally stored sales synchronise automatically when connection returns.</div></div>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>POS Reports</h2><div class="right"><button class="btn btn-ghost btn-xs">Print</button><button class="btn btn-ghost btn-xs">PDF</button><button class="btn btn-ghost btn-xs">Excel</button><button class="btn btn-cta btn-xs">Generate</button></div></div>
+    <div class="pad" style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="tchip">Daily Sales</span><span class="tchip">Sales Summary</span><span class="tchip">By Product</span><span class="tchip">By Category</span><span class="tchip">By Cashier</span><span class="tchip">By Branch</span><span class="tchip">Stock Sold</span><span class="tchip">Fast Movers</span><span class="tchip">Slow Movers</span><span class="tchip">Cashier Report</span><span class="tchip">Register Report</span><span class="tchip">Payment Method</span><span class="tchip">Cash Variance</span><span class="tchip">Gross Profit</span><span class="tchip">Product Profitability</span><span class="tchip">Margin Analysis</span></div></div>
+  <div class="card"><div class="card-h"><h2>POS Settings</h2></div>
+    <div class="pad"><div class="filters">
+      <div class="f"><label>Receipt Format</label><select class="in"><option>Thermal 80mm</option><option>A5</option></select></div>
+      <div class="f"><label>Receipt Numbering</label><input class="in" value="RCP-{seq}"></div>
+      <div class="f"><label>Sales Revenue Account</label><input class="in" value="4000 · Sales Revenue"></div>
+      <div class="f"><label>COGS Account</label><input class="in" value="5000 · Cost of Goods Sold"></div>
+      <div class="f"><label>Inventory Account</label><input class="in" value="1300 · Inventory"></div>
+      <div class="f"><label>Cash Account</label><input class="in" value="1060 · Cash-in-Drawer"></div>
+      <div class="f"><label>Hardware</label><input class="in" value="Scanner · Printer · Drawer · Display"></div>
+      <div class="f"><label>Approval Limits</label><input class="in" value="Discount &gt; 10% → Supervisor"></div>
+    </div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Offline">📴</button><button class="s-ic" data-tip="Reports">📊</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+</div>
+</body>
+</html>

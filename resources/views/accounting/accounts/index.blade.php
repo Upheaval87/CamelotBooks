@@ -1,161 +1,187 @@
 @php
-    $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
     $search = request('search');
     $typeFilter = request('type');
+    $statusFilter = request('status');
+    $typeOrder = ['asset', 'liability', 'equity', 'income', 'expense'];
+    $totalForBar = max($stats['total'], 1);
+    $activePct = round(($stats['active'] / $totalForBar) * 100);
+    $inactivePct = round(($stats['inactive'] / $totalForBar) * 100);
+    $typeNoteParts = [];
+    foreach ($typeOrder as $t) {
+        if (($typeCounts[$t] ?? 0) > 0) {
+            $typeNoteParts[] = ucfirst($t === 'asset' ? 'Assets' : ($t === 'liability' ? 'Liabilities' : $t)) . ' ' . $typeCounts[$t];
+        }
+    }
+    $activeNote = $stats['active'] === $stats['total'] ? '100% of accounts in use' : $stats['active'] . ' of ' . $stats['total'] . ' in use';
+    $inactiveNote = $stats['inactive'] === 0 ? 'No dormant accounts' : $stats['inactive'] . ' dormant accounts';
 @endphp
 
 <x-app-layout>
-    <div class="pb-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-<div class="suite">
+    <div class="coa-wrap" style="padding-top:24px;padding-bottom:24px">
 
-    {{-- page head --}}
-    <div class="page-head">
-        <div>
-            <h1>{{ __('Chart of Accounts') }}</h1>
-            <div class="sub">Your general ledger accounts organised by type.</div>
-        </div>
-        <div class="tbtns">
-            <a href="{{ route('accounting.accounts.create') }}" class="btn cta">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                {{ __('Create Account') }}
-            </a>
-        </div>
-    </div>
-
-    {{-- stats --}}
-    <div class="sgrid">
-        <div class="sbox">
-            <div class="l">{{ __('Total') }}</div>
-            <div class="v">{{ $stats['total'] }}</div>
-        </div>
-        <div class="sbox">
-            <div class="l">{{ __('Active') }}</div>
-            <div class="v t-teal">{{ $stats['active'] }}</div>
-        </div>
-        <div class="sbox">
-            <div class="l">{{ __('Inactive') }}</div>
-            <div class="v t-mint">{{ $stats['inactive'] }}</div>
-        </div>
-    </div>
-
-    {{-- toolbar --}}
-    <div class="toolbar" style="margin-top:16px">
-        <form method="GET" action="{{ route('accounting.accounts.index') }}" class="controls">
-            <div class="search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                <input type="text" name="search" value="{{ $search }}" placeholder="Search by code or name..." autocomplete="off" />
+        {{-- Page head --}}
+        <div class="coa-head">
+            <div>
+                <h1>{{ __('Chart of Accounts') }}</h1>
+                <div class="sub">Your general ledger accounts organised by type.</div>
             </div>
-            <select name="type" class="input" style="width:auto;min-width:170px">
-                <option value="">All Types</option>
-                @foreach($typeLabels as $value => $label)
-                    <option value="{{ $value }}" {{ $typeFilter === $value ? 'selected' : '' }}>{{ $label }}</option>
-                @endforeach
-            </select>
-            <button type="submit" class="btn ghost sm">{{ __('Filter') }}</button>
-            @if($search || $typeFilter)
-                <a href="{{ route('accounting.accounts.index') }}" class="btn ghost sm">{{ __('Clear') }}</a>
-            @endif
-        </form>
-    </div>
+            <div class="coa-head-btns">
+                <a href="{{ route('accounting.reports.chart-of-accounts') }}" class="coa-btn coa-btn-ghost">{{ __('Import / Export') }}</a>
+                <a href="{{ route('accounting.accounts.create') }}" class="coa-btn coa-btn-cta">{{ __('＋ Create Account') }}</a>
+            </div>
+        </div>
 
-    {{-- accounts grouped by type --}}
-    @forelse($typeLabels as $type => $label)
-        @if($grouped->has($type))
-            <section class="card card-sec" style="margin-top:16px">
-                <div class="sec-head">
-                    <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></span>
-                    <h2>{{ $label }}</h2>
-                    <span class="rule"></span>
-                </div>
-                <div class="li-wrap" style="margin-top:0">
-                    <table class="li-tbl">
-                        <thead>
-                            <tr>
-                                <th>{{ __('Code') }}</th>
-                                <th>{{ __('Name') }}</th>
-                                <th>{{ __('Sub Type') }}</th>
-                                <th class="right">{{ __('Balance') }}</th>
-                                <th>{{ __('Status') }}</th>
-                                <th class="right">{{ __('Actions') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($grouped[$type]->sortBy('code') as $account)
-                                <tr class="{{ $account->is_active ? '' : 'row-inact' }}">
-                                    <td><a href="{{ route('accounting.accounts.show', $account) }}" class="mono row-link">{{ $account->code }}</a></td>
-                                    <td><a href="{{ route('accounting.accounts.show', $account) }}" class="row-link">{{ $account->name }}</a></td>
-                                    <td class="muted">{{ str_replace('_', ' ', ucfirst($account->sub_type)) }}</td>
-                                    <td class="right numr">{{ format_number($account->current_balance) }}</td>
-                                    <td>
-                                        @if($account->is_active)
-                                            <span class="badge b-act"><span class="bdot"></span>Active</span>
-                                        @else
-                                            <span class="badge b-inact"><span class="bdot"></span>Inactive</span>
-                                        @endif
+        {{-- KPI strip --}}
+        <div class="coa-kpis">
+            <div class="coa-kpi">
+                <div class="l">{{ __('Total Accounts') }}</div>
+                <div class="v">{{ $stats['total'] }}</div>
+                <div class="bar"><i class="coa-fill-teal" style="width:100%"></i></div>
+                <div class="n">{{ implode(' · ', $typeNoteParts) ?: 'No accounts' }}</div>
+            </div>
+            <div class="coa-kpi">
+                <div class="l">{{ __('Active') }}</div>
+                <div class="v">{{ $stats['active'] }}</div>
+                <div class="bar"><i class="coa-fill-teal" style="width:{{ $activePct }}%"></i></div>
+                <div class="n">{{ $activeNote }}</div>
+            </div>
+            <div class="coa-kpi">
+                <div class="l">{{ __('Inactive') }}</div>
+                <div class="v">{{ $stats['inactive'] }}</div>
+                <div class="bar"><i class="coa-fill-soft" style="width:{{ $inactivePct }}%"></i></div>
+                <div class="n">{{ $inactiveNote }}</div>
+            </div>
+        </div>
+
+        {{-- Toolbar --}}
+        <div class="coa-card" style="margin-bottom:16px">
+            <div class="coa-pad">
+                <form method="GET" action="{{ route('accounting.accounts.index') }}">
+                    <div class="coa-toolbar">
+                        <input class="coa-in coa-grow" name="search" placeholder="Search by code or name…" value="{{ $search }}">
+                        <select class="coa-in" name="type">
+                            <option value="">{{ __('All Types') }}</option>
+                            <option value="asset" {{ $typeFilter === 'asset' ? 'selected' : '' }}>Asset</option>
+                            <option value="liability" {{ $typeFilter === 'liability' ? 'selected' : '' }}>Liability</option>
+                            <option value="equity" {{ $typeFilter === 'equity' ? 'selected' : '' }}>Equity</option>
+                            <option value="income" {{ $typeFilter === 'income' ? 'selected' : '' }}>Income</option>
+                            <option value="expense" {{ $typeFilter === 'expense' ? 'selected' : '' }}>Expense</option>
+                        </select>
+                        <select class="coa-in" name="status">
+                            <option value="">{{ __('All Status') }}</option>
+                            <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>Active</option>
+                            <option value="inactive" {{ $statusFilter === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        </select>
+                        <button type="submit" class="coa-btn coa-btn-cta coa-btn-sm" style="height:42px">{{ __('Filter') }}</button>
+                        <div class="coa-toolbar-right">
+                            <button type="button" class="coa-btn coa-btn-ghost coa-btn-sm" onclick="document.querySelectorAll('.coa-grp[data-open]').forEach(g=>g.setAttribute('data-open','true'))">{{ __('Expand All') }}</button>
+                            <button type="button" class="coa-btn coa-btn-ghost coa-btn-sm" onclick="document.querySelectorAll('.coa-grp[data-open]').forEach(g=>g.setAttribute('data-open','false'))">{{ __('Collapse All') }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- Accounts tree --}}
+        <div class="coa-card">
+            <div class="coa-li-wrap">
+                <table class="coa-table">
+                    <thead>
+                        <tr>
+                            <th style="width:10%">{{ __('Code') }}</th>
+                            <th style="width:34%">{{ __('Account Name') }}</th>
+                            <th>{{ __('Type') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th class="num">{{ __('Balance') }}</th>
+                            <th style="width:8%"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($typeOrder as $type)
+                            @if($grouped->has($type))
+                                @php
+                                    $typeAccounts = $grouped[$type]->sortBy('code');
+                                    $typeBalance = 0;
+                                    foreach ($typeAccounts as $a) {
+                                        $typeBalance += $balances[$a->id] ?? 0;
+                                    }
+                                @endphp
+                                {{-- Group header row --}}
+                                <tr class="coa-grp" data-open="true" onclick="let open=this.getAttribute('data-open');this.setAttribute('data-open',open==='true'?'false':'true');this.closest('tbody').querySelectorAll('[data-parent={{ $type }}]').forEach(r=>r.style.display=open==='true'?'none':'')">
+                                    <td colspan="5">
+                                        <span class="coa-grp-chevron">▾</span>
+                                        {{ $typeLabels[$type] }}
+                                        <span class="coa-grp-count">{{ $typeAccounts->count() }} accounts</span>
                                     </td>
-                                    <td class="right row-act">
-                                        <a href="{{ route('accounting.accounts.edit', $account) }}" class="ibtn" title="{{ __('Edit') }}">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                        </a>
-                                        <form method="POST" action="{{ route('accounting.accounts.toggle', $account) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ $account->is_active ? __('Deactivate this account?') : __('Activate this account?') }}', { type: 'danger' })">
-                                            @csrf @method('PATCH')
-                                            <button type="submit" class="ibtn {{ $account->is_active ? 'del' : '' }}" title="{{ $account->is_active ? __('Deactivate') : __('Activate') }}">
-                                                @if($account->is_active)
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14M5 8a2 2 0 1 1 0-4h14a2 2 0 1 1 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8m-9 4h4"/></svg>
-                                                @else
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                                                @endif
-                                            </button>
-                                        </form>
-                                    </td>
+                                    <td></td>
                                 </tr>
-                                @foreach($accounts->where('parent_id', $account->id)->sortBy('code') as $child)
-                                    <tr class="{{ $child->is_active ? '' : 'row-inact' }}">
-                                        <td><a href="{{ route('accounting.accounts.show', $child) }}" class="mono row-link">{{ $child->code }}</a></td>
+                                {{-- Account rows --}}
+                                @foreach($typeAccounts as $account)
+                                    @php $childCount = $accounts->where('parent_id', $account->id)->count(); @endphp
+                                    <tr data-parent="{{ $type }}">
+                                        <td class="coa-mono">{{ $account->code }}</td>
+                                        <td style="font-weight:600;color:var(--ink)">{{ $account->name }}</td>
+                                        <td><span class="coa-tchip">{{ ucfirst($type) }}</span></td>
                                         <td>
-                                            <span class="muted" style="margin-right:4px">—</span>
-                                            <a href="{{ route('accounting.accounts.show', $child) }}" class="row-link">{{ $child->name }}</a>
-                                        </td>
-                                        <td class="muted">{{ str_replace('_', ' ', ucfirst($child->sub_type)) }}</td>
-                                        <td class="right numr">{{ format_number($child->current_balance) }}</td>
-                                        <td>
-                                            @if($child->is_active)
-                                                <span class="badge b-act"><span class="bdot"></span>Active</span>
+                                            @if($account->is_active)
+                                                <span class="coa-badge coa-b-ok"><span class="bdot"></span>{{ __('Active') }}</span>
                                             @else
-                                                <span class="badge b-inact"><span class="bdot"></span>Inactive</span>
+                                                <span class="coa-badge coa-b-off"><span class="bdot"></span>{{ __('Inactive') }}</span>
                                             @endif
                                         </td>
-                                        <td class="right row-act">
-                                            <a href="{{ route('accounting.accounts.edit', $child) }}" class="ibtn" title="{{ __('Edit') }}">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                            </a>
-                                            <form method="POST" action="{{ route('accounting.accounts.toggle', $child) }}" class="inline" onsubmit="return fbConfirmSubmit(event, '{{ $child->is_active ? __('Deactivate this account?') : __('Activate this account?') }}', { type: 'danger' })">
-                                                @csrf @method('PATCH')
-                                                <button type="submit" class="ibtn {{ $child->is_active ? 'del' : '' }}" title="{{ $child->is_active ? __('Deactivate') : __('Activate') }}">
-                                                    @if($child->is_active)
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14M5 8a2 2 0 1 1 0-4h14a2 2 0 1 1 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8m-9 4h4"/></svg>
-                                                    @else
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                                                    @endif
-                                                </button>
-                                            </form>
+                                        <td class="num">{{ ($balances[$account->id] ?? 0) != 0 ? format_number($balances[$account->id]) : '—' }}</td>
+                                        <td>
+                                            <div class="coa-row-act">
+                                                <a href="{{ route('accounting.accounts.edit', $account) }}" class="coa-ibtn" title="{{ __('Edit') }}">✎</a>
+                                                <form method="POST" action="{{ route('accounting.accounts.toggle', $account) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, '{{ $account->is_active ? __('Deactivate this account?') : __('Activate this account?') }}', { type: 'danger' })">
+                                                    @csrf @method('PATCH')
+                                                    <button type="submit" class="coa-ibtn" title="{{ $account->is_active ? __('Deactivate') : __('Activate') }}">⋯</button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
+                                    {{-- Child accounts --}}
+                                    @foreach($accounts->where('parent_id', $account->id)->sortBy('code') as $child)
+                                        <tr class="coa-child" data-parent="{{ $type }}">
+                                            <td class="coa-mono">{{ $child->code }}</td>
+                                            <td style="font-weight:600;color:var(--ink)">— {{ $child->name }}</td>
+                                            <td><span class="coa-tchip">{{ ucfirst($type) }}</span></td>
+                                            <td>
+                                                @if($child->is_active)
+                                                    <span class="coa-badge coa-b-ok"><span class="bdot"></span>{{ __('Active') }}</span>
+                                                @else
+                                                    <span class="coa-badge coa-b-off"><span class="bdot"></span>{{ __('Inactive') }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="num">{{ ($balances[$child->id] ?? 0) != 0 ? format_number($balances[$child->id]) : '—' }}</td>
+                                            <td>
+                                                <div class="coa-row-act">
+                                                    <a href="{{ route('accounting.accounts.edit', $child) }}" class="coa-ibtn" title="{{ __('Edit') }}">✎</a>
+                                                    <form method="POST" action="{{ route('accounting.accounts.toggle', $child) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, '{{ $child->is_active ? __('Deactivate this account?') : __('Activate this account?') }}', { type: 'danger' })">
+                                                        @csrf @method('PATCH')
+                                                        <button type="submit" class="coa-ibtn" title="{{ $child->is_active ? __('Deactivate') : __('Activate') }}">⋯</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
                                 @endforeach
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        @endif
-    @empty
-        <div class="card" style="margin-top:16px">
-            <div class="empty">No accounts found.</div>
+                                {{-- Subtotal row --}}
+                                <tr class="coa-sub" data-parent="{{ $type }}">
+                                    <td colspan="4" style="text-align:right;font-weight:700">{{ $typeLabels[$type] }} Total</td>
+                                    <td class="num">{{ format_number($typeBalance) }}</td>
+                                    <td></td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="6" class="coa-empty">No accounts found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
-    @endforelse
 
-</div>
-        </div>
     </div>
 </x-app-layout>

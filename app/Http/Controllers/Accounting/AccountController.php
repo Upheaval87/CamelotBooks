@@ -14,10 +14,24 @@ class AccountController extends Controller
     {
         $companyId = session('current_company_id');
 
-        $query = Account::where('company_id', $companyId)->with('parent');
+        // Global stats (unfiltered) for KPI strip
+        $allAccounts = Account::where('company_id', $companyId)->get();
+        $stats = [
+            'total'    => (int) $allAccounts->count(),
+            'active'   => (int) $allAccounts->where('is_active', true)->count(),
+            'inactive' => (int) $allAccounts->where('is_active', false)->count(),
+        ];
+        $typeCounts = $allAccounts->groupBy('type')->map(fn($g) => $g->count());
+
+        // Filtered query for the table
+        $query = Account::where('company_id', $companyId);
 
         if ($request->filled('type')) {
             $query->where('type', $request->type);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
         }
 
         if ($request->filled('search')) {
@@ -30,25 +44,41 @@ class AccountController extends Controller
 
         $accounts = $query->orderBy('code')->get();
 
-        $stats = [
-            'total' => (int) $accounts->count(),
-            'active' => (int) $accounts->where('is_active', true)->count(),
-            'inactive' => (int) $accounts->where('is_active', false)->count(),
-        ];
+        // Optimized balance computation — single grouped query
+        $lineTotals = \App\Models\JournalEntryLine::select(
+                'account_id',
+                \Illuminate\Support\Facades\DB::raw('COALESCE(SUM(debit), 0) as total_debit'),
+                \Illuminate\Support\Facades\DB::raw('COALESCE(SUM(credit), 0) as total_credit')
+            )
+            ->whereHas('journalEntry', function ($q) use ($companyId) {
+                $q->where('company_id', $companyId)
+                  ->whereIn('status', [\App\Models\JournalEntry::STATUS_POSTED, \App\Models\JournalEntry::STATUS_REVERSED]);
+            })
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        $balances = [];
+        foreach ($accounts as $account) {
+            $totals = $lineTotals->get($account->id);
+            $debit = (float) ($totals->total_debit ?? 0);
+            $credit = (float) ($totals->total_credit ?? 0);
+            $balances[$account->id] = $account->isDebitNormal()
+                ? $debit - $credit + (float) $account->opening_balance
+                : $credit - $debit + (float) $account->opening_balance;
+        }
 
         $topLevel = $accounts->whereNull('parent_id')->values();
-
         $grouped = $topLevel->groupBy('type');
 
         $typeLabels = [
-            'asset' => 'Assets',
-            'liability' => 'Liabilities',
-            'equity' => 'Equity',
-            'income' => 'Income',
-            'expense' => 'Expenses',
+            'asset' => 'Assets', 'liability' => 'Liabilities', 'equity' => 'Equity',
+            'income' => 'Income', 'expense' => 'Expenses',
         ];
 
-        return view('accounting.accounts.index', compact('grouped', 'typeLabels', 'accounts', 'stats'));
+        return view('accounting.accounts.index', compact(
+            'grouped', 'typeLabels', 'accounts', 'stats', 'typeCounts', 'balances'
+        ));
     }
 
     public function create()

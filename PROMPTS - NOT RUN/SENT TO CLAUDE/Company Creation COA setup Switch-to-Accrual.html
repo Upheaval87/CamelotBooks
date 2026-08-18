@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accounting Method — Company Creation + Switch-to-Accrual</title>
+<style>
+  :root{--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--sec-2:#149897;
+    --ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;
+    --red-2:#b91c1c;--green:#15803d;--amber-2:#b45309;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 28px 80px}
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}.spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);padding:24px 0 8px}
+  .crumbs .here{color:var(--ink);font-weight:800}
+  h1{font-size:22px;font-weight:800;color:var(--ink)}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden;margin-top:16px}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .stepno{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));flex:none}
+  .pad{padding:20px 24px}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  .stepper{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}
+  .st{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:800;background:rgba(138,165,167,.12);border:1px solid rgba(138,165,167,.4);color:var(--muted)}
+  .st.on{background:rgba(18,143,142,.12);border-color:rgba(18,143,142,.5);color:var(--sec)}
+  .optcards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:900px){.optcards{grid-template-columns:1fr}}
+  .optcard{border:1.5px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;background:#fff;position:relative}
+  .optcard:hover{border-color:rgba(17,69,75,.35)}
+  .optcard.sel{border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .optcard .rd{position:absolute;top:14px;right:14px;width:18px;height:18px;border-radius:50%;border:2px solid var(--border)}
+  .optcard.sel .rd{border-color:var(--sec);background:var(--sec);box-shadow:inset 0 0 0 3px #fff}
+  .optcard .t{font-size:13.5px;font-weight:800;color:var(--ink)}
+  .optcard .d{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;color:#111827}
+  thead th.num{text-align:right}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--line)}
+  tbody tr:last-child td{border-bottom:none}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+  td.num.red{color:var(--red-2)}
+  .codecell{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--deep-1)}
+  .inrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .inrow:last-child{border-bottom:none}
+  .inrow .nm{flex:1;font-weight:600;color:var(--ink)}
+  .inrow input{width:130px;height:38px;border-radius:10px;border:1px solid var(--border);text-align:right;font-size:13px;font-family:inherit}
+  .inrow input:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;font-family:inherit}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-ghost{background:rgba(255,255,255,.9);border-color:var(--border);color:#374151}
+  .btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+  .okchip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:800;background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+  .warn{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(217,119,6,.4);background:rgba(217,119,6,.07);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--amber-2);font-weight:600;line-height:1.5}
+  .chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border-radius:999px;font-size:10.5px;font-weight:800;background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.3);color:var(--sec)}
+  .stage-body{margin-right:calc(var(--sw) + 12px)}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+<header class="tealbar"><div class="row1"><span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+  <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div></div></header>
+<div class="wrap">
+
+<!-- 1 · COMPANY CREATION — method lives here -->
+<div class="stage"><div class="stage-body">
+  <nav class="crumbs">Company Setup › <span class="here">Create Company</span></nav>
+  <h1>Create Company</h1>
+  <div class="sub">Every company gets an operating basis — chosen once, at creation.</div>
+  <div class="stepper"><span class="st on">1 · Company details</span><span class="st on">2 · Accounting method</span><span class="st on">3 · Fiscal year &amp; currency</span><span class="st on">4 · Finish</span></div>
+
+  <div class="card"><div class="card-h"><span class="stepno">2</span><h2>Accounting method — how this company keeps its books</h2></div>
+    <div class="pad">
+      <div class="optcards">
+        <div class="optcard sel"><span class="rd"></span><div class="t">Accrual (Recommended)</div>
+          <div class="d">Record income when earned &amp; expenses when incurred. Tracks receivables, payables, inventory, accruals &amp; prepayments. Full Balance Sheet + Income Statement. Best for credit, inventory, loans, external reporting.</div></div>
+        <div class="optcard"><span class="rd"></span><div class="t">Cash</div>
+          <div class="d">Record only when cash moves. Simpler, smaller chart. Best for tiny cash-only businesses. You can switch to accrual later via a controlled conversion.</div></div>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="warn">⚠ <span><b>What changes in your books:</b> accrual adds AR / AP / inventory / accrual / prepayment accounts and invoice &amp; bill modules; cash omits them and reports cash in/out. The method is stored per company and inherited by the Chart of Accounts.</span></div>
+        <div class="okchip" style="align-self:start">Reporting preference: <b>Accrual view</b> · cash-basis view available as a report toggle</div>
+      </div>
+    </div></div>
+</div>
+<div class="slim-rail"><button class="s-ic" data-tip="Company Setup">⚙</button><button class="s-ic" data-tip="Chart of Accounts">📒</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 2 · COA SETUP — inherits method -->
+<div class="stage"><div class="stage-body">
+  <nav class="crumbs">Company Setup › <span class="here">Chart of Accounts Structure</span></nav>
+  <h1>Chart of Accounts Structure</h1>
+  <div class="sub">Method is inherited from the company — not chosen here.</div>
+  <div class="card"><div class="card-h"><h2>Accounting method</h2><span class="chip" style="margin-left:8px">Inherited · Accrual (from company)</span>
+    <div style="margin-left:auto"><button class="btn btn-ghost btn-sm">Change at company level</button></div></div>
+    <div class="pad"><div class="warn">ⓘ <span>The coding structure below (format, levels, segments, generation) is independent of the accounting method. The method (accrual/cash) is set once at <b>Company Creation</b> and drives which accounts/modules are active.</span></div></div></div>
+  <div class="card"><div class="card-h"><h2>Code structure · segments · generation</h2></div>
+    <div class="pad"><div class="grid2">
+      <div><div class="inrow"><span class="nm">Format</span><span class="mono" style="font-weight:700">Hierarchical with separators · 1-01-001</span></div>
+        <div class="inrow"><span class="nm">Levels</span><span class="mono" style="font-weight:700">3</span></div>
+        <div class="inrow"><span class="nm">Segments</span><span class="mono" style="font-weight:700">1 · 2 · 3</span></div></div>
+      <div><div class="inrow"><span class="nm">Generation</span><span class="mono" style="font-weight:700">Automatic (admin manual override)</span></div>
+        <div class="inrow"><span class="nm">Default COA</span><span class="mono" style="font-weight:700">Accrual template (AR/AP/inventory active)</span></div></div>
+    </div></div></div>
+</div>
+<div class="slim-rail"><button class="s-ic" data-tip="Company Setup">⚙</button><button class="s-ic" data-tip="Chart of Accounts">📒</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 3 · SWITCH TO ACCRUAL — guided conversion -->
+<div class="stage"><div class="stage-body">
+  <nav class="crumbs">Settings › <span class="here">Switch to Accrual</span></nav>
+  <h1>Switch to Accrual — controlled conversion</h1>
+  <div class="sub">For a company currently on cash basis. A dated, journaled conversion — never a free toggle.</div>
+  <div class="stepper"><span class="st on">1 · Cut-off</span><span class="st on">2 · Opening balances</span><span class="st on">3 · Conversion journal</span><span class="st on">4 · Activate</span></div>
+
+  <div class="card"><div class="card-h"><span class="stepno">1</span><h2>Cut-off date</h2></div>
+    <div class="pad"><div class="inrow"><span class="nm">Accrual applies from</span><input type="date" value="2027-01-01" style="text-align:left"></div>
+      <div class="inrow"><span class="nm">Prior periods</span><span class="mono" style="font-weight:700">Prospective (recommended) — history stays cash basis</span></div></div></div>
+
+  <div class="card"><div class="card-h"><span class="stepno">2</span><h2>Capture opening balances at cut-off</h2></div>
+    <div class="pad">
+      <div class="inrow"><span class="nm">Accounts Receivable (earned, not collected)</span><input id="ar" value="2000000"></div>
+      <div class="inrow"><span class="nm">Inventory on hand</span><input id="inv" value="1500000"></div>
+      <div class="inrow"><span class="nm">Prepayments (paid, not yet used)</span><input id="pre" value="300000"></div>
+      <div class="inrow"><span class="nm">Accounts Payable (incurred, not paid)</span><input id="ap" value="800000"></div>
+      <div class="inrow"><span class="nm">Accrued expenses</span><input id="acc" value="200000"></div>
+      <div class="inrow"><span class="nm">Unearned revenue (received, not earned)</span><input id="une" value="0"></div>
+    </div></div>
+
+  <div class="card"><div class="card-h"><span class="stepno">3</span><h2>Conversion journal — auto-balanced to opening equity</h2>
+    <div style="margin-left:auto"><span class="okchip" id="bal">✓ Balanced · Dr = Cr</span></div></div>
+    <div class="pad"><table><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+      <tbody id="cj">
+        <tr><td>Accounts Receivable</td><td class="num" id="d-ar">2,000,000</td><td class="num"></td></tr>
+        <tr><td>Inventory</td><td class="num" id="d-inv">1,500,000</td><td class="num"></td></tr>
+        <tr><td>Prepayments</td><td class="num" id="d-pre">300,000</td><td class="num"></td></tr>
+        <tr><td>Accounts Payable</td><td class="num"></td><td class="num" id="c-ap">800,000</td></tr>
+        <tr><td>Accrued Expenses</td><td class="num"></td><td class="num" id="c-acc">200,000</td></tr>
+        <tr><td>Unearned Revenue</td><td class="num"></td><td class="num" id="c-une">0</td></tr>
+        <tr><td class="codecell">Retained Earnings — opening adjustment</td><td class="num" id="d-re"></td><td class="num" id="c-re">2,800,000</td></tr>
+        <tr><td class="codecell">Totals</td><td class="num" id="t-d">3,800,000</td><td class="num" id="t-c">3,800,000</td></tr>
+      </tbody></table>
+      <div class="warn" style="margin-top:12px">⚠ <span>Non-cash conversion — cash does not move. From the cut-off, invoice at delivery, expense at bill, track stock/COGS and run period-end accruals.</span></div>
+    </div></div>
+
+  <div class="card"><div class="card-h"><span class="stepno">4</span><h2>Activate conversion</h2>
+    <div style="margin-left:auto;display:flex;gap:8px"><button class="btn btn-ghost btn-sm">Save draft</button><button class="btn btn-cta btn-sm">Activate Conversion</button></div></div>
+    <div class="pad"><div class="warn">ⓘ <span>On activation the system: posts the conversion journal, activates AR / AP / inventory modules, flags periods before cut-off as <b>cash</b> and after as <b>accrual</b>, and keeps the cash-basis view available as a report. This is recorded in the audit trail and cannot be silently undone.</span></div></div></div>
+</div>
+<div class="slim-rail"><button class="s-ic" data-tip="Settings">⚙</button><button class="s-ic" data-tip="Chart of Accounts">📒</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+</div>
+<script>
+  var f=function(v){return (+v||0).toLocaleString('en-US');};
+  function recalc(){
+    var ar=+ar_.value,inv=+inv_.value,pre=+pre_.value,ap=+ap_.value,acc=+acc_.value,une=+une_.value;
+    var dr=ar+inv+pre, cr0=ap+acc+une, plug=dr-cr0;
+    d_ar.textContent=f(ar);d_inv.textContent=f(inv);d_pre.textContent=f(pre);
+    c_ap.textContent=f(ap);c_acc.textContent=f(acc);c_une.textContent=f(une);
+    var rePos=plug>=0; d_re.textContent=rePos?'':f(-plug); c_re.textContent=rePos?f(plug):'';
+    var td=dr+(rePos?0:-plug), tc=cr0+(rePos?plug:0);
+    t_d.textContent=f(td); t_c.textContent=f(tc);
+    bal.textContent=(td===tc)?'✓ Balanced · Dr = Cr':'✗ Out of balance';
+  }
+  var ar_=document.getElementById('ar'),inv_=document.getElementById('inv'),pre_=document.getElementById('pre'),
+      ap_=document.getElementById('ap'),acc_=document.getElementById('acc'),une_=document.getElementById('une');
+  [ar_,inv_,pre_,ap_,acc_,une_].forEach(function(i){i.addEventListener('input',recalc);});
+  recalc();
+</script>
+</body>
+</html>

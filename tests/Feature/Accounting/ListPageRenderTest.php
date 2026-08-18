@@ -11,6 +11,7 @@ use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\SalesReceipt;
 use App\Models\Vendor;
+use App\Services\FeatureManagement;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -39,6 +40,8 @@ class ListPageRenderTest extends TestCase
         $this->user->assignRole('company_admin');
         $this->user->update(['current_company_id' => $this->company->id]);
         session(['current_company_id' => $this->company->id]);
+
+        FeatureManagement::enable($this->company->id, 'inventory');
 
         AccountingPeriod::create([
             'company_id' => $this->company->id,
@@ -106,7 +109,7 @@ class ListPageRenderTest extends TestCase
         $routes = [
             'accounting.customers.index' => 'li-wrap',
             'accounting.vendors.index' => 'li-wrap',
-            'accounting.products.index' => 'li-wrap',
+            'accounting.inventory.items' => 'inv-wrap',
             'accounting.employees.index' => 'li-wrap',
             'accounting.invoices.index' => 'li-wrap',
             'accounting.bills.index' => 'li-wrap',

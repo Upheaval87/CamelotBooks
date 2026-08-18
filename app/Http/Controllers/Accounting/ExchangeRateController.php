@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Models\Currency;
 use App\Models\ExchangeRate;
 use Illuminate\Http\Request;
 
@@ -22,6 +23,32 @@ class ExchangeRateController extends Controller
         $baseCurrency = $company->base_currency;
 
         return view('accounting.exchange-rates.index', compact('rates', 'baseCurrency'));
+    }
+
+    public function create()
+    {
+        $companyId = session('current_company_id');
+        $company = Company::find($companyId);
+        $currencies = Currency::query()->active()->ordered()->get();
+
+        return view('accounting.exchange-rates.create', [
+            'baseCurrency' => $company->base_currency,
+            'currencies' => $currencies,
+            'exchangeRate' => null,
+        ]);
+    }
+
+    public function edit(ExchangeRate $exchangeRate)
+    {
+        $companyId = session('current_company_id');
+        $company = Company::find($companyId);
+        $currencies = Currency::query()->active()->ordered()->get();
+
+        return view('accounting.exchange-rates.create', [
+            'baseCurrency' => $company->base_currency,
+            'currencies' => $currencies,
+            'exchangeRate' => $exchangeRate,
+        ]);
     }
 
     public function store(Request $request)

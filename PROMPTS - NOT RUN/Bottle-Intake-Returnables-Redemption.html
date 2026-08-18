@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POS — Bottle Intake + Redemption (v3 fixes)</title>
+<style>
+  :root{--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--sec-2:#149897;--ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;--green:#15803d;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --pdeep:#0c3539;--pteal:#128F8E;--pink:#111827;--pbody:#374151;--pmut:#6b7280;--pfaint:#9ca3af;--phair:#e5e7eb;--phair2:#f3f4f6;}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;font-size:14px;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}.spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background-color:#e8f0f0;border-color:var(--border);color:var(--ink)}
+  .btn-sec{color:#fff;background-color:var(--sec);background-image:linear-gradient(180deg,var(--sec-2),var(--sec));box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#fff;background-color:var(--deep-2);background-image:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:24px 0 14px}
+  .page-head h1{font-size:22px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .step{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--sec);text-transform:uppercase}
+  .pad{padding:20px 24px}
+  .f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .f .in{width:100%;height:42px;border-radius:10px;border:1px solid var(--border);background:#fff;padding:0 12px;font-size:13.5px;color:var(--ink);font-family:inherit}
+  .f .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .search{position:relative}
+  .search .in{padding-left:34px}
+  .search svg.mag{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .search .go{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--sec);display:grid;place-items:center;cursor:pointer}
+  .filters{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media (max-width:1000px){.filters{grid-template-columns:1fr 1fr}}
+  .chk{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer;user-select:none}
+  .chk input{width:16px;height:16px;accent-color:var(--sec);cursor:pointer}
+  .tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .tchip.dep{background:rgba(18,143,142,.08);border-color:rgba(18,143,142,.3);color:var(--sec)}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  th.num,td.num{text-align:right}
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  td.num{font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  tbody tr:last-child td{border-bottom:none}
+  .em{color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+  @media (max-width:1000px){.grid2{grid-template-columns:1fr}}
+  .totrow{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--muted)}
+  .totrow.big{font-size:17px;font-weight:800;color:var(--ink);border-top:1px solid var(--line);margin-top:6px;padding-top:10px}
+  .totrow.big .v{color:var(--sec)}
+  .note{border:1.5px dashed rgba(18,143,142,.5);background:rgba(18,143,142,.05);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--muted)}
+  /* branded receipt — FIX: min-width 0 so it never overflows the sheet */
+  .doc{background:#fff;border-top:3px solid var(--pdeep);box-shadow:0 10px 26px -8px rgba(16,24,40,.28);border-radius:2px;padding:26px 30px 18px;font-size:10px;color:var(--pbody);max-width:460px}
+  .doc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--phair)}
+  .doc-mark{width:30px;height:30px;border-radius:8px;background:var(--pdeep);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+  .doc-co{font-size:12px;font-weight:700;color:var(--pink)}
+  .doc-tag{font-size:7.5px;color:var(--pmut);margin-top:1px}
+  .doc-id{text-align:right}
+  .doc-title{font-size:10.5px;font-weight:700;color:var(--pink);letter-spacing:.22em;text-transform:uppercase}
+  .doc-period{font-size:8.5px;color:var(--pmut);margin-top:3px}
+  .doc-accent{width:26px;height:3px;background:var(--pteal);margin-left:auto;margin-top:6px;border-radius:2px}
+  .dtable{width:100%;min-width:0;border-collapse:collapse;margin-top:14px;font-size:9.5px;table-layout:fixed}
+  .dtable th{font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--pmut);text-align:left;padding:0 4px 6px 0;border-bottom:1px solid var(--phair);overflow:hidden}
+  .dtable th.num,.dtable td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .dtable td{padding:5px 4px 5px 0;border-bottom:1px solid var(--phair2);color:var(--pbody);overflow:hidden;text-overflow:ellipsis}
+  .dtable td.num{color:var(--pink);font-weight:500}
+  .dtable tr.gt td{border-bottom:none;border-top:2px solid var(--pink);font-weight:700;color:var(--pink);padding-top:7px}
+  .words{margin-top:8px;font-size:8.5px;color:var(--pmut);font-style:italic}
+  .doc-foot{display:flex;justify-content:space-between;gap:8px;margin-top:14px;padding-top:8px;border-top:1px solid var(--phair);font-size:8px;color:var(--pfaint)}
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + 12px)}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background-color:var(--sec);background-image:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+<header class="tealbar">
+  <div class="row1"><span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div></div>
+  <div class="row2"><a class="navitem" href="#">Sales</a><a class="navitem active" href="#">POS</a><a class="navitem" href="#">Inventory</a><a class="navitem" href="#">Banking</a><a class="navitem" href="#">Reports</a></div>
+</header>
+<div class="wrap">
+
+<!-- 1 · BOTTLE INTAKE (receipt fits page) -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">1 · Bottle Intake — receipt table now fits the sheet</span>
+  <div class="page-head"><div><h1>Bottle Intake / Container Registration</h1><div class="sub">Customer hands in empties first → gets a numbered Returnables Receipt to redeem at checkout</div></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm">Receipts Register</button><button class="btn btn-cta btn-sm">Register Bottles</button></div></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><span class="step">1 · Intake Details</span></div>
+      <div class="pad">
+        <div class="filters" style="grid-template-columns:1fr 1fr">
+          <div class="f"><label>Customer</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="Search / Walk-in"><button class="go">🔍</button></div></div>
+          <div class="f"><label>Container</label><select class="in"><option>Coca-Cola Empty Bottle</option><option>Beer Empty Bottle</option><option>Crate (24)</option></select></div>
+          <div class="f"><label>Qty Received</label><input class="in" value="10"></div>
+          <div class="f"><label>Value Each</label><input class="in" value="K200" disabled></div>
+        </div>
+        <div class="totrow big" style="margin-top:12px"><span>Total Bottle Credit</span><span class="v">K2,000</span></div>
+        <div class="note" style="margin-top:10px">On register: empty stock +10 · issues <b style="color:var(--ink)">BRR-000123</b> · credit K2,000 held as liability until redeemed.</div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-sec btn-sm">Register &amp; Issue Receipt</button><button class="btn btn-ghost btn-sm">🖨 Print</button></div>
+      </div></div>
+    <div class="doc"><div class="doc-top"><div style="display:flex;gap:10px;align-items:center"><span class="doc-mark">C</span><div><div class="doc-co">CamelotBooks</div><div class="doc-tag">Enterprise Accounting &amp; Advisory Services</div></div></div>
+      <div class="doc-id"><div class="doc-title">Bottle Return Receipt</div><div class="doc-period">15 August 2026</div><div class="doc-accent"></div></div></div>
+      <table class="dtable">
+        <colgroup><col style="width:30%"><col style="width:30%"><col style="width:12%"><col style="width:14%"><col style="width:14%"></colgroup>
+        <thead><tr><th>Receipt №</th><th>Customer</th><th class="num">Qty</th><th class="num">Value</th><th class="num">Credit</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:700">BRR-000123</td><td>Walk-in</td><td class="num">10</td><td class="num">200</td><td class="num">2,000</td></tr>
+          <tr class="gt"><td colspan="4">Total Bottle Credit</td><td class="num">2,000</td></tr>
+        </tbody></table>
+      <div class="words">Amount in words: Two Thousand Kwacha only. Redeem on purchase; balance carries forward; valid 30 days.</div>
+      <div class="doc-foot"><span>www.camelotbooks.com · info@camelotbooks.com · +265 1 234 567</span><span>Page 1 of 1</span></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Register">🍾</button><button class="s-ic" data-tip="Print">🖨</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 2 · POS CHECKOUT (returnables section hidden until checkbox; renamed field) -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">2 · POS Checkout — Returnables Receipt hidden until activated</span>
+  <div class="page-head"><div><h1>POS Checkout — TILL-01</h1><div class="sub">Search/add products as usual; tick the box only if the customer holds a Returnables Receipt</div></div></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><span class="step">1 · Items + Returnables Receipt</span></div>
+      <div class="pad">
+        <div class="f"><label>Product</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" placeholder="Type to search products… (Up/Down to navigate, Enter to select)"><button class="go">🔍</button></div></div>
+        <div style="display:flex;gap:8px;align-items:flex-end;margin:10px 0">
+          <div class="f" style="width:90px;margin:0"><label>Qty</label><input class="in" value="12"></div>
+          <button class="btn btn-sec btn-sm">Add</button>
+          <button class="btn btn-ghost btn-sm">📷 Scan Barcode</button></div>
+
+        <!-- hidden until checkbox -->
+        <label class="chk" style="margin:6px 0 10px"><input type="checkbox" id="hasBrr"> Customer has a Returnables Receipt</label>
+        <div id="brrSection" style="display:none">
+          <div class="f"><label>Returnables Receipt №</label><div class="search"><svg class="mag" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input class="in" value="BRR-000123"><button style="position:absolute;right:6px;top:50%;transform:translateY(-50%);height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--sec);color:#fff;font-weight:700;font-size:12px;cursor:pointer">Apply</button></div>
+            <div style="margin-top:6px"><span class="tchip dep">BRR-000123 · 10 bottles · credit K2,000 · balance K0</span></div></div>
+        </div>
+
+        <div class="li-wrap" style="margin-top:12px"><table style="min-width:0"><thead><tr><th>Line</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr></thead><tbody>
+          <tr><td style="font-weight:700;color:var(--ink)">Coca-Cola 500ml Filled</td><td class="num">12</td><td class="num">1,000</td><td class="num">12,000</td></tr>
+          <tr><td class="em">Bottle Deposit (12 × 200)</td><td class="num">12</td><td class="num">200</td><td class="num">2,400</td></tr>
+          <tr class="redeem" style="display:none"><td class="em" style="color:var(--green)">BRR-000123 Redemption (10 × −200)</td><td class="num">10</td><td class="num" style="color:var(--green)">−200</td><td class="num" style="color:var(--green)">−2,000</td></tr>
+        </tbody></table></div>
+        <div class="note redeem" style="display:none;margin-top:10px">Covered 10 bottles pay drink only (K1,000 each). <b style="color:var(--ink)">2 extra bottles</b> pay full price incl. bottle (K1,200 each) = K2,400.</div>
+      </div></div>
+    <div class="card"><div class="card-h"><span class="step">2 · Payment</span></div>
+      <div class="pad">
+        <div class="totrow"><span>Drinks (12 × 1,000)</span><span>K12,000</span></div>
+        <div class="totrow"><span>Bottle Deposit (12)</span><span>+K2,400</span></div>
+        <div class="totrow redeem" style="display:none"><span>Returnables Redemption (10)</span><span style="color:var(--green)">−K2,000</span></div>
+        <div class="totrow big"><span>Total Due</span><span class="v" id="totalVal">K14,400</span></div>
+        <div class="note" style="margin-top:10px">If bottles returned &gt; drinks bought, the unused credit stays on the receipt for the next visit.</div>
+        <button class="btn btn-cta" style="width:100%;margin-top:12px">Complete Sale</button>
+      </div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Scan">📷</button><button class="s-ic" data-tip="Returnables">🎟</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+</div>
+<script>
+  var chk=document.getElementById('hasBrr'), sec=document.getElementById('brrSection'),
+      total=document.getElementById('totalVal');
+  function sync(){
+    var on=chk.checked;
+    sec.style.display=on?'block':'none';
+    document.querySelectorAll('.redeem').forEach(function(el){el.style.display=on?'':'none';});
+    total.textContent=on?'K12,400':'K14,400';
+  }
+  chk.addEventListener('change',sync); sync();
+</script>
+</body>
+</html>

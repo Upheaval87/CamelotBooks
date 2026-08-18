@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transaction Reversals + Authorization — CTAs always visible</title>
+<style>
+  :root{--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--deep-3:#0a2e32;--sec:#128F8E;--sec-2:#149897;--ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;--red-2:#b91c1c;--green:#15803d;--amber-2:#b45309;--steel:#46708C;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);
+    --shadow-green:0 1px 2px rgba(20,83,45,.3),0 10px 22px -8px rgba(22,163,74,.5),inset 0 1px 0 rgba(255,255,255,.25);
+    --shadow-red:0 1px 2px rgba(127,29,29,.3),0 10px 22px -8px rgba(220,38,38,.5),inset 0 1px 0 rgba(255,255,255,.2);
+    --shadow-amber:0 1px 2px rgba(120,53,15,.3),0 10px 22px -8px rgba(217,119,6,.5),inset 0 1px 0 rgba(255,255,255,.2);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}.spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background-color:#e8f0f0;border-color:var(--border);color:var(--ink)}
+  .btn-ghost:hover{background-color:#dceaea;border-color:rgba(17,69,75,.35)}
+  /* solid background-color fallback UNDER each gradient so CTAs are ALWAYS visible */
+  .btn-sec{color:#fff;background-color:var(--sec);background-image:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#fff;background-color:var(--deep-2);background-image:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-approve{color:#fff;background-color:var(--green);background-image:linear-gradient(180deg,#22c55e,var(--green));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-green);font-weight:700}
+  .btn-reject{color:#fff;background-color:var(--red-2);background-image:linear-gradient(180deg,#ef4444,var(--red-2));border-color:rgba(255,255,255,.2);box-shadow:var(--shadow-red);font-weight:700}
+  .btn-warn{color:#fff;background-color:var(--amber-2);background-image:linear-gradient(180deg,#f59e0b,var(--amber-2));border-color:rgba(255,255,255,.2);box-shadow:var(--shadow-amber);font-weight:700}
+  .btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+  .btn-xs{height:30px;padding:0 11px;font-size:11.5px;border-radius:9px}
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+  .crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--ink)}.crumbs .here{color:var(--ink);font-weight:800}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:24px 0 14px}
+  .page-head h1{font-size:21px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .pad{padding:22px 26px}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 22px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:1000px){.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}@media (max-width:640px){.g4{grid-template-columns:1fr}}
+  .f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .f .in{width:100%;height:44px;border-radius:12px;border:1px solid var(--border);background:#fff;padding:0 14px;font-size:13.5px;color:var(--ink);font-family:inherit}
+  .f .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .f select.in{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:34px}
+  .f textarea.in{height:auto;min-height:80px;padding:12px 14px;border-radius:12px;resize:vertical}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-open{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}.b-open .bdot{background:#22c55e}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:var(--amber)}
+  .b-rej{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-rej .bdot{background:var(--red-2)}
+  .b-post{background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);color:var(--sec)}.b-post .bdot{background:var(--sec)}
+  .tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .warn{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(217,119,6,.4);background:rgba(217,119,6,.07);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--amber-2);font-weight:600;line-height:1.5}
+  .errcard{display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(185,28,28,.3);background:rgba(185,28,28,.06);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--red-2);font-weight:600;line-height:1.5}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.85);box-shadow:var(--shadow-card)}
+  .kpi .l{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .kpi .v{margin-top:6px;font-size:1.25rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi .n{margin-top:3px;font-size:10.5px;color:var(--faint)}
+  .kpi.hero{border:none;background-color:var(--sec);background-image:linear-gradient(135deg,var(--sec-2),var(--sec) 60%,#0c7a79)}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}
+  .kpi.warn .v{color:var(--amber-2)}.kpi.red .v{color:var(--red-2)}
+  @media (max-width:1000px){.kpis{grid-template-columns:1fr 1fr}}
+  .wflow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0 14px}
+  .wf{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:800}
+  .wf.done{background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+  .wf.cur{background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.4);color:var(--amber-2)}
+  .wf.todo{background:rgba(138,165,167,.12);border:1px solid rgba(138,165,167,.4);color:var(--muted)}
+  .wf-arr{color:var(--faint)}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:820px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th.num{text-align:right}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  .em{color:var(--muted)}.dash{color:var(--faint)}
+  .numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  .numr.bold{font-weight:800}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + 12px)}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background-color:var(--sec);background-image:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+<header class="tealbar">
+  <div class="row1"><span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div></div>
+  <div class="row2"><a class="navitem" href="#">Sales</a><a class="navitem" href="#">Purchasing</a><a class="navitem active" href="#">Accounts</a><a class="navitem" href="#">Banking</a><a class="navitem" href="#">Reports</a></div>
+</header>
+<div class="wrap">
+
+<!-- 1 · SEARCH + REQUEST -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">1 · Search Transaction + Request Reversal</span>
+  <div class="page-head"><div><h1>Transaction Reversals</h1><div class="sub">Request controlled reversals of posted transactions — never delete.</div></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Search Transaction</h2></div>
+    <div class="pad"><div class="g4">
+      <div class="f"><label>Transaction Date</label><input class="in" type="date" value="2026-08-10"></div>
+      <div class="f"><label>Reference Number</label><input class="in" placeholder="JV-2026-000245, PAY-000567…"></div>
+      <div class="f"><label>Transaction Type</label><select class="in"><option>Journal Entry</option><option>Payment</option><option>Receipt</option><option>Invoice</option><option>Purchase</option><option>Bank Transaction</option><option>Payroll Posting</option><option>Loan Posting</option><option>Other</option></select></div>
+      <div class="f" style="align-self:end"><button class="btn btn-cta" style="width:100%">🔍 Search</button></div>
+    </div></div></div>
+  <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Result</h2></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:15%">Reference</th><th style="width:11%">Date</th><th style="width:13%">Type</th><th style="width:24%">Description</th><th style="width:11%">Created By</th><th class="num" style="width:12%">Amount (K)</th><th style="width:10%">Status</th><th style="width:8%"></th></tr></thead>
+      <tbody><tr><td class="mono">JV-2026-000245</td><td class="em">10 Aug</td><td><span class="tchip">Journal</span></td><td class="em">August rent posted twice</td><td class="em">J. Banda</td><td class="numr bold">2,000,000</td><td><span class="badge b-post"><span class="bdot"></span>Posted</span></td><td class="row-act"><button class="btn btn-sec btn-xs">Select</button></td></tr></tbody></table></div></div>
+  <div class="g2">
+    <div class="card"><div class="card-h"><h2>Original Entry — JV-2026-000245</h2></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody><tr><td class="em">5-01-002 Rent Expense</td><td class="numr">2,000,000</td><td class="dash">—</td></tr>
+        <tr><td class="em">1-01-002 Bank Account</td><td class="dash">—</td><td class="numr">2,000,000</td></tr></tbody></table></div>
+      <div class="pad" style="border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)">Branch: Head Office · Cost Centre: CC-01 · Currency MWK · 📎 rent_invoice.pdf</div></div>
+    <div class="card"><div class="card-h"><h2>Request Reversal</h2></div>
+      <div class="pad"><div class="g2" style="gap:14px">
+        <div class="f"><label>Reversal Reason <span style="color:var(--red)">*</span></label><textarea class="in">Duplicate transaction — August rent posted twice.</textarea></div>
+        <div class="f"><label>Reversal Date</label><select class="in"><option>Same date as original</option><option>Current date</option><option>User-selected</option></select></div>
+        <div class="f"><label>Reversal Method</label><select class="in"><option>Full Reversal</option><option>Partial Reversal</option></select></div>
+        <div class="f"><label>Partial Amount</label><input class="in" placeholder="—"></div>
+      </div>
+      <div class="warn" style="margin-top:12px">ⓘ <span>Reversal never deletes the original. A linked opposite entry (REV-…) is created; original becomes <b>REVERSED</b>.</span></div>
+      <div style="display:flex;gap:10px;margin-top:14px"><button class="btn btn-cta btn-sm">Request Reversal</button><button class="btn btn-ghost btn-sm">Cancel Request</button></div></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Search">🔍</button><button class="s-ic" data-tip="My Requests">📄</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 2 · DASHBOARD + LIST -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">2 · Reversals Dashboard + List</span>
+  <div class="page-head"><div><h1>Reversals Overview</h1><div class="sub">Requests, approvals and reversed totals.</div></div>
+    <button class="btn btn-sec btn-sm">⇩ Export Report</button></div>
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi hero"><div class="l">Pending Reversals</div><div class="v">12</div><div class="n" style="color:#dff7f6">awaiting authorisation</div></div>
+    <div class="kpi"><div class="l">Approved Today</div><div class="v">5</div><div class="n">posted to GL</div></div>
+    <div class="kpi red"><div class="l">Rejected This Month</div><div class="v">3</div><div class="n">with reasons</div></div>
+    <div class="kpi"><div class="l">Total Reversed</div><div class="v">K450,000</div><div class="n">this month</div></div></div>
+  <div class="card"><div class="card-h"><h2>Reversal Requests</h2></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:14%">Request №</th><th style="width:14%">Txn Ref</th><th style="width:11%">Date</th><th style="width:12%">Type</th><th class="num" style="width:12%">Amount (K)</th><th style="width:12%">Requested By</th><th style="width:11%">Status</th><th style="width:15%"></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">REV-REQ-000123</td><td class="mono">JV-2026-000245</td><td class="em">10 Aug</td><td><span class="tchip">Journal</span></td><td class="numr bold">2,000,000</td><td class="em">J. Banda</td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td><td class="row-act"><button class="ibtn">👁</button><button class="btn btn-approve btn-xs">Approve</button></td></tr>
+        <tr><td class="mono">REV-REQ-000122</td><td class="mono">PAY-000567</td><td class="em">08 Aug</td><td><span class="tchip">Payment</span></td><td class="numr bold">500,000</td><td class="em">M. Phiri</td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td><td class="row-act"><button class="ibtn">👁</button><button class="btn btn-approve btn-xs">Approve</button></td></tr>
+        <tr><td class="mono">REV-REQ-000121</td><td class="mono">INV-001198</td><td class="em">05 Aug</td><td><span class="tchip">Invoice</span></td><td class="numr bold">3,360,000</td><td class="em">J. Banda</td><td><span class="badge b-open"><span class="bdot"></span>Approved</span></td><td class="row-act"><button class="ibtn">👁</button></td></tr>
+        <tr><td class="mono">REV-REQ-000120</td><td class="mono">RCT-000311</td><td class="em">02 Aug</td><td><span class="tchip">Receipt</span></td><td class="numr bold">250,000</td><td class="em">M. Phiri</td><td><span class="badge b-rej"><span class="bdot"></span>Rejected</span></td><td class="row-act"><button class="ibtn">👁</button></td></tr>
+      </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Pending">⏳</button><button class="s-ic" data-tip="History">🕘</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 3 · AUTHORIZATION DASHBOARD -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">3 · Reversal Authorization Dashboard</span>
+  <div class="page-head"><div><h1>Reversal Authorization</h1><div class="sub">Approve, reject or request clarification.</div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-sec btn-sm">View Pending</button><button class="btn btn-sec btn-sm">My Approval Queue</button><button class="btn btn-sec btn-sm">Reversal History</button><button class="btn btn-cta btn-sm">Authorization Rules</button></div></div>
+  <div class="kpis">
+    <div class="kpi hero"><div class="l">Pending Requests</div><div class="v">12</div><div class="n" style="color:#dff7f6">assigned to you: 4</div></div>
+    <div class="kpi"><div class="l">Approved Today</div><div class="v">5</div><div class="n">posted to GL</div></div>
+    <div class="kpi red"><div class="l">Rejected Today</div><div class="v">1</div><div class="n">with reason</div></div>
+    <div class="kpi warn"><div class="l">Amount Pending</div><div class="v">K8.4M</div><div class="n">approved this month K12.6M</div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="My Queue">📥</button><button class="s-ic" data-tip="Rules">⚙</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 4 · PENDING QUEUE -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">4 · Pending Reversal Requests — approval queue</span>
+  <div class="page-head"><div><h1>Pending Reversal Requests</h1><div class="sub">Filters + approval queue.</div></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th style="width:14%">Request №</th><th style="width:14%">Txn Ref</th><th style="width:11%">Type</th><th style="width:20%">Description</th><th class="num" style="width:11%">Amount (K)</th><th style="width:11%">Requested By</th><th style="width:10%">Status</th><th style="width:16%"></th></tr></thead>
+    <tbody>
+      <tr><td class="mono">REV-REQ-000123</td><td class="mono">JV-2026-000245</td><td><span class="tchip">Journal</span></td><td class="em">Duplicate rent posting</td><td class="numr bold">2,000,000</td><td class="em">J. Banda</td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td><td class="row-act"><button class="ibtn">👁</button><button class="btn btn-approve btn-xs">Approve</button><button class="btn btn-reject btn-xs">Reject</button></td></tr>
+      <tr><td class="mono">REV-REQ-000122</td><td class="mono">PAY-000567</td><td><span class="tchip">Payment</span></td><td class="em">Wrong account posted</td><td class="numr bold">500,000</td><td class="em">M. Phiri</td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td><td class="row-act"><button class="ibtn">👁</button><button class="btn btn-approve btn-xs">Approve</button><button class="btn btn-reject btn-xs">Reject</button></td></tr>
+    </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="My Queue">📥</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 5 · REVIEW + AUTHORIZE -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">5 · Reversal Review — original vs proposed + authorize</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Reversals</a> › <span class="here">REV-REQ-000123</span></nav>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-approve btn-sm">✓ Approve Reversal</button><button class="btn btn-reject btn-sm">✕ Reject</button><button class="btn btn-warn btn-sm">? Request More Info</button></div></div>
+  <div class="wflow"><span class="wf done">✓ Requested</span><span class="wf-arr">→</span><span class="wf done">✓ Supervisor</span><span class="wf-arr">→</span><span class="wf cur">● Finance Manager</span><span class="wf-arr">→</span><span class="wf todo">CFO (&gt;500K)</span><span class="wf-arr">→</span><span class="wf todo">Reversed</span></div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="card-h"><h2>Original Entry — JV-2026-000245</h2><span class="badge b-post" style="margin-left:8px"><span class="bdot"></span>Posted</span></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody><tr><td class="em">5-01-002 Rent Expense</td><td class="numr">2,000,000</td><td class="dash">—</td></tr>
+        <tr><td class="em">1-01-002 Bank Account</td><td class="dash">—</td><td class="numr">2,000,000</td></tr></tbody></table></div></div>
+    <div class="card"><div class="card-h"><h2>Proposed Reversal — auto-generated</h2><span class="tchip" style="margin-left:8px">mirror entry</span></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody><tr><td class="em">1-01-002 Bank Account</td><td class="numr">2,000,000</td><td class="dash">—</td></tr>
+        <tr><td class="em">5-01-002 Rent Expense</td><td class="dash">—</td><td class="numr">2,000,000</td></tr></tbody></table></div></div>
+  </div>
+  <div class="card"><div class="card-h"><h2>Request Information</h2></div>
+    <div class="pad"><div class="g4">
+      <div class="f"><label>Requested By</label><input class="in" value="J. Banda" disabled></div>
+      <div class="f"><label>Request Date</label><input class="in" value="15 Aug 2026 09:30" disabled></div>
+      <div class="f"><label>Reason</label><input class="in" value="Duplicate transaction" disabled></div>
+      <div class="f"><label>Attachments</label><input class="in" value="📎 rent_invoice.pdf" disabled></div>
+    </div>
+    <div class="warn" style="margin-top:12px">⚠ <span>Approving creates the reversal journal, posts to GL, sets original POSTED → REVERSED and generates <b>REV-2026-000045</b>.</span></div>
+    <div class="errcard" style="margin-top:10px">❌ <span>Blocked if: already reversed · period closed · year locked · dependent transactions exist.</span></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Approve">✓</button><button class="s-ic" data-tip="Reject">✕</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- 6 · RULES + PERMISSIONS + AUDIT -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">6 · Authorization Rules + Permissions + Audit</span>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="card-h"><h2>Authorization Rules — approval limits</h2><div class="right"><button class="btn btn-cta btn-xs">＋ Add Rule</button></div></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Amount Range (K)</th><th>Approver</th><th>Levels</th></tr></thead>
+        <tbody>
+          <tr><td class="em">0 – 50,000</td><td class="em">Accountant</td><td><span class="tchip">1</span></td></tr>
+          <tr><td class="em">50,001 – 500,000</td><td class="em">Finance Manager</td><td><span class="tchip">1</span></td></tr>
+          <tr><td class="em">Above 500,000</td><td class="em">CFO</td><td><span class="tchip">Multi</span></td></tr>
+        </tbody></table></div></div>
+    <div class="card"><div class="card-h"><h2>User Permissions</h2></div>
+      <div class="li-wrap"><table style="min-width:0"><thead><tr><th>Role</th><th>Permissions</th></tr></thead>
+        <tbody>
+          <tr><td class="em">Accountant</td><td class="em">Request · view own · cancel pending</td></tr>
+          <tr><td class="em">Finance Manager</td><td class="em">Approve · reject · request clarification</td></tr>
+          <tr><td class="em">Senior Approver / CFO</td><td class="em">Approve high-value</td></tr>
+          <tr><td class="em">Auditor</td><td class="em">View all activity</td></tr>
+          <tr><td class="em">Administrator</td><td class="em">Configure rules</td></tr>
+        </tbody></table></div></div>
+  </div>
+  <div class="card"><div class="card-h"><h2>Audit Trail — REV-REQ-000123</h2><div class="right"><button class="btn btn-sec btn-xs">⇩ Export</button></div></div>
+    <div class="li-wrap"><table style="min-width:0"><thead><tr><th style="width:20%">Action</th><th style="width:20%">User</th><th style="width:24%">Date</th><th>Remarks</th></tr></thead>
+      <tbody>
+        <tr><td class="em">Requested</td><td class="em">J. Banda</td><td class="em">15 Aug 2026 09:30</td><td class="em">Duplicate transaction</td></tr>
+        <tr><td class="em">Reviewed</td><td class="em">M. Banda</td><td class="em">15 Aug 2026 10:15</td><td class="em">—</td></tr>
+        <tr><td class="em">Approved</td><td class="em">M. Banda</td><td class="em">15 Aug 2026 10:20</td><td class="em">Confirmed duplicate</td></tr>
+        <tr><td class="em">Posted to GL</td><td class="em">System</td><td class="em">15 Aug 2026 10:20</td><td class="em">REV-2026-000045 linked to JV-2026-000245</td></tr>
+      </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Rules">⚙</button><button class="s-ic" data-tip="Audit">🕘</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+</div>
+</body>
+</html>

@@ -15,7 +15,7 @@
 
                     @if(session('current_company_id'))
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
-                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.customers.*') || request()->routeIs('accounting.vendors.*') || request()->routeIs('accounting.invoices.*') || request()->routeIs('accounting.bills.*') || request()->routeIs('accounting.products.*') || request()->routeIs('accounting.credit-notes.*') || request()->routeIs('accounting.vendor-credits.*') || request()->routeIs('accounting.customer-payments.*') || request()->routeIs('accounting.vendor-payments.*') || request()->routeIs('accounting.purchase-requisitions.*') || request()->routeIs('accounting.purchase-orders.*') || request()->routeIs('accounting.goods-received-notes.*') || request()->routeIs('accounting.expenses.*') || request()->routeIs('accounting.quotations.*') || request()->routeIs('accounting.sales-receipts.*') ? 'border-gold-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.customers.*') || request()->routeIs('accounting.vendors.*') || request()->routeIs('accounting.invoices.*') || request()->routeIs('accounting.bills.*') || request()->routeIs('accounting.credit-notes.*') || request()->routeIs('accounting.vendor-credits.*') || request()->routeIs('accounting.customer-payments.*') || request()->routeIs('accounting.vendor-payments.*') || request()->routeIs('accounting.purchase-requisitions.*') || request()->routeIs('accounting.purchase-orders.*') || request()->routeIs('accounting.goods-received-notes.*') || request()->routeIs('accounting.expenses.*') || request()->routeIs('accounting.quotations.*') || request()->routeIs('accounting.sales-receipts.*') ? 'border-gold-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                             {{ __('Sales & Purchases') }}
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
@@ -44,28 +44,25 @@
                             @endif
                             <a href="{{ route('accounting.vendors.dashboard') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 font-medium">{{ __('Vendor Centre') }}</a>
                             <div class="border-t border-gray-100 my-1"></div>
-                            <a href="{{ route('accounting.products.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Products & Services') }}</a>
+                            <a href="{{ route('accounting.inventory.dashboard') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100 font-medium">{{ __('Inventory Centre') }}</a>
                         </div>
                     </div>
 
                     <div class="relative" x-data="{ ddOpen: false }" @click.away="ddOpen = false">
-                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ request()->routeIs('accounting.inventory-items.*') || request()->routeIs('accounting.stock-adjustments.*') || request()->routeIs('accounting.stock-transfers.*') || request()->routeIs('accounting.inventory-valuation.*') || request()->routeIs('accounting.low-stock.*') || request()->routeIs('accounting.uom-conversions.*') || request()->routeIs('accounting.landed-costs.*') || request()->routeIs('accounting.item-categories.*') ? 'border-gold-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        <button @click="ddOpen = !ddOpen" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition {{ str_starts_with($routeName, 'accounting.inventory.') ? 'border-gold-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                             {{ __('Inventory') }}
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity5">
-                            <a href="{{ route('accounting.inventory-items.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Inventory Items') }}</a>
-                            <a href="{{ route('accounting.item-categories.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Item Categories') }}</a>
-                            <div class="border-t border-gray-100 my-1"></div>
-                            <a href="{{ route('accounting.stock-adjustments.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Stock Adjustments') }}</a>
-                            <a href="{{ route('accounting.stock-transfers.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Stock Transfers') }}</a>
-                            <a href="{{ route('accounting.assemblies.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Assemblies') }}</a>
-                            <a href="{{ route('accounting.stock-counts.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Stock Counts') }}</a>
-                            <a href="{{ route('accounting.uom-conversions.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('UOM Conversions') }}</a>
-                            <a href="{{ route('accounting.landed-costs.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Landed Cost') }}</a>
-                            <div class="border-t border-gray-100 my-1"></div>
-                            <a href="{{ route('accounting.inventory-valuation.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Valuation Report') }}</a>
-                            <a href="{{ route('accounting.low-stock.index') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Low Stock Report') }}</a>
+                            <a href="{{ route('accounting.inventory.dashboard') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Dashboard') }}</a>
+                            <a href="{{ route('accounting.inventory.items') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Items') }}</a>
+                            <a href="{{ route('accounting.invsetup.categories') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Categories') }}</a>
+                            <a href="{{ route('accounting.invsetup.assemblies') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Assemblies') }}</a>
+                            <a href="{{ route('accounting.invsetup.transfers') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Transfers') }}</a>
+                            <a href="{{ route('accounting.invsetup.adjustments') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Adjustments') }}</a>
+                            <a href="{{ route('accounting.invsetup.stockcount') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Stock Count') }}</a>
+                            <a href="{{ route('accounting.invsetup.valuation') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Valuation') }}</a>
+                            <a href="{{ route('accounting.invsetup.lowstock') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Low Stock') }}</a>
                         </div>
                     </div>
 
@@ -361,18 +358,13 @@
             <x-responsive-nav-link :href="route('accounting.vendor-credits.index')" :active="request()->routeIs('accounting.vendor-credits.*')">{{ __('Vendor Credits') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.expenses.index')" :active="request()->routeIs('accounting.expenses.*')">{{ __('Expenses') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.vendors.dashboard')" :active="request()->routeIs('accounting.vendors.*')">{{ __('Vendor Centre') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.products.index')" :active="request()->routeIs('accounting.products.*')">{{ __('Products') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Inventory</div>
-            <x-responsive-nav-link :href="route('accounting.inventory-items.index')" :active="request()->routeIs('accounting.inventory-items.*')">{{ __('Inventory Items') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.item-categories.index')" :active="request()->routeIs('accounting.item-categories.*')">{{ __('Item Categories') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.stock-adjustments.index')" :active="request()->routeIs('accounting.stock-adjustments.*')">{{ __('Stock Adjustments') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.stock-transfers.index')" :active="request()->routeIs('accounting.stock-transfers.*')">{{ __('Stock Transfers') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.assemblies.index')" :active="request()->routeIs('accounting.assemblies.*')">{{ __('Assemblies') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.stock-counts.index')" :active="request()->routeIs('accounting.stock-counts.*')">{{ __('Stock Counts') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.uom-conversions.index')" :active="request()->routeIs('accounting.uom-conversions.*')">{{ __('UOM Conversions') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.landed-costs.index')" :active="request()->routeIs('accounting.landed-costs.*')">{{ __('Landed Cost') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.inventory-valuation.index')" :active="request()->routeIs('accounting.inventory-valuation.*')">{{ __('Valuation Report') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('accounting.low-stock.index')" :active="request()->routeIs('accounting.low-stock.*')">{{ __('Low Stock Report') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.inventory.dashboard')" :active="request()->routeIs('accounting.inventory.dashboard')">{{ __('Dashboard') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.inventory.items')" :active="str_starts_with(request()->route()?->getName() ?? '', 'accounting.inventory.items')">{{ __('Items') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.invsetup.categories')" :active="str_starts_with(request()->route()?->getName() ?? '', 'accounting.invsetup.categories')">{{ __('Categories') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.invsetup.stockcount')" :active="str_starts_with(request()->route()?->getName() ?? '', 'accounting.invsetup.stockcount')">{{ __('Stock Count') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.invsetup.valuation')" :active="str_starts_with(request()->route()?->getName() ?? '', 'accounting.invsetup.valuation')">{{ __('Valuation') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('accounting.invsetup.lowstock')" :active="str_starts_with(request()->route()?->getName() ?? '', 'accounting.invsetup.lowstock')">{{ __('Low Stock') }}</x-responsive-nav-link>
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Payroll</div>
             <x-responsive-nav-link :href="route('accounting.employees.index')" :active="request()->routeIs('accounting.employees.*')">{{ __('Employees') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('accounting.payroll-runs.index')" :active="request()->routeIs('accounting.payroll-runs.*')">{{ __('Payroll Runs') }}</x-responsive-nav-link>

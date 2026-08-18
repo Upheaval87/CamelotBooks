@@ -1,75 +1,52 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Cost Centers') }}" />
-
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            
-
-            <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Add Cost Center') }}</h3>
-                <form method="POST" action="{{ route('accounting.cost-centers.store') }}" class="flex items-end gap-4">
-                    @csrf
-                    <div class="flex-1">
-                        <x-input-label for="code" value="{{ __('Code') }}" />
-                        <x-text-input id="code" name="code" type="text" class="mt-1 block w-full" :value="old('code')" required />
-                        <x-input-error :messages="$errors->get('code')" class="mt-2" />
-                    </div>
-                    <div class="flex-1">
-                        <x-input-label for="name" value="{{ __('Name') }}" />
-                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required />
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                    </div>
-                    <div class="flex-1">
-                        <x-input-label for="description" value="{{ __('Description') }}" />
-                        <x-text-input id="description" name="description" type="text" class="mt-1 block w-full" :value="old('description')" />
-                    </div>
-                    <x-primary-button type="submit">{{ __('Add') }}</x-primary-button>
-                </form>
+    <div class="ac-wrap">
+        <div class="ac-page-head">
+            <h1>Cost Centres</h1>
+            <div style="display:flex;gap:10px">
+                <a href="{{ route('accounting.cost-centers.create') }}" class="ac-btn ac-btn-cta ac-btn-sm">New Cost Centre</a>
             </div>
+        </div>
 
-            <div class="datasheet-wrap">
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Code</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($costCenters as $costCenter)
-                                <tr class="{{ $costCenter->is_active ? '' : 'bg-gray-50 text-gray-400' }}">
-                                    <td>{{ $costCenter->code }}</td>
-                                    <td>{{ $costCenter->name }}</td>
-                                    <td class="text-ink-soft">{{ $costCenter->description ?? '—' }}</td>
-                                    <td class="text-center">
-                                        @if($costCenter->is_active)
-                                            <span class="status-pill positive">Active</span>
-                                        @else
-                                            <span class="status-pill neutral">Inactive</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-right">
-                                        <form method="POST" action="{{ route('accounting.cost-centers.toggle', $costCenter) }}" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="text-{{ $costCenter->is_active ? 'red' : 'green' }}-600 hover:text-{{ $costCenter->is_active ? 'red' : 'green' }}-900">
-                                                {{ $costCenter->is_active ? 'Deactivate' : 'Activate' }}
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-ink-soft">No cost centers found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+        <div class="ac-card">
+            <div class="ac-li-wrap">
+                <table class="ac-table" style="min-width:auto">
+                    <thead>
+                        <tr>
+                            <th style="width:15%">Code</th>
+                            <th style="width:25%">Name</th>
+                            <th style="width:15%">Department</th>
+                            <th style="width:15%">Manager</th>
+                            <th style="width:10%">Status</th>
+                            <th style="width:10%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($costCenters as $cc)
+                        <tr>
+                            <td class="ac-mono">{{ $cc->code }}</td>
+                            <td style="font-weight:600">{{ $cc->name }}</td>
+                            <td class="ac-em">{{ $cc->department ?? '—' }}</td>
+                            <td class="ac-em">{{ $cc->manager ?? '—' }}</td>
+                            <td>
+                                @if($cc->is_active)
+                                <span class="ac-badge ac-b-open"><span class="bdot"></span>Active</span>
+                                @else
+                                <span class="ac-badge ac-b-closed"><span class="bdot"></span>Inactive</span>
+                                @endif
+                            </td>
+                            <td class="ac-row-act">
+                                <a href="{{ route('accounting.cost-centers.show', $cc) }}" class="ac-ibtn" title="View">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="ac-em" style="text-align:center;padding:40px">No cost centres.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

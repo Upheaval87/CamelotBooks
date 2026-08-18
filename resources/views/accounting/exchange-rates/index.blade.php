@@ -1,88 +1,50 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Exchange Rates') }}" />
-
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
-
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ __('Add Exchange Rate') }}</h3>
-                <p class="text-sm text-gray-500 mb-4">Base currency: <strong>{{ $baseCurrency }}</strong></p>
-                <form method="POST" action="{{ route('accounting.exchange-rates.store') }}" class="flex items-end gap-4">
-                    @csrf
-                    <div>
-                        <x-input-label for="currency_from" value="{{ __('From') }}" />
-                        <x-text-input id="currency_from" name="currency_from" type="text" class="mt-1 block w-24" :value="old('currency_from')" placeholder="EUR" maxlength="3" required />
-                        <x-input-error :messages="$errors->get('currency_from')" class="mt-2" />
-                    </div>
-                    <div>
-                        <x-input-label for="currency_to" value="{{ __('To') }}" />
-                        <x-text-input id="currency_to" name="currency_to" type="text" class="mt-1 block w-24" :value="old('currency_to', $baseCurrency)" maxlength="3" required />
-                        <x-input-error :messages="$errors->get('currency_to')" class="mt-2" />
-                    </div>
-                    <div>
-                        <x-input-label for="rate" value="{{ __('Rate') }}" />
-                        <x-text-input id="rate" name="rate" type="number" step="0.00000001" class="mt-1 block w-36" :value="old('rate')" required />
-                        <x-input-error :messages="$errors->get('rate')" class="mt-2" />
-                    </div>
-                    <div>
-                        <x-input-label for="effective_date" value="{{ __('Effective Date') }}" />
-                        <x-text-input id="effective_date" name="effective_date" type="date" class="mt-1 block" :value="old('effective_date', now()->format('Y-m-d'))" required />
-                        <x-input-error :messages="$errors->get('effective_date')" class="mt-2" />
-                    </div>
-                    <x-primary-button type="submit">{{ __('Add') }}</x-primary-button>
-                </form>
+    <div class="ac-wrap">
+        <div class="ac-page-head">
+            <h1>Exchange Rates</h1>
+            <div style="display:flex;gap:10px">
+                <a href="{{ route('accounting.exchange-rates.create') }}" class="ac-btn ac-btn-cta ac-btn-sm">New Exchange Rate</a>
             </div>
+        </div>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ __('Bulk Import (CSV)') }}</h3>
-                <form method="POST" action="{{ route('accounting.exchange-rates.bulk') }}" class="space-y-3">
-                    @csrf
-                    <p class="text-sm text-gray-500">Format: <code>FROM,TO,RATE,DATE</code> (one per line). Example: <code>EUR,USD,1.0850,2026-07-01</code></p>
-                    <x-input-label for="csv_data" value="{{ __('CSV Data') }}" />
-                    <textarea id="csv_data" name="csv_data" rows="5" class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm font-sans text-sm">{{ old('csv_data') }}</textarea>
-                    <x-primary-button type="submit">{{ __('Import') }}</x-primary-button>
-                </form>
+        <div class="ac-card">
+            <div class="ac-card-h">
+                <h2>Rates</h2>
+                <div class="right">
+                    <span class="ac-tchip">Base: {{ $baseCurrency ?? 'N/A' }}</span>
+                </div>
             </div>
-
-            <div class="datasheet-wrap">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">{{ __('Saved Rates') }}</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>From</th>
-                                <th>To</th>
-                                <th class="text-right">Rate</th>
-                                <th>Effective Date</th>
-                                <th class="text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($rates as $rate)
-                                <tr>
-                                    <td>{{ $rate->currency_from }}</td>
-                                    <td>{{ $rate->currency_to }}</td>
-                                    <td class="numeric">{{ number_format($rate->rate, 8) }}</td>
-                                    <td class="text-ink-soft">{{ $rate->effective_date->format('Y-m-d') }}</td>
-                                    <td class="text-right">
-                                        <form method="POST" action="{{ route('accounting.exchange-rates.destroy', $rate) }}" class="inline" onsubmit="return fbConfirmSubmit(event, 'Delete this rate?', { type: 'danger' })">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-ink-soft">No exchange rates configured.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+            <div class="ac-li-wrap">
+                <table class="ac-table" style="min-width:auto">
+                    <thead>
+                        <tr>
+                            <th style="width:18%">From</th>
+                            <th style="width:18%">To</th>
+                            <th class="num" style="width:18%">Rate</th>
+                            <th style="width:18%">Effective Date</th>
+                            <th style="width:18%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($rates as $rate)
+                        <tr>
+                            <td class="ac-mono">{{ $rate->currency_from }}</td>
+                            <td class="ac-mono">{{ $rate->currency_to }}</td>
+                            <td class="ac-numr bold">{{ number_format($rate->rate, 6) }}</td>
+                            <td class="ac-em">{{ $rate->effective_date?->format('d M Y') ?? '—' }}</td>
+                            <td class="ac-row-act">
+                                <a href="{{ route('accounting.exchange-rates.edit', $rate) }}" class="ac-ibtn" title="Edit">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="ac-em" style="text-align:center;padding:40px">No exchange rates configured.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

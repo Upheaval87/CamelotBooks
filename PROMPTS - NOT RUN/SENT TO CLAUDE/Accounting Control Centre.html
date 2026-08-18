@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accounting Centre — Full CRUD Pages</title>
+<style>
+  :root{--sw:48px;--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--sec-2:#149897;--ink:#0B2A2D;--border:#dceaea;--line:#e2ecec;--muted:#5f7476;--faint:#8aa5a7;--focus:#94a3b8;--red-2:#b91c1c;--green:#15803d;--amber-2:#b45309;--steel:#46708C;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);
+    --shadow-cta:0 1px 2px rgba(6,32,35,.30),0 10px 20px -10px rgba(12,53,57,.60),inset 0 1px 0 rgba(255,255,255,.12);
+    --shadow-teal:0 1px 2px rgba(4,51,47,.25),0 10px 22px -8px rgba(18,143,142,.55),inset 0 1px 0 rgba(255,255,255,.25);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;-webkit-font-smoothing:antialiased}
+  svg{flex:none}:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .tealbar{width:100%;background:linear-gradient(180deg,#11454b 0%,#0c3539 55%,#0a2e32 100%)}
+  .row1{display:flex;align-items:center;gap:12px;padding:10px 28px}
+  .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#0e3a3e;font-weight:800;font-size:12px;background:linear-gradient(180deg,#f4fbfb,#d9edee)}
+  .brand-n{color:#fff;font-size:14.5px;font-weight:800}.spacer{flex:1}
+  .userchip{display:flex;align-items:center;gap:9px;padding:4px 11px 4px 4px;border-radius:12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+  .avatar-h{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:11px;background:linear-gradient(180deg,#1b565c,#124449);color:#d9f2f2}
+  .u-n{color:#fff;font-size:12px;font-weight:700}
+  .row2{display:flex;gap:2px;padding:7px 20px 9px;background:#DCE6E7;border-top:1px solid rgba(255,255,255,.55);overflow-x:auto}
+  .navitem{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;color:var(--ink);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  .navitem.active{color:#fff;background:linear-gradient(90deg,var(--sec-2),var(--sec))}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:13px;font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:inherit}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-ghost{background:rgba(255,255,255,.9);border-color:var(--border);color:#374151}
+  .btn-ghost:hover{border-color:rgba(17,69,75,.3);color:var(--ink)}
+  .btn-sec{color:#fff;background:linear-gradient(180deg,var(--sec-2),var(--sec));border-color:rgba(255,255,255,.25);box-shadow:var(--shadow-teal)}
+  .btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--deep-1),var(--deep-2) 55%,var(--deep-3));border-color:rgba(255,255,255,.14);box-shadow:var(--shadow-cta);font-weight:700}
+  .btn-danger-o{background:#fff;border-color:rgba(220,38,38,.35);color:var(--red)}
+  .btn-sm{height:38px;padding:0 15px;font-size:12.5px;border-radius:11px}
+  .btn-xs{height:30px;padding:0 11px;font-size:11.5px;border-radius:9px}
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+  .crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--ink)}.crumbs .here{color:var(--ink);font-weight:800}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:24px 0 14px}
+  .page-head h1{font-size:21px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .card{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .pad{padding:22px 26px}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 22px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px}
+  @media (max-width:1000px){.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}@media (max-width:640px){.g4{grid-template-columns:1fr}}
+  .f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .f .in{width:100%;height:44px;border-radius:12px;border:1px solid var(--border);background:#fff;padding:0 14px;font-size:13.5px;color:var(--ink);font-family:inherit}
+  .f .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.14)}
+  .f .in:disabled{background:rgba(238,244,244,.7);color:var(--muted)}
+  .f select.in{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:34px}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.05em}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-open{background:linear-gradient(180deg,#ecfdf3,#dcf5e7);border:1px solid rgba(22,163,74,.28);color:var(--green)}.b-open .bdot{background:#22c55e}
+  .b-closed{background:rgba(138,165,167,.15);border:1px solid rgba(138,165,167,.5);color:var(--muted)}.b-closed .bdot{background:var(--muted)}
+  .b-locked{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-locked .bdot{background:var(--red-2)}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:var(--amber)}
+  .b-post{background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.35);color:var(--sec)}.b-post .bdot{background:var(--sec)}
+  .b-draft{background:rgba(17,69,75,.07);border:1px solid rgba(17,69,75,.2);color:#11454b}.b-draft .bdot{background:#11454b}
+  .tchip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(17,69,75,.06);border:1px solid rgba(17,69,75,.16);color:var(--muted)}
+  .okchip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:800;background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.35);color:var(--green)}
+  .okchip.bad{background:rgba(185,28,28,.08);border-color:rgba(185,28,28,.3);color:var(--red-2)}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:820px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  thead th.num{text-align:right}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{padding:11px 12px;border-top:1.5px solid var(--deep-1);font-weight:800;color:var(--ink);background:rgba(17,69,75,.03)}
+  .em{color:var(--muted)}.dash{color:var(--faint)}
+  .numr{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink)}
+  .numr.bold{font-weight:800}.numr.red{color:var(--red-2);font-weight:700}.numr.green{color:var(--green);font-weight:700}
+  .row-act{display:flex;gap:4px;justify-content:flex-end}
+  .ibtn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:none;background:transparent;color:var(--faint);cursor:pointer}
+  .ibtn:hover{background:rgba(17,69,75,.06);color:var(--deep-1)}
+  .ci{height:36px;border-radius:7px;border:1px solid var(--border);background:#fff;padding:0 9px;font-size:12.5px;width:100%;font-family:inherit;color:var(--ink)}
+  td.num .ci{text-align:right}
+  .tree{list-style:none}
+  .trow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;cursor:pointer}
+  .trow:hover{background:rgba(17,69,75,.05)}
+  .tname{font-size:13px;font-weight:600;color:var(--ink)}
+  .tree ul{list-style:none;padding-left:26px;border-left:1.5px solid var(--line);margin-left:17px}
+  .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media (max-width:1000px){.pgrid{grid-template-columns:repeat(3,1fr)}}@media (max-width:700px){.pgrid{grid-template-columns:repeat(2,1fr)}}
+  .pcell{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.85)}
+  .pcell .m{font-size:12.5px;font-weight:800;color:var(--ink)}
+  .pcell .s{margin-top:6px}
+  .pcell .a{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .stage{position:relative}
+  .stage-body{margin-right:calc(var(--sw) + 12px)}
+  .slim-rail{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;padding:8px 7px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);border-right:none;border-radius:14px 0 0 14px;box-shadow:var(--shadow-card)}
+  .s-ic{position:relative;width:34px;height:34px;border:none;border-radius:10px;display:grid;place-items:center;background:none;color:var(--deep-1);cursor:pointer}
+  .s-ic:hover{background:rgba(17,69,75,.08)}
+  .s-ic:hover::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--deep-2);color:#eaffff;font-size:10px;font-weight:700;padding:5px 9px;border-radius:7px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(6,32,35,.6);z-index:5}
+  .s-div{height:1px;background:var(--line);margin:2px 4px}
+  .s-ic.expand{background:linear-gradient(180deg,var(--sec-2),var(--sec));color:#fff}
+  @media (max-width:768px){.stage-body{margin-right:0}.slim-rail{display:none!important}}
+</style>
+</head>
+<body>
+<header class="tealbar">
+  <div class="row1"><span class="logo">CB</span><div class="brand-n">CamelotBooks</div><span class="spacer"></span>
+    <div class="userchip"><span class="avatar-h">ES</span><span class="u-n">Elvis Seyama</span></div></div>
+  <div class="row2"><a class="navitem" href="#">Sales</a><a class="navitem" href="#">Purchasing</a><a class="navitem active" href="#">Accounts</a><a class="navitem" href="#">Banking</a><a class="navitem" href="#">Reports</a></div>
+</header>
+<div class="wrap">
+
+<!-- ============ JOURNAL ENTRIES · LIST ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Journal Entries · List</span>
+  <div class="page-head"><div><h1>Journal Entries</h1><div class="sub">All manual postings with status and actions.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">⋯ Import / Export</button><button class="btn btn-cta btn-sm">➕ New Journal Entry</button></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th style="width:12%">Journal №</th><th style="width:11%">Date</th><th style="width:13%">Type</th><th style="width:26%">Description</th><th class="num" style="width:12%">Amount (K)</th><th style="width:12%">Status</th><th style="width:16%"></th></tr></thead>
+    <tbody>
+      <tr><td class="mono">JV-009824</td><td class="em">14 Aug</td><td><span class="tchip">Adjustment</span></td><td class="em">August rent adjustment</td><td class="numr bold">2,000,000</td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button><button class="ibtn">⋯</button></td></tr>
+      <tr><td class="mono">JV-009822</td><td class="em">01 Aug</td><td><span class="tchip">General</span></td><td class="em">Depreciation — recurring</td><td class="numr bold">486,500</td><td><span class="badge b-post"><span class="bdot"></span>Posted</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="ibtn">↩</button><button class="ibtn">⋯</button></td></tr>
+      <tr><td class="mono">JV-009820</td><td class="em">31 Jul</td><td><span class="tchip">Closing</span></td><td class="em">July closing entries</td><td class="numr bold">18,120,000</td><td><span class="badge b-post"><span class="bdot"></span>Posted</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="ibtn">⋯</button></td></tr>
+      <tr><td class="mono">JV-009818</td><td class="em">30 Jul</td><td><span class="tchip">Reversal</span></td><td class="em">Reverse accrual</td><td class="numr bold">250,000</td><td><span class="badge b-draft"><span class="bdot"></span>Draft</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button><button class="ibtn">🗑</button></td></tr>
+    </tbody></table></div>
+  <div style="display:flex;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--line)"><span style="font-size:12px;color:var(--muted)">Showing 4 of 96</span><div style="display:flex;gap:8px"><button class="btn btn-ghost btn-xs">← Prev</button><button class="btn btn-ghost btn-xs">Next →</button></div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="New Journal">＋</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ JOURNAL · CREATE ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Journal Entries · Create</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Journals</a> › <span class="here">New</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-ghost btn-sm">Save Draft</button><button class="btn btn-cta btn-sm">Submit Approval</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Journal №</label><input class="in" value="JV-009825" disabled></div>
+    <div class="f"><label>Transaction Date</label><input class="in" type="date" value="2026-08-15"></div>
+    <div class="f"><label>Journal Type</label><select class="in"><option>General Journal</option><option>Adjustment</option><option>Closing</option><option>Opening</option><option>Reversal</option></select></div>
+    <div class="f"><label>Reference</label><input class="in" placeholder="Ref"></div>
+    <div class="f" style="grid-column:1/-1"><label>Description</label><input class="in" placeholder="Description"></div>
+    <div class="f"><label>Currency</label><select class="in"><option>MWK</option><option>USD</option></select></div>
+    <div class="f"><label>Exchange Rate</label><input class="in" value="1.0000" disabled></div>
+    <div class="f"><label>Attachment</label><input class="in" type="file"></div>
+  </div></div>
+  <div class="li-wrap"><table class="jtable"><thead><tr><th style="width:12%">Account</th><th style="width:26%">Description</th><th class="num" style="width:13%">Debit (K)</th><th class="num" style="width:13%">Credit (K)</th><th style="width:11%">Cost Centre</th><th style="width:6%"></th></tr></thead>
+    <tbody>
+      <tr><td class="mono">…</td><td class="em">Add line…</td><td class="num"><input class="ci jd" value=""></td><td class="num"><input class="ci jc" value=""></td><td class="em">—</td><td class="row-act"><button class="ibtn">🗑</button></td></tr>
+    </tbody>
+    <tfoot><tr><td colspan="2">Totals</td><td class="numr sum-d">0</td><td class="numr sum-c">0</td><td colspan="2"><span class="okchip bal">✓ Balanced</span></td></tr></tfoot></table></div>
+  <div class="pad" style="border-top:1px solid var(--line)"><button class="btn btn-ghost btn-xs">＋ Add Line</button><button class="btn btn-ghost btn-xs">Validate Balance</button></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Journals List">📒</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ JOURNAL · VIEW ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Journal Entries · View</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Journals</a> › <span class="here">JV-009822</span></nav>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">✎ Edit</button><button class="btn btn-ghost btn-sm">🖨 Print Voucher</button><button class="btn btn-ghost btn-sm">↩ Reverse</button><button class="btn btn-ghost btn-sm">⧉ Duplicate</button></div></div>
+  <div class="card"><div class="card-h"><h2>Journal — JV-009822</h2><span class="badge b-post" style="margin-left:8px"><span class="bdot"></span>Posted</span>
+    <div class="right"><span class="tchip">General</span><span class="tchip">01 Aug 2026</span><span class="tchip">MWK</span></div></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:12%">Account</th><th style="width:30%">Description</th><th class="num" style="width:14%">Debit (K)</th><th class="num" style="width:14%">Credit (K)</th><th style="width:12%">Cost Centre</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">5-03-001</td><td class="em">Depreciation expense</td><td class="numr">486,500</td><td class="dash">—</td><td class="em">—</td></tr>
+        <tr><td class="mono">1-03-002</td><td class="em">Accumulated depreciation</td><td class="dash">—</td><td class="numr">486,500</td><td class="em">—</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="2">Totals</td><td class="numr">486,500</td><td class="numr">486,500</td><td><span class="okchip">✓ Balanced</span></td></tr></tfoot></table></div>
+    <div class="pad" style="border-top:1px solid var(--line);font-size:12px;color:var(--muted)">Posted by Finance · 01 Aug 2026 10:06 · Source: Recurring Journal “Depreciation” · 📎 depreciation_schedule.pdf</div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Journals List">📒</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ JOURNAL · EDIT ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Journal Entries · Edit (draft only)</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Journals</a> › <a href="#">JV-009818</a> › <span class="here">Edit</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-cta btn-sm">Save Changes</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Journal №</label><input class="in" value="JV-009818" disabled></div>
+    <div class="f"><label>Transaction Date</label><input class="in" type="date" value="2026-07-30"></div>
+    <div class="f"><label>Journal Type</label><select class="in"><option>Reversal</option></select></div>
+    <div class="f"><label>Status</label><input class="in" value="Draft" disabled></div>
+  </div></div>
+  <div class="li-wrap"><table class="jtable"><thead><tr><th style="width:12%">Account</th><th style="width:26%">Description</th><th class="num" style="width:13%">Debit (K)</th><th class="num" style="width:13%">Credit (K)</th><th style="width:6%"></th></tr></thead>
+    <tbody>
+      <tr><td class="mono">2-02-004</td><td class="em">Accrued expenses</td><td class="num"><input class="ci jd" value="250000"></td><td class="num"><input class="ci jc" value=""></td><td class="row-act"><button class="ibtn">🗑</button></td></tr>
+      <tr><td class="mono">5-02-009</td><td class="em">Reversal — accrual</td><td class="num"><input class="ci jd" value=""></td><td class="num"><input class="ci jc" value="250000"></td><td class="row-act"><button class="ibtn">🗑</button></td></tr>
+    </tbody>
+    <tfoot><tr><td colspan="2">Totals</td><td class="numr sum-d">250,000</td><td class="numr sum-c">250,000</td><td colspan="2"><span class="okchip bal">✓ Balanced</span></td></tr></tfoot></table></div>
+  <div class="pad" style="border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)">Only Draft journals are editable; posted journals must be reversed.</div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Journals List">📒</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ FISCAL YEARS · LIST ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Fiscal Years · List</span>
+  <div class="page-head"><div><h1>Fiscal Years</h1><div class="sub">Year cycles with closing, locking and carry-forward.</div></div>
+    <button class="btn btn-cta btn-sm">➕ New Fiscal Year</button></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th style="width:20%">Fiscal Year</th><th style="width:14%">Start</th><th style="width:14%">End</th><th style="width:12%">Status</th><th style="width:36%"></th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:800;color:var(--ink)">2026 · Current</td><td class="em">01 Jan 2026</td><td class="em">31 Dec 2026</td><td><span class="badge b-open"><span class="bdot"></span>Open</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button><button class="btn btn-ghost btn-xs">Close</button><button class="btn btn-ghost btn-xs">Carry Fwd</button></td></tr>
+      <tr><td style="font-weight:800;color:var(--ink)">2025</td><td class="em">01 Jan 2025</td><td class="em">31 Dec 2025</td><td><span class="badge b-closed"><span class="bdot"></span>Closed</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="btn btn-ghost btn-xs">Reopen</button></td></tr>
+      <tr><td style="font-weight:800;color:var(--ink)">2024</td><td class="em">01 Jan 2024</td><td class="em">31 Dec 2024</td><td><span class="badge b-locked"><span class="bdot"></span>Locked</span></td>
+        <td class="row-act"><button class="ibtn">👁</button></td></tr>
+    </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="New Fiscal Year">＋</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ FISCAL YEAR · CREATE ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Fiscal Years · Create</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Fiscal Years</a> › <span class="here">New</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-cta btn-sm">Create &amp; Generate Periods</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Fiscal Year Name</label><input class="in" value="2027 Financial Year"></div>
+    <div class="f"><label>Start Date</label><input class="in" type="date" value="2027-01-01"></div>
+    <div class="f"><label>End Date</label><input class="in" type="date" value="2027-12-31"></div>
+    <div class="f"><label>Status</label><select class="in"><option>Open</option><option>Closed</option></select></div>
+    <div class="f" style="grid-column:1/-1"><label>Options</label><div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;font-weight:700;color:var(--ink)"><span>☑ Generate 12 monthly periods</span><span>☐ Add adjustment period</span></div></div>
+  </div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Fiscal Years">📅</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ FISCAL YEAR · VIEW / EDIT ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Fiscal Years · View / Edit</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Fiscal Years</a> › <span class="here">2026</span></nav>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">✎ Edit</button><button class="btn btn-ghost btn-sm">Close Year</button><button class="btn btn-ghost btn-sm">Lock</button><button class="btn btn-sec btn-sm">Carry Forward Balances</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Name</label><input class="in" value="2026 Financial Year" disabled></div>
+    <div class="f"><label>Start</label><input class="in" value="01 Jan 2026" disabled></div>
+    <div class="f"><label>End</label><input class="in" value="31 Dec 2026" disabled></div>
+    <div class="f"><label>Status</label><input class="in" value="Open" disabled></div>
+  </div>
+  <div class="pad" style="border-top:1px solid var(--line);font-size:12px;color:var(--muted)">12 monthly periods · 8 open · 4 closed · carry-forward posts opening balances to 2027 and computes retained earnings automatically.</div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Fiscal Years">📅</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ ACCOUNTING PERIODS · LIST ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Accounting Periods · List</span>
+  <div class="page-head"><div><h1>Accounting Periods — 2026</h1><div class="sub">Open / close / lock monthly posting periods.</div></div>
+    <div style="display:flex;gap:10px"><span class="tchip">Closing checklist</span><span class="tchip">User override</span><button class="btn btn-cta btn-sm">Generate Year</button></div></div>
+  <div class="pgrid">
+    <div class="pcell"><div class="m">Jan 2026</div><div class="s"><span class="badge b-locked"><span class="bdot"></span>Locked</span></div><div class="a"><button class="btn btn-ghost btn-xs">View</button></div></div>
+    <div class="pcell"><div class="m">Feb 2026</div><div class="s"><span class="badge b-locked"><span class="bdot"></span>Locked</span></div><div class="a"><button class="btn btn-ghost btn-xs">View</button></div></div>
+    <div class="pcell"><div class="m">Mar 2026</div><div class="s"><span class="badge b-closed"><span class="bdot"></span>Closed</span></div><div class="a"><button class="btn btn-ghost btn-xs">Reopen</button></div></div>
+    <div class="pcell"><div class="m">Apr 2026</div><div class="s"><span class="badge b-closed"><span class="bdot"></span>Closed</span></div><div class="a"><button class="btn btn-ghost btn-xs">Reopen</button></div></div>
+    <div class="pcell"><div class="m">May 2026</div><div class="s"><span class="badge b-closed"><span class="bdot"></span>Closed</span></div><div class="a"><button class="btn btn-ghost btn-xs">Reopen</button></div></div>
+    <div class="pcell"><div class="m">Jun 2026</div><div class="s"><span class="badge b-closed"><span class="bdot"></span>Closed</span></div><div class="a"><button class="btn btn-ghost btn-xs">Reopen</button></div></div>
+    <div class="pcell"><div class="m">Jul 2026</div><div class="s"><span class="badge b-closed"><span class="bdot"></span>Closed</span></div><div class="a"><button class="btn btn-ghost btn-xs">Reopen</button></div></div>
+    <div class="pcell" style="border-color:rgba(18,143,142,.5)"><div class="m">Aug 2026</div><div class="s"><span class="badge b-open"><span class="bdot"></span>Open</span></div><div class="a"><button class="btn btn-ghost btn-xs">Close</button><button class="btn btn-ghost btn-xs">Lock</button><button class="btn btn-ghost btn-xs">View</button></div></div>
+    <div class="pcell"><div class="m">Sep 2026</div><div class="s"><span class="badge b-open"><span class="bdot"></span>Open</span></div><div class="a"><button class="btn btn-ghost btn-xs">Close</button></div></div>
+    <div class="pcell"><div class="m">Oct–Dec 2026</div><div class="s"><span class="badge b-open"><span class="bdot"></span>Open</span></div><div class="a"><button class="btn btn-ghost btn-xs">Close</button></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Close Period">🔒</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ COST CENTRES · LIST ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Cost Centres · List</span>
+  <div class="page-head"><div><h1>Cost Centres</h1><div class="sub">Track income &amp; expenses by department, branch or project.</div></div>
+    <button class="btn btn-cta btn-sm">＋ Add Cost Centre</button></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th style="width:12%">Code</th><th style="width:24%">Name</th><th style="width:16%">Manager</th><th style="width:16%">Department</th><th style="width:11%">Status</th><th style="width:18%"></th></tr></thead>
+    <tbody>
+      <tr><td class="mono">CC-01</td><td class="em">Finance</td><td class="em">E. Seyama</td><td class="em">Finance</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button><button class="ibtn">📊</button></td></tr>
+      <tr><td class="mono">CC-02</td><td class="em">Sales</td><td class="em">M. Banda</td><td class="em">Sales</td><td><span class="badge b-open"><span class="bdot"></span>Active</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button><button class="ibtn">📊</button></td></tr>
+      <tr><td class="mono">CC-03</td><td class="em">IT</td><td class="em">P. Phiri</td><td class="em">IT</td><td><span class="badge b-closed"><span class="bdot"></span>Inactive</span></td>
+        <td class="row-act"><button class="ibtn">👁</button><button class="ibtn">✎</button></td></tr>
+    </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Add Cost Centre">＋</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ COST CENTRE · CREATE ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Cost Centres · Create</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Cost Centres</a> › <span class="here">New</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-cta btn-sm">Save Cost Centre</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Code</label><input class="in" value="CC-05"></div>
+    <div class="f"><label>Name</label><input class="in" placeholder="e.g. Operations"></div>
+    <div class="f"><label>Manager</label><input class="in" placeholder="Manager"></div>
+    <div class="f"><label>Department</label><select class="in"><option>Operations</option></select></div>
+    <div class="f"><label>Parent</label><select class="in"><option>CC-00 · Company</option></select></div>
+    <div class="f"><label>Status</label><select class="in"><option>Active</option><option>Inactive</option></select></div>
+  </div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Cost Centres">🏷</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ COST CENTRE · VIEW / EDIT ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Cost Centres · View / Edit</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Cost Centres</a> › <span class="here">CC-01</span></nav>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm">✎ Edit</button><button class="btn btn-ghost btn-sm">View Transactions</button><button class="btn btn-ghost btn-sm">Budget vs Actual</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Code</label><input class="in" value="CC-01" disabled></div>
+    <div class="f"><label>Name</label><input class="in" value="Finance" disabled></div>
+    <div class="f"><label>Manager</label><input class="in" value="E. Seyama" disabled></div>
+    <div class="f"><label>Budget YTD</label><input class="in" value="9,600,000" disabled></div>
+    <div class="f"><label>Actual YTD</label><input class="in" value="6,400,000" disabled></div>
+    <div class="f"><label>Variance</label><input class="in" value="3,200,000 (favourable)" disabled></div>
+  </div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Cost Centres">🏷</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ EXCHANGE RATES · LIST ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Exchange Rates · List</span>
+  <div class="page-head"><div><h1>Exchange Rates</h1><div class="sub">Base MWK · buying/selling · historical · revaluation.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">📥 Import</button><button class="btn btn-ghost btn-sm">＋ Add Currency</button><button class="btn btn-cta btn-sm">＋ Add Exchange Rate</button></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th style="width:13%">Currency</th><th style="width:14%">Rate Date</th><th class="num" style="width:15%">Buying</th><th class="num" style="width:15%">Selling</th><th style="width:12%">Base</th><th style="width:25%"></th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:700;color:var(--ink)">USD</td><td class="em">14 Aug 2026</td><td class="numr">1,720.00</td><td class="numr">1,745.00</td><td class="em">MWK</td>
+        <td class="row-act"><button class="ibtn">✎</button><button class="ibtn">🕘</button><button class="btn btn-ghost btn-xs">Revalue</button></td></tr>
+      <tr><td style="font-weight:700;color:var(--ink)">EUR</td><td class="em">14 Aug 2026</td><td class="numr">1,880.00</td><td class="numr">1,905.00</td><td class="em">MWK</td>
+        <td class="row-act"><button class="ibtn">✎</button><button class="ibtn">🕘</button><button class="btn btn-ghost btn-xs">Revalue</button></td></tr>
+    </tbody></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Add Rate">＋</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ EXCHANGE RATE · CREATE / EDIT ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Exchange Rates · Create / Edit</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Exchange Rates</a> › <span class="here">New</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-cta btn-sm">Save Rate</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Currency</label><select class="in"><option>USD</option><option>EUR</option><option>ZAR</option></select></div>
+    <div class="f"><label>Rate Date</label><input class="in" type="date" value="2026-08-15"></div>
+    <div class="f"><label>Buying Rate</label><input class="in" value="1720.00"></div>
+    <div class="f"><label>Selling Rate</label><input class="in" value="1745.00"></div>
+    <div class="f"><label>Base Currency</label><input class="in" value="MWK" disabled></div>
+  </div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Rates List">💱</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ ACCOUNT CLASSIFICATION · LIST ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Account Classification · List</span>
+  <div class="page-head"><div><h1>Account Classification</h1><div class="sub">Financial-statement mapping &amp; reporting hierarchy.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Preview Statement</button><button class="btn btn-cta btn-sm">＋ Add Classification</button></div></div>
+  <div class="g2">
+    <div class="card"><div class="card-h"><h2>Balance Sheet</h2></div>
+      <div class="pad"><ul class="tree">
+        <li><div class="trow"><span class="tname">Assets</span><span class="tchip">Current · Fixed</span></div></li>
+        <li><div class="trow"><span class="tname">Liabilities</span><span class="tchip">Current · Long-term</span></div></li>
+        <li><div class="trow"><span class="tname">Equity</span><span class="tchip">Capital · Retained</span></div></li>
+      </ul></div></div>
+    <div class="card"><div class="card-h"><h2>Income Statement</h2></div>
+      <div class="pad"><ul class="tree">
+        <li><div class="trow"><span class="tname">Income</span><span class="tchip">Sales · Other</span></div></li>
+        <li><div class="trow"><span class="tname">Expenses</span><span class="tchip">Operating · Admin</span></div></li>
+      </ul></div></div>
+  </div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Add Classification">＋</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ CLASSIFICATION · CREATE / EDIT ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Account Classification · Create / Edit</span>
+  <div class="page-head"><nav class="crumbs"><a href="#">Classification</a> › <span class="here">New</span></nav>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-cta btn-sm">Save Classification</button></div></div>
+  <div class="card"><div class="pad"><div class="g4">
+    <div class="f"><label>Classification Name</label><input class="in" placeholder="e.g. Current Assets"></div>
+    <div class="f"><label>Financial Statement</label><select class="in"><option>Balance Sheet</option><option>Income Statement</option></select></div>
+    <div class="f"><label>Section</label><select class="in"><option>Assets</option><option>Liabilities</option><option>Equity</option><option>Income</option><option>Expenses</option></select></div>
+    <div class="f"><label>Display Order</label><input class="in" value="10"></div>
+    <div class="f" style="grid-column:1/-1"><label>Assign Accounts</label><input class="in" placeholder="Search accounts to assign (1-01-001, 1-01-002…)"></div>
+  </div></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Classification List">🗂</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ GENERAL LEDGER · VIEW ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">General Ledger · View</span>
+  <div class="page-head"><div><h1>General Ledger — 1-01-002 · Bank</h1><div class="sub">Running balance with drill-down to source.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">🖨 Print</button><button class="btn btn-ghost btn-sm">⇩ Export</button></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th style="width:10%">Date</th><th style="width:14%">Reference</th><th style="width:32%">Description</th><th class="num" style="width:12%">Debit</th><th class="num" style="width:12%">Credit</th><th class="num" style="width:14%">Balance</th><th style="width:8%"></th></tr></thead>
+    <tbody>
+      <tr><td class="em">01 Aug</td><td class="mono">OPEN</td><td class="em">Opening balance</td><td class="dash">—</td><td class="dash">—</td><td class="numr bold">108,600,000</td><td class="row-act"><button class="ibtn">👁</button></td></tr>
+      <tr><td class="em">14 Aug</td><td class="mono">DEP-00112</td><td class="em">Customer payment — Beta</td><td class="numr">2,500,000</td><td class="dash">—</td><td class="numr bold">111,100,000</td><td class="row-act"><button class="ibtn">👁</button></td></tr>
+      <tr><td class="em">13 Aug</td><td class="mono">CHQ-000112</td><td class="em">Supplier — AHL</td><td class="dash">—</td><td class="numr">850,000</td><td class="numr bold">110,250,000</td><td class="row-act"><button class="ibtn">👁</button></td></tr>
+    </tbody>
+    <tfoot><tr><td colspan="5">Closing balance</td><td class="numr">110,250,000</td><td></td></tr></tfoot></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Ledger">📄</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+<!-- ============ TRIAL BALANCE · VIEW ============ -->
+<div class="stage"><div class="stage-body"><span class="opt-tag">Trial Balance · View</span>
+  <div class="page-head"><div><h1>Trial Balance — as at 31 Aug 2026</h1><div class="sub">Dr = Cr verification before statements.</div></div>
+    <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm">Comparative</button><button class="btn btn-cta btn-sm">Generate</button></div></div>
+  <div class="card"><div class="pad" style="padding-bottom:10px;display:flex;justify-content:flex-end"><span class="okchip">✓ Balanced · Dr = Cr = 311,410,000</span></div>
+    <div class="li-wrap"><table><thead><tr><th style="width:14%">Code</th><th style="width:40%">Account</th><th class="num" style="width:23%">Debit (K)</th><th class="num" style="width:23%">Credit (K)</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1-01-002</td><td class="em">Bank Account</td><td class="numr">110,250,000</td><td class="dash">—</td></tr>
+        <tr><td class="mono">2-01-001</td><td class="em">Accounts Payable</td><td class="dash">—</td><td class="numr">9,400,000</td></tr>
+        <tr><td class="mono">4-01-001</td><td class="em">Sales Revenue</td><td class="dash">—</td><td class="numr">168,400,000</td></tr>
+        <tr><td class="mono">5-01-001</td><td class="em">Salaries</td><td class="numr">64,000,000</td><td class="dash">—</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="2">Totals</td><td class="numr">311,410,000</td><td class="numr">311,410,000</td></tr></tfoot></table></div></div>
+</div><div class="slim-rail"><button class="s-ic" data-tip="Generate">⚡</button><div class="s-div"></div><button class="s-ic expand" data-tip="Expand rail">›</button></div></div>
+
+</div>
+<script>
+  function f(v){return (+v||0).toLocaleString('en-US');}
+  document.querySelectorAll('table.jtable').forEach(function(t){
+    function rec(){var d=0,c=0;t.querySelectorAll('.jd').forEach(function(i){d+=+i.value||0;});t.querySelectorAll('.jc').forEach(function(i){c+=+i.value||0;});
+      var sd=t.querySelector('.sum-d'),sc=t.querySelector('.sum-c'),b=t.querySelector('.bal');
+      if(sd)sd.textContent=f(d); if(sc)sc.textContent=f(c);
+      if(b){b.textContent=(d===c)?'✓ Balanced':'✗ Out '+(d-c).toLocaleString(); b.className='okchip'+(d===c?'':' bad');}}
+    t.querySelectorAll('.jd,.jc').forEach(function(i){i.addEventListener('input',rec);}); rec();
+  });
+</script>
+</body>
+</html>

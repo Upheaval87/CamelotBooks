@@ -4,8 +4,8 @@
     $routeName = $currentRoute ? $currentRoute->getName() : '';
     $companyId = session('current_company_id') ?? 0;
     $sectionMap = [
-        'sales-purchases' => ['accounting.customers', 'accounting.quotations', 'accounting.invoices', 'accounting.sales-receipts', 'accounting.credit-notes', 'accounting.vendors', 'accounting.purchase-orders', 'accounting.goods-received-notes', 'accounting.bills', 'accounting.vendor-payments', 'accounting.expenses', 'accounting.products'],
-        'inventory'       => ['accounting.inventory-items', 'accounting.stock-adjustments', 'accounting.stock-transfers', 'accounting.stock-counts', 'accounting.inventory-valuation'],
+        'sales-purchases' => ['accounting.customers', 'accounting.quotations', 'accounting.invoices', 'accounting.sales-receipts', 'accounting.credit-notes', 'accounting.vendors', 'accounting.purchase-orders', 'accounting.goods-received-notes', 'accounting.bills', 'accounting.vendor-payments', 'accounting.expenses'],
+        'inventory'       => ['accounting.inventory.'],
         'banking'         => ['accounting.bank-accounts', 'accounting.bank-reconciliation', 'accounting.deposits', 'accounting.cheques', 'accounting.petty-cash', 'accounting.cash-position'],
         'accounting'      => ['accounting.accounts', 'accounting.journal-entries', 'accounting.general-ledger', 'accounting.trial-balance', 'accounting.budgets'],
         'fixed-assets'    => ['accounting.fixed-assets', 'accounting.asset-depreciation', 'accounting.depreciation'],
@@ -68,7 +68,7 @@
             <a href="{{ route('accounting.vendor-payments.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.vendor-payments') ? 'active' : '' }}">Payments</a>
             <a href="{{ route('accounting.expenses.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.expenses') ? 'active' : '' }}">Expenses</a>
             <a href="{{ route('accounting.vendors.dashboard') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.vendors') ? 'active' : '' }}">Vendor Centre</a>
-            <a href="{{ route('accounting.products.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.products') ? 'active' : '' }}">Products</a>
+            <a href="{{ route('accounting.inventory.items') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.inventory.items') ? 'active' : '' }}">Items</a>
         </div>
 
         <div class="sidebar-section-label">Inventory</div>
@@ -80,11 +80,16 @@
             <svg class="sidebar-chevron" :class="openSection === 'inventory' ? 'rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
         <div x-show="openSection === 'inventory'" x-collapse.duration.300ms>
-            <a href="{{ route('accounting.inventory-items.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.inventory-items') ? 'active' : '' }}">Items</a>
-            <a href="{{ route('accounting.stock-adjustments.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.stock-adjustments') ? 'active' : '' }}">Adjustments</a>
-            <a href="{{ route('accounting.stock-transfers.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.stock-transfers') ? 'active' : '' }}">Transfers</a>
-            <a href="{{ route('accounting.stock-counts.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.stock-counts') ? 'active' : '' }}">Stock Counts</a>
-            <a href="{{ route('accounting.inventory-valuation.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.inventory-valuation') ? 'active' : '' }}">Valuation</a>
+            <a href="{{ route('accounting.inventory.dashboard') }}" class="sidebar-child {{ $routeName === 'accounting.inventory.dashboard' ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('accounting.inventory.items') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.inventory.items') ? 'active' : '' }}">Items</a>
+            <a href="{{ route('accounting.invsetup.categories') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.invsetup.categories') ? 'active' : '' }}">Categories</a>
+            <a href="{{ route('accounting.invsetup.assemblies') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.invsetup.assemblies') ? 'active' : '' }}">Assemblies</a>
+            <a href="{{ route('accounting.invsetup.transfers') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.invsetup.transfers') ? 'active' : '' }}">Transfers</a>
+            <a href="{{ route('accounting.invsetup.adjustments') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.invsetup.adjustments') ? 'active' : '' }}">Adjustments</a>
+            <a href="{{ route('accounting.invsetup.stockcount') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.invsetup.stockcount') ? 'active' : '' }}">Stock Count</a>
+            <a href="{{ route('accounting.invsetup.uom') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.invsetup.uom') ? 'active' : '' }}">UOM & Landed Costs</a>
+            <a href="{{ route('accounting.invsetup.valuation') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.invsetup.valuation') ? 'active' : '' }}">Valuation</a>
+            <a href="{{ route('accounting.invsetup.lowstock') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.invsetup.lowstock') ? 'active' : '' }}">Low Stock</a>
         </div>
 
         <div class="sidebar-section-label">Banking</div>

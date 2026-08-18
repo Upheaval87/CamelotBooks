@@ -151,7 +151,7 @@ class SearchCatalog
                         'income_account_id' => $p->income_account_id,
                         'expense_account_id' => $p->expense_account_id,
                         'stock_qty' => $p->tracked_as_inventory ? (float) ($stock[$p->id] ?? 0) : null,
-                        'url' => route('accounting.products.show', $p->id),
+                        'url' => route('accounting.inventory.items.show', $p->id),
                     ];
                 })->values();
             },
