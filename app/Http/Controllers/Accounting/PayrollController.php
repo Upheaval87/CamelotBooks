@@ -186,7 +186,7 @@ class PayrollController extends Controller
             }
         }
 
-        return redirect()->route('payroll.employees.show', $employee)
+        return redirect()->route('accounting.payroll.employees.show', $employee)
             ->with('success', 'Employee created.');
     }
 
@@ -318,7 +318,7 @@ class PayrollController extends Controller
             }
         }
 
-        return redirect()->route('payroll.employees.show', $employee)
+        return redirect()->route('accounting.payroll.employees.show', $employee)
             ->with('success', 'Employee updated.');
     }
 
@@ -392,7 +392,7 @@ class PayrollController extends Controller
         // TODO: Call PayrollService::calculate($run, $validated['employee_ids'])
         // to create PayrollRunItem records with gross/deductions/net calculations
 
-        return redirect()->route('payroll.runs.show', $run)
+        return redirect()->route('accounting.payroll.runs.show', $run)
             ->with('success', 'Run created.');
     }
 

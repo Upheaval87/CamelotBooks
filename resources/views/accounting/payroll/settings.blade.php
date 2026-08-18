@@ -3,7 +3,7 @@
 
     {{-- Breadcrumbs --}}
     <nav class="pr-crumbs mb-4">
-        <a href="{{ route('payroll.employees.index') }}">{{ __('Payroll') }}</a>
+        <a href="{{ route('accounting.payroll.employees.index') }}">{{ __('Payroll') }}</a>
         <span>›</span>
         <span class="here">{{ __('Settings') }}</span>
     </nav>
@@ -33,7 +33,7 @@
                     <div class="sub">{{ __('Core payroll settings that control how runs are processed.') }}</div>
                 </div>
                 <div class="pr-fc-bd">
-                    <form method="POST" action="{{ route('payroll.settings.store') }}">
+                    <form method="POST" action="{{ route('accounting.payroll.settings.store') }}">
                         @csrf
                         <div class="pr-fgrid">
                             <div class="pr-field">
@@ -160,7 +160,7 @@
                             <h1>{{ __('Add Allowance') }}</h1>
                         </div>
                         <div class="pr-fc-bd">
-                            <form method="POST" action="{{ route('payroll.settings.store') }}">
+                            <form method="POST" action="{{ route('accounting.payroll.settings.store') }}">
                                 @csrf
                                 <input type="hidden" name="form_type" value="allowance">
                                 <div class="pr-fgrid">

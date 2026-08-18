@@ -3,7 +3,7 @@
 
     {{-- Breadcrumbs --}}
     <nav class="pr-crumbs mb-4">
-        <a href="{{ route('payroll.employees.index') }}">{{ __('Payroll') }}</a>
+        <a href="{{ route('accounting.payroll.employees.index') }}">{{ __('Payroll') }}</a>
         <span>›</span>
         <span class="here">{{ __('Statutory Setup') }}</span>
     </nav>
@@ -73,7 +73,7 @@
                 </button>
 
                 <div x-show="showForm" x-cloak style="margin-top:16px">
-                    <form method="POST" action="{{ route('payroll.statutory.store') }}">
+                    <form method="POST" action="{{ route('accounting.payroll.statutory.store') }}">
                         @csrf
                         <input type="hidden" name="type" value="paye">
                         <div class="pr-fgrid" style="margin-bottom:20px">
@@ -203,7 +203,7 @@
                 </button>
 
                 <div x-show="showForm" x-cloak style="margin-top:16px">
-                    <form method="POST" action="{{ route('payroll.statutory.store') }}">
+                    <form method="POST" action="{{ route('accounting.payroll.statutory.store') }}">
                         @csrf
                         <input type="hidden" name="type" value="pension">
                         <div class="pr-fgrid">

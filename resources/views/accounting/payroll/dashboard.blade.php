@@ -13,11 +13,11 @@
                 <div class="sub">{{ __('Employees, runs, statutory deductions, benefits, payslips and reporting.') }}</div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <a href="{{ route('payroll.settings.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">&#9881; {{ __('Settings') }}</a>
-                <a href="{{ route('payroll.reports.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">&#128202; {{ __('Reports') }}</a>
-                <a href="{{ route('payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">&#128196; {{ __('Payslips') }}</a>
-                <a href="{{ route('payroll.runs.create') }}" class="pr-btn pr-btn-sec pr-btn-sm">&#9654; {{ __('Run Payroll') }}</a>
-                <a href="{{ route('payroll.employees.create') }}" class="pr-btn pr-btn-cta pr-btn-sm">+ {{ __('Add Employee') }}</a>
+                <a href="{{ route('accounting.payroll.settings.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">&#9881; {{ __('Settings') }}</a>
+                <a href="{{ route('accounting.payroll.reports.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">&#128202; {{ __('Reports') }}</a>
+                <a href="{{ route('accounting.payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">&#128196; {{ __('Payslips') }}</a>
+                <a href="{{ route('accounting.payroll.runs.create') }}" class="pr-btn pr-btn-sec pr-btn-sm">&#9654; {{ __('Run Payroll') }}</a>
+                <a href="{{ route('accounting.payroll.employees.create') }}" class="pr-btn pr-btn-cta pr-btn-sm">+ {{ __('Add Employee') }}</a>
             </div>
         </div>
 
@@ -77,7 +77,7 @@
                 <div class="v">{{ $pendingApprovals }}</div>
                 <div class="n">
                     @if($pendingApprovals > 0)
-                        <a href="{{ route('payroll.runs.index') }}" style="color:var(--amber-2)">{{ __('review runs') }} &rarr;</a>
+                        <a href="{{ route('accounting.payroll.runs.index') }}" style="color:var(--amber-2)">{{ __('review runs') }} &rarr;</a>
                     @else
                         {{ __('all caught up') }}
                     @endif
@@ -87,39 +87,39 @@
 
         {{-- Quick Nav --}}
         <div class="pr-statgrid" style="margin-bottom:16px">
-            <a href="{{ route('payroll.employees.index') }}" class="pr-fbox on">
+            <a href="{{ route('accounting.payroll.employees.index') }}" class="pr-fbox on">
                 <span class="pr-fbox-t pr-t-ink">&#128101;</span>
                 <span><span class="l">{{ __('Employees') }}</span><span class="v" style="display:block">{{ $totalEmployees }}</span></span>
             </a>
-            <a href="{{ route('payroll.runs.index') }}" class="pr-fbox">
+            <a href="{{ route('accounting.payroll.runs.index') }}" class="pr-fbox">
                 <span class="pr-fbox-t pr-t-mint">&#128197;</span>
                 <span><span class="l">{{ __('Payroll Runs') }}</span><span class="v" style="display:block">{{ __('View all') }}</span></span>
             </a>
-            <a href="{{ route('payroll.payslips.index') }}" class="pr-fbox">
+            <a href="{{ route('accounting.payroll.payslips.index') }}" class="pr-fbox">
                 <span class="pr-fbox-t pr-t-amber">&#128196;</span>
                 <span><span class="l">{{ __('Payslips') }}</span><span class="v" style="display:block">{{ __('View all') }}</span></span>
             </a>
-            <a href="{{ route('payroll.statutory.index') }}" class="pr-fbox">
+            <a href="{{ route('accounting.payroll.statutory.index') }}" class="pr-fbox">
                 <span class="pr-fbox-t pr-t-steel">&#127973;</span>
                 <span><span class="l">{{ __('Statutory') }}</span><span class="v" style="display:block">{{ __('PAYE &amp; Pension') }}</span></span>
             </a>
-            <a href="{{ route('payroll.people.index') }}" class="pr-fbox">
+            <a href="{{ route('accounting.payroll.people.index') }}" class="pr-fbox">
                 <span class="pr-fbox-t pr-t-ink">&#127973;</span>
                 <span><span class="l">{{ __('People Ops') }}</span><span class="v" style="display:block">{{ __('Loans &amp; Leave') }}</span></span>
             </a>
-            <a href="{{ route('payroll.reports.index') }}" class="pr-fbox">
+            <a href="{{ route('accounting.payroll.reports.index') }}" class="pr-fbox">
                 <span class="pr-fbox-t pr-t-mint">&#128202;</span>
                 <span><span class="l">{{ __('Reports') }}</span><span class="v" style="display:block">{{ __('Analytics') }}</span></span>
             </a>
-            <a href="{{ route('payroll.settings.index') }}" class="pr-fbox">
+            <a href="{{ route('accounting.payroll.settings.index') }}" class="pr-fbox">
                 <span class="pr-fbox-t pr-t-amber">&#9881;</span>
                 <span><span class="l">{{ __('Settings') }}</span><span class="v" style="display:block">{{ __('Configuration') }}</span></span>
             </a>
-            <a href="{{ route('payroll.runs.create') }}" class="pr-fbox">
+            <a href="{{ route('accounting.payroll.runs.create') }}" class="pr-fbox">
                 <span class="pr-fbox-t pr-t-mint">&#9654;</span>
                 <span><span class="l">{{ __('New Run') }}</span><span class="v" style="display:block">{{ __('Calculate pay') }}</span></span>
             </a>
-            <a href="{{ route('payroll.employees.create') }}" class="pr-fbox">
+            <a href="{{ route('accounting.payroll.employees.create') }}" class="pr-fbox">
                 <span class="pr-fbox-t pr-t-steel">+</span>
                 <span><span class="l">{{ __('Add Employee') }}</span><span class="v" style="display:block">{{ __('Onboard') }}</span></span>
             </a>
@@ -132,8 +132,8 @@
                     <h2>{{ __('Last Run') }} &mdash; {{ $lastRun->run_number ?? 'PR-' . $lastRun->id }}</h2>
                     <x-payroll::badge :status="$lastRun->status" type="run" />
                     <div class="right">
-                        <a href="{{ route('payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-xs">{{ __('Payslips') }}</a>
-                        <a href="{{ route('payroll.runs.show', $lastRun) }}" class="pr-btn pr-btn-ghost pr-btn-xs">{{ __('Audit') }}</a>
+                        <a href="{{ route('accounting.payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-xs">{{ __('Payslips') }}</a>
+                        <a href="{{ route('accounting.payroll.runs.show', $lastRun) }}" class="pr-btn pr-btn-ghost pr-btn-xs">{{ __('Audit') }}</a>
                     </div>
                 </div>
                 <div class="pr-pad" style="display:flex;gap:22px;flex-wrap:wrap;font-size:12.5px">
@@ -150,7 +150,7 @@
             <div class="pr-card-h">
                 <h2>{{ __('Recent Payslips') }}</h2>
                 <div class="right">
-                    <a href="{{ route('payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-xs">{{ __('View all') }} &rarr;</a>
+                    <a href="{{ route('accounting.payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-xs">{{ __('View all') }} &rarr;</a>
                 </div>
             </div>
             <div class="pr-li-wrap">

@@ -3,7 +3,7 @@
 
         {{-- Breadcrumbs --}}
         <nav class="pr-crumbs" style="margin-bottom:6px">
-            <a href="{{ route('payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
+            <a href="{{ route('accounting.payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
             <span class="here">{{ __('Runs') }}</span>
         </nav>
 
@@ -13,7 +13,7 @@
                 <h1>{{ __('Payroll Runs') }}</h1>
                 <div class="sub">{{ __('Calculate, approve, post and generate payslips.') }}</div>
             </div>
-            <a href="{{ route('payroll.runs.create') }}" class="pr-btn pr-btn-cta pr-btn-sm">+ {{ __('New Run') }}</a>
+            <a href="{{ route('accounting.payroll.runs.create') }}" class="pr-btn pr-btn-cta pr-btn-sm">+ {{ __('New Run') }}</a>
         </div>
 
         @php
@@ -46,7 +46,7 @@
         {{-- Filter controls --}}
         <div class="pr-card" style="margin-bottom:16px">
             <div class="pr-pad" style="padding-bottom:0">
-                <form method="GET" action="{{ route('payroll.runs.index') }}">
+                <form method="GET" action="{{ route('accounting.payroll.runs.index') }}">
                     <div class="pr-controls">
                         <div class="pr-search">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -64,7 +64,7 @@
                         </select>
                         <button type="submit" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Filter') }}</button>
                         @if(request('search') || request('status'))
-                            <a href="{{ route('payroll.runs.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Clear') }}</a>
+                            <a href="{{ route('accounting.payroll.runs.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Clear') }}</a>
                         @endif
                     </div>
                 </form>
@@ -98,11 +98,11 @@
                                 <td class="pr-numr bold">{{ format_number($run->total_net_pay ?? $run->items->sum('net_pay')) }}</td>
                                 <td class="pr-em">{{ $run->createdBy?->name ?? '—' }}</td>
                                 <td class="pr-row-act">
-                                    <a href="{{ route('payroll.runs.show', $run) }}" class="pr-ibtn" title="{{ __('View') }}">
+                                    <a href="{{ route('accounting.payroll.runs.show', $run) }}" class="pr-ibtn" title="{{ __('View') }}">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </a>
                                     @if($run->status === 'pending_approval')
-                                        <form method="POST" action="{{ route('payroll.runs.approve', $run) }}" style="display:inline">
+                                        <form method="POST" action="{{ route('accounting.payroll.runs.approve', $run) }}" style="display:inline">
                                             @csrf
                                             <button type="submit" class="pr-ibtn" title="{{ __('Approve') }}" style="color:var(--green)">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -110,7 +110,7 @@
                                         </form>
                                     @endif
                                     @if($run->status === 'approved')
-                                        <form method="POST" action="{{ route('payroll.runs.post', $run) }}" style="display:inline">
+                                        <form method="POST" action="{{ route('accounting.payroll.runs.post', $run) }}" style="display:inline">
                                             @csrf
                                             <button type="submit" class="pr-ibtn" title="{{ __('Post to GL') }}">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -118,7 +118,7 @@
                                         </form>
                                     @endif
                                     @if($run->status === 'posted')
-                                        <form method="POST" action="{{ route('payroll.runs.pay', $run) }}" style="display:inline">
+                                        <form method="POST" action="{{ route('accounting.payroll.runs.pay', $run) }}" style="display:inline">
                                             @csrf
                                             <button type="submit" class="pr-ibtn" title="{{ __('Record Payment') }}">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>

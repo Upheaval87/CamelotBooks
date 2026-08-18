@@ -17,8 +17,8 @@
 
         {{-- Breadcrumbs --}}
         <nav class="pr-crumbs" style="margin-bottom:6px">
-            <a href="{{ route('payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
-            <a href="{{ route('payroll.payslips.index') }}">{{ __('Payslips') }}</a> ›
+            <a href="{{ route('accounting.payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
+            <a href="{{ route('accounting.payroll.payslips.index') }}">{{ __('Payslips') }}</a> ›
             <span class="here">{{ $employee?->employee_number ?? 'EMP' }} · {{ $payslip->period_label ?? $runNumber }}</span>
         </nav>
 
@@ -29,12 +29,12 @@
                     <button type="button" class="on">{{ $payslip->period_label ?? $runNumber }}</button>
                 </div>
                 @if($payslip->employee_id)
-                    <a href="{{ route('payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('← All Payslips') }}</a>
+                    <a href="{{ route('accounting.payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('← All Payslips') }}</a>
                 @endif
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
                 @if(($payslip->status ?? '') !== 'sent')
-                    <form method="POST" action="{{ route('payroll.payslips.send', $payslip) }}" style="display:inline">
+                    <form method="POST" action="{{ route('accounting.payroll.payslips.send', $payslip) }}" style="display:inline">
                         @csrf
                         <button type="submit" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Email') }}</button>
                     </form>

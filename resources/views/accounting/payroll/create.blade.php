@@ -15,9 +15,9 @@
         {{-- Page head --}}
         <div class="pr-fc-hd" style="padding:0 0 0">
             <nav class="pr-crumbs" style="margin-bottom:8px">
-                <a href="{{ route('payroll.employees.index') }}">{{ __('Payroll') }}</a>
+                <a href="{{ route('accounting.payroll.employees.index') }}">{{ __('Payroll') }}</a>
                 <span style="color:var(--faint)">&rsaquo;</span>
-                <a href="{{ route('payroll.employees.index') }}">{{ __('Employees') }}</a>
+                <a href="{{ route('accounting.payroll.employees.index') }}">{{ __('Employees') }}</a>
                 <span style="color:var(--faint)">&rsaquo;</span>
                 <span class="here">{{ __('Add New') }}</span>
             </nav>
@@ -50,7 +50,7 @@
         </div>
 
         {{-- Form --}}
-        <form method="POST" action="{{ route('payroll.employees.store') }}" id="onboard-form" class="pr-formcard" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('accounting.payroll.employees.store') }}" id="onboard-form" class="pr-formcard" enctype="multipart/form-data">
             @csrf
 
             {{-- Step 1: Personal --}}

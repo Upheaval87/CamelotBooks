@@ -3,8 +3,8 @@
 
         {{-- Breadcrumbs --}}
         <nav class="pr-crumbs" style="margin-bottom:6px">
-            <a href="{{ route('payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
-            <a href="{{ route('payroll.runs.index') }}">{{ __('Runs') }}</a> ›
+            <a href="{{ route('accounting.payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
+            <a href="{{ route('accounting.payroll.runs.index') }}">{{ __('Runs') }}</a> ›
             <span class="here">{{ __('New Run') }}</span>
         </nav>
 
@@ -14,10 +14,10 @@
                 <h1>{{ __('New Payroll Run') }}</h1>
                 <div class="sub">{{ __('Select the pay period, employees, and statutory tables for this run.') }}</div>
             </div>
-            <a href="{{ route('payroll.runs.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Cancel') }}</a>
+            <a href="{{ route('accounting.payroll.runs.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Cancel') }}</a>
         </div>
 
-        <form method="POST" action="{{ route('payroll.runs.store') }}">
+        <form method="POST" action="{{ route('accounting.payroll.runs.store') }}">
             @csrf
 
             {{-- Run configuration card --}}
@@ -138,7 +138,7 @@
 
                 <div class="pr-fc-bar">
                     <span class="pr-fc-lbl">{{ __('Review employee list and submit when ready.') }}</span>
-                    <a href="{{ route('payroll.runs.index') }}" class="pr-btn pr-btn-light">{{ __('← Back') }}</a>
+                    <a href="{{ route('accounting.payroll.runs.index') }}" class="pr-btn pr-btn-light">{{ __('← Back') }}</a>
                     <button type="submit" class="pr-btn pr-btn-cta">{{ __('Create Run') }}</button>
                 </div>
             </div>

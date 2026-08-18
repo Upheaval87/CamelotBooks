@@ -3,9 +3,9 @@
 
         {{-- Breadcrumbs --}}
         <nav class="pr-crumbs mb-4">
-            <a href="{{ route('payroll.dashboard') }}">{{ __('Payroll') }}</a>
+            <a href="{{ route('accounting.payroll.dashboard') }}">{{ __('Payroll') }}</a>
             <span>›</span>
-            <a href="{{ route('payroll.employees.index') }}">{{ __('Employees') }}</a>
+            <a href="{{ route('accounting.payroll.employees.index') }}">{{ __('Employees') }}</a>
             <span>›</span>
             <span class="here">{{ $employee->employee_number ?: $employee->full_name }}</span>
         </nav>
@@ -17,9 +17,9 @@
                 <div class="sub">{{ $employee->employee_number }}</div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <a href="{{ route('payroll.employees.edit', $employee) }}" class="pr-btn pr-btn-ghost pr-btn-sm">✎ {{ __('Edit') }}</a>
-                <a href="{{ route('payroll.payslips.show', $employee->deliveries->first() ?? 0) }}" class="pr-btn pr-btn-ghost pr-btn-sm">📄 {{ __('Print Payslip') }}</a>
-                <a href="{{ route('payroll.employees.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">← {{ __('Back to Employees') }}</a>
+                <a href="{{ route('accounting.payroll.employees.edit', $employee) }}" class="pr-btn pr-btn-ghost pr-btn-sm">✎ {{ __('Edit') }}</a>
+                <a href="{{ route('accounting.payroll.payslips.show', $employee->deliveries->first() ?? 0) }}" class="pr-btn pr-btn-ghost pr-btn-sm">📄 {{ __('Print Payslip') }}</a>
+                <a href="{{ route('accounting.payroll.employees.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">← {{ __('Back to Employees') }}</a>
             </div>
         </div>
 
@@ -508,7 +508,7 @@
                             <h2>{{ __('Create New Loan') }}</h2>
                         </div>
                         <div class="pr-pad">
-                            <form method="POST" action="{{ route('payroll.people.store') }}" id="loan-create-form">
+                            <form method="POST" action="{{ route('accounting.payroll.people.store') }}" id="loan-create-form">
                                 @csrf
                                 <input type="hidden" name="employee_id" value="{{ $employee->id }}">
                                 <input type="hidden" name="type" value="loan">
@@ -587,7 +587,7 @@
                                                 @endif
                                             </td>
                                             <td class="pr-numr">
-                                                <a href="{{ route('payroll.payslips.show', $delivery) }}" class="pr-btn pr-btn-ghost pr-btn-xs">{{ __('View') }}</a>
+                                                <a href="{{ route('accounting.payroll.payslips.show', $delivery) }}" class="pr-btn pr-btn-ghost pr-btn-xs">{{ __('View') }}</a>
                                             </td>
                                         </tr>
                                     @endforeach

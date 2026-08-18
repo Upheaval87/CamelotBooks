@@ -13,7 +13,7 @@
 
         {{-- Breadcrumbs --}}
         <nav class="pr-crumbs" style="margin-bottom:6px">
-            <a href="{{ route('payroll.dashboard') }}">{{ __('Payroll') }}</a>
+            <a href="{{ route('accounting.payroll.dashboard') }}">{{ __('Payroll') }}</a>
             <span style="color:var(--faint)">&rsaquo;</span>
             <span class="here">{{ __('Employees') }}</span>
         </nav>
@@ -25,7 +25,7 @@
                 <div class="sub">{{ __('All employee records with salary, status and payment method.') }}</div>
             </div>
             <div style="display:flex;gap:10px">
-                <a href="{{ route('payroll.employees.create') }}" class="pr-btn pr-btn-cta pr-btn-sm">+ {{ __('Add Employee') }}</a>
+                <a href="{{ route('accounting.payroll.employees.create') }}" class="pr-btn pr-btn-cta pr-btn-sm">+ {{ __('Add Employee') }}</a>
             </div>
         </div>
 
@@ -33,23 +33,23 @@
         <div class="pr-card" style="margin-bottom:16px">
             <div class="pr-pad" style="padding-bottom:0">
                 <div class="pr-statgrid">
-                    <a href="{{ route('payroll.employees.index', array_filter(['search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ empty(request('status')) ? 'on' : '' }}">
+                    <a href="{{ route('accounting.payroll.employees.index', array_filter(['search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ empty(request('status')) ? 'on' : '' }}">
                         <span class="pr-fbox-t pr-t-ink">&#128101;</span>
                         <span><span class="l">{{ __('All') }}</span><span class="v" style="display:block">{{ $totalAll }}</span></span>
                     </a>
-                    <a href="{{ route('payroll.employees.index', array_filter(['status' => 'active', 'search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ request('status') === 'active' ? 'on' : '' }}">
+                    <a href="{{ route('accounting.payroll.employees.index', array_filter(['status' => 'active', 'search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ request('status') === 'active' ? 'on' : '' }}">
                         <span class="pr-fbox-t pr-t-mint">&#10003;</span>
                         <span><span class="l">{{ __('Active') }}</span><span class="v" style="display:block">{{ $activeCount }}</span></span>
                     </a>
-                    <a href="{{ route('payroll.employees.index', array_filter(['status' => 'on_leave', 'search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ request('status') === 'on_leave' ? 'on' : '' }}">
+                    <a href="{{ route('accounting.payroll.employees.index', array_filter(['status' => 'on_leave', 'search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ request('status') === 'on_leave' ? 'on' : '' }}">
                         <span class="pr-fbox-t pr-t-amber">&#127796;</span>
                         <span><span class="l">{{ __('On Leave') }}</span><span class="v" style="display:block">{{ $onLeaveCount }}</span></span>
                     </a>
-                    <a href="{{ route('payroll.employees.index', array_filter(['status' => 'contract', 'search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ request('status') === 'contract' ? 'on' : '' }}">
+                    <a href="{{ route('accounting.payroll.employees.index', array_filter(['status' => 'contract', 'search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ request('status') === 'contract' ? 'on' : '' }}">
                         <span class="pr-fbox-t pr-t-steel">&#128196;</span>
                         <span><span class="l">{{ __('Contract') }}</span><span class="v" style="display:block">{{ $contractCount }}</span></span>
                     </a>
-                    <a href="{{ route('payroll.employees.index', array_filter(['status' => 'terminated', 'search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ request('status') === 'terminated' ? 'on' : '' }}">
+                    <a href="{{ route('accounting.payroll.employees.index', array_filter(['status' => 'terminated', 'search' => request('search'), 'department' => request('department'), 'branch_id' => request('branch_id')])) }}" class="pr-fbox {{ request('status') === 'terminated' ? 'on' : '' }}">
                         <span class="pr-fbox-t pr-t-red">&#10007;</span>
                         <span><span class="l">{{ __('Terminated') }}</span><span class="v" style="display:block">{{ $terminatedCount }}</span></span>
                     </a>
@@ -57,7 +57,7 @@
 
                 {{-- Controls --}}
                 <div class="pr-controls">
-                    <form method="GET" action="{{ route('payroll.employees.index') }}" id="pr-filter-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%">
+                    <form method="GET" action="{{ route('accounting.payroll.employees.index') }}" id="pr-filter-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%">
                         <div class="pr-search">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             <input type="text" name="search" class="pr-input" placeholder="{{ __('Employee No, name, email...') }}" value="{{ request('search') }}">
@@ -78,7 +78,7 @@
                             @endforeach
                         </select>
                         @if(request()->hasAny(['search', 'department', 'branch_id', 'status']))
-                            <a href="{{ route('payroll.employees.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Clear') }}</a>
+                            <a href="{{ route('accounting.payroll.employees.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Clear') }}</a>
                         @endif
                     </form>
                 </div>
@@ -126,10 +126,10 @@
                                 <td><x-payroll::badge :status="$emp->employment_status ?? ($emp->is_active ? 'active' : 'terminated')" type="employee" /></td>
                                 <td>
                                     <div class="pr-row-act">
-                                        <a href="{{ route('payroll.employees.show', $emp) }}" class="pr-ibtn" title="{{ __('View') }}">
+                                        <a href="{{ route('accounting.payroll.employees.show', $emp) }}" class="pr-ibtn" title="{{ __('View') }}">
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                         </a>
-                                        <a href="{{ route('payroll.employees.edit', $emp) }}" class="pr-ibtn" title="{{ __('Edit') }}">
+                                        <a href="{{ route('accounting.payroll.employees.edit', $emp) }}" class="pr-ibtn" title="{{ __('Edit') }}">
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                         </a>
                                     </div>
@@ -140,7 +140,7 @@
                                 <td colspan="9" class="pr-em" style="text-align:center;padding:40px">
                                     {{ __('No employees found.') }}
                                     <div style="margin-top:12px">
-                                        <a href="{{ route('payroll.employees.create') }}" class="pr-btn pr-btn-cta pr-btn-sm">+ {{ __('Add your first employee') }}</a>
+                                        <a href="{{ route('accounting.payroll.employees.create') }}" class="pr-btn pr-btn-cta pr-btn-sm">+ {{ __('Add your first employee') }}</a>
                                     </div>
                                 </td>
                             </tr>

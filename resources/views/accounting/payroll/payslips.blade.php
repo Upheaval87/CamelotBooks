@@ -3,7 +3,7 @@
 
         {{-- Breadcrumbs --}}
         <nav class="pr-crumbs" style="margin-bottom:6px">
-            <a href="{{ route('payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
+            <a href="{{ route('accounting.payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
             <span class="here">{{ __('Payslips') }}</span>
         </nav>
 
@@ -44,7 +44,7 @@
         {{-- Filter controls --}}
         <div class="pr-card" style="margin-bottom:16px">
             <div class="pr-pad" style="padding-bottom:0">
-                <form method="GET" action="{{ route('payroll.payslips.index') }}">
+                <form method="GET" action="{{ route('accounting.payroll.payslips.index') }}">
                     <div class="pr-controls">
                         <div class="pr-search">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -59,7 +59,7 @@
                         </select>
                         <button type="submit" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Filter') }}</button>
                         @if(request('search') || request('status'))
-                            <a href="{{ route('payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Clear') }}</a>
+                            <a href="{{ route('accounting.payroll.payslips.index') }}" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Clear') }}</a>
                         @endif
                     </div>
                 </form>
@@ -94,7 +94,7 @@
                                 <td class="pr-em">{{ $payslip->period_label ?? $payslip->payrollRun?->period_label ?? '—' }}</td>
                                 <td class="pr-mono">
                                     @if($payslip->payroll_run_id)
-                                        <a href="{{ route('payroll.runs.show', $payslip->payroll_run_id) }}" style="color:var(--sec);text-decoration:none">{{ $payslip->payrollRun?->run_number ?? 'PR-' . str_pad($payslip->payroll_run_id, 4, '0', STR_PAD_LEFT) }}</a>
+                                        <a href="{{ route('accounting.payroll.runs.show', $payslip->payroll_run_id) }}" style="color:var(--sec);text-decoration:none">{{ $payslip->payrollRun?->run_number ?? 'PR-' . str_pad($payslip->payroll_run_id, 4, '0', STR_PAD_LEFT) }}</a>
                                     @else
                                         —
                                     @endif
@@ -104,11 +104,11 @@
                                 <td class="pr-numr {{ ($payslip->total_deductions ?? 0) > 0 ? 'red' : 'dash' }}">{{ format_number($payslip->total_deductions ?? 0) }}</td>
                                 <td class="pr-numr green bold">{{ format_number($payslip->net_pay) }}</td>
                                 <td class="pr-row-act">
-                                    <a href="{{ route('payroll.payslips.show', $payslip) }}" class="pr-ibtn" title="{{ __('View') }}">
+                                    <a href="{{ route('accounting.payroll.payslips.show', $payslip) }}" class="pr-ibtn" title="{{ __('View') }}">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </a>
                                     @if(($payslip->status ?? '') !== 'sent')
-                                        <form method="POST" action="{{ route('payroll.payslips.send', $payslip) }}" style="display:inline">
+                                        <form method="POST" action="{{ route('accounting.payroll.payslips.send', $payslip) }}" style="display:inline">
                                             @csrf
                                             <button type="submit" class="pr-ibtn" title="{{ __('Email') }}">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>

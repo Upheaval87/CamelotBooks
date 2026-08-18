@@ -3,7 +3,7 @@
 
     {{-- Breadcrumbs --}}
     <nav class="pr-crumbs mb-4">
-        <a href="{{ route('payroll.employees.index') }}">{{ __('Payroll') }}</a>
+        <a href="{{ route('accounting.payroll.employees.index') }}">{{ __('Payroll') }}</a>
         <span>›</span>
         <span class="here">{{ __('People Operations') }}</span>
     </nav>
@@ -135,7 +135,7 @@
                             <div class="sub">{{ __('Loans auto-deduct each payroll run until repaid.') }}</div>
                         </div>
                         <div class="pr-fc-bd">
-                            <form method="POST" action="{{ route('payroll.people.store') }}">
+                            <form method="POST" action="{{ route('accounting.payroll.people.store') }}">
                                 @csrf
                                 <div class="pr-fgrid">
                                     <div class="pr-field">

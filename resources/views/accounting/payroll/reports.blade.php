@@ -3,7 +3,7 @@
 
     {{-- Breadcrumbs --}}
     <nav class="pr-crumbs mb-4">
-        <a href="{{ route('payroll.employees.index') }}">{{ __('Payroll') }}</a>
+        <a href="{{ route('accounting.payroll.employees.index') }}">{{ __('Payroll') }}</a>
         <span>›</span>
         <span class="here">{{ __('Reports') }}</span>
     </nav>

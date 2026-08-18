@@ -32,8 +32,8 @@
 
         {{-- Breadcrumbs --}}
         <nav class="pr-crumbs" style="margin-bottom:6px">
-            <a href="{{ route('payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
-            <a href="{{ route('payroll.runs.index') }}">{{ __('Runs') }}</a> ›
+            <a href="{{ route('accounting.payroll.dashboard') }}">{{ __('Payroll') }}</a> ›
+            <a href="{{ route('accounting.payroll.runs.index') }}">{{ __('Runs') }}</a> ›
             <span class="here">{{ $runNumber }}</span>
         </nav>
 
@@ -45,31 +45,31 @@
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
                 @if($run->status === 'draft')
-                    <form method="POST" action="{{ route('payroll.runs.calculate', $run) }}">
+                    <form method="POST" action="{{ route('accounting.payroll.runs.calculate', $run) }}">
                         @csrf
                         <button type="submit" class="pr-btn pr-btn-ghost pr-btn-sm">{{ __('Calculate') }}</button>
                     </form>
                 @endif
                 @if($run->status === 'calculated')
-                    <form method="POST" action="{{ route('payroll.runs.submit', $run) }}">
+                    <form method="POST" action="{{ route('accounting.payroll.runs.submit', $run) }}">
                         @csrf
                         <button type="submit" class="pr-btn pr-btn-sec pr-btn-sm">{{ __('Submit for Approval') }}</button>
                     </form>
                 @endif
                 @if($run->status === 'pending_approval')
-                    <form method="POST" action="{{ route('payroll.runs.approve', $run) }}">
+                    <form method="POST" action="{{ route('accounting.payroll.runs.approve', $run) }}">
                         @csrf
                         <button type="submit" class="pr-btn pr-btn-sec pr-btn-sm">{{ __('Approve') }}</button>
                     </form>
                 @endif
                 @if($run->status === 'approved')
-                    <form method="POST" action="{{ route('payroll.runs.post', $run) }}">
+                    <form method="POST" action="{{ route('accounting.payroll.runs.post', $run) }}">
                         @csrf
                         <button type="submit" class="pr-btn pr-btn-cta pr-btn-sm">{{ __('Post to GL') }}</button>
                     </form>
                 @endif
                 @if($run->status === 'posted' || $run->status === 'partially_paid')
-                    <form method="POST" action="{{ route('payroll.runs.pay', $run) }}">
+                    <form method="POST" action="{{ route('accounting.payroll.runs.pay', $run) }}">
                         @csrf
                         <button type="submit" class="pr-btn pr-btn-cta pr-btn-sm">{{ __('Record Payment') }}</button>
                     </form>
@@ -210,7 +210,7 @@
                                 <td class="pr-numr green bold">{{ format_number($item->net_pay) }}</td>
                                 <td class="pr-numr">{{ format_number($item->pension_er) }}</td>
                                 <td class="pr-row-act">
-                                    <a href="{{ route('payroll.payslips.show', $item) }}" class="pr-ibtn" title="{{ __('View Payslip') }}">
+                                    <a href="{{ route('accounting.payroll.payslips.show', $item) }}" class="pr-ibtn" title="{{ __('View Payslip') }}">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                                     </a>
                                 </td>
