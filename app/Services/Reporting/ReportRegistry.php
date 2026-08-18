@@ -20,6 +20,7 @@ class ReportRegistry
         'analytics' => 'Analytics',
         'bi' => 'Business Intelligence',
         'pos' => 'Point of Sale',
+        'payroll' => 'Payroll',
     ];
 
     private static function all(): array
@@ -688,6 +689,35 @@ class ReportRegistry
                 'route' => 'pos.reports.sales-by-cashier',
                 'permission' => 'view_reports',
                 'feature_flag' => 'pos',
+            ],
+
+            // ── Payroll ──
+            'payslip_report' => [
+                'key' => 'payslip_report',
+                'name' => 'Payslip Report',
+                'description' => 'Summary of payslips for a payroll run.',
+                'category' => 'payroll',
+                'route' => 'accounting.payroll.reports.index',
+                'permission' => 'payroll-runs.view',
+                'feature_flag' => 'payroll',
+            ],
+            'payroll_register' => [
+                'key' => 'payroll_register',
+                'name' => 'Payroll Register',
+                'description' => 'Full payroll register for a period.',
+                'category' => 'payroll',
+                'route' => 'accounting.payroll.reports.index',
+                'permission' => 'payroll-runs.view',
+                'feature_flag' => 'payroll',
+            ],
+            'statutory_deductions' => [
+                'key' => 'statutory_deductions',
+                'name' => 'Statutory Deductions',
+                'description' => 'PAYE, pension, and other statutory deductions summary.',
+                'category' => 'payroll',
+                'route' => 'accounting.payroll.reports.index',
+                'permission' => 'payroll-runs.view',
+                'feature_flag' => 'payroll',
             ],
         ];
 

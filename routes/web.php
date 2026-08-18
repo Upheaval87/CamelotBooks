@@ -18,6 +18,7 @@ use App\Http\Controllers\Accounting\BankingReportsController;
 use App\Http\Controllers\Accounting\BankReconciliationController;
 use App\Http\Controllers\Accounting\BillController;
 use App\Http\Controllers\Accounting\BudgetController;
+use App\Http\Controllers\Accounting\PayrollController;
 use App\Http\Controllers\Accounting\CashFlowController;
 use App\Http\Controllers\Accounting\CreditNoteController;
 use App\Http\Controllers\Accounting\CostCenterController;
@@ -667,6 +668,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/adjustments/{adjustment}/approve', [BudgetController::class, 'approveAdjustment'])->name('adjustments.approve');
                 Route::post('/adjustments/{adjustment}/reject', [BudgetController::class, 'rejectAdjustment'])->name('adjustments.reject');
                 Route::post('/alerts/{alert}/read', [BudgetController::class, 'markAlertRead'])->name('alerts.read');
+            });
+
+            // Payroll Centre
+            Route::middleware('feature:payroll')->group(function () {
+                Route::get('payroll', [PayrollController::class, 'dashboard'])->name('payroll.dashboard');
+                Route::get('payroll/employees', [PayrollController::class, 'index'])->name('payroll.employees.index');
+                Route::get('payroll/employees/create', [PayrollController::class, 'create'])->name('payroll.employees.create');
+                Route::post('payroll/employees', [PayrollController::class, 'store'])->name('payroll.employees.store');
+                Route::get('payroll/employees/{employee}', [PayrollController::class, 'show'])->name('payroll.employees.show');
+                Route::get('payroll/employees/{employee}/edit', [PayrollController::class, 'edit'])->name('payroll.employees.edit');
+                Route::put('payroll/employees/{employee}', [PayrollController::class, 'update'])->name('payroll.employees.update');
+                Route::get('payroll/runs', [PayrollController::class, 'runs'])->name('payroll.runs.index');
+                Route::get('payroll/runs/create', [PayrollController::class, 'createRun'])->name('payroll.runs.create');
+                Route::post('payroll/runs', [PayrollController::class, 'storeRun'])->name('payroll.runs.store');
+                Route::get('payroll/runs/{run}', [PayrollController::class, 'showRun'])->name('payroll.runs.show');
+                Route::post('payroll/runs/{run}/calculate', [PayrollController::class, 'calculateRun'])->name('payroll.runs.calculate');
+                Route::post('payroll/runs/{run}/submit', [PayrollController::class, 'submitRun'])->name('payroll.runs.submit');
+                Route::post('payroll/runs/{run}/approve', [PayrollController::class, 'approveRun'])->name('payroll.runs.approve');
+                Route::post('payroll/runs/{run}/post', [PayrollController::class, 'postRun'])->name('payroll.runs.post');
+                Route::post('payroll/runs/{run}/pay', [PayrollController::class, 'payRun'])->name('payroll.runs.pay');
+                Route::get('payroll/payslips', [PayrollController::class, 'payslips'])->name('payroll.payslips.index');
+                Route::get('payroll/payslips/{payslip}', [PayrollController::class, 'showPayslip'])->name('payroll.payslips.show');
+                Route::post('payroll/payslips/{payslip}/send', [PayrollController::class, 'sendPayslip'])->name('payroll.payslips.send');
+                Route::get('payroll/statutory', [PayrollController::class, 'statutory'])->name('payroll.statutory.index');
+                Route::post('payroll/statutory', [PayrollController::class, 'storeStatutory'])->name('payroll.statutory.store');
+                Route::get('payroll/people', [PayrollController::class, 'people'])->name('payroll.people.index');
+                Route::post('payroll/people', [PayrollController::class, 'storePeople'])->name('payroll.people.store');
+                Route::get('payroll/reports', [PayrollController::class, 'reports'])->name('payroll.reports.index');
+                Route::get('payroll/settings', [PayrollController::class, 'settings'])->name('payroll.settings.index');
+                Route::post('payroll/settings', [PayrollController::class, 'storeSettings'])->name('payroll.settings.store');
             });
 
             Route::middleware('feature:fixed_assets')->group(function () {

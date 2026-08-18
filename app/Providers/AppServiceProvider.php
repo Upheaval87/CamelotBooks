@@ -28,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(database_path('migrations/tenant'));
 
+        Blade::anonymousComponentPath(resource_path('views/components/payroll'), 'payroll');
+
         Blade::directive('money', function (string $expression) {
             return "<?php echo format_money($expression); ?>";
         });

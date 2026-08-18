@@ -110,6 +110,11 @@ class Employee extends Model
         return $this->hasMany(PayslipDelivery::class);
     }
 
+    public function loans(): HasMany
+    {
+        return $this->hasMany(EmployeeLoan::class);
+    }
+
     public function scopeForCompany($query, int $companyId)
     {
         return $query->where('company_id', $companyId);

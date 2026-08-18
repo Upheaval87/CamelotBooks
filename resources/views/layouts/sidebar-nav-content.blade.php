@@ -9,7 +9,7 @@
         'banking'         => ['accounting.bank-accounts', 'accounting.bank-reconciliation', 'accounting.deposits', 'accounting.cheques', 'accounting.petty-cash', 'accounting.cash-position'],
         'accounting'      => ['accounting.accounts', 'accounting.journal-entries', 'accounting.general-ledger', 'accounting.trial-balance', 'accounting.budgets'],
         'fixed-assets'    => ['accounting.fixed-assets', 'accounting.asset-depreciation', 'accounting.depreciation'],
-        'payroll'         => ['accounting.employees', 'accounting.payroll-runs'],
+        'payroll'         => ['accounting.payroll.'],
         'reports'         => ['accounting.report', 'accounting.income-statement', 'accounting.balance-sheet', 'accounting.cash-flow'],
         'analytics'       => ['analytics.financial-ratios', 'analytics.revenue-expense-trends', 'analytics.sales', 'analytics.purchasing', 'analytics.inventory', 'analytics.profitability', 'analytics.budget-vs-actual-trend', 'analytics.cash-flow-trend'],
         'bi'              => ['bi.true-total-cost', 'bi.customer-lifetime-value', 'bi.employee-productivity', 'bi.branch-profitability'],
@@ -147,8 +147,14 @@
             <svg class="sidebar-chevron" :class="openSection === 'payroll' ? 'rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
         <div x-show="openSection === 'payroll'" x-collapse.duration.300ms>
-            <a href="{{ route('accounting.employees.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.employees') ? 'active' : '' }}">Employees</a>
-            <a href="{{ route('accounting.payroll-runs.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll-runs') ? 'active' : '' }}">Payroll Runs</a>
+            <a href="{{ route('accounting.payroll.dashboard') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll.dashboard') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('accounting.payroll.employees.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll.employees') ? 'active' : '' }}">Employees</a>
+            <a href="{{ route('accounting.payroll.runs.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll.runs') ? 'active' : '' }}">Payroll Runs</a>
+            <a href="{{ route('accounting.payroll.payslips.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll.payslips') ? 'active' : '' }}">Payslips</a>
+            <a href="{{ route('accounting.payroll.statutory.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll.statutory') ? 'active' : '' }}">Statutory</a>
+            <a href="{{ route('accounting.payroll.people.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll.people') ? 'active' : '' }}">People</a>
+            <a href="{{ route('accounting.payroll.reports.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll.reports') ? 'active' : '' }}">Reports</a>
+            <a href="{{ route('accounting.payroll.settings.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.payroll.settings') ? 'active' : '' }}">Settings</a>
         </div>
 
         <div class="sidebar-section-label">Reports</div>

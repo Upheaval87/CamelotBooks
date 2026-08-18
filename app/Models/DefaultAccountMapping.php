@@ -110,6 +110,7 @@ class DefaultAccountMapping extends Model
             'paye_payable' => 'PAYE Payable',
             'pension_payable' => 'Pension Payable',
             'net_pay_payable' => 'Net Pay Payable',
+            'loan_receivable' => 'Employee Loans Receivable',
             'petty_cash' => 'Petty Cash',
         ];
     }
@@ -152,6 +153,7 @@ class DefaultAccountMapping extends Model
             'paye_payable' => '2400',
             'pension_payable' => '2410',
             'net_pay_payable' => '2420',
+            'loan_receivable' => '1400',
             'petty_cash' => '1010',
         ];
     }

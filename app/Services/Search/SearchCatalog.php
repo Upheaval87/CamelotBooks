@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\AssetCategory;
 use App\Models\Bill;
 use App\Models\Budget;
+use App\Models\Employee;
 use App\Models\Branch;
 use App\Models\CostCenter;
 use App\Models\CreditNote;
@@ -56,6 +57,7 @@ class SearchCatalog
             $this->creditNote(),
             $this->vendorCredit(),
             $this->budget(),
+            $this->employee(),
         ];
     }
 
@@ -668,6 +670,38 @@ class SearchCatalog
                         'label' => "{$b->code} — {$b->name}",
                         'subtitle' => collect([$b->fiscalYear?->label, $b->status])->filter()->implode(' · '),
                         'url' => route('accounting.budgets.show', $b->id),
+                    ])->values();
+            },
+        ];
+    }
+
+    private function employee(): array
+    {
+        return [
+            'key' => 'employee',
+            'label' => 'Employees',
+            'permission' => 'payroll-runs.view',
+            'feature' => 'payroll',
+            'icon' => 'users',
+            'search' => function (string $q, int $companyId, int $limit, ?int $branchId = null): Collection {
+                return Employee::forCompany($companyId)
+                    ->select(['id', 'employee_number', 'first_name', 'last_name', 'email', 'department', 'position', 'is_active'])
+                    ->when($q !== '', function (Builder $w) use ($q) {
+                        $w->where(function (Builder $inner) use ($q) {
+                            $inner->where('employee_number', 'like', "%{$q}%")
+                                ->orWhere('first_name', 'like', "%{$q}%")
+                                ->orWhere('last_name', 'like', "%{$q}%")
+                                ->orWhere('email', 'like', "%{$q}%");
+                        });
+                    })
+                    ->orderByDesc('id')
+                    ->limit($limit)
+                    ->get()
+                    ->map(fn (Employee $e) => [
+                        'id' => $e->id,
+                        'label' => $e->full_name,
+                        'subtitle' => collect([$e->employee_number, $e->department, $e->position])->filter()->implode(' · '),
+                        'url' => route('accounting.payroll.employees.show', $e->id),
                     ])->values();
             },
         ];

@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -63,7 +63,7 @@ html, body { overflow-x: clip; }
     --shadow-cta: 0 1px 2px rgba(6,32,35,.3), 0 10px 20px -10px rgba(12,53,57,.6), inset 0 1px 0 rgba(255,255,255,.12);
     --shadow-dlg: 0 30px 80px -20px rgba(4,20,22,.65), 0 8px 24px -8px rgba(4,20,22,.4);
 
-    /* Quotation-suite aliases (spec §1.1) */
+    /* Quotation-suite aliases (spec Â§1.1) */
     --acc: #107C7B;
     --acc-2: #0C7E7D;
     --headbg: #11454B;
@@ -72,7 +72,7 @@ html, body { overflow-x: clip; }
     --shadow-dropdown: 0 16px 48px -12px rgba(10,42,46,.24), 0 4px 16px -8px rgba(10,42,46,.14);
     --shadow-paper: 0 1px 2px rgba(10,42,46,.06), 0 18px 48px -20px rgba(10,42,46,.24);
 
-    /* Legacy var() compatibility — old rules read these tokens; map to teal */
+    /* Legacy var() compatibility â€” old rules read these tokens; map to teal */
     --gold-500: #107C7B;
     --gold-600: #0C6B6A;
     --gold-700: #0C3539;
@@ -107,7 +107,7 @@ html, body { overflow-x: clip; }
         -moz-osx-font-smoothing: grayscale;
         @apply font-sans text-base text-gray-800 bg-panel;
     }
-    /* Global type scale — default element styles. Class-based rules in the
+    /* Global type scale â€” default element styles. Class-based rules in the
        components/utilities layers (and suite-scoped selectors) override these,
        so bare <h1>/<h2>/<h3>/<th> inherit a consistent look. Sizes stay on the
        rem scale (font-scale aware); weights follow the spec (800/800/700/800). */
@@ -115,7 +115,7 @@ html, body { overflow-x: clip; }
     h2, .section-title { @apply text-lg font-extrabold text-gray-900; }
     h3 { @apply text-base font-bold text-gray-900; }
     th { @apply text-xs font-extrabold uppercase tracking-[0.09em] text-[#52696B]; }
-    /* Monetary figures — stable column widths via tabular numerals + medium weight */
+    /* Monetary figures â€” stable column widths via tabular numerals + medium weight */
     .figure,
     .amount,
     td.numeric,
@@ -151,15 +151,15 @@ html, body { overflow-x: clip; }
 }
 
 @layer components {
-    /* ═══════════════════════════════════════════
-       PAGE TITLE — italic serif h1 under topbar
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       PAGE TITLE â€” italic serif h1 under topbar
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .page-eyebrow {
         @apply text-[0.714rem] uppercase tracking-[0.15em] text-ink-faint font-sans font-medium mt-0.5;
     }
-    /* ═══════════════════════════════════════════
-       TOPBAR — two-row horizontal navigation
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       TOPBAR â€” two-row horizontal navigation
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .topbar {
         @apply sticky top-0;
         z-index: 60;
@@ -174,7 +174,7 @@ html, body { overflow-x: clip; }
         background: #DCE6E7;
         border-bottom-color: rgba(255,255,255,.55);
     }
-    /* Brand mark — light teal tile with deep teal glyph */
+    /* Brand mark â€” light teal tile with deep teal glyph */
     .topbar-brand-mark {
         @apply w-[26px] h-[26px] rounded flex items-center justify-center shrink-0;
         background: linear-gradient(135deg, #F4FBFB, #D9EDEE);
@@ -222,7 +222,7 @@ html, body { overflow-x: clip; }
         background: rgba(255,255,255,0.10);
     }
 
-    /* Nav link styling — Row 2 */
+    /* Nav link styling â€” Row 2 */
     .topbar-nav-link {
         @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.875rem] font-medium h-[34px] transition-all duration-150;
         color: #0B2A2D;
@@ -260,18 +260,18 @@ html, body { overflow-x: clip; }
         transform: rotate(180deg)
     }
 
-    /* Navigation offset — invisible element to align Row 2 links under Row 1 divider */
+    /* Navigation offset â€” invisible element to align Row 2 links under Row 1 divider */
     .topbar-nav-offset {
         @apply shrink-0;
         width: 0; /* nav links start at the same left edge as the system icon (brand mark) */
     }
 
-    /* Dropdown submenu — parent container for positioning */
+    /* Dropdown submenu â€” parent container for positioning */
     .topbar-nav-dropdown-root {
         @apply relative;
     }
 
-    /* Dropdown submenu — the panel */
+    /* Dropdown submenu â€” the panel */
     .topbar-nav-dropdown {
         @apply absolute left-0 top-full mt-0.5 w-52 rounded-xl shadow-lg overflow-hidden z-50 py-1.5;
         background: #0C3539;
@@ -326,7 +326,7 @@ html, body { overflow-x: clip; }
         color: rgba(255,255,255,0.55);
     }
 
-    /* UI font-scale control (A−/A+) — segmented pill in Row 1 */
+    /* UI font-scale control (Aâˆ’/A+) â€” segmented pill in Row 1 */
     .topbar-font-scale {
         @apply inline-flex items-center gap-1 h-8 px-1 rounded-md shrink-0;
         border: 1px solid rgba(255,255,255,0.12);
@@ -388,9 +388,9 @@ html, body { overflow-x: clip; }
         opacity: 1;
     }
 
-    /* ═══════════════════════════════════════════
-       FAVOURITES — star dropdown + pinnable sidebar
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       FAVOURITES â€” star dropdown + pinnable sidebar
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
     /* Per-page star toggle (lives at the bottom of the favourites sidebar) */
     .favourite-toggle {
@@ -608,7 +608,7 @@ html, body { overflow-x: clip; }
         color: var(--gold);
     }
 
-    /* Pinnable sidebar rail — hidden until pinned, sits below topbar */
+    /* Pinnable sidebar rail â€” hidden until pinned, sits below topbar */
     .fav-sidebar {
         @apply flex-shrink-0 flex flex-col items-center overflow-hidden;
         width: 0;
@@ -780,9 +780,9 @@ html, body { overflow-x: clip; }
         background: var(--brick-soft);
     }
 
-    /* ═══════════════════════════════════════════
-       BUTTONS — four variants: primary, danger, commit, ghost
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       BUTTONS â€” four variants: primary, danger, commit, ghost
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .btn {
         @apply inline-flex items-center justify-center gap-1.5 font-semibold rounded transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 disabled:opacity-40 disabled:cursor-not-allowed select-none cursor-pointer;
         font-size: 0.8125rem;
@@ -828,9 +828,9 @@ html, body { overflow-x: clip; }
     /* Legacy aliases */
     .btn-secondary { @apply btn-ghost; }
 
-    /* ═══════════════════════════════════════════
-       FORM INPUTS — bottom-border only, no box / bg / radius.  Matches invoice-form-ledger.
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       FORM INPUTS â€” bottom-border only, no box / bg / radius.  Matches invoice-form-ledger.
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .input {
         @apply block w-full text-sm text-ink placeholder-ink-faint/60 transition-all duration-150;
         width: 100%;
@@ -901,9 +901,9 @@ html, body { overflow-x: clip; }
         @apply text-xs text-brick mt-1.5;
     }
 
-    /* ═══════════════════════════════════════════
-       FORM SECTION — gold numbered labels
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       FORM SECTION â€” gold numbered labels
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .form-section-label {
         @apply text-[0.714rem] font-semibold uppercase tracking-[0.12em] text-gold mb-4 pb-2 border-b border-line;
     }
@@ -931,9 +931,9 @@ html, body { overflow-x: clip; }
         background: rgba(226,236,236,1);
     }
 
-    /* ═══════════════════════════════════════════
-       FORM LAYOUT — two-column form + sidebar
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       FORM LAYOUT â€” two-column form + sidebar
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .form-page {
         display: flex;
         gap: 24px;
@@ -950,9 +950,9 @@ html, body { overflow-x: clip; }
         top: 5.375rem;
     }
 
-    /* ═══════════════════════════════════════════
-       CARDS — white bg, line border, small radius, faint label
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       CARDS â€” white bg, line border, small radius, faint label
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .card {
         @apply rounded-3xl shadow-card;
         background: rgba(255, 255, 255, 0.66);
@@ -1009,9 +1009,9 @@ html, body { overflow-x: clip; }
 
     /* topbar defined above */
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        DATASHEETS / TABLES
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .datasheet {
         @apply w-full border-collapse;
     }
@@ -1050,7 +1050,7 @@ html, body { overflow-x: clip; }
         background: #F4F8F8;
     }
 
-    /* Status pill badges — reference badge language */
+    /* Status pill badges â€” reference badge language */
     .pill-base {
         @apply inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-extrabold tracking-[0.05em] leading-4 shadow-badge border;
     }
@@ -1069,9 +1069,9 @@ html, body { overflow-x: clip; }
     .badge-warning { @apply pill-base bg-[#FBF3E2] text-[#8A5A15]; }
     .badge-danger { @apply pill-base bg-brick-soft text-brick; }
 
-    /* ═══════════════════════════════════════════
-       MODALS — gold accent line, serif title, dim scrim
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       MODALS â€” gold accent line, serif title, dim scrim
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .modal-backdrop {
         @apply fixed inset-0 z-50 bg-ink/50;
     }
@@ -1109,9 +1109,9 @@ html, body { overflow-x: clip; }
         @apply px-6 py-4 border-t border-line flex items-center justify-end gap-3;
     }
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        DROPDOWN
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .dropdown {
         @apply absolute z-50 min-w-[180px] bg-white rounded-xl border border-line shadow-dropdown overflow-hidden;
     }
@@ -1119,9 +1119,9 @@ html, body { overflow-x: clip; }
         @apply flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-ink hover:bg-gold-soft hover:text-ink transition-colors duration-100 cursor-pointer;
     }
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        NOTIFICATIONS / TOASTS
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .toast {
         @apply pointer-events-auto flex items-start gap-3 bg-white border-l-[3px] rounded-xl px-4 py-3.5 shadow-elevated min-w-[300px] max-w-sm animate-fade-in-up;
     }
@@ -1130,9 +1130,9 @@ html, body { overflow-x: clip; }
     .toast-error { @apply toast border-l-brick; }
     .toast-info { @apply toast border-l-gold; }
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        EMPTY STATE
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .empty-state {
         @apply flex flex-col items-center justify-center py-16 px-6 text-center;
     }
@@ -1146,16 +1146,16 @@ html, body { overflow-x: clip; }
         @apply text-sm text-ink-faint max-w-xs;
     }
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        TOOLBAR
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .toolbar {
         @apply bg-white border border-line rounded px-4 py-2.5 flex items-center justify-between gap-2;
     }
 
-    /* ═══════════════════════════════════════════
-       RECORD PAGE — toolbar, detail grid, balance panel
-    ═══════════════════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       RECORD PAGE â€” toolbar, detail grid, balance panel
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .record-toolbar {
         @apply rounded-2xl px-6 py-3.5 mb-5 flex items-center justify-between gap-2 flex-wrap;
         background: rgba(255, 255, 255, 0.66);
@@ -1206,7 +1206,7 @@ html, body { overflow-x: clip; }
     }
     .record-toolbar .tr-more:hover { color: #0C3539; background: rgba(17, 69, 75, 0.06); }
 
-    /* Detail page layout — two-column */
+    /* Detail page layout â€” two-column */
     .detail-page {
         display: flex;
         gap: 24px;
@@ -1223,7 +1223,7 @@ html, body { overflow-x: clip; }
         top: 126px;
     }
 
-    /* Detail grid — 3-column */
+    /* Detail grid â€” 3-column */
     .detail-grid {
         @apply grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-5;
     }
@@ -1273,9 +1273,9 @@ html, body { overflow-x: clip; }
         padding: 28px 10px;
     }
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        PAGINATION
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .pagination {
         @apply flex items-center gap-1;
     }
@@ -1289,9 +1289,9 @@ html, body { overflow-x: clip; }
         @apply opacity-40 cursor-not-allowed;
     }
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        TIMELINE / ACTIVITY
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .timeline {
         @apply relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-0 before:w-px before:bg-line;
     }
@@ -1305,9 +1305,9 @@ html, body { overflow-x: clip; }
         @apply text-sm;
     }
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        LOADING SKELETON
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .skeleton {
         @apply bg-neutral-200 rounded-md animate-pulse;
     }
@@ -1318,9 +1318,9 @@ html, body { overflow-x: clip; }
         @apply skeleton h-3 w-2/3;
     }
 
-    /* ═══════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        DIVIDER
-    ═══════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     .divider {
         @apply w-px h-5 bg-line mx-1.5;
     }
@@ -1353,9 +1353,9 @@ html, body { overflow-x: clip; }
     }
 }
 
-/* ═══════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DARK MODE
-═══════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .dark .card {
     @apply bg-neutral-900 border-neutral-800;
 }
@@ -1755,9 +1755,9 @@ html, body { overflow-x: clip; }
     color: rgba(156,163,175,1);
 }
 
-/* ═══════════════════════════════════════════
-   GLOBAL SEARCH MODAL — full-screen scrim, centered panel
-═══════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   GLOBAL SEARCH MODAL â€” full-screen scrim, centered panel
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .global-search-backdrop {
     position: fixed;
     inset: 0;
@@ -2522,7 +2522,7 @@ html, body { overflow-x: clip; }
 }
 .report-toolbar .zero-toggle input { accent-color: var(--gold-600, #0C6B6A); width: 14px; height: 14px; }
 
-/* --- Column header bar (#E2ECEC) — appears once per report --- */
+/* --- Column header bar (#E2ECEC) â€” appears once per report --- */
 .report-col-bar {
     display: flex; justify-content: space-between; align-items: center;
     background: #E2ECEC; padding: 10px 14px;
@@ -2530,7 +2530,7 @@ html, body { overflow-x: clip; }
     font-size: 0.857rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
 }
 
-/* --- Section name bar (#F4F8F8) — appears per section --- */
+/* --- Section name bar (#F4F8F8) â€” appears per section --- */
 .report-section-bar {
     display: flex; justify-content: space-between; align-items: center;
     background: #F4F8F8; padding: 9px 14px;
@@ -2655,9 +2655,9 @@ html, body { overflow-x: clip; }
     .detail-page-sidebar { width: 100%; position: static; }
 }
 
-/* ═══════════════════════════════════════════
-   TODO — personal task list
-═══════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   TODO â€” personal task list
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .todo-composer-main {
     display: flex; align-items: center; gap: 10px;
 }
@@ -2896,15 +2896,15 @@ a.todo-link-chip:hover { background: #EFE5CE; }
 }
 .todo-trigger svg { fill: none; }
 
-/* ═══════════════════════════════════════════
-   AUTH SUITE — shared split panel (auth/*)
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   AUTH SUITE â€” shared split panel (auth/*)
    Rebuilt Aug 2026 per docs/auth-suite.mockup.html.
    Scoped to .auth-login (the body class on auth pages) so the shared
    .input / .btn-primary styles are overridden ONLY here.
    The .password-input-* and .auth-login-password-checklist rules are
    shared with the profile change-password card, so they carry var()
    fallbacks and live OUTSIDE the .auth-login scope.
-═══════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .auth-login {
     --deep-1: #17565D;
     --deep-2: #0C3539;
@@ -2937,7 +2937,7 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     color: #374151;
 }
 
-/* Split shell — form side wider than brand side */
+/* Split shell â€” form side wider than brand side */
 .auth-split {
     display: grid;
     grid-template-columns: 0.9fr 1.1fr;
@@ -2948,7 +2948,7 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     box-shadow: 0 24px 70px -28px rgba(10,42,45,.45), 0 4px 16px -6px rgba(10,42,45,.22);
 }
 
-/* ─── Brand panel (left) ─── */
+/* â”€â”€â”€ Brand panel (left) â”€â”€â”€ */
 .auth-brand {
     position: relative;
     display: flex;
@@ -3059,7 +3059,7 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     position: relative;
 }
 
-/* ─── Form panel (right) ─── */
+/* â”€â”€â”€ Form panel (right) â”€â”€â”€ */
 .auth-form-col {
     display: flex;
     flex-direction: column;
@@ -3238,7 +3238,7 @@ a.todo-link-chip:hover { background: #EFE5CE; }
 }
 .auth-login-forgot:hover { color: var(--deep-1); }
 
-/* Primary CTA — deep-teal gradient */
+/* Primary CTA â€” deep-teal gradient */
 .auth-login .btn-primary,
 .auth-login-submit {
     display: inline-flex;
@@ -3310,7 +3310,7 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     outline: none;
 }
 
-/* ─── Verify code (OTP) page ─── */
+/* â”€â”€â”€ Verify code (OTP) page â”€â”€â”€ */
 .auth-login-otp-row {
     display: flex;
     gap: 10px;
@@ -3377,13 +3377,13 @@ a.todo-link-chip:hover { background: #EFE5CE; }
 }
 .auth-login-resend-timer--expired { color: var(--auth-error); }
 
-/* ═══════════════════════════════════════════
-   SET NEW PASSWORD — shared by auth/reset-password and the
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SET NEW PASSWORD â€” shared by auth/reset-password and the
    profile change-password card. These rules are intentionally
    NOT scoped to .auth-login so they work inside the profile card
    too; var() fallbacks keep them styled when .auth-login tokens
    are not in scope. The checklist mirrors the enforced policy.
-═══════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .password-input-wrap {
     position: relative;
 }
@@ -3448,7 +3448,7 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     height: 18px;
 }
 
-/* Requirements checklist — 2-column grid, teal tick disc when met;
+/* Requirements checklist â€” 2-column grid, teal tick disc when met;
    item text always present so state is never conveyed by color alone */
 .auth-login-password-checklist {
     list-style: none;
@@ -3495,7 +3495,7 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     color: inherit;
 }
 
-/* Profile change-password submit — same deep CTA as .auth-login-submit */
+/* Profile change-password submit â€” same deep CTA as .auth-login-submit */
 .password-form-submit {
     display: inline-flex;
     align-items: center;
@@ -3521,7 +3521,7 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     transform: translateY(-1px);
 }
 
-/* ─── Responsive: ≤960px collapses to single column ─── */
+/* â”€â”€â”€ Responsive: â‰¤960px collapses to single column â”€â”€â”€ */
 @media (max-width: 960px) {
     .auth-split {
         grid-template-columns: 1fr;
@@ -3537,13 +3537,13 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     }
 }
 
-/* ─── Responsive: short viewports hide the glass stat card ─── */
+/* â”€â”€â”€ Responsive: short viewports hide the glass stat card â”€â”€â”€ */
 @media (max-height: 820px) {
     .auth-glass { display: none; }
     .auth-brand h1 { font-size: 2.143rem; }
 }
 
-/* ─── Responsive: ≤420px tightens the OTP row ─── */
+/* â”€â”€â”€ Responsive: â‰¤420px tightens the OTP row â”€â”€â”€ */
 @media (max-width: 420px) {
     .auth-login-otp-row {
         gap: 6px;
@@ -3558,8 +3558,8 @@ a.todo-link-chip:hover { background: #EFE5CE; }
 /* ---------------------------------------------------------------
    SUPER ADMIN VISUAL SYSTEM (Aug 2026)
    Tokens match the approved mockups:
-     --sa-ink #0f1420 � --sa-muted #6b7280 � --sa-border #eceef2
-     --sa-accent #107C7B � --sa-accent-tint #DFF7F6 � --sa-input #fbfbfd
+     --sa-ink #0f1420 ï¿½ --sa-muted #6b7280 ï¿½ --sa-border #eceef2
+     --sa-accent #107C7B ï¿½ --sa-accent-tint #DFF7F6 ï¿½ --sa-input #fbfbfd
    GLASS CONSTRAINT: translucency + backdrop blur appears ONLY on the
    left nav rail and data-entry cards (the Super Admin redesign); every
    table body below is fully opaque.
@@ -4028,10 +4028,10 @@ select.sa-input {
    ======================================================================== */
 
 
-/* ═══════════════════════════════════════════
-   DIALOG SYSTEM — Executive Teal
-   z-index map: nav >= 60 · sticky heads 40 · scrim 80 · dialogs 85 · toasts 95
-═══════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DIALOG SYSTEM â€” Executive Teal
+   z-index map: nav >= 60 Â· sticky heads 40 Â· scrim 80 Â· dialogs 85 Â· toasts 95
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* ---- Toast viewport (pinned below the two-row topbar) ---- */
 .cb-toast-viewport {
@@ -4420,9 +4420,9 @@ select.sa-input {
     .cb-actions .cb-btn { width: 100%; }
 }
 
-/* ═══════════════════════════════════════════
-   BILL FORM — mockup create-bill (fluid line table, summary)
-═══════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   BILL FORM â€” mockup create-bill (fluid line table, summary)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .bill-ci {
     height: 36px;
     border-radius: 7px;
@@ -4520,9 +4520,9 @@ select.sa-input {
     display: none;
 }
 
-/* ═══════════════════════════════════════════
-   QUOTATION FORM — mockup create-quotation (live document preview)
-═══════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   QUOTATION FORM â€” mockup create-quotation (live document preview)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .quot-prev {
     position: sticky;
     top: calc(var(--topbar-h, 106px) + 24px);
@@ -4670,7 +4670,7 @@ select.sa-input {
 }
 
 
-/* ---- Copy-from-quote dialog (§5.6) ---- */
+/* ---- Copy-from-quote dialog (Â§5.6) ---- */
 .cq-overlay {
     position: fixed;
     inset: 0;
@@ -4814,11 +4814,11 @@ select.sa-input {
 }
 .cq-btn-gold:hover { filter: brightness(1.05); }
 
-/* ═══════════════════════════════════════════════════════════════
-   QUOTATIONS SUITE — executive teal (list / create / edit / view)
-   Self-contained styling per spec §1–§9. Additive .q-* hooks only;
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   QUOTATIONS SUITE â€” executive teal (list / create / edit / view)
+   Self-contained styling per spec Â§1â€“Â§9. Additive .q-* hooks only;
    legacy classes/ids kept so all existing JS/behaviour stays wired.
-═══════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* ---- page shells ---- */
 .q-page {
@@ -5124,7 +5124,7 @@ textarea.q-input {
 .q-mono { font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500; }
 .q-sec-head--pad { padding: 1.25rem 1.5rem 0; }
 
-/* ---- search combo (§5.5) — scoped to quotation cards ---- */
+/* ---- search combo (Â§5.5) â€” scoped to quotation cards ---- */
 .q-card .scoped-search-field {
     height: 2.75rem;
     padding-left: 0.75rem;
@@ -5153,7 +5153,7 @@ textarea.q-input {
 }
 .q-card .scoped-search-field .scoped-search-open:hover { background: rgba(223,247,246,1); }
 
-/* ---- tables (§6) — MIST headers (NOT navy) ---- */
+/* ---- tables (Â§6) â€” MIST headers (NOT navy) ---- */
 .q-table {
     width: 100%;
     border-collapse: separate;
@@ -5207,7 +5207,7 @@ textarea.q-input {
 .q-ibtn:hover { background: rgba(17,69,75,.06); border-color: rgba(17,69,75,.3); color: var(--ink, #0B2A2D); }
 .q-ibtn--del:hover { background: #FEF2F2; border-color: rgba(220,38,38,.35); color: var(--red, #DC2626); }
 
-/* empty state (§6) */
+/* empty state (Â§6) */
 .q-empty {
     padding: 1.75rem;
     text-align: center;
@@ -5215,7 +5215,7 @@ textarea.q-input {
     color: var(--faint, #5F7A7C);
 }
 
-/* line-item inputs inside the quotation form (§6 .ci) */
+/* line-item inputs inside the quotation form (Â§6 .ci) */
 .q-form .bill-ci {
     height: 2.25rem;                 /* 36px */
     border-radius: 0.4375rem;
@@ -5270,7 +5270,7 @@ textarea.q-input {
 }
 .q-total-row .v { font-variant-numeric: tabular-nums; }
 
-/* ---- rails (§8) ---- */
+/* ---- rails (Â§8) ---- */
 .q-rail { display: flex; flex-direction: column; gap: 1.25rem; }
 .q-rail-card {
     background: rgba(255,255,255,.75);
@@ -5322,7 +5322,7 @@ textarea.q-input {
 }
 .q-rail-link:hover { color: var(--headbg, #11454B); text-decoration: underline; }
 
-/* ---- view page toolbar (§9.4) ---- */
+/* ---- view page toolbar (Â§9.4) ---- */
 .q-sticky {
     position: sticky;
     top: var(--nav-h, 6.625rem);
@@ -5411,7 +5411,7 @@ textarea.q-input {
 .q-card--list .overflow-x-auto { border-radius: 1.125rem; overflow: visible; }
 .q-card--list .q-pag { border-top: 1px solid var(--line, #E2ECEC); }
 
-/* table wrappers stay overflow-visible above 720px (§6), scroll below */
+/* table wrappers stay overflow-visible above 720px (Â§6), scroll below */
 .q-wrap { overflow: visible; border-radius: 1.125rem; }
 
 /* ---- pagination ---- */
@@ -5482,13 +5482,13 @@ textarea.q-input {
     .q-wrap { overflow-x: auto; }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   QUOTATIONS SUITE §7–§9 — fboxes, profile, tabs, strips, shell,
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   QUOTATIONS SUITE Â§7â€“Â§9 â€” fboxes, profile, tabs, strips, shell,
    grouped toolbar, list head. New spec classes (additive).
-   §6 MIST headers are re-defined above (theads are light).
-═══════════════════════════════════════════════════════════════ */
+   Â§6 MIST headers are re-defined above (theads are light).
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ---- list page head — non-sticky (§9.1) ---- */
+/* ---- list page head â€” non-sticky (Â§9.1) ---- */
 .q-head--list {
     position: static;
     padding: 1.625rem 0 1rem;
@@ -5499,7 +5499,7 @@ textarea.q-input {
 }
 .q-head--list .q-head-cta { display: flex; align-items: center; gap: 0.625rem; }
 
-/* ---- shell grid (§8) — one card / page, right rail 300px ---- */
+/* ---- shell grid (Â§8) â€” one card / page, right rail 300px ---- */
 .q-shell {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 18.75rem;
@@ -5559,7 +5559,7 @@ textarea.q-input {
 }
 .q-vitem.is-active .q-vitem-ic { background: rgba(255,255,255,.18); color: #fff; }
 
-/* ---- summary rows in the detail rail (§8.4) ---- */
+/* ---- summary rows in the detail rail (Â§8.4) ---- */
 .q-srow-lite {
     display: flex;
     align-items: center;
@@ -5572,7 +5572,7 @@ textarea.q-input {
 .q-srow-lite + .q-srow-lite { border-top: 1px solid var(--line, #E2ECEC); }
 .q-srow-lite .v { font-weight: 600; color: var(--ink, #0B2A2D); font-variant-numeric: tabular-nums; }
 
-/* ---- rail memo preview (§8.2/§8.3) ---- */
+/* ---- rail memo preview (Â§8.2/Â§8.3) ---- */
 .q-rail-memo {
     margin-top: 0.625rem;
     padding: 0.5rem 0.625rem;
@@ -5581,7 +5581,7 @@ textarea.q-input {
     color: var(--muted, #52696B);
 }
 
-/* ---- list status filters — FBOXES (§7.1) ---- */
+/* ---- list status filters â€” FBOXES (Â§7.1) ---- */
 .q-fbox-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -5620,7 +5620,7 @@ textarea.q-input {
 .q-fbox-ic--steel { background: #46708C; }
 .q-fbox-ic--gray  { background: #5F7A7C; }
  .q-fbox-lbl {
-     font-size: 0.625rem;              /* 10px (was 9px — a11y floor) */
+     font-size: 0.625rem;              /* 10px (was 9px â€” a11y floor) */
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -5639,7 +5639,7 @@ textarea.q-input {
     box-shadow: 0 0 0 3px rgba(18,143,142,.12);
 }
 
-/* ---- detail icon stat boxes (§7.2) ---- */
+/* ---- detail icon stat boxes (Â§7.2) ---- */
 .q-istats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5682,7 +5682,7 @@ textarea.q-input {
     margin-top: 0.125rem;
 }
 
-/* ---- detail profile header (§7.3) ---- */
+/* ---- detail profile header (Â§7.3) ---- */
 .q-prof {
     display: flex;
     align-items: center;
@@ -5727,7 +5727,7 @@ textarea.q-input {
 }
 .q-prof-acts { margin-left: auto; display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; }
 
-/* ---- contents tabs (§7.4) ---- */
+/* ---- contents tabs (Â§7.4) ---- */
 .q-tabs {
     display: flex;
     align-items: center;
@@ -5771,7 +5771,7 @@ textarea.q-input {
     font-weight: 700;
 }
 
-/* ---- grand-total strip (§7.5) ---- */
+/* ---- grand-total strip (Â§7.5) ---- */
 .q-strip {
     display: flex;
     align-items: center;
@@ -5796,7 +5796,7 @@ textarea.q-input {
     font-variant-numeric: tabular-nums;
 }
 
-/* ---- grouped detail toolbar (§9.4) ---- */
+/* ---- grouped detail toolbar (Â§9.4) ---- */
 .q-toolbar-group { display: flex; flex-direction: column; gap: 0.5rem; }
 .q-toolbar-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .q-toolbar-group + .q-toolbar-group { border-left: 1px solid var(--line, #E2ECEC); padding-left: 1rem; }
@@ -5809,7 +5809,7 @@ textarea.q-input {
     margin-bottom: 0.5rem;
 }
 
-/* ---- line-item column widths (§6.2 form / §6.3 detail) ---- */
+/* ---- line-item column widths (Â§6.2 form / Â§6.3 detail) ---- */
 .q-col-c { width: 12%; }
 .q-col-n { width: 20%; }
 .q-col-d { width: 22%; }
@@ -5825,7 +5825,7 @@ textarea.q-input {
 .q-dcol-price { width: 12%; }
 .q-dcol-total { width: 15%; }
 
-/* ---- inline item search combo in the line-items table (§5.5) ---- */
+/* ---- inline item search combo in the line-items table (Â§5.5) ---- */
 .q-form table .scoped-search-field,
 .q-form table .scoped-search-field input { height: 2.25rem; }
 .q-form table .scoped-search-field { border-radius: 0.4375rem; }
@@ -5836,7 +5836,7 @@ textarea.q-input {
 }
 .q-form table .scoped-search-field .scoped-search-open svg { width: 1rem; height: 1rem; }
 
-/* ---- attachments dropzone (§9.2e) ---- */
+/* ---- attachments dropzone (Â§9.2e) ---- */
 .q-dropzone {
     display: block;
     width: 100%;
@@ -5874,7 +5874,7 @@ textarea.q-input {
     letter-spacing: 0.06em;
 }
 
-/* ---- attachments file cards (§7.4) ---- */
+/* ---- attachments file cards (Â§7.4) ---- */
 .q-file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.75rem; }
 .q-file-card {
     display: flex;
@@ -5903,7 +5903,7 @@ textarea.q-input {
 .q-file-card-size { font-size: 0.6875rem; color: var(--faint, #5F7A7C); }
 .q-file-card-actions { margin-left: auto; display: flex; gap: 0.375rem; }
 
-/* ---- activity timeline (§7.4) ---- */
+/* ---- activity timeline (Â§7.4) ---- */
 .q-act { display: flex; flex-direction: column; gap: 1.25rem; padding: 1.375rem 1.5rem; }
 .q-act-item { position: relative; display: flex; gap: 0.875rem; padding-left: 1.5rem; }
 .q-act-item::before {
@@ -5932,7 +5932,7 @@ textarea.q-input {
 .q-act-sub { font-size: 0.71875rem; color: var(--muted, #52696B); margin-top: 0.125rem; }
 .q-act-time { font-size: 0.6875rem; color: var(--faint, #5F7A7C); margin-top: 0.125rem; }
 
-/* ---- contents panes (§7.4) ---- */
+/* ---- contents panes (Â§7.4) ---- */
 .q-pane { padding: 1.25rem 1.5rem; }
 .q-pane-label { font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #52696B); margin-bottom: 0.5rem; }
 .q-pane-text { font-size: 0.84375rem; line-height: 1.7; color: var(--ink, #0B2A2D); white-space: pre-wrap; }
@@ -5951,7 +5951,7 @@ textarea.q-input {
 }
 .q-note-edit:focus { border-color: var(--sec, #107C7B); box-shadow: 0 0 0 3px rgba(18,143,142,.16); }
 
-/* ---- pipeline bars (�11.3) ---- */
+/* ---- pipeline bars (ï¿½11.3) ---- */
 .q-pipe-body { padding: 0.5rem 1.5rem 1.25rem; }
 .q-pipe-row { display: grid; grid-template-columns: 1.875rem 9rem minmax(0,1fr) 4rem 10rem; gap: 0.75rem; align-items: center; padding: 0.625rem 0; border-bottom: 1px solid var(--line, #E2ECEC); }
 .q-pipe-row:last-child { border-bottom: none; }
@@ -5976,13 +5976,13 @@ textarea.q-input {
 .q-row-total { font-size: 0.78125rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #52696B); padding: 0.75rem 1.25rem !important; }
 
 /* ==========================================================================
-   QUOTATIONS SUITE — DESIGN 2 (mockup "QUOTATIONS-all-pages DESIGN 2.html")
+   QUOTATIONS SUITE â€” DESIGN 2 (mockup "QUOTATIONS-all-pages DESIGN 2.html")
    All classes namespaced `.q2-*` so no bare class (.btn/.input/.card/.badge
    etc.) collides with app-global rules. Reuses the :root tokens (--sec,
    --deep-*, --mist-*, --line, --border, --muted, --faint, --focus,
    --cta-btn-shadow, --teal-btn-shadow, --topbar-h).
-   Sections: primitives · §1 list · §2 create · §3 edit · §4 detail · rails ·
-   tables · responsive.
+   Sections: primitives Â· Â§1 list Â· Â§2 create Â· Â§3 edit Â· Â§4 detail Â· rails Â·
+   tables Â· responsive.
    ========================================================================== */
 
 /* ---------- shared primitives ---------- */
@@ -6100,7 +6100,7 @@ textarea.q-input {
 .q2-rail-sec .q2-sec-ic svg { width: 0.875rem; height: 0.875rem; }
 .q2-rail-sec .q2-sec-title { font-size: 0.75rem; font-weight: 700; color: var(--muted, #52696B); }
 
-/* ---------- §1 list ---------- */
+/* ---------- Â§1 list ---------- */
 .q2-toolbar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.25rem; }
 .q2-search { position: relative; flex: 1; max-width: 26rem; min-width: 16rem; }
 .q2-search > svg { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); width: 1rem; height: 1rem; color: var(--faint, #5F7A7C); pointer-events: none; }
@@ -6142,7 +6142,7 @@ textarea.q-input {
 .q2-pag-btn.is-current { background: linear-gradient(180deg, #0C7E7D, #107C7B); border-color: transparent; color: #fff; box-shadow: 0 2px 6px rgba(18, 143, 142, 0.25); }
 .q2-pag-btn.is-disabled { opacity: 0.45; pointer-events: none; }
 
-/* ---------- §2/§3 form ---------- */
+/* ---------- Â§2/Â§3 form ---------- */
 .q2-sec { border: 1px solid var(--line, #E2ECEC); border-radius: 16px; background: var(--card, rgba(255, 255, 255, 0.75)); box-shadow: var(--shadow-card, 0 1px 3px rgba(12, 53, 57, 0.05)); padding: 1.375rem 1.5rem; }
 .q2-sec-head { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 1.25rem; }
 .q2-sec-ic { width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: 0.625rem; background: linear-gradient(180deg, var(--sec-2, #0C7E7D), var(--sec, #107C7B)); color: #fff; flex-shrink: 0; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 8px -3px rgba(10, 80, 80, 0.4); }
@@ -6181,7 +6181,7 @@ textarea.q-input {
 .q2-tbtns { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
 .q2-rail-memo { font-size: 0.75rem; line-height: 1.5; color: var(--faint, #5F7A7C); margin: 0; }
 
-/* ---------- §4 detail ---------- */
+/* ---------- Â§4 detail ---------- */
 .q2-prof { border: 1px solid var(--line, #E2ECEC); border-radius: 18px; background: var(--card, rgba(255, 255, 255, 0.75)); box-shadow: var(--shadow-card, 0 1px 3px rgba(12, 53, 57, 0.05)); padding: 1.375rem 1.5rem; }
 .q2-pbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .q2-pid { display: flex; align-items: center; gap: 1rem; }
@@ -6264,12 +6264,12 @@ textarea.q-input {
 }
 
 /* ==========================================================================
-    SALES RECEIPTS SUITE — DESIGN 2 (mockup "sales-receipt-suite.mockup.html")
+    SALES RECEIPTS SUITE â€” DESIGN 2 (mockup "sales-receipt-suite.mockup.html")
     Namespaced `.q2-*` additions for sales-receipts only. Reuses the DESIGN 2
     primitives above (.q2-head, .q2-btn, .q2-seg, .q2-badge, .q2-card, .q2-sec,
-    .q2-tbl, .q2-pag, .q2-rail, .q2-srow, .q2-statgrid, .q2-tabs, .q2-drop…).
-    Sections: statuses · list fboxes · chips · form spans/combos · payments ·
-    line cells · totals · detail tiles · post (ro-grid/jfoot/note-info) ·
+    .q2-tbl, .q2-pag, .q2-rail, .q2-srow, .q2-statgrid, .q2-tabs, .q2-dropâ€¦).
+    Sections: statuses Â· list fboxes Â· chips Â· form spans/combos Â· payments Â·
+    line cells Â· totals Â· detail tiles Â· post (ro-grid/jfoot/note-info) Â·
     responsive.
     ========================================================================== */
 
@@ -6285,7 +6285,7 @@ textarea.q-input {
 .q2-badge--overdue { background: #FEE2E2; border-color: #FBCACA; color: #B91C1C; }
 .q2-badge--overdue .q2-dot { background: #EF4444; }
 
-/* §1 list — 4-column fbox strip */
+/* Â§1 list â€” 4-column fbox strip */
 .q2-fbox-grid--4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 1.25rem; }
 .q2-em { color: var(--muted, #52696B); }
 .q2-row-act { display: flex; gap: 4px; justify-content: flex-end; }
@@ -6304,7 +6304,7 @@ textarea.q-input {
 .gt-lbl { font-size: 0.786rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted, #52696B); }
 .gt-val { font-size: 1.143rem; font-weight: 800; color: var(--ink, #0B2A2D); font-variant-numeric: tabular-nums; }
 
-/* §2/§3 form — grid spans */
+/* Â§2/Â§3 form â€” grid spans */
 .q2-sp2 { grid-column: span 2; }
 .q2-sp3 { grid-column: span 3; }
 
@@ -6340,18 +6340,18 @@ textarea.q-input {
 .q2-trow--total { border-bottom: none; border-top: 1.5px solid var(--deep-1, #17565D); margin-top: 0.25rem; padding-top: 0.5625rem; font-weight: 800; color: var(--deep-1, #17565D); }
 .q2-trow--total .q2-tval { font-weight: 800; color: var(--deep-1, #17565D); }
 
-/* rail summary — strong row + teal gt bar */
+/* rail summary â€” strong row + teal gt bar */
 .q2-srow--strong .q2-sval { font-weight: 800; color: var(--deep-3, #0A2E32); }
 .q2-gt { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-top: 0.75rem; padding: 0.75rem 0.875rem; border-radius: 12px; background: linear-gradient(90deg, var(--sec-2, #0C7E7D), var(--sec, #107C7B) 60%, #107C7B); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(11, 42, 45, 0.35); }
 .q2-gt .q2-gt-lbl { font-size: 0.625rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #DFF7F6; }
 .q2-gt .q2-gt-val { font-size: 1.0625rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
 
-/* §4 detail — avatar tile + mint stat value */
+/* Â§4 detail â€” avatar tile + mint stat value */
 .q2-ava-xl { width: 3.5rem; height: 3.5rem; display: grid; place-items: center; border-radius: 1rem; flex-shrink: 0; background: linear-gradient(180deg, rgba(18, 143, 142, 0.16), rgba(18, 143, 142, 0.08)); border: 1px solid rgba(18, 143, 142, 0.3); color: var(--sec, #107C7B); }
 .q2-ava-xl svg { width: 1.375rem; height: 1.375rem; }
 .q2-stat-val--mint { color: var(--sec, #107C7B); }
 
-/* §5 post — read-only summary grid, balanced chip, journal footer, info note */
+/* Â§5 post â€” read-only summary grid, balanced chip, journal footer, info note */
 .q2-ro-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 28px; margin-top: 1.125rem; }
 .q2-ro { min-width: 0; }
 .q2-ro-lbl { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #52696B); margin-bottom: 0.3125rem; }
@@ -6378,14 +6378,14 @@ textarea.q-input {
     .q2-sp2, .q2-sp3 { grid-column: 1 / -1; }
 }
 
-/* ═══════════════════════════════════════════
-   SALES RECEIPTS SUITE — DESIGN 2 (.sr-suite)
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SALES RECEIPTS SUITE â€” DESIGN 2 (.sr-suite)
    Ported from docs/sales-receipt-suite_mockup.html.
    All selectors scoped under .sr-suite so no bare class
-   (btn/card/toolbar/input/badge/…) collides with app-global rules.
+   (btn/card/toolbar/input/badge/â€¦) collides with app-global rules.
    Scope note: cards keep overflow visible so absolutely-positioned
    scoped-search dropdowns are not clipped.
-═══════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .sr-suite svg { flex: none; }
 
 .sr-suite h1 {
@@ -6790,14 +6790,14 @@ textarea.q-input {
     .sr-suite .li-totals .box { width: 100%; }
 }
 
-/* ═══════════════════════════════════════════
-   CUSTOMERS SUITE — (.cs-suite)
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   CUSTOMERS SUITE â€” (.cs-suite)
    Ported from the Customers mockup (teal executive language).
    All selectors scoped under .cs-suite so no bare class
-   (btn/card/toolbar/input/badge/tab/field/…) collides with app-global rules.
+   (btn/card/toolbar/input/badge/tab/field/â€¦) collides with app-global rules.
    Scope note: cards keep overflow visible so absolutely-positioned
    scoped-search dropdowns are not clipped.
-═══════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .cs-suite svg { flex: none; }
 /* Icons are authored as viewBox-only inline SVGs (no width/height attrs), so
    they must be sized via CSS. Pixel sizes match the mockup: page-head buttons
@@ -7273,7 +7273,7 @@ textarea.q-input {
 }
 
 /* ============================================================
-   .suite — consolidated design system for the Phase-50 rebuild
+   .suite â€” consolidated design system for the Phase-50 rebuild
    (Invoices / Vendors / Bills / Credit & Debit Notes / Payments)
    Union of the sales-receipt + customers mockup languages.
    ============================================================ */
@@ -7879,8 +7879,8 @@ textarea.q-input {
     .suite .statgrid--5 { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ════════════════════════════════════════════════════════════
-   SETTINGS SUITE — (.ss-suite)
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SETTINGS SUITE â€” (.ss-suite)
    Single-column no-rail redesign for System Settings, the
    Settings Audit Log, the Features screen and the shared
    Backup Management page. The legacy settings sidebar rail is
@@ -7889,7 +7889,7 @@ textarea.q-input {
    per-page actions (Save / Reset / Export / trigger buttons).
    All selectors are scoped under .ss-suite so no bare classes
    leak into the rest of the app.
-   ════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .ss-suite svg { flex: none; }
 
 /* icon sizing */
@@ -8275,7 +8275,7 @@ textarea.q-input {
     .ss-suite .li-wrap { margin-top: 12px; }
 }
 
-/* ─── general-ledger index: 4-up stat row + grouped filter controls ─── */
+/* â”€â”€â”€ general-ledger index: 4-up stat row + grouped filter controls â”€â”€â”€ */
 .suite .sgrid--4 { grid-template-columns: repeat(4, 1fr); }
 .suite .gl-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .suite .gl-field { min-width: 0; }
@@ -8287,7 +8287,7 @@ textarea.q-input {
     .suite .sgrid--4 { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* ─── Report Center: Variant A directory ─── */
+/* â”€â”€â”€ Report Center: Variant A directory â”€â”€â”€ */
 .va-suite {
     --va-side: 264px;
     color: var(--ink, #0B2A2D);
@@ -8635,7 +8635,7 @@ textarea.q-input {
     .va-search-input, .va-row, .va-star, .va-nav-item { transition: none; }
 }
 
-/* ─── Cash Position: `.cp2` suite (Target Design) ─── */
+/* â”€â”€â”€ Cash Position: `.cp2` suite (Target Design) â”€â”€â”€ */
 .cp2 { color: var(--ink, #0B2A2D); }
 .cp2 .wrap { max-width: 1440px; margin: 0 auto; padding: 0 24px 40px; }
 
@@ -9056,7 +9056,7 @@ textarea.q-input {
 }
 
 /* ============================================================
-   Bank Reconciliation suite (br) — ported from docs/Bank-reconciliation.html
+   Bank Reconciliation suite (br) â€” ported from docs/Bank-reconciliation.html
    All br pages render inside <div class="suite pb-6">; shared primitives
    that don't exist in the .suite block are defined here scoped to .suite.
    ============================================================ */
@@ -9208,7 +9208,7 @@ textarea.q-input {
 .suite .repcard .d { font-size: 0.821rem; color: var(--muted, #52696B); line-height: 1.5; }
 .suite .repcard .foot { margin-top: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-/* toggle rows (suite scope — mirrors .ss-suite) */
+/* toggle rows (suite scope â€” mirrors .ss-suite) */
 .suite .toggle-row {
     display: flex;
     align-items: flex-start;
@@ -9279,7 +9279,7 @@ textarea.q-input {
     .br-pill, .br-filterbar select.f, .br-filterbar input.f, .suite .dropz, .br-more-menu a { transition: none; }
 }
 
-/* ============ Purchase Requisition suite (.pr-suite) — docs/PR.html ============ */
+/* ============ Purchase Requisition suite (.pr-suite) â€” docs/PR.html ============ */
 .pr-suite.wrap{max-width:1440px;margin:0 auto;padding:24px 28px 72px}
 .pr-suite h1{font-size:1.5rem;font-weight:800;color:var(--ink,#0B2A2D);display:flex;align-items:center;gap:11px;flex-wrap:wrap;font-family:inherit;letter-spacing:-.01em}
 .pr-suite .sub{font-size:0.893rem;color:var(--muted,#52696B);margin-top:4px}
@@ -9467,7 +9467,7 @@ textarea.q-input {
 .pr-suite .li-wrap .scoped-search-field{height:36px}
 .pr-suite .li-wrap .scoped-search-field .scoped-search-filter{top:10px}
 
-/* ============ Expense Management suite (.ex-suite) — docs/Expense-Management.html ============ */
+/* ============ Expense Management suite (.ex-suite) â€” docs/Expense-Management.html ============ */
 .ex-suite.wrap{max-width:1440px;margin:0 auto;padding:24px 28px 72px}
 .ex-suite .sticky-head h1{margin:0;line-height:1.25}
 .ex-suite h1{font-size:1.5rem;font-weight:800;color:var(--ink,#0B2A2D);display:flex;align-items:center;gap:11px;flex-wrap:wrap;font-family:inherit;letter-spacing:-.01em}
@@ -9803,7 +9803,7 @@ textarea.q-input {
 @media (max-width:720px){.rep-grid,.vc-aging-grid,.dash-cols{grid-template-columns:minmax(0,1fr)}}
 
 /* ============================================================
-   Vendor Centre — DESIGN (mockup §1–§6, §8)
+   Vendor Centre â€” DESIGN (mockup Â§1â€“Â§6, Â§8)
    Vendor pages carry `class="suite ex-suite"` so the full mockup
    language (kpis/sumbar/fbox/crumbs/cluster/more/filterbar/seg2/
    icon-btn/bars/attchips/att/b-paid/b-sub/okchip/...) is inherited.
@@ -9859,7 +9859,7 @@ textarea.q-input {
 @media (max-width:1000px){.ex-suite .dashgrid{grid-template-columns:minmax(0,1fr)}.ex-suite .dashgrid-2{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:720px){.ex-suite .statgrid{grid-template-columns:repeat(2,1fr)}.ex-suite .kpis{grid-template-columns:minmax(0,1fr)}}
 
-/* --- seg control buttons (reports/§6) --- */
+/* --- seg control buttons (reports/Â§6) --- */
 .ex-suite .seg .segbtn{height:34px;padding:0 14px;border-radius:10px;border:none;background:transparent;color:var(--muted,#52696B);
   font-family:inherit;font-size:0.893rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .ex-suite .seg .segbtn:hover{color:var(--ink,#0B2A2D)}
@@ -9891,9 +9891,9 @@ textarea.q-input {
     .ex-suite * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
-/* ──────────────────────────────────────────────────────────
-   BANKING CENTRE — `.bk-*` supplement (module-scoped)
-   ────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   BANKING CENTRE â€” `.bk-*` supplement (module-scoped)
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 /* --- q2 supplements (missing from the base q2 block) --- */
 .q2-rail-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--faint, #5F7A7C); padding: 0.25rem 0.125rem 0.5rem; }
@@ -10180,15 +10180,15 @@ textarea.q-input {
 
 .bu-dashgrid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px }
 
-/* ── Reports filter row ───────────────────────────────── */
+/* â”€â”€ Reports filter row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bu-filter-row { display: flex; align-items: end; gap: 14px; flex-wrap: wrap }
 
-/* ── Chip quick-switch ─────────────────────────────────── */
+/* â”€â”€ Chip quick-switch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bu-chip { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.92); font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all .15s }
 .bu-chip:hover { border-color: var(--sec); color: var(--sec) }
 .bu-chip.on { background: rgba(18,143,142,.08); border-color: rgba(18,143,142,.35); color: var(--sec); font-weight: 700 }
 
-/* ── Chart ─────────────────────────────────────────────── */
+/* â”€â”€ Chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bu-chart { display: flex; align-items: end; gap: 6px; height: 200px; padding: 0 4px }
 .bu-cg { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 6px; min-width: 0 }
 .bu-bars { display: flex; align-items: end; gap: 3px; flex: 1; width: 100% }
@@ -10232,9 +10232,9 @@ textarea.q-input {
     .q2-statgrid--4 { grid-template-columns: 1fr; }
 }
 
-/* ═══════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    BUDGETING SUB-NAV (.bu-subnav / .bu-stab)
-═══════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .bu-subnav { display: flex; align-items: center; gap: 0; background: #e8f0f0; border: 1px solid var(--border); border-radius: 14px; padding: 8px 14px; margin: 0 0 12px; overflow-x: auto }
 .bu-subnav-grp { display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; font-size: 12px; font-weight: 800; color: var(--ink); white-space: nowrap; user-select: none }
 .bu-subnav-ic { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--deep-2, #0c3539); color: #e2c069; flex: none }
@@ -10246,18 +10246,18 @@ textarea.q-input {
 .bu-new { font-size: 9px; font-weight: 800; letter-spacing: .08em; padding: 2px 6px; border-radius: 6px; background: var(--deep-2, #0c3539); color: #e2c069; line-height: 1 }
 .bu-subnav-spacer { flex: 1 }
 
-/* ═══════════════════════════════════════════
-   BUDGET REPORTS — REDESIGNED (.bur-* suite)
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   BUDGET REPORTS â€” REDESIGNED (.bur-* suite)
    Matches APPENDIX A mockup pixel-for-pixel
-═══════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Page head ─────────────────────────────────────── */
+/* â”€â”€ Page head â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bur-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-top: 24px; margin-bottom: 20px }
 .bur-head h1 { font-size: 23px; font-weight: 800; color: var(--ink); letter-spacing: -.01em }
 .bur-head .sub { font-size: 12.5px; color: var(--muted); margin-top: 5px }
 .bur-head-acts { display: flex; align-items: center; gap: 10px }
 
-/* ── Export button group ────────────────────────────── */
+/* â”€â”€ Export button group â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bur-bgroup { display: inline-flex; border: 1px solid var(--border); border-radius: 11px; overflow: hidden; background: #fff; box-shadow: var(--shadow-card) }
 .bur-bgroup button, .bur-bgroup a { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 15px; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit; transition: background .14s, color .14s; text-decoration: none }
 .bur-bgroup button + button, .bur-bgroup button + a, .bur-bgroup a + button, .bur-bgroup a + a { border-left: 1px solid var(--line) }
@@ -10265,14 +10265,14 @@ textarea.q-input {
 .bur-bgroup .ic { font-size: 13px }
 .bur-vsep { width: 1px; height: 24px; background: var(--line) }
 
-/* ── Buttons ───────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bur-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px; font-weight: 600; font-size: 12.5px; border: 1px solid transparent; cursor: pointer; font-family: inherit; transition: all .14s; white-space: nowrap }
 .bur-btn-ghost { background: #e8f0f0; border-color: var(--border); color: var(--ink) }
 .bur-btn-ghost:hover { background: #dceaea }
 .bur-btn-cta { color: #fff; background: var(--deep-2); font-weight: 700; box-shadow: 0 10px 22px -10px rgba(8,40,44,.55) }
 .bur-btn-cta:hover { background: var(--deep-1) }
 
-/* ── Filter card ────────────────────────────────────── */
+/* â”€â”€ Filter card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bur-f { display: flex; flex-direction: column }
 .bur-f label { display: block; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px }
 .bur-f .in { width: 100%; height: 42px; border-radius: 11px; border: 1px solid var(--border); background: #fff; padding: 0 13px; font-size: 13px; color: var(--ink); font-family: inherit }
@@ -10281,7 +10281,7 @@ textarea.q-input {
 .bur-filters { display: grid; grid-template-columns: 1.25fr .9fr .9fr 1.1fr 1.1fr auto; gap: 14px; align-items: end }
 .bur-divider { height: 1px; background: var(--line); margin: 18px 0 16px }
 
-/* ── Segmented quick-switch ─────────────────────────── */
+/* â”€â”€ Segmented quick-switch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bur-rtype { display: flex; align-items: center; gap: 14px; flex-wrap: wrap }
 .bur-rtype .lab { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted) }
 .bur-seg { display: inline-flex; gap: 6px; flex-wrap: wrap }
@@ -10289,7 +10289,7 @@ textarea.q-input {
 .bur-seg button:hover { border-color: rgba(18,143,142,.45); color: var(--ink) }
 .bur-seg button.on { border-color: var(--sec); color: var(--sec); background: rgba(18,143,142,.08) }
 
-/* ── KPI cards ──────────────────────────────────────── */
+/* â”€â”€ KPI cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bur-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 16px 0 }
 .bur-kpi { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: rgba(255,255,255,.92); box-shadow: var(--shadow-card) }
 .bur-kpi .l { font-size: 9.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--faint) }
@@ -10302,13 +10302,13 @@ textarea.q-input {
 .bur-up { color: var(--green) }
 .bur-dn { color: var(--red-2) }
 
-/* ── Results grid ───────────────────────────────────── */
+/* â”€â”€ Results grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bur-grid2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start }
 
-/* ── Chart card header select ───────────────────────── */
+/* â”€â”€ Chart card header select â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .bur-chart-select { height: 34px; width: auto; border-radius: 10px; border: 1px solid var(--border); background: #fff; padding: 0 10px; font-size: 12.5px; font-family: inherit; color: var(--ink); appearance: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center; padding-right: 28px }
 
-/* ── Responsive ─────────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 1100px) {
     .bur-filters { grid-template-columns: repeat(3, 1fr) }
     .bur-grid2 { grid-template-columns: 1fr }
@@ -10333,9 +10333,9 @@ textarea.q-input {
     .bur-kpi.hero { -webkit-print-color-adjust: exact; print-color-adjust: exact }
 }
 
-/* ══════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ACCOUNTING CONTROL CENTRE (.ac-* scoped)
-   ══════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 :root {
   --ac-deep-1: #17565d; --ac-deep-2: #0c3539; --ac-sec: #128F8E; --ac-sec-2: #149897;
@@ -10350,19 +10350,19 @@ textarea.q-input {
 
 .ac-wrap { max-width: 1440px; margin: 0 auto; padding: 0 28px 80px }
 
-/* ── Crumbs ────────────────────────────────────────── */
+/* â”€â”€ Crumbs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-crumbs { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ac-muted) }
 .ac-crumbs a { color: var(--ac-muted); text-decoration: none }
 .ac-crumbs a:hover { color: var(--ac-ink) }
 .ac-crumbs .here { color: var(--ac-ink); font-weight: 800 }
 
-/* ── Page head ─────────────────────────────────────── */
+/* â”€â”€ Page head â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 24px 0 14px }
 .ac-page-head h1 { font-size: 21px; font-weight: 800; color: var(--ac-ink) }
 .ac-page-head-title { font-size: 21px; font-weight: 800; color: var(--ac-ink); margin: 4px 0 16px }
 .ac-page-head .ac-sub { font-size: 12.5px; color: var(--ac-muted); margin-top: 4px }
 
-/* ── Buttons ───────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 13px; font-weight: 600; font-size: 13.5px; border: 1px solid transparent; cursor: pointer; transition: all .18s; white-space: nowrap; font-family: inherit }
 .ac-btn:hover { transform: translateY(-1px) }
 .ac-btn-ghost { background: rgba(255,255,255,.9); border-color: var(--ac-border); color: #374151 }
@@ -10373,27 +10373,27 @@ textarea.q-input {
 .ac-btn-sm { height: 38px; padding: 0 15px; font-size: 12.5px; border-radius: 11px }
 .ac-btn-xs { height: 30px; padding: 0 11px; font-size: 11.5px; border-radius: 9px }
 
-/* ── Cards ─────────────────────────────────────────── */
+/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-card { background: rgba(255,255,255,.85); backdrop-filter: blur(14px); border: 1px solid var(--ac-border); border-radius: 20px; box-shadow: var(--ac-shadow-card); overflow: hidden }
 .ac-card-h { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--ac-line); flex-wrap: wrap }
 .ac-card-h h2 { font-size: 14px; font-weight: 800; color: var(--ac-ink) }
 .ac-card-h .right { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap }
 .ac-pad { padding: 22px 26px }
 
-/* ── Grid ──────────────────────────────────────────── */
+/* â”€â”€ Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 22px }
 .ac-g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 22px }
 @media (max-width: 1000px) { .ac-g4 { grid-template-columns: 1fr 1fr } .ac-g2 { grid-template-columns: 1fr } }
 @media (max-width: 640px) { .ac-g4 { grid-template-columns: 1fr } }
 
-/* ── Form fields ───────────────────────────────────── */
+/* â”€â”€ Form fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-f label { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--ac-muted); margin-bottom: 7px }
 .ac-f .in { width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--ac-border); background: #fff; padding: 0 14px; font-size: 13.5px; color: var(--ac-ink); font-family: inherit }
 .ac-f .in:focus { outline: none; border-color: var(--ac-sec); box-shadow: 0 0 0 4px rgba(18,143,142,.14) }
 .ac-f .in:disabled { background: rgba(238,244,244,.7); color: var(--ac-muted) }
 .ac-f select.in { appearance: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; padding-right: 34px }
 
-/* ── Badges ────────────────────────────────────────── */
+/* â”€â”€ Badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .05em }
 .ac-badge .bdot { width: 6px; height: 6px; border-radius: 50% }
 .ac-b-open { background: linear-gradient(180deg, #ecfdf3, #dcf5e7); border: 1px solid rgba(22,163,74,.28); color: var(--ac-green) }
@@ -10411,12 +10411,12 @@ textarea.q-input {
 .ac-b-rev { background: rgba(217,119,6,.10); border: 1px solid rgba(217,119,6,.35); color: var(--ac-amber-2) }
 .ac-b-rev .bdot { background: var(--ac-amber) }
 
-/* ── Chips ─────────────────────────────────────────── */
+/* â”€â”€ Chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-tchip { display: inline-flex; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.16); color: var(--ac-muted) }
 .ac-okchip { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 800; background: rgba(22,163,74,.10); border: 1px solid rgba(22,163,74,.35); color: var(--ac-green) }
 .ac-okchip.bad { background: rgba(185,28,28,.08); border-color: rgba(185,28,28,.3); color: var(--ac-red-2) }
 
-/* ── Table ─────────────────────────────────────────── */
+/* â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-li-wrap { overflow-x: auto }
 .ac-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; min-width: 820px }
 .ac-thead th { background: linear-gradient(180deg, #f4f8f8, #e8f0f0); color: #111827; text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 11px 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(71,95,97,.45) }
@@ -10433,40 +10433,40 @@ textarea.q-input {
 .ac-numr.green { color: var(--ac-green); font-weight: 700 }
 .ac-mono { font-family: ui-monospace, Menlo, monospace }
 
-/* ── Row actions ───────────────────────────────────── */
+/* â”€â”€ Row actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-row-act { display: flex; gap: 4px; justify-content: flex-end }
 .ac-ibtn { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; border: none; background: transparent; color: var(--ac-faint); cursor: pointer }
 .ac-ibtn:hover { background: rgba(17,69,75,.06); color: var(--ac-deep-1) }
 
-/* ── Compact input in table ────────────────────────── */
+/* â”€â”€ Compact input in table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-ci { height: 36px; border-radius: 7px; border: 1px solid var(--ac-border); background: #fff; padding: 0 9px; font-size: 12.5px; width: 100%; font-family: inherit; color: var(--ac-ink) }
 td.num .ac-ci { text-align: right }
 
-/* ── Tree / classification ─────────────────────────── */
+/* â”€â”€ Tree / classification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-tree { list-style: none }
 .ac-trow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; cursor: pointer }
 .ac-trow:hover { background: rgba(17,69,75,.05) }
 .ac-tname { font-size: 13px; font-weight: 600; color: var(--ac-ink) }
 .ac-tree ul { list-style: none; padding-left: 26px; border-left: 1.5px solid var(--ac-line); margin-left: 17px }
 
-/* ── Period grid ───────────────────────────────────── */
+/* â”€â”€ Period grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-pgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px }
 .ac-pcell { border: 1px solid var(--ac-border); border-radius: 14px; padding: 12px 14px; background: rgba(255,255,255,.85) }
 .ac-pcell .m { font-size: 12.5px; font-weight: 800; color: var(--ac-ink) }
 .ac-pcell .s { margin-top: 6px }
 .ac-pcell .a { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap }
 
-/* ── Footer bar ────────────────────────────────────── */
+/* â”€â”€ Footer bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ac-footer-bar { display: flex; justify-content: space-between; padding: 14px 24px; border-top: 1px solid var(--ac-line); font-size: 12px; color: var(--ac-muted) }
 
-/* ── Responsive ────────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 1000px) { .ac-pgrid { grid-template-columns: repeat(3, 1fr) } }
 @media (max-width: 700px) { .ac-pgrid { grid-template-columns: repeat(2, 1fr) } }
 @media (max-width: 768px) { .ac-slim-rail { display: none !important } }
 
-/* ═══════════════════════════════════════════════════════
-   JOURNAL ENTRIES — .je-* design system (APPENDIX A)
-   ═══════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   JOURNAL ENTRIES â€” .je-* design system (APPENDIX A)
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 :root {
   --je-deep-1: #17565d; --je-deep-2: #0c3539; --je-deep-3: #0a2e32;
   --je-sec: #128F8E; --je-sec-2: #149897;
@@ -10481,12 +10481,12 @@ td.num .ac-ci { text-align: right }
 .je-crumbs a:hover { color: var(--je-deep-1) }
 .je-crumbs .here { color: var(--je-ink); font-weight: 800 }
 
-/* ── Page head ────────────────────────────────────────── */
+/* â”€â”€ Page head â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 14px 0 18px }
 .je-page-head h1 { font-size: 22px; font-weight: 800; color: var(--je-ink) }
 .je-page-head .sub { font-size: 12.5px; color: var(--je-muted); margin-top: 4px }
 
-/* ── Buttons ──────────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 13px; border: 1px solid transparent; cursor: pointer; font-family: inherit; transition: all .14s; white-space: nowrap; text-decoration: none }
 .je-btn-ghost { background: #e8f0f0; border-color: var(--je-border); color: var(--je-ink) }
 .je-btn-ghost:hover { background: #dceaea }
@@ -10496,7 +10496,7 @@ td.num .ac-ci { text-align: right }
 .je-btn-cta:hover { background: var(--je-deep-3) }
 .je-btn-sm { height: 38px; padding: 0 15px; font-size: 12.5px }
 
-/* ── Cards ────────────────────────────────────────────── */
+/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-card { background: rgba(255,255,255,.88); backdrop-filter: blur(14px); border: 1px solid var(--je-border); border-radius: 18px; box-shadow: var(--je-shadow-card); overflow: hidden }
 .je-card + .je-card { margin-top: 16px }
 .je-card-h { display: flex; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--je-line); flex-wrap: wrap }
@@ -10504,7 +10504,7 @@ td.num .ac-ci { text-align: right }
 .je-card-h .right { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
 .je-pad { padding: 20px 24px }
 
-/* ── Form fields ──────────────────────────────────────── */
+/* â”€â”€ Form fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-f label { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--je-muted); margin-bottom: 7px }
 .je-f .in { width: 100%; height: 42px; border-radius: 11px; border: 1px solid var(--je-border); background: #fff; padding: 0 13px; font-size: 13.5px; color: var(--je-ink); font-family: inherit }
 .je-f select.in { appearance: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 13px center; padding-right: 32px }
@@ -10515,14 +10515,14 @@ td.num .ac-ci { text-align: right }
 @media (max-width: 1000px) { .je-g4 { grid-template-columns: 1fr 1fr } .je-g-span3 { grid-column: span 2 } }
 @media (max-width: 640px) { .je-g4 { grid-template-columns: 1fr } .je-g-span3 { grid-column: span 1 } }
 
-/* ── Toolbar (filters) ────────────────────────────────── */
+/* â”€â”€ Toolbar (filters) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
 .je-toolbar .in { height: 42px; border-radius: 11px; border: 1px solid var(--je-border); background: #fff; padding: 0 13px; font-size: 13px; font-family: inherit; color: var(--je-ink) }
 .je-toolbar select.in { appearance: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 13px center; padding-right: 32px }
 .je-toolbar .in:focus { outline: none; border-color: var(--je-sec); box-shadow: 0 0 0 4px rgba(18,143,142,.13) }
 .je-toolbar .grow { flex: 1; min-width: 220px }
 
-/* ── Badges ───────────────────────────────────────────── */
+/* â”€â”€ Badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800 }
 .je-badge .bdot { width: 6px; height: 6px; border-radius: 50% }
 .je-b-post { background: rgba(18,143,142,.10); border: 1px solid rgba(18,143,142,.4); color: var(--je-sec) } .je-b-post .bdot { background: var(--je-sec) }
@@ -10531,10 +10531,10 @@ td.num .ac-ci { text-align: right }
 .je-b-rev { background: rgba(185,28,28,.08); border: 1px solid rgba(185,28,28,.3); color: var(--je-red-2) } .je-b-rev .bdot { background: var(--je-red-2) }
 .je-b-ok { background: rgba(22,163,74,.10); border: 1px solid rgba(22,163,74,.4); color: var(--je-green) }
 
-/* ── Type chips ───────────────────────────────────────── */
+/* â”€â”€ Type chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-tchip { display: inline-flex; padding: 4px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.16); color: var(--je-muted) }
 
-/* ── Table ────────────────────────────────────────────── */
+/* â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-li-wrap { overflow-x: auto }
 .je-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px }
 .je-table thead th { background: linear-gradient(180deg, #f4f8f8, #e8f0f0); color: #111827; text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 11px 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(71,95,97,.45); white-space: nowrap }
@@ -10545,14 +10545,14 @@ td.num .ac-ci { text-align: right }
 .je-table tbody tr:last-child td { border-bottom: none }
 .je-table tfoot td { padding: 12px; border-top: 1.5px solid var(--je-deep-1); font-weight: 800; color: var(--je-ink) }
 
-/* ── Table helpers ────────────────────────────────────── */
+/* â”€â”€ Table helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px }
 .je-em { color: var(--je-muted) }
 .je-row-act { display: flex; gap: 4px; justify-content: flex-end }
 .je-ibtn { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; border: none; background: transparent; color: var(--je-faint); cursor: pointer; transition: all .12s; text-decoration: none }
 .je-ibtn:hover { background: rgba(17,69,75,.06); color: var(--je-deep-1) }
 
-/* ── Line editor inputs ───────────────────────────────── */
+/* â”€â”€ Line editor inputs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-lines .in { height: 40px; border-radius: 10px; border: 1px solid var(--je-border); background: #fff; padding: 0 11px; font-size: 13px; font-family: inherit; width: 100%; color: var(--je-ink) }
 .je-lines select.in { appearance: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center; padding-right: 30px }
 .je-lines .in:focus { outline: none; border-color: var(--je-sec); box-shadow: 0 0 0 3px rgba(18,143,142,.12) }
@@ -10560,44 +10560,44 @@ td.num .ac-ci { text-align: right }
 .je-lines .rm { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--je-border); background: #fff; color: var(--je-red-2); font-weight: 700; cursor: pointer; display: grid; place-items: center }
 .je-lines .rm:hover { background: rgba(185,28,28,.06) }
 
-/* ── Account sub-text ─────────────────────────────────── */
+/* â”€â”€ Account sub-text â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-acct .code { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 12px }
 .je-acct .name { display: block; font-size: 10px; color: var(--je-faint); font-weight: 600; margin-top: 1px }
 
-/* ── Foot meta (audit) ────────────────────────────────── */
+/* â”€â”€ Foot meta (audit) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-foot-meta { padding: 13px 20px; font-size: 11.5px; color: var(--je-muted); border-top: 1px solid var(--je-line) }
 
-/* ── Sticky action bar ────────────────────────────────── */
+/* â”€â”€ Sticky action bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-actionbar { position: sticky; bottom: 16px; display: flex; gap: 10px; justify-content: flex-end; padding: 14px 18px; margin-top: 16px; background: rgba(255,255,255,.88); backdrop-filter: blur(14px); border: 1px solid var(--je-border); border-radius: 14px; box-shadow: var(--je-shadow-card) }
 
-/* ── Pager ────────────────────────────────────────────── */
+/* â”€â”€ Pager â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-pager { display: flex; align-items: center; gap: 8px; padding: 13px 20px; font-size: 12px; color: var(--je-muted); border-top: 1px solid var(--je-line) }
 .je-pager .pg { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--je-border); background: #fff; font-weight: 700; color: var(--je-ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none }
 .je-pager .pg:hover { background: #e8f0f0 }
 .je-pager .pg.is-current { background: var(--je-deep-2); color: #fff; border-color: var(--je-deep-2) }
 .je-pager .pg.disabled { opacity: .4; pointer-events: none }
 
-/* ── Balanced chip ────────────────────────────────────── */
+/* â”€â”€ Balanced chip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .je-okchip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(22,163,74,.10); border: 1px solid rgba(22,163,74,.35); color: var(--je-green) }
 .je-okchip.bad { background: rgba(185,28,28,.08); border-color: rgba(185,28,28,.3); color: var(--je-red-2) }
 
-/* ── Responsive ───────────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 1000px) { .je-page-head { flex-direction: column; align-items: flex-start } }
 @media (max-width: 640px) { .je-toolbar { flex-direction: column } .je-toolbar .grow { min-width: 100% } }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CHART OF ACCOUNTS  (coa-* suite)
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 .coa-wrap { max-width: 1440px; margin: 0 auto }
 
-/* ── Page head ───────────────────────────────────────── */
+/* â”€â”€ Page head â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 0 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 18px }
 .coa-head h1 { font-size: 23px; font-weight: 800; color: var(--ink) }
 .coa-head .sub { font-size: 12.5px; color: var(--muted); margin-top: 5px }
 .coa-head-btns { display: flex; gap: 10px }
 
-/* ── Buttons ─────────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 13px; border: 1px solid transparent; cursor: pointer; font-family: inherit; transition: all .14s; white-space: nowrap; text-decoration: none }
 .coa-btn-ghost { background: #e8f0f0; border-color: var(--border); color: var(--ink) }
 .coa-btn-ghost:hover { background: #dceaea }
@@ -10605,7 +10605,7 @@ td.num .ac-ci { text-align: right }
 .coa-btn-cta:hover { background: var(--deep-1) }
 .coa-btn-sm { height: 38px; padding: 0 15px; font-size: 12.5px }
 
-/* ── KPI strip ───────────────────────────────────────── */
+/* â”€â”€ KPI strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px }
 .coa-kpi { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; background: rgba(255,255,255,.92); box-shadow: var(--shadow-card) }
 .coa-kpi .l { font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint) }
@@ -10616,11 +10616,11 @@ td.num .ac-ci { text-align: right }
 .coa-fill-teal { background: var(--sec) }
 .coa-fill-soft { background: #7fd0c6 }
 
-/* ── Card ────────────────────────────────────────────── */
+/* â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-card { background: rgba(255,255,255,.88); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-card); overflow: hidden }
 .coa-pad { padding: 16px 20px }
 
-/* ── Toolbar ─────────────────────────────────────────── */
+/* â”€â”€ Toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
 .coa-in { height: 42px; border-radius: 11px; border: 1px solid var(--border); background: #fff; padding: 0 13px; font-size: 13px; font-family: inherit; color: var(--ink) }
 .coa-in:focus { outline: none; border-color: var(--sec); box-shadow: 0 0 0 4px rgba(18,143,142,.13) }
@@ -10628,7 +10628,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .coa-grow { flex: 1; min-width: 240px }
 .coa-toolbar-right { margin-left: auto; display: flex; gap: 8px }
 
-/* ── Table ───────────────────────────────────────────── */
+/* â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-li-wrap { overflow-x: auto }
 .coa-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px }
 .coa-table thead th { background: linear-gradient(180deg, #f4f8f8, #e8f0f0); color: #111827; text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 11px 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(71,95,97,.45) }
@@ -10637,21 +10637,21 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .coa-table td.num { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink) }
 .coa-table tbody tr:hover td { background: rgba(17,69,75,.04) }
 
-/* ── Group rows ──────────────────────────────────────── */
+/* â”€â”€ Group rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-table tr.coa-grp td { background: rgba(17,69,75,.05); font-weight: 800; color: var(--ink); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; user-select: none }
 .coa-table tr.coa-grp td:first-child { padding-left: 12px }
 .coa-grp-chevron { display: inline-block; width: 16px; font-size: 11px; transition: transform .15s }
 .coa-grp[data-open="false"] .coa-grp-chevron { transform: rotate(-90deg) }
 .coa-grp-count { font-weight: 600; color: var(--muted); font-size: 10px; margin-left: 8px }
 
-/* ── Child row indent ────────────────────────────────── */
+/* â”€â”€ Child row indent â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-child td:first-child { padding-left: 28px }
 
-/* ── Mono / muted ────────────────────────────────────── */
+/* â”€â”€ Mono / muted â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px }
 .coa-em { color: var(--muted) }
 
-/* ── Status badge ────────────────────────────────────── */
+/* â”€â”€ Status badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800 }
 .coa-badge .bdot { width: 6px; height: 6px; border-radius: 50% }
 .coa-b-ok { background: rgba(22,163,74,.10); border: 1px solid rgba(22,163,74,.4); color: var(--green) }
@@ -10659,35 +10659,35 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .coa-b-off { background: rgba(138,165,167,.15); border: 1px solid rgba(138,165,167,.5); color: var(--muted) }
 .coa-b-off .bdot { background: var(--muted) }
 
-/* ── Type chip ───────────────────────────────────────── */
+/* â”€â”€ Type chip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-tchip { display: inline-flex; padding: 4px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.16); color: var(--muted) }
 
-/* ── Row actions ─────────────────────────────────────── */
+/* â”€â”€ Row actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-row-act { display: flex; gap: 4px; justify-content: flex-end }
 .coa-ibtn { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; border: none; background: transparent; color: var(--faint); cursor: pointer; text-decoration: none }
 .coa-ibtn:hover { background: rgba(17,69,75,.06); color: var(--deep-1) }
 
-/* ── Subtotal row ────────────────────────────────────── */
+/* â”€â”€ Subtotal row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-table tr.coa-sub td { border-top: 1px solid var(--line); font-weight: 700; color: var(--ink); background: rgba(18,143,142,.05) }
 
-/* ── Empty state ─────────────────────────────────────── */
+/* â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .coa-empty { text-align: center; padding: 40px 20px; color: var(--muted); font-weight: 600 }
 
-/* ── Responsive ──────────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 900px) { .coa-kpis { grid-template-columns: 1fr } }
 @media (max-width: 768px) { .coa-head { flex-direction: column; align-items: flex-start } .coa-toolbar { flex-direction: column } .coa-toolbar .coa-grow { min-width: 100% } .coa-toolbar-right { margin-left: 0 } }
 
-/* ═══════════════════════════════════════════════════════════
-   INVENTORY CENTRE — .inv-* scoped CSS
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   INVENTORY CENTRE â€” .inv-* scoped CSS
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Page shell ──────────────────────────────────────────── */
+/* â”€â”€ Page shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px }
 .inv-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px }
 .inv-head h1 { font-size: 1.5rem; font-weight: 800; color: var(--ink); letter-spacing: -0.02em }
 .inv-head .inv-sub { font-size: 13px; color: var(--muted); margin-top: 2px }
 
-/* ── Buttons ─────────────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 18px; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; transition: all .15s }
 .inv-btn-cta { background: linear-gradient(135deg, var(--sec, #128F8E), var(--sec-2, #149897)); color: #fff; box-shadow: 0 2px 8px rgba(18,143,142,.25) }
 .inv-btn-cta:hover { filter: brightness(1.06); transform: translateY(-1px) }
@@ -10698,7 +10698,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-btn-danger:hover { background: #fef2f2 }
 .inv-btn svg, .inv-btn-sm svg { width: 15px; height: 15px; flex-shrink: 0 }
 
-/* ── KPI strip ───────────────────────────────────────────── */
+/* â”€â”€ KPI strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px }
 .inv-kpi { background: rgba(255,255,255,.75); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px }
 .inv-kpi .inv-kpi-l { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
@@ -10711,19 +10711,19 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-kpi .inv-kpi-bar-fill.green { background: var(--green, #15803d) }
 .inv-kpi .inv-kpi-sub { font-size: 11px; color: var(--faint); margin-top: 6px }
 
-/* ── Cards ───────────────────────────────────────────────── */
+/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-card { background: rgba(255,255,255,.75); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 20px }
 .inv-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line) }
 .inv-card-head h2 { font-size: 15px; font-weight: 800; color: var(--ink) }
 .inv-card-head .inv-card-sub { font-size: 12px; color: var(--faint) }
 
-/* ── Tabs ────────────────────────────────────────────────── */
+/* â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 20px }
 .inv-tab { padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s }
 .inv-tab:hover { color: var(--ink) }
 .inv-tab.on { color: var(--deep-1, #17565d); border-bottom-color: var(--sec, #128F8E) }
 
-/* ── Toolbar (search + filters) ──────────────────────────── */
+/* â”€â”€ Toolbar (search + filters) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px }
 .inv-toolbar .inv-grow { flex: 1; min-width: 200px }
 .inv-search { position: relative }
@@ -10736,7 +10736,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-filter-clear { font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; padding: 6px 10px; border-radius: 8px }
 .inv-filter-clear:hover { color: var(--sec); background: rgba(18,143,142,.06) }
 
-/* ── Table ───────────────────────────────────────────────── */
+/* â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,.75); backdrop-filter: blur(14px) }
 .inv-tbl { width: 100%; border-collapse: collapse; font-size: 13px }
 .inv-tbl thead { background: linear-gradient(180deg, var(--deep-1, #17565d), var(--deep-2, #0c3539) 80%, var(--deep-3, #0a2e32)) }
@@ -10751,7 +10751,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-tbl .inv-link { color: var(--deep-1, #17565d); text-decoration: none; font-weight: 600 }
 .inv-tbl .inv-link:hover { text-decoration: underline }
 
-/* ── Status badges ───────────────────────────────────────── */
+/* â”€â”€ Status badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700 }
 .inv-badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0 }
 .inv-badge-active { background: rgba(21,128,61,.08); color: var(--green, #15803d) }
@@ -10767,13 +10767,13 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-badge-teal { background: rgba(18,143,142,.08); color: var(--sec, #128F8E) }
 .inv-badge-teal .inv-badge-dot { background: var(--sec, #128F8E) }
 
-/* ── Chip / tag ──────────────────────────────────────────── */
+/* â”€â”€ Chip / tag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.12); color: var(--muted) }
 .inv-chip.teal { background: rgba(18,143,142,.08); border-color: rgba(18,143,142,.18); color: var(--sec, #128F8E) }
 .inv-chip.amber { background: rgba(180,83,9,.08); border-color: rgba(180,83,9,.18); color: var(--amber-2, #b45309) }
 .inv-chip.red { background: rgba(185,28,28,.08); border-color: rgba(185,28,28,.18); color: var(--red-2, #b91c1c) }
 
-/* ── Detail page (profile) ───────────────────────────────── */
+/* â”€â”€ Detail page (profile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-detail-head { display: flex; align-items: center; gap: 16px; margin-bottom: 24px }
 .inv-avatar { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; font-size: 20px; font-weight: 800; color: #fff; flex-shrink: 0 }
 .inv-avatar.teal { background: linear-gradient(135deg, var(--sec, #128F8E), var(--sec-2, #149897)) }
@@ -10784,7 +10784,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-field-value { font-size: 13.5px; font-weight: 600; color: var(--ink) }
 .inv-field-value.mono { font-family: 'JetBrains Mono', monospace; font-size: 12.5px }
 
-/* ── Form layouts ────────────────────────────────────────── */
+/* â”€â”€ Form layouts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-form { display: flex; flex-direction: column; gap: 20px }
 .inv-form-group { display: flex; flex-direction: column; gap: 6px }
 .inv-form-label { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
@@ -10795,7 +10795,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-form-hint { font-size: 11.5px; color: var(--faint) }
 .inv-form-err { font-size: 11.5px; color: var(--red-2, #b91c1c) }
 
-/* ── Line items table (stock forms) ──────────────────────── */
+/* â”€â”€ Line items table (stock forms) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-lines { width: 100%; border-collapse: collapse }
 .inv-lines thead { background: linear-gradient(180deg, var(--deep-1), var(--deep-2) 80%) }
 .inv-lines thead th { padding: 10px 14px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #cdd7e2; text-align: left }
@@ -10806,20 +10806,20 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-add-line { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: var(--sec, #128F8E); background: none; border: none; cursor: pointer; padding: 6px 0 }
 .inv-add-line:hover { text-decoration: underline }
 
-/* ── Totals strip ────────────────────────────────────────── */
+/* â”€â”€ Totals strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-totals { display: flex; justify-content: flex-end; padding: 16px 0 }
 .inv-totals-box { min-width: 260px; background: rgba(18,143,142,.04); border: 1px solid rgba(18,143,142,.15); border-radius: 14px; padding: 16px 20px }
 .inv-totals-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: var(--muted) }
 .inv-totals-row .inv-totals-v { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums }
 .inv-totals-row.grand { border-top: 1px solid var(--sec, #128F8E); margin-top: 6px; padding-top: 10px; font-size: 15px; font-weight: 800; color: var(--ink) }
 
-/* ── Section leaders (navy icon chip) ────────────────────── */
+/* â”€â”€ Section leaders (navy icon chip) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-sec-lead { display: flex; align-items: center; gap: 10px; margin-bottom: 16px }
 .inv-sec-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, var(--deep-1, #17565d), var(--deep-2, #0c3539)); color: #e2c069; flex-shrink: 0 }
 .inv-sec-ic svg { width: 17px; height: 17px }
 .inv-sec-title { font-size: 13px; font-weight: 800; color: var(--ink) }
 
-/* ── Rail (right sidebar) ────────────────────────────────── */
+/* â”€â”€ Rail (right sidebar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-shell { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 24px; align-items: start }
 .inv-rail { position: sticky; top: var(--topbar-h, 106px) }
 .inv-rail-card { background: rgba(255,255,255,.75); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; margin-bottom: 14px }
@@ -10828,7 +10828,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-rail-item:hover { background: rgba(17,69,75,.06) }
 .inv-rail-item svg { width: 16px; height: 16px; color: var(--faint); flex-shrink: 0 }
 
-/* ── Config hub tiles ────────────────────────────────────── */
+/* â”€â”€ Config hub tiles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-cfg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px }
 .inv-cfg-tile { display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.75); backdrop-filter: blur(14px); text-decoration: none; color: var(--ink); transition: all .15s }
 .inv-cfg-tile:hover { border-color: var(--sec, #128F8E); box-shadow: 0 4px 12px rgba(18,143,142,.12); transform: translateY(-2px) }
@@ -10837,7 +10837,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-cfg-tile .inv-cfg-title { font-size: 14px; font-weight: 700 }
 .inv-cfg-tile .inv-cfg-desc { font-size: 12px; color: var(--muted); line-height: 1.5 }
 
-/* ── Dashboard bars ──────────────────────────────────────── */
+/* â”€â”€ Dashboard bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-bars { display: flex; flex-direction: column; gap: 10px }
 .inv-bar-row { display: flex; align-items: center; gap: 12px }
 .inv-bar-label { width: 120px; font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
@@ -10847,7 +10847,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-bar-fill.red { background: var(--red-2, #b91c1c) }
 .inv-bar-val { width: 50px; text-align: right; font-size: 12px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums }
 
-/* ── Movement rows ───────────────────────────────────────── */
+/* â”€â”€ Movement rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-mov-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line) }
 .inv-mov-row:last-child { border-bottom: none }
 .inv-mov-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0 }
@@ -10861,7 +10861,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-mov-amt.in { color: var(--green, #15803d) }
 .inv-mov-amt.out { color: var(--red-2, #b91c1c) }
 
-/* ── Pagination ──────────────────────────────────────────── */
+/* â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-pag { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; font-size: 12.5px; color: var(--muted) }
 .inv-pag-info { font-weight: 600 }
 .inv-pag-nav { display: flex; gap: 4px }
@@ -10870,13 +10870,13 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-pag-btn.on { background: linear-gradient(135deg, var(--deep-1), var(--deep-2)); color: #fff; border-color: var(--deep-1) }
 .inv-pag-btn:disabled { opacity: .4; pointer-events: none }
 
-/* ── Empty state ─────────────────────────────────────────── */
+/* â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-empty { text-align: center; padding: 48px 20px; color: var(--muted) }
 .inv-empty svg { width: 48px; height: 48px; color: var(--faint); margin: 0 auto 12px }
 .inv-empty p { font-size: 14px; font-weight: 600 }
 .inv-empty .inv-empty-sub { font-size: 12.5px; color: var(--faint); margin-top: 4px }
 
-/* ── Progress / stock bar ────────────────────────────────── */
+/* â”€â”€ Progress / stock bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-stock-bar { display: flex; align-items: center; gap: 8px }
 .inv-stock-bar-track { flex: 1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden }
 .inv-stock-bar-fill { height: 100%; border-radius: 3px; transition: width .3s }
@@ -10884,11 +10884,11 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-stock-bar-fill.low { background: var(--amber-2, #b45309) }
 .inv-stock-bar-fill.out { background: var(--red-2, #b91c1c) }
 
-/* ── Valuation table highlight ───────────────────────────── */
+/* â”€â”€ Valuation table highlight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-val-total { background: rgba(18,143,142,.04) }
 .inv-val-total td { font-weight: 800 !important; border-top: 2px solid var(--sec, #128F8E) !important }
 
-/* ── Transfer / adjustment step indicator ─────────────────── */
+/* â”€â”€ Transfer / adjustment step indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-steps { display: flex; gap: 0; margin-bottom: 24px }
 .inv-step { flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: var(--faint); border-bottom: 2px solid var(--line) }
 .inv-step.on { color: var(--sec, #128F8E); border-bottom-color: var(--sec, #128F8E) }
@@ -10897,7 +10897,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-step.on .inv-step-num { background: var(--sec, #128F8E); color: #fff }
 .inv-step.done .inv-step-num { background: var(--green, #15803d); color: #fff }
 
-/* ── Report cards ────────────────────────────────────────── */
+/* â”€â”€ Report cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-report-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px }
 .inv-report-card { display: flex; align-items: flex-start; gap: 14px; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.75); backdrop-filter: blur(14px); text-decoration: none; color: var(--ink); transition: all .15s }
 .inv-report-card:hover { border-color: var(--sec, #128F8E); box-shadow: 0 4px 12px rgba(18,143,142,.12); transform: translateY(-1px) }
@@ -10906,11 +10906,11 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-report-card h3 { font-size: 13.5px; font-weight: 700 }
 .inv-report-card p { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.5 }
 
-/* ── Low stock table ─────────────────────────────────────── */
+/* â”€â”€ Low stock table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-lowstock .inv-tbl tbody tr.inv-critical td { background: rgba(185,28,28,.04) }
 .inv-lowstock .inv-tbl tbody tr.inv-warning td { background: rgba(180,83,9,.04) }
 
-/* ── Settings toggle row ─────────────────────────────────── */
+/* â”€â”€ Settings toggle row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inv-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--line) }
 .inv-toggle-row:last-child { border-bottom: none }
 .inv-toggle-info .inv-toggle-title { font-size: 13.5px; font-weight: 600; color: var(--ink) }
@@ -10920,7 +10920,304 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-toggle-track::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.15) }
 .inv-toggle-track.on::after { transform: translateX(20px) }
 
-/* ── Responsive ──────────────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 1100px) { .inv-shell { grid-template-columns: 1fr } .inv-rail { position: static } .inv-cfg-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) } .inv-report-grid { grid-template-columns: 1fr 1fr } }
 @media (max-width: 768px) { .inv-head { flex-direction: column; align-items: flex-start } .inv-toolbar { flex-direction: column } .inv-toolbar .inv-grow { min-width: 100% } .inv-form-row, .inv-form-row-3 { grid-template-columns: 1fr } .inv-kpis { grid-template-columns: 1fr 1fr } .inv-cfg-grid { grid-template-columns: 1fr } .inv-report-grid { grid-template-columns: 1fr } .inv-tabs { overflow-x: auto } }
 @media (max-width: 480px) { .inv-kpis { grid-template-columns: 1fr } }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PAYROLL CENTRE (.pr-* scoped)
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* Reuses global :root tokens: --deep-1, --deep-2, --deep-3, --sec, --sec-2,
+   --ink, --border, --line, --muted, --faint, --focus, --red, --red-2,
+   --green, --amber, --amber-2, --steel, --shadow-card, --shadow-cta,
+   --shadow-teal (defined in the global :root block above). */
+
+.pr { --rw: 300px; --sw: 48px; }
+
+.pr .wrap { max-width: 1440px; margin: 0 auto; padding: 0 28px 80px }
+
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 13px; font-weight: 600; font-size: 13.5px; border: 1px solid transparent; cursor: pointer; transition: all .18s; white-space: nowrap; font-family: inherit }
+.pr .pr-btn:hover { transform: translateY(-1px) }
+.pr .pr-btn-ghost { background: rgba(255,255,255,.9); border-color: var(--border); color: #374151 }
+.pr .pr-btn-ghost:hover { border-color: rgba(17,69,75,.3); color: var(--ink) }
+.pr .pr-btn-sec { color: #fff; background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: rgba(255,255,255,.25); box-shadow: var(--shadow-teal) }
+.pr .pr-btn-cta { color: #eaffff; background: linear-gradient(180deg, var(--deep-1), var(--deep-2) 55%, var(--deep-3)); border-color: rgba(255,255,255,.14); box-shadow: var(--shadow-cta); font-weight: 700 }
+.pr .pr-btn-danger-o { background: #fff; border-color: rgba(220,38,38,.35); color: var(--red) }
+.pr .pr-btn-sm { height: 38px; padding: 0 15px; font-size: 12.5px; border-radius: 11px }
+.pr .pr-btn-xs { height: 30px; padding: 0 11px; font-size: 11.5px; border-radius: 9px }
+.pr .pr-btn-light { background: rgba(255,255,255,.9); border: 1px solid var(--border); color: var(--deep-1); font-weight: 700 }
+
+/* â”€â”€ Breadcrumbs / Page head â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-crumbs { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--muted) }
+.pr .pr-crumbs a { color: var(--muted); text-decoration: none }
+.pr .pr-crumbs a:hover { color: var(--ink) }
+.pr .pr-crumbs .here { color: var(--ink); font-weight: 800 }
+.pr .pr-page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 26px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 22px }
+.pr .pr-page-head h1 { font-size: 22px; font-weight: 800; color: var(--ink); letter-spacing: -.01em }
+.pr .pr-page-head .sub { font-size: 12.5px; color: var(--muted); margin-top: 4px }
+
+/* â”€â”€ Status badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .05em }
+.pr .pr-badge .pr-bdot { width: 6px; height: 6px; border-radius: 50% }
+.pr .pr-b-act { background: linear-gradient(180deg, #ecfdf3, #dcf5e7); border: 1px solid rgba(22,163,74,.28); color: var(--green) }
+.pr .pr-b-act .pr-bdot { background: #22c55e }
+.pr .pr-b-pend { background: rgba(217,119,6,.10); border: 1px solid rgba(217,119,6,.35); color: var(--amber-2) }
+.pr .pr-b-pend .pr-bdot { background: var(--amber) }
+.pr .pr-b-leave { background: rgba(217,119,6,.10); border: 1px solid rgba(217,119,6,.35); color: var(--amber-2) }
+.pr .pr-b-leave .pr-bdot { background: var(--amber) }
+.pr .pr-b-contract { background: rgba(70,112,140,.10); border: 1px solid rgba(70,112,140,.4); color: var(--steel) }
+.pr .pr-b-contract .pr-bdot { background: var(--steel) }
+.pr .pr-b-term { background: rgba(185,28,28,.08); border: 1px solid rgba(185,28,28,.3); color: var(--red-2) }
+.pr .pr-b-term .pr-bdot { background: var(--red-2) }
+.pr .pr-b-draft { background: rgba(17,69,75,.07); border: 1px solid rgba(17,69,75,.2); color: #11454b }
+.pr .pr-b-draft .pr-bdot { background: #11454b }
+.pr .pr-b-lock { background: rgba(138,165,167,.15); border: 1px solid rgba(138,165,167,.5); color: var(--muted) }
+.pr .pr-b-lock .pr-bdot { background: var(--muted) }
+.pr .pr-tchip { display: inline-flex; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.16); color: var(--muted) }
+.pr .pr-tchip-amber { background: rgba(217,119,6,.08); border-color: rgba(217,119,6,.25); color: var(--amber-2) }
+.pr .pr-tchip-steel { background: rgba(70,112,140,.08); border-color: rgba(70,112,140,.3); color: var(--steel) }
+.pr .pr-tchip-green { background: rgba(21,128,61,.08); border-color: rgba(21,128,61,.25); color: var(--green) }
+
+/* â”€â”€ KPIs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px }
+.pr .pr-kpi { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: rgba(255,255,255,.85); box-shadow: var(--shadow-card) }
+.pr .pr-kpi .l { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint) }
+.pr .pr-kpi .v { margin-top: 6px; font-size: 1.25rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums }
+.pr .pr-kpi .n { margin-top: 3px; font-size: 10.5px; color: var(--faint) }
+.pr .pr-kpi-hero { border: none; background: linear-gradient(135deg, var(--sec-2), var(--sec) 60%, #0c7a79) }
+.pr .pr-kpi-hero .l { color: #dff7f6 }
+.pr .pr-kpi-hero .v { color: #fff }
+.pr .pr-kpi-warn .v { color: var(--amber-2) }
+
+/* â”€â”€ Status filter boxes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-statgrid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px }
+.pr .pr-fbox { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; background: rgba(255,255,255,.85); cursor: pointer; text-align: left }
+.pr .pr-fbox.on { border-color: rgba(18,143,142,.55); box-shadow: 0 0 0 3px rgba(18,143,142,.12) }
+.pr .pr-fbox-t { width: 2rem; height: 2rem; border-radius: .625rem; display: grid; place-items: center; color: #fff; flex: none }
+.pr .pr-t-ink { background: linear-gradient(180deg, #17565d, #0a2e32) }
+.pr .pr-t-mint { background: #7FD1C0; color: #0c3539 }
+.pr .pr-t-amber { background: #d97706 }
+.pr .pr-t-steel { background: #46708C }
+.pr .pr-t-red { background: #dc2626 }
+.pr .pr-fbox .l { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint) }
+.pr .pr-fbox .v { font-size: 15px; font-weight: 800; color: var(--ink) }
+
+/* â”€â”€ Controls / inputs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 16px }
+.pr .pr-search { position: relative; flex: 1; min-width: 220px; max-width: 420px }
+.pr .pr-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint) }
+.pr .pr-input { width: 100%; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: #fff; padding: 0 12px; font-size: 13px; color: var(--ink); font-family: inherit }
+.pr .pr-search .pr-input { padding-left: 36px }
+.pr .pr-input:focus { outline: none; border-color: var(--sec); box-shadow: 0 0 0 4px rgba(18,143,142,.14) }
+.pr select.pr-input { width: auto; padding-right: 30px; appearance: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center }
+
+/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-card { background: rgba(255,255,255,.85); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-card); overflow: hidden }
+.pr .pr-card-h { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap }
+.pr .pr-card-h h2 { font-size: 14px; font-weight: 800; color: var(--ink) }
+.pr .pr-card-h .right { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap }
+.pr .pr-pad { padding: 20px 24px }
+
+/* â”€â”€ Tables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-li-wrap { margin-top: 0; border: none; border-radius: 0; overflow-x: auto }
+.pr table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; min-width: 820px }
+.pr thead th { background: linear-gradient(180deg, #f4f8f8, #e8f0f0); color: #111827; text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 11px 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(71,95,97,.45) }
+.pr thead th.num { text-align: right }
+.pr tbody td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle }
+.pr tbody tr:hover td { background: rgba(17,69,75,.04) }
+.pr tbody tr:last-child td { border-bottom: none }
+.pr tfoot td { padding: 12px; border-top: 1.5px solid var(--deep-1); font-weight: 800; color: var(--ink); background: rgba(17,69,75,.03) }
+.pr .pr-mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 500; color: var(--ink) }
+.pr .pr-em { color: var(--muted) }
+.pr .pr-dash { color: var(--faint) }
+.pr .pr-numr { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; color: var(--ink) }
+.pr .pr-numr.bold { font-weight: 800 }
+.pr .pr-numr.red { color: var(--red-2); font-weight: 700 }
+.pr .pr-numr.green { color: var(--green); font-weight: 700 }
+.pr .pr-row-act { display: flex; gap: 4px; justify-content: flex-end }
+.pr .pr-ibtn { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; border: none; background: transparent; color: var(--faint); cursor: pointer }
+.pr .pr-ibtn:hover { background: rgba(17,69,75,.06); color: var(--deep-1) }
+.pr .pr-pagi { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-top: 1px solid var(--line) }
+.pr .pr-pagi .t { font-size: 12px; color: var(--muted) }
+
+/* â”€â”€ Onboarding wizard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-hsteps { display: flex; align-items: flex-start; margin: 6px 0 22px; overflow-x: auto; padding-bottom: 4px }
+.pr .pr-hs { display: flex; align-items: flex-start; gap: 10px; min-width: max-content }
+.pr .pr-hs .pr-hs-dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; border: 2px solid var(--border); background: #fff; color: var(--faint); z-index: 1 }
+.pr .pr-hs .t { font-size: 12px; font-weight: 800; color: var(--muted) }
+.pr .pr-hs .d { font-size: 10px; color: var(--faint); margin-top: 2px }
+.pr .pr-hs .pr-hs-bar { width: 56px; height: 2px; background: var(--line); margin: 16px 10px 0 }
+.pr .pr-hs.done .pr-hs-dot { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff }
+.pr .pr-hs.done .pr-hs-bar { background: var(--sec) }
+.pr .pr-hs.done .t { color: var(--ink) }
+.pr .pr-hs.cur .pr-hs-dot { border-color: var(--sec); color: var(--sec); box-shadow: 0 0 0 5px rgba(18,143,142,.15) }
+.pr .pr-hs.cur .t { color: var(--deep-1) }
+
+/* â”€â”€ Form card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-formcard { background: rgba(255,255,255,.94); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 26px; box-shadow: var(--shadow-card); overflow: hidden }
+.pr .pr-fc-hd { padding: 26px 30px 0 }
+.pr .pr-fc-hd .kick { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--sec) }
+.pr .pr-fc-hd h1 { font-size: 22px; font-weight: 800; color: var(--ink); margin-top: 6px }
+.pr .pr-fc-hd .sub { font-size: 13px; color: var(--muted); margin-top: 6px }
+.pr .pr-fc-bd { padding: 26px 30px }
+.pr .pr-fgrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px 26px }
+.pr .pr-field label { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px }
+.pr .pr-field label .pr-req { color: var(--red) }
+.pr .pr-field label .pr-opt { color: var(--faint) }
+.pr .pr-field .pr-field-in { width: 100%; height: 48px; border-radius: 14px; border: 1px solid var(--border); background: #fff; padding: 0 16px; font-size: 14px; color: var(--ink); font-family: inherit }
+.pr .pr-field .pr-field-in:focus { outline: none; border-color: var(--sec); box-shadow: 0 0 0 4px rgba(18,143,142,.14) }
+.pr .pr-field .pr-hint { margin-top: 7px; font-size: 10.5px; color: var(--faint) }
+.pr .pr-field .pr-hint b { color: var(--green) }
+.pr .pr-sug { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; height: 26px; padding: 0 10px; border-radius: 999px; background: rgba(18,143,142,.08); border: 1px dashed rgba(18,143,142,.5); color: var(--sec); font-size: 10.5px; font-weight: 800; cursor: pointer }
+.pr .pr-fc-bar { position: sticky; bottom: 12px; margin: 0 30px 26px; display: flex; align-items: center; gap: 10px; padding: 14px 0 0 }
+.pr .pr-fc-bar .pr-fc-lbl { color: var(--muted); font-size: 11.5px; font-weight: 800; margin-right: auto }
+.pr .pr-fc-bar .pr-btn { height: 40px }
+
+/* â”€â”€ Employee profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-prof { display: flex; align-items: center; gap: 16px; padding: 20px 24px; flex-wrap: wrap }
+.pr .pr-ava-xl { width: 3.5rem; height: 3.5rem; border-radius: 1rem; display: grid; place-items: center; flex: none; font-size: 15px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--sec-2), var(--sec)); box-shadow: var(--shadow-teal) }
+.pr .pr-prof-n { font-size: 17px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.pr .pr-prof-c { margin-top: 5px; display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted) }
+.pr .pr-mono-chip { font-family: ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 600; color: var(--deep-1); background: rgba(17,69,75,.07); border: 1px solid rgba(17,69,75,.2); border-radius: 8px; padding: 4px 10px }
+
+/* â”€â”€ Summary bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-sumbar { display: grid; grid-template-columns: 1fr 1fr 1fr 1.25fr; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.85); box-shadow: var(--shadow-card) }
+.pr .pr-sumbar-cell { padding: 14px 18px; border-right: 1px solid var(--line) }
+.pr .pr-sumbar-cell .l { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint) }
+.pr .pr-sumbar-cell .v { margin-top: 4px; font-size: 1.125rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums }
+.pr .pr-sumbar-cell .n { margin-top: 2px; font-size: 10px; color: var(--faint) }
+.pr .pr-sumbar-hero { border-right: none; background: linear-gradient(90deg, var(--sec-2), var(--sec) 60%, #107c7b); display: flex; flex-direction: column; justify-content: center }
+.pr .pr-sumbar-hero .l { color: #dff7f6 }
+.pr .pr-sumbar-hero .v { color: #fff; font-size: 1.25rem }
+
+/* â”€â”€ Tabs / panes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); padding: 0 18px; background: rgba(255,255,255,.6); overflow-x: auto }
+.pr .pr-tab { padding: 12px 14px; border: none; background: none; cursor: pointer; position: relative; font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--muted); white-space: nowrap }
+.pr .pr-tab::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2.5px; border-radius: 3px; background: transparent }
+.pr .pr-tab.on { color: var(--ink) }
+.pr .pr-tab.on::after { background: var(--sec) }
+.pr .pr-pane { display: none }
+.pr .pr-pane.on { display: block }
+
+/* â”€â”€ Detail grids â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px 20px }
+.pr .pr-fld .l { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint) }
+.pr .pr-fld .v { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--ink) }
+.pr .pr-attchips { display: flex; gap: 8px; flex-wrap: wrap }
+.pr .pr-att { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 10px; background: rgba(255,255,255,.9); border: 1px solid var(--border); font-size: 11.5px; font-weight: 600; color: #374151 }
+
+/* â”€â”€ Payroll run workflow chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-wflow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 4px 0 16px }
+.pr .pr-wf { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 11px; font-weight: 800 }
+.pr .pr-wf.done { background: rgba(22,163,74,.10); border: 1px solid rgba(22,163,74,.35); color: var(--green) }
+.pr .pr-wf.cur { background: rgba(217,119,6,.12); border: 1px solid rgba(217,119,6,.4); color: var(--amber-2) }
+.pr .pr-wf.todo { background: rgba(138,165,167,.12); border: 1px solid rgba(138,165,167,.4); color: var(--muted) }
+.pr .pr-wf-arr { color: var(--faint) }
+
+/* â”€â”€ Payslip / segmented picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-segp { display: inline-flex; background: rgba(255,255,255,.9); border: 1px solid var(--border); border-radius: 12px; padding: 4px; gap: 2px }
+.pr .pr-segp button { height: 32px; padding: 0 12px; border: none; border-radius: 9px; background: none; font-family: inherit; font-size: 12px; font-weight: 700; color: var(--muted); cursor: pointer }
+.pr .pr-segp button.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff }
+
+/* â”€â”€ Paper / payslip sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-paper { background: #fff; border: 1px solid var(--border); border-radius: 26px; box-shadow: var(--shadow-card); overflow: hidden; position: relative }
+.pr .pr-paper .pr-wm { position: absolute; right: 28px; bottom: 104px; font-size: 40px; font-weight: 800; color: rgba(17,69,75,.06); letter-spacing: -.02em; pointer-events: none }
+.pr .pr-pp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 28px 32px; border-bottom: 1px solid var(--line) }
+.pr .pr-pp-logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: #0e3a3e; background: linear-gradient(180deg, #f4fbfb, #d9edee) }
+.pr .pr-pp-title { text-align: right }
+.pr .pr-pp-title .big { font-size: 20px; font-weight: 800; letter-spacing: .18em; color: var(--deep-1) }
+.pr .pr-pp-title .ref { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--muted); margin-top: 4px }
+.pr .pr-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800 }
+.pr .pr-tag.paid { background: linear-gradient(180deg, #ecfdf3, #dcf5e7); border: 1px solid rgba(22,163,74,.28); color: var(--green) }
+.pr .pr-tag.conf { background: rgba(138,165,167,.12); border: 1px solid rgba(138,165,167,.4); color: var(--muted) }
+.pr .pr-pp-emp { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 20px 32px; border-bottom: 1px solid var(--line); background: rgba(238,244,244,.4) }
+.pr .pr-pp-ava { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; font-weight: 800; font-size: 16px; color: #fff; background: linear-gradient(135deg, var(--sec-2), var(--sec)) }
+.pr .pr-pp-facts { margin-left: auto; display: grid; grid-template-columns: repeat(4,auto); gap: 8px 26px }
+.pr .pr-pf .l { font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint) }
+.pr .pr-pf .v { font-size: 12px; font-weight: 700; color: var(--ink); margin-top: 3px }
+.pr .pr-pp-cols { display: grid; grid-template-columns: 1fr 1fr }
+.pr .pr-pp-col { padding: 22px 32px }
+.pr .pr-pp-col + .pr-pp-col { border-left: 1px solid var(--line) }
+.pr .pr-pp-col h4 { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 12px }
+.pr .pr-pt { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 0; table-layout: auto }
+.pr .pr-pt th { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); text-align: left; padding: 0 0 8px }
+.pr .pr-pt th.num { text-align: right }
+.pr .pr-pt td { padding: 9px 0; border-top: 1px dashed var(--line); color: var(--muted) }
+.pr .pr-pt td.b { color: var(--ink); font-weight: 600 }
+.pr .pr-pt td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600 }
+.pr .pr-pt tr.tot td { border-top: 1.5px solid var(--deep-1); font-weight: 800; color: var(--ink); padding-top: 11px }
+
+/* â”€â”€ Net-pay card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-net-card { margin: 6px 32px 14px; border-radius: 18px; padding: 22px 26px; color: #fff; background: linear-gradient(100deg, var(--deep-2) 0%, var(--deep-1) 45%, var(--sec) 115%); box-shadow: var(--shadow-cta); display: flex; align-items: center; gap: 26px; flex-wrap: wrap }
+.pr .pr-nc-net .l { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #dff7f6 }
+.pr .pr-nc-net .v { font-size: 2.2rem; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 4px }
+.pr .pr-nc-net .s { font-size: 11.5px; color: #cfe8e8; margin-top: 4px }
+.pr .pr-nc-stats { margin-left: auto; display: flex; gap: 30px; flex-wrap: wrap }
+.pr .pr-nc .l { font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.72) }
+.pr .pr-nc .v { font-size: 15px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums }
+.pr .pr-nc .v.soft { color: #ffd9d9 }
+
+/* â”€â”€ Payslip info cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-pp-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; padding: 0 32px 24px }
+.pr .pr-pcard { border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; background: rgba(238,244,244,.5) }
+.pr .pr-pcard .t { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 10px }
+.pr .pr-pcard .r { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 4px 0 }
+.pr .pr-pcard .r b { color: var(--ink); font-variant-numeric: tabular-nums }
+.pr .pr-pp-foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 18px 32px; border-top: 1px solid var(--line); background: rgba(238,244,244,.5); font-size: 11.5px; color: var(--muted) }
+.pr .pr-pp-foot a { color: var(--sec); font-weight: 800; text-decoration: none }
+.pr .pr-qr { width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--border); background: repeating-linear-gradient(0deg, var(--ink) 0 3px, transparent 3px 6px), repeating-linear-gradient(90deg, var(--ink) 0 3px, transparent 3px 6px); opacity: .8 }
+
+/* â”€â”€ Statutory / report cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-mcards { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px }
+.pr .pr-mcard { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: rgba(255,255,255,.85); display: flex; flex-direction: column; gap: 8px }
+.pr .pr-mcard .t { font-size: 13.5px; font-weight: 800; color: var(--ink) }
+.pr .pr-mcard .d { font-size: 11.5px; color: var(--muted); line-height: 1.5 }
+.pr .pr-mcard .foot { margin-top: auto; display: flex; gap: 6px; flex-wrap: wrap }
+.pr .pr-repcards { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px }
+.pr .pr-repcard { border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,.85); box-shadow: var(--shadow-card); padding: 16px; display: flex; flex-direction: column; gap: 8px }
+.pr .pr-repcard .t { font-size: 13.5px; font-weight: 800; color: var(--ink) }
+.pr .pr-repcard .d { font-size: 11.5px; color: var(--muted); line-height: 1.5 }
+.pr .pr-repcard .foot { margin-top: auto; display: flex; gap: 6px; align-items: center }
+.pr .pr-fmt { font-size: 9.5px; font-weight: 800; letter-spacing: .06em; color: var(--deep-1); background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.16); border-radius: 999px; padding: 2px 8px }
+.pr .pr-open-l { margin-left: auto; font-size: 11px; font-weight: 800; color: var(--sec); text-decoration: none }
+
+/* â”€â”€ Dropdown (more menu) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.pr .pr-more { position: relative }
+.pr .pr-more-menu { position: absolute; right: 0; top: 100%; min-width: 180px; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card); z-index: 50; padding: 4px }
+.pr .pr-more-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: none; font-size: 12.5px; font-weight: 600; color: var(--ink); cursor: pointer; border-radius: 8px; text-align: left; font-family: inherit }
+.pr .pr-more-item:hover { background: rgba(17,69,75,.06) }
+.pr .pr-more-item.danger { color: var(--red) }
+
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-width: 1100px) {
+  .pr .pr-statgrid { grid-template-columns: repeat(3,1fr) }
+  .pr .pr-repcards { grid-template-columns: 1fr 1fr }
+}
+@media (max-width: 1000px) {
+  .pr .pr-kpis { grid-template-columns: 1fr 1fr }
+  .pr .pr-fgrid { grid-template-columns: 1fr 1fr }
+  .pr .pr-mcards { grid-template-columns: 1fr }
+}
+@media (max-width: 900px) {
+  .pr .pr-sumbar { grid-template-columns: 1fr 1fr }
+  .pr .pr-sumbar-hero { grid-column: 1 / -1 }
+  .pr .pr-g3 { grid-template-columns: 1fr 1fr }
+  .pr .pr-pp-facts { margin-left: 0; grid-template-columns: repeat(2,auto) }
+  .pr .pr-pp-cards { grid-template-columns: 1fr }
+}
+@media (max-width: 860px) {
+  .pr .pr-pp-cols { grid-template-columns: 1fr }
+}
+@media (max-width: 768px) {
+  .pr .slim-rail { display: none !important }
+  .pr .pr-sumbar { grid-template-columns: 1fr 1fr }
+  .pr .pr-page-head { flex-direction: column; align-items: flex-start }
+}
+@media (max-width: 700px) {
+  .pr .pr-repcards { grid-template-columns: 1fr }
+}
+@media (max-width: 640px) {
+  .pr .pr-fgrid { grid-template-columns: 1fr }
+}

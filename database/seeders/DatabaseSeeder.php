@@ -251,6 +251,14 @@ class DatabaseSeeder extends Seeder
                 'cash_flow_section' => 'operating',
             ],
             [
+                'code' => '1400',
+                'name' => 'Employee Loans Receivable',
+                'type' => 'asset',
+                'sub_type' => 'current_asset',
+                'description' => 'Outstanding employee loan balances',
+                'cash_flow_section' => 'operating',
+            ],
+            [
                 'code' => '1500',
                 'name' => 'Property, Plant and Equipment',
                 'type' => 'asset',
