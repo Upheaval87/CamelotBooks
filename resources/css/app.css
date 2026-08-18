@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -10681,77 +10681,85 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
    INVENTORY CENTRE â€” .inv-* scoped CSS
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* â”€â”€ Page shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px }
-.inv-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px }
-.inv-head h1 { font-size: 1.5rem; font-weight: 800; color: var(--ink); letter-spacing: -0.02em }
-.inv-head .inv-sub { font-size: 13px; color: var(--muted); margin-top: 2px }
+/* ═══════════════════════════════════════════════════════════════
+   INVENTORY CENTRE — .inv-* scoped CSS
+   ═══════════════════════════════════════════════════════════════ */
 
-/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-btn { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 18px; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; transition: all .15s }
-.inv-btn-cta { background: linear-gradient(135deg, var(--sec, #128F8E), var(--sec-2, #149897)); color: #fff; box-shadow: 0 2px 8px rgba(18,143,142,.25) }
+/* ── Page shell ─────────────────────────────────────────── */
+.inv-wrap { max-width: 1440px; margin: 0 auto; padding: 0 28px 80px }
+.inv-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px }
+.inv-head h1 { font-size: 1.375rem; font-weight: 800; color: var(--ink); letter-spacing: -0.02em }
+.inv-head .inv-sub { font-size: 13px; color: var(--muted); margin-top: 2px }
+.inv-crumbs { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--faint); margin-bottom: 8px }
+.inv-crumbs a { color: var(--faint); text-decoration: none }
+.inv-crumbs a:hover { color: var(--sec, #128F8E) }
+.inv-crumbs .sep { color: var(--line) }
+
+/* ── Buttons ────────────────────────────────────────────── */
+.inv-btn { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 20px; border-radius: 12px; font-family: inherit; font-size: 13px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; transition: all .15s }
+.inv-btn-cta { background: linear-gradient(135deg, var(--deep-1, #17565d), var(--deep-2, #0c3539)); color: #fff; box-shadow: 0 2px 8px rgba(18,143,142,.25) }
 .inv-btn-cta:hover { filter: brightness(1.06); transform: translateY(-1px) }
-.inv-btn-ghost { background: rgba(255,255,255,.8); border: 1px solid var(--border); color: var(--ink) }
+.inv-btn-ghost { background: rgba(255,255,255,.88); border: 1px solid var(--border, #dceaea); color: var(--ink, #0b2a2d) }
 .inv-btn-ghost:hover { background: #fff }
-.inv-btn-sm { height: 30px; padding: 0 12px; font-size: 12px; border-radius: 8px }
+.inv-btn-sec { background: linear-gradient(135deg, var(--sec, #128F8E), var(--sec-2, #149897)); color: #fff; box-shadow: 0 2px 8px rgba(18,143,142,.25) }
+.inv-btn-sec:hover { filter: brightness(1.06); transform: translateY(-1px) }
+.inv-btn-sm { height: 36px; padding: 0 14px; font-size: 12px; border-radius: 10px }
+.inv-btn-xs { height: 30px; padding: 0 10px; font-size: 11px; border-radius: 8px }
 .inv-btn-danger { background: #fff; border: 1px solid #fca5a5; color: var(--red-2, #b91c1c) }
 .inv-btn-danger:hover { background: #fef2f2 }
-.inv-btn svg, .inv-btn-sm svg { width: 15px; height: 15px; flex-shrink: 0 }
+.inv-btn svg, .inv-btn-sm svg, .inv-btn-xs svg { width: 15px; height: 15px; flex-shrink: 0 }
 
-/* â”€â”€ KPI strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px }
-.inv-kpi { background: rgba(255,255,255,.75); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px }
-.inv-kpi .inv-kpi-l { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
-.inv-kpi .inv-kpi-v { margin-top: 6px; font-size: 1.35rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums }
-.inv-kpi .inv-kpi-bar { margin-top: 10px; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden }
-.inv-kpi .inv-kpi-bar-fill { height: 100%; border-radius: 3px; transition: width .4s }
-.inv-kpi .inv-kpi-bar-fill.teal { background: var(--sec) }
-.inv-kpi .inv-kpi-bar-fill.amber { background: var(--amber-2, #b45309) }
-.inv-kpi .inv-kpi-bar-fill.red { background: var(--red-2, #b91c1c) }
-.inv-kpi .inv-kpi-bar-fill.green { background: var(--green, #15803d) }
-.inv-kpi .inv-kpi-sub { font-size: 11px; color: var(--faint); margin-top: 6px }
+/* ── Tabs ───────────────────────────────────────────────── */
+.inv-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line, #e2ecec); margin-bottom: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch }
+.inv-tab { padding: 11px 18px; font-size: 13px; font-weight: 700; color: var(--muted, #5f7476); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap }
+.inv-tab:hover { color: var(--ink, #0b2a2d) }
+.inv-tab.on { color: var(--deep-1, #17565d); border-bottom-color: var(--sec, #128F8E) }
 
-/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-card { background: rgba(255,255,255,.75); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 20px }
+/* ── KPI strip ──────────────────────────────────────────── */
+.inv-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px }
+.inv-kpi { border: 1px solid var(--border, #dceaea); border-radius: 14px; padding: 16px 18px; background: rgba(255,255,255,.88); backdrop-filter: blur(14px) }
+.inv-kpi .inv-kpi-l { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint, #8aa5a7) }
+.inv-kpi .inv-kpi-v { margin-top: 6px; font-size: 1.375rem; font-weight: 800; color: var(--ink, #0b2a2d); font-variant-numeric: tabular-nums }
+.inv-kpi .inv-kpi-n { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--muted, #5f7476) }
+.inv-kpi .inv-kpi-sub { font-size: 11px; color: var(--faint, #8aa5a7); margin-top: 6px }
+.inv-kpi.hero { background: linear-gradient(135deg, var(--sec, #128F8E), var(--sec-2, #149897)); color: #fff; border-color: transparent }
+.inv-kpi.hero .inv-kpi-l, .inv-kpi.hero .inv-kpi-n { color: rgba(255,255,255,.7) }
+.inv-kpi.hero .inv-kpi-v { color: #fff }
+
+/* ── Cards ──────────────────────────────────────────────── */
+.inv-card { background: rgba(255,255,255,.88); backdrop-filter: blur(14px); border: 1px solid var(--border, #dceaea); border-radius: 18px; margin-bottom: 20px; overflow: hidden }
+.inv-card-h { display: flex; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--line, #e2ecec); font-size: 13px; font-weight: 700; color: var(--ink, #0b2a2d) }
+.inv-card-h .inv-sec-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, var(--deep-1, #17565d), var(--deep-2, #0c3539)); color: #e2c069; flex-shrink: 0 }
+.inv-card-h .inv-sec-ic svg { width: 17px; height: 17px }
+.inv-card-h .inv-sec-ic-inv { margin-left: auto; flex-shrink: 0 }
+.inv-card-body { padding: 0 }
 .inv-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line) }
 .inv-card-head h2 { font-size: 15px; font-weight: 800; color: var(--ink) }
 .inv-card-head .inv-card-sub { font-size: 12px; color: var(--faint) }
 
-/* â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 20px }
-.inv-tab { padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s }
-.inv-tab:hover { color: var(--ink) }
-.inv-tab.on { color: var(--deep-1, #17565d); border-bottom-color: var(--sec, #128F8E) }
-
-/* â”€â”€ Toolbar (search + filters) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px }
-.inv-toolbar .inv-grow { flex: 1; min-width: 200px }
-.inv-search { position: relative }
-.inv-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--faint); pointer-events: none }
-.inv-search .inv-input { padding-left: 36px }
-.inv-input { height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.85); font-family: inherit; font-size: 13px; color: var(--ink); transition: border-color .15s, box-shadow .15s }
-.inv-input:focus { outline: none; border-color: var(--sec, #128F8E); box-shadow: 0 0 0 3px rgba(18,143,142,.12) }
-.inv-select { height: 38px; padding: 0 32px 0 12px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.85) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%235f7476' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center; font-family: inherit; font-size: 13px; color: var(--ink); appearance: none; cursor: pointer }
-.inv-select:focus { outline: none; border-color: var(--sec); box-shadow: 0 0 0 3px rgba(18,143,142,.12) }
-.inv-filter-clear { font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; padding: 6px 10px; border-radius: 8px }
-.inv-filter-clear:hover { color: var(--sec); background: rgba(18,143,142,.06) }
-
-/* â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,.75); backdrop-filter: blur(14px) }
-.inv-tbl { width: 100%; border-collapse: collapse; font-size: 13px }
-.inv-tbl thead { background: linear-gradient(180deg, var(--deep-1, #17565d), var(--deep-2, #0c3539) 80%, var(--deep-3, #0a2e32)) }
-.inv-tbl thead th { padding: 12px 16px; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #cdd7e2; text-align: left; white-space: nowrap; border-bottom: 1px solid rgba(255,255,255,.08) }
+/* ── Tables ─────────────────────────────────────────────── */
+.inv-tbl-wrap { overflow-x: auto }
+.inv-tbl { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 720px }
+.inv-tbl thead { background: linear-gradient(180deg, #f4f8f8, #e8f0f0) }
+.inv-tbl thead th { padding: 12px 16px; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #5f7476); text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line, #e2ecec) }
 .inv-tbl thead th:last-child, .inv-tbl tbody td:last-child { text-align: right }
-.inv-tbl tbody td { padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--ink); vertical-align: middle }
+.inv-tbl thead th.num, .inv-tbl tbody td.num { text-align: right }
+.inv-tbl tbody td { padding: 12px 16px; border-bottom: 1px solid var(--line, #e2ecec); color: var(--ink, #0b2a2d); vertical-align: middle }
 .inv-tbl tbody tr:last-child td { border-bottom: none }
-.inv-tbl tbody tr:hover { background: rgba(18,143,142,.03) }
+.inv-tbl tbody tr:hover td { background: rgba(17,69,75,.035) }
 .inv-tbl .inv-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600 }
 .inv-tbl .inv-num.red { color: var(--red-2, #b91c1c) }
+.inv-tbl .inv-numr { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600 }
+.inv-tbl .inv-numr-red { color: var(--red-2, #b91c1c) }
 .inv-tbl .inv-mono { font-family: 'JetBrains Mono', monospace; font-size: 12px }
 .inv-tbl .inv-link { color: var(--deep-1, #17565d); text-decoration: none; font-weight: 600 }
 .inv-tbl .inv-link:hover { text-decoration: underline }
+.inv-tbl .inv-tbl-r { text-align: right }
+.inv-tbl .inv-tbl-c { text-align: center }
+.inv-tbl-total td { font-weight: 800 !important; border-top: 2px solid var(--sec, #128F8E) !important }
+.inv-tbl thead tr:first-child th { box-shadow: inset 0 1px 0 rgba(255,255,255,.5) }
 
-/* â”€â”€ Status badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Status badges ──────────────────────────────────────── */
 .inv-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700 }
 .inv-badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0 }
 .inv-badge-active { background: rgba(21,128,61,.08); color: var(--green, #15803d) }
@@ -10767,13 +10775,19 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-badge-teal { background: rgba(18,143,142,.08); color: var(--sec, #128F8E) }
 .inv-badge-teal .inv-badge-dot { background: var(--sec, #128F8E) }
 
-/* â”€â”€ Chip / tag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Pill (status) ──────────────────────────────────────── */
+.inv-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700 }
+.inv-pill-act { background: rgba(21,128,61,.08); color: var(--green, #15803d) }
+.inv-pill-wip { background: rgba(180,83,9,.08); color: var(--amber-2, #b45309) }
+.inv-pill-inact { background: rgba(107,114,128,.08); color: var(--muted) }
+
+/* ── Chip / tag ─────────────────────────────────────────── */
 .inv-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.12); color: var(--muted) }
 .inv-chip.teal { background: rgba(18,143,142,.08); border-color: rgba(18,143,142,.18); color: var(--sec, #128F8E) }
 .inv-chip.amber { background: rgba(180,83,9,.08); border-color: rgba(180,83,9,.18); color: var(--amber-2, #b45309) }
 .inv-chip.red { background: rgba(185,28,28,.08); border-color: rgba(185,28,28,.18); color: var(--red-2, #b91c1c) }
 
-/* â”€â”€ Detail page (profile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Detail page (profile) ──────────────────────────────── */
 .inv-detail-head { display: flex; align-items: center; gap: 16px; margin-bottom: 24px }
 .inv-avatar { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; font-size: 20px; font-weight: 800; color: #fff; flex-shrink: 0 }
 .inv-avatar.teal { background: linear-gradient(135deg, var(--sec, #128F8E), var(--sec-2, #149897)) }
@@ -10784,10 +10798,10 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-field-value { font-size: 13.5px; font-weight: 600; color: var(--ink) }
 .inv-field-value.mono { font-family: 'JetBrains Mono', monospace; font-size: 12.5px }
 
-/* â”€â”€ Form layouts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Form layouts ───────────────────────────────────────── */
 .inv-form { display: flex; flex-direction: column; gap: 20px }
 .inv-form-group { display: flex; flex-direction: column; gap: 6px }
-.inv-form-label { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+.inv-form-label { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #5f7476) }
 .inv-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px }
 .inv-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px }
 .inv-form .inv-input, .inv-form .inv-select, .inv-form textarea.inv-input { width: 100% }
@@ -10795,31 +10809,31 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-form-hint { font-size: 11.5px; color: var(--faint) }
 .inv-form-err { font-size: 11.5px; color: var(--red-2, #b91c1c) }
 
-/* â”€â”€ Line items table (stock forms) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-lines { width: 100%; border-collapse: collapse }
-.inv-lines thead { background: linear-gradient(180deg, var(--deep-1), var(--deep-2) 80%) }
-.inv-lines thead th { padding: 10px 14px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #cdd7e2; text-align: left }
-.inv-lines tbody td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: middle }
-.inv-lines tbody td .inv-input { height: 34px; font-size: 12.5px }
-.inv-lines .inv-line-rm { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; border: none; background: transparent; color: var(--faint); cursor: pointer }
-.inv-lines .inv-line-rm:hover { background: rgba(185,28,28,.08); color: var(--red-2, #b91c1c) }
-.inv-add-line { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: var(--sec, #128F8E); background: none; border: none; cursor: pointer; padding: 6px 0 }
-.inv-add-line:hover { text-decoration: underline }
+/* ── Inputs ─────────────────────────────────────────────── */
+.inv-input { height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--border, #dceaea); background: rgba(255,255,255,.88); font-family: inherit; font-size: 13px; color: var(--ink, #0b2a2d); transition: border-color .15s, box-shadow .15s }
+.inv-input:focus { outline: none; border-color: var(--sec, #128F8E); box-shadow: 0 0 0 3px rgba(18,143,142,.12) }
+.inv-select { height: 42px; padding: 0 32px 0 12px; border-radius: 12px; border: 1px solid var(--border, #dceaea); background: rgba(255,255,255,.88) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%235f7476' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center; font-family: inherit; font-size: 13px; color: var(--ink, #0b2a2d); appearance: none; cursor: pointer }
+.inv-select:focus { outline: none; border-color: var(--sec); box-shadow: 0 0 0 3px rgba(18,143,142,.12) }
+.inv-filter-clear { font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; padding: 6px 10px; border-radius: 8px }
+.inv-filter-clear:hover { color: var(--sec); background: rgba(18,143,142,.06) }
 
-/* â”€â”€ Totals strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-totals { display: flex; justify-content: flex-end; padding: 16px 0 }
-.inv-totals-box { min-width: 260px; background: rgba(18,143,142,.04); border: 1px solid rgba(18,143,142,.15); border-radius: 14px; padding: 16px 20px }
-.inv-totals-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: var(--muted) }
-.inv-totals-row .inv-totals-v { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums }
-.inv-totals-row.grand { border-top: 1px solid var(--sec, #128F8E); margin-top: 6px; padding-top: 10px; font-size: 15px; font-weight: 800; color: var(--ink) }
+/* ── Toggle / switch ────────────────────────────────────── */
+.inv-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--line) }
+.inv-toggle-row:last-child { border-bottom: none }
+.inv-toggle-info .inv-toggle-title { font-size: 13.5px; font-weight: 600; color: var(--ink) }
+.inv-toggle-info .inv-toggle-desc { font-size: 12px; color: var(--muted); margin-top: 2px }
+.inv-toggle-track { width: 44px; height: 25px; border-radius: 14px; background: var(--line, #e2ecec); position: relative; cursor: pointer; transition: background .2s; border: none; flex-shrink: 0 }
+.inv-toggle-track.on { background: var(--sec, #128F8E) }
+.inv-toggle-track::after { content: ''; position: absolute; width: 19px; height: 19px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.15) }
+.inv-toggle-track.on::after { transform: translateX(19px) }
 
-/* â”€â”€ Section leaders (navy icon chip) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Section leaders (navy icon chip) ───────────────────── */
 .inv-sec-lead { display: flex; align-items: center; gap: 10px; margin-bottom: 16px }
 .inv-sec-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, var(--deep-1, #17565d), var(--deep-2, #0c3539)); color: #e2c069; flex-shrink: 0 }
 .inv-sec-ic svg { width: 17px; height: 17px }
 .inv-sec-title { font-size: 13px; font-weight: 800; color: var(--ink) }
 
-/* â”€â”€ Rail (right sidebar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Rail (right sidebar) — kept for items-show ─────────── */
 .inv-shell { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 24px; align-items: start }
 .inv-rail { position: sticky; top: var(--topbar-h, 106px) }
 .inv-rail-card { background: rgba(255,255,255,.75); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; margin-bottom: 14px }
@@ -10828,7 +10842,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-rail-item:hover { background: rgba(17,69,75,.06) }
 .inv-rail-item svg { width: 16px; height: 16px; color: var(--faint); flex-shrink: 0 }
 
-/* â”€â”€ Config hub tiles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Config hub tiles ───────────────────────────────────── */
 .inv-cfg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px }
 .inv-cfg-tile { display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.75); backdrop-filter: blur(14px); text-decoration: none; color: var(--ink); transition: all .15s }
 .inv-cfg-tile:hover { border-color: var(--sec, #128F8E); box-shadow: 0 4px 12px rgba(18,143,142,.12); transform: translateY(-2px) }
@@ -10837,7 +10851,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-cfg-tile .inv-cfg-title { font-size: 14px; font-weight: 700 }
 .inv-cfg-tile .inv-cfg-desc { font-size: 12px; color: var(--muted); line-height: 1.5 }
 
-/* â”€â”€ Dashboard bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Dashboard bars ─────────────────────────────────────── */
 .inv-bars { display: flex; flex-direction: column; gap: 10px }
 .inv-bar-row { display: flex; align-items: center; gap: 12px }
 .inv-bar-label { width: 120px; font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
@@ -10847,7 +10861,7 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-bar-fill.red { background: var(--red-2, #b91c1c) }
 .inv-bar-val { width: 50px; text-align: right; font-size: 12px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums }
 
-/* â”€â”€ Movement rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Movement rows ──────────────────────────────────────── */
 .inv-mov-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line) }
 .inv-mov-row:last-child { border-bottom: none }
 .inv-mov-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0 }
@@ -10861,7 +10875,38 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-mov-amt.in { color: var(--green, #15803d) }
 .inv-mov-amt.out { color: var(--red-2, #b91c1c) }
 
-/* â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Line items table (stock forms) ─────────────────────── */
+.inv-lines { width: 100%; border-collapse: collapse }
+.inv-lines thead { background: linear-gradient(180deg, var(--deep-1), var(--deep-2) 80%) }
+.inv-lines thead th { padding: 10px 14px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #cdd7e2; text-align: left }
+.inv-lines tbody td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: middle }
+.inv-lines tbody td .inv-input { height: 34px; font-size: 12.5px }
+.inv-lines .inv-line-rm { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; border: none; background: transparent; color: var(--faint); cursor: pointer }
+.inv-lines .inv-line-rm:hover { background: rgba(185,28,28,.08); color: var(--red-2, #b91c1c) }
+.inv-add-line { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: var(--sec, #128F8E); background: none; border: none; cursor: pointer; padding: 6px 0 }
+.inv-add-line:hover { text-decoration: underline }
+
+/* ── Totals strip ───────────────────────────────────────── */
+.inv-totals { display: flex; justify-content: flex-end; padding: 16px 0 }
+.inv-totals-box { min-width: 260px; background: rgba(18,143,142,.04); border: 1px solid rgba(18,143,142,.15); border-radius: 14px; padding: 16px 20px }
+.inv-totals-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: var(--muted) }
+.inv-totals-row .inv-totals-v { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums }
+.inv-totals-row.grand { border-top: 1px solid var(--sec, #128F8E); margin-top: 6px; padding-top: 10px; font-size: 15px; font-weight: 800; color: var(--ink) }
+
+/* ── Tree table ─────────────────────────────────────────── */
+.inv-tree .inv-child td:first-child { padding-left: 44px }
+.inv-tree .inv-caret { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; border: none; background: transparent; color: var(--faint, #8aa5a7); cursor: pointer; font-size: 12px; transition: all .12s }
+.inv-tree .inv-caret:hover { background: rgba(17,69,75,.08); color: var(--ink, #0b2a2d) }
+.inv-tree .inv-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0 }
+
+/* ── Steps (stock count explainer) ──────────────────────── */
+.inv-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px }
+.inv-step { border: 1px solid var(--border, #dceaea); border-radius: 13px; padding: 20px; background: rgba(255,255,255,.88) }
+.inv-step-n { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--deep-1, #17565d); color: #fff; margin-bottom: 10px }
+.inv-step-t { font-size: 13px; font-weight: 700; color: var(--ink, #0b2a2d); margin-bottom: 4px }
+.inv-step-s { font-size: 12px; color: var(--muted, #5f7476); line-height: 1.5 }
+
+/* ── Pagination ─────────────────────────────────────────── */
 .inv-pag { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; font-size: 12.5px; color: var(--muted) }
 .inv-pag-info { font-weight: 600 }
 .inv-pag-nav { display: flex; gap: 4px }
@@ -10870,13 +10915,14 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-pag-btn.on { background: linear-gradient(135deg, var(--deep-1), var(--deep-2)); color: #fff; border-color: var(--deep-1) }
 .inv-pag-btn:disabled { opacity: .4; pointer-events: none }
 
-/* â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Empty state ────────────────────────────────────────── */
 .inv-empty { text-align: center; padding: 48px 20px; color: var(--muted) }
-.inv-empty svg { width: 48px; height: 48px; color: var(--faint); margin: 0 auto 12px }
-.inv-empty p { font-size: 14px; font-weight: 600 }
-.inv-empty .inv-empty-sub { font-size: 12.5px; color: var(--faint); margin-top: 4px }
+.inv-empty svg { width: 40px; height: 40px; color: var(--faint, #8aa5a7); margin: 0 auto 12px }
+.inv-empty p { font-size: 13px; font-weight: 600 }
+.inv-empty .inv-empty-sub { font-size: 12px; color: var(--faint, #8aa5a7); margin-top: 4px }
+.inv-empty-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; margin: 0 auto 12px; background: rgba(17,69,75,.06); color: var(--faint, #8aa5a7) }
 
-/* â”€â”€ Progress / stock bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Progress / stock bar ───────────────────────────────── */
 .inv-stock-bar { display: flex; align-items: center; gap: 8px }
 .inv-stock-bar-track { flex: 1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden }
 .inv-stock-bar-fill { height: 100%; border-radius: 3px; transition: width .3s }
@@ -10884,20 +10930,11 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-stock-bar-fill.low { background: var(--amber-2, #b45309) }
 .inv-stock-bar-fill.out { background: var(--red-2, #b91c1c) }
 
-/* â”€â”€ Valuation table highlight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Valuation table highlight ──────────────────────────── */
 .inv-val-total { background: rgba(18,143,142,.04) }
 .inv-val-total td { font-weight: 800 !important; border-top: 2px solid var(--sec, #128F8E) !important }
 
-/* â”€â”€ Transfer / adjustment step indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-steps { display: flex; gap: 0; margin-bottom: 24px }
-.inv-step { flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 12.5px; font-weight: 700; color: var(--faint); border-bottom: 2px solid var(--line) }
-.inv-step.on { color: var(--sec, #128F8E); border-bottom-color: var(--sec, #128F8E) }
-.inv-step.done { color: var(--green, #15803d); border-bottom-color: var(--green, #15803d) }
-.inv-step-num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; background: var(--line); color: var(--faint) }
-.inv-step.on .inv-step-num { background: var(--sec, #128F8E); color: #fff }
-.inv-step.done .inv-step-num { background: var(--green, #15803d); color: #fff }
-
-/* â”€â”€ Report cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Report cards ───────────────────────────────────────── */
 .inv-report-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px }
 .inv-report-card { display: flex; align-items: flex-start; gap: 14px; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.75); backdrop-filter: blur(14px); text-decoration: none; color: var(--ink); transition: all .15s }
 .inv-report-card:hover { border-color: var(--sec, #128F8E); box-shadow: 0 4px 12px rgba(18,143,142,.12); transform: translateY(-1px) }
@@ -10906,25 +10943,20 @@ select.coa-in { appearance: none; background: #fff url("data:image/svg+xml,%3Csv
 .inv-report-card h3 { font-size: 13.5px; font-weight: 700 }
 .inv-report-card p { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.5 }
 
-/* â”€â”€ Low stock table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Low stock table ────────────────────────────────────── */
 .inv-lowstock .inv-tbl tbody tr.inv-critical td { background: rgba(185,28,28,.04) }
 .inv-lowstock .inv-tbl tbody tr.inv-warning td { background: rgba(180,83,9,.04) }
 
-/* â”€â”€ Settings toggle row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.inv-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--line) }
-.inv-toggle-row:last-child { border-bottom: none }
-.inv-toggle-info .inv-toggle-title { font-size: 13.5px; font-weight: 600; color: var(--ink) }
-.inv-toggle-info .inv-toggle-desc { font-size: 12px; color: var(--muted); margin-top: 2px }
-.inv-toggle-track { width: 44px; height: 24px; border-radius: 12px; background: var(--line); position: relative; cursor: pointer; transition: background .2s }
-.inv-toggle-track.on { background: var(--sec, #128F8E) }
-.inv-toggle-track::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.15) }
-.inv-toggle-track.on::after { transform: translateX(20px) }
+/* ── Flex helpers ───────────────────────────────────────── */
+.inv-flex-1 { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0 }
+.inv-justify-end { justify-content: flex-end }
+.inv-flex-col { display: flex; flex-direction: column }
+.inv-sub { font-size: 12px; color: var(--faint); margin-top: 2px }
 
-/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 1100px) { .inv-shell { grid-template-columns: 1fr } .inv-rail { position: static } .inv-cfg-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) } .inv-report-grid { grid-template-columns: 1fr 1fr } }
-@media (max-width: 768px) { .inv-head { flex-direction: column; align-items: flex-start } .inv-toolbar { flex-direction: column } .inv-toolbar .inv-grow { min-width: 100% } .inv-form-row, .inv-form-row-3 { grid-template-columns: 1fr } .inv-kpis { grid-template-columns: 1fr 1fr } .inv-cfg-grid { grid-template-columns: 1fr } .inv-report-grid { grid-template-columns: 1fr } .inv-tabs { overflow-x: auto } }
+@media (max-width: 768px) { .inv-head { flex-direction: column; align-items: flex-start } .inv-form-row, .inv-form-row-3 { grid-template-columns: 1fr } .inv-kpis { grid-template-columns: 1fr 1fr } .inv-cfg-grid { grid-template-columns: 1fr } .inv-report-grid { grid-template-columns: 1fr } .inv-tabs { overflow-x: auto } .inv-steps { grid-template-columns: 1fr } }
 @media (max-width: 480px) { .inv-kpis { grid-template-columns: 1fr } }
-
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PAYROLL CENTRE (.pr-* scoped)
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
