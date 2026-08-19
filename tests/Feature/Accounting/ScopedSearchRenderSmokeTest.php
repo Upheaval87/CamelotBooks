@@ -635,6 +635,41 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'approved_at' => now(),
         ]);
 
+        $rjTemplate = \App\Models\RecurringJournalTemplate::create([
+            'company_id' => $this->company->id,
+            'name' => 'Monthly Rent',
+            'reference' => 'RJ-0001',
+            'journal_type' => 'standard',
+            'frequency' => 'monthly',
+            'start_date' => now()->subMonth()->toDateString(),
+            'next_run_date' => now()->addDays(10)->toDateString(),
+            'generation_mode' => 'draft_only',
+            'status' => 'active',
+            'total_amount' => 5000,
+            'currency' => 'USD',
+            'created_by' => $this->user->id,
+        ]);
+
+        \App\Models\RecurringJournalTemplateLine::create([
+            'company_id' => $this->company->id,
+            'rjt_id' => $rjTemplate->id,
+            'account_id' => $this->incomeAccount->id,
+            'description' => 'Rent expense',
+            'debit' => 5000,
+            'credit' => 0,
+            'line_type' => 'expense',
+        ]);
+
+        \App\Models\RecurringJournalTemplateLine::create([
+            'company_id' => $this->company->id,
+            'rjt_id' => $rjTemplate->id,
+            'account_id' => $expenseAccount->id,
+            'description' => 'Rent payable',
+            'debit' => 0,
+            'credit' => 5000,
+            'line_type' => 'expense',
+        ]);
+
         $routes = [
             'purchase-requisitions.index' => route('accounting.purchase-requisitions.index'),
             'purchase-requisitions.create' => route('accounting.purchase-requisitions.create'),
@@ -756,6 +791,18 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'budgets.settings' => route('accounting.budgets.settings'),
             'budgets.templates' => route('accounting.budgets.templates'),
             'budgets.reports' => route('accounting.budgets.reports'),
+            'rj.dashboard' => route('accounting.rj.dashboard'),
+            'rj.index' => route('accounting.rj.index'),
+            'rj.create' => route('accounting.rj.create'),
+            'rj.show' => route('accounting.rj.show', $rjTemplate),
+            'rj.edit' => route('accounting.rj.edit', $rjTemplate),
+            'rj.templates' => route('accounting.rj.templates'),
+            'rj.scheduled' => route('accounting.rj.scheduled'),
+            'rj.generated' => route('accounting.rj.generated'),
+            'rj.approvals' => route('accounting.rj.approvals'),
+            'rj.history' => route('accounting.rj.history'),
+            'rj.reports' => route('accounting.rj.reports'),
+            'rj.settings' => route('accounting.rj.settings'),
             'system-settings.company' => route('system-settings.index', 'company'),
             'system-settings.regional' => route('system-settings.index', 'regional'),
             'system-settings.currency' => route('system-settings.index', 'currency'),

@@ -34,7 +34,7 @@
         ['label' => __('Trial Balance'),       'route' => 'accounting.trial-balance.index'],
         ['label' => __('Fiscal Years'),        'route' => 'accounting.fiscal-years.index'],
         ['label' => __('Accounting Periods'),  'route' => 'accounting.periods.index'],
-        ['label' => __('Recurring Journals'),  'route' => 'accounting.recurring-journals.index'],
+        ['label' => __('Recurring Journals'),  'route' => 'accounting.rj.dashboard'],
         ['label' => __('Cost Centers'),        'route' => 'accounting.cost-centers.index'],
         ['label' => __('Exchange Rates'),      'route' => 'accounting.exchange-rates.index'],
         ['label' => __('Account Classification'),'route' => 'accounting.account-classification.index'],

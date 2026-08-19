@@ -53,6 +53,7 @@ class JournalPostingEngine
                 'is_adjusting_entry' => $data['is_adjusting_entry'] ?? false,
                 'source_module' => $data['source_module'] ?? null,
                 'linked_entry_id' => $data['linked_entry_id'] ?? null,
+                'recurring_template_id' => $data['recurring_template_id'] ?? null,
                 'created_by' => $data['created_by'],
                 'posted_by' => $data['posted_by'] ?? null,
                 'posted_at' => $data['posted_at'] ?? null,
@@ -91,6 +92,7 @@ class JournalPostingEngine
                 'is_adjusting_entry' => $data['is_adjusting_entry'] ?? false,
                 'source_module' => $data['source_module'] ?? null,
                 'linked_entry_id' => $data['linked_entry_id'] ?? null,
+                'recurring_template_id' => $data['recurring_template_id'] ?? null,
                 'created_by' => $data['created_by'],
             ]);
 

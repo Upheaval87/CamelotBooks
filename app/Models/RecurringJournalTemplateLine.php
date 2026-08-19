@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Models\Concerns\TenantScoped;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -12,13 +11,8 @@ class RecurringJournalTemplateLine extends Model
     use TenantScoped;
 
     protected $fillable = [
-        'recurring_journal_template_id',
-        'account_id',
-        'branch_id',
-        'cost_center_id',
-        'debit',
-        'credit',
-        'memo',
+        'company_id', 'rjt_id', 'account_id', 'branch_id',
+        'cost_center_id', 'description', 'debit', 'credit', 'memo', 'line_type',
     ];
 
     protected $casts = [
@@ -28,7 +22,7 @@ class RecurringJournalTemplateLine extends Model
 
     public function template(): BelongsTo
     {
-        return $this->belongsTo(RecurringJournalTemplate::class, 'recurring_journal_template_id');
+        return $this->belongsTo(RecurringJournalTemplate::class, 'rjt_id');
     }
 
     public function account(): BelongsTo
@@ -39,5 +33,10 @@ class RecurringJournalTemplateLine extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 }

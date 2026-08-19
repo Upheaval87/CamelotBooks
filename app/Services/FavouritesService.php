@@ -67,7 +67,7 @@ class FavouritesService
         'accounting.trial-balance.index' => ['trial-balance', 'Trial Balance', 'scale'],
         'accounting.fiscal-years.index' => ['fiscal-years', 'Fiscal Years', 'calendar'],
         'accounting.periods.index' => ['accounting-periods', 'Accounting Periods', 'calendar-clock'],
-        'accounting.recurring-journals.index' => ['recurring-journals', 'Recurring Journals', 'repeat'],
+        'accounting.rj.dashboard' => ['rj-dashboard', 'Recurring Journals', 'repeat'],
         'accounting.cost-centers.index' => ['cost-centers', 'Cost Centers', 'building'],
         'accounting.exchange-rates.index' => ['exchange-rates', 'Exchange Rates', 'globe'],
         'accounting.account-classification.index' => ['account-classification', 'Account Classification', 'tags'],
@@ -140,7 +140,7 @@ class FavouritesService
         'accounting.accounts.show' => ['account', 'Account', 'book'],
         'accounting.journal-entries.show' => ['journal-entry', 'Journal Entry', 'book-open'],
         'accounting.fiscal-years.show' => ['fiscal-year', 'Fiscal Year', 'calendar'],
-        'accounting.recurring-journals.show' => ['recurring-journal', 'Recurring Journal', 'repeat'],
+        'accounting.rj.show' => ['rj-journal', 'Recurring Journal', 'repeat'],
         'accounting.customers.show' => ['customer', 'Customer', 'users'],
         'accounting.vendors.show' => ['vendor', 'Vendor', 'truck'],
 

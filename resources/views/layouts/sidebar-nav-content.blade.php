@@ -7,7 +7,7 @@
         'sales-purchases' => ['accounting.customers', 'accounting.quotations', 'accounting.invoices', 'accounting.sales-receipts', 'accounting.credit-notes', 'accounting.vendors', 'accounting.purchase-orders', 'accounting.goods-received-notes', 'accounting.bills', 'accounting.vendor-payments', 'accounting.expenses'],
         'inventory'       => ['accounting.inventory.'],
         'banking'         => ['accounting.bank-accounts', 'accounting.bank-reconciliation', 'accounting.deposits', 'accounting.cheques', 'accounting.petty-cash', 'accounting.cash-position'],
-        'accounting'      => ['accounting.accounts', 'accounting.journal-entries', 'accounting.general-ledger', 'accounting.trial-balance', 'accounting.budgets'],
+        'accounting'      => ['accounting.accounts', 'accounting.journal-entries', 'accounting.general-ledger', 'accounting.trial-balance', 'accounting.budgets', 'accounting.rj.'],
         'fixed-assets'    => ['accounting.fixed-assets', 'accounting.asset-depreciation', 'accounting.depreciation'],
         'payroll'         => ['accounting.payroll.'],
         'reports'         => ['accounting.report', 'accounting.income-statement', 'accounting.balance-sheet', 'accounting.cash-flow'],
@@ -123,6 +123,7 @@
             <a href="{{ route('accounting.general-ledger.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.general-ledger') ? 'active' : '' }}">General Ledger</a>
             <a href="{{ route('accounting.trial-balance.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.trial-balance') ? 'active' : '' }}">Trial Balance</a>
             <a href="{{ route('accounting.budgets.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.budgets') ? 'active' : '' }}">Budgets</a>
+            <a href="{{ route('accounting.rj.dashboard') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.rj') ? 'active' : '' }}">Recurring Journals</a>
         </div>
 
         <div class="sidebar-section-label">Fixed Assets</div>

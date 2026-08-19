@@ -312,14 +312,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('exchange-rates/{exchangeRate}', [ExchangeRateController::class, 'destroy'])->name('exchange-rates.destroy');
             Route::post('exchange-rates/bulk', [ExchangeRateController::class, 'bulkStore'])->name('exchange-rates.bulk');
 
-            // Recurring Journals
-            Route::get('recurring-journals', [RecurringJournalController::class, 'index'])->name('recurring-journals.index');
-            Route::get('recurring-journals/create', [RecurringJournalController::class, 'create'])->name('recurring-journals.create');
-            Route::post('recurring-journals', [RecurringJournalController::class, 'store'])->name('recurring-journals.store');
-            Route::get('recurring-journals/{template}', [RecurringJournalController::class, 'show'])->name('recurring-journals.show');
-            Route::get('recurring-journals/{template}/edit', [RecurringJournalController::class, 'edit'])->name('recurring-journals.edit');
-            Route::put('recurring-journals/{template}', [RecurringJournalController::class, 'update'])->name('recurring-journals.update');
-            Route::patch('recurring-journals/{template}/toggle', [RecurringJournalController::class, 'toggle'])->name('recurring-journals.toggle');
+            // Recurring Journals Centre
+            Route::get('recurring-journals/dashboard', [RecurringJournalController::class, 'dashboard'])->name('rj.dashboard');
+            Route::get('recurring-journals', [RecurringJournalController::class, 'index'])->name('rj.index');
+            Route::get('recurring-journals/create', [RecurringJournalController::class, 'create'])->name('rj.create');
+            Route::post('recurring-journals', [RecurringJournalController::class, 'store'])->name('rj.store');
+            Route::get('recurring-journals/templates', [RecurringJournalController::class, 'templates'])->name('rj.templates');
+            Route::get('recurring-journals/scheduled', [RecurringJournalController::class, 'scheduled'])->name('rj.scheduled');
+            Route::get('recurring-journals/generated', [RecurringJournalController::class, 'generated'])->name('rj.generated');
+            Route::get('recurring-journals/approvals', [RecurringJournalController::class, 'approvals'])->name('rj.approvals');
+            Route::get('recurring-journals/history', [RecurringJournalController::class, 'history'])->name('rj.history');
+            Route::get('recurring-journals/reports', [RecurringJournalController::class, 'reports'])->name('rj.reports');
+            Route::get('recurring-journals/settings', [RecurringJournalController::class, 'settings'])->name('rj.settings');
+            Route::post('recurring-journals/settings', [RecurringJournalController::class, 'settingsUpdate'])->name('rj.settings.update');
+            Route::get('recurring-journals/export', [RecurringJournalController::class, 'export'])->name('rj.export');
+            Route::get('recurring-journals/{template}/preview-schedule', [RecurringJournalController::class, 'previewSchedule'])->name('rj.preview-schedule');
+            Route::get('recurring-journals/{template}', [RecurringJournalController::class, 'show'])->name('rj.show');
+            Route::get('recurring-journals/{template}/edit', [RecurringJournalController::class, 'edit'])->name('rj.edit');
+            Route::put('recurring-journals/{template}', [RecurringJournalController::class, 'update'])->name('rj.update');
+            Route::delete('recurring-journals/{template}', [RecurringJournalController::class, 'destroy'])->name('rj.destroy');
+            Route::patch('recurring-journals/{template}/toggle', [RecurringJournalController::class, 'toggle'])->name('rj.toggle');
+            Route::post('recurring-journals/{template}/duplicate', [RecurringJournalController::class, 'duplicate'])->name('rj.duplicate');
+            Route::post('recurring-journals/{template}/run-now', [RecurringJournalController::class, 'runNow'])->name('rj.run-now');
+            Route::post('recurring-journals/{template}/test-run', [RecurringJournalController::class, 'testRun'])->name('rj.test-run');
+            Route::post('recurring-journals/runs/{run}/approve', [RecurringJournalController::class, 'approveRun'])->name('rj.approve-run');
+            Route::post('recurring-journals/runs/{run}/reject', [RecurringJournalController::class, 'rejectRun'])->name('rj.reject-run');
 
             // Customers
             Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
