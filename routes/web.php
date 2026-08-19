@@ -934,19 +934,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // POS
         Route::prefix('pos')->name('pos.')->middleware('feature:pos')->group(function () {
-            // Terminals
+            // Sales Receipts (list/history — new redesigned page)
+            Route::get('receipts', [\App\Http\Controllers\POS\PosSaleController::class, 'index'])->name('receipts.index');
+
+            // Register & Shift (till sessions — redesigned page)
+            Route::get('register', [\App\Http\Controllers\POS\TillSessionController::class, 'index'])->name('register.index');
+            Route::post('register/open', [\App\Http\Controllers\POS\TillSessionController::class, 'open'])->name('register.open');
+            Route::post('register/{session}/close', [\App\Http\Controllers\POS\TillSessionController::class, 'close'])->name('register.close');
+            Route::get('register/{session}', [\App\Http\Controllers\POS\TillSessionController::class, 'show'])->name('register.show');
+
+            // Returnables (bottle returns intake + BRR)
+            Route::get('returnables', [\App\Http\Controllers\POS\PosReturnableController::class, 'index'])->name('returnables.index');
+            Route::post('returnables', [\App\Http\Controllers\POS\PosReturnableController::class, 'store'])->name('returnables.store');
+
+            // Products (POS inventory listing)
+            Route::get('products', [\App\Http\Controllers\POS\PosProductController::class, 'index'])->name('products.index');
+
+            // POS Settings (consolidated store/devices/preferences)
+            Route::get('settings', [\App\Http\Controllers\POS\PosSettingsController::class, 'index'])->name('settings.index');
+
+            // Terminals (CRUD — kept for backwards compat)
             Route::get('terminals', [\App\Http\Controllers\POS\PosTerminalController::class, 'index'])->name('terminals.index');
             Route::post('terminals', [\App\Http\Controllers\POS\PosTerminalController::class, 'store'])->name('terminals.store');
             Route::patch('terminals/{terminal}', [\App\Http\Controllers\POS\PosTerminalController::class, 'update'])->name('terminals.update');
             Route::patch('terminals/{terminal}/toggle', [\App\Http\Controllers\POS\PosTerminalController::class, 'toggle'])->name('terminals.toggle');
 
-            // Payment Methods
+            // Payment Methods (CRUD — kept for backwards compat)
             Route::get('payment-methods', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'index'])->name('payment-methods.index');
             Route::post('payment-methods', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'store'])->name('payment-methods.store');
             Route::patch('payment-methods/{paymentMethod}', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'update'])->name('payment-methods.update');
             Route::patch('payment-methods/{paymentMethod}/toggle', [\App\Http\Controllers\POS\PosPaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
 
-            // Till Sessions
+            // Till Sessions (legacy aliases — kept for backwards compat)
             Route::get('till-sessions', [\App\Http\Controllers\POS\TillSessionController::class, 'index'])->name('till-sessions.index');
             Route::post('till-sessions/open', [\App\Http\Controllers\POS\TillSessionController::class, 'open'])->name('till-sessions.open');
             Route::post('till-sessions/{session}/close', [\App\Http\Controllers\POS\TillSessionController::class, 'close'])->name('till-sessions.close');

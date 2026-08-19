@@ -52,7 +52,7 @@ class TillSessionController extends Controller
                 (float) $request->opening_float
             );
 
-            return redirect()->route('pos.till-sessions.index')->with('success', 'Till opened successfully.');
+            return redirect()->route('pos.register.index')->with('success', 'Till opened successfully.');
         } catch (\LogicException $e) {
             return back()->withErrors(['terminal_id' => $e->getMessage()])->withInput();
         }
@@ -82,7 +82,7 @@ class TillSessionController extends Controller
                 $msg .= " Variance: {$direction} of $" . number_format(abs($flash->variance), 2);
             }
 
-            return redirect()->route('pos.till-sessions.index')->with('success', $msg);
+            return redirect()->route('pos.register.index')->with('success', $msg);
         } catch (\LogicException $e) {
             return back()->withErrors(['actual_cash_count' => $e->getMessage()])->withInput();
         }

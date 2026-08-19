@@ -18,6 +18,56 @@ use Illuminate\Support\Facades\DB;
 
 class PosSaleController extends Controller
 {
+    public function index(Request $request)
+    {
+        $companyId = session('current_company_id');
+        $q = $request->input('q');
+        $method = $request->input('method');
+        $status = $request->input('status');
+
+        $query = PosSale::where('company_id', $companyId)
+            ->with(['customer', 'terminal', 'payments.paymentMethod'])
+            ->latest();
+
+        if ($q) {
+            $query->where(function ($w) use ($q) {
+                $w->where('sale_number', 'like', "%{$q}%")
+                  ->orWhereHas('customer', fn ($cw) => $cw->where('name', 'like', "%{$q}%"));
+            });
+        }
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        if ($method) {
+            $query->whereHas('payments', fn ($pw) => $pw->where('payment_method_id', $method));
+        }
+
+        $sales = $query->paginate(25)->withQueryString();
+
+        $stats = PosSale::where('company_id', $companyId)
+            ->selectRaw('status, count(*) as count, sum(total) as total')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $totalSales = PosSale::where('company_id', $companyId)->sum('total');
+        $totalCount = PosSale::where('company_id', $companyId)->count();
+        $todaySales = PosSale::where('company_id', $companyId)->whereDate('created_at', today())->sum('total');
+        $todayCount = PosSale::where('company_id', $companyId)->whereDate('created_at', today())->count();
+        $avgSale = $totalCount > 0 ? $totalSales / $totalCount : 0;
+
+        $paymentMethods = \App\Models\PosPaymentMethod::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('pos.receipts.index', compact(
+            'sales', 'stats', 'totalSales', 'totalCount', 'todaySales', 'todayCount',
+            'avgSale', 'paymentMethods', 'q', 'method', 'status'
+        ));
+    }
+
     public function checkout()
     {
         $companyId = session('current_company_id');
