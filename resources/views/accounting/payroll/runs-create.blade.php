@@ -90,7 +90,7 @@
                             {{ __('Select All') }} ({{ $employees->count() }})
                         </label>
                         @if($employees->count() > 0)
-                            <span style="font-size:11px;color:var(--muted)">{{ __('{{ $employees->count() }} active employees available') }}</span>
+                            <span style="font-size:11px;color:var(--muted)">{{ $employees->count() }} active employees available</span>
                         @endif
                     </div>
 

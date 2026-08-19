@@ -17,6 +17,7 @@ use App\Models\PayrollRun;
 use App\Models\PayrollRunItem;
 use App\Models\PayslipDelivery;
 use App\Models\PensionScheme;
+use App\Services\Payroll\PayrollService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -96,7 +97,7 @@ class PayrollController extends Controller
 
         $employees = $query->orderBy('first_name')->paginate(20)->withQueryString();
 
-        $branches = Branch::forCompany($companyId)->active()->orderBy('name')->get();
+        $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
 
         return view('accounting.payroll.employees', compact(
             'companyId',
@@ -112,7 +113,7 @@ class PayrollController extends Controller
     {
         $companyId = (int) session('current_company_id');
 
-        $branches = Branch::forCompany($companyId)->active()->orderBy('name')->get();
+        $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $allowances = CompanyAllowance::forCompany($companyId)->active()->orderBy('name')->get();
         $pensionSchemes = PensionScheme::forCompany($companyId)->current()->get();
 
@@ -161,26 +162,24 @@ class PayrollController extends Controller
         $validated['is_active'] = true;
         $validated['employee_number'] = $this->generateEmployeeNumber($companyId);
 
-        $employee = Employee::create($validated);
+        $employee = Employee::create(collect($validated)->except(['basic_salary', 'payment_frequency', 'pension_scheme_id', 'allowances'])->toArray());
 
-        // TODO: Call PayrollService::createSalaryStructure() to persist salary structure + allowance items
         if ($request->filled('basic_salary')) {
             $structure = EmployeeSalaryStructure::create([
-                'company_id'   => $companyId,
-                'employee_id'  => $employee->id,
-                'basic_salary' => $validated['basic_salary'],
-                'pension_scheme_id' => $validated['pension_scheme_id'] ?? null,
-                'effective_date'    => $validated['hire_date'],
+                'company_id'        => $companyId,
+                'employee_id'       => $employee->id,
+                'basic_pay'         => $validated['basic_salary'],
+                'effective_from'    => $validated['hire_date'],
                 'is_current'        => true,
             ]);
 
             if ($request->filled('allowances')) {
                 foreach ($request->allowances as $item) {
                     EmployeeSalaryItem::create([
-                        'company_id'        => $companyId,
+                        'company_id'          => $companyId,
                         'salary_structure_id' => $structure->id,
-                        'allowance_id'      => $item['allowance_id'],
-                        'amount'            => $item['amount'],
+                        'company_allowance_id' => $item['allowance_id'],
+                        'amount'              => $item['amount'],
                     ]);
                 }
             }
@@ -210,17 +209,17 @@ class PayrollController extends Controller
         // YTD gross from payroll_run_items
         $ytdGross = PayrollRunItem::forCompany($companyId)
             ->where('employee_id', $employee->id)
-            ->whereHas('payrollRun', fn ($q) => $q->whereYear('pay_period_start', now()->year))
+            ->whereHas('payrollRun', fn ($q) => $q->whereYear('period_start', now()->year))
             ->sum('gross_pay');
 
         $ytdDeductions = PayrollRunItem::forCompany($companyId)
             ->where('employee_id', $employee->id)
-            ->whereHas('payrollRun', fn ($q) => $q->whereYear('pay_period_start', now()->year))
+            ->whereHas('payrollRun', fn ($q) => $q->whereYear('period_start', now()->year))
             ->sum('total_deductions');
 
         $ytdNetPay = PayrollRunItem::forCompany($companyId)
             ->where('employee_id', $employee->id)
-            ->whereHas('payrollRun', fn ($q) => $q->whereYear('pay_period_start', now()->year))
+            ->whereHas('payrollRun', fn ($q) => $q->whereYear('period_start', now()->year))
             ->sum('net_pay');
 
         $recentPayments = $employee->payments->sortByDesc('created_at')->take(10);
@@ -247,7 +246,7 @@ class PayrollController extends Controller
 
         $employee->load('currentSalaryStructure.items');
 
-        $branches = Branch::forCompany($companyId)->active()->orderBy('name')->get();
+        $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $allowances = CompanyAllowance::forCompany($companyId)->active()->orderBy('name')->get();
         $pensionSchemes = PensionScheme::forCompany($companyId)->current()->get();
 
@@ -295,14 +294,12 @@ class PayrollController extends Controller
             'allowances.*.amount'        => 'required_with:allowances|numeric|min:0',
         ]);
 
-        $employee->update($validated);
+        $employee->update(collect($validated)->except(['basic_salary', 'payment_frequency', 'pension_scheme_id', 'allowances'])->toArray());
 
-        // TODO: Call PayrollService::updateSalaryStructure() to update salary structure + allowance items
         $structure = $employee->currentSalaryStructure;
         if ($structure) {
             $structure->update([
-                'basic_salary'      => $validated['basic_salary'],
-                'pension_scheme_id' => $validated['pension_scheme_id'] ?? null,
+                'basic_pay' => $validated['basic_salary'],
             ]);
 
             if ($request->filled('allowances')) {
@@ -311,7 +308,7 @@ class PayrollController extends Controller
                     EmployeeSalaryItem::create([
                         'company_id'          => $companyId,
                         'salary_structure_id' => $structure->id,
-                        'allowance_id'        => $item['allowance_id'],
+                        'company_allowance_id' => $item['allowance_id'],
                         'amount'              => $item['amount'],
                     ]);
                 }
@@ -352,7 +349,7 @@ class PayrollController extends Controller
         $employees = Employee::forCompany($companyId)->active()->get();
         $payeTable = PayeTable::forCompany($companyId)->current()->first();
         $pensionScheme = PensionScheme::forCompany($companyId)->current()->first();
-        $branches = Branch::forCompany($companyId)->active()->orderBy('name')->get();
+        $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
 
         return view('accounting.payroll.runs-create', compact(
             'companyId',
@@ -366,7 +363,7 @@ class PayrollController extends Controller
     /**
      * Runs store — create run + calculate items.
      */
-    public function storeRun(Request $request)
+    public function storeRun(Request $request, PayrollService $payrollService)
     {
         $companyId = (int) session('current_company_id');
 
@@ -379,18 +376,31 @@ class PayrollController extends Controller
             'employee_ids.*'    => 'exists:employees,id',
         ]);
 
+        $runNumber = $payrollService->generateRunNumber($companyId);
+
+        $periodStart = $validated['pay_period_start'];
+        $periodEnd = $validated['pay_period_end'];
+
         $run = PayrollRun::create([
             'company_id'       => $companyId,
-            'pay_period_start' => $validated['pay_period_start'],
-            'pay_period_end'   => $validated['pay_period_end'],
-            'payment_date'     => $validated['payment_date'],
+            'run_number'       => $runNumber,
+            'period_label'     => $periodStart . ' to ' . $periodEnd,
+            'period_start'     => $periodStart,
+            'period_end'       => $periodEnd,
+            'pay_date'         => $validated['payment_date'],
             'branch_id'        => $validated['branch_id'] ?? null,
+            'paye_table_id'    => PayeTable::forCompany($companyId)->current()->value('id'),
+            'pension_scheme_id' => PensionScheme::forCompany($companyId)->current()->value('id'),
             'status'           => 'draft',
             'created_by'       => auth()->id(),
         ]);
 
-        // TODO: Call PayrollService::calculate($run, $validated['employee_ids'])
-        // to create PayrollRunItem records with gross/deductions/net calculations
+        foreach ($validated['employee_ids'] as $employeeId) {
+            PayrollRunItem::create([
+                'payroll_run_id' => $run->id,
+                'employee_id'    => $employeeId,
+            ]);
+        }
 
         return redirect()->route('accounting.payroll.runs.show', $run)
             ->with('success', 'Run created.');
@@ -430,16 +440,14 @@ class PayrollController extends Controller
     /**
      * Runs calculate — apply the calculation engine to produce RunItem records.
      */
-    public function calculateRun(PayrollRun $run)
+    public function calculateRun(PayrollRun $run, PayrollService $payrollService)
     {
         $companyId = (int) session('current_company_id');
 
         abort_unless((int) $run->company_id === $companyId, 404);
         abort_unless($run->status === 'draft', 422, 'Run must be in draft status to calculate.');
 
-        // TODO: Call PayrollService::calculate($run) to create PayrollRunItem records
-
-        $run->update(['status' => 'calculated']);
+        $payrollService->calculate($run);
 
         return back()->with('success', 'Run calculated.');
     }
@@ -481,17 +489,14 @@ class PayrollController extends Controller
     /**
      * Runs post — post to GL (create journal entry).
      */
-    public function postRun(PayrollRun $run)
+    public function postRun(PayrollRun $run, PayrollService $payrollService)
     {
         $companyId = (int) session('current_company_id');
 
         abort_unless((int) $run->company_id === $companyId, 404);
-        abort_unless($run->status === 'approved', 422, 'Run must be approved before posting.');
+        abort_unless(in_array($run->status, ['approved', 'calculated']), 422, 'Run must be approved before posting.');
 
-        // TODO: Call PayrollService::postToGeneralLedger($run)
-        // to create the journal entry via JournalPostingEngine
-
-        $run->update(['status' => 'posted', 'posted_at' => now()]);
+        $payrollService->postToGeneralLedger($run);
 
         return back()->with('success', 'Run posted to GL.');
     }
@@ -499,21 +504,14 @@ class PayrollController extends Controller
     /**
      * Runs pay — mark as paid, create EmployeePayment records.
      */
-    public function payRun(PayrollRun $run)
+    public function payRun(PayrollRun $run, PayrollService $payrollService)
     {
         $companyId = (int) session('current_company_id');
 
         abort_unless((int) $run->company_id === $companyId, 404);
         abort_unless($run->status === 'posted', 422, 'Run must be posted before recording payments.');
 
-        // TODO: Call PayrollService::recordPayments($run)
-        // to create EmployeePayment records for each item
-
-        $run->update([
-            'status'     => 'partially_paid',
-            'paid_at'    => now(),
-            'paid_by'    => auth()->id(),
-        ]);
+        $payrollService->recordPayments($run);
 
         return back()->with('success', 'Payments recorded.');
     }
@@ -545,7 +543,7 @@ class PayrollController extends Controller
     {
         $companyId = (int) session('current_company_id');
 
-        abort_unless((int) $payslip->company_id === $companyId, 404);
+        abort_unless((int) $payslip->payrollRun->company_id === $companyId, 404);
 
         $payslip->load([
             'employee.currentSalaryStructure.items.allowance',
@@ -563,7 +561,7 @@ class PayrollController extends Controller
     {
         $companyId = (int) session('current_company_id');
 
-        abort_unless((int) $payslip->company_id === $companyId, 404);
+        abort_unless((int) $payslip->payrollRun->company_id === $companyId, 404);
 
         $employee = $payslip->employee;
 
@@ -614,43 +612,47 @@ class PayrollController extends Controller
 
         if ($validated['type'] === 'paye_table') {
             $request->validate([
-                'year'   => 'required|integer|min:2000',
-                'bands'  => 'required|array|min:1',
-                'bands.*.lower'  => 'required|numeric|min:0',
-                'bands.*.upper'  => 'required|numeric|gte:bands.*.lower',
-                'bands.*.rate'   => 'required|numeric|min:0|max:100',
+                'effective_from' => 'required|date',
+                'bands'          => 'required|array|min:1',
+                'bands.*.threshold'   => 'required|numeric|min:0',
+                'bands.*.upper_limit' => 'nullable|numeric|gte:bands.*.threshold',
+                'bands.*.rate'        => 'required|numeric|min:0|max:100',
             ]);
 
             $table = PayeTable::create([
-                'company_id' => $companyId,
-                'name'       => $validated['name'],
-                'year'       => $request->year,
-                'is_current' => true,
+                'company_id'     => $companyId,
+                'version_name'   => $validated['name'],
+                'effective_from' => $request->effective_from,
+                'effective_to'   => $request->effective_to ?? null,
+                'is_current'     => true,
             ]);
 
-            foreach ($request->bands as $band) {
+            foreach ($request->bands as $i => $band) {
                 PayeTableBand::create([
-                    'company_id'  => $companyId,
                     'paye_table_id' => $table->id,
-                    'lower_limit'  => $band['lower'],
-                    'upper_limit'  => $band['upper'],
-                    'rate'         => $band['rate'],
+                    'threshold'     => $band['threshold'],
+                    'upper_limit'   => $band['upper_limit'] ?? null,
+                    'rate'          => $band['rate'],
+                    'sort_order'    => $i,
                 ]);
             }
         } elseif ($validated['type'] === 'pension_scheme') {
             $request->validate([
-                'employer_contribution_rate' => 'required|numeric|min:0|max:100',
-                'employee_contribution_rate'  => 'required|numeric|min:0|max:100',
-                'effective_date'              => 'required|date',
+                'employer_rate'       => 'required|numeric|min:0|max:100',
+                'employee_rate'       => 'required|numeric|min:0|max:100',
+                'effective_from'      => 'required|date',
+                'max_contributory_salary' => 'nullable|numeric|min:0',
             ]);
 
             PensionScheme::create([
-                'company_id'                => $companyId,
-                'name'                      => $validated['name'],
-                'employer_contribution_rate' => $request->employer_contribution_rate,
-                'employee_contribution_rate'  => $request->employee_contribution_rate,
-                'effective_date'              => $request->effective_date,
-                'is_current'                 => true,
+                'company_id'               => $companyId,
+                'name'                     => $validated['name'],
+                'employer_rate'            => $request->employer_rate,
+                'employee_rate'            => $request->employee_rate,
+                'max_contributory_salary'  => $request->max_contributory_salary ?? null,
+                'effective_from'           => $request->effective_from,
+                'effective_to'             => $request->effective_to ?? null,
+                'is_current'               => true,
             ]);
         }
 
@@ -694,19 +696,32 @@ class PayrollController extends Controller
         $companyId = (int) session('current_company_id');
 
         $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'amount'      => 'required|numeric|min:0.01',
-            'repayment_months' => 'required|integer|min:1',
+            'employee_id'      => 'required|exists:employees,id',
+            'amount'           => 'required|numeric|min:0.01',
             'monthly_repayment' => 'required|numeric|min:0',
-            'reason'      => 'nullable|string|max:1000',
-            'start_date'  => 'required|date',
+            'interest_rate'    => 'nullable|numeric|min:0|max:100',
+            'start_date'       => 'required|date',
+            'end_date'         => 'nullable|date|after_or_equal:start_date',
+            'notes'            => 'nullable|string|max:1000',
         ]);
 
-        $validated['company_id'] = $companyId;
-        $validated['status'] = 'active';
-        $validated['outstanding_balance'] = $validated['amount'];
+        $runNumber = 'LOAN-' . now()->format('Y') . '-' . str_pad(
+            EmployeeLoan::forCompany($companyId)->count() + 1, 4, '0', STR_PAD_LEFT
+        );
 
-        EmployeeLoan::create($validated);
+        EmployeeLoan::create([
+            'company_id'          => $companyId,
+            'employee_id'         => $validated['employee_id'],
+            'loan_number'         => $runNumber,
+            'principal_amount'    => $validated['amount'],
+            'outstanding_balance' => $validated['amount'],
+            'monthly_deduction'   => $validated['monthly_repayment'],
+            'interest_rate'       => $validated['interest_rate'] ?? 0,
+            'start_date'          => $validated['start_date'],
+            'end_date'            => $validated['end_date'] ?? null,
+            'status'              => 'active',
+            'notes'               => $validated['notes'] ?? null,
+        ]);
 
         return back()->with('success', 'Loan created.');
     }

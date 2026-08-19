@@ -728,6 +728,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::middleware('feature:inventory')->prefix('inventory')->name('inventory.')->group(function () {
                 Route::get('/', [InventoryCentreController::class, 'dashboard'])->name('dashboard');
                 Route::get('items', [InventoryCentreController::class, 'items'])->name('items');
+                Route::get('items/export', [InventoryCentreController::class, 'itemsExportCsv'])->name('items.export');
                 Route::get('items/create', [InventoryCentreController::class, 'itemsCreate'])->name('items.create');
                 Route::post('items', [InventoryCentreController::class, 'itemsStore'])->name('items.store');
                 Route::get('items/{product}', [InventoryCentreController::class, 'itemsShow'])->name('items.show');
@@ -740,6 +741,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('categories', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'categories'])->name('categories');
                 Route::get('assemblies', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'assemblies'])->name('assemblies');
                 Route::get('transfers', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'transfers'])->name('transfers');
+                Route::get('transfers/create', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'transferCreate'])->name('transfers.create');
+                Route::post('transfers', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'transferStore'])->name('transfers.store');
                 Route::get('adjustments', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'adjustments'])->name('adjustments');
                 Route::get('stock-count', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'stockCount'])->name('stockcount');
                 Route::get('uom', [\App\Http\Controllers\Accounting\InventorySetupController::class, 'uom'])->name('uom');

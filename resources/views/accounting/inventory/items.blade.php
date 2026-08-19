@@ -1,49 +1,73 @@
 <x-app-layout>
-    <div class="inv-wrap py-6">
+    <div class="inv-wrap pt-10 pb-6">
         <div class="inv-head">
             <div>
                 <h1>{{ __('Inventory Items') }}</h1>
                 <div class="inv-sub">{{ $stats['total'] }} {{ __('total items') }} &middot; {{ $stats['active'] }} {{ __('active') }} &middot; {{ $stats['tracked'] }} {{ __('tracked') }}</div>
             </div>
-            <a href="{{ route('accounting.inventory.items.create') }}" class="inv-btn inv-btn-cta">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                {{ __('Add Item') }}
-            </a>
+            <div style="display:flex;gap:10px">
+                <a href="{{ route('accounting.inventory.items.export', request()->query()) }}" class="inv-btn inv-btn-ghost">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    {{ __('Export CSV') }}
+                </a>
+                <a href="{{ route('accounting.inventory.items.create') }}" class="inv-btn inv-btn-cta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    {{ __('Add Item') }}
+                </a>
+            </div>
         </div>
 
         <div class="inv-kpis">
-            <div class="inv-kpi"><div class="inv-kpi-l">{{ __('Total') }}</div><div class="inv-kpi-v">{{ $stats['total'] }}</div></div>
-            <div class="inv-kpi"><div class="inv-kpi-l">{{ __('Active') }}</div><div class="inv-kpi-v">{{ $stats['active'] }}</div></div>
-            <div class="inv-kpi"><div class="inv-kpi-l">{{ __('Tracked') }}</div><div class="inv-kpi-v">{{ $stats['tracked'] }}</div></div>
-            <div class="inv-kpi"><div class="inv-kpi-l">{{ __('Low Stock') }}</div><div class="inv-kpi-v" style="color:{{ $stats['low_stock'] > 0 ? 'var(--red-2,#b91c1c)' : 'inherit' }}">{{ $stats['low_stock'] }}</div></div>
+            <div class="inv-kpi">
+                <div class="inv-kpi-l">{{ __('Total') }}</div>
+                <div class="inv-kpi-v">{{ $stats['total'] }}</div>
+                <div class="inv-kpi-sub">{{ __('all items') }}</div>
+            </div>
+            <div class="inv-kpi">
+                <div class="inv-kpi-l">{{ __('Active') }}</div>
+                <div class="inv-kpi-v">{{ $stats['active'] }}</div>
+                <div class="inv-kpi-n" style="color:var(--green,#15803d)">{{ $stats['total'] > 0 ? round($stats['active'] / $stats['total'] * 100) : 0 }}% {{ __('active') }}</div>
+            </div>
+            <div class="inv-kpi">
+                <div class="inv-kpi-l">{{ __('Tracked') }}</div>
+                <div class="inv-kpi-v">{{ $stats['tracked'] }}</div>
+                <div class="inv-kpi-sub">{{ __('stock-managed') }}</div>
+            </div>
+            <div class="inv-kpi hero">
+                <div class="inv-kpi-l">{{ __('Low Stock') }}</div>
+                <div class="inv-kpi-v">{{ $stats['low_stock'] }}</div>
+                <div class="inv-kpi-n">{{ $stats['low_stock'] > 0 ? __('reorder needed') : __('no reorder needed') }}</div>
+            </div>
         </div>
 
-        <form class="inv-toolbar" method="GET">
-            <div class="inv-search inv-grow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" name="search" value="{{ request('search') }}" class="inv-input inv-search" placeholder="{{ __('Search by name, SKU, or barcode...') }}" style="width:100%">
-            </div>
-            <select name="category_id" class="inv-select">
-                <option value="">{{ __('All Categories') }}</option>
-                @foreach($categories as $cat)
-                <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                @endforeach
-            </select>
-            <select name="status" class="inv-select">
-                <option value="">{{ __('All Statuses') }}</option>
-                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('Active') }}</option>
-                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
-            </select>
-            <select name="tracked" class="inv-select">
-                <option value="">{{ __('All Tracking') }}</option>
-                <option value="yes" {{ request('tracked') === 'yes' ? 'selected' : '' }}>{{ __('Tracked') }}</option>
-                <option value="no" {{ request('tracked') === 'no' ? 'selected' : '' }}>{{ __('Not Tracked') }}</option>
-            </select>
-            <button type="submit" class="inv-btn inv-btn-ghost">{{ __('Filter') }}</button>
-            @if(request()->hasAny(['search', 'category_id', 'status', 'tracked']))
-            <a href="{{ route('accounting.inventory.items') }}" class="inv-filter-clear">{{ __('Clear') }}</a>
-            @endif
-        </form>
+        <div class="inv-card" style="margin-bottom:16px"><div style="padding:16px 20px">
+            <form class="inv-toolbar" method="GET">
+                <div class="inv-search" style="position:relative;flex:1;min-width:260px">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                    <input type="text" name="search" value="{{ request('search') }}" class="inv-input" placeholder="{{ __('Search by name, SKU, or barcode...') }}" style="width:100%;padding-left:38px">
+                </div>
+                <select name="category_id" class="inv-select">
+                    <option value="">{{ __('All Categories') }}</option>
+                    @foreach($categories as $cat)
+                    <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+                <select name="status" class="inv-select">
+                    <option value="">{{ __('All Statuses') }}</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('Active') }}</option>
+                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
+                </select>
+                <select name="tracked" class="inv-select">
+                    <option value="">{{ __('All Tracking') }}</option>
+                    <option value="yes" {{ request('tracked') === 'yes' ? 'selected' : '' }}>{{ __('Tracked') }}</option>
+                    <option value="no" {{ request('tracked') === 'no' ? 'selected' : '' }}>{{ __('Not Tracked') }}</option>
+                </select>
+                <button type="submit" class="inv-btn inv-btn-cta inv-btn-sm">{{ __('Filter') }}</button>
+                @if(request()->hasAny(['search', 'category_id', 'status', 'tracked']))
+                <a href="{{ route('accounting.inventory.items') }}" class="inv-filter-clear">{{ __('Clear') }}</a>
+                @endif
+            </form>
+        </div></div>
 
         @if($products->isEmpty())
         <div class="inv-card inv-empty">
@@ -52,32 +76,54 @@
             <div class="inv-empty-sub">{{ __('Try adjusting your filters or create a new item.') }}</div>
         </div>
         @else
-        <div class="inv-tbl-wrap">
+        <div class="inv-card"><div class="inv-tbl-wrap">
             <table class="inv-tbl">
                 <thead>
                     <tr>
-                        <th>{{ __('Name') }}</th>
+                        <th style="width:26%">{{ __('Name') }}</th>
                         <th>{{ __('SKU') }}</th>
                         <th>{{ __('Category') }}</th>
                         <th>{{ __('Type') }}</th>
-                        <th>{{ __('Sales Price') }}</th>
-                        <th>{{ __('Stock') }}</th>
+                        <th class="num">{{ __('Sales Price') }}</th>
+                        <th class="num">{{ __('Stock') }}</th>
                         <th>{{ __('Status') }}</th>
-                        <th></th>
+                        <th style="width:9%"></th>
                     </tr>
                 </thead>
                 <tbody>
                 @foreach($products as $p)
+                @php
+                    $stock = $p->tracked_as_inventory ? $p->stock_qty : null;
+                    $reorder = $p->effective_reorder_point;
+                    $isOut = $p->tracked_as_inventory && $stock <= 0;
+                    $isLow = $p->tracked_as_inventory && $reorder && $reorder > 0 && $stock > 0 && $stock <= $reorder;
+                    $initials = strtoupper(substr($p->name, 0, 2));
+                @endphp
                 <tr>
-                    <td><a href="{{ route('accounting.inventory.items.show', $p) }}" class="inv-link">{{ $p->name }}</a></td>
+                    <td>
+                        <div class="name" style="display:flex;align-items:center;gap:10px;font-weight:600;color:var(--ink)">
+                            <span class="m" style="width:32px;height:32px;border-radius:9px;background:rgba(18,143,142,.1);color:var(--deep-1,#17565d);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none">{{ $initials }}</span>
+                            <a href="{{ route('accounting.inventory.items.show', $p) }}" class="inv-link">{{ $p->name }}</a>
+                        </div>
+                    </td>
                     <td class="inv-mono">{{ $p->sku }}</td>
-                    <td>{{ $p->itemCategory?->name ?? '—' }}</td>
+                    <td class="em" style="color:var(--muted)">{{ $p->itemCategory?->name ?? '—' }}</td>
                     <td><span class="inv-chip">{{ ucfirst($p->type) }}</span></td>
-                    <td class="inv-num">{{ number_format($p->sales_price ?? 0, 2) }}</td>
-                    <td class="inv-num">{{ number_format($p->stock_qty ?? 0, 0) }}</td>
+                    <td class="inv-num">{{ format_money($p->sales_price ?? 0) }}</td>
+                    <td class="inv-num">
+                        @if(!$p->tracked_as_inventory)
+                            —
+                        @elseif($isOut)
+                            <span style="color:var(--red-2,#b91c1c);font-weight:700">Out</span>
+                        @elseif($isLow)
+                            <span style="color:var(--amber-2,#b45309);font-weight:700">{{ number_format($stock, 0) }} left</span>
+                        @else
+                            {{ number_format($stock, 0) }}
+                        @endif
+                    </td>
                     <td><span class="inv-badge inv-badge-{{ $p->is_active ? 'active' : 'inactive' }}"><span class="inv-badge-dot"></span>{{ $p->is_active ? __('Active') : __('Inactive') }}</span></td>
                     <td>
-                        <div style="display:flex;gap:4px;justify-content:flex-end">
+                        <div class="row-act" style="display:flex;gap:4px;justify-content:flex-end">
                             <a href="{{ route('accounting.inventory.items.show', $p) }}" class="inv-btn inv-btn-sm inv-btn-ghost" title="{{ __('View') }}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </a>
@@ -94,6 +140,7 @@
         <div class="inv-pag">
             <div class="inv-pag-info">{{ __('Showing') }} {{ $products->firstItem() }}–{{ $products->lastItem() }} {{ __('of') }} {{ $products->total() }} {{ __('items') }}</div>
             <div class="inv-pag-nav">{{ $products->links() }}</div>
+        </div>
         </div>
         @endif
     </div>

@@ -31,6 +31,10 @@ class PayrollRun extends Model
         'journal_entry_id',
         'paye_table_id',
         'pension_scheme_id',
+        'branch_id',
+        'posted_at',
+        'paid_at',
+        'paid_by',
         'created_by',
     ];
 
@@ -80,6 +84,16 @@ class PayrollRun extends Model
     public function approvedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function paidByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function scopeForCompany($query, int $companyId)

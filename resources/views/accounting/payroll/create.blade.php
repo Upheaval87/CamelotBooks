@@ -1,4 +1,5 @@
 @php
+    $currentStep = $currentStep ?? 1;
     $stepTitles = [
         ['name' => __('Personal'), 'sub' => __('Identity & contact')],
         ['name' => __('Employment'), 'sub' => __('Role & placement')],
@@ -175,7 +176,7 @@
                     <div class="pr-fgrid">
                         <div class="pr-field">
                             <label>{{ __('Basic Pay') }} <span class="pr-req">*</span></label>
-                            <input type="number" name="basic_salary" class="pr-field-in" required min="0" step="0.01" value="{{ old('basic_salary') }}" x-model.number="basicSalary">
+                            <input type="number" name="basic_pay" class="pr-field-in" required min="0" step="0.01" value="{{ old('basic_pay') }}" x-model.number="basicSalary">
                             <div class="pr-hint" x-show="basicSalary > 0">
                                 <b>&#10003;</b> {{ __('Monthly') }}: <span x-text="formatMoney(basicSalary)"></span>
                             </div>
@@ -332,7 +333,7 @@
                             </div>
                             <div class="pr-pad">
                                 <div class="pr-g3">
-                                    <div class="pr-fld"><div class="l">{{ __('Basic Pay') }}</div><div class="v" x-text="formatMoney(formData.basic_salary)"></div></div>
+                                    <div class="pr-fld"><div class="l">{{ __('Basic Pay') }}</div><div class="v" x-text="formatMoney(formData.basic_pay)"></div></div>
                                     <div class="pr-fld"><div class="l">{{ __('Frequency') }}</div><div class="v" x-text="formData.payment_frequency || '—'"></div></div>
                                 </div>
                             </div>
@@ -386,7 +387,7 @@
         function payrollOnboard() {
             return {
                 step: {{ $currentStep ?? 1 }},
-                basicSalary: {{ old('basic_salary', 0) }},
+                basicSalary: {{ old('basic_pay', 0) }},
                 payFrequency: '{{ old('payment_frequency', 'monthly') }}',
                 formData: {
                     first_name: @js(old('first_name')),
@@ -405,7 +406,7 @@
                     employment_status: @js(old('employment_status', 'active')),
                     hire_date: @js(old('hire_date', date('Y-m-d'))),
                     employment_type: @js(old('employment_type')),
-                    basic_salary: @js(old('basic_salary')),
+                    basic_pay: @js(old('basic_pay')),
                     payment_frequency: @js(old('payment_frequency', 'monthly')),
                     pension_scheme_id: @js(old('pension_scheme_id')),
                     pension_member_number: @js(old('pension_member_number')),
@@ -442,7 +443,7 @@
                             this.formData[el.name] = el.value;
                         }
                     });
-                    this.basicSalary = parseFloat(form.querySelector('[name="basic_salary"]')?.value) || 0;
+                    this.basicSalary = parseFloat(form.querySelector('[name="basic_pay"]')?.value) || 0;
                     this.payFrequency = form.querySelector('[name="payment_frequency"]')?.value || 'monthly';
                 },
 

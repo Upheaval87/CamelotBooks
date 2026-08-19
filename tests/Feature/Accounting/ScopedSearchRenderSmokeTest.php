@@ -700,6 +700,7 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'invsetup.categories' => route('accounting.invsetup.categories'),
             'invsetup.assemblies' => route('accounting.invsetup.assemblies'),
             'invsetup.transfers' => route('accounting.invsetup.transfers'),
+            'invsetup.transfers.create' => route('accounting.invsetup.transfers.create'),
             'invsetup.adjustments' => route('accounting.invsetup.adjustments'),
             'invsetup.stockcount' => route('accounting.invsetup.stockcount'),
             'invsetup.uom' => route('accounting.invsetup.uom'),

@@ -11,6 +11,7 @@ use App\Models\InventoryTransfer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\SystemSetting;
 
 class InventoryCentreController extends Controller
 {
@@ -74,6 +75,60 @@ class InventoryCentreController extends Controller
     public function items(Request $request)
     {
         $companyId = session('current_company_id');
+        $query = $this->baseItemsQuery($request, $companyId);
+
+        $products = $query->orderBy('name')->paginate(20)->withQueryString();
+        $categories = ItemCategory::forCompany($companyId)->orderBy('name')->get(['id', 'name']);
+
+        $stats = [
+            'total' => Product::forCompany($companyId)->count(),
+            'active' => Product::forCompany($companyId)->active()->count(),
+            'tracked' => Product::forCompany($companyId)->where('tracked_as_inventory', true)->count(),
+            'low_stock' => DB::table('products')
+                ->where('company_id', $companyId)
+                ->where('tracked_as_inventory', true)
+                ->whereRaw('reorder_point > 0 AND (SELECT COALESCE(SUM(quantity_on_hand), 0) FROM inventory_stock WHERE product_id = products.id) <= reorder_point')
+                ->count(),
+        ];
+
+        $cs = SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+
+        return view('accounting.inventory.items', compact('products', 'categories', 'stats', 'cs'));
+    }
+
+    public function itemsExportCsv(Request $request)
+    {
+        $this->requirePermission($request, 'inventory.view');
+
+        $companyId = session('current_company_id');
+        $products = $this->baseItemsQuery($request, $companyId)->orderBy('name')->get();
+
+        $filename = 'inventory-items-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($products) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Name', 'SKU', 'Barcode', 'Category', 'Type', 'Sales Price', 'Purchase Price', 'Stock', 'Reorder Point', 'Tracked', 'Status']);
+            foreach ($products as $p) {
+                fputcsv($out, [
+                    $p->name,
+                    $p->sku,
+                    $p->barcode,
+                    $p->itemCategory?->name ?? '',
+                    ucfirst($p->type),
+                    number_format((float) $p->sales_price, 2, '.', ''),
+                    number_format((float) $p->purchase_price, 2, '.', ''),
+                    $p->tracked_as_inventory ? $p->stock_qty : 'N/A',
+                    $p->effective_reorder_point ?? '',
+                    $p->tracked_as_inventory ? 'Yes' : 'No',
+                    $p->is_active ? 'Active' : 'Inactive',
+                ]);
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    private function baseItemsQuery(Request $request, int $companyId)
+    {
         $query = Product::forCompany($companyId)->with('itemCategory');
 
         if ($request->filled('search')) {
@@ -97,21 +152,7 @@ class InventoryCentreController extends Controller
             $query->where('tracked_as_inventory', $request->tracked === 'yes');
         }
 
-        $products = $query->orderBy('name')->paginate(20)->withQueryString();
-        $categories = ItemCategory::forCompany($companyId)->orderBy('name')->get(['id', 'name']);
-
-        $stats = [
-            'total' => Product::forCompany($companyId)->count(),
-            'active' => Product::forCompany($companyId)->active()->count(),
-            'tracked' => Product::forCompany($companyId)->where('tracked_as_inventory', true)->count(),
-            'low_stock' => DB::table('products')
-                ->where('company_id', $companyId)
-                ->where('tracked_as_inventory', true)
-                ->whereRaw('reorder_point > 0 AND (SELECT COALESCE(SUM(quantity_on_hand), 0) FROM inventory_stock WHERE product_id = products.id) <= reorder_point')
-                ->count(),
-        ];
-
-        return view('accounting.inventory.items', compact('products', 'categories', 'stats'));
+        return $query;
     }
 
     public function itemsCreate()
@@ -166,21 +207,32 @@ class InventoryCentreController extends Controller
         $companyId = session('current_company_id');
         abort_unless($product->company_id === $companyId, 403);
 
-        $product->load('itemCategory');
+        $product->load('itemCategory', 'incomeAccount', 'expenseAccount');
 
-        $stockLayers = DB::table('inventory_cost_layers')
+        $stockOnHand = $product->stock_qty ?? 0;
+        $reorderPoint = $product->effective_reorder_point ?? 0;
+        $salesPrice = (float) ($product->sales_price ?? 0);
+        $purchasePrice = (float) ($product->purchase_price ?? 0);
+        $margin = $salesPrice - $purchasePrice;
+        $marginPct = $salesPrice > 0 ? round(($margin / $salesPrice) * 100) : 0;
+
+        $isOut = $product->tracked_as_inventory && $stockOnHand <= 0;
+        $isLow = $product->tracked_as_inventory && $reorderPoint > 0 && $stockOnHand > 0 && $stockOnHand <= $reorderPoint;
+
+        $recentMovements = DB::table('inventory_cost_layers')
             ->where('product_id', $product->id)
             ->where('company_id', $companyId)
-            ->where('quantity_remaining', '>', 0)
-            ->orderBy('created_at')
-            ->get();
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->take(10)
+            ->get(['id', 'quantity_remaining', 'unit_cost', 'source_type', 'source_id', 'date']);
 
-        $recentAdjustments = InventoryAdjustment::forCompany($companyId)
-            ->where('product_id', $product->id)
-            ->latest()->take(5)
-            ->get(['id', 'adjustment_number', 'status', 'created_at']);
+        $cs = SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
 
-        return view('accounting.inventory.items-show', compact('product', 'stockLayers', 'recentAdjustments'));
+        return view('accounting.inventory.items-show', compact(
+            'product', 'stockOnHand', 'reorderPoint', 'salesPrice', 'purchasePrice',
+            'margin', 'marginPct', 'isOut', 'isLow', 'recentMovements', 'cs'
+        ));
     }
 
     public function itemsEdit(Product $product)
