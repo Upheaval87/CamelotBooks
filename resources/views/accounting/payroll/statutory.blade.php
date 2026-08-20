@@ -60,7 +60,7 @@
                 @endif
 
                 <div x-data="payeTableForm()">
-                    <button type="button" class="paye-btn paye-btn-sec paye-btn-sm" @click="showForm = !showForm" x-show="!showForm">
+                    <button type="button" class="paye-btn paye-btn-cta paye-btn-sm" @click="showForm = !showForm" x-show="!showForm">
                         {{ __('＋ Create PAYE Table') }}
                     </button>
 
