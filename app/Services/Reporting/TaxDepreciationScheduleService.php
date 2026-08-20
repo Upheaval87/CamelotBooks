@@ -13,7 +13,7 @@ class TaxDepreciationScheduleService
             ->where('is_active', true)
             ->where('status', '!=', 'disposed')
             ->with(['category', 'depreciationBooks' => fn ($q) => $q->where('book_type', 'tax')])
-            ->orderBy('code')
+            ->orderBy('asset_code')
             ->get();
 
         $schedule = [];

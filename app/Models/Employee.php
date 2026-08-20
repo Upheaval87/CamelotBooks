@@ -32,14 +32,28 @@ class Employee extends Model
         'hire_date',
         'termination_date',
         'employment_status',
+        'employment_type',
+        'employment_end_date',
         'tax_id',
         'national_id',
+        'nationality',
+        'marital_status',
+        'dependents',
+        'place_of_residence',
+        'home_village',
+        'home_district',
+        'nok_name',
+        'nok_relationship',
+        'nok_phone',
         'pension_member_number',
         'pension_scheme_id',
         'bank_name',
         'bank_account_number',
         'bank_account_name',
         'bank_branch_code',
+        'payment_method',
+        'mobile_money_provider',
+        'mobile_money_number',
         'is_active',
         'payslip_password',
     ];
@@ -48,6 +62,7 @@ class Employee extends Model
         'date_of_birth' => 'date',
         'hire_date' => 'date',
         'termination_date' => 'date',
+        'employment_end_date' => 'date',
         'is_active' => 'boolean',
     ];
 
@@ -113,6 +128,16 @@ class Employee extends Model
     public function loans(): HasMany
     {
         return $this->hasMany(EmployeeLoan::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(EmployeeDocument::class);
+    }
+
+    public function beneficiaries(): HasMany
+    {
+        return $this->hasMany(EmployeeBeneficiary::class);
     }
 
     public function scopeForCompany($query, int $companyId)

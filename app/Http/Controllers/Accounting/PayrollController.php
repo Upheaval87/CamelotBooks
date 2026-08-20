@@ -7,6 +7,8 @@ use App\Models\Account;
 use App\Models\Branch;
 use App\Models\CompanyAllowance;
 use App\Models\Employee;
+use App\Models\EmployeeBeneficiary;
+use App\Models\EmployeeDocument;
 use App\Models\EmployeeLoan;
 use App\Models\EmployeePayment;
 use App\Models\EmployeeSalaryItem;
@@ -139,51 +141,103 @@ class PayrollController extends Controller
             'phone'                 => 'nullable|string|max:50',
             'date_of_birth'         => 'nullable|date',
             'gender'                => 'nullable|string|in:male,female,other',
+            'national_id'           => 'nullable|string|max:100',
+            'tax_id'                => 'nullable|string|max:100',
+            'nationality'           => 'nullable|string|max:100',
+            'marital_status'        => 'nullable|string|in:single,married,divorced,widowed',
+            'dependents'            => 'nullable|integer|min:0',
+            'place_of_residence'    => 'nullable|string|max:255',
+            'home_village'          => 'nullable|string|max:255',
+            'home_district'         => 'nullable|string|max:100',
+            'nok_name'              => 'nullable|string|max:255',
+            'nok_relationship'      => 'nullable|string|in:spouse,parent,child,sibling,other',
+            'nok_phone'             => 'nullable|string|max:50',
             'hire_date'             => 'required|date',
             'department'            => 'nullable|string|max:255',
-            'job_title'             => 'nullable|string|max:255',
+            'position'              => 'nullable|string|max:255',
             'branch_id'             => 'nullable|exists:branches,id',
-            'employment_type'       => 'nullable|string|in:full_time,part_time,contract,intern',
+            'employment_type'       => 'nullable|string|in:full_time,part_time,contract,casual,temporary',
+            'employment_end_date'   => 'nullable|date|required_if:employment_type,part_time,contract,casual,temporary',
+            'employment_status'     => 'nullable|string|in:active,on_leave,terminated',
+            'basic_salary'          => 'required|numeric|min:0',
+            'payment_frequency'     => 'required|string|in:monthly,weekly',
+            'housing_allowance'     => 'nullable|numeric|min:0',
+            'transport_allowance'   => 'nullable|numeric|min:0',
+            'other_allowances'      => 'nullable|numeric|min:0',
+            'pension_scheme_id'     => 'nullable|exists:pension_schemes,id',
+            'pension_member_number' => 'nullable|string|max:100',
+            'pension_contribution'  => 'nullable|numeric|min:0|max:100',
+            'other_deductions'      => 'nullable|numeric|min:0',
+            'payment_method'        => 'nullable|string|in:bank_transfer,mobile_money,cash',
             'bank_name'             => 'nullable|string|max:255',
             'bank_account_number'   => 'nullable|string|max:50',
             'bank_account_name'     => 'nullable|string|max:255',
-            'nrc_number'            => 'nullable|string|max:100',
-            'tax_number'            => 'nullable|string|max:100',
-            'basic_salary'          => 'required|numeric|min:0',
-            'payment_frequency'     => 'required|string|in:monthly,weekly',
-            'pension_scheme_id'     => 'nullable|exists:pension_schemes,id',
+            'bank_branch_code'      => 'nullable|string|max:255',
+            'mobile_money_provider' => 'nullable|string|max:100',
+            'mobile_money_number'   => 'nullable|string|max:50',
+            'payslip_password'      => 'nullable|string|max:255',
             'allowances'            => 'nullable|array',
             'allowances.*.allowance_id' => 'required_with:allowances|exists:company_allowances,id',
             'allowances.*.amount'        => 'required_with:allowances|numeric|min:0',
+            'beneficiaries'            => 'nullable|array',
+            'beneficiaries.*.full_name' => 'required_with:beneficiaries|string|max:255',
+            'beneficiaries.*.relationship' => 'required_with:beneficiaries|string|in:spouse,child,parent,sibling,other',
+            'beneficiaries.*.phone'    => 'nullable|string|max:50',
+            'beneficiaries.*.pct'      => 'required_with:beneficiaries|numeric|min:0.01|max:100',
         ]);
 
         $validated['company_id'] = $companyId;
-        $validated['employment_status'] = 'active';
+        $validated['employment_status'] = $validated['employment_status'] ?? 'active';
         $validated['is_active'] = true;
         $validated['employee_number'] = $this->generateEmployeeNumber($companyId);
 
-        $employee = Employee::create(collect($validated)->except(['basic_salary', 'payment_frequency', 'pension_scheme_id', 'allowances'])->toArray());
+        $employee = Employee::create(collect($validated)->except([
+            'basic_salary', 'payment_frequency', 'housing_allowance',
+            'transport_allowance', 'other_allowances',
+            'pension_scheme_id', 'pension_member_number', 'pension_contribution', 'other_deductions',
+            'allowances', 'beneficiaries',
+        ])->toArray());
 
         if ($request->filled('basic_salary')) {
             $structure = EmployeeSalaryStructure::create([
-                'company_id'        => $companyId,
-                'employee_id'       => $employee->id,
-                'basic_pay'         => $validated['basic_salary'],
-                'effective_from'    => $validated['hire_date'],
-                'is_current'        => true,
+                'company_id'     => $companyId,
+                'employee_id'    => $employee->id,
+                'basic_pay'      => $validated['basic_salary'],
+                'effective_from' => $validated['hire_date'],
+                'is_current'     => true,
             ]);
 
             if ($request->filled('allowances')) {
                 foreach ($request->allowances as $item) {
                     EmployeeSalaryItem::create([
-                        'company_id'          => $companyId,
-                        'salary_structure_id' => $structure->id,
+                        'company_id'           => $companyId,
+                        'salary_structure_id'  => $structure->id,
                         'company_allowance_id' => $item['allowance_id'],
-                        'amount'              => $item['amount'],
+                        'amount'               => $item['amount'],
                     ]);
                 }
             }
         }
+
+        // Beneficiaries
+        if ($request->filled('beneficiaries')) {
+            foreach ($request->beneficiaries as $i => $ben) {
+                if (!empty($ben['full_name'])) {
+                    EmployeeBeneficiary::create([
+                        'company_id'    => $companyId,
+                        'employee_id'   => $employee->id,
+                        'full_name'     => $ben['full_name'],
+                        'relationship'  => $ben['relationship'] ?? 'other',
+                        'phone'         => $ben['phone'] ?? null,
+                        'pct'           => $ben['pct'] ?? 0,
+                        'sort_order'    => $i,
+                    ]);
+                }
+            }
+        }
+
+        // Documents
+        $this->handleDocuments($request, $employee, $companyId);
 
         return redirect()->route('accounting.payroll.employees.show', $employee)
             ->with('success', 'Employee created.');
@@ -244,7 +298,11 @@ class PayrollController extends Controller
 
         abort_unless((int) $employee->company_id === $companyId, 404);
 
-        $employee->load('currentSalaryStructure.items');
+        $employee->load([
+            'currentSalaryStructure.items.allowance',
+            'documents',
+            'beneficiaries',
+        ]);
 
         $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $allowances = CompanyAllowance::forCompany($companyId)->active()->orderBy('name')->get();
@@ -275,45 +333,128 @@ class PayrollController extends Controller
             'phone'                 => 'nullable|string|max:50',
             'date_of_birth'         => 'nullable|date',
             'gender'                => 'nullable|string|in:male,female,other',
+            'national_id'           => 'nullable|string|max:100',
+            'tax_id'                => 'nullable|string|max:100',
+            'nationality'           => 'nullable|string|max:100',
+            'marital_status'        => 'nullable|string|in:single,married,divorced,widowed',
+            'dependents'            => 'nullable|integer|min:0',
+            'place_of_residence'    => 'nullable|string|max:255',
+            'home_village'          => 'nullable|string|max:255',
+            'home_district'         => 'nullable|string|max:100',
+            'nok_name'              => 'nullable|string|max:255',
+            'nok_relationship'      => 'nullable|string|in:spouse,parent,child,sibling,other',
+            'nok_phone'             => 'nullable|string|max:50',
             'hire_date'             => 'required|date',
             'department'            => 'nullable|string|max:255',
-            'job_title'             => 'nullable|string|max:255',
+            'position'              => 'nullable|string|max:255',
             'branch_id'             => 'nullable|exists:branches,id',
-            'employment_status'    => ['nullable', 'string', Rule::in(['active', 'inactive', 'on_leave', 'terminated'])],
-            'employment_type'       => 'nullable|string|in:full_time,part_time,contract,intern',
-            'bank_name'             => 'nullable|string|max:255',
-            'bank_account_number'   => 'nullable|string|max:50',
-            'bank_account_name'     => 'nullable|string|max:255',
-            'nrc_number'            => 'nullable|string|max:100',
-            'tax_number'            => 'nullable|string|max:100',
+            'employment_type'       => 'nullable|string|in:full_time,part_time,contract,casual,temporary',
+            'employment_end_date'   => 'nullable|date|required_if:employment_type,part_time,contract,casual,temporary',
+            'employment_status'     => ['nullable', 'string', Rule::in(['active', 'inactive', 'on_leave', 'terminated'])],
             'basic_salary'          => 'required|numeric|min:0',
             'payment_frequency'     => 'required|string|in:monthly,weekly',
             'pension_scheme_id'     => 'nullable|exists:pension_schemes,id',
+            'pension_member_number' => 'nullable|string|max:100',
+            'pension_contribution'  => 'nullable|numeric|min:0|max:100',
+            'other_deductions'      => 'nullable|numeric|min:0',
+            'payment_method'        => 'nullable|string|in:bank_transfer,mobile_money,cash',
+            'bank_name'             => 'nullable|string|max:255',
+            'bank_account_number'   => 'nullable|string|max:50',
+            'bank_account_name'     => 'nullable|string|max:255',
+            'bank_branch_code'      => 'nullable|string|max:255',
+            'mobile_money_provider' => 'nullable|string|max:100',
+            'mobile_money_number'   => 'nullable|string|max:50',
+            'payslip_password'      => 'nullable|string|max:255',
             'allowances'            => 'nullable|array',
             'allowances.*.allowance_id' => 'required_with:allowances|exists:company_allowances,id',
             'allowances.*.amount'        => 'required_with:allowances|numeric|min:0',
+            'beneficiaries'            => 'nullable|array',
+            'beneficiaries.*.full_name' => 'required_with:beneficiaries|string|max:255',
+            'beneficiaries.*.relationship' => 'required_with:beneficiaries|string|in:spouse,child,parent,sibling,other',
+            'beneficiaries.*.phone'    => 'nullable|string|max:50',
+            'beneficiaries.*.pct'      => 'required_with:beneficiaries|numeric|min:0.01|max:100',
+            'delete_documents'         => 'nullable|array',
+            'delete_documents.*'       => 'integer',
         ]);
 
-        $employee->update(collect($validated)->except(['basic_salary', 'payment_frequency', 'pension_scheme_id', 'allowances'])->toArray());
+        $employee->update(collect($validated)->except([
+            'basic_salary', 'payment_frequency', 'pension_scheme_id',
+            'pension_member_number', 'pension_contribution', 'other_deductions',
+            'allowances', 'beneficiaries', 'delete_documents',
+        ])->toArray());
 
-        $structure = $employee->currentSalaryStructure;
-        if ($structure) {
-            $structure->update([
-                'basic_pay' => $validated['basic_salary'],
-            ]);
+        // Salary structure
+        if ($request->filled('basic_salary')) {
+            $structure = $employee->currentSalaryStructure;
+            if ($structure) {
+                $structure->update([
+                    'basic_pay' => $validated['basic_salary'],
+                ]);
+                if ($request->filled('allowances')) {
+                    $structure->items()->delete();
+                    foreach ($request->allowances as $item) {
+                        EmployeeSalaryItem::create([
+                            'company_id'           => $companyId,
+                            'salary_structure_id'  => $structure->id,
+                            'company_allowance_id' => $item['allowance_id'],
+                            'amount'               => $item['amount'],
+                        ]);
+                    }
+                }
+            } else {
+                EmployeeSalaryStructure::where('employee_id', $employee->id)->update(['is_current' => false]);
+                $structure = EmployeeSalaryStructure::create([
+                    'company_id'     => $companyId,
+                    'employee_id'    => $employee->id,
+                    'basic_pay'      => $validated['basic_salary'],
+                    'effective_from' => $validated['hire_date'],
+                    'is_current'     => true,
+                ]);
+                if ($request->filled('allowances')) {
+                    foreach ($request->allowances as $item) {
+                        EmployeeSalaryItem::create([
+                            'company_id'           => $companyId,
+                            'salary_structure_id'  => $structure->id,
+                            'company_allowance_id' => $item['allowance_id'],
+                            'amount'               => $item['amount'],
+                        ]);
+                    }
+                }
+            }
+        }
 
-            if ($request->filled('allowances')) {
-                $structure->items()->delete();
-                foreach ($request->allowances as $item) {
-                    EmployeeSalaryItem::create([
-                        'company_id'          => $companyId,
-                        'salary_structure_id' => $structure->id,
-                        'company_allowance_id' => $item['allowance_id'],
-                        'amount'              => $item['amount'],
+        // Beneficiaries — replace all
+        EmployeeBeneficiary::where('employee_id', $employee->id)->delete();
+        if ($request->filled('beneficiaries')) {
+            foreach ($request->beneficiaries as $i => $ben) {
+                if (!empty($ben['full_name'])) {
+                    EmployeeBeneficiary::create([
+                        'company_id'    => $companyId,
+                        'employee_id'   => $employee->id,
+                        'full_name'     => $ben['full_name'],
+                        'relationship'  => $ben['relationship'] ?? 'other',
+                        'phone'         => $ben['phone'] ?? null,
+                        'pct'           => $ben['pct'] ?? 0,
+                        'sort_order'    => $i,
                     ]);
                 }
             }
         }
+
+        // Delete flagged documents
+        if ($request->filled('delete_documents')) {
+            $deleteIds = $request->input('delete_documents');
+            $docs = EmployeeDocument::where('employee_id', $employee->id)
+                ->whereIn('id', $deleteIds)
+                ->get();
+            foreach ($docs as $doc) {
+                \Storage::disk('private')->delete($doc->storage_ref);
+                $doc->delete();
+            }
+        }
+
+        // New documents
+        $this->handleDocuments($request, $employee, $companyId);
 
         return redirect()->route('accounting.payroll.employees.show', $employee)
             ->with('success', 'Employee updated.');
@@ -832,5 +973,50 @@ class PayrollController extends Controller
         }
 
         return 'EMP-' . str_pad($next, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Handle document uploads for employee onboarding/edit.
+     */
+    private function handleDocuments(Request $request, Employee $employee, int $companyId): void
+    {
+        $uploadMap = [
+            'document_photo'       => ['kind' => 'photo',     'label' => 'Passport Photo', 'mimes' => 'jpg,jpeg,png', 'maxKb' => 2048],
+            'document_national_id' => ['kind' => 'national_id', 'label' => 'National ID',   'mimes' => 'pdf,jpg,jpeg,png', 'maxKb' => 5120],
+            'document_custom_1'    => ['kind' => 'custom',     'label' => null, 'mimes' => 'pdf,jpg,jpeg,png,gif,webp,doc,docx,xls,xlsx,txt,csv', 'maxKb' => 10240],
+            'document_custom_2'    => ['kind' => 'custom',     'label' => null, 'mimes' => 'pdf,jpg,jpeg,png,gif,webp,doc,docx,xls,xlsx,txt,csv', 'maxKb' => 10240],
+        ];
+
+        foreach ($uploadMap as $inputName => $cfg) {
+            if ($request->hasFile($inputName)) {
+                $file = $request->file($inputName);
+                $ext = $file->getClientOriginalExtension();
+                $dir = "employee-documents/{$companyId}/{$employee->id}";
+                $filename = uniqid() . '.' . $ext;
+                $path = $file->storeAs($dir, $filename, 'private');
+
+                $kind = $cfg['kind'];
+                $fieldName = null;
+                if ($kind === 'custom') {
+                    $fieldName = $request->input($inputName . '_name');
+                    if (empty($fieldName)) {
+                        $fieldName = $inputName === 'document_custom_1'
+                            ? $request->input('document_custom_1_name', 'Attachment 1')
+                            : $request->input('document_custom_2_name', 'Attachment 2');
+                    }
+                }
+
+                EmployeeDocument::create([
+                    'company_id'  => $companyId,
+                    'employee_id' => $employee->id,
+                    'kind'        => $kind,
+                    'field_name'  => $fieldName,
+                    'mime'        => $file->getMimeType(),
+                    'size_bytes'  => $file->getSize(),
+                    'storage_ref' => $path,
+                    'created_by'  => auth()->id(),
+                ]);
+            }
+        }
     }
 }
