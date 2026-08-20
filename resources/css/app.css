@@ -11879,7 +11879,7 @@ select.tf-in{appearance:none;background-color:#fff;background-image:url("data:im
 .paye .paye-btn-ghost:hover{background:#dceaea}
 .paye .paye-btn-sec{color:#fff;background:var(--paye-sec);box-shadow:0 8px 18px -8px rgba(18,143,142,.5)}
 .paye .paye-btn-sec:hover{filter:brightness(1.1)}
-.paye .paye-btn-cta{color:#fff;background:var(--paye-deep-2);font-weight:700;box-shadow:0 10px 22px -10px rgba(8,40,44,.55)}
+.paye .paye-btn-cta{color:#eaffff;background:linear-gradient(180deg,var(--paye-deep-1),var(--paye-deep-2) 55%,#0a2e32);border-color:rgba(255,255,255,.14);box-shadow:0 10px 22px -10px rgba(8,40,44,.55);font-weight:700}
 .paye .paye-btn-cta:hover{filter:brightness(1.15)}
 .paye .paye-btn-sm{height:38px;padding:0 15px;font-size:12.5px}
 .paye .paye-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px;margin:22px 0 8px}
