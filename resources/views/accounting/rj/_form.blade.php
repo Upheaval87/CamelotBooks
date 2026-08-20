@@ -72,9 +72,9 @@
                         <label>Currency</label>
                         <select name="currency" class="input">
                             @forelse($currencies as $curOption)
-                                <option value="{{ $curOption->code }}" @selected(old('currency', $template?->currency ?? 'USD') === $curOption->code)>{{ $curOption->code }} - {{ $curOption->name }}</option>
+                                <option value="{{ $curOption->code }}" @selected(old('currency', $template?->currency ?? $systemCurrency) === $curOption->code)>{{ $curOption->code }} - {{ $curOption->name }}</option>
                             @empty
-                                <option value="USD" @selected(old('currency', $template?->currency ?? 'USD') === 'USD')>USD - US Dollar</option>
+                                <option value="{{ $systemCurrency }}" selected>{{ $systemCurrency }}</option>
                             @endforelse
                         </select>
                     </div>
@@ -82,98 +82,26 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card rj-lines-card" style="margin-top:16px">
             <div class="card-sec">
                 <div class="sec-head">
                     <span class="sec-ic">📝</span>
                     <h2>Journal Lines</h2>
                 </div>
                 <div class="li-wrap" style="margin-top:12px">
-                    <table>
+                    <table style="width:100%;table-layout:fixed;border-collapse:collapse">
                         <thead>
                             <tr>
-                                <th>Account</th>
-                                <th>Description</th>
-                                <th class="num">Debit</th>
-                                <th class="num">Credit</th>
-                                <th>Department</th>
-                                <th>Cost Centre</th>
-                                <th></th>
+                                <th style="width:26%">Account</th>
+                                <th style="width:22%">Description</th>
+                                <th class="num" style="width:13%">Debit</th>
+                                <th class="num" style="width:13%">Credit</th>
+                                <th style="width:10%">Dept</th>
+                                <th style="width:10%">Cost Centre</th>
+                                <th style="width:6%"></th>
                             </tr>
                         </thead>
                         <tbody id="rj-lines-body">
-                            @php
-                                $linesData = [];
-                                if (old('lines')) {
-                                    foreach (array_values(old('lines')) as $l) {
-                                        $linesData[] = [
-                                            'account_id' => $l['account_id'] ?? '',
-                                            'memo' => $l['memo'] ?? '',
-                                            'debit' => $l['debit'] ?? '',
-                                            'credit' => $l['credit'] ?? '',
-                                            'branch_id' => $l['branch_id'] ?? '',
-                                            'cost_center_id' => $l['cost_center_id'] ?? '',
-                                        ];
-                                    }
-                                } elseif ($isEdit) {
-                                    foreach ($template->templateLines as $line) {
-                                        $linesData[] = [
-                                            'account_id' => $line->account_id ?? '',
-                                            'memo' => $line->memo ?? '',
-                                            'debit' => $line->debit > 0 ? $line->debit : '',
-                                            'credit' => $line->credit > 0 ? $line->credit : '',
-                                            'branch_id' => $line->branch_id ?? '',
-                                            'cost_center_id' => $line->cost_center_id ?? '',
-                                        ];
-                                    }
-                                }
-                                if (empty($linesData)) {
-                                    $linesData = [
-                                        ['account_id' => '', 'memo' => '', 'debit' => '', 'credit' => '', 'branch_id' => '', 'cost_center_id' => ''],
-                                        ['account_id' => '', 'memo' => '', 'debit' => '', 'credit' => '', 'branch_id' => '', 'cost_center_id' => ''],
-                                    ];
-                                }
-                            @endphp
-                            @foreach($linesData as $idx => $ld)
-                                <tr class="rj-line-row">
-                                    <td>
-                                        <select name="lines[{{ $idx }}][account_id]" class="input" required onchange="updateTotals()">
-                                            <option value="">Select account</option>
-                                            @foreach($accounts as $acc)
-                                                <option value="{{ $acc->id }}" @selected($ld['account_id'] == $acc->id)>{{ $acc->code }} - {{ $acc->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" name="lines[{{ $idx }}][memo]" class="input" value="{{ $ld['memo'] }}" placeholder="Description">
-                                    </td>
-                                    <td>
-                                        <input type="number" name="lines[{{ $idx }}][debit]" class="input" value="{{ $ld['debit'] }}" step="0.01" min="0" placeholder="0.00" style="text-align:right" onchange="updateTotals()">
-                                    </td>
-                                    <td>
-                                        <input type="number" name="lines[{{ $idx }}][credit]" class="input" value="{{ $ld['credit'] }}" step="0.01" min="0" placeholder="0.00" style="text-align:right" onchange="updateTotals()">
-                                    </td>
-                                    <td>
-                                        <select name="lines[{{ $idx }}][branch_id]" class="input">
-                                            <option value="">None</option>
-                                            @foreach($branches as $br)
-                                                <option value="{{ $br->id }}" @selected($ld['branch_id'] == $br->id)>{{ $br->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select name="lines[{{ $idx }}][cost_center_id]" class="input">
-                                            <option value="">None</option>
-                                            @foreach($costCenters as $cc)
-                                                <option value="{{ $cc->id }}" @selected($ld['cost_center_id'] == $cc->id)>{{ $cc->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-danger-o btn-xs" onclick="removeLine(this)" title="Remove line">✕</button>
-                                    </td>
-                                </tr>
-                            @endforeach
                         </tbody>
                         <tfoot>
                             <tr>
@@ -191,7 +119,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" style="margin-top:16px">
             <div class="card-sec">
                 <div class="sec-head">
                     <span class="sec-ic">📅</span>
@@ -246,34 +174,83 @@
 </div>
 
 <script>
-    let lineIndex = document.querySelectorAll('#rj-lines-body .rj-line-row').length;
+    const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
+    const COST_CENTER_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'cost-center']));
+    const RJ_ACCOUNTS = @json($accounts->map(fn($a) => ['id' => $a->id, 'code' => $a->code, 'name' => $a->name]));
+    const RJ_BRANCHES = @json($branches->map(fn($b) => ['id' => $b->id, 'name' => $b->name]));
+    const RJ_CC = @json($costCenters->map(fn($c) => ['id' => $c->id, 'name' => $c->name]));
+    const RJ_LINES = @json($linesData);
 
-    function addLine() {
+    const esc = s => String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    function accountLabel(id) {
+        const a = RJ_ACCOUNTS.find(x => x.id == id);
+        return a ? a.code + ' - ' + a.name : '';
+    }
+
+    function ccLabel(id) {
+        const c = RJ_CC.find(x => x.id == id);
+        return c ? c.name : '';
+    }
+
+    let lineIndex = 0;
+
+    function addLine(data) {
+        const d = data || {};
+        const idx = lineIndex++;
         const tbody = document.getElementById('rj-lines-body');
-        const accountsOptions = document.querySelector('#rj-lines-body select[name*="[account_id]"]');
-        const branchOptions = document.querySelector('#rj-lines-body select[name*="[branch_id]"]');
-        const ccOptions = document.querySelector('#rj-lines-body select[name*="[cost_center_id]"]');
-
-        const clone = document.querySelector('#rj-lines-body .rj-line-row:last-child').cloneNode(true);
-        lineIndex++;
-
-        clone.querySelectorAll('select, input').forEach(function(el) {
-            el.name = el.name.replace(/\[\d+\]/, '[' + lineIndex + ']');
-            if (el.tagName === 'SELECT') {
-                el.selectedIndex = 0;
-            } else {
-                el.value = '';
-            }
-        });
-
-        tbody.appendChild(clone);
+        const tr = document.createElement('tr');
+        tr.className = 'rj-line-row';
+        tr.innerHTML = `
+            <td class="rj-acct-cell">
+                ${scopedSearchFieldHtml({
+                    name: 'lines[' + idx + '][account_id]',
+                    entity: 'account',
+                    searchUrl: ACCOUNT_SEARCH_URL,
+                    value: d.account_id || '',
+                    label: d.account_id ? accountLabel(d.account_id) : '',
+                    placeholder: 'Search accounts\u2026',
+                    required: true,
+                })}
+            </td>
+            <td>
+                <input type="text" name="lines[${idx}][memo]" class="input" value="${esc(d.memo || '')}" placeholder="Description" style="width:100%">
+            </td>
+            <td>
+                <input type="number" name="lines[${idx}][debit]" class="input" value="${d.debit || ''}" step="0.01" min="0" placeholder="0.00" style="width:100%;text-align:right" onchange="updateTotals()" oninput="updateTotals()">
+            </td>
+            <td>
+                <input type="number" name="lines[${idx}][credit]" class="input" value="${d.credit || ''}" step="0.01" min="0" placeholder="0.00" style="width:100%;text-align:right" onchange="updateTotals()" oninput="updateTotals()">
+            </td>
+            <td style="overflow:hidden">
+                <select name="lines[${idx}][branch_id]" class="input" style="width:100%">
+                    <option value="">None</option>
+                    ${RJ_BRANCHES.map(b => '<option value="' + b.id + '"' + (d.branch_id == b.id ? ' selected' : '') + '>' + esc(b.name) + '</option>').join('')}
+                </select>
+            </td>
+            <td class="rj-acct-cell">
+                ${scopedSearchFieldHtml({
+                    name: 'lines[' + idx + '][cost_center_id]',
+                    entity: 'cost-center',
+                    searchUrl: COST_CENTER_SEARCH_URL,
+                    value: d.cost_center_id || '',
+                    label: d.cost_center_id ? ccLabel(d.cost_center_id) : '',
+                    placeholder: 'None',
+                })}
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger-o btn-xs" onclick="removeLine(this)" title="Remove line">✕</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
         updateTotals();
     }
 
     function removeLine(btn) {
         const tbody = document.getElementById('rj-lines-body');
         const rows = tbody.querySelectorAll('.rj-line-row');
-        if (rows.length <= 2) return;
+        if (rows.length <= 1) return;
         btn.closest('tr').remove();
         updateTotals();
     }
@@ -309,7 +286,53 @@
         }
     });
 
+    function repositionDropdown(field) {
+        if (!field) return;
+        var dd = field.querySelector('.scoped-search-dropdown');
+        if (!dd || dd.offsetParent === null) return;
+        var rect = field.getBoundingClientRect();
+        dd.style.position = 'fixed';
+        dd.style.top = (rect.bottom + 4) + 'px';
+        dd.style.left = rect.left + 'px';
+        dd.style.width = rect.width + 'px';
+        dd.style.zIndex = '10000';
+        dd.style.marginTop = '0';
+    }
+
+    function resetDropdown(dd) {
+        if (!dd) return;
+        dd.style.position = '';
+        dd.style.top = '';
+        dd.style.left = '';
+        dd.style.width = '';
+        dd.style.zIndex = '';
+        dd.style.marginTop = '';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-        updateTotals();
+        if (RJ_LINES.length > 0) {
+            RJ_LINES.forEach(function(line) { addLine(line); });
+        } else {
+            addLine();
+            addLine();
+        }
+
+        var linesBody = document.getElementById('rj-lines-body');
+        linesBody.addEventListener('input', function(e) {
+            var field = e.target.closest('.scoped-search-field');
+            if (field) repositionDropdown(field);
+        });
+        linesBody.addEventListener('focusin', function(e) {
+            var field = e.target.closest('.scoped-search-field');
+            if (field) setTimeout(function() { repositionDropdown(field); }, 50);
+        });
+        linesBody.addEventListener('focusout', function(e) {
+            var field = e.target.closest('.scoped-search-field');
+            if (!field) return;
+            setTimeout(function() {
+                var dd = field.querySelector('.scoped-search-dropdown');
+                resetDropdown(dd);
+            }, 150);
+        });
     });
 </script>

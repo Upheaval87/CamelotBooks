@@ -83,7 +83,7 @@ return new class extends Migration
                 $table->timestamps();
 
                 $table->index(['company_id', 'status']);
-                $table->index(['recurring_journal_template_id', 'run_date']);
+                $table->index(['recurring_journal_template_id', 'run_date'], 'rjr_tpl_date_idx');
             });
         }
 

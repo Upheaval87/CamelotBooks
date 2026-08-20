@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Branch;
+use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Currency;
 use App\Models\RecurringJournalTemplate;
@@ -63,8 +64,23 @@ class RecurringJournalController extends Controller
         $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $costCenters = CostCenter::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $currencies = Currency::query()->active()->ordered()->get();
+        $systemCurrency = Company::find($companyId)?->base_currency ?? 'MWK';
 
-        return view('accounting.rj.create', compact('accounts', 'branches', 'costCenters', 'currencies'));
+        $linesData = [];
+        if (old('lines')) {
+            foreach (array_values(old('lines')) as $l) {
+                $linesData[] = [
+                    'account_id' => $l['account_id'] ?? '',
+                    'memo' => $l['memo'] ?? '',
+                    'debit' => $l['debit'] ?? '',
+                    'credit' => $l['credit'] ?? '',
+                    'branch_id' => $l['branch_id'] ?? '',
+                    'cost_center_id' => $l['cost_center_id'] ?? '',
+                ];
+            }
+        }
+
+        return view('accounting.rj.create', compact('accounts', 'branches', 'costCenters', 'currencies', 'systemCurrency', 'linesData'));
     }
 
     public function store(Request $request)
@@ -136,9 +152,22 @@ class RecurringJournalController extends Controller
         $branches = Branch::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $costCenters = CostCenter::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $currencies = Currency::query()->active()->ordered()->get();
+        $systemCurrency = Company::find($companyId)?->base_currency ?? 'MWK';
         $template->load('templateLines');
 
-        return view('accounting.rj.edit', compact('template', 'accounts', 'branches', 'costCenters', 'currencies'));
+        $linesData = [];
+        foreach ($template->templateLines as $line) {
+            $linesData[] = [
+                'account_id' => $line->account_id ?? '',
+                'memo' => $line->memo ?? '',
+                'debit' => $line->debit > 0 ? $line->debit : '',
+                'credit' => $line->credit > 0 ? $line->credit : '',
+                'branch_id' => $line->branch_id ?? '',
+                'cost_center_id' => $line->cost_center_id ?? '',
+            ];
+        }
+
+        return view('accounting.rj.edit', compact('template', 'accounts', 'branches', 'costCenters', 'currencies', 'systemCurrency', 'linesData'));
     }
 
     public function update(Request $request, RecurringJournalTemplate $template)
