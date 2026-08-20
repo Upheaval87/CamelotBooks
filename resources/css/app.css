@@ -10464,6 +10464,23 @@ td.num .ac-ci { text-align: right }
 @media (max-width: 700px) { .ac-pgrid { grid-template-columns: repeat(2, 1fr) } }
 @media (max-width: 768px) { .ac-slim-rail { display: none !important } }
 
+/* --- Accounting Settings additions (Exchange Rates / Cost Centres / Periods / Classification) --- */
+.ac-ic { width: 34px; height: 34px; border-radius: 10px; background: rgba(18,143,142,.1); display: grid; place-items: center; font-size: 15px; flex-shrink: 0 }
+.ac-chip-brand { background: rgba(18,143,142,.1); border-color: rgba(18,143,142,.35); color: var(--ac-sec) }
+.ac-tchip.type-asset { background: rgba(18,143,142,.1); border: 1px solid rgba(18,143,142,.35); color: var(--ac-sec) }
+.ac-tchip.type-liability { background: rgba(185,28,28,.08); border: 1px solid rgba(185,28,28,.3); color: var(--ac-red-2) }
+.ac-tchip.type-equity { background: rgba(12,53,57,.08); border: 1px solid rgba(12,53,57,.3); color: var(--ac-deep-2) }
+.ac-tchip.type-income { background: rgba(22,163,74,.1); border: 1px solid rgba(22,163,74,.4); color: var(--ac-green) }
+.ac-tchip.type-expense { background: rgba(180,83,9,.1); border: 1px solid rgba(180,83,9,.35); color: var(--ac-amber-2) }
+.ac-tsel { height: 36px; border-radius: 10px; border: 1px solid var(--ac-border); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center; padding: 0 30px 0 11px; font-size: 12.5px; color: var(--ac-ink); font-family: inherit; appearance: none }
+.ac-tsel:focus { outline: none; border-color: var(--ac-sec); box-shadow: 0 0 0 3px rgba(18,143,142,.13) }
+.ac-ck { display: flex; align-items: center; gap: 8px; justify-content: flex-end; font-size: 11.5px; font-weight: 600; color: var(--ac-muted); cursor: pointer }
+.ac-ck input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--ac-sec) }
+.ac-empty { padding: 34px; text-align: center; color: var(--ac-muted); font-size: 13px }
+.ac-empty .ac-empty-ic { width: 40px; height: 40px; border-radius: 12px; background: rgba(17,69,75,.06); display: grid; place-items: center; font-size: 17px; margin: 0 auto 10px }
+.ac-actionbar { position: sticky; bottom: 16px; display: flex; gap: 10px; justify-content: flex-end; padding: 14px 18px; margin-top: 16px }
+
+
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    JOURNAL ENTRIES â€” .je-* design system (APPENDIX A)
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
