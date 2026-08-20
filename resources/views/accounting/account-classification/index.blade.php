@@ -27,7 +27,7 @@
                                 <th style="width:30%">Account Name</th>
                                 <th style="width:11%">Type</th>
                                 <th style="width:30%">Cash Flow Section</th>
-                                <th style="width:20%">Non-Cash</th>
+                                <th style="width:20%;text-align:center">Non-Cash</th>
                             </tr>
                         </thead>
                         <tbody class="ac-tbody">
@@ -54,11 +54,8 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td>
-                                    <label class="ac-ck">
-                                        <input type="checkbox" name="is_non_cash[{{ $account->id }}]" value="1" {{ ($account->is_non_cash ?? false) ? 'checked' : '' }}>
-                                        Non-cash
-                                    </label>
+                                <td style="text-align:center">
+                                    <input type="checkbox" name="is_non_cash[{{ $account->id }}]" value="1" {{ ($account->is_non_cash ?? false) ? 'checked' : '' }} style="width:16px;height:16px;accent-color:var(--ac-sec)">
                                 </td>
                             </tr>
                             @empty
