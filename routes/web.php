@@ -715,7 +715,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('payroll/reports', [PayrollController::class, 'reports'])->name('payroll.reports.index');
                 Route::get('payroll/settings', [PayrollController::class, 'settings'])->name('payroll.settings.index');
                 Route::post('payroll/settings', [PayrollController::class, 'storeSettings'])->name('payroll.settings.store');
+
+                // Payslip Distribution
+                Route::get('payroll/runs/{run}/distribution', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'payRunFinalized'])->name('payroll.distribution.finalized');
+                Route::get('payroll/runs/{run}/distribution/validate', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'validateBeforeSend'])->name('payroll.distribution.validate');
+                Route::post('payroll/runs/{run}/distribution/generate', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'generate'])->name('payroll.distribution.generate');
+                Route::post('payroll/runs/{run}/distribution/finalize', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'finalize'])->name('payroll.distribution.finalize');
+                Route::post('payroll/runs/{run}/distribution/send', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'bulkSend'])->name('payroll.distribution.bulk-send');
+                Route::get('payroll/runs/{run}/distribution/status', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'status'])->name('payroll.distribution.status');
+                Route::post('payroll/payslips/{payslip}/distribution/send', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'send'])->name('payroll.distribution.send');
+                Route::post('payroll/distributions/{distribution}/resend', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'resend'])->name('payroll.distribution.resend');
+                Route::get('payroll/distribution/employee-settings', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'employeeSettings'])->name('payroll.distribution.employee-settings');
+                Route::post('payroll/distribution/employee-settings', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'updateEmployeeSettings'])->name('payroll.distribution.update-employee-settings');
+                Route::get('payroll/distribution/audit', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'auditTrail'])->name('payroll.distribution.audit');
+                Route::get('payroll/distribution/audit/export', [\App\Http\Controllers\Accounting\PayslipDistributionController::class, 'exportAuditCsv'])->name('payroll.distribution.audit.export');
             });
+
+            // Employee Payslip Portal routes registered below (outside auth group)
 
             Route::middleware('feature:fixed_assets')->group(function () {
             // Fixed Assets
@@ -1072,6 +1088,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // stored on the central users table.
     Route::post('/preferences/font-scale', [UserPreferenceController::class, 'updateFontScale'])
         ->name('preferences.font-scale');
+});
+
+// Employee Payslip Portal — outside auth, verified group. Portal uses its own
+// session-based employee auth (portal_employee_id / portal_company_id) so it
+// does not require a logged-in Laravel user. Still needs company.context so
+// current_company_id is available in the session for authenticate().
+Route::middleware('company.context')->prefix('accounting/payroll/portal')->name('accounting.payroll.portal.')->group(function () {
+    Route::get('login', [\App\Http\Controllers\Accounting\EmployeePayslipPortalController::class, 'showLogin'])->name('login');
+    Route::post('authenticate', [\App\Http\Controllers\Accounting\EmployeePayslipPortalController::class, 'authenticate'])->name('authenticate');
+    Route::get('', [\App\Http\Controllers\Accounting\EmployeePayslipPortalController::class, 'index'])->name('index');
+    Route::get('payslip/{payslip}', [\App\Http\Controllers\Accounting\EmployeePayslipPortalController::class, 'preview'])->name('preview');
+    Route::post('logout', [\App\Http\Controllers\Accounting\EmployeePayslipPortalController::class, 'logout'])->name('logout');
 });
 
 require __DIR__.'/auth.php';
