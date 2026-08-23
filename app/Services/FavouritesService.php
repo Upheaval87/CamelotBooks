@@ -131,6 +131,9 @@ class FavouritesService
         'admin.setup-wizard.index' => ['setup-wizard', 'Setup Wizard', 'wand'],
         'companies.index' => ['companies', 'Companies', 'building'],
         'branches.index' => ['branches', 'Branches', 'git-branch'],
+        'accounting.taxation.dashboard' => ['tax-dashboard', 'Tax Dashboard', 'calculator'],
+        'accounting.taxation.config'   => ['tax-config',   'Tax Configuration', 'settings'],
+        'accounting.taxation.periods'   => ['tax-periods',    'Tax Periods',    'calendar'],
     ];
 
     /**
@@ -203,6 +206,7 @@ class FavouritesService
         'ruler' => 'M16.5 3.5l4 4L7.5 20.5l-4-4zM12 8l4 4M8 12l4 4',
         'anchor' => 'M12 22V8M5 12H2a10 10 0 0020 0h-3M12 8a3 3 0 100-6 3 3 0 000 6z',
         'scale' => 'M12 3v18M3 7h18M6 7l-3 5 3 5m12-10l3 5-3 5M7 21h10',
+        'calculator' => 'M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zM8 6h8v4H8zM8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01',
         'alert-triangle' => 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01',
         'bank' => 'M3 21h18M3 10h18M5 10v11M19 10v11M10 10v11M14 10v11M3 10l9-6 9 6M3 21h18',
         'arrow-left-right' => 'M8 3L4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4',

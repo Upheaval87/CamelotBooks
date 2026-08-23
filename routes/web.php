@@ -52,6 +52,7 @@ use App\Http\Controllers\Accounting\SalesOrderController;
 use App\Http\Controllers\Accounting\ReportCenterController;
 use App\Http\Controllers\Accounting\SalesReceiptController;
 use App\Http\Controllers\Accounting\SalesRegisterController;
+use App\Http\Controllers\Accounting\TaxController;
 
 use App\Http\Controllers\Accounting\CashPositionController;
 use App\Http\Controllers\BranchController;
@@ -690,6 +691,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/adjustments/{adjustment}/approve', [BudgetController::class, 'approveAdjustment'])->name('adjustments.approve');
                 Route::post('/adjustments/{adjustment}/reject', [BudgetController::class, 'rejectAdjustment'])->name('adjustments.reject');
                 Route::post('/alerts/{alert}/read', [BudgetController::class, 'markAlertRead'])->name('alerts.read');
+            });
+
+            // Taxation Centre
+            Route::prefix('taxation')->name('taxation.')->middleware('permission:taxation.view|taxation.edit')->group(function () {
+                Route::get('/', [TaxController::class, 'dashboard'])->name('dashboard');
+                Route::get('/config', [TaxController::class, 'config'])->name('config');
+                Route::get('/codes', [TaxController::class, 'codes'])->name('codes');
+                Route::get('/types', [TaxController::class, 'types'])->name('types');
+                Route::get('/rates', [TaxController::class, 'rates'])->name('rates');
+                Route::get('/exemptions', [TaxController::class, 'exemptions'])->name('exemptions');
+                Route::get('/jurisdictions', [TaxController::class, 'jurisdictions'])->name('jurisdictions');
+                Route::get('/accounts', [TaxController::class, 'accounts'])->name('accounts');
+                Route::get('/periods', [TaxController::class, 'periods'])->name('periods');
+                Route::get('/returns/{periodId}/working-paper', [TaxController::class, 'returnWorkingPaper'])->name('returns.working-paper');
+                Route::get('/reconciliation', [TaxController::class, 'reconciliation'])->name('reconciliation');
+                Route::get('/certificates', [TaxController::class, 'certificates'])->name('certificates');
+                Route::get('/reports', [TaxController::class, 'reports'])->name('reports');
+                Route::get('/audit-trail', [TaxController::class, 'auditTrail'])->name('audit-trail');
+                Route::get('/position', [TaxController::class, 'currentPosition'])->name('position');
+                Route::get('/control-account', [TaxController::class, 'controlAccount'])->name('control-account');
+                Route::get('/payments', [TaxController::class, 'payments'])->name('payments');
+                Route::post('/payments', [TaxController::class, 'storePayment'])->name('payments.store');
+                Route::post('/adjustments', [TaxController::class, 'storeAdjustment'])->name('adjustments.store');
+                Route::post('/adjustments/{adjustment}/approve', [TaxController::class, 'approveAdjustment'])->name('adjustments.approve');
+                Route::post('/adjustments/{adjustment}/reject', [TaxController::class, 'rejectAdjustment'])->name('adjustments.reject');
+                Route::post('/returns/{returnId}/approve', [TaxController::class, 'approveReturn'])->name('returns.approve');
+                Route::post('/returns/{returnId}/reject', [TaxController::class, 'rejectReturn'])->name('returns.reject');
+                Route::post('/returns/{returnId}/file', [TaxController::class, 'fileReturn'])->name('returns.file');
+                Route::post('/returns/generate', [TaxController::class, 'generateReturn'])->name('returns.generate');
+                Route::post('/certificates/generate', [TaxController::class, 'generateCertificate'])->name('certificates.generate');
+                Route::post('/certificates/{certificate}/revoke', [TaxController::class, 'revokeCertificate'])->name('certificates.revoke');
+                Route::post('/payments/{payment}/void', [TaxController::class, 'voidPayment'])->name('payments.void');
+                Route::post('/periods/{period}/close', [TaxController::class, 'closePeriod'])->name('periods.close');
+                Route::get('/recognition-rules', [TaxController::class, 'recognitionRules'])->name('recognition-rules');
             });
 
             // Payroll Centre

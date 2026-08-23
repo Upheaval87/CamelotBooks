@@ -11,6 +11,7 @@ import './favourites';
 import './report-center';
 import './permissions-console';
 import './font-scale';
+import './tx-export';
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 

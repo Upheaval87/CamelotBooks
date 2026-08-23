@@ -172,18 +172,24 @@
         ];
     }
 
-    if ($feat('bi')) {
-        $modules[] = (object)[
-            'label' => __('BI'),
-            'icon' => '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
-            'children' => [
-                ['label' => __('True Total Cost'),      'route' => 'bi.true-total-cost'],
-                ['label' => __('Customer LTV'),         'route' => 'bi.customer-lifetime-value'],
-                ['label' => __('Employee Productivity'),'route' => 'bi.employee-productivity'],
-                ['label' => __('Branch Profitability'), 'route' => 'bi.branch-profitability'],
-            ],
-        ];
-    }
+    $taxationChildren = [
+        ['label' => __('Dashboard'),             'route' => 'accounting.taxation.dashboard'],
+        ['label' => __('Configuration'),         'route' => 'accounting.taxation.config'],
+        ['label' => __('Periods'),               'route' => 'accounting.taxation.periods'],
+        ['label' => __('Reconciliation'),        'route' => 'accounting.taxation.reconciliation'],
+        ['label' => __('WHT Certificates'),      'route' => 'accounting.taxation.certificates'],
+        ['label' => __('Reports'),               'route' => 'accounting.taxation.reports'],
+        ['label' => __('Audit Trail'),           'route' => 'accounting.taxation.audit-trail'],
+        ['label' => __('Current Position'),      'route' => 'accounting.taxation.position'],
+        ['label' => __('VAT Control Account'),   'route' => 'accounting.taxation.control-account'],
+        ['label' => __('Payments'),              'route' => 'accounting.taxation.payments'],
+        ['label' => __('Recognition Rules'),     'route' => 'accounting.taxation.recognition-rules'],
+    ];
+    $modules[] = (object)[
+        'label' => __('Taxation'),
+        'icon' => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
+        'children' => $taxationChildren,
+    ];
 
     if ($feat('pos')) {
         $modules[] = (object)[
@@ -365,7 +371,7 @@
                                     @if($child['moved'] ?? false)
                                         <div class="dd-sep"></div>
                                     @endif
-                                    <a href="{{ route($child['route']) }}"
+                                    <a href="{{ route($child['route'], $child['params'] ?? []) }}"
                                        class="topbar-nav-dropdown-item @if($cActive) active @endif @if($child['moved'] ?? false) moved @endif"
                                        @if($cActive) aria-current="page" @endif>
                                         <span>{{ $child['label'] }}{!! ($child['moved'] ?? false) ? ' &#8594;' : '' !!}</span>
@@ -411,6 +417,10 @@
                      x-cloak>
                     <a href="{{ route('dashboard') }}" class="topbar-overflow-item">{{ __('Dashboard') }}</a>
                     <a href="{{ route('todo.index') }}" class="topbar-overflow-item">{{ __('My Tasks') }}</a>
+                    @if($feat('bi'))
+                        <div class="mx-3 my-1 border-t border-white/10"></div>
+                        <a href="{{ route('bi.true-total-cost') }}" class="topbar-overflow-item">{{ __('BI') }}</a>
+                    @endif
                     @if($user?->is_super_admin)
                         <div class="mx-3 my-1 border-t border-white/10"></div>
                         <a href="{{ route('superadmin.dashboard') }}" class="topbar-overflow-item">{{ __('Super Admin') }}</a>

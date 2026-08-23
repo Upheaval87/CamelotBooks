@@ -119,6 +119,7 @@ return [
         'bi'        => ['view'],
 
         // ── Tax ──
+        'taxation'       => ['view', 'create', 'edit', 'void', 'approve'],
         'tax-rates'  => ['view', 'create', 'edit', 'void'],
         'tax-returns' => ['view', 'create', 'submit'],
     ],
