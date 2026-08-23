@@ -7,6 +7,7 @@ use App\Models\Concerns\TenantScoped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
@@ -16,6 +17,7 @@ class Product extends Model
         'company_id',
         'category_id',
         'name',
+        'brand',
         'description',
         'sku',
         'barcode',
@@ -24,6 +26,18 @@ class Product extends Model
         'sales_price',
         'purchase_price',
         'reorder_point',
+        'reorder_qty',
+        'max_stock',
+        'lead_time_days',
+        'default_supplier_id',
+        'costing_method',
+        'low_stock_alerts',
+        'batch_expiry_tracking',
+        'serial_tracking',
+        'price_list',
+        'opening_stock',
+        'opening_as_at',
+        'warehouse_id',
         'unit_of_measure',
         'income_account_id',
         'expense_account_id',
@@ -43,6 +57,14 @@ class Product extends Model
         'is_active' => 'boolean',
         'tracked_as_inventory' => 'boolean',
         'is_assembly' => 'boolean',
+        'low_stock_alerts' => 'boolean',
+        'batch_expiry_tracking' => 'boolean',
+        'serial_tracking' => 'boolean',
+        'max_stock' => 'integer',
+        'reorder_qty' => 'integer',
+        'lead_time_days' => 'integer',
+        'opening_stock' => 'decimal:4',
+        'opening_as_at' => 'date',
     ];
 
     public function company(): BelongsTo
@@ -68,6 +90,21 @@ class Product extends Model
     public function inventoryAssetAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'inventory_asset_account_id');
+    }
+
+    public function defaultSupplier(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'default_supplier_id');
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'warehouse_id');
+    }
+
+    public function returnable(): HasOne
+    {
+        return $this->hasOne(ItemReturnable::class, 'item_id');
     }
 
     public function costLayers(): HasMany

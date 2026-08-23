@@ -1,187 +1,321 @@
 @php
-    $search = request('search');
-    $typeFilter = request('type');
-    $statusFilter = request('status');
-    $typeOrder = ['asset', 'liability', 'equity', 'income', 'expense'];
-    $totalForBar = max($stats['total'], 1);
-    $activePct = round(($stats['active'] / $totalForBar) * 100);
-    $inactivePct = round(($stats['inactive'] / $totalForBar) * 100);
-    $typeNoteParts = [];
-    foreach ($typeOrder as $t) {
-        if (($typeCounts[$t] ?? 0) > 0) {
-            $typeNoteParts[] = ucfirst($t === 'asset' ? 'Assets' : ($t === 'liability' ? 'Liabilities' : $t)) . ' ' . $typeCounts[$t];
+    $cs = $systemCurrency;
+    $accountStats = $stats;
+
+    function _coaFlattenAccounts($accounts, $depth = 0) {
+        $out = [];
+        foreach ($accounts as $a) {
+            $a['_depth'] = $depth;
+            $out[] = $a;
+            if (!empty($a['children'])) {
+                $out = array_merge($out, _coaFlattenAccounts($a['children'], $depth + 1));
+            }
         }
+        return $out;
     }
-    $activeNote = $stats['active'] === $stats['total'] ? '100% of accounts in use' : $stats['active'] . ' of ' . $stats['total'] . ' in use';
-    $inactiveNote = $stats['inactive'] === 0 ? 'No dormant accounts' : $stats['inactive'] . ' dormant accounts';
 @endphp
 
 <x-app-layout>
-    <div class="coa-wrap" style="padding-top:24px;padding-bottom:24px">
+    <div class="coa2-wrap" style="padding-top:24px;padding-bottom:24px">
 
-        {{-- Page head --}}
-        <div class="coa-head">
+        <div class="coa2-head">
             <div>
                 <h1>{{ __('Chart of Accounts') }}</h1>
-                <div class="sub">Your general ledger accounts organised by type.</div>
+                <div class="coa2-sub">{{ $accountStats['total'] }} {{ __('accounts') }} &middot; {{ $accountStats['types'] }} {{ __('types') }} &middot; {{ __('system currency') }} ({{ $cs }}) &middot; {{ __('controlled accounts protected') }}</div>
             </div>
-            <div class="coa-head-btns">
-                <a href="{{ route('accounting.reports.chart-of-accounts') }}" class="coa-btn coa-btn-ghost">{{ __('Import / Export') }}</a>
-                <a href="{{ route('accounting.accounts.create') }}" class="coa-btn coa-btn-cta">{{ __('＋ Create Account') }}</a>
-            </div>
-        </div>
-
-        {{-- KPI strip --}}
-        <div class="coa-kpis">
-            <div class="coa-kpi">
-                <div class="l">{{ __('Total Accounts') }}</div>
-                <div class="v">{{ $stats['total'] }}</div>
-                <div class="bar"><i class="coa-fill-teal" style="width:100%"></i></div>
-                <div class="n">{{ implode(' · ', $typeNoteParts) ?: 'No accounts' }}</div>
-            </div>
-            <div class="coa-kpi">
-                <div class="l">{{ __('Active') }}</div>
-                <div class="v">{{ $stats['active'] }}</div>
-                <div class="bar"><i class="coa-fill-teal" style="width:{{ $activePct }}%"></i></div>
-                <div class="n">{{ $activeNote }}</div>
-            </div>
-            <div class="coa-kpi">
-                <div class="l">{{ __('Inactive') }}</div>
-                <div class="v">{{ $stats['inactive'] }}</div>
-                <div class="bar"><i class="coa-fill-soft" style="width:{{ $inactivePct }}%"></i></div>
-                <div class="n">{{ $inactiveNote }}</div>
+            <div class="coa2-head-btns">
+                <button class="coa2-btn coa2-btn-ghost" id="coa2ExpandAll">{{ __('Expand All') }}</button>
+                <button class="coa2-btn coa2-btn-ghost" id="coa2CollapseAll">{{ __('Collapse All') }}</button>
+                <a href="{{ route('accounting.accounts.create') }}" class="coa2-btn coa2-btn-cta">{{ __('+ New Account') }}</a>
             </div>
         </div>
 
-        {{-- Toolbar --}}
-        <div class="coa-card" style="margin-bottom:16px">
-            <div class="coa-pad">
-                <form method="GET" action="{{ route('accounting.accounts.index') }}">
-                    <div class="coa-toolbar">
-                        <input class="coa-in coa-grow" name="search" placeholder="Search by code or name…" value="{{ $search }}">
-                        <select class="coa-in" name="type">
-                            <option value="">{{ __('All Types') }}</option>
-                            <option value="asset" {{ $typeFilter === 'asset' ? 'selected' : '' }}>Asset</option>
-                            <option value="liability" {{ $typeFilter === 'liability' ? 'selected' : '' }}>Liability</option>
-                            <option value="equity" {{ $typeFilter === 'equity' ? 'selected' : '' }}>Equity</option>
-                            <option value="income" {{ $typeFilter === 'income' ? 'selected' : '' }}>Income</option>
-                            <option value="expense" {{ $typeFilter === 'expense' ? 'selected' : '' }}>Expense</option>
-                        </select>
-                        <select class="coa-in" name="status">
-                            <option value="">{{ __('All Status') }}</option>
-                            <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="inactive" {{ $statusFilter === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                        </select>
-                        <button type="submit" class="coa-btn coa-btn-cta coa-btn-sm" style="height:42px">{{ __('Filter') }}</button>
-                        <div class="coa-toolbar-right">
-                            <button type="button" class="coa-btn coa-btn-ghost coa-btn-sm" onclick="document.querySelectorAll('.coa-grp[data-open]').forEach(g=>g.setAttribute('data-open','true'))">{{ __('Expand All') }}</button>
-                            <button type="button" class="coa-btn coa-btn-ghost coa-btn-sm" onclick="document.querySelectorAll('.coa-grp[data-open]').forEach(g=>g.setAttribute('data-open','false'))">{{ __('Collapse All') }}</button>
+        <div class="coa2-eq">
+            <div class="coa2-eq-cell">
+                <span class="coa2-eq-l">{{ __('Total Assets') }}</span>
+                <span class="coa2-eq-v">{{ format_number($equation['assets']) }}</span>
+            </div>
+            <div class="coa2-eq-sep"></div>
+            <div class="coa2-eq-cell">
+                <span class="coa2-eq-l">{{ __('Total Liabilities') }}</span>
+                <span class="coa2-eq-v">{{ format_number($equation['liabilities']) }}</span>
+            </div>
+            <div class="coa2-eq-sep"></div>
+            <div class="coa2-eq-cell">
+                <span class="coa2-eq-l">{{ __('Total Equity') }}</span>
+                <span class="coa2-eq-v">{{ format_number($equation['equity']) }}</span>
+            </div>
+            <span class="coa2-eq-bal" style="color:{{ $equation['balanced'] ? 'var(--green)' : 'var(--red-2)' }}">
+                @if($equation['balanced'])
+                    &#10003; {{ __('Balanced') }} &mdash; {{ __('Assets = Liabilities + Equity') }}
+                @else
+                    &#9888; {{ __('Out of balance by') }} {{ format_number($equation['difference']) }}
+                @endif
+            </span>
+        </div>
+
+        <div class="coa2-toolbar">
+            <div class="coa2-seg" id="coa2Seg">
+                <button data-v="tree" class="{{ $currentView === 'tree' ? 'on' : '' }}">{{ __('Hierarchy') }}</button>
+                <button data-v="list" class="{{ $currentView === 'list' ? 'on' : '' }}">{{ __('List') }}</button>
+            </div>
+            <input class="coa2-search" id="coa2Q" placeholder="{{ __('Filter by code or name...') }}">
+            <select class="coa2-sel" id="coa2Status">
+                <option value="">{{ __('All statuses') }}</option>
+                <option value="Active">{{ __('Active') }}</option>
+                <option value="Inactive">{{ __('Inactive') }}</option>
+                <option value="Controlled">{{ __('Controlled') }}</option>
+            </select>
+            <span class="coa2-tlabel">{{ __('Hide zero-balance') }}</span>
+            <span class="coa2-sw" id="coa2ZeroSw"></span>
+            <span class="coa2-count" id="coa2Count"></span>
+        </div>
+
+        <div class="coa2-view {{ $currentView === 'tree' ? 'on' : '' }}" id="coa2ViewTree">
+            <div class="coa2-tree">
+                <div class="coa2-tree-h">
+                    <span></span><span>{{ __('Code') }}</span><span>{{ __('Account') }}</span>
+                    <span>{{ __('Level') }}</span><span>{{ __('Status') }}</span>
+                    <span class="coa2-num">{{ __('Opening') }} ({{ $cs }})</span>
+                    <span class="coa2-num">{{ __('Current') }} ({{ $cs }})</span>
+                    <span></span>
+                </div>
+                <div class="coa2-padwrap" id="coa2TreeBody">
+                    @foreach($tree as $typeNode)
+                        <div class="coa2-node">
+                                <div class="coa2-row coa2-row-t" data-status="" data-open="0" data-cur="{{ $typeNode['total'] }}">
+                                    <button class="coa2-car">&#9660;</button>
+                                    <span class="coa2-code"></span>
+                                    <span class="coa2-nm">{{ strtoupper($typeNode['label']) }}</span>
+                                    <span><span class="coa2-chip coa2-lv-t">{{ __('Type') }}</span></span>
+                                    <span></span>
+                                    <span class="coa2-num coa2-roll-op"></span>
+                                    <span class="coa2-num coa2-roll-cu"></span>
+                                    <span></span>
+                                </div>
+                            <div class="coa2-kids">
+                                @foreach($typeNode['sub_types'] as $subNode)
+                                    <div class="coa2-node">
+                                        <div class="coa2-row coa2-row-s" data-status="" data-open="0" data-cur="0">
+                                            <button class="coa2-car">&#9660;</button>
+                                            <span class="coa2-code"></span>
+                                            <span class="coa2-nm">{{ $subNode['label'] }}</span>
+                                            <span><span class="coa2-chip coa2-lv-s">{{ __('Sub-type') }}</span></span>
+                                            <span></span>
+                                            <span class="coa2-num coa2-roll-op"></span>
+                                            <span class="coa2-num coa2-roll-cu"></span>
+                                            <span></span>
+                                        </div>
+                                        <div class="coa2-kids">
+                                            @foreach($subNode['accounts'] as $account)
+                                                @include('accounting.accounts._coa-tree-node', ['node' => $account, 'depth' => 0])
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
-                </form>
+                    @endforeach
+                </div>
             </div>
         </div>
 
-        {{-- Accounts tree --}}
-        <div class="coa-card">
-            <div class="coa-li-wrap">
-                <table class="coa-table">
-                    <thead>
-                        <tr>
-                            <th style="width:10%">{{ __('Code') }}</th>
-                            <th style="width:34%">{{ __('Account Name') }}</th>
-                            <th>{{ __('Type') }}</th>
-                            <th>{{ __('Status') }}</th>
-                            <th class="num">{{ __('Balance') }}</th>
-                            <th style="width:8%"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($typeOrder as $type)
-                            @if($grouped->has($type))
-                                @php
-                                    $typeAccounts = $grouped[$type]->sortBy('code');
-                                    $typeBalance = 0;
-                                    foreach ($typeAccounts as $a) {
-                                        $typeBalance += $balances[$a->id] ?? 0;
-                                    }
-                                @endphp
-                                {{-- Group header row --}}
-                                <tr class="coa-grp" data-open="true" onclick="let open=this.getAttribute('data-open');this.setAttribute('data-open',open==='true'?'false':'true');this.closest('tbody').querySelectorAll('[data-parent={{ $type }}]').forEach(r=>r.style.display=open==='true'?'none':'')">
-                                    <td colspan="5">
-                                        <span class="coa-grp-chevron">▾</span>
-                                        {{ $typeLabels[$type] }}
-                                        <span class="coa-grp-count">{{ $typeAccounts->count() }} accounts</span>
-                                    </td>
-                                    <td></td>
+        <div class="coa2-view {{ $currentView === 'list' ? 'on' : '' }}" id="coa2ViewList">
+            @foreach($tree as $typeNode)
+                <div class="coa2-sec">
+                    <div class="coa2-sec-h">
+                        <span class="coa2-sec-t">{{ $typeNode['label'] }} {{ __('Accounts') }}</span>
+                        <span class="coa2-sec-n">{{ count(array_filter($typeNode['sub_types'], fn($s) => !empty($s['accounts']))) }}</span>
+                    </div>
+                    <div class="coa2-tbl-wrap">
+                        <table class="coa2-tbl">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px">{{ __('Code') }}</th>
+                                    <th>{{ __('Account') }}</th>
+                                    <th>{{ __('Sub-type') }}</th>
+                                    <th>{{ __('Status') }}</th>
+                                    <th class="coa2-num">{{ __('Opening') }} ({{ $cs }})</th>
+                                    <th class="coa2-num">{{ __('Current') }} ({{ $cs }})</th>
+                                    <th style="width:110px"></th>
                                 </tr>
-                                {{-- Account rows --}}
-                                @foreach($typeAccounts as $account)
-                                    @php $childCount = $accounts->where('parent_id', $account->id)->count(); @endphp
-                                    <tr data-parent="{{ $type }}">
-                                        <td class="coa-mono">{{ $account->code }}</td>
-                                        <td style="font-weight:600;color:var(--ink)">{{ $account->name }}</td>
-                                        <td><span class="coa-tchip">{{ ucfirst($type) }}</span></td>
-                                        <td>
-                                            @if($account->is_active)
-                                                <span class="coa-badge coa-b-ok"><span class="bdot"></span>{{ __('Active') }}</span>
-                                            @else
-                                                <span class="coa-badge coa-b-off"><span class="bdot"></span>{{ __('Inactive') }}</span>
-                                            @endif
-                                        </td>
-                                        <td class="num">{{ ($balances[$account->id] ?? 0) != 0 ? format_number($balances[$account->id]) : '—' }}</td>
-                                        <td>
-                                            <div class="coa-row-act">
-                                                <a href="{{ route('accounting.accounts.edit', $account) }}" class="coa-ibtn" title="{{ __('Edit') }}">✎</a>
-                                                <form method="POST" action="{{ route('accounting.accounts.toggle', $account) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, '{{ $account->is_active ? __('Deactivate this account?') : __('Activate this account?') }}', { type: 'danger' })">
-                                                    @csrf @method('PATCH')
-                                                    <button type="submit" class="coa-ibtn" title="{{ $account->is_active ? __('Deactivate') : __('Activate') }}">⋯</button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {{-- Child accounts --}}
-                                    @foreach($accounts->where('parent_id', $account->id)->sortBy('code') as $child)
-                                        <tr class="coa-child" data-parent="{{ $type }}">
-                                            <td class="coa-mono">{{ $child->code }}</td>
-                                            <td style="font-weight:600;color:var(--ink)">— {{ $child->name }}</td>
-                                            <td><span class="coa-tchip">{{ ucfirst($type) }}</span></td>
-                                            <td>
-                                                @if($child->is_active)
-                                                    <span class="coa-badge coa-b-ok"><span class="bdot"></span>{{ __('Active') }}</span>
-                                                @else
-                                                    <span class="coa-badge coa-b-off"><span class="bdot"></span>{{ __('Inactive') }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="num">{{ ($balances[$child->id] ?? 0) != 0 ? format_number($balances[$child->id]) : '—' }}</td>
-                                            <td>
-                                                <div class="coa-row-act">
-                                                    <a href="{{ route('accounting.accounts.edit', $child) }}" class="coa-ibtn" title="{{ __('Edit') }}">✎</a>
-                                                    <form method="POST" action="{{ route('accounting.accounts.toggle', $child) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, '{{ $child->is_active ? __('Deactivate this account?') : __('Activate this account?') }}', { type: 'danger' })">
-                                                        @csrf @method('PATCH')
-                                                        <button type="submit" class="coa-ibtn" title="{{ $child->is_active ? __('Deactivate') : __('Activate') }}">⋯</button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($typeNode['sub_types'] as $subNode)
+                                    @foreach(_coaFlattenAccounts($subNode['accounts']) as $account)
+                                        @include('accounting.accounts._coa-list-row', ['account' => $account, 'cs' => $cs])
                                     @endforeach
                                 @endforeach
-                                {{-- Subtotal row --}}
-                                <tr class="coa-sub" data-parent="{{ $type }}">
-                                    <td colspan="4" style="text-align:right;font-weight:700">{{ $typeLabels[$type] }} Total</td>
-                                    <td class="num">{{ format_number($typeBalance) }}</td>
-                                    <td></td>
-                                </tr>
-                            @endif
-                        @empty
-                            <tr>
-                                <td colspan="6" class="coa-empty">No accounts found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <div id="coa2Menu">
+        <div class="coa2-mhead" id="coa2MenuTitle"></div>
+        <button data-a="ledger">{{ __('View ledger') }}</button>
+        <button data-a="edit">{{ __('Edit account') }}</button>
+        <button data-a="deact" id="coa2MenuDeact" class="danger"></button>
+    </div>
+
+    <div class="coa2-modal" id="coa2Modal">
+        <div class="coa2-mbox">
+            <div class="coa2-mbox-h"><h3 id="coa2MTitle">{{ __('Deactivate account') }}</h3></div>
+            <div class="coa2-mbox-b">
+                <div class="coa2-warn">{{ __('Future postings blocked; history retained. Permission-gated + audited.') }}</div>
+                <div class="coa2-f">
+                    <label>{{ __('Reason (mandatory)') }}</label>
+                    <textarea id="coa2MReason" placeholder="{{ __('e.g. Replaced by 1000 - no activity since 2024') }}"></textarea>
+                </div>
+            </div>
+            <div class="coa2-mbox-f">
+                <button class="coa2-btn coa2-btn-ghost" id="coa2MCancel">{{ __('Cancel') }}</button>
+                <button class="coa2-btn coa2-btn-danger" id="coa2MOk">{{ __('Deactivate') }}</button>
             </div>
         </div>
-
     </div>
+
+    @push('scripts')
+    <script>
+    (function(){
+        var treeData = @json($tree);
+        var balances = @json($balances);
+        var deactivateUrl = '{{ route("accounting.accounts.deactivate", ":id") }}';
+        var reactivateUrl = '{{ route("accounting.accounts.reactivate", ":id") }}';
+        var editUrl = '{{ route("accounting.accounts.edit", ":id") }}';
+        var ledgerUrl = '{{ route("accounting.accounts.show", ":id") }}';
+        var csrfToken = '{{ csrf_token() }}';
+
+        function fmt(n){var a=Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+a+')':a;}
+
+        function roll(node){
+            var o=0,c=0;
+            node.querySelectorAll(':scope > .coa2-kids .coa2-leaf').forEach(function(l){o+=parseFloat(l.dataset.open)||0;c+=parseFloat(l.dataset.cur)||0;});
+            node.querySelectorAll(':scope > .coa2-kids .coa2-node').forEach(function(n){var r=roll(n);o+=r.o;c+=r.c;});
+            var h=node.querySelector(':scope > .coa2-row');
+            if(h){
+                var opEl=h.querySelector('.coa2-roll-op');
+                var cuEl=h.querySelector('.coa2-roll-cu');
+                if(opEl)opEl.textContent=fmt(o);
+                if(cuEl){cuEl.textContent=fmt(c);cuEl.classList.toggle('neg',c<0);}
+            }
+            return{o:o,c:c};
+        }
+
+        var tops=document.querySelectorAll('#coa2TreeBody > .coa2-node');
+        tops.forEach(function(t){roll(t);});
+
+        document.getElementById('coa2Seg').addEventListener('click',function(e){
+            var b=e.target.closest('button');if(!b)return;
+            document.querySelectorAll('#coa2Seg button').forEach(function(x){x.classList.remove('on');});
+            b.classList.add('on');
+            document.getElementById('coa2ViewTree').classList.toggle('on',b.dataset.v==='tree');
+            document.getElementById('coa2ViewList').classList.toggle('on',b.dataset.v==='list');
+            applyFilter();
+            fetch('{{ route("accounting.accounts.preference") }}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrfToken,'Accept':'application/json'},body:JSON.stringify({view:b.dataset.v})});
+        });
+
+        document.querySelectorAll('.coa2-car').forEach(function(c){
+            c.addEventListener('click',function(e){
+                e.stopPropagation();
+                c.closest('.coa2-node').classList.toggle('collapsed');
+            });
+        });
+        document.getElementById('coa2ExpandAll').addEventListener('click',function(){document.querySelectorAll('.coa2-node').forEach(function(n){n.classList.remove('collapsed');});});
+        document.getElementById('coa2CollapseAll').addEventListener('click',function(){document.querySelectorAll('.coa2-node').forEach(function(n){n.classList.add('collapsed');});});
+
+        var q=document.getElementById('coa2Q'),st=document.getElementById('coa2Status'),zero=document.getElementById('coa2ZeroSw'),countEl=document.getElementById('coa2Count');
+
+        function matches(el){
+            var term=q.value.trim().toLowerCase();
+            var hideQ=term&&el.textContent.toLowerCase().indexOf(term)===-1;
+            var hideS=st.value&&el.dataset.status!==st.value;
+            var hideZ=zero.classList.contains('on')&&parseFloat(el.dataset.cur)===0&&parseFloat(el.dataset.open)===0;
+            return !(hideQ||hideS||hideZ);
+        }
+
+        function applyFilter(){
+            var shown=0;
+            document.querySelectorAll('#coa2ViewTree .coa2-leaf').forEach(function(l){var ok=matches(l);l.style.display=ok?'':'none';if(ok)shown++;});
+            document.querySelectorAll('#coa2ViewTree .coa2-node').forEach(function(n){
+                var has=[].slice.call(n.querySelectorAll('.coa2-leaf')).some(function(l){return l.style.display!=='none';});
+                var isLeaf=n.querySelector(':scope > .coa2-leaf');
+                n.style.display=(has||isLeaf)?'':'none';
+                if(q.value||st.value||zero.classList.contains('on'))n.classList.remove('collapsed');
+            });
+            document.querySelectorAll('#coa2ViewList .coa2-lrow').forEach(function(r){var ok=matches(r);r.style.display=ok?'':'none';if(ok)shown++;});
+            document.querySelectorAll('#coa2ViewList .coa2-sec').forEach(function(s){
+                var hasVisible=[].slice.call(s.querySelectorAll('.coa2-lrow')).some(function(r){return r.style.display!=='none';});
+                s.style.display=hasVisible?'':'none';
+            });
+            countEl.textContent=shown+' {{ __("accounts shown") }}';
+        }
+        q.addEventListener('input',applyFilter);st.addEventListener('change',applyFilter);
+        zero.addEventListener('click',function(){zero.classList.toggle('on');applyFilter();});
+        applyFilter();
+
+        var menu=document.getElementById('coa2Menu'),menuDeact=document.getElementById('coa2MenuDeact');
+        var modal=document.getElementById('coa2Modal'),activeRow=null,activeAccountId=null;
+
+        document.addEventListener('click',function(e){
+            var more=e.target.closest('.coa2-more');
+            if(more){
+                activeRow=more.closest('tr')||more.closest('.coa2-row');
+                activeAccountId=activeRow.dataset.id;
+                document.getElementById('coa2MenuTitle').textContent=(activeRow.dataset.code||'')+' \u00B7 '+(activeRow.dataset.name||'');
+                var isInactive=activeRow.dataset.status==='Inactive';
+                var isControlled=activeRow.dataset.status==='Controlled';
+                menuDeact.disabled=isControlled;
+                menuDeact.textContent=isControlled?'{{ __("Controlled - cannot deactivate") }}':(isInactive?'{{ __("Reactivate account") }}':'{{ __("Deactivate account") }}');
+                menuDeact.classList.toggle('danger',!isControlled&&!isInactive);
+                var r=more.getBoundingClientRect();
+                menu.style.top=Math.min(r.bottom+6,innerHeight-200)+'px';
+                menu.style.left=Math.max(12,r.left-160)+'px';
+                menu.classList.add('on');e.stopPropagation();return;
+            }
+            if(!e.target.closest('#coa2Menu'))menu.classList.remove('on');
+        });
+
+        menu.addEventListener('click',function(e){
+            var b=e.target.closest('button');if(!b||b.disabled)return;
+            menu.classList.remove('on');
+            var action=b.dataset.a;
+            if(action==='ledger'){window.location=ledgerUrl.replace(':id',activeAccountId);return;}
+            if(action==='edit'){window.location=editUrl.replace(':id',activeAccountId);return;}
+            if(action!=='deact')return;
+            if(activeRow.dataset.status==='Inactive'){
+                fetch(reactivateUrl.replace(':id',activeAccountId),{method:'PATCH',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrfToken,'Accept':'application/json'}})
+                .then(function(r){return r.json();}).then(function(d){
+                    if(d.ok){activeRow.dataset.status='Active';
+                    var oldChip=activeRow.querySelector('.coa2-st-i');if(oldChip)oldChip.outerHTML='<span class="coa2-chip coa2-st-a">{{ __("Active") }}</span>';
+                    var oldCell=activeRow.querySelector('.coa2-chip.st-i');if(oldCell)oldCell.outerHTML='<span class="coa2-chip coa2-st-a">{{ __("Active") }}</span>';
+                    applyFilter();}
+                });return;
+            }
+            document.getElementById('coa2MTitle').textContent='{{ __("Deactivate") }} '+(activeRow.dataset.code||'')+' \u00B7 '+(activeRow.dataset.name||'');
+            document.getElementById('coa2MReason').value='';modal.classList.add('on');
+        });
+
+        document.getElementById('coa2MCancel').addEventListener('click',function(){modal.classList.remove('on');});
+        modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('on');});
+
+        document.getElementById('coa2MOk').addEventListener('click',function(){
+            var reason=document.getElementById('coa2MReason').value.trim();
+            if(!reason){document.getElementById('coa2MReason').focus();return;}
+            fetch(deactivateUrl.replace(':id',activeAccountId),{method:'PATCH',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrfToken,'Accept':'application/json'},body:JSON.stringify({reason:reason})})
+            .then(function(r){return r.json();}).then(function(d){
+                if(d.ok){
+                    activeRow.dataset.status='Inactive';
+                    var oldChip=activeRow.querySelector('.coa2-st-a');if(oldChip)oldChip.outerHTML='<span class="coa2-chip coa2-st-i">{{ __("Inactive") }}</span>';
+                    var oldCell=activeRow.querySelector('.coa2-chip.st-a');if(oldCell)oldCell.outerHTML='<span class="coa2-chip coa2-st-i">{{ __("Inactive") }}</span>';
+                    modal.classList.remove('on');applyFilter();
+                }
+            });
+        });
+    })();
+    </script>
+    @endpush
 </x-app-layout>

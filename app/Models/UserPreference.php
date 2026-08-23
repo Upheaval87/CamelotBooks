@@ -20,6 +20,7 @@ class UserPreference extends Model
     protected $fillable = [
         'user_id',
         'sidebar_pinned',
+        'coa_view',
         'report_favourites',
         'budget_report_prefs',
     ];

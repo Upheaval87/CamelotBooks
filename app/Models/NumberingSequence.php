@@ -58,6 +58,7 @@ class NumberingSequence extends Model
             'sales_order' => 'Sales Order',
             'sales_receipt' => 'Sales Receipt',
             'billing_quotation' => 'Branch Quotation',
+            'transaction_reversal' => 'Reversal',
         ];
     }
 
@@ -87,6 +88,7 @@ class NumberingSequence extends Model
             ['document_type' => 'sales_order', 'prefix' => 'SO-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'sales_receipt', 'prefix' => 'SR-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'billing_quotation', 'prefix' => 'BQ-', 'padding_width' => 4, 'reset_policy' => 'annually'],
+            ['document_type' => 'transaction_reversal', 'prefix' => 'REV-', 'padding_width' => 4, 'reset_policy' => 'annually'],
         ];
     }
 }

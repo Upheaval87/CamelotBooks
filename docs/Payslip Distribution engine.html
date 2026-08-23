@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll — Payslip Distribution & Secure Portal</title>
+<style>
+  :root{--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--ink:#0B2A2D;--sub:#41585c;--muted:#5f7476;--faint:#8aa5a7;--border:#dceaea;--line:#e2ecec;--green:#15803d;--red-2:#b91c1c;--amber-2:#b45309;--hair:#EEF3F1;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;font-size:14px;-webkit-font-smoothing:antialiased}
+  :focus-visible{outline:2px solid #94a3b8;outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 0 6px}
+  .page-head h1{font-size:22px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border-radius:12px;font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer;font-family:inherit;transition:all .14s;white-space:nowrap}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .btn-ghost{background:#e8f0f0;border-color:var(--border);color:var(--ink)}
+  .btn-sec{color:#fff;background:var(--sec);box-shadow:0 8px 18px -8px rgba(18,143,142,.5)}
+  .btn-cta{color:#fff;background:var(--deep-2);font-weight:700;box-shadow:0 10px 22px -10px rgba(8,40,44,.55)}
+  .btn-ok{color:#fff;background:var(--green)}
+  .btn-sm{height:34px;padding:0 13px;font-size:12px;border-radius:10px}
+  .card{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h .ic{width:34px;height:34px;border-radius:10px;background:rgba(18,143,142,.1);display:grid;place-items:center;font-size:15px}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pad{padding:20px 24px}
+  .mb{margin-bottom:16px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:14px 0 16px}
+  @media (max-width:1000px){.kpis{grid-template-columns:1fr 1fr}}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.94)}
+  .kpi .l{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{margin-top:5px;font-size:1.3rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi .n{margin-top:3px;font-size:10.5px;font-weight:700;color:var(--muted)}
+  .kpi.hero{background:var(--sec);border:none}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}.kpi.hero .n{color:#dff7f6}
+  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+  @media (max-width:1100px){.grid2{grid-template-columns:1fr}}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:860px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  th.num,td.num{text-align:right}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--sub)}
+  td.num{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .name{font-weight:600;color:var(--ink)}
+  .em{color:var(--muted)}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-ok{background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.4);color:var(--green)}.b-ok .bdot{background:#22c55e}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:#d97706}
+  .b-rev{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-rev .bdot{background:var(--red-2)}
+  .b-post{background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.4);color:var(--sec)}.b-post .bdot{background:var(--sec)}
+  .b-off{background:rgba(138,165,167,.15);border:1px solid rgba(138,165,167,.5);color:var(--muted)}.b-off .bdot{background:var(--muted)}
+  .alert{border-radius:12px;padding:11px 14px;font-size:12px;font-weight:700;margin-top:12px}
+  .alert.red{border:1px solid rgba(185,28,28,.4);background:rgba(185,28,28,.07);color:var(--red-2)}
+  .alert.amber{border:1px solid rgba(180,83,9,.4);background:rgba(180,83,9,.07);color:var(--amber-2)}
+  .alert.teal{border:1px dashed rgba(18,143,142,.5);background:rgba(18,143,142,.06);color:var(--sec)}
+  .alert.green{border:1px solid rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--green)}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px}
+  @media (max-width:900px){.g3{grid-template-columns:1fr}}
+  .f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .f .in{width:100%;height:42px;border-radius:11px;border:1px solid var(--border);background:#fff;padding:0 13px;font-size:13.5px;color:var(--ink);font-family:inherit}
+  .f select.in{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 13px center;padding-right:32px}
+  .f .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.13)}
+  .dl{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--hair);font-size:12.5px}
+  .dl:last-child{border-bottom:none}
+  .dl .l{color:var(--muted);font-weight:600}
+  .dl .v{font-weight:700;color:var(--ink)}
+  .sw{width:44px;height:25px;border-radius:999px;background:#CBD8D6;position:relative;transition:.2s;flex:none;cursor:pointer}
+  .sw.on{background:var(--sec)}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .sw.on::after{left:22px}
+  .swrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--hair)}
+  .swrow:last-child{border-bottom:none}
+  .swrow .t{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .swrow .s{font-size:11px;color:var(--muted);margin-top:2px}
+  .prog{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:6px 0}
+  .prog i{display:block;height:100%;border-radius:4px;background:var(--sec)}
+  .tile{border:1px solid var(--border);border-radius:13px;background:rgba(255,255,255,.94);padding:14px 16px;margin-bottom:10px}
+  .tile .t{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:6px}
+  .tile .s{font-size:12px;color:var(--muted)}
+  .tile .v{font-size:1.4rem;font-weight:800;color:var(--deep-2);margin:6px 0}
+  .payslip-view{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;max-width:800px;margin:0 auto}
+  .payslip-view h3{font-size:18px;font-weight:800;color:var(--deep-2);text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--sec)}
+  .payslip-section{margin:16px 0}
+  .payslip-section h4{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sec);margin-bottom:8px}
+  .payslip-line{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+  .payslip-line.total{border-top:2px solid var(--deep-2);margin-top:8px;padding-top:10px;font-weight:800;font-size:15px;color:var(--deep-2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- 1 · PAY RUN — FINALIZED (Send Payslips button) -->
+<div><span class="opt-tag">1 · Pay Run · August 2026 (Finalized)</span>
+  <div class="page-head"><div><h1 style="display:flex;gap:10px;align-items:center">Pay Run · August 2026 <span class="badge b-ok"><span class="bdot"></span>FINALIZED</span></h1><div class="sub">Payroll approved and locked · ready for payslip distribution.</div></div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Employees</div><div class="v">246</div><div class="n">in pay run</div></div>
+    <div class="kpi"><div class="l">Gross Payroll</div><div class="v">K148.5M</div><div class="n">total earnings</div></div>
+    <div class="kpi"><div class="l">Net Payroll</div><div class="v">K112.3M</div><div class="n">after deductions</div></div>
+    <div class="kpi hero"><div class="l">Pay Date</div><div class="v" style="font-size:15px">31 Aug 2026</div><div class="n">payment date</div></div>
+  </div>
+  <div class="card"><div class="card-h"><span class="ic">📄</span><h2>Payslip Distribution</h2></div>
+    <div class="pad">
+      <div class="dl"><span class="l">Payslips Generated</span><span class="v">246 / 246</span></div>
+      <div class="dl"><span class="l">Emails Sent</span><span class="v">0 / 246</span></div>
+      <div class="dl"><span class="l">Failed</span><span class="v" style="color:var(--green)">0</span></div>
+      <div class="dl"><span class="l">Pending</span><span class="v">246</span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+        <button class="btn btn-cta">Send All Payslips</button>
+        <button class="btn btn-sec">Preview Distribution</button>
+        <button class="btn btn-ghost">View Delivery Status</button>
+      </div>
+      <div class="alert teal">Payroll data locked after finalization · payslips generated in-memory from immutable records · PDFs password-protected and discarded after delivery.</div>
+    </div></div>
+</div>
+
+<!-- 2 · PRE-DISTRIBUTION VALIDATION -->
+<div><span class="opt-tag">2 · Pre-Distribution Validation</span>
+  <div class="page-head"><div><h1>Distribution Summary</h1><div class="sub">Validation before sending payslips.</div></div>
+    <button class="btn btn-cta">Send 242 Payslips</button></div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Ready to Send</div><div class="v" style="color:var(--green)">242</div><div class="n">all checks passed</div></div>
+    <div class="kpi"><div class="l">Missing Email</div><div class="v" style="color:var(--red-2)">2</div><div class="n">no email address</div></div>
+    <div class="kpi"><div class="l">Missing Password</div><div class="v" style="color:var(--amber-2)">1</div><div class="n">payslip password not set</div></div>
+    <div class="kpi"><div class="l">Invalid Email</div><div class="v" style="color:var(--red-2)">1</div><div class="n">malformed address</div></div>
+  </div>
+  <div class="card"><div class="card-h"><span class="ic">⚠</span><h2>Cannot Send — Fix Required</h2></div>
+    <div class="li-wrap"><table><thead><tr><th>Employee</th><th>Issue</th><th>Action</th></tr></thead><tbody>
+      <tr><td class="name">Peter Zulu</td><td><span class="badge b-rev"><span class="bdot"></span>Missing Email</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Fix Profile</button></td></tr>
+      <tr><td class="name">Grace Mbewe</td><td><span class="badge b-rev"><span class="bdot"></span>Missing Email</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Fix Profile</button></td></tr>
+      <tr><td class="name">James Phiri</td><td><span class="badge b-pend"><span class="bdot"></span>Missing Password</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Set Password</button></td></tr>
+      <tr><td class="name">Anna Tembo</td><td><span class="badge b-rev"><span class="bdot"></span>Invalid Email</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Fix Email</button></td></tr>
+    </tbody></table></div></div>
+</div>
+
+<!-- 3 · BULK SEND PROGRESS -->
+<div><span class="opt-tag">3 · Bulk Send Progress</span>
+  <div class="page-head"><div><h1>Sending Payslips…</h1><div class="sub">Generating, encrypting, and delivering.</div></div></div>
+  <div class="card"><div class="pad">
+    <div class="dl"><span class="l">Generating Payslips</span><span class="v">242 / 242</span></div>
+    <div class="prog"><i style="width:100%"></i></div>
+    <div class="dl"><span class="l">Encrypting PDFs</span><span class="v">242 / 242</span></div>
+    <div class="prog"><i style="width:100%"></i></div>
+    <div class="dl"><span class="l">Preparing Emails</span><span class="v">242 / 242</span></div>
+    <div class="prog"><i style="width:100%"></i></div>
+    <div class="dl"><span class="l">Sending</span><span class="v">152 / 242</span></div>
+    <div class="prog"><i style="width:63%"></i></div>
+    <div class="alert teal">PDFs generated in-memory, encrypted with employee passwords, attached to emails, then discarded from server memory.</div>
+  </div></div>
+</div>
+
+<!-- 4 · DISTRIBUTION STATUS TABLE -->
+<div><span class="opt-tag">4 · Distribution Status</span>
+  <div class="page-head"><div><h1>Payslip Delivery Status</h1><div class="sub">Track each email independently.</div></div>
+    <button class="btn btn-ghost">Export Log</button></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>Employee</th><th>Email</th><th>Password</th><th>PDF</th><th>Status</th><th>Action</th></tr></thead><tbody>
+    <tr><td class="name">John Banda</td><td class="em">john@...</td><td><span class="badge b-ok"><span class="bdot"></span>Configured</span></td><td><span class="badge b-ok"><span class="bdot"></span>Ready</span></td><td><span class="badge b-ok"><span class="bdot"></span>Sent</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">View</button><button class="btn btn-ghost btn-sm">Resend</button></td></tr>
+    <tr><td class="name">Mary Phiri</td><td class="em">mary@...</td><td><span class="badge b-ok"><span class="bdot"></span>Configured</span></td><td><span class="badge b-ok"><span class="bdot"></span>Ready</span></td><td><span class="badge b-pend"><span class="bdot"></span>Pending</span></td><td class="row-act"><button class="btn btn-sec btn-sm">Send</button></td></tr>
+    <tr><td class="name">Peter Zulu</td><td class="em">—</td><td><span class="badge b-ok"><span class="bdot"></span>Configured</span></td><td><span class="badge b-ok"><span class="bdot"></span>Ready</span></td><td><span class="badge b-rev"><span class="bdot"></span>Missing Email</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Fix</button></td></tr>
+    <tr><td class="name">Grace Mbewe</td><td class="em">grace@...</td><td><span class="badge b-off"><span class="bdot"></span>Not Set</span></td><td><span class="badge b-ok"><span class="bdot"></span>Ready</span></td><td><span class="badge b-rev"><span class="bdot"></span>Blocked</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Fix</button></td></tr>
+    <tr><td class="name">Samuel Tembo</td><td class="em">sam@...</td><td><span class="badge b-ok"><span class="bdot"></span>Configured</span></td><td><span class="badge b-ok"><span class="bdot"></span>Ready</span></td><td><span class="badge b-rev"><span class="bdot"></span>Failed</span></td><td class="row-act"><button class="btn btn-sec btn-sm">Retry</button></td></tr>
+  </tbody></table></div></div>
+</div>
+
+<!-- 5 · EMPLOYEE PROFILE — PAYSLIP SECURITY SETTINGS -->
+<div><span class="opt-tag">5 · Employee Profile · Payslip Security Settings</span>
+  <div class="page-head"><div><h1>John Banda · EMP-00125</h1><div class="sub">Payslip delivery and password configuration.</div></div></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><span class="ic">🔐</span><h2>Payslip Delivery & Security</h2></div>
+      <div class="pad"><div class="g3">
+        <div class="f"><label>Email Address</label><input class="in" value="john.banda@company.com"></div>
+        <div class="f"><label>Payslip PDF Password</label><input class="in" type="password" value="••••••••" disabled style="background:var(--hair);color:var(--muted)"><div class="em" style="font-size:10px;margin-top:5px">Encrypted at rest · never displayed</div></div>
+        <div class="f"><label>Confirm Password</label><input class="in" type="password" value="••••••••" disabled style="background:var(--hair);color:var(--muted)"></div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="swrow"><div><div class="t">Email Payslips</div><div class="s">Send payslip to email on pay date</div></div><span class="sw on"></span></div>
+        <div class="swrow"><div><div class="t">Portal Payslips</div><div class="s">Available in employee self-service portal</div></div><span class="sw on"></span></div>
+      </div>
+      <div class="alert teal">Password last changed: 15 Jun 2026 · Password stored using authenticated encryption (not hash) · PDF encryption applied in-memory before delivery.</div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px"><button class="btn btn-ghost">Cancel</button><button class="btn btn-cta">Update Settings</button></div>
+      </div></div>
+    <div class="card"><div class="card-h"><span class="ic">📊</span><h2>Payroll Administrator View</h2></div>
+      <div class="pad">
+        <div class="dl"><span class="l">Email</span><span class="v">john.banda@company.com</span></div>
+        <div class="dl"><span class="l">Password</span><span class="v"><span class="badge b-ok"><span class="bdot"></span>Configured</span></span></div>
+        <div class="dl"><span class="l">Email Payslips</span><span class="v">Enabled</span></div>
+        <div class="dl"><span class="l">Portal Access</span><span class="v">Enabled</span></div>
+        <div class="dl"><span class="l">Last Password Change</span><span class="v">15 Jun 2026</span></div>
+        <div class="alert green">Administrator cannot view the actual password · only status is shown.</div>
+      </div></div>
+  </div>
+</div>
+
+<!-- 6 · EMPLOYEE PORTAL — MY PAYSLIPS -->
+<div><span class="opt-tag">6 · Employee Portal · My Payslips (Self-Service)</span>
+  <div class="page-head"><div><h1>My Payslips</h1><div class="sub">John Banda · EMP-00125 · Finance Department</div></div></div>
+  <div class="tile">
+    <div class="t">August 2026</div>
+    <div class="s">Pay Date: 31 August 2026 · Net Pay: <b style="color:var(--deep-2);font-size:16px">K485,000</b></div>
+    <div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-cta">View Payslip</button><button class="btn btn-sec">Download PDF</button></div>
+  </div>
+  <div class="card"><div class="card-h"><span class="ic">📜</span><h2>Payslip History</h2></div>
+    <div class="li-wrap"><table><thead><tr><th>Pay Period</th><th>Pay Date</th><th class="num">Net Pay</th><th>Status</th><th>Action</th></tr></thead><tbody>
+      <tr><td class="name">August 2026</td><td class="em">31 Aug 2026</td><td class="num">485,000</td><td><span class="badge b-ok"><span class="bdot"></span>Available</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">View</button><button class="btn btn-ghost btn-sm">Download</button></td></tr>
+      <tr><td class="name">July 2026</td><td class="em">31 Jul 2026</td><td class="num">485,000</td><td><span class="badge b-ok"><span class="bdot"></span>Available</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">View</button><button class="btn btn-ghost btn-sm">Download</button></td></tr>
+      <tr><td class="name">June 2026</td><td class="em">30 Jun 2026</td><td class="num">482,500</td><td><span class="badge b-ok"><span class="bdot"></span>Available</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">View</button><button class="btn btn-ghost btn-sm">Download</button></td></tr>
+      <tr><td class="name">May 2026</td><td class="em">31 May 2026</td><td class="num">482,500</td><td><span class="badge b-ok"><span class="bdot"></span>Available</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">View</button><button class="btn btn-ghost btn-sm">Download</button></td></tr>
+    </tbody></table></div></div>
+</div>
+
+<!-- 7 · EMPLOYEE PORTAL — SECURE PAYSLIP PREVIEW -->
+<div><span class="opt-tag">7 · Employee Portal · Secure Payslip Preview</span>
+  <div class="page-head"><div><h1>Payslip · August 2026</h1><div class="sub">Secure HTML preview · PDF download is password-protected.</div></div>
+    <button class="btn btn-sec">Download Password-Protected PDF</button></div>
+  <div class="payslip-view">
+    <h3>PAYSLIP</h3>
+    <div class="payslip-section">
+      <div class="payslip-line"><span>Employee</span><span class="name">John Banda</span></div>
+      <div class="payslip-line"><span>Employee No</span><span>EMP-00125</span></div>
+      <div class="payslip-line"><span>Department</span><span>Finance</span></div>
+      <div class="payslip-line"><span>Pay Period</span><span>August 2026</span></div>
+      <div class="payslip-line"><span>Pay Date</span><span>31 August 2026</span></div>
+    </div>
+    <div class="payslip-section">
+      <h4>Earnings</h4>
+      <div class="payslip-line"><span>Basic Salary</span><span>450,000</span></div>
+      <div class="payslip-line"><span>Housing Allowance</span><span>35,000</span></div>
+      <div class="payslip-line"><span>Transport Allowance</span><span>20,000</span></div>
+    </div>
+    <div class="payslip-section">
+      <h4>Deductions</h4>
+      <div class="payslip-line"><span>PAYE</span><span>(12,500)</span></div>
+      <div class="payslip-line"><span>Pension</span><span>(7,500)</span></div>
+    </div>
+    <div class="payslip-line total"><span>NET PAY</span><span>K485,000</span></div>
+  </div>
+  <div class="alert teal" style="margin-top:16px">Downloaded PDFs are encrypted with your payslip password · generated in-memory and discarded after download · no PDF stored on server.</div>
+</div>
+
+<!-- 8 · AUDIT TRAIL -->
+<div><span class="opt-tag">8 · Payslip Distribution Audit Trail</span>
+  <div class="page-head"><div><h1>Payslip Distribution Audit</h1><div class="sub">Complete log of all distribution events · passwords never logged.</div></div>
+    <button class="btn btn-ghost">Export Audit Log</button></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>Date / Time</th><th>Employee</th><th>Pay Run</th><th>Action</th><th>Recipient</th><th>Performed By</th><th>Status</th></tr></thead><tbody>
+    <tr><td class="em">31 Aug 2026 14:32</td><td class="name">John Banda</td><td class="mono">PR-2026-08</td><td>Sent</td><td class="em">john.banda@...</td><td class="em">Payroll Officer</td><td><span class="badge b-ok"><span class="bdot"></span>Successful</span></td></tr>
+    <tr><td class="em">31 Aug 2026 14:33</td><td class="name">Mary Phiri</td><td class="mono">PR-2026-08</td><td>Sent</td><td class="em">mary.phiri@...</td><td class="em">Payroll Officer</td><td><span class="badge b-ok"><span class="bdot"></span>Successful</span></td></tr>
+    <tr><td class="em">31 Aug 2026 14:35</td><td class="name">Samuel Tembo</td><td class="mono">PR-2026-08</td><td>Failed</td><td class="em">sam.tembo@...</td><td class="em">System</td><td><span class="badge b-rev"><span class="bdot"></span>SMTP Error</span></td></tr>
+    <tr><td class="em">31 Aug 2026 14:40</td><td class="name">Samuel Tembo</td><td class="mono">PR-2026-08</td><td>Resent</td><td class="em">sam.tembo@...</td><td class="em">Payroll Officer</td><td><span class="badge b-ok"><span class="bdot"></span>Successful</span></td></tr>
+    <tr><td class="em">31 Aug 2026 15:10</td><td class="name">John Banda</td><td class="mono">PR-2026-08</td><td>Portal Download</td><td class="em">—</td><td class="em">John Banda</td><td><span class="badge b-ok"><span class="bdot"></span>Successful</span></td></tr>
+  </tbody></table></div></div>
+</div>
+
+</div>
+</body>
+</html>

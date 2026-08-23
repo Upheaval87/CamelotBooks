@@ -249,8 +249,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Chart of Accounts
             Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+            Route::get('accounts/tree', [AccountController::class, 'tree'])->name('accounts.tree');
+            Route::post('accounts/preference', [AccountController::class, 'preference'])->name('accounts.preference');
             Route::get('accounts/create', [AccountController::class, 'create'])->name('accounts.create');
             Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+            Route::patch('accounts/{account}/deactivate', [AccountController::class, 'deactivate'])->name('accounts.deactivate');
+            Route::patch('accounts/{account}/reactivate', [AccountController::class, 'reactivate'])->name('accounts.reactivate');
             Route::get('accounts/{account}', [AccountController::class, 'show'])->name('accounts.show');
             Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
             Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
@@ -314,6 +318,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Recurring Journals Centre
             Route::get('recurring-journals/dashboard', [RecurringJournalController::class, 'dashboard'])->name('rj.dashboard');
+            Route::post('recurring-journals/dashboard/run-scheduled', [RecurringJournalController::class, 'runScheduled'])->name('rj.run-scheduled');
             Route::get('recurring-journals', [RecurringJournalController::class, 'index'])->name('rj.index');
             Route::get('recurring-journals/create', [RecurringJournalController::class, 'create'])->name('rj.create');
             Route::post('recurring-journals', [RecurringJournalController::class, 'store'])->name('rj.store');
@@ -757,6 +762,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('account-classification/{classification}/edit', [AccountClassificationController::class, 'edit'])->name('account-classification.edit');
             Route::patch('account-classification', [AccountClassificationController::class, 'update'])->name('account-classification.update');
 
+            // ── Transaction Reversals ──
+            Route::prefix('reversals')->name('reversals.')->group(function () {
+                Route::get('create', [\App\Http\Controllers\Accounting\ReversalController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Accounting\ReversalController::class, 'store'])->name('store');
+                Route::get('/', [\App\Http\Controllers\Accounting\ReversalController::class, 'index'])->name('index');
+                Route::get('{id}', [\App\Http\Controllers\Accounting\ReversalController::class, 'show'])->name('show')->where('id', '[0-9]+');
+                Route::get('authorization', [\App\Http\Controllers\Accounting\ReversalController::class, 'auth'])->name('auth');
+                Route::get('authorization/queue', [\App\Http\Controllers\Accounting\ReversalController::class, 'authQueue'])->name('auth.queue');
+                Route::get('authorization/{id}', [\App\Http\Controllers\Accounting\ReversalController::class, 'authShow'])->name('auth.show');
+                Route::post('authorization/{id}/approve', [\App\Http\Controllers\Accounting\ReversalController::class, 'authApprove'])->name('auth.approve');
+                Route::post('authorization/{id}/reject', [\App\Http\Controllers\Accounting\ReversalController::class, 'authReject'])->name('auth.reject');
+                Route::post('authorization/{id}/clarify', [\App\Http\Controllers\Accounting\ReversalController::class, 'authClarify'])->name('auth.clarify');
+                Route::get('rules', [\App\Http\Controllers\Accounting\ReversalController::class, 'rules'])->name('rules');
+                Route::post('rules', [\App\Http\Controllers\Accounting\ReversalController::class, 'rulesStore'])->name('rules.store');
+                Route::post('rules/{ruleId}/toggle', [\App\Http\Controllers\Accounting\ReversalController::class, 'rulesToggle'])->name('rules.toggle');
+                Route::delete('rules/{ruleId}', [\App\Http\Controllers\Accounting\ReversalController::class, 'rulesDelete'])->name('rules.delete');
+                Route::get('audit', [\App\Http\Controllers\Accounting\ReversalController::class, 'audit'])->name('audit');
+            });
+
             // ── Inventory Centre ──
             Route::middleware('feature:inventory')->prefix('inventory')->name('inventory.')->group(function () {
                 Route::get('/', [InventoryCentreController::class, 'dashboard'])->name('dashboard');
@@ -917,9 +941,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
             Route::post('users/{user}/toggle-2fa', [\App\Http\Controllers\Admin\UserController::class, 'toggle2fa'])->name('users.toggle-2fa');
 
-            // Permission Manager
+            // Permissions Console
             Route::get('permissions', [\App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('permissions.index');
-            Route::post('permissions/sync', [\App\Http\Controllers\Admin\PermissionController::class, 'sync'])->name('permissions.sync');
+            Route::post('permissions', [\App\Http\Controllers\Admin\PermissionController::class, 'store'])->name('permissions.store');
+            Route::post('permissions/save', [\App\Http\Controllers\Admin\PermissionController::class, 'savePermissions'])->name('permissions.save');
+            Route::post('permissions/{role}/toggle-active', [\App\Http\Controllers\Admin\PermissionController::class, 'toggleActive'])->name('permissions.toggle-active');
+            Route::get('permissions/{role}/permissions', [\App\Http\Controllers\Admin\PermissionController::class, 'getRolePermissions'])->name('permissions.role-permissions');
 
             // Setup Wizard
             Route::get('setup-wizard', [\App\Http\Controllers\Admin\SetupWizardController::class, 'index'])->name('setup-wizard.index');

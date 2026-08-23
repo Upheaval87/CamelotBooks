@@ -31,6 +31,18 @@ class RecurringJournalController extends Controller
         return view('accounting.rj.dashboard', $stats);
     }
 
+    public function runScheduled()
+    {
+        $results = $this->service->runDueSchedules();
+
+        $message = "Generated {$results['generated']} journal(s).";
+        if ($results['failed'] > 0) {
+            $message .= " {$results['failed']} failed.";
+        }
+
+        return redirect()->route('accounting.rj.dashboard')->with('success', $message);
+    }
+
     public function index()
     {
         $companyId = session('current_company_id');

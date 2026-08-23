@@ -32,6 +32,17 @@ class Account extends Model
         'is_non_cash',
         'next_cheque_number',
         'petty_cash_float',
+        'is_group',
+        'level',
+        'allow_posting',
+        'is_system_account',
+        'normal_balance',
+        'posting_behaviour',
+        'allow_adjustments',
+        'legacy_code',
+        'is_contra',
+        'sort_order',
+        'version',
     ];
 
     protected $casts = [
@@ -43,6 +54,13 @@ class Account extends Model
         'next_cheque_number' => 'integer',
         'petty_cash_float' => 'decimal:2',
         'opening_balance_date' => 'date',
+        'is_group' => 'boolean',
+        'allow_posting' => 'boolean',
+        'is_system_account' => 'boolean',
+        'allow_adjustments' => 'boolean',
+        'is_contra' => 'boolean',
+        'sort_order' => 'integer',
+        'version' => 'integer',
     ];
 
     public function getCurrentBalanceAttribute(): float
@@ -87,6 +105,21 @@ class Account extends Model
     public function bankTransactions(): HasMany
     {
         return $this->hasMany(BankTransaction::class, 'bank_account_id');
+    }
+
+    public function auditTrail(): HasMany
+    {
+        return $this->hasMany(CoaAuditLog::class);
+    }
+
+    public function isControlled(): bool
+    {
+        return (bool) $this->is_system_account;
+    }
+
+    public function isContra(): bool
+    {
+        return (bool) $this->is_contra;
     }
 
     public function isDebitNormal(): bool

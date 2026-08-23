@@ -9,7 +9,7 @@
                 <div style="display:flex;gap:10px;flex-wrap:wrap">
                     <a href="{{ route('accounting.rj.settings') }}" class="btn btn-ghost btn-sm">⚙ Settings</a>
                     <a href="{{ route('accounting.rj.reports') }}" class="btn btn-ghost btn-sm">📊 View Reports</a>
-                    <form method="POST" action="{{ route('accounting.rj.dashboard') }}" style="display:inline">
+                    <form method="POST" action="{{ route('accounting.rj.run-scheduled') }}" style="display:inline">
                         @csrf
                         <button type="submit" class="btn btn-sec btn-sm">▶ Run Scheduled Journals</button>
                     </form>

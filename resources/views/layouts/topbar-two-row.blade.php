@@ -38,6 +38,7 @@
         ['label' => __('Cost Centers'),        'route' => 'accounting.cost-centers.index'],
         ['label' => __('Exchange Rates'),      'route' => 'accounting.exchange-rates.index'],
         ['label' => __('Account Classification'),'route' => 'accounting.account-classification.index'],
+        ['label' => __('Transaction Reversals'), 'route' => 'accounting.reversals.index'],
     ];
 
     if ($feat('budgets')) {

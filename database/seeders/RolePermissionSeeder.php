@@ -26,16 +26,20 @@ class RolePermissionSeeder extends Seeder
             }
         }
 
-        // ── 2. Create all report permissions ──
+        // ── 2. Create all report permissions (view + export/print/email/schedule) ──
         $reportKeys = [];
+        $reportActions = ['view', 'export', 'print', 'email', 'schedule'];
         foreach ($permConfig['reports'] as $key => $label) {
             $reportKeys[] = $key;
-            if (!isset($allPermissions["reports.{$key}.view"])) {
-                $perm = Permission::firstOrCreate([
-                    'name' => "reports.{$key}.view",
-                    'guard_name' => 'web',
-                ]);
-                $allPermissions["reports.{$key}.view"] = $perm->id;
+            foreach ($reportActions as $action) {
+                $permName = "reports.{$key}.{$action}";
+                if (!isset($allPermissions[$permName])) {
+                    $perm = Permission::firstOrCreate([
+                        'name' => $permName,
+                        'guard_name' => 'web',
+                    ]);
+                    $allPermissions[$permName] = $perm->id;
+                }
             }
         }
 
@@ -53,7 +57,7 @@ class RolePermissionSeeder extends Seeder
          *   'reports.*'  → all report permissions
          *   'module.action' → that specific permission
          */
-        $resolve = function (string $pattern) use ($permConfig, $reportKeys): array {
+        $resolve = function (string $pattern) use ($permConfig, $reportKeys, $reportActions): array {
             if ($pattern === '*') {
                 $names = [];
                 foreach ($permConfig['modules'] as $module => $actions) {
@@ -62,13 +66,21 @@ class RolePermissionSeeder extends Seeder
                     }
                 }
                 foreach ($reportKeys as $key) {
-                    $names[] = "reports.{$key}.view";
+                    foreach ($reportActions as $action) {
+                        $names[] = "reports.{$key}.{$action}";
+                    }
                 }
                 return array_unique($names);
             }
 
             if ($pattern === 'reports.*') {
-                return array_map(fn($k) => "reports.{$k}.view", $reportKeys);
+                $names = [];
+                foreach ($reportKeys as $key) {
+                    foreach ($reportActions as $action) {
+                        $names[] = "reports.{$key}.{$action}";
+                    }
+                }
+                return $names;
             }
 
             // Check if it's a "module.*" pattern

@@ -11,7 +11,7 @@
             {{-- crumbs --}}
             <nav class="crumbs">
                 <a href="{{ route('accounting.vendors.dashboard') }}">Vendor Centre</a>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
                 <span>Reports</span>
             </nav>
 

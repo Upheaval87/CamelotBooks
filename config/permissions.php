@@ -69,6 +69,7 @@ return [
         'exchange-rates'     => ['view', 'create', 'edit', 'delete'],
         'recurring-journals' => ['view', 'create', 'edit', 'void'],
         'account-classification' => ['view', 'edit'],
+        'transaction-reversals' => ['view', 'request', 'approve', 'reject', 'clarify', 'configure_rules', 'view_audit'],
 
         // ── Payroll ──
         'employees'    => ['view', 'create', 'edit', 'void'],
@@ -309,6 +310,7 @@ return [
                 'tax-returns.*',
                 'accounting-periods.*',
                 'fiscal-years.*',
+                'transaction-reversals.*',
                 // Reports — most financial reports
                 'reports.general_ledger.view',
                 'reports.trial_balance.view',
@@ -453,6 +455,8 @@ return [
                 'budgets.view', 'budgets.approve',
                 'journal-entries.view', 'journal-entries.approve',
                 'payroll-runs.view', 'payroll-runs.approve',
+                // Transaction reversals
+                'transaction-reversals.view', 'transaction-reversals.approve',
                 // Customers, Vendors, Products — view only
                 'customers.view',
                 'vendors.view',
@@ -493,6 +497,46 @@ return [
                 'reports.employee_cost_by_branch.view',
                 'reports.report_center.view',
                 // System — minimal
+                'audit-log.view',
+                'system-health.view',
+            ],
+        ],
+
+        'senior_approver' => [
+            'label' => 'Senior Approver / CFO',
+            'scope' => 'company',
+            'permissions' => [
+                // View + approve on transactional modules
+                'invoices.view', 'invoices.approve',
+                'bills.view', 'bills.approve',
+                'expenses.view', 'expenses.approve',
+                'expense-claims.view', 'expense-claims.approve',
+                'purchase-requisitions.view', 'purchase-requisitions.approve',
+                'purchase-orders.view', 'purchase-orders.approve',
+                'budgets.view', 'budgets.approve',
+                'journal-entries.view', 'journal-entries.approve',
+                'payroll-runs.view', 'payroll-runs.approve',
+                // Transaction reversals — full approval chain
+                'transaction-reversals.view', 'transaction-reversals.approve',
+                'transaction-reversals.reject', 'transaction-reversals.clarify',
+                // Banking
+                'bank-accounts.view',
+                'bank-reconciliations.view', 'bank-reconciliations.approve',
+                // Accounting — view only
+                'chart-of-accounts.view',
+                'accounting-periods.view',
+                'fiscal-years.view',
+                'cost-centers.view',
+                // Reports — summary/approval
+                'reports.general_ledger.view',
+                'reports.trial_balance.view',
+                'reports.income_statement.view',
+                'reports.balance_sheet.view',
+                'reports.cash_flow.view',
+                'reports.pending_approvals_aging.view',
+                'reports.payroll_summary.view',
+                'reports.report_center.view',
+                // System
                 'audit-log.view',
                 'system-health.view',
             ],
