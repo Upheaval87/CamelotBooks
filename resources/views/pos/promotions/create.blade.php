@@ -1,16 +1,15 @@
 <x-app-layout>
     <div class="pos">
-        <div class="wrap">
-            <div class="pos-page-head">
-                <div>
-                    <h1>Create Promotion</h1>
-                    <div class="pos-sub">Define a new discount or promotional offer</div>
-                </div>
-                <div class="pos-actions">
-                    <a href="{{ route('pos.promotions.index') }}" class="pos-btn pos-btn-ghost">Cancel</a>
-                    <button type="submit" form="promotion-form" class="pos-btn pos-btn-cta">Save Promotion</button>
-                </div>
+        <div class="pos-page-head">
+            <div>
+                <h1>Create Promotion</h1>
+                <div class="pos-sub">Define a new discount or promotional offer</div>
             </div>
+            <div class="pos-actions">
+                <a href="{{ route('pos.promotions.index') }}" class="pos-btn pos-btn-ghost">Cancel</a>
+                <button type="submit" form="promotion-form" class="pos-btn pos-btn-cta">Save Promotion</button>
+            </div>
+        </div>
 
             <form id="promotion-form" method="POST" action="{{ route('pos.promotions.store') }}">
                 @csrf
@@ -21,11 +20,11 @@
                     </div>
                     <div class="pos-pad">
                         @if($errors->any())
-                            <x-feedback.alert variant="error" class="mb-4">
+                            <div style="padding:10px;border:1px solid var(--pos-red);border-radius:8px;margin-bottom:16px">
                                 @foreach($errors->all() as $error)
-                                    <div>{{ $error }}</div>
+                                    <div style="color:var(--pos-red);font-size:13px">{{ $error }}</div>
                                 @endforeach
-                            </x-feedback.alert>
+                            </div>
                         @endif
 
                         <div class="pos-g3">

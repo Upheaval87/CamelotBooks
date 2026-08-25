@@ -1,288 +1,273 @@
 <x-app-layout>
-    <x-list-header title="{{ __('POS Checkout') }} – {{ session('pos_terminal_identifier') ?? '' }}" />
+    <div class="pos">
+        <div class="pos-page-head">
+            <div>
+                <h1>POS Checkout</h1>
+                <div class="pos-sub">{{ session('pos_terminal_identifier') ?? '' }}</div>
+            </div>
+        </div>
 
-    <div class="pb-12" x-data="posCheckout()" x-effect="reactiveFilter()">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+        <div x-data="posCheckout()" x-effect="reactiveFilter()">
 
             {{-- Offline Indicator --}}
-            <div x-show="!isOnline" x-cloak
-                class="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded relative flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                    <span class="font-semibold">Offline Mode</span> – Sales will be queued and synced when connection is restored.
+            <div x-show="!isOnline" x-cloak class="pos-alert pos-alert-warn" style="margin-bottom:16px">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                    <span class="pos-bold">Offline Mode</span> – Sales will be queued and synced when connection is restored.
                 </div>
-                <span x-show="offlineQueueCount > 0" class="text-sm font-medium"
-                    x-text="offlineQueueCount + ' sale(s) queued'"></span>
+                <span x-show="offlineQueueCount > 0" class="pos-sub" x-text="offlineQueueCount + ' sale(s) queued'"></span>
             </div>
 
             {{-- Sync Notification --}}
-            <div x-show="syncResult" x-cloak x-transition
-                class="mb-4 px-4 py-3 rounded relative flex items-center justify-between"
-                :class="syncResult?.failed > 0 ? 'bg-yellow-100 border border-yellow-400 text-yellow-800' : 'bg-green-100 border border-green-400 text-green-700'">
+            <div x-show="syncResult" x-cloak x-transition class="pos-alert" style="margin-bottom:16px"
+                :class="syncResult?.failed > 0 ? 'pos-alert-warn' : 'pos-alert-ok'">
                 <span x-text="syncResult?.message"></span>
-                <button @click="syncResult = null" class="ml-2 font-bold">&times;</button>
+                <button @click="syncResult = null" class="pos-btn-close">&times;</button>
             </div>
-            
 
-            <div id="pos-error" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative hidden">
+            <div id="pos-error" class="pos-alert pos-alert-error" style="margin-bottom:16px;display:none">
                 <span id="pos-error-text"></span>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="pos-g-checkout">
                 {{-- Product Selection & Lines --}}
-                <div class="lg:col-span-2 card p-6">
-                    <div class="form-section-label">1 · Add Items</div>
+                <div class="pos-g-checkout-main">
+                    <div class="pos-card">
+                        <div class="pos-card-h">1 · Add Items</div>
+                        <div class="pos-pad">
 
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                        <div class="relative">
-                            <div class="scoped-search-field">
-                                <svg class="scoped-search-filter" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                                </svg>
-                                <input type="text" x-model="searchQuery"
-                                    @focus="dropdownOpen = searchQuery.length > 0"
-                                    @keydown.down.prevent="moveHighlight(1)"
-                                    @keydown.up.prevent="moveHighlight(-1)"
-                                    @keydown.enter.prevent="confirmHighlight()"
-                                    @keydown.escape="dropdownOpen = false"
-                                    placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off" />
-                                <span class="scoped-search-divider" aria-hidden="true"></span>
-                                <button type="button" class="scoped-search-open" title="Search across all records" @click="openGlobalSearch()">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                </button>
-                            </div>
-                            <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak
-                                class="absolute z-30 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                                <template x-for="(p, pi) in filteredProducts" :key="p.id">
-                                    <div class="px-3 py-2 cursor-pointer flex justify-between items-center"
-                                        :style="parseInt(pi) === highlightIndex ? 'background-color: #4f46e5; color: white !important;' : ''"
-                                        :class="p.tracked_as_inventory && p.current_stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''"
-                                        @click="selectProduct(p)"
-                                        @mouseenter="highlightIndex = parseInt(pi)">
-                                        <div :style="parseInt(pi) === highlightIndex ? 'color: white !important;' : ''">
-                                            <span class="text-sm" x-text="p.sku + ' – ' + p.name"></span>
-                                            <span x-show="p.tracked_as_inventory" class="ml-2 text-xs"
-                                                x-text="p.current_stock > 0 ? 'Stock: ' + p.current_stock : 'Out of stock'"></span>
-                                        </div>
-                                        <span class="text-sm font-semibold" x-text="formatMoney(parseFloat(p.sales_price))"></span>
+                            <div style="margin-bottom:16px">
+                                <label class="pos-lbl">Product</label>
+                                <div style="position:relative">
+                                    <div class="scoped-search-field">
+                                        <svg class="scoped-search-filter" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                                        </svg>
+                                        <input type="text" x-model="searchQuery"
+                                            @focus="dropdownOpen = searchQuery.length > 0"
+                                            @keydown.down.prevent="moveHighlight(1)"
+                                            @keydown.up.prevent="moveHighlight(-1)"
+                                            @keydown.enter.prevent="confirmHighlight()"
+                                            @keydown.escape="dropdownOpen = false"
+                                            placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off" />
+                                        <span class="scoped-search-divider" aria-hidden="true"></span>
+                                        <button type="button" class="scoped-search-open" title="Search across all records" @click="openGlobalSearch()">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                        </button>
                                     </div>
-                                </template>
+                                    <div x-show="dropdownOpen && filteredProducts.length > 0" x-cloak class="pos-dropdown">
+                                        <template x-for="(p, pi) in filteredProducts" :key="p.id">
+                                            <div class="pos-dropdown-row"
+                                                :class="parseInt(pi) === highlightIndex ? 'pos-dropdown-row--hl' : (p.tracked_as_inventory && p.current_stock <= 0 ? 'pos-dropdown-row--oos' : '')"
+                                                @click="selectProduct(p)"
+                                                @mouseenter="highlightIndex = parseInt(pi)">
+                                                <div>
+                                                    <span class="pos-bold" x-text="p.sku + ' – ' + p.name"></span>
+                                                    <span x-show="p.tracked_as_inventory" class="pos-sub" style="margin-left:8px"
+                                                        x-text="p.current_stock > 0 ? 'Stock: ' + p.current_stock : 'Out of stock'"></span>
+                                                </div>
+                                                <span class="pos-bold" x-text="formatMoney(parseFloat(p.sales_price))"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;gap:12px;margin-bottom:16px;align-items:flex-end">
+                                <div style="width:160px" x-show="selectedProductName">
+                                    <label class="pos-lbl">Unit</label>
+                                    <select x-model="addUom" @change="onUomChange()" class="pos-in pos-in-sm">
+                                        <option value="">Each (base)</option>
+                                        <template x-for="u in (productUoms.uoms || []).filter(u => !u.is_base)" :key="u.uom_name">
+                                            <option :value="u.uom_name" x-text="u.uom_name + ' (' + u.conversion_factor + 'x)'"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div style="width:90px">
+                                    <label class="pos-lbl">Qty</label>
+                                    <input type="number" x-model="addQty" min="1" step="1" value="1"
+                                        @keydown.enter.prevent="addLine()"
+                                        class="pos-in pos-in-sm" style="text-align:center" />
+                                </div>
+                                <button type="button" @click="addLine()" class="pos-btn pos-btn-cta">Add</button>
+                                <div class="pos-sub" x-show="selectedProductName">
+                                    Selected: <span class="pos-bold" x-text="selectedProductName"></span>
+                                </div>
+                            </div>
+
+                            <div class="pos-li-wrap">
+                                <table class="pos-tbl">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th class="center">UOM</th>
+                                            <th class="num">Qty</th>
+                                            <th class="num">Price</th>
+                                            <th class="num">Discount</th>
+                                            <th class="num">Tax</th>
+                                            <th class="num">Total</th>
+                                            <th class="center"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(line, index) in lines" :key="index">
+                                            <tr>
+                                                <td x-text="line.product_name"></td>
+                                                <td class="center">
+                                                    <template x-if="line.transaction_uom">
+                                                        <select x-model="line.transaction_uom" @change="onLineUomChange(index)" class="pos-in pos-in-sm" style="width:112px">
+                                                            <option value="">Each</option>
+                                                            <template x-for="u in (uomConversions[line.product_id] || [])" :key="u.uom_name">
+                                                                <option :value="u.uom_name" x-text="u.uom_name"></option>
+                                                            </template>
+                                                        </select>
+                                                    </template>
+                                                    <template x-if="!line.transaction_uom">
+                                                        <span class="pos-sub">Each</span>
+                                                    </template>
+                                                </td>
+                                                <td class="num">
+                                                    <input type="number" x-model.number="line.transaction_qty" min="0.01" step="1"
+                                                        class="pos-in pos-in-sm" style="width:80px;text-align:right"
+                                                        @input="onLineQtyChange(index)" />
+                                                </td>
+                                                <td class="num">
+                                                    <input type="number" x-model.number="line.unit_price" min="0" step="0.01"
+                                                        class="pos-in pos-in-sm" style="width:96px;text-align:right" @input="recalcLine(index)" />
+                                                </td>
+                                                <td class="num">
+                                                    <input type="number" x-model.number="line.discount_amount" min="0" step="0.01"
+                                                        class="pos-in pos-in-sm" style="width:80px;text-align:right" @input="recalcLine(index)" />
+                                                </td>
+                                                <td class="num pos-em" x-text="formatMoney(line.tax_amount)"></td>
+                                                <td class="num pos-bold" x-text="formatMoney(line.line_total)"></td>
+                                                <td class="center">
+                                                    <button type="button" @click="removeLine(index)" class="pos-btn-del" title="Remove">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                        <tr x-show="lines.length === 0">
+                                            <td colspan="8" class="pos-em" style="text-align:center;padding:24px">No items added yet. Search and add products above.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="flex gap-3 mb-4 items-end">
-                        <div class="w-[160px]" x-show="selectedProductName">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                            <select x-model="addUom" @change="onUomChange()"
-                                class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-sm">
-                                <option value="">Each (base)</option>
-                                <template x-for="u in (productUoms.uoms || []).filter(u => !u.is_base)" :key="u.uom_name">
-                                    <option :value="u.uom_name" x-text="u.uom_name + ' (' + u.conversion_factor + 'x)'"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div class="w-[90px]">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
-                            <input type="number" x-model="addQty" min="1" step="1" value="1"
-                                @keydown.enter.prevent="addLine()"
-                                class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-center" />
-                        </div>
-                        <button type="button" @click="addLine()"
-                            class="px-6 py-2 bg-gold-600 text-white rounded-md font-semibold text-sm hover:bg-gold-700 shadow-sm whitespace-nowrap">
-                            {{ __('Add') }}
-                        </button>
-                        <div class="text-sm text-gray-500" x-show="selectedProductName">
-                            Selected: <span class="font-semibold text-gray-800" x-text="selectedProductName"></span>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="datasheet">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th class="text-center">UOM</th>
-                                    <th class="text-right">Qty</th>
-                                    <th class="text-right">Price</th>
-                                    <th class="text-right">Discount</th>
-                                    <th class="text-right">Tax</th>
-                                    <th class="text-right">Total</th>
-                                    <th class="text-center"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="(line, index) in lines" :key="index">
-                                    <tr>
-                                        <td x-text="line.product_name"></td>
-                                        <td class="text-center">
-                                            <template x-if="line.transaction_uom">
-                                                <select x-model="line.transaction_uom" @change="onLineUomChange(index)"
-                                                    class="w-28 input">
-                                                    <option value="">Each</option>
-                                                    <template x-for="u in (uomConversions[line.product_id] || [])" :key="u.uom_name">
-                                                        <option :value="u.uom_name" x-text="u.uom_name"></option>
-                                                    </template>
-                                                </select>
-                                            </template>
-                                            <template x-if="!line.transaction_uom">
-                                                <span class="text-gray-400 text-xs">Each</span>
-                                            </template>
-                                        </td>
-                                        <td class="text-right">
-                                            <input type="number" x-model.number="line.transaction_qty" min="0.01" step="1"
-                                                class="input w-20 text-right"
-                                                @input="onLineQtyChange(index)" />
-                                        </td>
-                                        <td class="text-right">
-                                            <input type="number" x-model.number="line.unit_price" min="0" step="0.01"
-                                                class="input w-24 text-right" @input="recalcLine(index)" />
-                                        </td>
-                                        <td class="text-right">
-                                            <input type="number" x-model.number="line.discount_amount" min="0" step="0.01"
-                                                class="input w-20 text-right" @input="recalcLine(index)" />
-                                        </td>
-                                        <td class="numeric text-ink-soft" x-text="formatMoney(line.tax_amount)"></td>
-                                        <td class="numeric font-semibold" x-text="formatMoney(line.line_total)"></td>
-                                        <td class="text-center">
-                                            <button type="button" @click="removeLine(index)" class="text-red-600 hover:text-red-900 text-sm font-medium">Remove</button>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <tr x-show="lines.length === 0">
-                                    <td colspan="8" class="text-ink-soft text-center py-6">No items added yet. Search and add products above.</td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 
                 {{-- Payment Panel (sticky) --}}
-                <div class="lg:sticky lg:top-6 lg:self-start">
-                    <div class="card p-6">
-                        <div class="form-section-label">2 · Payment</div>
+                <div class="pos-g-checkout-side">
+                    <div class="pos-card pos-sticky-top">
+                        <div class="pos-card-h">2 · Payment</div>
+                        <div class="pos-pad">
 
-                        <div class="mb-3">
-                            <label class="block text-sm font-medium text-gray-700">Customer</label>
-                            <div class="pos-customer-picker">
-                                <x-scoped-search-field
-                                    name="customer_id"
-                                    entity="customer"
-                                    search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
-                                    value="{{ $walkInCustomer?->id ?? '' }}"
-                                    label="{{ $walkInCustomer?->name ?? '' }}"
-                                    on-select="posCustomerSelected"
-                                    placeholder="{{ __('Search customers...') }}"
-                                />
-                            </div>
-                            <button type="button" @click="setWalkInCustomer()" class="mt-1 text-xs text-gray-500 hover:text-gold-700">Walk-in Customer</button>
-                            <div x-show="bottleCreditAvailable > 0" x-cloak class="mt-2 p-2 bg-teal-50 border border-teal-200 rounded-md">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-xs font-semibold text-teal-700">Bottle Credit Available</span>
-                                    <span class="text-sm font-bold text-teal-800" x-text="formatMoney(bottleCreditAvailable)"></span>
+                            <div style="margin-bottom:12px">
+                                <label class="pos-lbl">Customer</label>
+                                <div class="pos-customer-picker">
+                                    <x-scoped-search-field
+                                        name="customer_id"
+                                        entity="customer"
+                                        search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
+                                        value="{{ $walkInCustomer?->id ?? '' }}"
+                                        label="{{ $walkInCustomer?->name ?? '' }}"
+                                        on-select="posCustomerSelected"
+                                        placeholder="{{ __('Search customers...') }}"
+                                    />
                                 </div>
-                                <button type="button" @click="bottleCreditApplied = Math.min(bottleCreditAvailable, getTotals().total); bottleReturnableIds = ['auto'];"
-                                    x-show="bottleCreditApplied === 0"
-                                    class="mt-1 w-full text-xs bg-teal-600 text-white rounded py-1 hover:bg-teal-700 font-semibold">
-                                    Apply to This Sale
-                                </button>
-                                <button type="button" @click="bottleCreditApplied = 0; bottleReturnableIds = [];"
-                                    x-show="bottleCreditApplied > 0"
-                                    class="mt-1 w-full text-xs bg-white border border-teal-300 text-teal-700 rounded py-1 hover:bg-teal-50 font-semibold">
-                                    Remove Credit
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700">Reference</label>
-                            <input type="text" x-model="reference"
-                                class="mt-1 block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm" placeholder="Optional" />
-                        </div>
-
-                        {{-- Totals --}}
-                        <div class="border-t pt-3 mb-3 space-y-1">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Subtotal</span>
-                                <span x-text="formatMoney(getTotals().subtotal)"></span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Discount</span>
-                                <span x-text="'-' + formatMoney(getTotals().discount)"></span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-500">Tax</span>
-                                <span x-text="formatMoney(getTotals().tax)"></span>
-                            </div>
-                            <div class="flex justify-between text-sm" x-show="bottleCreditApplied > 0">
-                                <span class="text-teal-600 font-medium">Bottle Credit</span>
-                                <span class="text-teal-600 font-semibold" x-text="'-' + formatMoney(bottleCreditApplied)"></span>
-                            </div>
-                            <div class="flex justify-between text-xl font-bold border-t pt-2">
-                                <span>Total Due</span>
-                                <span class="text-gold-700" x-text="formatMoney(getTotals().total - bottleCreditApplied)"></span>
-                            </div>
-                        </div>
-
-                        {{-- Confirmed Payments --}}
-                        <div class="mb-4" x-show="payments.length > 0">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Payments</span>
-                                <span class="text-sm font-medium" :class="getRemaining() > 0 ? 'text-red-600' : 'text-green-600'"
-                                    x-text="'Remaining: ' + formatMoney(getRemaining())"></span>
-                            </div>
-                            <template x-for="(pay, pi) in payments" :key="pi">
-                                <div class="flex justify-between items-center bg-gray-50 rounded-md px-3 py-2 mb-1 text-sm">
-                                    <div>
-                                        <span class="font-medium" x-text="pay.method_name"></span>
-                                        <span class="text-gray-500 ml-1" x-show="pay.type === 'cash'" x-text="'(Tendered: ' + formatMoney(parseFloat(pay.cash_tendered)) + ')'"></span>
-                                        <span class="text-gray-500 ml-1" x-show="pay.reference_number" x-text="'Ref: ' + pay.reference_number"></span>
-                                        <span class="text-gray-400 ml-1 text-xs" x-show="pay.account_name" x-text="pay.account_name"></span>
-                                        <span class="text-gray-400 ml-1 text-xs" x-show="pay.institution" x-text="pay.institution"></span>
+                                <button type="button" @click="setWalkInCustomer()" class="pos-link" style="margin-top:4px">Walk-in Customer</button>
+                                <div x-show="bottleCreditAvailable > 0" x-cloak class="pos-card-accent" style="margin-top:8px;padding:10px">
+                                    <div style="display:flex;justify-content:space-between;align-items:center">
+                                        <span class="pos-sub pos-bold">Bottle Credit Available</span>
+                                        <span class="pos-bold" x-text="formatMoney(bottleCreditAvailable)"></span>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-semibold" x-text="formatMoney(parseFloat(pay.amount))"></span>
-                                        <span x-show="pay.type === 'cash' && parseFloat(pay.change) > 0" class="text-green-600 text-xs" x-text="'Change: ' + formatMoney(parseFloat(pay.change))"></span>
-                                        <button type="button" @click="removePayment(pi)" class="text-red-500 hover:text-red-700 font-bold text-xs">&times;</button>
-                                    </div>
+                                    <button type="button" @click="bottleCreditApplied = Math.min(bottleCreditAvailable, getTotals().total); bottleReturnableIds = ['auto'];"
+                                        x-show="bottleCreditApplied === 0"
+                                        class="pos-btn pos-btn-sec pos-btn-sm" style="width:100%;margin-top:6px">Apply to This Sale</button>
+                                    <button type="button" @click="bottleCreditApplied = 0; bottleReturnableIds = [];"
+                                        x-show="bottleCreditApplied > 0"
+                                        class="pos-btn pos-btn-ghost pos-btn-sm" style="width:100%;margin-top:6px">Remove Credit</button>
                                 </div>
-                            </template>
-                        </div>
+                            </div>
 
-                        {{-- Add Payment Button --}}
-                        <div class="mb-4" x-show="getRemaining() > 0">
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <button type="button" @click="openPaymentModal('cash')"
-                                    class="py-3 px-4 bg-emerald-50 border-2 border-emerald-300 text-emerald-700 rounded-lg font-semibold text-sm hover:bg-emerald-100 transition">
-                                    Cash
-                                </button>
-                                <button type="button" @click="openPaymentModal('card')"
-                                    class="py-3 px-4 bg-gold-soft border-2 border-gold-line text-gray-900 rounded-lg font-semibold text-sm hover:bg-gold-soft transition">
-                                    Card
-                                </button>
-                                <button type="button" @click="openPaymentModal('mobile_money')"
-                                    class="py-3 px-4 bg-gold-soft border-2 border-gold-line text-gold-700 rounded-lg font-semibold text-sm hover:bg-gold-soft transition">
-                                    Mobile Money
-                                </button>
-                                <button type="button" @click="openSplitModal()"
-                                    class="py-3 px-4 bg-amber-50 border-2 border-amber-300 text-amber-700 rounded-lg font-semibold text-sm hover:bg-amber-100 transition">
-                                    Split Payment
+                            <div style="margin-bottom:16px">
+                                <label class="pos-lbl">Reference</label>
+                                <input type="text" x-model="reference" class="pos-in" placeholder="Optional" />
+                            </div>
+
+                            {{-- Totals --}}
+                            <div class="pos-totals">
+                                <div class="pos-total-row">
+                                    <span class="pos-sub">Subtotal</span>
+                                    <span x-text="formatMoney(getTotals().subtotal)"></span>
+                                </div>
+                                <div class="pos-total-row">
+                                    <span class="pos-sub">Discount</span>
+                                    <span x-text="'-' + formatMoney(getTotals().discount)"></span>
+                                </div>
+                                <div class="pos-total-row">
+                                    <span class="pos-sub">Tax</span>
+                                    <span x-text="formatMoney(getTotals().tax)"></span>
+                                </div>
+                                <div class="pos-total-row" x-show="bottleCreditApplied > 0">
+                                    <span class="pos-bold" style="color:var(--pos-sec)">Bottle Credit</span>
+                                    <span class="pos-bold" style="color:var(--pos-sec)" x-text="'-' + formatMoney(bottleCreditApplied)"></span>
+                                </div>
+                                <div class="pos-total-row pos-total-grand">
+                                    <span class="pos-bold">Total Due</span>
+                                    <span class="pos-numr pos-bold" x-text="formatMoney(getTotals().total - bottleCreditApplied)"></span>
+                                </div>
+                            </div>
+
+                            {{-- Confirmed Payments --}}
+                            <div x-show="payments.length > 0" style="margin-bottom:16px">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                    <span class="pos-bold">Payments</span>
+                                    <span class="pos-sub pos-bold" :class="getRemaining() > 0 ? 'pos-neg' : 'pos-pos'"
+                                        x-text="'Remaining: ' + formatMoney(getRemaining())"></span>
+                                </div>
+                                <template x-for="(pay, pi) in payments" :key="pi">
+                                    <div class="pos-payment-row">
+                                        <div>
+                                            <span class="pos-bold" x-text="pay.method_name"></span>
+                                            <span class="pos-sub" x-show="pay.type === 'cash'" x-text="'(Tendered: ' + formatMoney(parseFloat(pay.cash_tendered)) + ')'"></span>
+                                            <span class="pos-sub" x-show="pay.reference_number" x-text="'Ref: ' + pay.reference_number"></span>
+                                            <span class="pos-sub" x-show="pay.account_name" x-text="pay.account_name"></span>
+                                            <span class="pos-sub" x-show="pay.institution" x-text="pay.institution"></span>
+                                        </div>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <span class="pos-bold" x-text="formatMoney(parseFloat(pay.amount))"></span>
+                                            <span x-show="pay.type === 'cash' && parseFloat(pay.change) > 0" class="pos-pos pos-sub" x-text="'Change: ' + formatMoney(parseFloat(pay.change))"></span>
+                                            <button type="button" @click="removePayment(pi)" class="pos-btn-close" style="color:var(--pos-red)">&times;</button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Add Payment Buttons --}}
+                            <div x-show="getRemaining() > 0" style="margin-bottom:16px">
+                                <div class="pos-g2" style="gap:8px">
+                                    <button type="button" @click="openPaymentModal('cash')" class="pos-btn pos-btn-pay-cash">Cash</button>
+                                    <button type="button" @click="openPaymentModal('card')" class="pos-btn pos-btn-pay-card">Card</button>
+                                    <button type="button" @click="openPaymentModal('mobile_money')" class="pos-btn pos-btn-pay-mobile">Mobile Money</button>
+                                    <button type="button" @click="openSplitModal()" class="pos-btn pos-btn-pay-split">Split Payment</button>
+                                </div>
+                            </div>
+
+                            {{-- COMPLETE SALE BUTTON --}}
+                            <div class="pos-total-row pos-total-grand" style="border-top:none;padding-top:12px">
+                                <button type="button" @click="submitSale()"
+                                    :disabled="lines.length === 0 || submitting || getRemaining() > 0"
+                                    class="pos-btn pos-btn-submit"
+                                    :class="(lines.length > 0 && getRemaining() <= 0 && !submitting) ? 'pos-btn-submit--ready' : 'pos-btn-submit--disabled'">
+                                    <span x-show="!submitting && lines.length > 0 && getRemaining() > 0" x-text="'Balance Due: ' + formatMoney(getRemaining())"></span>
+                                    <span x-show="!submitting && lines.length > 0 && getRemaining() <= 0">Complete Sale</span>
+                                    <span x-show="submitting">Processing...</span>
+                                    <span x-show="!submitting && lines.length === 0">Add items first</span>
                                 </button>
                             </div>
-                        </div>
-
-                        {{-- COMPLETE SALE BUTTON --}}
-                        <div class="mt-4 pt-4 border-t">
-                            <button type="button" @click="submitSale()"
-                                :disabled="lines.length === 0 || submitting || getRemaining() > 0"
-                                class="w-full py-4 px-6 rounded-lg font-bold text-lg uppercase tracking-wider transition duration-200"
-                                :class="(lines.length > 0 && getRemaining() <= 0 && !submitting) ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
-                                <span x-show="!submitting && lines.length > 0 && getRemaining() > 0" x-text="'Balance Due: ' + formatMoney(getRemaining())"></span>
-                                <span x-show="!submitting && lines.length > 0 && getRemaining() <= 0">Complete Sale</span>
-                                <span x-show="submitting">Processing...</span>
-                                <span x-show="!submitting && lines.length === 0">Add items first</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -290,105 +275,92 @@
         </div>
 
         {{-- ===== PAYMENT MODAL (Cash) ===== --}}
-        <div x-show="showModal && modalType === 'cash'" x-cloak
-            class="modal-overlay"
-            @keydown.escape.window="closeModal()">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" @click.stop>
-                <h3 class="text-xl font-bold text-gray-800 mb-1">Cash Payment</h3>
-                <div class="text-sm text-gray-500 mb-4">Enter the cash amount received from the customer.</div>
+        <div x-show="showModal && modalType === 'cash'" x-cloak class="pos-overlay" @keydown.escape.window="closeModal()">
+            <div class="pos-modal" @click.stop>
+                <div class="pos-modal-h">Cash Payment</div>
+                <div class="pos-modal-sub">Enter the cash amount received from the customer.</div>
 
-                <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div class="text-sm text-gray-500 mb-1">Total Due</div>
-                    <div class="text-3xl font-bold text-gold-700" x-text="formatMoney(modalDue)"></div>
+                <div class="pos-modal-due">
+                    <div class="pos-sub">Total Due</div>
+                    <div class="pos-modal-amount pos-numr" x-text="formatMoney(modalDue)"></div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Cash Tendered</label>
+                <div style="margin-bottom:16px">
+                    <label class="pos-lbl">Cash Tendered</label>
                     <input type="number" x-model.number="modalCashTendered" x-ref="cashTenderedInput" min="0" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-md shadow-sm text-right"
-                        placeholder="0.00" />
+                        class="pos-in pos-in-lg" style="text-align:right" placeholder="0.00" />
                 </div>
 
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <button type="button" @click="modalCashTendered = modalDue"
-                        class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm font-medium">Exact</button>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+                    <button type="button" @click="modalCashTendered = modalDue" class="pos-btn pos-btn-ghost pos-btn-sm">Exact</button>
                     <template x-for="denom in [10, 20, 50, 100]" :key="denom">
-                        <button type="button" @click="modalCashTendered = denom"
-                            class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm font-medium"
+                        <button type="button" @click="modalCashTendered = denom" class="pos-btn pos-btn-ghost pos-btn-sm"
                             x-text="formatMoney(denom)"></button>
                     </template>
                 </div>
 
-                <div class="rounded-lg p-3 mb-4 text-center"
-                    :class="modalCashTendered >= modalDue ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'"
+                <div class="pos-modal-status"
+                    :class="modalCashTendered >= modalDue ? 'pos-modal-status--ok' : 'pos-modal-status--err'"
                     x-show="modalCashTendered > 0">
                     <template x-if="modalCashTendered >= modalDue">
                         <div>
-                            <div class="text-xs text-green-600 font-medium uppercase">Change to Give</div>
-                            <div class="text-3xl font-bold text-green-600" x-text="formatMoney(modalCashTendered - modalDue)"></div>
+                            <div class="pos-sub pos-bold">Change to Give</div>
+                            <div class="pos-modal-amount pos-pos" x-text="formatMoney(modalCashTendered - modalDue)"></div>
                         </div>
                     </template>
                     <template x-if="modalCashTendered > 0 && modalCashTendered < modalDue">
                         <div>
-                            <div class="text-xs text-red-600 font-medium uppercase">Insufficient — Remaining</div>
-                            <div class="text-2xl font-bold text-red-600" x-text="formatMoney(modalDue - modalCashTendered)"></div>
+                            <div class="pos-sub pos-bold pos-neg">Insufficient — Remaining</div>
+                            <div class="pos-modal-amount pos-neg" x-text="formatMoney(modalDue - modalCashTendered)"></div>
                         </div>
                     </template>
                 </div>
 
-                <div class="flex gap-3 pt-2">
-                    <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
+                <div class="pos-modal-actions">
+                    <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalCashTendered || modalCashTendered < modalDue"
-                        class="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="pos-btn pos-btn-cash pos-modal-proceed">Proceed</button>
                 </div>
             </div>
         </div>
 
         {{-- ===== PAYMENT MODAL (Card) ===== --}}
-        <div x-show="showModal && modalType === 'card'" x-cloak
-            class="modal-overlay"
-            @keydown.escape.window="closeModal()">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" @click.stop>
-                <h3 class="text-xl font-bold text-gray-800 mb-1">Card Payment</h3>
-                <div class="text-sm text-gray-500 mb-4">Enter card payment details.</div>
+        <div x-show="showModal && modalType === 'card'" x-cloak class="pos-overlay" @keydown.escape.window="closeModal()">
+            <div class="pos-modal" @click.stop>
+                <div class="pos-modal-h">Card Payment</div>
+                <div class="pos-modal-sub">Enter card payment details.</div>
 
-                <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div class="text-sm text-gray-500 mb-1">Balance Due</div>
-                    <div class="text-3xl font-bold text-gold-700" x-text="formatMoney(modalDue)"></div>
+                <div class="pos-modal-due">
+                    <div class="pos-sub">Balance Due</div>
+                    <div class="pos-modal-amount pos-numr" x-text="formatMoney(modalDue)"></div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                <div style="margin-bottom:12px">
+                    <label class="pos-lbl">Amount</label>
                     <input type="number" x-model.number="modalAmount" x-ref="cardAmountInput" min="0.01" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-right"
-                        placeholder="0.00" />
+                        class="pos-in pos-in-lg" style="text-align:right" placeholder="0.00" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Transaction No.</label>
+                <div style="margin-bottom:12px">
+                    <label class="pos-lbl">Reference / Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm"
-                        placeholder="e.g. TXN12345" />
+                        class="pos-in" placeholder="e.g. TXN12345" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
-                    <input type="text" x-model="modalAccountName"
-                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm"
-                        placeholder="Cardholder name" />
+                <div style="margin-bottom:12px">
+                    <label class="pos-lbl">Account Name</label>
+                    <input type="text" x-model="modalAccountName" class="pos-in" placeholder="Cardholder name" />
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Financial Institution</label>
-                    <select x-model="modalInstitution"
-                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
+                <div style="margin-bottom:16px">
+                    <label class="pos-lbl">Financial Institution</label>
+                    <select x-model="modalInstitution" class="pos-in">
                         <option value="">Select bank...</option>
                         @foreach($bankAccounts as $bank)
                             <option value="{{ $bank->name }}">{{ $bank->name }}</option>
@@ -396,57 +368,49 @@
                     </select>
                 </div>
 
-                <div class="flex gap-3 pt-2">
-                    <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
+                <div class="pos-modal-actions">
+                    <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalAmount || modalAmount <= 0 || Math.abs(parseFloat(modalAmount) - modalDue) > 0.01"
-                        class="flex-1 py-3 px-4 bg-gold-600 text-white rounded-lg font-bold text-lg hover:bg-gold-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="pos-btn pos-btn-card pos-modal-proceed">Proceed</button>
                 </div>
             </div>
         </div>
 
         {{-- ===== PAYMENT MODAL (Mobile Money) ===== --}}
-        <div x-show="showModal && modalType === 'mobile_money'" x-cloak
-            class="modal-overlay"
-            @keydown.escape.window="closeModal()">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" @click.stop>
-                <h3 class="text-xl font-bold text-gray-800 mb-1">Mobile Money Payment</h3>
-                <div class="text-sm text-gray-500 mb-4">Enter mobile money payment details.</div>
+        <div x-show="showModal && modalType === 'mobile_money'" x-cloak class="pos-overlay" @keydown.escape.window="closeModal()">
+            <div class="pos-modal" @click.stop>
+                <div class="pos-modal-h">Mobile Money Payment</div>
+                <div class="pos-modal-sub">Enter mobile money payment details.</div>
 
-                <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div class="text-sm text-gray-500 mb-1">Balance Due</div>
-                    <div class="text-3xl font-bold text-gold-700" x-text="formatMoney(modalDue)"></div>
+                <div class="pos-modal-due">
+                    <div class="pos-sub">Balance Due</div>
+                    <div class="pos-modal-amount pos-numr" x-text="formatMoney(modalDue)"></div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                <div style="margin-bottom:12px">
+                    <label class="pos-lbl">Amount</label>
                     <input type="number" x-model.number="modalAmount" x-ref="mobileAmountInput" min="0.01" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full text-2xl font-semibold border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm text-right"
-                        placeholder="0.00" />
+                        class="pos-in pos-in-lg" style="text-align:right" placeholder="0.00" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Transaction No.</label>
+                <div style="margin-bottom:12px">
+                    <label class="pos-lbl">Reference / Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm"
-                        placeholder="e.g. MP123456" />
+                        class="pos-in" placeholder="e.g. MP123456" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
-                    <input type="text" x-model="modalAccountName"
-                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm"
-                        placeholder="Account holder name" />
+                <div style="margin-bottom:12px">
+                    <label class="pos-lbl">Account Name</label>
+                    <input type="text" x-model="modalAccountName" class="pos-in" placeholder="Account holder name" />
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Provider / Institution</label>
-                    <select x-model="modalInstitution"
-                        class="block w-full border-gray-300 focus:border-gold-500 focus:ring-gold-500 rounded-md shadow-sm">
+                <div style="margin-bottom:16px">
+                    <label class="pos-lbl">Provider / Institution</label>
+                    <select x-model="modalInstitution" class="pos-in">
                         <option value="">Select provider...</option>
                         @foreach($mobileProviders as $provider)
                             <option value="{{ $provider->name }}">{{ $provider->name }}</option>
@@ -454,91 +418,82 @@
                     </select>
                 </div>
 
-                <div class="flex gap-3 pt-2">
-                    <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
+                <div class="pos-modal-actions">
+                    <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="!modalAmount || modalAmount <= 0 || Math.abs(parseFloat(modalAmount) - modalDue) > 0.01"
-                        class="flex-1 py-3 px-4 bg-gold-600 text-white rounded-lg font-bold text-lg hover:bg-gold-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="pos-btn pos-btn-mobile pos-modal-proceed">Proceed</button>
                 </div>
             </div>
         </div>
 
         {{-- ===== SPLIT PAYMENT MODAL ===== --}}
-        <div x-show="showModal && modalType === 'split'" x-cloak
-            class="modal-overlay"
-            @keydown.escape.window="closeModal()">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" @click.stop>
-                <h3 class="text-xl font-bold text-gray-800 mb-1">Split Payment</h3>
-                <div class="text-sm text-gray-500 mb-4">Allocate the total due across multiple payment methods.</div>
+        <div x-show="showModal && modalType === 'split'" x-cloak class="pos-overlay" @keydown.escape.window="closeModal()">
+            <div class="pos-modal pos-modal--wide" @click.stop>
+                <div class="pos-modal-h">Split Payment</div>
+                <div class="pos-modal-sub">Allocate the total due across multiple payment methods.</div>
 
-                <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div class="text-sm text-gray-500">Total Due</div>
-                    <div class="text-3xl font-bold text-gold-700" x-text="formatMoney(modalDue)"></div>
+                <div class="pos-modal-due">
+                    <div class="pos-sub">Total Due</div>
+                    <div class="pos-modal-amount pos-numr" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 {{-- Cash Row --}}
-                <div class="border rounded-lg p-4 mb-3" :class="splitCashEnabled ? 'border-emerald-300 bg-emerald-50/30' : ''">
-                    <label class="flex items-center gap-2 mb-0 cursor-pointer">
-                        <input type="checkbox" x-model="splitCashEnabled" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                        <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-                        <span class="font-semibold text-gray-800">Cash</span>
+                <div class="pos-split-row" :class="splitCashEnabled ? 'pos-split-row--active' : ''">
+                    <label class="pos-split-label">
+                        <input type="checkbox" x-model="splitCashEnabled" class="pos-checkbox pos-checkbox--cash">
+                        <div class="pos-split-dot" style="background:var(--pos-green)"></div>
+                        <span class="pos-bold">Cash</span>
                     </label>
-                    <div x-show="splitCashEnabled" x-transition class="mt-3">
-                        <div class="grid grid-cols-2 gap-3">
+                    <div x-show="splitCashEnabled" x-transition style="margin-top:12px">
+                        <div class="pos-g2">
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Allocate to Cash</label>
+                                <label class="pos-lbl-sm">Allocate to Cash</label>
                                 <input type="number" x-model.number="splitCashAlloc" min="0" step="0.01"
-                                    @focus="$el.select()"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
+                                    @focus="$el.select()" class="pos-in pos-in-sm" style="text-align:right" placeholder="0.00" />
                             </div>
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Cash Tendered</label>
+                                <label class="pos-lbl-sm">Cash Tendered</label>
                                 <input type="number" x-model.number="splitCashTendered" min="0" step="0.01"
-                                    @focus="$el.select()"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
+                                    @focus="$el.select()" class="pos-in pos-in-sm" style="text-align:right" placeholder="0.00" />
                             </div>
                         </div>
-                        <div class="mt-2 flex justify-between items-center text-sm" x-show="splitCashTendered > 0 && splitCashAlloc > 0">
-                            <span class="text-gray-500">Change</span>
-                            <span class="font-semibold"
-                                :class="splitCashTendered >= splitCashAlloc ? 'text-green-600' : 'text-red-600'"
+                        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center" x-show="splitCashTendered > 0 && splitCashAlloc > 0">
+                            <span class="pos-sub">Change</span>
+                            <span class="pos-bold"
+                                :class="splitCashTendered >= splitCashAlloc ? 'pos-pos' : 'pos-neg'"
                                 x-text="splitCashTendered >= splitCashAlloc ? formatMoney(splitCashTendered - splitCashAlloc) : 'Short by ' + formatMoney(splitCashAlloc - splitCashTendered)"></span>
                         </div>
                     </div>
                 </div>
 
                 {{-- Card Row --}}
-                <div class="border rounded-lg p-4 mb-3" :class="splitCardEnabled ? 'border-gold-line bg-gold-soft/30' : ''">
-                    <label class="flex items-center gap-2 mb-0 cursor-pointer">
-                        <input type="checkbox" x-model="splitCardEnabled" class="rounded border-gray-300 text-gold-700 focus:ring-gold-500">
-                        <div class="w-3 h-3 rounded-full bg-gold-600"></div>
-                        <span class="font-semibold text-gray-800">Card</span>
+                <div class="pos-split-row" :class="splitCardEnabled ? 'pos-split-row--active' : ''">
+                    <label class="pos-split-label">
+                        <input type="checkbox" x-model="splitCardEnabled" class="pos-checkbox pos-checkbox--card">
+                        <div class="pos-split-dot" style="background:var(--pos-amber)"></div>
+                        <span class="pos-bold">Card</span>
                     </label>
-                    <div x-show="splitCardEnabled" x-transition class="mt-3">
-                        <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div x-show="splitCardEnabled" x-transition style="margin-top:12px">
+                        <div class="pos-g2">
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Amount</label>
+                                <label class="pos-lbl-sm">Amount</label>
                                 <input type="number" x-model.number="splitCardAmount" min="0" step="0.01"
-                                    @focus="$el.select()"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
+                                    @focus="$el.select()" class="pos-in pos-in-sm" style="text-align:right" placeholder="0.00" />
                             </div>
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Reference / Transaction No.</label>
-                                <input type="text" x-model="splitCardRef"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="e.g. TXN12345" />
+                                <label class="pos-lbl-sm">Reference / Transaction No.</label>
+                                <input type="text" x-model="splitCardRef" class="pos-in pos-in-sm" placeholder="e.g. TXN12345" />
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="pos-g2" style="margin-top:8px">
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Account Name</label>
-                                <input type="text" x-model="splitCardAccountName"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Cardholder name" />
+                                <label class="pos-lbl-sm">Account Name</label>
+                                <input type="text" x-model="splitCardAccountName" class="pos-in pos-in-sm" placeholder="Cardholder name" />
                             </div>
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Financial Institution</label>
-                                <select x-model="splitCardInstitution"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm">
+                                <label class="pos-lbl-sm">Financial Institution</label>
+                                <select x-model="splitCardInstitution" class="pos-in pos-in-sm">
                                     <option value="">Select bank...</option>
                                     @foreach($bankAccounts as $bank)
                                         <option value="{{ $bank->name }}">{{ $bank->name }}</option>
@@ -550,36 +505,32 @@
                 </div>
 
                 {{-- Mobile Money Row --}}
-                <div class="border rounded-lg p-4 mb-4" :class="splitMobileEnabled ? 'border-gold-line bg-gold-soft/30' : ''">
-                    <label class="flex items-center gap-2 mb-0 cursor-pointer">
-                        <input type="checkbox" x-model="splitMobileEnabled" class="rounded border-gray-300 text-gold-700 focus:ring-gold-500">
-                        <div class="w-3 h-3 rounded-full bg-gold-600"></div>
-                        <span class="font-semibold text-gray-800">Mobile Money</span>
+                <div class="pos-split-row" :class="splitMobileEnabled ? 'pos-split-row--active' : ''">
+                    <label class="pos-split-label">
+                        <input type="checkbox" x-model="splitMobileEnabled" class="pos-checkbox pos-checkbox--mobile">
+                        <div class="pos-split-dot" style="background:var(--pos-sec)"></div>
+                        <span class="pos-bold">Mobile Money</span>
                     </label>
-                    <div x-show="splitMobileEnabled" x-transition class="mt-3">
-                        <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div x-show="splitMobileEnabled" x-transition style="margin-top:12px">
+                        <div class="pos-g2">
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Amount</label>
+                                <label class="pos-lbl-sm">Amount</label>
                                 <input type="number" x-model.number="splitMmobileAmount" min="0" step="0.01"
-                                    @focus="$el.select()"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm text-right" placeholder="0.00" />
+                                    @focus="$el.select()" class="pos-in pos-in-sm" style="text-align:right" placeholder="0.00" />
                             </div>
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Reference / Transaction No.</label>
-                                <input type="text" x-model="splitMobileRef"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="e.g. MP123456" />
+                                <label class="pos-lbl-sm">Reference / Transaction No.</label>
+                                <input type="text" x-model="splitMobileRef" class="pos-in pos-in-sm" placeholder="e.g. MP123456" />
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="pos-g2" style="margin-top:8px">
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Account Name</label>
-                                <input type="text" x-model="splitMobileAccountName"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm" placeholder="Account holder name" />
+                                <label class="pos-lbl-sm">Account Name</label>
+                                <input type="text" x-model="splitMobileAccountName" class="pos-in pos-in-sm" placeholder="Account holder name" />
                             </div>
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Provider / Institution</label>
-                                <select x-model="splitMobileInstitution"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm text-sm">
+                                <label class="pos-lbl-sm">Provider / Institution</label>
+                                <select x-model="splitMobileInstitution" class="pos-in pos-in-sm">
                                     <option value="">Select provider...</option>
                                     @foreach($mobileProviders as $provider)
                                         <option value="{{ $provider->name }}">{{ $provider->name }}</option>
@@ -591,25 +542,25 @@
                 </div>
 
                 {{-- Running Balance --}}
-                <div class="rounded-lg p-3 mb-4 text-center"
-                    :class="getSplitRemaining() === 0 ? 'bg-green-50 border border-green-200' : getSplitRemaining() > 0 ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'">
-                    <div class="text-xs font-medium uppercase"
-                        :class="getSplitRemaining() === 0 ? 'text-green-600' : getSplitRemaining() > 0 ? 'text-amber-600' : 'text-red-600'"
+                <div class="pos-modal-status"
+                    :class="getSplitRemaining() === 0 ? 'pos-modal-status--ok' : getSplitRemaining() > 0 ? 'pos-modal-status--warn' : 'pos-modal-status--err'">
+                    <div class="pos-sub pos-bold"
+                        :class="getSplitRemaining() === 0 ? 'pos-pos' : getSplitRemaining() > 0 ? 'pos-warn' : 'pos-neg'"
                         x-text="getSplitRemaining() === 0 ? 'Balanced' : getSplitRemaining() > 0 ? 'Remaining Balance' : 'Over-allocated'"></div>
-                    <div class="text-2xl font-bold"
-                        :class="getSplitRemaining() === 0 ? 'text-green-600' : getSplitRemaining() > 0 ? 'text-amber-600' : 'text-red-600'"
+                    <div class="pos-modal-amount"
+                        :class="getSplitRemaining() === 0 ? 'pos-pos' : getSplitRemaining() > 0 ? 'pos-warn' : 'pos-neg'"
                         x-text="formatMoney(Math.abs(getSplitRemaining()))"></div>
                 </div>
 
-                <div class="flex gap-3 pt-2">
-                    <button type="button" @click="closeModal()"
-                        class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-300">Cancel</button>
+                <div class="pos-modal-actions">
+                    <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmSplitPayment()"
                         :disabled="getSplitRemaining() !== 0 || !splitPaymentValid()"
-                        class="flex-1 py-3 px-4 bg-amber-600 text-white rounded-lg font-bold text-lg hover:bg-amber-500 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Proceed</button>
+                        class="pos-btn pos-btn-split pos-modal-proceed">Proceed</button>
                 </div>
             </div>
         </div>
+
     </div>
 
     <script>
@@ -836,7 +787,6 @@
                     this.dropdownOpen = false;
                     this.highlightIndex = -1;
 
-                    // Load UOMs for this product
                     const uoms = this.uomConversions[p.id] || [];
                     this.productUoms = { uoms: uoms, basePrice: parseFloat(p.sales_price) || 0 };
                     if (uoms.length > 0) {
@@ -1160,7 +1110,7 @@
                     if (this.lines.length === 0 || this.getRemaining() > 0) return;
 
                     this.submitting = true;
-                    document.getElementById('pos-error').classList.add('hidden');
+                    document.getElementById('pos-error').style.display = 'none';
 
                     const payload = {
                         terminal_id: {{ session('pos_terminal_id') ?? 0 }},
@@ -1201,8 +1151,8 @@
                         this.reference = '';
                         const errDiv = document.getElementById('pos-error');
                         document.getElementById('pos-error-text').textContent = 'Sale queued for offline sync. ID: ' + offlineId;
-                        errDiv.classList.remove('hidden');
-                        errDiv.className = 'mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative';
+                        errDiv.style.display = 'block';
+                        errDiv.className = 'pos-alert pos-alert-warn';
                         return;
                     }
 
@@ -1223,14 +1173,14 @@
                         } else {
                             const errDiv = document.getElementById('pos-error');
                             document.getElementById('pos-error-text').textContent = data.message;
-                            errDiv.classList.remove('hidden');
-                            errDiv.className = 'mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative';
+                            errDiv.style.display = 'block';
+                            errDiv.className = 'pos-alert pos-alert-error';
                         }
                     } catch (e) {
                         const errDiv = document.getElementById('pos-error');
                         document.getElementById('pos-error-text').textContent = 'An unexpected error occurred.';
-                        errDiv.classList.remove('hidden');
-                        errDiv.className = 'mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative';
+                        errDiv.style.display = 'block';
+                        errDiv.className = 'pos-alert pos-alert-error';
                     } finally {
                         this.submitting = false;
                     }
@@ -1241,7 +1191,6 @@
 
     <script src="/js/pos-offline-queue.js"></script>
     <script>
-        // Background sync when back online
         window.addEventListener('online', async () => {
             const count = PosOfflineQueue.getCount();
             if (count > 0 && typeof Alpine !== 'undefined') {

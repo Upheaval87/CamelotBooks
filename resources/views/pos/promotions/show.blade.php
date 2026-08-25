@@ -1,20 +1,19 @@
 <x-app-layout>
     <div class="pos">
-        <div class="wrap">
-            <div class="pos-page-head">
-                <div>
-                    <h1>{{ $promotion->name }}</h1>
-                    <div class="pos-sub">{{ ucfirst(str_replace('_', ' ', $promotion->type)) }} · {{ $promotion->start_date->format('d M Y') }} – {{ $promotion->end_date->format('d M Y') }}</div>
-                </div>
-                <div class="pos-actions">
-                    <a href="{{ route('pos.promotions.index') }}" class="pos-btn pos-btn-ghost">Back</a>
-                    <form method="POST" action="{{ route('pos.promotions.destroy', $promotion) }}" style="display:inline" onsubmit="return confirm('Delete this promotion?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="pos-btn pos-btn-danger-o">Delete</button>
-                    </form>
-                </div>
+        <div class="pos-page-head">
+            <div>
+                <h1>{{ $promotion->name }}</h1>
+                <div class="pos-sub">{{ ucfirst(str_replace('_', ' ', $promotion->type)) }} · {{ $promotion->start_date->format('d M Y') }} – {{ $promotion->end_date->format('d M Y') }}</div>
             </div>
+            <div class="pos-actions">
+                <a href="{{ route('pos.promotions.index') }}" class="pos-btn pos-btn-ghost">Back</a>
+                <form method="POST" action="{{ route('pos.promotions.destroy', $promotion) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Delete this promotion?', { type: 'danger' })">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="pos-btn pos-btn-danger-o">Delete</button>
+                </form>
+            </div>
+        </div>
 
             <div class="pos-card" style="margin-bottom:16px">
                 <div class="pos-card-h">

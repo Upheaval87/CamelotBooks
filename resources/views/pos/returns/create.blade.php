@@ -1,31 +1,46 @@
 <x-app-layout>
     @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-    <x-list-header title="{{ __('New POS Return') }}" />
+    <div class="pos">
+        <div class="pos-page-head">
+            <div>
+                <h1>New POS Return</h1>
+                <div class="pos-sub">Select a sale and return items for a refund</div>
+            </div>
+            <div class="pos-actions">
+                <a href="{{ route('pos.returns.index') }}" class="pos-btn pos-btn-ghost">Cancel</a>
+                <button type="submit" form="return-form" class="pos-btn pos-btn-cta" x-bind:disabled="refundTotal <= 0 || submitting" x-on:click="submitting = true">
+                    <span x-show="!submitting">Post Return</span>
+                    <span x-show="submitting" x-cloak>Processing…</span>
+                </button>
+            </div>
+        </div>
 
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            
+        <div class="pos-shell">
+            <div>
+                @if($errors->any())
+                    <div class="pos-card" style="margin-bottom:16px;border:1px solid var(--pos-red)">
+                        <div class="pos-pad">
+                            <ul style="margin:0;padding-left:16px;color:var(--pos-red);font-size:13px">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                @endif
 
-            @if($errors->any())
-                <x-feedback.alert variant="error" class="mb-4">
-                    <ul class="list-disc list-inside">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </x-feedback.alert>
-            @endif
+                <form id="return-form" method="POST" action="{{ route('pos.returns.store') }}" x-data="returnForm()">
+                    @csrf
 
-            <div class="form-page">
-                <div class="form-page-main">
-                    <form method="POST" action="{{ route('pos.returns.store') }}" x-data="returnForm()">
-                        @csrf
-
-                        <div class="card p-6 mb-6">
-                            <x-form.section number="01" :title="__('Return Details')" />
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <x-input-label for="sale_id" value="{{ __('Original Sale') }}" />
+                    {{-- Section: Return Details --}}
+                    <div class="pos-card" style="margin-bottom:16px">
+                        <div class="pos-card-h">
+                            <span class="pos-step">01 · Return Details</span>
+                        </div>
+                        <div class="pos-pad">
+                            <div class="pos-g2">
+                                <div class="pos-f">
+                                    <label>Original Sale <span style="color:var(--pos-red)">*</span></label>
                                     @php
                                         $saleItems = collect($sales)->map(fn($s) => [
                                             'id' => $s->id,
@@ -44,78 +59,81 @@
                                         on-select="posReturnSaleSelected"
                                         required
                                     />
-                                    <x-input-error :messages="$errors->get('pos_sale_id')" class="mt-2" />
                                 </div>
-                                <div>
-                                    <x-input-label for="date" value="{{ __('Return Date') }}" />
-                                    <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', now()->toDateString())" required />
-                                </div>
-                                <div class="md:col-span-2">
-                                    <x-input-label for="reason" value="{{ __('Reason') }}" />
-                                    <x-text-input id="reason" name="reason" type="text" class="mt-1 block w-full" :value="old('reason')" placeholder="e.g. Customer changed mind, defective item" />
+                                <div class="pos-f">
+                                    <label>Return Date <span style="color:var(--pos-red)">*</span></label>
+                                    <input type="date" name="date" class="pos-in" value="{{ old('date', now()->toDateString()) }}" required>
                                 </div>
                             </div>
+                            <div class="pos-f" style="margin-top:12px">
+                                <label>Reason</label>
+                                <input type="text" name="reason" class="pos-in" value="{{ old('reason') }}" placeholder="e.g. Customer changed mind, defective item">
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="card p-6 mb-6">
-                            <x-form.section number="02" :title="__('Items to Return')" />
-                            <p class="text-sm text-ink-soft mb-4" x-show="!saleLoaded">Select a sale above to load its items.</p>
+                    {{-- Section: Items to Return --}}
+                    <div class="pos-card">
+                        <div class="pos-card-h">
+                            <span class="pos-step">02 · Items to Return</span>
+                        </div>
+                        <div class="pos-pad">
+                            <p class="pos-sub" x-show="!saleLoaded">Select a sale above to load its items.</p>
 
                             <div x-show="saleLoaded" x-cloak>
-                                <div class="overflow-x-auto">
-                                    <table class="datasheet">
+                                <div class="pos-li-wrap">
+                                    <table class="pos-tbl">
                                         <thead>
                                             <tr>
                                                 <th>Product</th>
-                                                <th class="text-right">Qty Sold</th>
-                                                <th class="text-right">Unit Price</th>
-                                                <th class="text-right">Tax Rate</th>
-                                                <th class="text-right">Qty Returning</th>
+                                                <th class="num">Qty Sold</th>
+                                                <th class="num">Unit Price</th>
+                                                <th class="num">Tax Rate</th>
+                                                <th class="num">Qty Returning</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <template x-for="(line, idx) in saleLines" :key="line.id">
                                                 <tr>
                                                     <td x-text="line.product?.name"></td>
-                                                    <td class="numeric" x-text="parseFloat(line.quantity).toFixed(4)"></td>
-                                                    <td class="numeric">{{ $cs }}<span x-text="parseFloat(line.unit_price).toFixed(2)"></span></td>
-                                                    <td class="numeric" x-text="parseFloat(line.tax_rate).toFixed(2) + '%'"></td>
-                                                    <td class="text-right">
+                                                    <td class="num" x-text="parseFloat(line.quantity).toFixed(4)"></td>
+                                                    <td class="num">{{ $cs }}<span x-text="parseFloat(line.unit_price).toFixed(2)"></span></td>
+                                                    <td class="num" x-text="parseFloat(line.tax_rate).toFixed(2) + '%'"></td>
+                                                    <td class="num">
                                                         <input type="hidden" :name="'lines[' + idx + '][pos_sale_line_id]'" :value="line.id">
                                                         <input type="number" :name="'lines[' + idx + '][quantity_returned]'" x-model.number="line.qtyReturn"
                                                             :max="line.quantity" min="0" step="0.0001"
-                                                            class="input w-28 text-right">
+                                                            class="pos-in" style="width:100px;text-align:right">
                                                     </td>
                                                 </tr>
                                             </template>
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <td colspan="4" class="text-right font-semibold">Refund Total:</td>
-                                                <td class="numeric font-bold text-red-600">-{{ $cs }}<span x-text="refundTotal.toFixed(2)"></span></td>
+                                                <td colspan="4" class="num">Refund Total:</td>
+                                                <td class="num pos-bold" style="color:var(--pos-red)">-{{ $cs }}<span x-text="refundTotal.toFixed(2)"></span></td>
                                             </tr>
                                         </tfoot>
                                     </table>
                                 </div>
                             </div>
-
-                            <div class="flex items-center justify-end mt-8 gap-3">
-                                <x-button variant="ghost" href="{{ route('pos.returns.index') }}">{{ __('Cancel') }}</x-button>
-                                <x-primary-button type="submit" x-bind:disabled="refundTotal <= 0 || submitting" x-on:click="submitting = true">
-                                    <span x-show="!submitting">{{ __('Post Return') }}</span>
-                                    <span x-show="submitting" x-cloak>{{ __('Processing...') }}</span>
-                                </x-primary-button>
-                            </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                </form>
+            </div>
 
-                <x-form.quick-actions :title="__('Quick Actions')" :groups="[
-                    ['label' => __('View'), 'links' => [
-                        ['title' => __('POS Dashboard'), 'route' => route('pos.dashboard'), 'icon' => 'grid'],
-                        ['title' => __('Returns List'), 'route' => route('pos.returns.index'), 'icon' => 'table-list'],
-                    ]],
-                ]" />
+            <div class="pos-rail">
+                <div class="pos-rail-card">
+                    <h3>Quick Nav</h3>
+                    <a href="{{ route('pos.dashboard') }}" class="pos-rail-link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        POS Dashboard
+                    </a>
+                    <a href="{{ route('pos.returns.index') }}" class="pos-rail-link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                        Returns List
+                    </a>
+                </div>
             </div>
         </div>
     </div>

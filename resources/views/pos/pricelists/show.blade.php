@@ -1,21 +1,20 @@
 <x-app-layout>
     <div class="pos">
-        <div class="wrap">
-            <div class="pos-page-head">
-                <div>
-                    <h1>{{ $priceList->name }}</h1>
-                    <div class="pos-sub">{{ ucfirst($priceList->type) }} Price List · {{ $priceList->items->count() }} items</div>
-                </div>
-                <div class="pos-actions">
-                    <a href="{{ route('pos.pricelists.index') }}" class="pos-btn pos-btn-ghost">Back</a>
-                    <a href="{{ route('pos.pricelists.edit', $priceList) }}" class="pos-btn pos-btn-sec">Edit</a>
-                    <form method="POST" action="{{ route('pos.pricelists.destroy', $priceList) }}" style="display:inline" onsubmit="return confirm('Delete this price list?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="pos-btn pos-btn-danger-o">Delete</button>
-                    </form>
-                </div>
+        <div class="pos-page-head">
+            <div>
+                <h1>{{ $priceList->name }}</h1>
+                <div class="pos-sub">{{ ucfirst($priceList->type) }} Price List · {{ $priceList->items->count() }} items</div>
             </div>
+            <div class="pos-actions">
+                <a href="{{ route('pos.pricelists.index') }}" class="pos-btn pos-btn-ghost">Back</a>
+                <a href="{{ route('pos.pricelists.edit', $priceList) }}" class="pos-btn pos-btn-sec">Edit</a>
+                <form method="POST" action="{{ route('pos.pricelists.destroy', $priceList) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Delete this price list?', { type: 'danger' })">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="pos-btn pos-btn-danger-o">Delete</button>
+                </form>
+            </div>
+        </div>
 
             {{-- Details --}}
             <div class="pos-card" style="margin-bottom:16px">

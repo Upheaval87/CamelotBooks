@@ -19,15 +19,14 @@
         ])->values();
     @endphp
 
-    <div class="pos-wrap">
-        <div class="pos-head">
+    <div class="pos">
+        <div class="pos-page-head">
             <div>
                 <h1>Create Price List</h1>
                 <p class="pos-sub">Define alternate pricing for a channel, customer group, or period.</p>
             </div>
-            <div class="pos-grow"></div>
             <div class="pos-actions">
-                <a href="{{ route('pos.pricelists.index') }}" class="pos-btn pos-btn-sec">Cancel</a>
+                <a href="{{ route('pos.pricelists.index') }}" class="pos-btn pos-btn-ghost">Cancel</a>
                 <button type="submit" form="pricelist-form" class="pos-btn pos-btn-cta">Save Price List</button>
             </div>
         </div>

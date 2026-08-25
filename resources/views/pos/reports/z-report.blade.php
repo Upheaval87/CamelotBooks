@@ -1,129 +1,175 @@
 <x-app-layout>
-    <x-list-header title="{{ __('POS Z-Report') }}" />
-
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            @if(!$data)
-                <div class="card p-6 text-center text-ink-soft">
-                    No closed till sessions found.
-                </div>
-            @else
-
-            <div class="card p-6 mb-6">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                        <p class="text-xs text-ink-soft uppercase">Terminal</p>
-                        <p class="font-semibold text-gray-900">{{ $data['session']->terminal?->identifier ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-ink-soft uppercase">Cashier</p>
-                        <p class="font-semibold text-gray-900">{{ $data['session']->user?->name ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-ink-soft uppercase">Opened</p>
-                        <p class="font-semibold text-gray-900">{{ $data['session']->opened_at?->format('M d, H:i') ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-ink-soft uppercase">Closed</p>
-                        <p class="font-semibold text-gray-900">{{ $data['session']->closed_at?->format('M d, H:i') ?? '—' }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card p-6 mb-6">
-                <div class="form-section-label">1 · Sales Summary</div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <p class="text-2xl font-bold text-gray-900">{{ $data['sales_count'] }}</p>
-                        <p class="text-xs text-ink-soft uppercase">Gross Sales</p>
-                    </div>
-                    <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <p class="text-2xl font-bold text-red-600">{{ $data['returns_count'] }}</p>
-                        <p class="text-xs text-ink-soft uppercase">Returns</p>
-                    </div>
-                    <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <p class="text-2xl font-bold text-gray-900">@money($data['sales_total'])</p>
-                        <p class="text-xs text-ink-soft uppercase">Gross Amount</p>
-                    </div>
-                    <div class="text-center p-4 bg-gold-soft rounded-lg">
-                        <p class="text-2xl font-bold text-gray-900">@money($data['net_sales'])</p>
-                        <p class="text-xs text-ink-soft uppercase">Net Sales</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-4 mt-4">
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <p class="text-sm text-gray-600">Subtotal</p>
-                        <p class="font-semibold text-gray-900">@money($data['sales_subtotal'])</p>
-                    </div>
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <p class="text-sm text-gray-600">Tax</p>
-                        <p class="font-semibold text-gray-900">@money($data['sales_tax'])</p>
-                    </div>
-                    <div class="text-center p-3 bg-red-50 rounded-lg">
-                        <p class="text-sm text-gray-600">Returns</p>
-                        <p class="font-semibold text-red-600">-@money($data['returns_total'])</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card p-6 mb-6">
-                <div class="form-section-label">2 · Payments by Method</div>
-                <table class="datasheet">
-                    <thead>
-                        <tr>
-                            <th>Method</th>
-                            <th class="text-right">Sales</th>
-                            <th class="text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($data['payments_by_method'] as $pm)
-                            <tr>
-                                <td>{{ $pm->method_name }}</td>
-                                <td class="numeric">{{ $pm->sale_count }}</td>
-                                <td class="numeric font-semibold">@money($pm->total_amount)</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-ink-soft text-center">No payments recorded.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="bg-gold-soft border border-gold-line card p-6 mb-6">
-                <div class="form-section-label">3 · Cash Drawer Reconciliation</div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-sm text-gold-700">Opening Float</p>
-                        <p class="font-semibold text-gray-900">@money($data['opening_float'])</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gold-700">+ Cash Payments</p>
-                        <p class="font-semibold text-gray-900">@money($data['cash_payments'])</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gold-700">− Returns (Cash)</p>
-                        <p class="font-semibold text-gray-900">@money($data['returns_total'])</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gold-700">= Expected Cash</p>
-                        <p class="text-xl font-bold text-gray-900">@money($data['expected_cash'])</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gold-700">Actual Cash Count</p>
-                        <p class="text-xl font-bold text-gray-900">{{ $data['actual_cash_count'] !== null ? format_money($data['actual_cash_count']) : '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gold-700">Variance</p>
-                        <p class="text-xl font-bold {{ ($data['variance'] ?? 0) > 0 ? 'text-green-600' : (($data['variance'] ?? 0) < 0 ? 'text-red-600' : 'text-gray-900') }}">
-                            {{ $data['variance'] !== null ? ($data['variance'] >= 0 ? '+' : '') . format_money($data['variance']) : '—' }}
-                        </p>
-                    </div>
-                </div>
+    <div class="pos">
+        <div class="pos-page-head">
+            <div>
+                <h1>POS Z-Report</h1>
+                <div class="pos-sub">End-of-day consolidated sales report</div>
             </div>
         </div>
+
+        @if(!$data)
+            <div class="pos-card">
+                <div class="pos-empty">
+                    <h3>No closed till sessions found</h3>
+                    <p>Z-Reports are generated from closed till sessions.</p>
+                </div>
+            </div>
+        @else
+            <div class="pos-shell">
+                <div>
+                    <div class="pos-card" style="margin-bottom:16px">
+                        <div class="pos-card-h">Session Info</div>
+                        <div class="pos-pad">
+                            <div class="pos-g4">
+                                <div>
+                                    <div class="pos-kpi-l">Terminal</div>
+                                    <div class="pos-kpi-v">{{ $data['session']->terminal?->identifier ?? '—' }}</div>
+                                </div>
+                                <div>
+                                    <div class="pos-kpi-l">Cashier</div>
+                                    <div class="pos-kpi-v">{{ $data['session']->user?->name ?? '—' }}</div>
+                                </div>
+                                <div>
+                                    <div class="pos-kpi-l">Opened</div>
+                                    <div class="pos-kpi-v">{{ $data['session']->opened_at?->format('M d, H:i') ?? '—' }}</div>
+                                </div>
+                                <div>
+                                    <div class="pos-kpi-l">Closed</div>
+                                    <div class="pos-kpi-v">{{ $data['session']->closed_at?->format('M d, H:i') ?? '—' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pos-card" style="margin-bottom:16px">
+                        <div class="pos-card-h">1 · Sales Summary</div>
+                        <div class="pos-pad">
+                            <div class="pos-g4">
+                                <div class="pos-sbox">
+                                    <div class="pos-ic"><span class="pos-bdot green"></span></div>
+                                    <div class="pos-n">{{ $data['sales_count'] }}</div>
+                                    <div class="pos-l">Gross Sales</div>
+                                </div>
+                                <div class="pos-sbox">
+                                    <div class="pos-ic"><span class="pos-bdot red"></span></div>
+                                    <div class="pos-n" style="color:var(--pos-red)">{{ $data['returns_count'] }}</div>
+                                    <div class="pos-l">Returns</div>
+                                </div>
+                                <div class="pos-sbox">
+                                    <div class="pos-ic"><span class="pos-bdot green"></span></div>
+                                    <div class="pos-n">{{ format_money($data['sales_total']) }}</div>
+                                    <div class="pos-l">Gross Amount</div>
+                                </div>
+                                <div class="pos-sbox">
+                                    <div class="pos-ic"><span class="pos-bdot amber"></span></div>
+                                    <div class="pos-n pos-numr">{{ format_money($data['net_sales']) }}</div>
+                                    <div class="pos-l">Net Sales</div>
+                                </div>
+                            </div>
+                            <div class="pos-g3" style="margin-top:16px">
+                                <div>
+                                    <div class="pos-kpi-l">Subtotal</div>
+                                    <div class="pos-kpi-v">{{ format_money($data['sales_subtotal']) }}</div>
+                                </div>
+                                <div>
+                                    <div class="pos-kpi-l">Tax</div>
+                                    <div class="pos-kpi-v">{{ format_money($data['sales_tax']) }}</div>
+                                </div>
+                                <div>
+                                    <div class="pos-kpi-l">Returns</div>
+                                    <div class="pos-kpi-v" style="color:var(--pos-red)">-{{ format_money($data['returns_total']) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pos-card" style="margin-bottom:16px">
+                        <div class="pos-card-h">2 · Payments by Method</div>
+                        <div class="pos-li-wrap">
+                            <table class="pos-tbl">
+                                <thead>
+                                    <tr>
+                                        <th>Method</th>
+                                        <th class="num">Sales</th>
+                                        <th class="num">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($data['payments_by_method'] as $pm)
+                                        <tr>
+                                            <td class="pos-bold">{{ $pm->method_name }}</td>
+                                            <td class="num">{{ $pm->sale_count }}</td>
+                                            <td class="num pos-bold">{{ format_money($pm->total_amount) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="pos-em">No payments recorded.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="pos-card pos-card-accent" style="margin-bottom:16px">
+                        <div class="pos-card-h">3 · Cash Drawer Reconciliation</div>
+                        <div class="pos-pad">
+                            <div class="pos-g3">
+                                <div>
+                                    <div class="pos-kpi-l">Opening Float</div>
+                                    <div class="pos-kpi-v">{{ format_money($data['opening_float']) }}</div>
+                                </div>
+                                <div>
+                                    <div class="pos-kpi-l">+ Cash Payments</div>
+                                    <div class="pos-kpi-v">{{ format_money($data['cash_payments']) }}</div>
+                                </div>
+                                <div>
+                                    <div class="pos-kpi-l">− Returns (Cash)</div>
+                                    <div class="pos-kpi-v">{{ format_money($data['returns_total']) }}</div>
+                                </div>
+                            </div>
+                            <div class="pos-g2" style="margin-top:16px">
+                                <div>
+                                    <div class="pos-kpi-l">= Expected Cash</div>
+                                    <div class="pos-kpi-v pos-numr">{{ format_money($data['expected_cash']) }}</div>
+                                </div>
+                                <div>
+                                    <div class="pos-kpi-l">Actual Cash Count</div>
+                                    <div class="pos-kpi-v pos-numr">{{ $data['actual_cash_count'] !== null ? format_money($data['actual_cash_count']) : '—' }}</div>
+                                </div>
+                            </div>
+                            <div style="margin-top:12px;padding:10px;border-radius:8px;background:{{ ($data['variance'] ?? 0) < 0 ? 'rgba(185,28,28,.08)' : 'rgba(18,143,142,.08)' }}">
+                                <div class="pos-kpi-l">Variance</div>
+                                <div class="pos-kpi-v pos-numr pos-bold" style="color:{{ ($data['variance'] ?? 0) > 0 ? 'var(--pos-green)' : (($data['variance'] ?? 0) < 0 ? 'var(--pos-red)' : 'var(--pos-ink)') }}">
+                                    {{ $data['variance'] !== null ? ($data['variance'] >= 0 ? '+' : '') . format_money($data['variance']) : '—' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pos-rail">
+                    <div class="pos-rail-card">
+                        <h3>Quick Nav</h3>
+                        <a href="{{ route('pos.reports.overview') }}" class="pos-rail-link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
+                            Reports Overview
+                        </a>
+                        <a href="{{ route('pos.reports.x-report') }}" class="pos-rail-link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            X Report
+                        </a>
+                        <a href="{{ route('pos.reports.sales-by-terminal') }}" class="pos-rail-link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+                            Sales by Terminal
+                        </a>
+                        <a href="{{ route('pos.reports.sales-by-cashier') }}" class="pos-rail-link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Sales by Cashier
+                        </a>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
-    @endif
 </x-app-layout>

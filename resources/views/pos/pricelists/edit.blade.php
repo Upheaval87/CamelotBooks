@@ -1,28 +1,29 @@
 <x-app-layout>
     <div class="pos">
-        <div class="wrap">
-            <div class="pos-page-head">
-                <div>
-                    <h1>Edit Price List</h1>
-                    <div class="pos-sub">{{ $priceList->name }}</div>
-                </div>
-                <div class="pos-actions">
-                    <a href="{{ route('pos.pricelists.show', $priceList) }}" class="pos-btn pos-btn-ghost">Cancel</a>
-                    <button type="submit" form="pricelist-form" class="pos-btn pos-btn-cta">Save Changes</button>
-                </div>
+        <div class="pos-page-head">
+            <div>
+                <h1>Edit Price List</h1>
+                <div class="pos-sub">{{ $priceList->name }}</div>
             </div>
+            <div class="pos-actions">
+                <a href="{{ route('pos.pricelists.show', $priceList) }}" class="pos-btn pos-btn-ghost">Cancel</a>
+                <button type="submit" form="pricelist-form" class="pos-btn pos-btn-cta">Save Changes</button>
+            </div>
+        </div>
 
-            <form id="pricelist-form" method="POST" action="{{ route('pos.pricelists.update', $priceList) }}">
-                @csrf
-                @method('PATCH')
+        <form id="pricelist-form" method="POST" action="{{ route('pos.pricelists.update', $priceList) }}">
+            @csrf
+            @method('PATCH')
 
-                @if($errors->any())
-                    <x-feedback.alert variant="error" class="mb-4">
+            @if($errors->any())
+                <div class="pos-card" style="margin-bottom:16px;border:1px solid var(--pos-red)">
+                    <div class="pos-pad">
                         @foreach($errors->all() as $error)
-                            <div>{{ $error }}</div>
+                            <div style="color:var(--pos-red);font-size:13px">{{ $error }}</div>
                         @endforeach
-                    </x-feedback.alert>
-                @endif
+                    </div>
+                </div>
+            @endif
 
                 <div class="pos-card" style="margin-bottom:16px">
                     <div class="pos-card-h">

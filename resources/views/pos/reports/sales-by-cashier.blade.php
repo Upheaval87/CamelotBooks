@@ -1,71 +1,98 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Sales by Cashier') }}" />
+    <div class="pos">
+        <div class="pos-page-head">
+            <div>
+                <h1>Sales by Cashier</h1>
+                <div class="pos-sub">Individual cashier performance metrics</div>
+            </div>
+        </div>
 
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="card p-6 mb-6">
-                <form method="GET" action="{{ route('pos.reports.sales-by-cashier') }}" class="flex items-end gap-4 flex-wrap">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">From</label>
-                        <input type="date" name="from" value="{{ $data['from']->format('Y-m-d') }}"
-                            class="input">
+        <div class="pos-shell">
+            <div>
+                <div class="pos-card" style="margin-bottom:16px">
+                    <div class="pos-pad">
+                        <form method="GET" action="{{ route('pos.reports.sales-by-cashier') }}" style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
+                            <div>
+                                <label class="pos-lbl">From</label>
+                                <input type="date" name="from" value="{{ $data['from']->format('Y-m-d') }}" class="pos-in">
+                            </div>
+                            <div>
+                                <label class="pos-lbl">To</label>
+                                <input type="date" name="to" value="{{ $data['to']->format('Y-m-d') }}" class="pos-in">
+                            </div>
+                            <button type="submit" class="pos-btn pos-btn-sec">Filter</button>
+                        </form>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">To</label>
-                        <input type="date" name="to" value="{{ $data['to']->format('Y-m-d') }}"
-                            class="input">
+                </div>
+
+                <div class="pos-card">
+                    <div class="pos-li-wrap">
+                        <table class="pos-tbl">
+                            <thead>
+                                <tr>
+                                    <th>Cashier</th>
+                                    <th class="num">Sessions</th>
+                                    <th class="num">Sales Count</th>
+                                    <th class="num">Gross Sales</th>
+                                    <th class="num">Returns</th>
+                                    <th class="num">Net Sales</th>
+                                    <th class="num">Avg Sale</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($data['cashiers'] as $row)
+                                    <tr>
+                                        <td class="pos-bold">{{ $row['user']?->name ?? '—' }}</td>
+                                        <td class="num">{{ $row['sessions_count'] }}</td>
+                                        <td class="num">{{ $row['sales_count'] }}</td>
+                                        <td class="num">{{ format_money($row['sales_total']) }}</td>
+                                        <td class="num" style="color:var(--pos-red)">{{ format_money($row['returns_total']) }}</td>
+                                        <td class="num pos-bold">{{ format_money($row['net_sales']) }}</td>
+                                        <td class="num pos-em">{{ format_money($row['average_sale']) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="pos-em">No cashier sessions found for this period.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                            @if(count($data['cashiers']) > 0)
+                            <tfoot>
+                                <tr>
+                                    <td class="pos-em">Grand Total</td>
+                                    <td class="num pos-em">—</td>
+                                    <td class="num pos-bold">{{ $data['grand_count'] }}</td>
+                                    <td class="num pos-bold">{{ format_money($data['grand_total_sales']) }}</td>
+                                    <td class="num pos-bold" style="color:var(--pos-red)">{{ format_money($data['grand_total_returns']) }}</td>
+                                    <td class="num pos-bold pos-numr">{{ format_money($data['grand_net_sales']) }}</td>
+                                    <td class="num pos-em">{{ format_money($data['grand_count'] > 0 ? $data['grand_total_sales'] / $data['grand_count'] : 0) }}</td>
+                                </tr>
+                            </tfoot>
+                            @endif
+                        </table>
                     </div>
-                    <x-button variant="primary" type="submit">Filter</x-button>
-                </form>
+                </div>
             </div>
 
-            <div class="datasheet-wrap">
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Cashier</th>
-                                <th class="text-right">Sessions</th>
-                                <th class="text-right">Sales Count</th>
-                                <th class="text-right">Gross Sales</th>
-                                <th class="text-right">Returns</th>
-                                <th class="text-right">Net Sales</th>
-                                <th class="text-right">Avg Sale</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($data['cashiers'] as $row)
-                                <tr>
-                                    <td>{{ $row['user']?->name ?? '—' }}</td>
-                                    <td class="numeric">{{ $row['sessions_count'] }}</td>
-                                    <td class="numeric">{{ $row['sales_count'] }}</td>
-                                    <td class="numeric">@money($row['sales_total'])</td>
-                                    <td class="numeric text-red-600">@money($row['returns_total'])</td>
-                                    <td class="numeric font-semibold">@money($row['net_sales'])</td>
-                                    <td class="numeric text-ink-soft">@money($row['average_sale'])</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-ink-soft text-center">No cashier sessions found for this period.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        @if(count($data['cashiers']) > 0)
-                        <tfoot class="font-semibold">
-                            <tr>
-                                <td class="text-ink-soft">Grand Total</td>
-                                <td class="numeric">—</td>
-                                <td class="numeric">{{ $data['grand_count'] }}</td>
-                                <td class="numeric">@money($data['grand_total_sales'])</td>
-                                <td class="numeric text-red-600">@money($data['grand_total_returns'])</td>
-                                <td class="numeric text-gray-900">@money($data['grand_net_sales'])</td>
-                                <td class="numeric text-ink-soft">
-                                    @money($data['grand_count'] > 0 ? $data['grand_total_sales'] / $data['grand_count'] : 0)
-                                </td>
-                            </tr>
-                        </tfoot>
-                        @endif
-                    </table>
+            <div class="pos-rail">
+                <div class="pos-rail-card">
+                    <h3>Quick Nav</h3>
+                    <a href="{{ route('pos.reports.overview') }}" class="pos-rail-link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
+                        Reports Overview
+                    </a>
+                    <a href="{{ route('pos.reports.x-report') }}" class="pos-rail-link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        X Report
+                    </a>
+                    <a href="{{ route('pos.reports.z-report') }}" class="pos-rail-link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Z Report
+                    </a>
+                    <a href="{{ route('pos.reports.sales-by-terminal') }}" class="pos-rail-link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+                        Sales by Terminal
+                    </a>
                 </div>
             </div>
         </div>
