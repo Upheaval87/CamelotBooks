@@ -734,6 +734,11 @@
                     document.addEventListener('fullscreenchange', this._fullscreenHandler);
                     this._minimizeHandler = () => this.minimize();
                     window.addEventListener('pos-minimize-click', this._minimizeHandler);
+                    this._fullscreenToggleHandler = (e) => {
+                        if (e.detail && e.detail.enter) this.enterFullscreen();
+                        else this.exitFullscreen();
+                    };
+                    window.addEventListener('pos-toggle-fullscreen', this._fullscreenToggleHandler);
                     this.offlineQueueCount = PosOfflineQueue.getCount();
                 },
 
