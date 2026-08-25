@@ -1,5 +1,15 @@
 <x-app-layout>
     <div class="pos" x-data="posCheckout()" x-effect="reactiveFilter()">
+        {{-- Fullscreen prompt overlay --}}
+        <div x-show="!hasEnteredFullscreen" x-cloak class="pos-overlay" style="z-index:9999" @click="enterFullscreen(); hasEnteredFullscreen = true">
+            <div style="text-align:center;cursor:pointer;user-select:none">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--pos-sec)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px">
+                    <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+                </svg>
+                <div style="font-size:22px;font-weight:800;color:var(--pos-ink);margin-bottom:8px">Tap to enter fullscreen</div>
+                <div style="font-size:13px;color:var(--pos-muted)">Optimizes the checkout for POS use</div>
+            </div>
+        </div>
         <div class="pos-page-head">
             <div>
                 <h1>POS Checkout</h1>
@@ -680,6 +690,7 @@
                 bottleReturnableIds: [],
                 returnableReceiptEnabled: false,
                 returnableReceiptNumber: '',
+                hasEnteredFullscreen: false,
 
                 init() {
                     document.body.classList.add('pos-checkout-active');
@@ -746,6 +757,8 @@
                         const el = document.documentElement;
                         if (el.requestFullscreen) el.requestFullscreen();
                         else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                        document.documentElement.style.overflow = 'hidden';
+                        document.body.style.overflow = 'hidden';
                     } catch (e) { /* fullscreen not supported */ }
                 },
 
@@ -753,12 +766,14 @@
                     try {
                         if (document.fullscreenElement) document.exitFullscreen();
                         else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+                        document.documentElement.style.overflow = '';
+                        document.body.style.overflow = '';
                     } catch (e) { /* silent */ }
                 },
 
                 minimize() {
                     this.exitFullscreen();
-                    window.location.href = '{{ route("pos.products.index") }}';
+                    window.location.href = '{{ route("dashboard") }}';
                 },
 
                 setWalkInCustomer() {

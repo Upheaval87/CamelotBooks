@@ -254,15 +254,15 @@
     <div class="topbar-row-1">
         <div class="flex items-center gap-3 h-full px-5 lg:px-8 max-w-8xl mx-auto">
             @if($isPosCheckout)
-                {{-- POS Checkout: minimize button --}}
-                <button type="button" class="pos-minimize-btn" title="Minimize (go to Products)"
+                {{-- POS Checkout: close button (exit to dashboard) --}}
+                <button type="button" class="pos-minimize-btn" title="Close POS"
                     onclick="window.dispatchEvent(new CustomEvent('pos-minimize-click'))">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
                 <button type="button" class="pos-minimize-btn" title="Toggle Fullscreen"
                     x-data="{ fs: false }"
                     @click="fs = !fs; window.dispatchEvent(new CustomEvent('pos-toggle-fullscreen', { detail: { enter: fs } }))"
-                    x-effect="fs = !!document.fullscreenElement">
+                    @fullscreen.window="fs = !!document.fullscreenElement">
                     <svg x-show="!fs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
                     </svg>
