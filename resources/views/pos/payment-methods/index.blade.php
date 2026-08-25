@@ -48,6 +48,11 @@
                             />
                             <x-input-error :messages="$errors->get('settlement_bank_account_id')" class="mt-2" />
                         </div>
+                        <div>
+                            <x-input-label for="fee_percent" value="{{ __('Fee %') }}" />
+                            <x-text-input id="fee_percent" name="fee_percent" type="number" class="mt-1 block w-full" :value="old('fee_percent', '0')" min="0" max="100" step="0.01" />
+                            <x-input-error :messages="$errors->get('fee_percent')" class="mt-2" />
+                        </div>
                         <div class="flex items-center gap-2 mt-6">
                             <input type="checkbox" id="requires_reference" name="requires_reference" value="1" {{ old('requires_reference') ? 'checked' : '' }}
                                 class="rounded border-gray-300 text-gold-700 shadow-sm focus:ring-gold-500" />
@@ -69,6 +74,7 @@
                                 <th>Name</th>
                                 <th>Type</th>
                                 <th>Clearing Account</th>
+                                <th class="text-center">Fee %</th>
                                 <th>Settlement Account</th>
                                 <th class="text-center">Ref Required</th>
                                 <th class="text-center">Status</th>
@@ -86,6 +92,9 @@
                                     </td>
                                     <td class="text-ink-soft">
                                         {{ $method->clearingAccount ? $method->clearingAccount->code . ' - ' . $method->clearingAccount->name : '—' }}
+                                    </td>
+                                    <td class="text-center text-ink-soft">
+                                        {{ $method->fee_percent > 0 ? $method->fee_percent . '%' : '—' }}
                                     </td>
                                     <td class="text-ink-soft">
                                         {{ $method->settlementBankAccount ? $method->settlementBankAccount->code . ' - ' . $method->settlementBankAccount->name : '—' }}
@@ -112,7 +121,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-ink-soft text-center">No payment methods found.</td>
+                                    <td colspan="8" class="text-ink-soft text-center">No payment methods found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

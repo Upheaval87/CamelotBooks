@@ -23,9 +23,6 @@
             foreach ($chartMonths as $monthData) {
                 $maxBar = max($maxBar, $monthData['out'], $monthData['in']);
             }
-
-            $sevClass = ['error' => 'tx-b-rev', 'warning' => 'tx-b-pend', 'info' => 'tx-b-post'];
-            $sevLabel = ['error' => 'Error', 'warning' => 'Warning', 'info' => 'Info'];
         @endphp
 
         <div class="tx-page-head">
@@ -33,7 +30,7 @@
                 <h1>{{ __('Tax Dashboard') }}</h1>
                 <p class="sub">{{ __('Live tax position across VAT, withholding and payroll.') }}</p>
             </div>
-            <div class="flex items-center gap-2 flex-wrap">
+            <div style="display:flex;gap:10px">
                 <a href="{{ route('accounting.taxation.periods') }}" class="tx-btn tx-btn-ghost">{{ __('Tax Periods') }}</a>
                 <a href="{{ $prepareUrl }}" class="tx-btn tx-btn-cta">{{ __('Prepare Return') }}</a>
             </div>
@@ -41,45 +38,53 @@
 
         <div class="tx-kpis">
             <div class="tx-kpi hero">
-                <div class="l">{{ __('Net VAT Payable') }}</div>
-                <div class="v">{{ number_format($kpi['net_payable'], 2) }}</div>
+                <div class="l">{{ __('VAT Payable') }}</div>
+                <div class="v">{{ number_format($kpi['net_payable'], 0) }}</div>
                 <div class="n">
                     @if ($heroDue)
-                        {{ __('Due :date', ['date' => \Illuminate\Support\Carbon::parse($heroDue)->format('d M Y')]) }}
+                        {{ \Illuminate\Support\Carbon::parse($heroDue)->format('M Y') }} &middot; {{ __('due :date', ['date' => \Illuminate\Support\Carbon::parse($heroDue)->format('d M')]) }}
                     @else
-                        {{ __('No filing deadline scheduled') }}
+                        {{ __('No deadline') }}
                     @endif
                 </div>
             </div>
             <div class="tx-kpi">
                 <div class="l">{{ __('Output Tax') }}</div>
-                <div class="v">{{ number_format($kpi['output_tax'], 2) }}</div>
-                <div class="n">({{ $cs }}) {{ __('charged on sales') }}</div>
+                <div class="v">{{ number_format($kpi['output_tax'], 0) }}</div>
+                <div class="n">
+                    @if ($currentPeriod)
+                        {{ $currentPeriod->start_date->format('M Y') }}
+                    @endif
+                </div>
             </div>
             <div class="tx-kpi">
                 <div class="l">{{ __('Input Tax') }}</div>
-                <div class="v">{{ number_format($kpi['input_tax'], 2) }}</div>
-                <div class="n">({{ $cs }}) {{ __('recoverable on purchases') }}</div>
+                <div class="v">{{ number_format($kpi['input_tax'], 0) }}</div>
+                <div class="n">
+                    @if ($currentPeriod)
+                        {{ $currentPeriod->start_date->format('M Y') }}
+                    @endif
+                </div>
             </div>
             <div class="tx-kpi">
                 <div class="l">{{ __('Outstanding') }}</div>
-                <div class="v {{ $kpi['outstanding'] > 0 ? 'tx-neg' : 'tx-green' }}">{{ number_format($kpi['outstanding'], 2) }}</div>
-                <div class="n">{{ __(':amount paid to date', ['amount' => number_format($kpi['paid'], 2)]) }}</div>
+                <div class="v {{ $kpi['outstanding'] > 0 ? 'tx-neg' : '' }}">{{ number_format($kpi['outstanding'], 0) }}</div>
+                <div class="n">{{ number_format($kpi['paid'], 0) }} {{ __('paid to date') }}</div>
             </div>
             <div class="tx-kpi">
                 <div class="l">{{ __('Current Period') }}</div>
-                <div class="v" style="font-size:1rem;">
+                <div class="v" style="font-size:15px">
                     @if ($currentPeriod)
                         {{ $currentPeriod->label }}
                     @else
                         &mdash;
                     @endif
                 </div>
-                <div class="n">
+                <div class="n" style="color:var(--green,#15803d)">
                     @if ($currentPeriod)
-                        {{ $currentPeriod->taxType?->name }} &middot; {{ __('ends :date', ['date' => $currentPeriod->end_date->format('d M')]) }}
+                        {{ __('Open') }}
                     @else
-                        {{ __(':open open / :unfiled unfiled periods', ['open' => $kpi['open_periods'], 'unfiled' => $kpi['unfiled_periods']]) }}
+                        &mdash;
                     @endif
                 </div>
             </div>
@@ -88,8 +93,8 @@
         <div class="tx-grid2">
             <div class="tx-card">
                 <div class="tx-card-h">
-                    <span class="ic">&#9632;</span>
-                    <h2>{{ __('Input vs Output Tax') }} <span style="color:var(--muted);font-weight:600;">({{ $cs }})</span></h2>
+                    <span class="ic">&#128202;</span>
+                    <h2>{{ __('Input vs Output VAT') }} &mdash; {{ __('last 6 months') }}</h2>
                 </div>
                 <div class="tx-pad">
                     @if (count($chartMonths) > 0)
@@ -97,16 +102,16 @@
                             @foreach ($chartMonths as $monthData)
                                 <div class="tx-cg">
                                     <div class="tx-cb">
-                                        <div class="tx-bar out" title="{{ __('Output') }}: {{ number_format($monthData['out'], 2) }}" style="height:{{ max(3, (int) round($monthData['out'] / $maxBar * 110)) }}px;"></div>
                                         <div class="tx-bar in" title="{{ __('Input') }}: {{ number_format($monthData['in'], 2) }}" style="height:{{ max(3, (int) round($monthData['in'] / $maxBar * 110)) }}px;"></div>
+                                        <div class="tx-bar out" title="{{ __('Output') }}: {{ number_format($monthData['out'], 2) }}" style="height:{{ max(3, (int) round($monthData['out'] / $maxBar * 110)) }}px;"></div>
                                     </div>
                                     <span class="tx-cl">{{ $monthData['label'] }}</span>
                                 </div>
                             @endforeach
                         </div>
                         <div class="tx-legend">
-                            <span><i style="background:var(--deep-2);"></i>{{ __('Output tax') }}</span>
-                            <span><i style="background:rgba(18,143,142,.55);"></i>{{ __('Input tax') }}</span>
+                            <span><i style="background:rgba(18,143,142,.55);"></i>{{ __('Input VAT') }}</span>
+                            <span><i style="background:var(--deep-2,#0c3539);"></i>{{ __('Output VAT') }}</span>
                         </div>
                     @else
                         <p class="tx-em" style="padding:24px 0;text-align:center;">{{ __('No posted tax transactions yet.') }}</p>
@@ -115,45 +120,45 @@
             </div>
 
             <div style="display:flex;flex-direction:column;gap:16px;">
-                <div class="tx-card">
+                <div class="tx-card" style="margin-bottom:0">
                     <div class="tx-card-h">
                         <span class="ic">&#9200;</span>
-                        <h2>{{ __('Upcoming Deadlines') }}</h2>
+                        <h2>{{ __('Upcoming Filing Deadlines') }}</h2>
                     </div>
-                    <div class="tx-pad" style="display:flex;flex-direction:column;gap:10px;">
+                    <div class="tx-pad">
                         @forelse ($kpi['upcoming_deadlines'] as $deadline)
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:9px;border-bottom:1px solid var(--hair, #EEF3F1);">
-                                <div style="min-width:0;">
-                                    <div class="tx-name" style="font-size:12.5px;">{{ $deadline['label'] }}</div>
-                                    <div class="tx-em" style="font-size:11px;">{{ $deadline['tax_type_name'] ?? $deadline['tax_type_code'] }} &middot; {{ \Illuminate\Support\Carbon::parse($deadline['filing_due_date'])->format('d M Y') }}</div>
-                                </div>
-                                <span class="tx-badge {{ $deadline['days_left'] <= 7 ? 'tx-b-rev' : ($deadline['days_left'] <= 14 ? 'tx-b-pend' : 'tx-b-post') }}">
-                                    <span class="bdot"></span>{{ $deadline['days_left'] }}d
-                                </span>
+                            <div class="tx-dl-simple">
+                                <span class="l">{{ $deadline['tax_type_name'] ?? $deadline['tax_type_code'] }} &middot; {{ $deadline['label'] }}</span>
+                                <span class="v">{{ \Illuminate\Support\Carbon::parse($deadline['filing_due_date'])->format('d M Y') }}</span>
                             </div>
                         @empty
                             <p class="tx-em" style="text-align:center;padding:12px 0;">{{ __('No upcoming deadlines.') }}</p>
                         @endforelse
+                        @if ($kpi['unfiled_periods'] > 0)
+                            <div class="tx-dl-simple">
+                                <span class="l">{{ __('Unfiled periods') }}</span>
+                                <span class="v tx-red">{{ $kpi['unfiled_periods'] }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
                 <div class="tx-card">
                     <div class="tx-card-h">
-                        <span class="ic">&#9878;</span>
+                        <span class="ic">&#9888;</span>
                         <h2>{{ __('Tax Exceptions') }}</h2>
-                        @if (count($exceptions) > 0)
-                            <span class="tx-badge tx-b-pend" style="margin-left:auto;"><span class="bdot"></span>{{ count($exceptions) }}</span>
-                        @endif
                     </div>
-                    <div class="tx-pad" style="display:flex;flex-direction:column;gap:12px;">
+                    <div class="tx-pad">
                         @forelse ($exceptions as $exception)
-                            <div>
-                                <span class="tx-badge {{ $sevClass[$exception['severity']] ?? 'tx-b-off' }}"><span class="bdot"></span>{{ $sevLabel[$exception['severity']] ?? ucfirst($exception['severity']) }}</span>
-                                <p style="font-size:12px;color:var(--sub, #41585c);margin-top:6px;line-height:1.45;">{{ $exception['message'] }}</p>
-                                <a class="tx-jl" style="font-size:11.5px;" href="{{ $exception['link'] }}">{{ __('View') }} &rarr;</a>
+                            <div class="tx-dl-simple">
+                                <span class="l">{{ $exception['message'] }}</span>
+                                <span class="v tx-red">&times;</span>
                             </div>
                         @empty
-                            <p class="tx-em" style="text-align:center;padding:12px 0;">{{ __('All clear — no tax exceptions detected.') }}</p>
+                            <div class="tx-dl-simple">
+                                <span class="l">{{ __('No exceptions') }}</span>
+                                <span class="v" style="color:var(--green,#15803d)">&check;</span>
+                            </div>
                         @endforelse
                     </div>
                 </div>

@@ -12,6 +12,7 @@ use App\Models\PosSale;
 use App\Models\Product;
 use App\Services\Accounting\InventoryService;
 use App\Services\Inventory\UnitOfMeasureConversionService;
+use App\Services\POS\PosReturnableService;
 use App\Services\POS\PosSaleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -116,6 +117,10 @@ class PosSaleController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
+        $walkInCustomer = Customer::where('company_id', $companyId)
+            ->where('name', 'Walk-in Customer')
+            ->first(['id', 'name']);
+
         $bankAccounts = Account::where('company_id', $companyId)
             ->where('is_bank_account', true)
             ->where('is_active', true)
@@ -148,7 +153,7 @@ class PosSaleController extends Controller
             }
         }
 
-        return view('pos.sales.checkout', compact('products', 'paymentMethods', 'customers', 'bankAccounts', 'mobileProviders', 'uomConversions'));
+        return view('pos.sales.checkout', compact('products', 'paymentMethods', 'customers', 'bankAccounts', 'mobileProviders', 'uomConversions', 'walkInCustomer'));
     }
 
     public function store(Request $request)
@@ -180,19 +185,35 @@ class PosSaleController extends Controller
             'payments.*.processor_name' => 'nullable|string|max:255',
             'payments.*.account_name' => 'nullable|string|max:255',
             'payments.*.institution' => 'nullable|string|max:255',
+            'bottle_credit_applied' => 'nullable|numeric|min:0',
+            'bottle_returnable_ids' => 'nullable|array',
         ]);
 
         $validated['company_id'] = $companyId;
         $validated['branch_id'] = $validated['branch_id'] ?? session('pos_terminal_branch_id');
 
+        $bottleCredit = (float) ($validated['bottle_credit_applied'] ?? 0);
+
         try {
             $sale = app(PosSaleService::class)->checkout($validated, $userId);
+
+            if ($bottleCredit > 0 && $validated['customer_id'] ?? null) {
+                $returnableService = app(PosReturnableService::class);
+                $returnableService->redeemOnCheckout(
+                    $companyId,
+                    (int) $validated['customer_id'],
+                    $validated['branch_id'] ? (int) $validated['branch_id'] : null,
+                    $bottleCredit,
+                    $userId
+                );
+            }
 
             return response()->json([
                 'success' => true,
                 'sale_id' => $sale->id,
                 'sale_number' => $sale->sale_number,
                 'total' => $sale->total,
+                'bottle_credit_applied' => $bottleCredit,
                 'message' => "Sale {$sale->sale_number} completed.",
             ]);
         } catch (\InvalidArgumentException $e) {
@@ -312,5 +333,21 @@ class PosSaleController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * Void a posted sale — reverse journal + restock.
+     */
+    public function void(PosSale $sale)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($sale->company_id === $companyId, 403);
+        abort_unless($sale->status === PosSale::STATUS_POSTED, 422, 'Only posted sales can be voided.');
+
+        $userId = auth()->id();
+        app(PosSaleService::class)->voidSale($sale, $companyId, $userId);
+
+        return redirect()->route('pos.receipts.index')
+            ->with('success', "Sale {$sale->sale_number} has been voided.");
     }
 }

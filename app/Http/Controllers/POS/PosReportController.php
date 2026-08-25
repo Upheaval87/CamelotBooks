@@ -86,4 +86,13 @@ class PosReportController extends Controller
 
         return view('pos.reports.sales-by-cashier', compact('data'));
     }
+
+    /**
+     * POS Reports overview — all report tiles.
+     */
+    public function overview()
+    {
+        $companyId = session('current_company_id');
+        return view('pos.reports.overview', compact('companyId'));
+    }
 }

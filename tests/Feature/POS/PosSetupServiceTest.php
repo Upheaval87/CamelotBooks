@@ -92,7 +92,7 @@ class PosSetupServiceTest extends TestCase
         PosSetupService::seedDefaultsForCompany($this->company->id);
 
         $this->assertEquals(3, Account::where('company_id', $this->company->id)->whereIn('code', ['1060', '1070', '1080'])->count());
-        $this->assertEquals(3, PosPaymentMethod::where('company_id', $this->company->id)->count());
+        $this->assertEquals(4, PosPaymentMethod::where('company_id', $this->company->id)->count());
     }
 
     public function test_accounts_do_not_leak_between_companies(): void

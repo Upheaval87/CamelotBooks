@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('branch-quotations:expire')->daily();
+        $schedule->command('returnables:sweep-expired')->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

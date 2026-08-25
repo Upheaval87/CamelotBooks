@@ -70,7 +70,7 @@
                 <form method="GET" action="{{ route('accounting.vendors.index') }}" id="vend-list-form">
                     <div class="controls">
                         <div class="search">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
                             <input type="text" name="search" class="input" placeholder="Name, email, phone..." value="{{ request('search') }}" />
                         </div>
                         <select name="status" class="input">

@@ -1,29 +1,70 @@
-<div class="tx-kpis" style="grid-template-columns:1fr 1fr;">
-    <div class="tx-kpi {{ $taxPayableAccount ? '' : 'warn' }}">
-        <div class="l">{{ __('Output / Payable Account') }}</div>
-        <div class="v" style="font-size:1rem;">
+<div class="tx-grid2" style="grid-template-columns:1fr 1fr;">
+    <div class="tx-card" style="margin-bottom:0">
+        <div class="tx-card-h">
+            <span class="ic" style="background:rgba(22,163,74,.1);color:var(--green,#15803d)">&#128179;</span>
+            <h2>{{ __('Output / Payable Account') }}</h2>
+        </div>
+        <div class="tx-pad">
             @if ($taxPayableAccount)
-                <span class="tx-mono">{{ $taxPayableAccount->code }}</span> &middot; {{ $taxPayableAccount->name }}
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Account') }}</span>
+                    <span class="v"><span class="tx-mono">{{ $taxPayableAccount->code }}</span> &middot; {{ $taxPayableAccount->name }}</span>
+                </div>
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Description') }}</span>
+                    <span class="v tx-em">{{ __('Where sales tax collected is credited.') }}</span>
+                </div>
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Status') }}</span>
+                    <span class="v"><span class="tx-badge tx-b-ok"><span class="bdot"></span>{{ __('Mapped') }}</span></span>
+                </div>
             @else
-                {{ __('Not configured') }}
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Account') }}</span>
+                    <span class="v tx-em">{{ __('Not configured') }}</span>
+                </div>
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Status') }}</span>
+                    <span class="v"><span class="tx-badge tx-b-pend"><span class="bdot"></span>{{ __('Not set') }}</span></span>
+                </div>
             @endif
         </div>
-        <div class="n">{{ __('Where sales tax collected is credited.') }}</div>
     </div>
-    <div class="tx-kpi {{ $taxReceivableAccount ? '' : 'warn' }}">
-        <div class="l">{{ __('Input / Receivable Account') }}</div>
-        <div class="v" style="font-size:1rem;">
+
+    <div class="tx-card" style="margin-bottom:0">
+        <div class="tx-card-h">
+            <span class="ic" style="background:rgba(18,143,142,.1);color:var(--sec,#128F8E)">&#128179;</span>
+            <h2>{{ __('Input / Receivable Account') }}</h2>
+        </div>
+        <div class="tx-pad">
             @if ($taxReceivableAccount)
-                <span class="tx-mono">{{ $taxReceivableAccount->code }}</span> &middot; {{ $taxReceivableAccount->name }}
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Account') }}</span>
+                    <span class="v"><span class="tx-mono">{{ $taxReceivableAccount->code }}</span> &middot; {{ $taxReceivableAccount->name }}</span>
+                </div>
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Description') }}</span>
+                    <span class="v tx-em">{{ __('Where purchase tax recoverable is debited.') }}</span>
+                </div>
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Status') }}</span>
+                    <span class="v"><span class="tx-badge tx-b-ok"><span class="bdot"></span>{{ __('Mapped') }}</span></span>
+                </div>
             @else
-                {{ __('Not configured') }}
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Account') }}</span>
+                    <span class="v tx-em">{{ __('Not configured') }}</span>
+                </div>
+                <div class="tx-dl-simple">
+                    <span class="l">{{ __('Status') }}</span>
+                    <span class="v"><span class="tx-badge tx-b-pend"><span class="bdot"></span>{{ __('Not set') }}</span></span>
+                </div>
             @endif
         </div>
-        <div class="n">{{ __('Where purchase tax recoverable is debited.') }}</div>
     </div>
 </div>
 
-<div class="tx-card">
+<div class="tx-card" style="margin-top:16px">
     <div class="tx-card-h">
         <span class="ic">&#9632;</span>
         <h2>{{ __('Other Mappings') }}</h2>
@@ -57,11 +98,11 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" style="text-align:center;padding:36px;color:var(--muted);">{{ __('No mappings defined yet.') }}</td></tr>
+                    <tr><td colspan="3" class="tx-em" style="text-align:center;padding:36px;">{{ __('No mappings defined yet.') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 </div>
 
-<p class="tx-em" style="margin-top:12px;">{{ __('Mappings are maintained in System Settings &rarr; Default Accounts.') }}{!! '' !!}</p>
+<p class="tx-em" style="margin-top:12px;">{{ __('Mappings are maintained in System Settings &rarr; Default Accounts.') }}</p>

@@ -209,6 +209,6 @@ class Bill extends Model
 
     public function scopeForDateRange($query, $from, $to)
     {
-        return $query->whereBetween('bill_date', [$from, $to]);
+        return $query->whereDate('bill_date', '>=', $from)->whereDate('bill_date', '<=', $to);
     }
 }

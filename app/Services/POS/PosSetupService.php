@@ -3,6 +3,7 @@
 namespace App\Services\POS;
 
 use App\Models\Account;
+use App\Models\DefaultAccountMapping;
 use App\Models\MobileMoneyProvider;
 use App\Models\PosPaymentMethod;
 
@@ -123,6 +124,47 @@ class PosSetupService
                 ['company_id' => $companyId, 'name' => $provider],
                 ['is_active' => true]
             );
+        }
+
+        $accountsReceivable = Account::firstOrCreate(
+            ['company_id' => $companyId, 'code' => '1100'],
+            [
+                'name' => 'Accounts Receivable',
+                'type' => 'asset',
+                'sub_type' => 'current_asset',
+                'description' => 'Amounts owed by customers',
+                'is_active' => true,
+            ]
+        );
+
+        PosPaymentMethod::firstOrCreate(
+            ['company_id' => $companyId, 'name' => 'Customer Credit'],
+            [
+                'type' => 'customer_credit',
+                'clearing_account_id' => $accountsReceivable->id,
+                'requires_reference' => false,
+                'is_active' => true,
+            ]
+        );
+
+        // Ensure POS-critical default account mappings exist
+        $posMappingCodes = [
+            'cash_in_drawer'       => '1060',
+            'cash_shortage'        => '6900',
+            'cash_overage'         => '7400',
+            'merchant_fee_expense' => '6950',
+            'undeposited_funds'    => '1050',
+            'accounts_receivable'  => '1100',
+            'inventory_asset'      => '1200',
+            'default_revenue'      => '4000',
+            'default_expense'      => '5000',
+        ];
+
+        foreach ($posMappingCodes as $key => $code) {
+            $acct = Account::where('company_id', $companyId)->where('code', $code)->first();
+            if ($acct) {
+                DefaultAccountMapping::setMapping($companyId, $key, $acct->id);
+            }
         }
     }
 }

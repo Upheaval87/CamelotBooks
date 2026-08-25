@@ -874,6 +874,81 @@ class TaxController extends Controller
             ->with('success', __('Tax payment recorded.'));
     }
 
+    public function payeWht(Request $request)
+    {
+        $this->requirePermission($request, 'taxation.view');
+        $companyId = $this->companyId();
+
+        $payeTransactions = TaxTransaction::query()
+            ->where('company_id', $companyId)
+            ->posted()
+            ->whereHas('taxCode', fn ($q) => $q->whereHas('taxType', fn ($q2) => $q2->where('category', 'PAYE')))
+            ->with('taxCode:id,code,name')
+            ->orderByDesc('posting_date')
+            ->get();
+
+        $whtTransactions = TaxTransaction::query()
+            ->where('company_id', $companyId)
+            ->posted()
+            ->whereHas('taxCode', fn ($q) => $q->whereHas('taxType', fn ($q2) => $q2->where('category', 'WHT')))
+            ->with('taxCode:id,code,name')
+            ->orderByDesc('posting_date')
+            ->get();
+
+        $certificates = WhtCertificate::query()
+            ->where('company_id', $companyId)
+            ->with('vendor:id,name')
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get();
+
+        $payeTotal = (float) $payeTransactions->sum('tax_amount');
+        $whtTotal = (float) $whtTransactions->sum('tax_amount');
+
+        return view('accounting.taxation.paye-wht', compact(
+            'payeTransactions', 'whtTransactions', 'certificates', 'payeTotal', 'whtTotal'
+        ) + ['cs' => $this->cs()]);
+    }
+
+    public function calendar(Request $request)
+    {
+        $this->requirePermission($request, 'taxation.view');
+        $companyId = $this->companyId();
+
+        $periods = TaxPeriod::query()
+            ->where('company_id', $companyId)
+            ->with('taxType:id,code,name')
+            ->whereNotNull('filing_due_date')
+            ->orderBy('filing_due_date')
+            ->get();
+
+        $obligations = $periods->map(function (TaxPeriod $period) {
+            $daysLeft = (int) today()->diffInDays($period->filing_due_date);
+            $status = match (true) {
+                $period->status === 'CLOSED' => 'completed',
+                $period->filing_due_date->isPast() => 'overdue',
+                $daysLeft <= 7 => 'urgent',
+                $daysLeft <= 30 => 'upcoming',
+                default => 'future',
+            };
+
+            return [
+                'period_id' => $period->id,
+                'label' => $period->label,
+                'tax_type_code' => $period->taxType?->code,
+                'tax_type_name' => $period->taxType?->name,
+                'filing_due_date' => optional($period->filing_due_date)->toDateString(),
+                'payment_due_date' => optional($period->payment_due_date)->toDateString(),
+                'period_status' => $period->status,
+                'days_left' => $daysLeft,
+                'status' => $status,
+                'working_paper_url' => route('accounting.taxation.returns.working-paper', ['periodId' => $period->id]),
+            ];
+        });
+
+        return view('accounting.taxation.calendar', compact('obligations') + ['cs' => $this->cs()]);
+    }
+
     public function storeAdjustment(Request $request)
     {
         $this->requirePermission($request, 'taxation.edit');

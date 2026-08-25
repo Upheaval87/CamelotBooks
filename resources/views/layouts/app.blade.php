@@ -37,6 +37,7 @@
             <script src="{{ \Illuminate\Support\Facades\Vite::asset('resources/js/scoped-search-field.js') }}"></script>
         @endif
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @stack('styles')
     </head>
     <body class="font-sans antialiased bg-neutral-50 dark:bg-neutral-950">
 

@@ -199,12 +199,15 @@ class TenantDefaultsSeeder
     {
         $supplemental = [
             ['code' => '1050', 'name' => 'Undeposited Funds', 'type' => 'asset', 'sub_type' => 'current_asset'],
+            ['code' => '1320', 'name' => 'Returnable Containers', 'type' => 'asset', 'sub_type' => 'current_asset'],
+            ['code' => '1700', 'name' => 'Accumulated Impairment Losses', 'type' => 'asset', 'sub_type' => 'non_current_asset'],
             ['code' => '2150', 'name' => 'Accrued Purchases', 'type' => 'liability', 'sub_type' => 'current_liability'],
+            ['code' => '2350', 'name' => 'Customer Bottle Credits Liability', 'type' => 'liability', 'sub_type' => 'current_liability'],
+            ['code' => '3300', 'name' => 'Revaluation Surplus', 'type' => 'equity', 'sub_type' => 'equity'],
+            ['code' => '4050', 'name' => 'Bottle Deposit Revenue', 'type' => 'income', 'sub_type' => 'revenue'],
             ['code' => '6800', 'name' => 'Purchase Price Variance', 'type' => 'expense', 'sub_type' => 'operating_expense'],
             ['code' => '6850', 'name' => 'Inventory Count Variance', 'type' => 'expense', 'sub_type' => 'operating_expense'],
-            ['code' => '1700', 'name' => 'Accumulated Impairment Losses', 'type' => 'asset', 'sub_type' => 'non_current_asset'],
             ['code' => '7100', 'name' => 'Gain/Loss on Disposal of Fixed Assets', 'type' => 'expense', 'sub_type' => 'non_operating_expense'],
-            ['code' => '3300', 'name' => 'Revaluation Surplus', 'type' => 'equity', 'sub_type' => 'equity'],
         ];
 
         foreach ($supplemental as $account) {

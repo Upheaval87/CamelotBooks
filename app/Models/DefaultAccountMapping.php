@@ -112,6 +112,9 @@ class DefaultAccountMapping extends Model
             'net_pay_payable' => 'Net Pay Payable',
             'loan_receivable' => 'Employee Loans Receivable',
             'petty_cash' => 'Petty Cash',
+            'returnable_containers' => 'Returnable Containers',
+            'bottle_credits_liability' => 'Customer Bottle Credits Liability',
+            'bottle_deposit_revenue' => 'Bottle Deposit Revenue',
         ];
     }
 
@@ -155,6 +158,9 @@ class DefaultAccountMapping extends Model
             'net_pay_payable' => '2420',
             'loan_receivable' => '1400',
             'petty_cash' => '1010',
+            'returnable_containers' => '1320',
+            'bottle_credits_liability' => '2350',
+            'bottle_deposit_revenue' => '4050',
         ];
     }
 }

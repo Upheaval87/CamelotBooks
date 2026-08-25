@@ -170,13 +170,29 @@
                                     name="customer_id"
                                     entity="customer"
                                     search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
-                                    value=""
-                                    label=""
+                                    value="{{ $walkInCustomer?->id ?? '' }}"
+                                    label="{{ $walkInCustomer?->name ?? '' }}"
                                     on-select="posCustomerSelected"
                                     placeholder="{{ __('Search customers...') }}"
                                 />
                             </div>
-                            <button type="button" @click="clearPosCustomer()" class="mt-1 text-xs text-gray-500 hover:text-gold-700">Walk-in Customer</button>
+                            <button type="button" @click="setWalkInCustomer()" class="mt-1 text-xs text-gray-500 hover:text-gold-700">Walk-in Customer</button>
+                            <div x-show="bottleCreditAvailable > 0" x-cloak class="mt-2 p-2 bg-teal-50 border border-teal-200 rounded-md">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-semibold text-teal-700">Bottle Credit Available</span>
+                                    <span class="text-sm font-bold text-teal-800" x-text="formatMoney(bottleCreditAvailable)"></span>
+                                </div>
+                                <button type="button" @click="bottleCreditApplied = Math.min(bottleCreditAvailable, getTotals().total); bottleReturnableIds = ['auto'];"
+                                    x-show="bottleCreditApplied === 0"
+                                    class="mt-1 w-full text-xs bg-teal-600 text-white rounded py-1 hover:bg-teal-700 font-semibold">
+                                    Apply to This Sale
+                                </button>
+                                <button type="button" @click="bottleCreditApplied = 0; bottleReturnableIds = [];"
+                                    x-show="bottleCreditApplied > 0"
+                                    class="mt-1 w-full text-xs bg-white border border-teal-300 text-teal-700 rounded py-1 hover:bg-teal-50 font-semibold">
+                                    Remove Credit
+                                </button>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -199,9 +215,13 @@
                                 <span class="text-gray-500">Tax</span>
                                 <span x-text="formatMoney(getTotals().tax)"></span>
                             </div>
+                            <div class="flex justify-between text-sm" x-show="bottleCreditApplied > 0">
+                                <span class="text-teal-600 font-medium">Bottle Credit</span>
+                                <span class="text-teal-600 font-semibold" x-text="'-' + formatMoney(bottleCreditApplied)"></span>
+                            </div>
                             <div class="flex justify-between text-xl font-bold border-t pt-2">
                                 <span>Total Due</span>
-                                <span class="text-gold-700" x-text="formatMoney(getTotals().total)"></span>
+                                <span class="text-gold-700" x-text="formatMoney(getTotals().total - bottleCreditApplied)"></span>
                             </div>
                         </div>
 
@@ -610,6 +630,23 @@
             }
         };
 
+        window.setWalkInCustomer = function() {
+            const walkInId = '{{ $walkInCustomer?->id ?? '' }}';
+            const walkInName = '{{ $walkInCustomer?->name ?? '' }}';
+            window.dispatchEvent(new CustomEvent('pos-customer-selected', {
+                detail: { id: walkInId, label: walkInName },
+            }));
+            const host = document.querySelector('.pos-customer-picker [data-scoped-search-field]');
+            if (host && window.Alpine) {
+                const comp = Alpine.$data(host);
+                if (comp && typeof comp.setValue === 'function') {
+                    comp.setValue(walkInId, walkInName);
+                } else if (comp && typeof comp.clear === 'function') {
+                    comp.clear();
+                }
+            }
+        };
+
         function posCheckout() {
             return {
                 products: @json($products),
@@ -623,7 +660,9 @@
                 uomConversions: @json($uomConversions),
                 productUoms: {},
                 lines: [],
-                customerId: '',
+                customerId: '{{ $walkInCustomer?->id ?? '' }}',
+                walkInCustomerId: '{{ $walkInCustomer?->id ?? '' }}',
+                walkInCustomerName: '{{ $walkInCustomer?->name ?? '' }}',
                 reference: '',
                 payments: [],
                 submitting: false,
@@ -658,6 +697,9 @@
                 isOnline: navigator.onLine,
                 offlineQueueCount: PosOfflineQueue.getCount(),
                 syncResult: null,
+                bottleCreditAvailable: 0,
+                bottleCreditApplied: 0,
+                bottleReturnableIds: [],
 
                 init() {
                     this.filteredProducts = [];
@@ -683,6 +725,7 @@
                     });
                     window.addEventListener('pos-customer-selected', (e) => {
                         this.customerId = (e.detail && e.detail.id) || '';
+                        this.fetchBottleCredit();
                     });
                     window.addEventListener('online', () => {
                         this.isOnline = true;
@@ -692,6 +735,38 @@
                         this.isOnline = false;
                     });
                     this.offlineQueueCount = PosOfflineQueue.getCount();
+                },
+
+                setWalkInCustomer() {
+                    this.customerId = this.walkInCustomerId;
+                    this.bottleCreditAvailable = 0;
+                    this.bottleCreditApplied = 0;
+                    this.bottleReturnableIds = [];
+                    const host = document.querySelector('.pos-customer-picker [data-scoped-search-field]');
+                    if (host && window.Alpine) {
+                        const comp = Alpine.$data(host);
+                        if (comp) {
+                            comp.selectedId = this.walkInCustomerId;
+                            comp.selectedLabel = this.walkInCustomerName;
+                            comp.query = this.walkInCustomerName;
+                            comp.results = [];
+                            comp.open = false;
+                        }
+                    }
+                    this.fetchBottleCredit();
+                },
+
+                async fetchBottleCredit() {
+                    this.bottleCreditAvailable = 0;
+                    this.bottleCreditApplied = 0;
+                    this.bottleReturnableIds = [];
+                    if (!this.customerId) return;
+                    try {
+                        const url = '{{ route("pos.returnables.credit-check") }}' + '?customer_id=' + this.customerId;
+                        const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                        const data = await resp.json();
+                        this.bottleCreditAvailable = parseFloat(data.available_credit) || 0;
+                    } catch (e) { /* silent */ }
                 },
 
                 async attemptSync() {
@@ -889,7 +964,8 @@
 
                 getRemaining() {
                     const total = this.getTotals().total;
-                    const paid = this.payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+                    const creditApplied = this.bottleCreditApplied || 0;
+                    const paid = this.payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0) + creditApplied;
                     return Math.max(0, parseFloat((total - paid).toFixed(2)));
                 },
 
@@ -1091,6 +1167,8 @@
                         cashier_session_id: null,
                         customer_id: this.customerId || null,
                         reference: this.reference || null,
+                        bottle_credit_applied: this.bottleCreditApplied || 0,
+                        bottle_returnable_ids: this.bottleReturnableIds || [],
                         lines: this.lines.map(l => ({
                             product_id: l.product_id,
                             quantity: l.quantity,

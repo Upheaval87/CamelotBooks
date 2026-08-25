@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -47,12 +48,14 @@ class User extends Authenticatable
         'failed_login_attempts',
         'locked_until',
         'font_scale',
+        'pos_cashier_pin',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
         'two_factor_secret',
+        'pos_cashier_pin',
     ];
 
     protected function casts(): array
@@ -183,5 +186,32 @@ class User extends Authenticatable
             return true;
         }
         return parent::can($ability, $arguments);
+    }
+
+    /**
+     * Set the user's POS cashier PIN (hashed at rest).
+     */
+    public function setPosPin(string $pin): void
+    {
+        $this->update(['pos_cashier_pin' => Hash::make($pin)]);
+    }
+
+    /**
+     * Check if the user has a POS PIN set.
+     */
+    public function hasPosPin(): bool
+    {
+        return filled($this->pos_cashier_pin);
+    }
+
+    /**
+     * Verify a POS PIN against the stored hash.
+     */
+    public function verifyPosPin(string $pin): bool
+    {
+        if (!$this->hasPosPin()) {
+            return false;
+        }
+        return Hash::check($pin, $this->pos_cashier_pin);
     }
 }

@@ -1,5 +1,18 @@
 <x-app-layout>
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 py-6 tx-wrap">
+        @php
+            $tabLabels = [
+                'types' => __('Tax Types'),
+                'codes' => __('Tax Codes'),
+                'rates' => __('Tax Rates'),
+                'exemptions' => __('Exemptions'),
+                'jurisdictions' => __('Jurisdictions'),
+                'accounts' => __('Tax Accounts'),
+            ];
+        @endphp
+
+        <div class="tx-opt-tag">{{ __('Tax Configuration') }} &middot; {{ $tabLabels[$activeTab] ?? '' }}</div>
+
         <div class="tx-page-head">
             <div>
                 <h1>{{ __('Tax Configuration') }}</h1>

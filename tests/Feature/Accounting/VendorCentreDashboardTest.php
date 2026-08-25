@@ -65,13 +65,15 @@ class VendorCentreDashboardTest extends TestCase
         $this->actingAs($this->user)
             ->get(route('accounting.vendors.dashboard'))
             ->assertOk()
-            ->assertSee('Vendor Centre')
-            ->assertSee('Overview')
+            ->assertSee('Vendors')
+            ->assertSee('Accounts payable overview')
             ->assertSee('Payables Aging')
-            ->assertSee('Top Vendors by Balance')
-            ->assertSee('Due in Next 30 Days')
-            ->assertSee('Recent Activity')
-            ->assertSee('New Bill');
+            ->assertSee('Top Vendors')
+            ->assertSee('Upcoming Payments')
+            ->assertSee('Needs Attention')
+            ->assertSee('Vendor Balances')
+            ->assertSee('New Vendor')
+            ->assertSee('Purchase Order');
     }
 
     public function test_dashboard_stats_reflect_live_ap_ledger(): void

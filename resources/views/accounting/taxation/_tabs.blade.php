@@ -2,8 +2,8 @@
     $active = $active ?? 'types';
     $txTabs = [
         'types' => ['Tax Types', route('accounting.taxation.config', ['tab' => 'types'])],
-        'rates' => ['Tax Rates', route('accounting.taxation.config', ['tab' => 'rates'])],
         'codes' => ['Tax Codes', route('accounting.taxation.config', ['tab' => 'codes'])],
+        'rates' => ['Tax Rates', route('accounting.taxation.config', ['tab' => 'rates'])],
         'exemptions' => ['Exemptions', route('accounting.taxation.config', ['tab' => 'exemptions'])],
         'jurisdictions' => ['Jurisdictions', route('accounting.taxation.config', ['tab' => 'jurisdictions'])],
         'accounts' => ['Tax Accounts', route('accounting.taxation.config', ['tab' => 'accounts'])],

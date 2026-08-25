@@ -96,6 +96,7 @@
             <div class="inv-form-group">
                 <label class="inv-form-label">{{ __('Tax Rate (%)') }}</label>
                 <input type="number" name="tax_rate" value="{{ old('tax_rate', $product?->tax_rate ?? 0) }}" class="inv-input" min="0" max="100" step="0.01">
+                @error('tax_rate') <div class="inv-form-err">{{ $message }}</div> @enderror
             </div>
             <div class="inv-form-group inv-span4">
                 <label class="inv-form-label">{{ __('Description') }} <span style="color:var(--faint)">{{ __('Optional') }}</span></label>
@@ -144,12 +145,14 @@
                 <input type="number" name="purchase_price" id="inv-cost" value="{{ old('purchase_price', $product?->purchase_price) }}"
                        class="inv-input" min="0" step="0.01" placeholder="0.00" x-on:input="calcMargin()">
                 <div class="inv-form-hint">{{ $cs }}</div>
+                @error('purchase_price') <div class="inv-form-err">{{ $message }}</div> @enderror
             </div>
             <div class="inv-form-group">
                 <label class="inv-form-label">{{ __('Sales Price') }}</label>
                 <input type="number" name="sales_price" id="inv-price" value="{{ old('sales_price', $product?->sales_price) }}"
                        class="inv-input" min="0" step="0.01" placeholder="0.00" x-on:input="calcMargin()">
                 <div class="inv-form-hint">{{ $cs }}</div>
+                @error('sales_price') <div class="inv-form-err">{{ $message }}</div> @enderror
             </div>
             <div class="inv-form-group">
                 <label class="inv-form-label">{{ __('Margin') }}</label>
@@ -161,6 +164,7 @@
                 <label class="inv-form-label">{{ __('Reorder Point') }}</label>
                 <input type="number" name="reorder_point" value="{{ old('reorder_point', $product?->reorder_point) }}"
                        class="inv-input" min="0" placeholder="0">
+                @error('reorder_point') <div class="inv-form-err">{{ $message }}</div> @enderror
             </div>
             <div class="inv-form-group">
                 <label class="inv-form-label">{{ __('Income Account') }}</label>

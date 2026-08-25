@@ -28,7 +28,7 @@ class AgingReportService
             $customerName = $invoice->customer->name ?? 'Unknown';
             $dueDate = Carbon::parse($invoice->due_date);
             $daysOverdue = max(0, $asOf->diffInDays($dueDate, false));
-            $daysOverdue = $asOf->greaterThan($dueDate) ? $asOf->diffInDays($dueDate) : 0;
+            $daysOverdue = $asOf->greaterThan($dueDate) ? abs($asOf->diffInDays($dueDate)) : 0;
 
             $amount = (float) $invoice->amount - (float) $invoice->amount_paid;
 
@@ -79,7 +79,7 @@ class AgingReportService
     {
         $bills = Bill::where('company_id', $companyId)
             ->whereIn('status', ['posted', 'partially_paid', 'approved'])
-            ->where('bill_date', '<=', $asOfDate)
+            ->whereDate('bill_date', '<=', $asOfDate)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->with('vendor')
             ->get();
@@ -91,7 +91,7 @@ class AgingReportService
             $vendorId = $bill->vendor_id;
             $vendorName = $bill->vendor->name ?? 'Unknown';
             $dueDate = Carbon::parse($bill->due_date);
-            $daysOverdue = $asOf->greaterThan($dueDate) ? $asOf->diffInDays($dueDate) : 0;
+            $daysOverdue = $asOf->greaterThan($dueDate) ? abs($asOf->diffInDays($dueDate)) : 0;
 
             $amount = (float) $bill->amount - (float) $bill->amount_paid;
 
@@ -152,7 +152,7 @@ class AgingReportService
 
         foreach ($invoices as $invoice) {
             $dueDate = Carbon::parse($invoice->due_date);
-            $daysOverdue = $asOf->greaterThan($dueDate) ? $asOf->diffInDays($dueDate) : 0;
+            $daysOverdue = $asOf->greaterThan($dueDate) ? abs($asOf->diffInDays($dueDate)) : 0;
             $amount = (float) $invoice->amount - (float) $invoice->amount_paid;
 
             $lines[] = [
@@ -182,7 +182,7 @@ class AgingReportService
     {
         $bills = Bill::where('company_id', $companyId)
             ->whereIn('status', ['posted', 'partially_paid', 'approved'])
-            ->where('bill_date', '<=', $asOfDate)
+            ->whereDate('bill_date', '<=', $asOfDate)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->with('vendor')
             ->get();
@@ -192,7 +192,7 @@ class AgingReportService
 
         foreach ($bills as $bill) {
             $dueDate = Carbon::parse($bill->due_date);
-            $daysOverdue = $asOf->greaterThan($dueDate) ? $asOf->diffInDays($dueDate) : 0;
+            $daysOverdue = $asOf->greaterThan($dueDate) ? abs($asOf->diffInDays($dueDate)) : 0;
             $amount = (float) $bill->amount - (float) $bill->amount_paid;
 
             $lines[] = [

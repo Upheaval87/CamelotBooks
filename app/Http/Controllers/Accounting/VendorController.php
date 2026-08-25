@@ -9,6 +9,7 @@ use App\Models\Vendor;
 use App\Models\VendorCredit;
 use App\Models\VendorPayment;
 use App\Services\Reporting\AgingReportService;
+use App\Services\VendorCentre\VendorCentreService;
 use Illuminate\Http\Request;
 
 class VendorController extends Controller
@@ -80,61 +81,28 @@ class VendorController extends Controller
     public function dashboard(Request $request)
     {
         $companyId = session('current_company_id');
+        $cs = SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
 
-        $aging = app(AgingReportService::class)->apAging($companyId, null, now()->format('Y-m-d'));
+        $vc = app(VendorCentreService::class);
 
-        $overdue = (float) $aging['totals']['days_1_30']
-            + (float) $aging['totals']['days_31_60']
-            + (float) $aging['totals']['days_61_90']
-            + (float) $aging['totals']['days_90_plus'];
+        $vendorCount = $vc->getVendorCount($companyId);
+        $totalPayables = $vc->getTotalPayables($companyId);
+        $dueThisWeek = $vc->getDueThisWeek($companyId);
+        $overdueStats = $vc->getOverdueStats($companyId);
+        $purchasesYTD = $vc->getPurchasesYTD($companyId);
 
-        $openStatuses = [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE];
-
-        $stats = [
-            'vendors' => (int) Vendor::where('company_id', $companyId)->where('is_active', true)->count(),
-            'total_vendors' => (int) Vendor::where('company_id', $companyId)->count(),
-            'open_balance' => (float) $aging['totals']['total'],
-            'current' => (float) $aging['totals']['current'],
-            'overdue' => $overdue,
-            'unpaid_bills' => (int) Bill::where('company_id', $companyId)->whereIn('status', $openStatuses)->count(),
-            'bills_this_month' => (float) Bill::where('company_id', $companyId)
-                ->whereBetween('bill_date', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])
-                ->selectRaw('COALESCE(SUM(amount), 0) as amt')
-                ->value('amt'),
-            'pending_approval' => (int) Bill::where('company_id', $companyId)->where('status', Bill::STATUS_PENDING_APPROVAL)->count(),
-        ];
-
-        $topVendors = collect($aging['vendors'])->sortByDesc('total')->take(5)->values()->all();
-
-        $dueSoon = Bill::where('company_id', $companyId)
-            ->whereIn('status', $openStatuses)
-            ->where('due_date', '>=', now()->toDateString())
-            ->where('due_date', '<=', now()->addDays(30)->toDateString())
-            ->with('vendor')
-            ->orderBy('due_date')
-            ->limit(8)
-            ->get();
-
-        $recentBills = Bill::where('company_id', $companyId)
-            ->with('vendor')
-            ->orderBy('bill_date', 'desc')
-            ->limit(6)
-            ->get();
-
-        $recentPayments = VendorPayment::where('company_id', $companyId)
-            ->with('vendor')
-            ->orderBy('payment_date', 'desc')
-            ->limit(6)
-            ->get();
-
-        $recentCredits = VendorCredit::where('company_id', $companyId)
-            ->with('vendor')
-            ->orderBy('created_at', 'desc')
-            ->limit(6)
-            ->get();
+        $agingBars = $vc->getAgingBarData($companyId);
+        $upcomingPayments = $vc->getUpcomingPayments($companyId);
+        $topVendors = $vc->getTopVendors($companyId, $request->query('top_sort', 'spend'));
+        $pendingTransactions = $vc->getPendingTransactions($companyId);
+        $alertCounts = $vc->getAlertCounts($companyId);
+        $vendorBalances = $vc->getVendorBalances($companyId);
+        $exportParams = $request->except('page');
 
         return view('accounting.vendors.dashboard', compact(
-            'stats', 'topVendors', 'dueSoon', 'recentBills', 'recentPayments', 'recentCredits', 'aging'
+            'cs', 'vendorCount', 'totalPayables', 'dueThisWeek', 'overdueStats',
+            'purchasesYTD', 'agingBars', 'upcomingPayments', 'topVendors',
+            'pendingTransactions', 'alertCounts', 'vendorBalances', 'exportParams'
         ));
     }
 

@@ -15,8 +15,8 @@ return new class extends Migration
         Schema::create('payslip_audit_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained();
-            $table->foreignId('payslip_id')->constrained()->nullOnDelete();
-            $table->foreignId('employee_id')->constrained()->nullOnDelete();
+            $table->foreignId('payslip_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('employee_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('action', 50);
             $table->json('metadata')->nullable();

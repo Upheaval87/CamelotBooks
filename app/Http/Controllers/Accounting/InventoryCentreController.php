@@ -13,6 +13,7 @@ use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use App\Models\SystemSetting;
 
 class InventoryCentreController extends Controller
@@ -178,7 +179,7 @@ class InventoryCentreController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'sku' => 'required|string|max:50|unique:products,sku,' . $companyId . ',company_id',
+            'sku' => ['required', 'string', 'max:50', Rule::unique('products', 'sku')->where('company_id', $companyId)],
             'barcode' => 'nullable|string|max:50',
             'type' => 'required|in:goods,service,bundle',
             'brand' => 'nullable|string|max:100',
@@ -189,7 +190,7 @@ class InventoryCentreController extends Controller
 
             'sales_price' => 'nullable|numeric|min:0',
             'purchase_price' => 'nullable|numeric|min:0',
-            'reorder_point' => 'nullable|integer|min:0',
+            'reorder_point' => 'nullable|numeric|min:0',
             'income_account_id' => 'nullable|exists:accounts,id',
             'expense_account_id' => 'nullable|exists:accounts,id',
             'inventory_asset_account_id' => 'nullable|exists:accounts,id',
@@ -347,7 +348,7 @@ class InventoryCentreController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:50',
+            'sku' => ['nullable', 'string', 'max:50', Rule::unique('products', 'sku')->ignore($product->id)->where('company_id', $companyId)],
             'barcode' => 'nullable|string|max:50',
             'type' => 'required|in:goods,service,bundle',
             'brand' => 'nullable|string|max:100',
@@ -358,7 +359,7 @@ class InventoryCentreController extends Controller
 
             'sales_price' => 'nullable|numeric|min:0',
             'purchase_price' => 'nullable|numeric|min:0',
-            'reorder_point' => 'nullable|integer|min:0',
+            'reorder_point' => 'nullable|numeric|min:0',
             'income_account_id' => 'nullable|exists:accounts,id',
             'expense_account_id' => 'nullable|exists:accounts,id',
             'inventory_asset_account_id' => 'nullable|exists:accounts,id',

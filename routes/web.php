@@ -713,6 +713,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/control-account', [TaxController::class, 'controlAccount'])->name('control-account');
                 Route::get('/payments', [TaxController::class, 'payments'])->name('payments');
                 Route::post('/payments', [TaxController::class, 'storePayment'])->name('payments.store');
+                Route::get('/paye-wht', [TaxController::class, 'payeWht'])->name('paye-wht');
+                Route::get('/calendar', [TaxController::class, 'calendar'])->name('calendar');
                 Route::post('/adjustments', [TaxController::class, 'storeAdjustment'])->name('adjustments.store');
                 Route::post('/adjustments/{adjustment}/approve', [TaxController::class, 'approveAdjustment'])->name('adjustments.approve');
                 Route::post('/adjustments/{adjustment}/reject', [TaxController::class, 'rejectAdjustment'])->name('adjustments.reject');
@@ -1043,7 +1045,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Returnables (bottle returns intake + BRR)
             Route::get('returnables', [\App\Http\Controllers\POS\PosReturnableController::class, 'index'])->name('returnables.index');
-            Route::post('returnables', [\App\Http\Controllers\POS\PosReturnableController::class, 'store'])->name('returnables.store');
+            Route::get('returnables/intake', [\App\Http\Controllers\POS\PosReturnableController::class, 'intake'])->name('returnables.intake');
+            Route::post('returnables/intake', [\App\Http\Controllers\POS\PosReturnableController::class, 'storeIntake'])->name('returnables.store-intake');
+            Route::get('returnables/credit-check', [\App\Http\Controllers\POS\PosReturnableController::class, 'creditCheck'])->name('returnables.credit-check');
+            Route::get('returnables/{id}', [\App\Http\Controllers\POS\PosReturnableController::class, 'show'])->name('returnables.show');
+            Route::get('returnables/{id}/print', [\App\Http\Controllers\POS\PosReturnableController::class, 'print'])->name('returnables.print');
+            Route::post('returnables/{id}/void', [\App\Http\Controllers\POS\PosReturnableController::class, 'void'])->name('returnables.void');
 
             // Products (POS inventory listing)
             Route::get('products', [\App\Http\Controllers\POS\PosProductController::class, 'index'])->name('products.index');
@@ -1088,16 +1095,76 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('returns', [\App\Http\Controllers\POS\PosReturnController::class, 'store'])->name('returns.store');
             Route::get('returns/{return}', [\App\Http\Controllers\POS\PosReturnController::class, 'show'])->name('returns.show');
 
+            // POS Centre — new pages
+            Route::get('customers', [\App\Http\Controllers\POS\PosCustomerController::class, 'index'])->name('customers.index');
+            Route::get('pricelists', [\App\Http\Controllers\POS\PosPriceListController::class, 'index'])->name('pricelists.index');
+            Route::get('pricelists/create', [\App\Http\Controllers\POS\PosPriceListController::class, 'create'])->name('pricelists.create');
+            Route::post('pricelists', [\App\Http\Controllers\POS\PosPriceListController::class, 'store'])->name('pricelists.store');
+            Route::get('pricelists/{priceList}', [\App\Http\Controllers\POS\PosPriceListController::class, 'show'])->name('pricelists.show');
+            Route::get('pricelists/{priceList}/edit', [\App\Http\Controllers\POS\PosPriceListController::class, 'edit'])->name('pricelists.edit');
+            Route::patch('pricelists/{priceList}', [\App\Http\Controllers\POS\PosPriceListController::class, 'update'])->name('pricelists.update');
+            Route::delete('pricelists/{priceList}', [\App\Http\Controllers\POS\PosPriceListController::class, 'destroy'])->name('pricelists.destroy');
+
+            Route::get('promotions', [\App\Http\Controllers\POS\PosPromotionController::class, 'index'])->name('promotions.index');
+            Route::get('promotions/create', [\App\Http\Controllers\POS\PosPromotionController::class, 'create'])->name('promotions.create');
+            Route::post('promotions', [\App\Http\Controllers\POS\PosPromotionController::class, 'store'])->name('promotions.store');
+            Route::get('promotions/{promotion}', [\App\Http\Controllers\POS\PosPromotionController::class, 'show'])->name('promotions.show');
+            Route::patch('promotions/{promotion}', [\App\Http\Controllers\POS\PosPromotionController::class, 'update'])->name('promotions.update');
+            Route::delete('promotions/{promotion}', [\App\Http\Controllers\POS\PosPromotionController::class, 'destroy'])->name('promotions.destroy');
+
+            Route::get('offline', [\App\Http\Controllers\POS\PosOfflineController::class, 'index'])->name('offline.index');
+            Route::get('reports/overview', [\App\Http\Controllers\POS\PosReportController::class, 'overview'])->name('reports.overview');
+
+            // Void sale
+            Route::post('sales/{sale}/void', [\App\Http\Controllers\POS\PosSaleController::class, 'void'])->name('sales.void');
+
             // POS Reports
             Route::get('reports/x-report', [\App\Http\Controllers\POS\PosReportController::class, 'xReport'])->name('reports.x-report');
             Route::get('reports/z-report', [\App\Http\Controllers\POS\PosReportController::class, 'zReport'])->name('reports.z-report');
             Route::get('reports/sales-by-terminal', [\App\Http\Controllers\POS\PosReportController::class, 'salesByTerminal'])->name('reports.sales-by-terminal');
             Route::get('reports/sales-by-cashier', [\App\Http\Controllers\POS\PosReportController::class, 'salesByCashier'])->name('reports.sales-by-cashier');
 
-            // Cashier PIN login (accessible to any company user)
+            // Mobile POS (§6–§13: Home, Sell, Checkout, Receipt, Receipts, Register, Products, Settings)
+            Route::prefix('m')->name('m.')->group(function () {
+                Route::get('home', [\App\Http\Controllers\POS\PosMobileController::class, 'home'])->name('home');
+                Route::get('sell', [\App\Http\Controllers\POS\PosMobileController::class, 'sell'])->name('sell');
+                Route::get('checkout', [\App\Http\Controllers\POS\PosMobileController::class, 'checkout'])->name('checkout');
+                Route::get('receipt/{id}', [\App\Http\Controllers\POS\PosMobileController::class, 'receipt'])->name('receipt');
+                Route::get('products-json', [\App\Http\Controllers\POS\PosMobileController::class, 'productsJson'])->name('products-json');
+                // Phase C — Supporting pages
+                Route::get('receipts', [\App\Http\Controllers\POS\PosMobileController::class, 'receipts'])->name('receipts');
+                Route::get('register', [\App\Http\Controllers\POS\PosMobileController::class, 'register'])->name('register');
+                Route::get('products', [\App\Http\Controllers\POS\PosMobileController::class, 'products'])->name('products');
+                Route::get('settings', [\App\Http\Controllers\POS\PosMobileController::class, 'settings'])->name('settings');
+
+                // Phase D — Returnables Mobile (§14)
+                Route::get('ret/intake', [\App\Http\Controllers\POS\PosMobileController::class, 'retIntake'])->name('ret-intake');
+                Route::post('ret/intake', [\App\Http\Controllers\POS\PosMobileController::class, 'retIntakeStore'])->name('ret-intake.store');
+                Route::get('ret/receipt/{id}', [\App\Http\Controllers\POS\PosMobileController::class, 'retReceipt'])->name('ret-receipt');
+                Route::get('ret/register', [\App\Http\Controllers\POS\PosMobileController::class, 'retRegister'])->name('ret-register');
+            });
+
+            // POS Login (replaces old cashier login — responsive desktop+mobile)
+            Route::get('login', [\App\Http\Controllers\POS\PosCashierController::class, 'showLoginForm'])->name('login');
+            Route::post('login', [\App\Http\Controllers\POS\PosCashierController::class, 'login'])->name('login.post');
+            Route::post('logout', [\App\Http\Controllers\POS\PosCashierController::class, 'logout'])->name('logout');
+
+            // Legacy alias routes (backwards compat for old links/references)
             Route::get('cashier/login', [\App\Http\Controllers\POS\PosCashierController::class, 'showLoginForm'])->name('cashier.login');
             Route::post('cashier/login', [\App\Http\Controllers\POS\PosCashierController::class, 'login'])->name('cashier.login.post');
             Route::post('cashier/logout', [\App\Http\Controllers\POS\PosCashierController::class, 'logout'])->name('cashier.logout');
+
+            // POS Reset (password / PIN reset)
+            Route::get('reset', [\App\Http\Controllers\POS\PosAuthController::class, 'showReset'])->name('reset');
+            Route::post('reset/send-code', [\App\Http\Controllers\POS\PosAuthController::class, 'sendCode'])->name('reset.send-code');
+            Route::post('reset/verify-code', [\App\Http\Controllers\POS\PosAuthController::class, 'verifyCode'])->name('reset.verify-code');
+            Route::get('reset/new-password/{token}', [\App\Http\Controllers\POS\PosAuthController::class, 'showNewPassword'])->name('reset.password');
+            Route::post('reset/new-password', [\App\Http\Controllers\POS\PosAuthController::class, 'storeNewPassword'])->name('reset.password.post');
+
+            // POS Verify (identity gate for sensitive actions)
+            Route::get('verify', [\App\Http\Controllers\POS\PosAuthController::class, 'showVerify'])->name('verify');
+            Route::post('verify', [\App\Http\Controllers\POS\PosAuthController::class, 'verify'])->name('verify.post');
+            Route::post('verify/password', [\App\Http\Controllers\POS\PosAuthController::class, 'verifyPassword'])->name('verify.password');
 
             // EIS E-Invoicing
             Route::get('eis/terminals', [\App\Http\Controllers\POS\EisController::class, 'terminals'])->name('eis.terminals');

@@ -59,6 +59,11 @@ class Customer extends Model
         return $this->hasMany(CustomerPayment::class);
     }
 
+    public function sales(): HasMany
+    {
+        return $this->hasMany(PosSale::class);
+    }
+
     public function getBalanceDueAttribute(): float
     {
         $openInvoices = $this->invoices()

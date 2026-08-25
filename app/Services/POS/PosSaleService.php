@@ -149,9 +149,12 @@ class PosSaleService
             }
 
             if (round($totalPayments, 2) < round($total, 2)) {
-                throw new InvalidArgumentException(
-                    'Total payments ($' . number_format($totalPayments, 2) . ') is less than sale total ($' . number_format($total, 2) . ').'
-                );
+                $bottleCredit = (float) ($data['bottle_credit_applied'] ?? 0);
+                if ($bottleCredit > 0 && round($totalPayments + $bottleCredit, 2) < round($total, 2)) {
+                    throw new InvalidArgumentException(
+                        'Total payments ($' . number_format($totalPayments + $bottleCredit, 2) . ' including bottle credit) is less than sale total ($' . number_format($total, 2) . ').'
+                    );
+                }
             }
 
             $sale->update([
@@ -355,5 +358,74 @@ class PosSaleService
                 throw new InvalidArgumentException("Payment {$i}: amount must be positive.");
             }
         }
+    }
+
+    /**
+     * Void a posted sale: reverse the JE, restock inventory, update status.
+     */
+    public function voidSale(PosSale $sale, int $companyId, int $userId): PosSale
+    {
+        return DB::transaction(function () use ($sale, $companyId, $userId) {
+            // 1. Reverse stock
+            foreach ($sale->lines()->with('product')->get() as $line) {
+                if ($line->product && $line->product->tracked_as_inventory) {
+                    $this->inventoryService->receiveStock(
+                        $companyId,
+                        $line->product_id,
+                        $sale->branch_id,
+                        (float) $line->quantity,
+                        (float) $line->cost_of_goods / max((float) $line->quantity, 1),
+                        'pos_void',
+                        $sale->id,
+                        now()->toDateString()
+                    );
+                }
+            }
+
+            // 2. Reverse the journal entry (if posted)
+            if ($sale->journal_entry_id) {
+                $this->reverseJournalEntry($sale, $companyId, $userId);
+            }
+
+            // 3. Update status
+            $sale->update(['status' => PosSale::STATUS_VOIDED]);
+
+            AuditLog::log(
+                $companyId,
+                $userId,
+                PosSale::class,
+                $sale->id,
+                'pos.sale.voided',
+                ['status' => 'posted'],
+                ['status' => 'voided'],
+                "Voided sale {$sale->sale_number}"
+            );
+
+            return $sale->fresh();
+        });
+    }
+
+    private function reverseJournalEntry(PosSale $sale, int $companyId, int $userId): void
+    {
+        $originalEntry = $sale->journalEntry;
+        if (!$originalEntry) return;
+
+        // Create a reversing entry
+        $lines = $originalEntry->lines()->get()->map(fn ($line) => [
+            'account_id' => $line->account_id,
+            'debit' => $line->credit,
+            'credit' => $line->debit,
+            'description' => "Reversal: {$line->description}",
+        ])->toArray();
+
+        $this->postingEngine->post([
+            'company_id' => $companyId,
+            'date' => now()->toDateString(),
+            'reference' => "VOID-{$sale->sale_number}",
+            'memo' => "Reversal for voided sale {$sale->sale_number}",
+            'source_module' => 'pos',
+            'created_by' => $userId,
+            'lines' => $lines,
+        ]);
     }
 }

@@ -6,27 +6,36 @@ use App\Http\Controllers\Controller;
 use App\Models\PosTerminal;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class PosCashierController extends Controller
 {
     public function showLoginForm()
     {
         $companyId = session('current_company_id');
+
         $terminals = PosTerminal::where('company_id', $companyId)
             ->where('is_active', true)
             ->with('branch')
             ->orderBy('identifier')
             ->get();
 
-        return view('pos.cashier.login', compact('terminals'));
+        $cashiers = User::whereHas('companies', fn ($q) => $q->where('company_id', $companyId))
+            ->whereNotNull('pos_cashier_pin')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'has_pin' => $u->hasPosPin()]);
+
+        return view('pos.auth.login', compact('terminals', 'cashiers'));
     }
 
     public function login(Request $request)
     {
         $companyId = session('current_company_id');
 
+        $authType = $request->input('auth_type', 'pin');
+
         $request->validate([
-            'pin' => 'required|string|min:4|max:10',
             'terminal_id' => 'required|exists:pos_terminals,id',
         ]);
 
@@ -39,17 +48,33 @@ class PosCashierController extends Controller
             return back()->withErrors(['terminal_id' => 'Terminal not found or inactive.'])->withInput();
         }
 
-        $user = User::where('pos_cashier_pin', $request->pin)
-            ->whereNotNull('pos_cashier_pin')
-            ->first();
+        if ($authType === 'password') {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
 
-        if (!$user) {
-            return back()->withErrors(['pin' => 'Invalid PIN.'])->withInput();
-        }
+            $user = User::where('email', $request->email)
+                ->where('is_active', true)
+                ->whereHas('companies', fn ($q) => $q->where('company_id', $companyId))
+                ->first();
 
-        $hasAccess = $user->companies()->where('company_id', $companyId)->exists();
-        if (!$hasAccess) {
-            return back()->withErrors(['pin' => 'You do not have access to this company.'])->withInput();
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                return back()->withErrors(['email' => 'Invalid credentials.'])->withInput();
+            }
+        } else {
+            $request->validate([
+                'pin' => 'required|string|min:4|max:10',
+            ]);
+
+            $user = User::whereNotNull('pos_cashier_pin')
+                ->whereHas('companies', fn ($q) => $q->where('company_id', $companyId))
+                ->get()
+                ->first(fn ($u) => $u->verifyPosPin($request->pin));
+
+            if (!$user) {
+                return back()->withErrors(['pin' => 'Invalid PIN.'])->withInput();
+            }
         }
 
         session([
@@ -75,6 +100,6 @@ class PosCashierController extends Controller
             'pos_session_started_at',
         ]);
 
-        return redirect()->route('pos.cashier.login');
+        return redirect()->route('pos.login');
     }
 }

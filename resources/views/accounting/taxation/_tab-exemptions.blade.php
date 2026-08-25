@@ -1,4 +1,8 @@
 <div class="tx-card">
+    <div class="tx-card-h">
+        <span class="ic">&#128683;</span>
+        <h2>{{ __('Tax Exemptions') }}</h2>
+    </div>
     <div class="tx-li-wrap">
         <table class="tx-table" style="min-width:860px;">
             <thead>
@@ -15,7 +19,7 @@
                 @forelse ($exemptions as $exemption)
                     <tr>
                         <td class="tx-mono tx-name">{{ $exemption->code }}</td>
-                        <td>{{ $exemption->name }}</td>
+                        <td class="tx-name">{{ $exemption->name }}</td>
                         <td><span class="tx-tchip tx-t-vat">{{ $exemption->taxType?->name ?? '&mdash;' }}</span></td>
                         <td class="tx-em">{{ Str::limit($exemption->scope ?? '', 60) }}</td>
                         <td class="tx-em">{{ Str::limit($exemption->reason ?? '', 80) }}</td>
@@ -28,7 +32,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" style="text-align:center;padding:36px;color:var(--muted);">{{ __('No exemptions configured yet.') }}</td></tr>
+                    <tr><td colspan="6" class="tx-em" style="text-align:center;padding:36px;">{{ __('No exemptions configured yet.') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

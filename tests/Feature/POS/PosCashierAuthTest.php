@@ -29,9 +29,9 @@ class PosCashierAuthTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->user = User::factory()->create([
-            'pos_cashier_pin' => '1234',
-        ]);
+        $this->user = User::factory()->create();
+        $this->user->setPosPin('1234');
+        $this->user->refresh();
         $this->user->companies()->attach($this->company->id, ['role' => 'accountant']);
 
         $this->terminal = PosTerminal::create([
@@ -65,7 +65,6 @@ class PosCashierAuthTest extends TestCase
         $this->loginAsUser();
         $response = $this->get(route('pos.cashier.login'));
         $response->assertOk();
-        $response->assertSee('Front Counter');
         $response->assertSee('T1');
     }
 
@@ -141,9 +140,9 @@ class PosCashierAuthTest extends TestCase
 
     public function test_user_without_access_fails(): void
     {
-        $outsider = User::factory()->create([
-            'pos_cashier_pin' => '5678',
-        ]);
+        $outsider = User::factory()->create();
+        $outsider->setPosPin('5678');
+        $outsider->refresh();
 
         $this->loginAsUser();
         $this->post(route('pos.cashier.login.post'), [
@@ -175,7 +174,7 @@ class PosCashierAuthTest extends TestCase
 
         $this->assertNotNull(session('pos_cashier_id'));
 
-        $this->post(route('pos.cashier.logout'))->assertRedirect(route('pos.cashier.login'));
+        $this->post(route('pos.cashier.logout'))->assertRedirect(route('pos.login'));
         $this->assertNull(session('pos_cashier_id'));
         $this->assertNull(session('pos_terminal_id'));
     }

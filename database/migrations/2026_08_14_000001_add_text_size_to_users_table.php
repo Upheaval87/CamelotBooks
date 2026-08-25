@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('text_size', 10)->nullable()->default('md')->after('is_active');
+            $table->string('text_size', 10)->nullable()->default('md')->after('email');
         });
     }
 

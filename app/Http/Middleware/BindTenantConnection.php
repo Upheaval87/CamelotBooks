@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Services\Tenancy\TenantConnectionResolver;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -65,6 +66,17 @@ class BindTenantConnection
         // companies run in legacy mode (data still in the shared DB) — no binding.
         if ($company->isProvisioned()) {
             app(TenantConnectionResolver::class)->resolve($company);
+
+            // Ensure the authenticated user has a stub row in the tenant
+            // `users` table so FK-constrained writes (user_preferences,
+            // user_favourites, model_has_roles, etc.) succeed.
+            $tenantConn = TenantConnectionResolver::connectionName();
+            DB::connection($tenantConn)
+                ->table('users')
+                ->updateOrInsert(
+                    ['id' => $user->id],
+                    ['created_at' => now(), 'updated_at' => now()]
+                );
         }
 
         setPermissionsTeamId($company->id);
