@@ -464,6 +464,7 @@
                             <div>
                                 <label class="pos-lbl-sm">Allocate to Cash</label>
                                 <input type="number" x-model.number="splitCashAlloc" min="0" step="0.01"
+                                    @input="if (splitCashTendered < splitCashAlloc) splitCashTendered = splitCashAlloc"
                                     @focus="$el.select()" class="pos-in pos-in-sm" style="text-align:right" placeholder="0.00" />
                             </div>
                             <div>
@@ -556,20 +557,21 @@
                 </div>
 
                 {{-- Running Balance --}}
+                <?php /* @var float $splitBalance — signed remaining; display uses abs(), buttons check via isSplitBalanced() */ ?>
                 <div class="pos-modal-status"
-                    :class="getSplitRemaining() === 0 ? 'pos-modal-status--ok' : getSplitRemaining() > 0 ? 'pos-modal-status--warn' : 'pos-modal-status--err'">
+                    :class="isSplitBalanced() ? 'pos-modal-status--ok' : getSplitRemaining() > 0 ? 'pos-modal-status--warn' : 'pos-modal-status--err'">
                     <div class="pos-sub pos-bold"
-                        :class="getSplitRemaining() === 0 ? 'pos-pos' : getSplitRemaining() > 0 ? 'pos-warn' : 'pos-neg'"
-                        x-text="getSplitRemaining() === 0 ? 'Balanced' : getSplitRemaining() > 0 ? 'Remaining Balance' : 'Over-allocated'"></div>
+                        :class="isSplitBalanced() ? 'pos-pos' : getSplitRemaining() > 0 ? 'pos-warn' : 'pos-neg'"
+                        x-text="isSplitBalanced() ? 'Balanced' : getSplitRemaining() > 0 ? 'Remaining Balance' : 'Over-allocated'"></div>
                     <div class="pos-modal-amount"
-                        :class="getSplitRemaining() === 0 ? 'pos-pos' : getSplitRemaining() > 0 ? 'pos-warn' : 'pos-neg'"
+                        :class="isSplitBalanced() ? 'pos-pos' : getSplitRemaining() > 0 ? 'pos-warn' : 'pos-neg'"
                         x-text="formatMoney(Math.abs(getSplitRemaining()))"></div>
                 </div>
 
                 <div class="pos-modal-actions">
                     <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmSplitPayment()"
-                        :disabled="getSplitRemaining() !== 0 || !splitPaymentValid()"
+                        :disabled="!isSplitBalanced() || !splitPaymentValid()"
                         class="pos-btn pos-btn-split pos-modal-proceed">Proceed</button>
                 </div>
             </div>
@@ -1099,6 +1101,10 @@
                     return parseFloat((this.modalDue - alloc).toFixed(2));
                 },
 
+                isSplitBalanced() {
+                    return Math.abs(this.getSplitRemaining()) < 0.01;
+                },
+
                 splitPaymentValid() {
                     const hasEnabled = this.splitCashEnabled || this.splitCardEnabled || this.splitMobileEnabled;
                     if (!hasEnabled) return false;
@@ -1127,7 +1133,7 @@
                 },
 
                 confirmSplitPayment() {
-                    if (this.getSplitRemaining() !== 0 || !this.splitPaymentValid()) return;
+                    if (!this.isSplitBalanced() || !this.splitPaymentValid()) return;
 
                     if (this.splitCashEnabled) {
                         const cashAlloc = parseFloat(this.splitCashAlloc) || 0;
