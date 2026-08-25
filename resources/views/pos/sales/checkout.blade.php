@@ -683,7 +683,6 @@
 
                 init() {
                     document.body.classList.add('pos-checkout-active');
-                    this.enterFullscreen();
                     this.filteredProducts = [];
                     this.fieldId = 'pos-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now().toString(36);
                     if (this.$el) {
