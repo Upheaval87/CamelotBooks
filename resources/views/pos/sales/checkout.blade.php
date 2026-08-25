@@ -272,8 +272,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
         {{-- ===== PAYMENT MODAL (Cash) ===== --}}
         <div x-show="showModal && modalType === 'cash'" x-cloak class="pos-overlay" @keydown.escape.window="closeModal()">
             <div class="pos-modal" @click.stop>
@@ -559,6 +557,8 @@
                         class="pos-btn pos-btn-split pos-modal-proceed">Proceed</button>
                 </div>
             </div>
+        </div>
+
         </div>
 
     </div>
