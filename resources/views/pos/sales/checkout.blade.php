@@ -105,7 +105,6 @@
                                             <th class="center">UOM</th>
                                             <th class="num">Qty</th>
                                             <th class="num">Price</th>
-                                            <th class="num">Tax</th>
                                             <th class="num">Total</th>
                                             <th class="center"></th>
                                         </tr>
@@ -144,7 +143,6 @@
                                                     <input type="number" x-model.number="line.unit_price" min="0" step="0.01"
                                                         class="pos-in pos-in-sm" style="width:96px;text-align:right" @input="recalcLine(index)" />
                                                 </td>
-                                                <td class="num pos-em" x-text="formatMoney(line.tax_amount)"></td>
                                                 <td class="num pos-bold" x-text="formatMoney(line.line_total)"></td>
                                                 <td class="center">
                                                     <button type="button" @click="removeLine(index)" class="pos-btn-del" title="Remove">
@@ -154,7 +152,7 @@
                                             </tr>
                                         </template>
                                         <tr x-show="lines.length === 0">
-                                            <td colspan="7" class="pos-em" style="text-align:center;padding:24px">No items added yet. Search and add products above.</td>
+                                            <td colspan="6" class="pos-em" style="text-align:center;padding:24px">No items added yet. Search and add products above.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -247,14 +245,23 @@
                                     <div class="pos-payment-row">
                                         <div>
                                             <span class="pos-bold" x-text="pay.method_name"></span>
-                                            <span class="pos-sub" x-show="pay.type === 'cash'" x-text="'(Tendered: ' + formatMoney(parseFloat(pay.cash_tendered)) + ')'"></span>
-                                            <span class="pos-sub" x-show="pay.reference_number" x-text="'Ref: ' + pay.reference_number"></span>
-                                            <span class="pos-sub" x-show="pay.account_name" x-text="pay.account_name"></span>
-                                            <span class="pos-sub" x-show="pay.institution" x-text="pay.institution"></span>
+                                            <span x-show="pay.reference_number" class="pos-sub" x-text="'Ref: ' + pay.reference_number"></span>
+                                            <span x-show="pay.account_name" class="pos-sub" x-text="pay.account_name"></span>
+                                            <span x-show="pay.institution" class="pos-sub" x-text="pay.institution"></span>
                                         </div>
-                                        <div style="display:flex;align-items:center;gap:8px">
+                                        <div style="display:flex;align-items:center;gap:10px">
                                             <span class="pos-bold" x-text="formatMoney(parseFloat(pay.amount))"></span>
-                                            <span x-show="pay.type === 'cash' && parseFloat(pay.change) > 0" class="pos-pos pos-sub" x-text="'Change: ' + formatMoney(parseFloat(pay.change))"></span>
+                                            <template x-if="pay.type === 'cash' && parseFloat(pay.cash_tendered) > 0">
+                                                <div style="display:flex;align-items:center;gap:8px;background:var(--pos-mist);border-radius:8px;padding:4px 10px">
+                                                    <span style="font-size:11px;color:var(--pos-muted)">Tendered:</span>
+                                                    <span class="pos-bold" style="font-size:13px" x-text="formatMoney(parseFloat(pay.cash_tendered))"></span>
+                                                    <template x-if="parseFloat(pay.change) > 0">
+                                                        <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(22,163,74,.1);color:var(--pos-green);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700">
+                                                            Change: <span x-text="formatMoney(parseFloat(pay.change))"></span>
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </template>
                                             <button type="button" @click="removePayment(pi)" class="pos-btn-del" title="Remove payment">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                                             </button>
@@ -295,17 +302,17 @@
                 <div class="pos-modal-h">Cash Payment</div>
                 <div class="pos-modal-sub">Enter the cash amount received from the customer.</div>
 
-                <div class="pos-modal-due">
-                    <div class="pos-sub">Total Due</div>
-                    <div class="pos-modal-amount pos-numr" x-text="formatMoney(modalDue)"></div>
+                <div class="pos-modal-due" style="margin-bottom:20px">
+                    <div class="pos-sub" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase">Total Due</div>
+                    <div class="pos-modal-amount pos-numr" style="font-size:36px" x-text="formatMoney(modalDue)"></div>
                 </div>
 
                 <div class="pos-f" style="margin-bottom:16px">
-                    <label>Cash Tendered</label>
+                    <label class="pos-lbl" style="font-size:13px">Cash Tendered</label>
                     <input type="number" x-model.number="modalCashTendered" x-ref="cashTenderedInput" min="0" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
-                        class="pos-in pos-in-lg" style="text-align:right" placeholder="0.00" />
+                        class="pos-in pos-in-lg" style="text-align:right;font-size:28px;font-weight:800;height:56px" placeholder="0.00" />
                 </div>
 
                 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
@@ -318,17 +325,17 @@
 
                 <div class="pos-modal-status"
                     :class="modalCashTendered >= modalDue ? 'pos-modal-status--ok' : 'pos-modal-status--err'"
-                    x-show="modalCashTendered > 0">
+                    x-show="modalCashTendered > 0" style="padding:20px">
                     <template x-if="modalCashTendered >= modalDue">
                         <div>
-                            <div class="pos-sub pos-bold">Change to Give</div>
-                            <div class="pos-modal-amount pos-pos" x-text="formatMoney(modalCashTendered - modalDue)"></div>
+                            <div class="pos-sub pos-bold" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Change to Give</div>
+                            <div style="font-size:40px;font-weight:800;color:var(--pos-green)" x-text="formatMoney(modalCashTendered - modalDue)"></div>
                         </div>
                     </template>
                     <template x-if="modalCashTendered > 0 && modalCashTendered < modalDue">
                         <div>
-                            <div class="pos-sub pos-bold pos-neg">Insufficient — Remaining</div>
-                            <div class="pos-modal-amount pos-neg" x-text="formatMoney(modalDue - modalCashTendered)"></div>
+                            <div class="pos-sub pos-bold pos-neg" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Insufficient — Remaining</div>
+                            <div style="font-size:40px;font-weight:800;color:var(--pos-red)" x-text="formatMoney(modalDue - modalCashTendered)"></div>
                         </div>
                     </template>
                 </div>
@@ -880,6 +887,7 @@
 
                 addLine() {
                     if (!this.selectedProductId) return;
+                    if (parseInt(this.addQty) < 1) return;
                     const product = this.products.find(p => p.id == this.selectedProductId);
                     if (!product) return;
 
@@ -893,6 +901,7 @@
 
                     const existing = this.lines.find(l => l.product_id == product.id && l.transaction_uom === uom);
                     if (existing) {
+                        existing.transaction_qty = (existing.transaction_qty || 1) + qty;
                         existing.quantity += qty;
                         this.recalcLine(this.lines.indexOf(existing));
                     } else {
