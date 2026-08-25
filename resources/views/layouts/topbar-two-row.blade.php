@@ -242,12 +242,14 @@
 
     $isActiveRoute = fn($route) => $route === $routeName || str_starts_with($routeName, $route) || request()->routeIs($route);
 
+    $isPosCheckout = str_contains($routeName, 'pos.sales.checkout');
+
     $currentCompany ??= null;
     $currentBranches ??= collect();
     $branchName = $currentBranches->first()?->name ?? '';
 @endphp
 
-<header class="topbar">
+<header class="topbar {{ $isPosCheckout ? 'topbar--pos' : '' }}">
     {{-- Row 1: Brand + Company/User bar --}}
     <div class="topbar-row-1">
         <div class="flex items-center gap-3 h-full px-5 lg:px-8 max-w-8xl mx-auto">
@@ -268,6 +270,7 @@
             <div class="flex-1 min-w-0"></div>
 
             <div class="flex items-center gap-3 shrink-0">
+                @unless($isPosCheckout)
                 <button type="button"
                         class="fav-star-trigger todo-trigger"
                         x-data
@@ -315,6 +318,7 @@
                     <span class="hidden lg:inline">{{ __('Search') }}</span>
                     <kbd>Ctrl K</kbd>
                 </button>
+                @endunless
 
                 <div class="topbar-user-avatar">
                     <span>{{ strtoupper(substr($user?->name ?? 'U', 0, 1)) }}</span>
@@ -334,7 +338,7 @@
     </div>
 
     {{-- Row 2: Module navigation with submenu dropdowns --}}
-    <div class="topbar-row-2">
+    <div class="topbar-row-2 {{ $isPosCheckout ? 'hidden' : '' }}">
         <div class="flex items-center h-full px-5 lg:px-8 max-w-8xl mx-auto overflow-visible">
             <div id="topbar-nav-offset" class="topbar-nav-offset"></div>
 

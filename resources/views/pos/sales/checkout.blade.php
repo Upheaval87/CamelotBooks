@@ -1,13 +1,16 @@
 <x-app-layout>
-    <div class="pos">
+    <div class="pos" x-data="posCheckout()" x-effect="reactiveFilter()">
         <div class="pos-page-head">
             <div>
                 <h1>POS Checkout</h1>
                 <div class="pos-sub">{{ session('pos_terminal_identifier') ?? '' }}</div>
             </div>
+            <a href="{{ route('pos.products.index') }}" class="pos-close-btn" title="Exit checkout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </a>
         </div>
 
-        <div x-data="posCheckout()" x-effect="reactiveFilter()">
+        <div x-effect="reactiveFilter()">
 
             {{-- Offline Indicator --}}
             <div x-show="!isOnline" x-cloak class="pos-alert pos-alert-warn" style="margin-bottom:16px">
@@ -47,9 +50,9 @@
                                             @focus="dropdownOpen = searchQuery.length > 0"
                                             @keydown.down.prevent="moveHighlight(1)"
                                             @keydown.up.prevent="moveHighlight(-1)"
-                                            @keydown.enter.prevent="confirmHighlight()"
+                                            @keydown.enter.prevent="if (highlightIndex >= 0 && filteredProducts.length > 0) { const p = filteredProducts[highlightIndex]; selectProduct(p); $nextTick(() => addLine()); } else { confirmHighlight(); }"
                                             @keydown.escape="dropdownOpen = false"
-                                            placeholder="Type to search products... (Up/Down to navigate, Enter to select)" autocomplete="off" />
+                                            placeholder="Type to search products... (or scan barcode)" autocomplete="off" />
                                         <span class="scoped-search-divider" aria-hidden="true"></span>
                                         <button type="button" class="scoped-search-open" title="Search across all records" @click="openGlobalSearch()">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -73,8 +76,8 @@
                                 </div>
                             </div>
 
-                            <div style="display:flex;gap:12px;margin-bottom:16px;align-items:flex-end">
-                                <div style="width:160px" x-show="selectedProductName">
+                            <div class="pos-checkout-add-row">
+                                <div x-show="selectedProductName">
                                     <label class="pos-lbl">Unit</label>
                                     <select x-model="addUom" @change="onUomChange()" class="pos-in pos-in-sm">
                                         <option value="">Each (base)</option>
@@ -83,14 +86,16 @@
                                         </template>
                                     </select>
                                 </div>
-                                <div style="width:90px">
+                                <div>
                                     <label class="pos-lbl">Qty</label>
                                     <input type="number" x-model="addQty" min="1" step="1" value="1"
                                         @keydown.enter.prevent="addLine()"
-                                        class="pos-in pos-in-sm" style="text-align:center" />
+                                        class="pos-in pos-in-sm" style="text-align:center;width:90px" />
                                 </div>
-                                <button type="button" @click="addLine()" class="pos-btn pos-btn-cta">Add</button>
-                                <div class="pos-sub" x-show="selectedProductName">
+                                <div>
+                                    <button type="button" @click="addLine()" class="pos-btn pos-btn-cta" style="height:38px">Add</button>
+                                </div>
+                                <div class="pos-sub" x-show="selectedProductName" style="padding-bottom:4px">
                                     Selected: <span class="pos-bold" x-text="selectedProductName"></span>
                                 </div>
                             </div>
@@ -195,6 +200,18 @@
                             <div style="margin-bottom:16px">
                                 <label class="pos-lbl">Reference</label>
                                 <input type="text" x-model="reference" class="pos-in" placeholder="Optional" />
+                            </div>
+
+                            {{-- Returnables Receipt --}}
+                            <div style="margin-bottom:16px">
+                                <label class="pos-ret-toggle">
+                                    <input type="checkbox" x-model="returnableReceiptEnabled" />
+                                    Returnables Receipt
+                                </label>
+                                <div x-show="returnableReceiptEnabled" x-transition style="margin-top:8px">
+                                    <label class="pos-lbl">Returnables Receipt #</label>
+                                    <input type="text" x-model="returnableReceiptNumber" class="pos-in" placeholder="e.g. BRR-0001" />
+                                </div>
                             </div>
 
                             {{-- Totals --}}
@@ -427,7 +444,7 @@
 
         {{-- ===== SPLIT PAYMENT MODAL ===== --}}
         <div x-show="showModal && modalType === 'split'" x-cloak class="pos-overlay" @keydown.escape.window="closeModal()">
-            <div class="pos-modal pos-modal--wide" @click.stop>
+            <div class="pos-modal pos-modal--wide pos-modal--scrollable" @click.stop>
                 <div class="pos-modal-h">Split Payment</div>
                 <div class="pos-modal-sub">Allocate the total due across multiple payment methods.</div>
 
@@ -651,8 +668,11 @@
                 bottleCreditAvailable: 0,
                 bottleCreditApplied: 0,
                 bottleReturnableIds: [],
+                returnableReceiptEnabled: false,
+                returnableReceiptNumber: '',
 
                 init() {
+                    document.body.classList.add('pos-checkout-active');
                     this.filteredProducts = [];
                     this.fieldId = 'pos-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now().toString(36);
                     if (this.$el) {
@@ -663,6 +683,16 @@
                             this.dropdownOpen = false;
                         }
                     });
+                    this._onKeydown = (e) => {
+                        if (this.showModal) return;
+                        if (e.key === 'Enter' && !e.target.closest('input, select, textarea, button, a')) {
+                            e.preventDefault();
+                            if (this.lines.length > 0 && this.getRemaining() <= 0 && !this.submitting) {
+                                this.submitSale();
+                            }
+                        }
+                    };
+                    document.addEventListener('keydown', this._onKeydown);
                     window.addEventListener('global-search-selected', (e) => {
                         const detail = (e && e.detail) || {};
                         if (!detail.entity || detail.entity !== 'product') return;
@@ -754,6 +784,9 @@
                         const sku = p.sku ? String(p.sku).toLowerCase() : '';
                         if (q === barcode || q === sku) {
                             this.selectProduct(p);
+                            if (q === barcode) {
+                                this.$nextTick(() => this.addLine());
+                            }
                             return;
                         }
                     }
@@ -860,6 +893,10 @@
                     this.productUoms = {};
                     this.filteredProducts = [];
                     this.dropdownOpen = false;
+                    this.$nextTick(() => {
+                        const searchInput = this.$el.querySelector('.scoped-search-field input[type="text"]');
+                        if (searchInput) searchInput.focus();
+                    });
                 },
 
                 removeLine(index) {
@@ -1119,6 +1156,8 @@
                         reference: this.reference || null,
                         bottle_credit_applied: this.bottleCreditApplied || 0,
                         bottle_returnable_ids: this.bottleReturnableIds || [],
+                        returnable_receipt_enabled: this.returnableReceiptEnabled || false,
+                        returnable_receipt_number: this.returnableReceiptNumber || null,
                         lines: this.lines.map(l => ({
                             product_id: l.product_id,
                             quantity: l.quantity,
