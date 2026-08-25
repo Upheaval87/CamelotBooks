@@ -5,9 +5,6 @@
                 <h1>POS Checkout</h1>
                 <div class="pos-sub">{{ session('pos_terminal_identifier') ?? '' }}</div>
             </div>
-            <a href="{{ route('pos.products.index') }}" class="pos-close-btn" title="Exit checkout">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </a>
         </div>
 
         <div x-effect="reactiveFilter()">
@@ -197,20 +194,22 @@
                                 </div>
                             </div>
 
-                            <div style="margin-bottom:16px">
-                                <label class="pos-lbl">Reference</label>
+                            <div class="pos-f" style="margin-bottom:16px">
+                                <label>Reference</label>
                                 <input type="text" x-model="reference" class="pos-in" placeholder="Optional" />
                             </div>
 
                             {{-- Returnables Receipt --}}
                             <div style="margin-bottom:16px">
-                                <label class="pos-ret-toggle">
-                                    <input type="checkbox" x-model="returnableReceiptEnabled" />
-                                    Returnables Receipt
-                                </label>
+                                <div class="pos-ret-toggle" @click="returnableReceiptEnabled = !returnableReceiptEnabled" style="cursor:pointer">
+                                    <div class="inv-toggle-track" :class="returnableReceiptEnabled ? 'on' : ''"></div>
+                                    <span style="font-size:13.5px;color:var(--pos-ink)">Returnables Receipt</span>
+                                </div>
                                 <div x-show="returnableReceiptEnabled" x-transition style="margin-top:8px">
-                                    <label class="pos-lbl">Returnables Receipt #</label>
-                                    <input type="text" x-model="returnableReceiptNumber" class="pos-in" placeholder="e.g. BRR-0001" />
+                                    <div class="pos-f">
+                                        <label>Returnables Receipt #</label>
+                                        <input type="text" x-model="returnableReceiptNumber" class="pos-in" placeholder="e.g. BRR-0001" />
+                                    </div>
                                 </div>
                             </div>
 
@@ -276,11 +275,11 @@
                             {{-- COMPLETE SALE BUTTON --}}
                             <div class="pos-total-row pos-total-grand" style="border-top:none;padding-top:12px">
                                 <button type="button" @click="submitSale()"
-                                    :disabled="lines.length === 0 || submitting || getRemaining() > 0"
+                                    :disabled="lines.length === 0 || submitting || !isFullyPaid()"
                                     class="pos-btn pos-btn-submit"
-                                    :class="(lines.length > 0 && getRemaining() <= 0 && !submitting) ? 'pos-btn-submit--ready' : 'pos-btn-submit--disabled'">
-                                    <span x-show="!submitting && lines.length > 0 && getRemaining() > 0" x-text="'Balance Due: ' + formatMoney(getRemaining())"></span>
-                                    <span x-show="!submitting && lines.length > 0 && getRemaining() <= 0">Complete Sale</span>
+                                    :class="(lines.length > 0 && isFullyPaid() && !submitting) ? 'pos-btn-submit--ready' : 'pos-btn-submit--disabled'">
+                                    <span x-show="!submitting && lines.length > 0 && !isFullyPaid()" x-text="'Balance Due: ' + formatMoney(getRemaining())"></span>
+                                    <span x-show="!submitting && lines.length > 0 && isFullyPaid()">Complete Sale</span>
                                     <span x-show="submitting">Processing...</span>
                                     <span x-show="!submitting && lines.length === 0">Add items first</span>
                                 </button>
@@ -300,8 +299,8 @@
                     <div class="pos-modal-amount pos-numr" x-text="formatMoney(modalDue)"></div>
                 </div>
 
-                <div style="margin-bottom:16px">
-                    <label class="pos-lbl">Cash Tendered</label>
+                <div class="pos-f" style="margin-bottom:16px">
+                    <label>Cash Tendered</label>
                     <input type="number" x-model.number="modalCashTendered" x-ref="cashTenderedInput" min="0" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
@@ -336,7 +335,7 @@
                 <div class="pos-modal-actions">
                     <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
-                        :disabled="!modalCashTendered || modalCashTendered < modalDue"
+                        :disabled="parseFloat(modalCashTendered) < parseFloat(modalDue)"
                         class="pos-btn pos-btn-cash pos-modal-proceed">Proceed</button>
                 </div>
             </div>
@@ -353,28 +352,28 @@
                     <div class="pos-modal-amount pos-numr" x-text="formatMoney(modalDue)"></div>
                 </div>
 
-                <div style="margin-bottom:12px">
-                    <label class="pos-lbl">Amount</label>
+                <div class="pos-f" style="margin-bottom:12px">
+                    <label>Amount</label>
                     <input type="number" x-model.number="modalAmount" x-ref="cardAmountInput" min="0.01" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="pos-in pos-in-lg" style="text-align:right" placeholder="0.00" />
                 </div>
 
-                <div style="margin-bottom:12px">
-                    <label class="pos-lbl">Reference / Transaction No.</label>
+                <div class="pos-f" style="margin-bottom:12px">
+                    <label>Reference / Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="pos-in" placeholder="e.g. TXN12345" />
                 </div>
 
-                <div style="margin-bottom:12px">
-                    <label class="pos-lbl">Account Name</label>
+                <div class="pos-f" style="margin-bottom:12px">
+                    <label>Account Name</label>
                     <input type="text" x-model="modalAccountName" class="pos-in" placeholder="Cardholder name" />
                 </div>
 
-                <div style="margin-bottom:16px">
-                    <label class="pos-lbl">Financial Institution</label>
+                <div class="pos-f" style="margin-bottom:16px">
+                    <label>Financial Institution</label>
                     <select x-model="modalInstitution" class="pos-in">
                         <option value="">Select bank...</option>
                         @foreach($bankAccounts as $bank)
@@ -386,7 +385,7 @@
                 <div class="pos-modal-actions">
                     <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
-                        :disabled="!modalAmount || modalAmount <= 0 || Math.abs(parseFloat(modalAmount) - modalDue) > 0.01"
+                        :disabled="parseFloat(modalAmount) < 0.01 || Math.abs(parseFloat(modalAmount) - parseFloat(modalDue)) > 0.01"
                         class="pos-btn pos-btn-card pos-modal-proceed">Proceed</button>
                 </div>
             </div>
@@ -403,28 +402,28 @@
                     <div class="pos-modal-amount pos-numr" x-text="formatMoney(modalDue)"></div>
                 </div>
 
-                <div style="margin-bottom:12px">
-                    <label class="pos-lbl">Amount</label>
+                <div class="pos-f" style="margin-bottom:12px">
+                    <label>Amount</label>
                     <input type="number" x-model.number="modalAmount" x-ref="mobileAmountInput" min="0.01" step="0.01"
                         @focus="$el.select()"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="pos-in pos-in-lg" style="text-align:right" placeholder="0.00" />
                 </div>
 
-                <div style="margin-bottom:12px">
-                    <label class="pos-lbl">Reference / Transaction No.</label>
+                <div class="pos-f" style="margin-bottom:12px">
+                    <label>Reference / Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="pos-in" placeholder="e.g. MP123456" />
                 </div>
 
-                <div style="margin-bottom:12px">
-                    <label class="pos-lbl">Account Name</label>
+                <div class="pos-f" style="margin-bottom:12px">
+                    <label>Account Name</label>
                     <input type="text" x-model="modalAccountName" class="pos-in" placeholder="Account holder name" />
                 </div>
 
-                <div style="margin-bottom:16px">
-                    <label class="pos-lbl">Provider / Institution</label>
+                <div class="pos-f" style="margin-bottom:16px">
+                    <label>Provider / Institution</label>
                     <select x-model="modalInstitution" class="pos-in">
                         <option value="">Select provider...</option>
                         @foreach($mobileProviders as $provider)
@@ -436,7 +435,7 @@
                 <div class="pos-modal-actions">
                     <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
-                        :disabled="!modalAmount || modalAmount <= 0 || Math.abs(parseFloat(modalAmount) - modalDue) > 0.01"
+                        :disabled="parseFloat(modalAmount) < 0.01 || Math.abs(parseFloat(modalAmount) - parseFloat(modalDue)) > 0.01"
                         class="pos-btn pos-btn-mobile pos-modal-proceed">Proceed</button>
                 </div>
             </div>
@@ -673,6 +672,7 @@
 
                 init() {
                     document.body.classList.add('pos-checkout-active');
+                    this.enterFullscreen();
                     this.filteredProducts = [];
                     this.fieldId = 'pos-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now().toString(36);
                     if (this.$el) {
@@ -715,7 +715,35 @@
                     window.addEventListener('offline', () => {
                         this.isOnline = false;
                     });
+                    this._fullscreenHandler = () => {
+                        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                            /* exited fullscreen externally — do nothing, let minimize handle navigation */
+                        }
+                    };
+                    document.addEventListener('fullscreenchange', this._fullscreenHandler);
+                    this._minimizeHandler = () => this.minimize();
+                    window.addEventListener('pos-minimize-click', this._minimizeHandler);
                     this.offlineQueueCount = PosOfflineQueue.getCount();
+                },
+
+                enterFullscreen() {
+                    try {
+                        const el = document.documentElement;
+                        if (el.requestFullscreen) el.requestFullscreen();
+                        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                    } catch (e) { /* fullscreen not supported */ }
+                },
+
+                exitFullscreen() {
+                    try {
+                        if (document.fullscreenElement) document.exitFullscreen();
+                        else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+                    } catch (e) { /* silent */ }
+                },
+
+                minimize() {
+                    this.exitFullscreen();
+                    window.location.href = '{{ route("pos.products.index") }}';
                 },
 
                 setWalkInCustomer() {
@@ -956,6 +984,10 @@
                     return Math.max(0, parseFloat((total - paid).toFixed(2)));
                 },
 
+                isFullyPaid() {
+                    return this.getRemaining() <= 0;
+                },
+
                 openPaymentModal(type) {
                     this.modalType = type;
                     this.modalDue = this.getRemaining();
@@ -1144,7 +1176,7 @@
                 },
 
                 async submitSale() {
-                    if (this.lines.length === 0 || this.getRemaining() > 0) return;
+                    if (this.lines.length === 0 || !this.isFullyPaid()) return;
 
                     this.submitting = true;
                     document.getElementById('pos-error').style.display = 'none';

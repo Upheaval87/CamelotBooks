@@ -11765,21 +11765,22 @@ body.pos-checkout-active .topbar-row-1 { border-bottom: none }
 body.pos-checkout-active .topbar-brand-mark,
 body.pos-checkout-active .topbar-system-name,
 body.pos-checkout-active .topbar-divider,
-body.pos-checkout-active #topbar-company-area { display: none !important }
 .pos-checkout-title { font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 12px; white-space: nowrap }
 .pos-checkout-title svg { width: 20px; height: 20px; opacity: .7; flex-shrink: 0 }
 .pos-close-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.08); color: #fff; cursor: pointer; transition: all .15s }
 .pos-close-btn:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.3) }
 .pos-close-btn svg { width: 16px; height: 16px }
+.pos-minimize-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.08); color: #fff; cursor: pointer; transition: all .15s; flex-shrink: 0 }
+.pos-minimize-btn:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.3) }
+.pos-minimize-btn svg { width: 16px; height: 16px }
 
 /* Checkout form alignment fixes */
 .pos-checkout-add-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px }
 .pos-checkout-add-row .pos-lbl { margin-bottom: 4px }
 .pos-checkout-add-row .pos-in-sm { height: 38px }
 
-/* Returnables receipt toggle */
-.pos-ret-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; cursor: pointer; user-select: none; font-size: 13px; color: var(--pos-ink); font-weight: 600 }
-.pos-ret-toggle input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--pos-sec); cursor: pointer }
+/* Returnables receipt toggle — pill switch matching inventory toggle */
+.pos-ret-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; user-select: none }
 
 /* Split payment modal scrollability */
 .pos .pos-modal--scrollable { max-height: 85vh; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 80px }

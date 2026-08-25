@@ -253,12 +253,19 @@
     {{-- Row 1: Brand + Company/User bar --}}
     <div class="topbar-row-1">
         <div class="flex items-center gap-3 h-full px-5 lg:px-8 max-w-8xl mx-auto">
-            <div class="topbar-brand-mark">
-                <span>L</span>
-            </div>
-            <span class="topbar-system-name">{{ config('app.name', 'CamelotBooks') }}</span>
-
-            <div class="topbar-divider"></div>
+            @if($isPosCheckout)
+                {{-- POS Checkout: minimize button --}}
+                <button type="button" class="pos-minimize-btn" title="Minimize (go to Products)"
+                    onclick="window.dispatchEvent(new CustomEvent('pos-minimize-click'))">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+            @else
+                <div class="topbar-brand-mark">
+                    <span>L</span>
+                </div>
+                <span class="topbar-system-name">{{ config('app.name', 'CamelotBooks') }}</span>
+                <div class="topbar-divider"></div>
+            @endif
 
             <div class="flex items-center gap-1.5 min-w-0" id="topbar-company-area">
                 <span class="topbar-company-name truncate">{{ $currentCompany?->name ?? config('app.name', 'CamelotBooks') }}</span>
