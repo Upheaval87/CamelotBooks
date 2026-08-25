@@ -11671,6 +11671,13 @@ select.wz-in { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 .pos .pos-btn-del { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--pos-red); cursor: pointer }
 .pos .pos-btn-del:hover { background: rgba(185,28,28,.08) }
 
+.pos .pos-qty-stepper { display: inline-flex; align-items: center; gap: 0; border: 1.5px solid var(--pos-border); border-radius: 8px; overflow: hidden; background: var(--pos-bg) }
+.pos .pos-qty-btn { display: grid; place-items: center; width: 28px; height: 28px; border: none; background: transparent; color: var(--pos-ink); cursor: pointer; font-family: inherit; transition: background .1s }
+.pos .pos-qty-btn:hover { background: rgba(18,143,142,.1); color: var(--pos-sec) }
+.pos .pos-qty-input { border: none !important; background: transparent !important; height: 28px; min-width: 0; padding: 0 2px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; -moz-appearance: textfield }
+.pos .pos-qty-input::-webkit-inner-spin-button,
+.pos .pos-qty-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0 }
+
 .pos .pos-link { background: none; border: none; color: var(--pos-muted); font-size: 12px; cursor: pointer; padding: 0; font-family: inherit }
 .pos .pos-link:hover { color: var(--pos-sec) }
 

@@ -47,7 +47,7 @@
                                             @focus="dropdownOpen = searchQuery.length > 0"
                                             @keydown.down.prevent="moveHighlight(1)"
                                             @keydown.up.prevent="moveHighlight(-1)"
-                                            @keydown.enter.prevent="if (highlightIndex >= 0 && filteredProducts.length > 0) { const p = filteredProducts[highlightIndex]; selectProduct(p); $nextTick(() => addLine()); } else { confirmHighlight(); }"
+                                            @keydown.enter.prevent="if (highlightIndex >= 0 && filteredProducts.length > 0) { selectProduct(filteredProducts[highlightIndex]); } else { confirmHighlight(); }"
                                             @keydown.escape="dropdownOpen = false"
                                             placeholder="Type to search products... (or scan barcode)" autocomplete="off" />
                                         <span class="scoped-search-divider" aria-hidden="true"></span>
@@ -105,7 +105,6 @@
                                             <th class="center">UOM</th>
                                             <th class="num">Qty</th>
                                             <th class="num">Price</th>
-                                            <th class="num">Discount</th>
                                             <th class="num">Tax</th>
                                             <th class="num">Total</th>
                                             <th class="center"></th>
@@ -129,17 +128,21 @@
                                                     </template>
                                                 </td>
                                                 <td class="num">
-                                                    <input type="number" x-model.number="line.transaction_qty" min="0.01" step="1"
-                                                        class="pos-in pos-in-sm" style="width:80px;text-align:right"
-                                                        @input="onLineQtyChange(index)" />
+                                                    <div class="pos-qty-stepper">
+                                                        <button type="button" class="pos-qty-btn" @click="line.transaction_qty = Math.max(1, (line.transaction_qty || 1) - 1); onLineQtyChange(index)">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                        </button>
+                                                        <input type="number" x-model.number="line.transaction_qty" min="1" step="1"
+                                                            class="pos-in pos-in-sm pos-qty-input" style="width:52px;text-align:center"
+                                                            @input="onLineQtyChange(index)" />
+                                                        <button type="button" class="pos-qty-btn" @click="line.transaction_qty = (line.transaction_qty || 0) + 1; onLineQtyChange(index)">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                                 <td class="num">
                                                     <input type="number" x-model.number="line.unit_price" min="0" step="0.01"
                                                         class="pos-in pos-in-sm" style="width:96px;text-align:right" @input="recalcLine(index)" />
-                                                </td>
-                                                <td class="num">
-                                                    <input type="number" x-model.number="line.discount_amount" min="0" step="0.01"
-                                                        class="pos-in pos-in-sm" style="width:80px;text-align:right" @input="recalcLine(index)" />
                                                 </td>
                                                 <td class="num pos-em" x-text="formatMoney(line.tax_amount)"></td>
                                                 <td class="num pos-bold" x-text="formatMoney(line.line_total)"></td>
@@ -151,7 +154,7 @@
                                             </tr>
                                         </template>
                                         <tr x-show="lines.length === 0">
-                                            <td colspan="8" class="pos-em" style="text-align:center;padding:24px">No items added yet. Search and add products above.</td>
+                                            <td colspan="7" class="pos-em" style="text-align:center;padding:24px">No items added yet. Search and add products above.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -220,10 +223,6 @@
                                     <span x-text="formatMoney(getTotals().subtotal)"></span>
                                 </div>
                                 <div class="pos-total-row">
-                                    <span class="pos-sub">Discount</span>
-                                    <span x-text="'-' + formatMoney(getTotals().discount)"></span>
-                                </div>
-                                <div class="pos-total-row">
                                     <span class="pos-sub">Tax</span>
                                     <span x-text="formatMoney(getTotals().tax)"></span>
                                 </div>
@@ -256,7 +255,9 @@
                                         <div style="display:flex;align-items:center;gap:8px">
                                             <span class="pos-bold" x-text="formatMoney(parseFloat(pay.amount))"></span>
                                             <span x-show="pay.type === 'cash' && parseFloat(pay.change) > 0" class="pos-pos pos-sub" x-text="'Change: ' + formatMoney(parseFloat(pay.change))"></span>
-                                            <button type="button" @click="removePayment(pi)" class="pos-btn-close" style="color:var(--pos-red)">&times;</button>
+                                            <button type="button" @click="removePayment(pi)" class="pos-btn-del" title="Remove payment">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                            </button>
                                         </div>
                                     </div>
                                 </template>
@@ -274,15 +275,15 @@
 
                             {{-- COMPLETE SALE BUTTON --}}
                             <div class="pos-total-row pos-total-grand" style="border-top:none;padding-top:12px">
-                                <button type="button" @click="submitSale()"
-                                    :disabled="lines.length === 0 || submitting || !isFullyPaid()"
-                                    class="pos-btn pos-btn-submit"
-                                    :class="(lines.length > 0 && isFullyPaid() && !submitting) ? 'pos-btn-submit--ready' : 'pos-btn-submit--disabled'">
-                                    <span x-show="!submitting && lines.length > 0 && !isFullyPaid()" x-text="'Balance Due: ' + formatMoney(getRemaining())"></span>
-                                    <span x-show="!submitting && lines.length > 0 && isFullyPaid()">Complete Sale</span>
-                                    <span x-show="submitting">Processing...</span>
-                                    <span x-show="!submitting && lines.length === 0">Add items first</span>
-                                </button>
+                            <button type="button" @click="submitSale()"
+                                :disabled="lines.length === 0 || submitting || !isFullyPaid()"
+                                class="pos-btn pos-btn-cta"
+                                style="width:100%;height:42px">
+                                <span x-show="!submitting && lines.length > 0 && !isFullyPaid()" x-text="'Balance Due: ' + formatMoney(getRemaining())"></span>
+                                <span x-show="!submitting && lines.length > 0 && isFullyPaid()">Complete Sale</span>
+                                <span x-show="submitting">Processing...</span>
+                                <span x-show="!submitting && lines.length === 0">Add items first</span>
+                            </button>
                             </div>
                         </div>
                     </div>
@@ -336,7 +337,7 @@
                     <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="parseFloat(modalCashTendered) < parseFloat(modalDue)"
-                        class="pos-btn pos-btn-cash pos-modal-proceed">Proceed</button>
+                        class="pos-btn pos-btn-cta pos-modal-proceed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -386,7 +387,7 @@
                     <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="parseFloat(modalAmount) < 0.01 || Math.abs(parseFloat(modalAmount) - parseFloat(modalDue)) > 0.01"
-                        class="pos-btn pos-btn-card pos-modal-proceed">Proceed</button>
+                        class="pos-btn pos-btn-cta pos-modal-proceed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -436,7 +437,7 @@
                     <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmPaymentModal()"
                         :disabled="parseFloat(modalAmount) < 0.01 || Math.abs(parseFloat(modalAmount) - parseFloat(modalDue)) > 0.01"
-                        class="pos-btn pos-btn-mobile pos-modal-proceed">Proceed</button>
+                        class="pos-btn pos-btn-cta pos-modal-proceed">Proceed</button>
                 </div>
             </div>
         </div>
@@ -572,7 +573,7 @@
                     <button type="button" @click="closeModal()" class="pos-btn pos-btn-ghost pos-modal-cancel">Cancel</button>
                     <button type="button" @click="confirmSplitPayment()"
                         :disabled="!isSplitBalanced() || !splitPaymentValid()"
-                        class="pos-btn pos-btn-split pos-modal-proceed">Proceed</button>
+                        class="pos-btn pos-btn-cta pos-modal-proceed">Proceed</button>
                 </div>
             </div>
         </div>
