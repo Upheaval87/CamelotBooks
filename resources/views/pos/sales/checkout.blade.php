@@ -47,7 +47,7 @@
                                             @focus="dropdownOpen = searchQuery.length > 0"
                                             @keydown.down.prevent="moveHighlight(1)"
                                             @keydown.up.prevent="moveHighlight(-1)"
-                                            @keydown.enter.prevent="if (highlightIndex >= 0 && filteredProducts.length > 0) { selectProduct(filteredProducts[highlightIndex]); } else { confirmHighlight(); }"
+                                            @keydown.enter.prevent="if (highlightIndex >= 0 && filteredProducts.length > 0) { selectProduct(filteredProducts[highlightIndex]); } else if (selectedProductId && parseInt(addQty) >= 1) { addLine(); } else { confirmHighlight(); }"
                                             @keydown.escape="dropdownOpen = false"
                                             placeholder="Type to search products... (or scan barcode)" autocomplete="off" />
                                         <span class="scoped-search-divider" aria-hidden="true"></span>
@@ -302,9 +302,23 @@
                 <div class="pos-modal-h">Cash Payment</div>
                 <div class="pos-modal-sub">Enter the cash amount received from the customer.</div>
 
-                <div class="pos-modal-due" style="margin-bottom:20px">
-                    <div class="pos-sub" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase">Total Due</div>
-                    <div class="pos-modal-amount pos-numr" style="font-size:36px" x-text="formatMoney(modalDue)"></div>
+                <div style="background:var(--pos-mist);border-radius:12px;padding:16px 18px;margin-bottom:20px">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--pos-line)">
+                        <span class="pos-sub" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase">Total Due</span>
+                        <span class="pos-numr" style="font-size:32px;font-weight:800;color:var(--pos-ink)" x-text="formatMoney(modalDue)"></span>
+                    </div>
+                    <div x-show="modalCashTendered > 0" style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+                        <span class="pos-sub" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase">Cash Tendered</span>
+                        <span class="pos-numr" style="font-size:32px;font-weight:800;color:var(--pos-ink)" x-text="formatMoney(modalCashTendered)"></span>
+                    </div>
+                    <div x-show="modalCashTendered > 0 && modalCashTendered >= modalDue" style="display:flex;justify-content:space-between;align-items:baseline">
+                        <span class="pos-sub pos-bold" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase;color:var(--pos-green)">Change to Give</span>
+                        <span class="pos-numr" style="font-size:32px;font-weight:800;color:var(--pos-green)" x-text="formatMoney(modalCashTendered - modalDue)"></span>
+                    </div>
+                    <div x-show="modalCashTendered > 0 && modalCashTendered < modalDue" style="display:flex;justify-content:space-between;align-items:baseline">
+                        <span class="pos-sub pos-bold" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase;color:var(--pos-red)">Remaining</span>
+                        <span class="pos-numr" style="font-size:32px;font-weight:800;color:var(--pos-red)" x-text="formatMoney(modalDue - modalCashTendered)"></span>
+                    </div>
                 </div>
 
                 <div class="pos-f" style="margin-bottom:16px">
@@ -320,23 +334,6 @@
                     <template x-for="denom in [10, 20, 50, 100]" :key="denom">
                         <button type="button" @click="modalCashTendered = denom" class="pos-btn pos-btn-ghost pos-btn-sm"
                             x-text="formatMoney(denom)"></button>
-                    </template>
-                </div>
-
-                <div class="pos-modal-status"
-                    :class="modalCashTendered >= modalDue ? 'pos-modal-status--ok' : 'pos-modal-status--err'"
-                    x-show="modalCashTendered > 0" style="padding:20px">
-                    <template x-if="modalCashTendered >= modalDue">
-                        <div>
-                            <div class="pos-sub pos-bold" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Change to Give</div>
-                            <div style="font-size:40px;font-weight:800;color:var(--pos-green)" x-text="formatMoney(modalCashTendered - modalDue)"></div>
-                        </div>
-                    </template>
-                    <template x-if="modalCashTendered > 0 && modalCashTendered < modalDue">
-                        <div>
-                            <div class="pos-sub pos-bold pos-neg" style="font-size:12px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Insufficient — Remaining</div>
-                            <div style="font-size:40px;font-weight:800;color:var(--pos-red)" x-text="formatMoney(modalDue - modalCashTendered)"></div>
-                        </div>
                     </template>
                 </div>
 
