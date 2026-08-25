@@ -15,7 +15,7 @@
                         </form>
                     </div>
                     <a href="{{ route('pos.products.index') }}" class="pos-btn pos-btn-ghost">Adjust Stock</a>
-                    <a href="{{ route('accounting.products.create') }}" class="pos-btn pos-btn-sec">Add Product</a>
+                                                <a href="{{ route('accounting.inventory.items.create') }}" class="pos-btn pos-btn-sec">Add Product</a>
                 </div>
             </div>
 
@@ -77,7 +77,7 @@
                                         </td>
                                         <td class="num">
                                             <div class="pos-row-act">
-                                                <a href="{{ route('accounting.products.edit', $product) }}" class="pos-ibtn" title="Edit">✎</a>
+                                                <a href="{{ route('accounting.inventory.items.edit', $product) }}" class="pos-ibtn" title="Edit">✎</a>
                                             </div>
                                         </td>
                                     </tr>
@@ -87,7 +87,7 @@
                                             <div class="pos-empty">
                                                 <h3>No products found</h3>
                                                 <p>Add products to get started with POS sales.</p>
-                                                <a href="{{ route('accounting.products.create') }}" class="pos-btn pos-btn-sec">Add Product</a>
+                    <a href="{{ route('accounting.inventory.items.create') }}" class="pos-btn pos-btn-sec">Add Product</a>
                                             </div>
                                         </td>
                                     </tr>
@@ -104,11 +104,11 @@
                 <div class="pos-rail">
                     <div class="pos-rail-card">
                         <h3>Quick Nav</h3>
-                        <a href="{{ route('accounting.products.create') }}" class="pos-rail-link">
+                        <a href="{{ route('accounting.inventory.items.create') }}" class="pos-rail-link">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             Add Product
                         </a>
-                        <a href="{{ route('accounting.stock-adjustments.create') }}" class="pos-rail-link">
+                        <a href="{{ route('accounting.invsetup.adjustments') }}" class="pos-rail-link">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
                             Adjust Stock
                         </a>
