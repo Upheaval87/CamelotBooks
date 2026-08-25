@@ -1120,13 +1120,11 @@
                     if (this.splitCardEnabled) {
                         const cardAmount = parseFloat(this.splitCardAmount) || 0;
                         if (cardAmount <= 0) return false;
-                        if (!this.splitCardRef.trim()) return false;
                     }
 
                     if (this.splitMobileEnabled) {
                         const mobileAmount = parseFloat(this.splitMmobileAmount) || 0;
                         if (mobileAmount <= 0) return false;
-                        if (!this.splitMobileRef.trim()) return false;
                     }
 
                     return true;
