@@ -1,9 +1,9 @@
 @extends('layouts.pos-mobile', ['title' => 'BRR Register'])
 
 @section('content')
-<div class="pos-m-page" style="padding-bottom:5rem;">
+<div class="pos-m-page" style="padding-bottom:5.5rem">
 
-    {{-- §14.3 — Header --}}
+    {{-- Header --}}
     <div class="pos-m-greeting">
         <div class="pos-m-greeting-name">BRR Register</div>
         <div class="pos-m-greeting-sub">
@@ -13,24 +13,24 @@
         </div>
     </div>
 
-    {{-- §14.3 — Search --}}
-    <div class="pos-m-search-bar">
-        <form method="GET" action="{{ route('pos.m.ret-register') }}" class="pos-m-filter-form" style="width:100%">
-            <div class="pos-m-search-field">
-                <svg class="pos-m-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
-                <input type="text" name="q" class="pos-m-search-input" value="{{ $q }}" placeholder="Search BRR number or customer…">
-                @if($q)
-                    <a href="{{ route('pos.m.ret-register', ['status' => $status]) }}" class="pos-m-search-clear">&times;</a>
-                @endif
-            </div>
+    {{-- Search --}}
+    <div class="pos-m-search" style="margin-bottom:.75rem;position:relative">
+        <span class="pos-m-search-ic">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+        </span>
+        <form method="GET" action="{{ route('pos.m.ret-register') }}" style="flex:1;display:flex">
+            <input type="text" name="q" value="{{ $q }}" placeholder="Search BRR number or customer…">
             @if($status)
                 <input type="hidden" name="status" value="{{ $status }}">
             @endif
         </form>
+        @if($q)
+            <a href="{{ route('pos.m.ret-register', ['status' => $status]) }}" class="pos-m-search-clear">&times;</a>
+        @endif
     </div>
 
-    {{-- §14.3 — Status Chips --}}
-    <div class="pos-m-chip-scroll">
+    {{-- Status Chips --}}
+    <div class="pos-m-chips">
         @php
             $chips = [
                 '' => 'All',
@@ -42,7 +42,7 @@
         @endphp
         @foreach($chips as $key => $label)
             <a href="{{ route('pos.m.ret-register', array_filter(['status' => $key ?: null, 'q' => $q])) }}"
-               class="pos-m-chip {{ $status === $key || (!$status && $key === '') ? 'pos-m-chip--active' : '' }}">
+               class="pos-m-chip {{ $status === $key || (!$status && $key === '') ? 'pos-m-chip--on' : '' }}">
                 {{ $label }}
                 @if(isset($stats[$key]))
                     <span class="pos-m-chip-count">{{ $stats[$key] }}</span>
@@ -51,7 +51,7 @@
         @endforeach
     </div>
 
-    {{-- §14.3 — BRR Cards --}}
+    {{-- BRR Cards --}}
     @forelse($returnables as $r)
         <div class="pos-m-ret-card">
             <div class="pos-m-ret-card-top">

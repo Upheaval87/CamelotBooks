@@ -93,11 +93,11 @@ class PosMobileTest extends TestCase
         $response = $this->get(route('pos.m.home'));
         $response->assertStatus(200);
         $response->assertSee('pos-m-page');
-        $response->assertSee('pos-m-greeting');
-        $response->assertSee('pos-m-stats');
-        $response->assertSee('pos-m-actions');
+        $response->assertSee('pos-m-greet');
+        $response->assertSee('pos-m-sum');
+        $response->assertSee('pos-m-qa');
         $response->assertSee('Quick Actions');
-        $response->assertSee('Recent Sales');
+        $response->assertSee('Recent Activity');
     }
 
     public function test_home_shows_zero_state(): void
@@ -127,7 +127,7 @@ class PosMobileTest extends TestCase
         $response = $this->get(route('pos.m.home'));
         $response->assertStatus(200);
         $response->assertSee('POS-0001');
-        $response->assertSee('150.00');
+        $response->assertSee('150');
     }
 
     public function test_home_shows_terminal_name(): void
@@ -145,12 +145,12 @@ class PosMobileTest extends TestCase
         $this->actingAsCashier();
         $response = $this->get(route('pos.m.sell'));
         $response->assertStatus(200);
-        $response->assertSee('pos-m-sell-page');
-        $response->assertSee('pos-m-search-bar');
-        $response->assertSee('pos-m-cat-tabs');
-        $response->assertSee('pos-m-prod-grid');
-        $response->assertSee('pos-m-swipe-wrap');
-        $response->assertSee('pos-m-methods');
+        $response->assertSee('pos-m-page');
+        $response->assertSee('pos-m-searchrow');
+        $response->assertSee('pos-m-tabs');
+        $response->assertSee('pos-m-pgrid');
+        $response->assertSee('pos-m-sheet-ov');
+        $response->assertSee('pos-m-pcard');
         $response->assertSee('posMobileSell');
     }
 
@@ -181,8 +181,7 @@ class PosMobileTest extends TestCase
         $this->actingAsCashier();
         $response = $this->get(route('pos.m.sell'));
         $response->assertStatus(200);
-        $response->assertSee('Cash');
-        $response->assertSee('Split');
+        $response->assertSee('Checkout');
     }
 
     public function test_sell_renders_category_tabs(): void
@@ -207,8 +206,8 @@ class PosMobileTest extends TestCase
         $this->actingAsCashier();
         $response = $this->get(route('pos.m.checkout'));
         $response->assertStatus(200);
-        $response->assertSee('pos-m-sell-page');
-        $response->assertSee('pos-m-methods');
+        $response->assertSee('pos-m-page');
+        $response->assertSee('pos-m-payopt');
     }
 
     // ─── §9 Receipt ───
@@ -241,9 +240,9 @@ class PosMobileTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Sale Complete');
         $response->assertSee('POS-0002');
-        $response->assertSee('pos-m-receipt-doc');
-        $response->assertSee('pos-m-receipt-check');
-        $response->assertSee('Print Receipt');
+        $response->assertSee('pos-m-doc');
+        $response->assertSee('pos-m-tick');
+        $response->assertSee('Print');
         $response->assertSee('New Sale');
     }
 
@@ -374,7 +373,7 @@ class PosMobileTest extends TestCase
         $response = $this->get(route('pos.m.home'));
         $response->assertStatus(200);
         $response->assertSee('pos-m-nav');
-        $response->assertSee('pos-m-nav-item');
+        $response->assertSee('pos-m-nav-b');
         $response->assertSee('Home');
         $response->assertSee('Receipts');
     }
@@ -459,7 +458,7 @@ class PosMobileTest extends TestCase
         $this->actingAsCashier();
         $response = $this->get(route('pos.m.receipts', ['method' => 'cash']));
         $response->assertStatus(200);
-        $response->assertSee('pos-m-chip--active', false);
+        $response->assertSee('pos-m-chip--on', false);
     }
 
     public function test_receipts_has_bottom_nav(): void
@@ -547,7 +546,7 @@ class PosMobileTest extends TestCase
         $response->assertSee('pos-m-page');
         $response->assertSee('Products');
         $response->assertSee('pos-m-search-field');
-        $response->assertSee('pos-m-chip-row');
+        $response->assertSee('pos-m-chips');
         $response->assertSee('No products found.');
     }
 

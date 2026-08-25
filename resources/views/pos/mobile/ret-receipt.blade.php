@@ -1,9 +1,9 @@
 @extends('layouts.pos-mobile', ['title' => 'BRR Receipt'])
 
 @section('content')
-<div class="pos-m-page" style="padding-bottom:5rem;">
+<div class="pos-m-page" style="padding-bottom:5.5rem">
 
-    {{-- §14.2 — Back --}}
+    {{-- Back --}}
     <a href="{{ route('pos.m.ret-register') }}" class="pos-m-back-link">
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
         Register
@@ -16,7 +16,7 @@
         </div>
     @endif
 
-    {{-- §14.2 — Branded Receipt --}}
+    {{-- Branded Receipt --}}
     <div class="pos-m-receipt-card">
 
         {{-- Header --}}
@@ -118,10 +118,10 @@
         </div>
     </div>
 
-    {{-- §14.2 — Actions --}}
+    {{-- Actions --}}
     <div class="pos-m-receipt-actions">
-        <a href="{{ route('pos.m.ret-intake') }}" class="pos-m-btn pos-m-btn--outline">New Intake</a>
-        <a href="{{ route('pos.m.ret-register') }}" class="pos-m-btn pos-m-btn--solid">View Register</a>
+        <a href="{{ route('pos.m.ret-intake') }}" class="pos-m-btn pos-m-btn--outline pos-m-btn--block">New Intake</a>
+        <a href="{{ route('pos.m.ret-register') }}" class="pos-m-btn pos-m-btn--solid pos-m-btn--block">View Register</a>
     </div>
 
     @include('pos.mobile._bottom-nav', ['active' => 'home'])

@@ -1,9 +1,9 @@
 @extends('layouts.pos-mobile', ['title' => 'Bottle Intake'])
 
 @section('content')
-<div class="pos-m-page" style="padding-bottom:5rem;">
+<div class="pos-m-page" style="padding-bottom:5.5rem">
 
-    {{-- §14.1 — Header --}}
+    {{-- Header --}}
     <div class="pos-m-greeting">
         <div class="pos-m-greeting-name">Bottle Intake</div>
         <div class="pos-m-greeting-sub">Accept containers · Issue a BRR receipt</div>
@@ -19,9 +19,9 @@
     <form method="POST" action="{{ route('pos.m.ret-intake.store') }}" id="retake-form">
         @csrf
 
-        {{-- §14.1 — Customer --}}
+        {{-- Customer --}}
         <div class="pos-m-section-title">Customer</div>
-        <div class="pos-m-field">
+        <div class="pos-m-field" style="position:relative">
             <input type="text" class="pos-m-input" id="ret-customer-search"
                    placeholder="Search customer…" autocomplete="off">
             <input type="hidden" name="customer_id" id="ret-customer-id" value="{{ old('customer_id') }}">
@@ -32,7 +32,7 @@
             <div class="pos-m-customer-list" id="ret-customer-list"></div>
         </div>
 
-        {{-- §14.1 — Container Select --}}
+        {{-- Container Select --}}
         <div class="pos-m-section-title">Container</div>
         <div class="pos-m-field">
             <select name="product_id" class="pos-m-select" id="ret-container" required>
@@ -53,7 +53,7 @@
             </div>
         </div>
 
-        {{-- §14.1 — Quantity Steppers --}}
+        {{-- Quantity Steppers --}}
         <div class="pos-m-section-title">Quantity</div>
         <div class="pos-m-qty-row">
             <button type="button" class="pos-m-qty-btn" onclick="retAdjust(-1)">−</button>
@@ -62,30 +62,30 @@
             <button type="button" class="pos-m-qty-btn" onclick="retAdjust(1)">+</button>
         </div>
 
-        {{-- §14.1 — Live Total --}}
+        {{-- Live Total --}}
         <div class="pos-m-total-row" id="ret-total-row" style="display:none">
             <span class="pos-m-total-label">Total credit</span>
             <span class="pos-m-total-value" id="ret-total-value">K 0.00</span>
         </div>
 
-        {{-- §14.1 — Credit To Chips --}}
+        {{-- Credit To Chips --}}
         <div class="pos-m-section-title">Credit to</div>
-        <div class="pos-m-chip-row">
-            <button type="button" class="pos-m-chip pos-m-chip--active" data-val="store_credit" onclick="retCreditTo(this)">Store credit</button>
+        <div class="pos-m-chips">
+            <button type="button" class="pos-m-chip pos-m-chip--on" data-val="store_credit" onclick="retCreditTo(this)">Store credit</button>
             <button type="button" class="pos-m-chip" data-val="cash_refund" onclick="retCreditTo(this)">Cash refund</button>
         </div>
         <input type="hidden" name="credit_to" id="ret-credit-to" value="store_credit">
 
-        {{-- §14.1 — Notes --}}
+        {{-- Notes --}}
         <div class="pos-m-section-title" style="margin-top:.75rem">Notes <span style="font-weight:400;color:#9AAEAE">(optional)</span></div>
         <div class="pos-m-field">
             <input type="text" name="notes" class="pos-m-input" maxlength="500"
                    value="{{ old('notes') }}" placeholder="Condition, reason, etc.">
         </div>
 
-        {{-- §14.1 — Confirm --}}
-        <button type="submit" class="pos-m-btn pos-m-btn--solid" id="ret-confirm" disabled
-                style="margin-top:1rem;width:100%;">
+        {{-- Confirm --}}
+        <button type="submit" class="pos-m-btn pos-m-btn--solid pos-m-btn--block" id="ret-confirm" disabled
+                style="margin-top:1rem">
             Confirm Return
         </button>
     </form>
@@ -149,8 +149,10 @@ function retUpdateTotal() {
 }
 
 function retCreditTo(btn) {
-    document.querySelectorAll('.pos-m-chip-row .pos-m-chip').forEach(c => c.classList.remove('pos-m-chip--active'));
-    btn.classList.add('pos-m-chip--active');
+    document.querySelectorAll('.pos-m-chips .pos-m-chip').forEach(c => {
+        c.classList.remove('pos-m-chip--on');
+    });
+    btn.classList.add('pos-m-chip--on');
     document.getElementById('ret-credit-to').value = btn.dataset.val;
 }
 

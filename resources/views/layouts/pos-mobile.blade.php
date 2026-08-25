@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="pos-m-shell">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,9 +9,15 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        .pos-m-shell{font-family:'Inter',system-ui,sans-serif;background:#F5F7F6;color:#13292C;margin:0;padding:0;min-height:100dvh}
-        .pos-m-shell *,.pos-m-shell *::before,.pos-m-shell *::after{box-sizing:border-box}
-        [x-cloak]{display:none !important}
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        [x-cloak] { display: none !important; }
+        body.pos-m-body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg, #F5F7F6);
+            color: var(--ink, #13292C);
+            -webkit-font-smoothing: antialiased;
+            min-height: 100dvh;
+        }
     </style>
 </head>
 <body class="pos-m-body">
