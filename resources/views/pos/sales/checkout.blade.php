@@ -150,8 +150,8 @@
                                                     </div>
                                                 </td>
                                                 <td class="num">
-                                                    <input type="number" x-model.number="line.unit_price" min="0" step="0.01"
-                                                        class="pos-in pos-in-sm" style="width:96px;text-align:right" @input="recalcLine(index)" />
+                                                    <input type="number" x-model.number="line.unit_price" min="0" step="0.01" readonly
+                                                        class="pos-in pos-in-sm" style="width:96px;text-align:right;background:var(--pos-mist);cursor:default" />
                                                 </td>
                                                 <td class="num pos-bold" x-text="formatMoney(line.line_total)"></td>
                                                 <td class="center">
@@ -757,8 +757,6 @@
                         const el = document.documentElement;
                         if (el.requestFullscreen) el.requestFullscreen();
                         else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-                        document.documentElement.style.overflow = 'hidden';
-                        document.body.style.overflow = 'hidden';
                     } catch (e) { /* fullscreen not supported */ }
                 },
 
@@ -766,8 +764,6 @@
                     try {
                         if (document.fullscreenElement) document.exitFullscreen();
                         else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
-                        document.documentElement.style.overflow = '';
-                        document.body.style.overflow = '';
                     } catch (e) { /* silent */ }
                 },
 
