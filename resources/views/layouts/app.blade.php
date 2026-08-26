@@ -32,6 +32,46 @@
             window.fontScaleUrl = "{{ route('preferences.font-scale') }}";
             window.TODO_LINKABLE_CLASS_MAP = @json(\App\Models\TodoTask::LINKABLE_CLASS_MAP);
         </script>
+        @php
+            $posRouteName = request()->route()?->getName() ?? '';
+            $posRedirectUrl = null;
+            if (str_starts_with($posRouteName, 'pos.') && !str_starts_with($posRouteName, 'pos.m.')) {
+                $posRedirectMap = [
+                    'pos.sales.checkout'  => route('pos.m.sell'),
+                    'pos.register.index'  => route('pos.m.register'),
+                    'pos.receipts.index'  => route('pos.m.receipts'),
+                    'pos.products.index'  => route('pos.m.products'),
+                    'pos.settings.index'  => route('pos.m.settings'),
+                    'pos.returnables.index'  => route('pos.m.ret-register'),
+                    'pos.returnables.intake' => route('pos.m.ret-intake'),
+                ];
+                if (isset($posRedirectMap[$posRouteName])) {
+                    $posRedirectUrl = $posRedirectMap[$posRouteName];
+                } elseif ($posRouteName === 'pos.sales.receipt') {
+                    $posRedirectUrl = route('pos.m.receipt', request()->route('id'));
+                } elseif ($posRouteName === 'pos.returnables.show') {
+                    $posRedirectUrl = route('pos.m.ret-receipt', request()->route('id'));
+                }
+            }
+        @endphp
+        @if($posRedirectUrl)
+        <script>
+            (function() {
+                var MOBILE_BREAKPOINT = 768;
+                function checkAndRedirect() {
+                    if (window.innerWidth <= MOBILE_BREAKPOINT) {
+                        window.location.replace(@js($posRedirectUrl));
+                    }
+                }
+                checkAndRedirect();
+                var resizeTimer;
+                window.addEventListener('resize', function() {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(checkAndRedirect, 200);
+                });
+            })();
+        </script>
+        @endif
 
         @if(!\Illuminate\Support\Facades\Vite::isRunningHot())
             <script src="{{ \Illuminate\Support\Facades\Vite::asset('resources/js/scoped-search-field.js') }}"></script>
