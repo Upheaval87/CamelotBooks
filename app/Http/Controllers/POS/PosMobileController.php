@@ -269,11 +269,12 @@ class PosMobileController extends Controller
         $branchId = session('pos_terminal_branch_id');
 
         // Branch selector (§10.1 — scoping)
-        $headOffice = $user->companyAssignments()
+        // "Head office" = user has no branch restriction on their assignment
+        $assignment = $user->companyAssignments()
             ->where('company_id', $companyId)
-            ->where('is_head_office', true)
-            ->exists();
-        if ($headOffice) {
+            ->first();
+        $canSeeAllBranches = ! $assignment || empty($assignment->branch_ids);
+        if ($canSeeAllBranches) {
             $branches = \App\Models\Branch::where('company_id', $companyId)
                 ->where('is_active', true)
                 ->orderBy('name')
@@ -297,7 +298,7 @@ class PosMobileController extends Controller
         $filterMethod = $request->input('method', '');
 
         // Enforce branch scoping server-side (§10.1)
-        if (!$headOffice && $filterBranch && !$branches->contains('id', $filterBranch)) {
+        if (!$canSeeAllBranches && $filterBranch && !$branches->contains('id', $filterBranch)) {
             $filterBranch = $branchId ?? '';
         }
 
