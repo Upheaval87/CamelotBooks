@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Services\Reporting\CashFlowStatementService;
+use App\Services\Reporting\ReportAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\View;
@@ -24,12 +25,21 @@ class CashFlowController extends Controller
 
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo);
 
+        $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('accounting.cash-flow.index', array_merge($statement, compact('branches', 'branchId', 'dateFrom', 'dateTo')));
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'dateFrom', 'dateTo'),
+        );
+
+        return view('accounting.cash-flow.index', array_merge($statement, compact('branches', 'branchId', 'dateFrom', 'dateTo', 'currencySymbol')));
     }
 
     public function exportCsv(Request $request)
@@ -41,7 +51,20 @@ class CashFlowController extends Controller
 
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo);
 
+        if ($statement['mismatch'] !== null) {
+            return redirect()->route('accounting.cash-flow.index', $request->query())
+                ->withErrors(['export' => 'Export blocked: ending cash does not match actual bank balances.']);
+        }
+
         $filename = "cash_flow_{$dateFrom}_to_{$dateTo}.csv";
+
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'dateFrom', 'dateTo'),
+            outputFormat: 'csv',
+        );
 
         return Response::streamDownload(function () use ($statement) {
             $handle = fopen('php://output', 'w');
@@ -94,7 +117,21 @@ class CashFlowController extends Controller
         $dateTo = $request->input('date_to', now()->format('Y-m-d'));
 
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo);
+
+        if ($statement['mismatch'] !== null) {
+            return redirect()->route('accounting.cash-flow.index', $request->query())
+                ->withErrors(['export' => 'Export blocked: ending cash does not match actual bank balances.']);
+        }
+
         $company = Company::findOrFail($companyId);
+
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'dateFrom', 'dateTo'),
+            outputFormat: 'pdf',
+        );
 
         $content = view('accounting.cash-flow.print', array_merge($statement, compact('company', 'dateFrom', 'dateTo')))->render();
 
