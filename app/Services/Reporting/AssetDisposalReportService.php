@@ -2,14 +2,14 @@
 
 namespace App\Services\Reporting;
 
-use App\Models\AssetDisposal;
+use App\Models\FixedAssets\FaDisposal;
 
 class AssetDisposalReportService
 {
     public function generate(int $companyId, ?string $dateFrom = null, ?string $dateTo = null): array
     {
-        $disposals = AssetDisposal::where('company_id', $companyId)
-            ->with(['asset', 'journalEntry', 'createdBy'])
+        $disposals = FaDisposal::where('company_id', $companyId)
+            ->with(['asset', 'journalEntry', 'requester'])
             ->when($dateFrom, fn ($q) => $q->where('disposal_date', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->where('disposal_date', '<=', $dateTo))
             ->orderBy('disposal_date', 'desc')
@@ -22,10 +22,10 @@ class AssetDisposalReportService
                 'disposal_method' => $d->disposal_method,
                 'acquisition_cost' => (float) ($d->asset->acquisition_cost ?? 0),
                 'proceeds_amount' => (float) $d->proceeds_amount,
-                'gain_loss_amount' => (float) $d->gain_loss_amount,
+                'gain_loss_amount' => (float) $d->gain_loss,
                 'journal_entry_id' => $d->journal_entry_id,
                 'memo' => $d->memo,
-                'created_by' => $d->createdBy->name ?? '—',
+                'created_by' => $d->requester->name ?? '—',
             ])->toArray();
 
         $totalProceeds = collect($disposals)->sum('proceeds_amount');

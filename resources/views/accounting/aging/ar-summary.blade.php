@@ -1,95 +1,123 @@
 <x-app-layout>
-    <x-list-header title="{{ __('A/R Aging Summary') }}" />
+    @php
+        $cs = $currencySymbol ?? '$';
+        $drillBranch = $branchId ? '&branch_id='.$branchId : '';
+    @endphp
 
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="GET" action="{{ route('accounting.aging.ar-summary') }}" class="flex items-end gap-4">
-                    <div class="flex-1">
-                        <x-input-label for="as_of_date" value="{{ __('As Of Date') }}" />
-                        <x-text-input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$as_of_date" />
-                    </div>
-                    <div class="flex-1">
-                        <x-input-label for="branch_id" value="{{ __('Branch (Optional)') }}" />
-                        <x-scoped-search-field
-                            name="branch_id"
-                            entity="branch"
-                            search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
-                            :value="request('branch_id')"
-                            :label="request('branch_id') ? ($branches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
-                            placeholder="{{ __('All Branches') }}"
-                        />
-                    </div>
-                    <div class="flex gap-2">
-                        <x-primary-button type="submit">{{ __('Generate') }}</x-primary-button>
-                        <a href="{{ route('accounting.aging.ar-summary') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Clear') }}
-                        </a>
-                    </div>
-                </form>
+    <div class="fr-wrap">
+        <div class="fr-head">
+            <div>
+                <h1>{{ __('A/R Aging Summary') }}</h1>
+                <div class="fr-sub">As at {{ \Carbon\Carbon::parse($asOfDate)->format('d M Y') }} · {{ $cs }}</div>
             </div>
-
-            <div class="mb-4 flex gap-2">
-                <a href="{{ route('accounting.aging.ar-summary', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-gold-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest shadow-sm">Summary</a>
-                <a href="{{ route('accounting.aging.ar-detail', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">Detail</a>
+            <div class="fr-actions">
+                <div x-data="{ open: false }" @click.away="open = false" style="position:relative;display:inline-block">
+                    <button type="button" class="fr-btn fr-btn-ghost fr-btn-sm" @click="open = !open">Send Statements ▾</button>
+                    <div x-show="open" x-transition style="position:absolute;right:0;top:100%;z-index:50;background:#fff;border:1px solid #e5e7eb;border-radius:8px;min-width:200px;box-shadow:0 4px 12px rgba(0,0,0,.1);margin-top:4px">
+                        <a href="{{ route('accounting.reports.customer-statement') }}" style="display:block;padding:8px 16px;color:#374151;text-decoration:none;font-size:.8125rem">Customer Statement Report</a>
+                    </div>
+                </div>
+                <button type="button" class="fr-btn fr-btn-ghost fr-btn-sm" onclick="window.print()">Print</button>
+                <a href="{{ route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ar'])) }}" class="fr-btn fr-btn-ghost fr-btn-sm">Excel</a>
+                <a href="{{ route('accounting.aging.ar-detail', request()->query()) }}" class="fr-btn fr-btn-ghost fr-btn-sm">View Detail</a>
             </div>
+        </div>
 
-            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+        <form method="GET" action="{{ route('accounting.aging.ar-summary') }}" class="fr-filters">
+            <div class="fr-f">
+                <label for="as_of_date">{{ __('As Of Date') }}</label>
+                <input type="date" id="as_of_date" name="as_of_date" value="{{ $asOfDate }}">
+            </div>
+            <div class="fr-f">
+                <label for="branch_id">{{ __('Branch') }}</label>
+                <select id="branch_id" name="branch_id">
+                    <option value="">{{ __('All Branches') }}</option>
+                    @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" {{ (int)($branchId ?? 0) === $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div style="display:flex;gap:.5rem">
+                <button type="submit" class="fr-btn fr-btn-cta fr-btn-sm">Generate</button>
+                <a href="{{ route('accounting.aging.ar-summary') }}" class="fr-btn fr-btn-ghost fr-btn-sm">Clear</a>
+            </div>
+        </form>
 
-            <x-report.card>
-                <x-report.header
-                    :company="$currentCompany->name ?? config('app.name')"
-                    title="A/R Aging Summary"
-                    :range="'As of ' . \Carbon\Carbon::parse($as_of_date)->format('M d, Y')"
-                />
+        <div class="fr-kpis">
+            <div class="fr-kpi hero"><div class="fr-kpi-l">Total Outstanding</div><div class="fr-kpi-v">{{ format_number($totals['total']) }}</div></div>
+            <div class="fr-kpi"><div class="fr-kpi-l">Current</div><div class="fr-kpi-v">{{ format_number($totals['current']) }}</div></div>
+            <div class="fr-kpi"><div class="fr-kpi-l">1–30 Days</div><div class="fr-kpi-v">{{ format_number($totals['days_1_30']) }}</div></div>
+            <div class="fr-kpi"><div class="fr-kpi-l">31–60 Days</div><div class="fr-kpi-v">{{ format_number($totals['days_31_60']) }}</div></div>
+            <div class="fr-kpi"><div class="fr-kpi-l">61–90 Days</div><div class="fr-kpi-v">{{ format_number($totals['days_61_90']) }}</div></div>
+            <div class="fr-kpi"><div class="fr-kpi-l">90+ Days</div><div class="fr-kpi-v {{ ($totals['days_90_plus'] ?? 0) > 0 ? 'red' : '' }}">{{ format_number($totals['days_90_plus']) }}</div></div>
+        </div>
 
-                <x-report.toolbar
-                    :csvRoute="route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ar']))"
-                />
-
-                <table class="report-table">
+        <div class="fr-card">
+            <div class="fr-card-head">
+                <h2>A/R Aging Summary</h2>
+            </div>
+            <div class="fr-table-wrap">
+                <table class="fr-table">
                     <thead>
                         <tr>
-                            <th>Customer</th>
-                            <th class="report-col-amt">Current ({{ $cs }})</th>
-                            <th class="report-col-amt">1-30 Days ({{ $cs }})</th>
-                            <th class="report-col-amt">31-60 Days ({{ $cs }})</th>
-                            <th class="report-col-amt">61-90 Days ({{ $cs }})</th>
-                            <th class="report-col-amt">90+ Days ({{ $cs }})</th>
-                            <th class="report-col-amt">Total ({{ $cs }})</th>
+                            <th style="width:22%">Customer</th>
+                            <th class="r" style="width:13%">Current</th>
+                            <th class="r" style="width:13%">1–30 Days</th>
+                            <th class="r" style="width:13%">31–60 Days</th>
+                            <th class="r" style="width:13%">61–90 Days</th>
+                            <th class="r" style="width:13%">90+ Days</th>
+                            <th class="r" style="width:13%">Total</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($customers as $row)
-                            @php $zero = $row['total'] <= 0; @endphp
-                            <tr class="@if($zero) zero @endif">
-                                <td>{{ $row['customer_name'] }}</td>
-                                <td class="report-cell-amt">{{ format_number($row['current']) }}</td>
-                                <td class="report-cell-amt">{{ format_number($row['days_1_30']) }}</td>
-                                <td class="report-cell-amt">{{ format_number($row['days_31_60']) }}</td>
-                                <td class="report-cell-amt">{{ format_number($row['days_61_90']) }}</td>
-                                <td class="report-cell-amt">{{ format_number($row['days_90_plus']) }}</td>
-                                <td class="report-cell-amt">{{ format_number($row['total']) }}</td>
+                            <tr>
+                                <td>
+                                    <a href="{{ route('accounting.customers.show', $row['customer_id']).'?'.$drillBranch }}" class="fr-tl">{{ $row['customer_name'] }}</a>
+                                </td>
+                                <td class="r">{{ format_number($row['current']) }}</td>
+                                <td class="r">{{ format_number($row['days_1_30']) }}</td>
+                                <td class="r">{{ format_number($row['days_31_60']) }}</td>
+                                <td class="r">{{ format_number($row['days_61_90']) }}</td>
+                                <td class="r">
+                                    @if(($row['days_90_plus'] ?? 0) > 0)
+                                        <span class="fr-badge fr-badge-red"><span class="fr-badge-dot"></span>{{ format_number($row['days_90_plus']) }}</span>
+                                    @else
+                                        {{ format_number($row['days_90_plus']) }}
+                                    @endif
+                                </td>
+                                <td class="r" style="font-weight:700">{{ format_number($row['total']) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-ink-soft" style="padding:20px 14px">No outstanding invoices found.</td>
+                                <td colspan="7" style="text-align:center;padding:2rem 1rem;color:var(--faint,#8aa5a7)">No outstanding invoices found.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot>
-                        <tr class="report-total-row">
-                            <td>Total</td>
-                            <td class="report-cell-amt report-total-val">{{ format_number($totals['current']) }}</td>
-                            <td class="report-cell-amt report-total-val">{{ format_number($totals['days_1_30']) }}</td>
-                            <td class="report-cell-amt report-total-val">{{ format_number($totals['days_31_60']) }}</td>
-                            <td class="report-cell-amt report-total-val">{{ format_number($totals['days_61_90']) }}</td>
-                            <td class="report-cell-amt report-total-val">{{ format_number($totals['days_90_plus']) }}</td>
-                            <td class="report-cell-amt report-total-val">{{ format_number($totals['total']) }}</td>
+                        <tr>
+                            <td style="font-weight:800">Total</td>
+                            <td class="r" style="font-weight:800">{{ format_number($totals['current']) }}</td>
+                            <td class="r" style="font-weight:800">{{ format_number($totals['days_1_30']) }}</td>
+                            <td class="r" style="font-weight:800">{{ format_number($totals['days_31_60']) }}</td>
+                            <td class="r" style="font-weight:800">{{ format_number($totals['days_61_90']) }}</td>
+                            <td class="r" style="font-weight:800">
+                                @if(($totals['days_90_plus'] ?? 0) > 0)
+                                    <span class="fr-badge fr-badge-red"><span class="fr-badge-dot"></span>{{ format_number($totals['days_90_plus']) }}</span>
+                                @else
+                                    {{ format_number($totals['days_90_plus']) }}
+                                @endif
+                            </td>
+                            <td class="r" style="font-weight:800">{{ format_number($totals['total']) }}</td>
                         </tr>
                     </tfoot>
                 </table>
-            </x-report.card>
+            </div>
+        </div>
+
+        <div class="fr-actionbar">
+            <a href="{{ route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ar'])) }}" class="fr-btn fr-btn-ghost">Export CSV</a>
+            <button type="button" class="fr-btn fr-btn-cta" onclick="window.print()">Print / PDF</button>
         </div>
     </div>
 </x-app-layout>

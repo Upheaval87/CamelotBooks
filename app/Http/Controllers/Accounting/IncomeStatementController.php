@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Services\Reporting\IncomeStatementService;
+use App\Services\Reporting\ReportAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\View;
@@ -26,6 +27,34 @@ class IncomeStatementController extends Controller
 
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo, $compareMode, $costCenterId);
 
+        $comparison = $statement['comparison'] ?? null;
+        $comparisonPeriodLabel = null;
+        $comparisonDateFrom = null;
+        $comparisonDateTo = null;
+        if ($comparison) {
+            $comparisonDateFrom = $comparison['date_from'] ?? null;
+            $comparisonDateTo = $comparison['date_to'] ?? null;
+            $comparisonPeriodLabel = $compareMode === 'year_ago' ? 'Year Ago' : 'Prior Period';
+            foreach ($statement['groups'] as $type => $subTypes) {
+                foreach ($subTypes as $subType => $items) {
+                    foreach ($items as &$item) {
+                        $accountId = $item['account']->id;
+                        $item['comparison_net'] = null;
+                        if (isset($comparison['groups'][$type][$subType])) {
+                            foreach ($comparison['groups'][$type][$subType] as $compItem) {
+                                if ($compItem['account']->id === $accountId) {
+                                    $item['comparison_net'] = $compItem['net'];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
@@ -36,7 +65,14 @@ class IncomeStatementController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.income-statement.index', array_merge($statement, compact('branches', 'branchId', 'costCenters', 'costCenterId', 'dateFrom', 'dateTo', 'compareMode')));
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'costCenterId', 'dateFrom', 'dateTo', 'compareMode'),
+        );
+
+        return view('accounting.income-statement.index', array_merge($statement, compact('branches', 'branchId', 'costCenters', 'costCenterId', 'dateFrom', 'dateTo', 'compareMode', 'comparisonPeriodLabel', 'comparisonDateFrom', 'comparisonDateTo', 'currencySymbol')));
     }
 
     public function exportCsv(Request $request)
@@ -50,6 +86,14 @@ class IncomeStatementController extends Controller
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo, null, $costCenterId);
 
         $filename = "income_statement_{$dateFrom}_to_{$dateTo}.csv";
+
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'costCenterId', 'dateFrom', 'dateTo'),
+            outputFormat: 'csv',
+        );
 
         return Response::streamDownload(function () use ($statement) {
             $handle = fopen('php://output', 'w');
@@ -94,6 +138,14 @@ class IncomeStatementController extends Controller
 
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo, null, $costCenterId);
         $company = Company::findOrFail($companyId);
+
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'costCenterId', 'dateFrom', 'dateTo'),
+            outputFormat: 'pdf',
+        );
 
         $content = view('accounting.income-statement.print', array_merge($statement, compact('company', 'dateFrom', 'dateTo')))->render();
 

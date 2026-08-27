@@ -104,19 +104,20 @@
         'children' => $accountingChildren,
     ];
 
+    // Fixed Assets menu rebuilt in Phase 2
     if ($feat('fixed_assets')) {
         $modules[] = (object)[
-            'label' => __('Assets'),
-            'icon' => '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+            'label' => __('Fixed Assets'),
+            'icon' => '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
             'children' => [
-                ['label' => __('Asset Categories'),'route' => 'accounting.asset-categories.index'],
-                ['label' => __('Asset Register'),  'route' => 'accounting.fixed-assets.index'],
-                ['label' => __('Depreciation'),    'route' => 'accounting.depreciation.runs'],
-                ['label' => __('Usage Log (UOP)'), 'route' => 'accounting.asset-usage.index'],
-                ['label' => __('Disposals'),       'route' => 'accounting.asset-disposals.index'],
-                ['label' => __('Transfers'),       'route' => 'accounting.asset-transfers.index'],
-                ['label' => __('Impairments'),     'route' => 'accounting.asset-impairments.index'],
-                ['label' => __('Revaluations'),    'route' => 'accounting.asset-revaluations.index'],
+                ['label' => __('Dashboard'),    'route' => 'accounting.fixed-assets.dashboard'],
+                ['label' => __('Asset Register'),'route' => 'accounting.fixed-assets.register'],
+                ['label' => __('Categories'),    'route' => 'accounting.fixed-assets.categories'],
+                ['label' => __('Depreciation Runs'),'route' => 'accounting.fixed-assets.depreciation-runs'],
+                ['label' => __('Disposals'),     'route' => 'accounting.fixed-assets.disposals'],
+                ['label' => __('Transfers'),     'route' => 'accounting.fixed-assets.transfers'],
+                ['label' => __('Revaluations'),  'route' => 'accounting.fixed-assets.revaluations'],
+                ['label' => __('Impairments'),   'route' => 'accounting.fixed-assets.impairments'],
             ],
         ];
     }

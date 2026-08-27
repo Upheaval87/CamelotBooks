@@ -1,0 +1,2347 @@
+# IMPLEMENTATION PROMPT — "Records & Clearance Desk" (Laravel) — v5 (mockup embedded, no external file lookup)
+
+## 0. MISSION & GUARDRAILS
+
+You are building a **simple, document-centric, workflow-oriented** records system for a Sacco
+(loan + membership applications). This is **NOT** a full document management system. The core
+loop is:
+
+> Capture a record → attach/upload documents → classify the application → track status →
+> route for CRB clearance → search/report → maintain an audit trail.
+
+Hard rules:
+1. **`applications` is the central table.** Documents, CRB clearances, status history and notes
+   all attach to it. Loan- and membership-specific fields live in 1-to-1 child tables.
+2. Keep it boring and standard: Laravel conventions, Form Requests, Policies, Eloquent
+   relationships, no exotic architecture. No API needed — server-rendered Blade only.
+   Do not scaffold API routes, API resources, or Sanctum tokens; this system is Blade-only.
+3. The UI must replicate **the mockup embedded in full at the end of this prompt (Appendix
+   A)** — markup structure, CSS, badges, tables, tabs, modals. Do not go looking for a
+   separate `mockup.html` file on disk or ask for one to be uploaded — the complete mockup
+   source is already inlined below in Appendix A; treat that code block as the mockup. Port
+   its CSS to `resources/css/app.css` and its JS patterns to Alpine.js.
+4. Every important action is audit-logged. Every file download/view is authorized. Documents
+   live on a **private disk** and are streamed through authorized routes only.
+5. **Branch scoping is enforced by default, and is determined by the user's branch, not
+   their role.** Every user (including `admin`/`viewer`) belongs to exactly one branch. Only
+   users whose branch is flagged as the **head office** see records across all branches
+   (their own plus every other branch); everyone else sees only their own branch's records,
+   unless `settings.branch_scoping_enabled = 0`. Role still governs *what actions* a user may
+   take (§8) — head-office status only governs *which branches' records they can see*.
+   See §2.1, §4, and §8.
+6. Ask a clarifying question only when something is genuinely ambiguous; otherwise decide
+   sensibly and note the decision.
+
+## 1. TECH STACK
+
+| Layer | Choice |
+|---|---|
+| PHP | ≥ 8.2 |
+| Framework | Laravel 11/12 |
+| DB | MySQL / MariaDB |
+| Auth | Laravel Breeze (Blade stack) — auth scaffolding only |
+| JS | Alpine.js (tabs, dropdowns, modals, bulk-select bar, toasts) |
+| CSS | The mockup's custom CSS, compiled through Vite (`resources/css/app.css`) |
+| Exports | Native streamed CSV (`fputcsv`). PDF = print-friendly Blade view (browser print). `barryvdh/laravel-dompdf` optional later |
+| Optional pkgs (later only) | `spatie/laravel-activitylog`, `maatwebsite/excel`, `laravel/scout` |
+
+Setup commands:
+```bash
+laravel new sacco-records            # or composer create-project
+composer require laravel/breeze --dev
+php artisan breeze:install blade --no-interaction
+# create MySQL DB, set .env (DB_*; FILESYSTEM_DISK local)
+php artisan make:model ... etc. per schema below
+```
+
+## 2. DATABASE SCHEMA
+
+Migration order and exact columns. Use `$table->foreignId(...)->constrained()` and cascade
+where noted. All tables get `id` + timestamps unless stated.
+
+### 2.1 `branches`
+code (string 10, unique), name, region, officer_in_charge (nullable),
+**is_head_office (bool default false — exactly one branch should have this set; drives
+cross-branch visibility, see §4)**, timestamps.
+Add a DB-level safeguard (a small model-level check in `Branch::saving()`, since MySQL can't
+easily do a single-row-true unique constraint) that prevents saving a second branch with
+`is_head_office = true` — reject with a validation error naming the existing head office
+branch instead.
+
+### 2.2 `users` (modify Breeze migration)
+name, email, password, **role** (string 20, default `'records_officer'`; values:
+`admin`, `records_officer`, `credit_officer`, `viewer`), **branch_id** (FK branches,
+restrictOnDelete, **required for every user regardless of role** — an admin or viewer sees
+all branches only because their `branch_id` points at the head-office branch, not because of
+their role), is_active (bool default true), last_login_at (nullable), timestamps.
+
+### 2.3 `members`
+membership_number (string 12, unique, format `MEM-000000`), first_name, last_name,
+national_id (string 20, unique, format `345678/10/1`), phone (string 20, nullable),
+email (nullable), employer (nullable), employment_type (nullable),
+monthly_income (decimal 12,2 nullable), branch_id (nullable FK), joined_at (date nullable),
+status (string 15 default `active`: active/inactive/suspended), timestamps.
+Indexes: national_id, phone, (last_name, first_name).
+
+### 2.4 `loan_products`
+code (unique), name, requires_collateral (bool default false), requires_crb (bool default true),
+max_amount (decimal 15,2 nullable), default_term_months (int default 12), is_active (bool),
+sort_order (int default 0), timestamps.
+
+### 2.5 `sequences`  *(number generator)*
+type (string 20 unique — `loan`, `membership`, `member`), last_number (unsignedBigInteger default 0).
+
+### 2.6 `applications`  ← CENTRAL TABLE
+- application_number (string 12, unique)
+- application_type (string 12: `loan` | `membership`)  — PHP enum, NOT a lookup table
+- member_id (nullable FK members, nullOnDelete)  — null for membership applicants until approved
+- applicant_name (string)  — denormalized for display/search
+- national_id (string 20 nullable), phone (string 20 nullable) — snapshot for search
+- branch_id (FK branches, restrictOnDelete)  — **drives branch-scoped visibility, see §4/§8**
+- application_date (date)
+- status (string 25 default `draft`) — values: `draft, submitted, under_review,
+  awaiting_documents, awaiting_crb, crb_cleared, crb_flagged, approved, rejected, archived`
+- crb_status (string 25 nullable) — values: `not_submitted, awaiting_submission, submitted,
+  awaiting_response, cleared, flagged, failed, requires_review` (null for membership)
+- docs_completion (tinyInteger default 0) — denormalized checklist % (maintained by service)
+- assigned_user_id (nullable FK users, nullOnDelete)
+- created_by (FK users, restrictOnDelete)
+- archived_at (nullable timestamp)
+- timestamps, softDeletes
+- Indexes: status, crb_status, application_type, application_date, branch_id, member_id,
+  docs_completion; fulltext not required (use LIKE).
+
+### 2.7 `loan_applications` (1-1 child)
+application_id (FK applications, cascadeOnDelete, **unique**), loan_product_id (FK loan_products),
+requested_amount (decimal 15,2), term_months (int nullable), interest_rate_pm
+(decimal 5,2 nullable, per-month %), purpose (text nullable), repayment_channel (string nullable),
+timestamps.
+
+### 2.8 `membership_applications` (1-1 child)
+application_id (FK applications, cascadeOnDelete, **unique**), applicant_type (string 15:
+`individual|joint|corporate`), kyc_notes (text nullable), approved_membership_number
+(string nullable — set when approved & member created), timestamps.
+
+### 2.9 `document_types`
+name, slug (unique), category (string 20: `form, identification, financial, employment,
+collateral, kyc, clearance, other`), applies_to (json — array of `["loan","membership"]`),
+is_required (bool — drives checklist), **allows_multiple (bool default false — true for types
+like Collateral/KYC Documents where more than one file may be attached)**,
+accepted_formats (string default `pdf,jpg,jpeg,png`), max_size_mb (int default 10),
+is_active (bool default true), sort_order (int), timestamps.
+
+### 2.10 `documents`
+document_type_id (FK document_types), original_filename, stored_path, mime_type,
+file_size (unsignedInteger), version (smallInteger default 1), replaces_document_id
+(nullable self-FK), uploaded_by (FK users), description (nullable), status (string 15 default
+`under_review`: under_review/verified/rejected/superseded), timestamps, softDeletes.
+
+### 2.11 `application_documents` (pivot — active doc(s) of each type per application)
+application_id (FK applications, cascadeOnDelete), document_id (FK documents, cascadeOnDelete),
+document_type_id (FK document_types) — denormalized for constraint,
+timestamps.
+**Constraint changed from v1:** no longer a blanket `unique(application_id, document_type_id)`.
+Instead:
+- For a `document_type` with `allows_multiple = false`: application code enforces (in
+  `DocumentService::attach`, inside a transaction) that at most one **active** row exists for
+  that `(application_id, document_type_id)` pair — replacing via the existing replace flow,
+  not the DB constraint.
+- For `allows_multiple = true`: any number of active rows may exist for that pair; each is a
+  distinct attachment (e.g. multiple collateral photos, multiple KYC documents).
+- Add a partial/application-level unique guard instead at the DB level:
+  `unique(application_id, document_id)` (a given document row is only ever pivoted once).
+
+### 2.12 `crb_clearances` (one row per application, updated in place)
+application_id (FK applications, cascadeOnDelete, **unique**), status (string 25 default
+`awaiting_submission`), reference_number (nullable), submitted_at (nullable datetime),
+response_at (nullable datetime), result (text nullable), remarks (text nullable),
+attempts (tinyInteger default 0), processed_by (nullable FK users, nullOnDelete), timestamps.
+
+### 2.13 `application_status_history`
+application_id (FK applications, cascadeOnDelete), from_status (string 25 nullable),
+to_status (string 25), changed_by (FK users), reason (nullable), timestamps.
+Index: application_id, created_at.
+
+### 2.14 `notes`
+application_id (FK applications, cascadeOnDelete), user_id (FK users), body (text), timestamps.
+
+### 2.15 `audit_logs`
+user_id (nullable FK users, nullOnDelete), action (string 50 — dotted verb, e.g.
+`document.uploaded`, `status.changed`, `crb.submitted`), application_id (nullable FK,
+nullOnDelete — denormalized for fast per-record filtering), auditable_type + auditable_id
+(nullable morphs), description (text), metadata (json nullable), ip_address (string 45 nullable),
+created_at timestamp (no updated_at). Indexes: application_id, action, created_at.
+
+### 2.16 `settings`
+key (string unique), value (text nullable). Seed defaults (see §10). Includes new key
+`branch_scoping_enabled` (default `1`).
+
+## 3. ENUMS (PHP 8.1+ backed enums in `app/Enums`)
+
+- `ApplicationType: string` { Loan='loan', Membership='membership' } → `label()`.
+- `ApplicationStatus: string` — all 10 values; methods: `label()`, `badgeClass()`
+  (mockup classes `b-draft`…`b-arch`), and static `transitions(): array`:
+  ```
+  draft            → [submitted]
+  submitted        → [under_review, awaiting_documents, awaiting_crb, rejected]
+  under_review     → [awaiting_documents, awaiting_crb, approved, rejected]
+  awaiting_documents → [submitted, under_review, rejected]
+  awaiting_crb     → [crb_cleared, crb_flagged, under_review, rejected]
+  crb_cleared      → [approved, rejected, under_review]
+  crb_flagged      → [under_review, rejected]
+  approved         → [archived]
+  rejected         → [archived]
+  ```
+  Method `canTransitionTo(self $to): bool`. `archived` reachable from any status by admin only.
+- `CrbStatus: string` — 8 values above; `label()`, `badgeClass()` (`c-none`…`c-rev`).
+- `DocumentFileStatus: string` { UnderReview, Verified, Rejected, Superseded }.
+- `UserRole: string` { Admin, RecordsOfficer, CreditOfficer, Viewer } with `label()`.
+- `ApplicantType: string` { Individual, Joint, Corporate }.
+
+Cast on models: `status => ApplicationStatus::class`, etc.
+
+## 4. MODELS & RELATIONSHIPS (`app/Models`)
+
+- **Application**: belongsTo member, branch, assignedUser (`assigned_user_id`), creator
+  (`created_by`); hasOne loanDetail (`LoanApplication`), membershipDetail, crbClearance;
+  hasMany statusHistory, notes; belongsToMany documents via `application_documents`
+  (withPivot document_type_id); hasOneThrough-style helper for active docs.
+  Scopes: `scopeOfType`, `scopeSearch($q)` (see §9), `scopeCrbQueue` (crb_status in
+  awaiting set), `scopeMissingDocs` (`docs_completion < 100` and status not in
+  [approved, rejected, archived]).
+  **`scopeVisibleTo(Builder $query, User $user)`** — if
+  `Setting::get('branch_scoping_enabled', true)` and `$user->branch->is_head_office` is
+  false: constrain `where('branch_id', $user->branch_id)`. If the user's branch **is** the
+  head office, or scoping is disabled: no constraint (all branches visible). This check is
+  purely about the user's own `branch_id → is_head_office` flag — it does not look at
+  `$user->role` at all, so an admin or viewer sitting at a regular branch is just as
+  branch-scoped as a records_officer there, and a records_officer who happens to be posted
+  at head office sees every branch. Apply this scope in **every** controller method that
+  lists or resolves an `Application` — index, show, search, dashboard counts, reports — via
+  route-model-binding-safe checks (404, not 403, for out-of-scope records the user has no
+  business knowing exist) or an explicit query constraint before `findOrFail`.
+  Accessors: `days_waiting_crb` (submitted_at → now, only when status awaiting),
+  `is_overdue_crb` (> setting crb_sla_days), `type_badge`.
+- **User**: hasMany assignedApplications; belongsTo branch; helper `initials()`, `isAdmin()`,
+  **`isHeadOffice(): bool`** (delegates to `$this->branch->is_head_office`) — this, not role,
+  is what any branch-visibility check should call.
+- **Member**: hasMany applications; accessor `full_name`.
+- **Document**: belongsTo type, uploader, replaces (`self`), replacedBy (inverse);
+  belongsToMany applications via pivot. Accessor `extension`.
+  **`scopeVisibleTo(Builder $query, User $user)`** — documents have no `branch_id` of their
+  own (they belong to whichever application they're attached to), so this scope constrains
+  via the pivot/relationship: `whereHas('applications', fn($q) => $q->visibleTo($user))`.
+  `DocumentRepositoryController@index` and `MissingDocumentsController@index` **must** apply
+  this scope before any of their own `type`/`branch`/`q` filters — otherwise those two
+  listing pages would leak the existence and metadata of every branch's documents even
+  though opening any individual out-of-branch file is still blocked by `DocumentPolicy`
+  (§8). As with §9's search filter, if a non-head-office user passes an explicit `branch`
+  query param for another branch, ignore it rather than honoring it.
+- **ApplicationDocument** pivot model with `$attributes` access.
+- **CrbClearance**: belongsTo application, processor.
+- **ApplicationStatusHistory**, **Note**, **AuditLog**: simple belongsTo.
+- **Setting**: static `get($key, $default)` with per-request cache.
+
+## 5. SERVICES (`app/Services`)
+
+### 5.1 `NumberingService`
+`nextNumber(string $type): string` — wraps `DB::transaction` + `lockForUpdate` on the
+`sequences` row; formats: loan `LA-` + 6-digit zero-pad, membership `MA-`, member `MEM-`.
+Format prefixes read from settings (`loan_number_format`) but padding constant for MVP.
+
+### 5.2 `DocumentChecklistService`
+- `requiredTypesFor(Application $app): Collection<DocumentType>` — where `is_active`,
+  `applies_to` contains app type, `is_required`. Extra rule: collateral type only required if
+  loan product `requires_collateral`.
+- `evaluate(Application $app): array{items: Collection, percent: int}` — each item:
+  type + state (`received | missing | requested`) from `application_documents`. For a type
+  with `allows_multiple = true`, "received" means **≥1** active document of that type is
+  attached (not exactly one); count of attached files is shown alongside the state for those
+  types. CRB Report type shown as informational state `system` (never counts toward %).
+- Persists `applications.docs_completion` after every upload/replace/delete (call from
+  `DocumentService` and from an artisan command `app:checklist:refresh` for repair).
+
+### 5.3 `DocumentService`
+`attach(Application, UploadedFile, DocumentType, ?description): Document` — inside a
+`DB::transaction`, verify the file's **actual** content type via `finfo`/magic-byte detection
+(not just the client-reported MIME) against `document_type.accepted_formats`; store on disk
+`private` under `documents/{application_id}/`, create `documents` row (version = existing
+max version for that type+app + 1, or 1). Pivot behavior depends on
+`document_type.allows_multiple`:
+  - `false`: if an active pivot already exists for this `(application, type)`, reject with a
+    validation error directing the user to "Replace" instead — do not silently create a
+    second active row.
+  - `true`: always insert a new pivot row alongside any existing ones.
+`replace(Document $old, UploadedFile, ?description): Document` — old doc → `superseded`,
+new row `replaces_document_id` = old id, pivot swapped (old pivot row removed, new one
+inserted) — applies to both single- and multi-doc types (replaces one specific attachment,
+not the whole set).
+`delete(Document)` — soft delete, detach pivot. Every call fires `AuditService` and
+`DocumentChecklistService::evaluate()` to refresh `docs_completion`.
+
+### 5.4 `ApplicationWorkflowService`
+`create(array $data): Application` — generate number, snapshot applicant_name/national_id/phone
+(from selected member or typed-in applicant), create child row (loan/membership), write status
+history `null → draft|submitted`, audit `application.created`.
+`advance(Application, ApplicationStatus $to, ?reason): void` — wrapped in `DB::transaction`
+with `lockForUpdate()` on the application row to prevent two concurrent requests both passing
+validation before either writes; validate transition (`ApplicationStatus::canTransitionTo`)
+against the **freshly locked** row's current status, update, write
+`application_status_history`, audit.
+`assign(Application, User)` — updates `assigned_user_id`, audit `application.assigned`, and
+writes a stub notification (`Log::info` for MVP, matching the pattern used for reminders in
+§15) so the assignee is told to check the record — replace with real mail/SMS later without
+changing the call site.
+`approveMembership(Application)` — on approved: create `members` row (next MEM number),
+link member_id, set approved_membership_number.
+
+### 5.5 `CrbService`
+`submit(Application, User)` — create/update crb_clearance (status `submitted`, attempts++,
+submitted_at now, reference_number = `CRB/{Y}/{rand5}`), set application crb_status
+`submitted` → then immediately `awaiting_response` (mock gateway), audit `crb.submitted`.
+`recordOutcome(Application, CrbStatus $outcome, ?result, ?remarks, User)` — response_at now,
+set clearance + application crb_status, auto-advance application status to `crb_cleared` /
+`crb_flagged` when currently `awaiting_crb`, audit. `resubmit()` for failed.
+
+### 5.6 `AuditService`
+`log(string $action, ?Application $app, string $description, array $meta = [], ?Model $subject)`
+— captures auth user + IP. Called explicitly from services/controllers **and** wired via
+observers as a safety net (guard against double-logging with action keys).
+
+### 5.7 `SearchService`
+`run(array $filters): LengthAwarePaginator` — applies `Application::visibleTo($user)` (§4)
+before any of the filters in §9, so branch-scoped users never see out-of-branch results in
+search either.
+
+### 5.8 `ReportService` + `app/Reports`
+Abstract `Report` class: `key(), title(), description(), query(), columns()` (column =
+header + closure). Every report's base `query()` applies `Application::visibleTo($user)`
+before report-specific filters, so a non-head-office user of any role running "Pending
+Applications" only sees their own branch's rows; a head-office user sees all. One class each:
+`LoanRegister, MembershipRegister, PendingApplications, AwaitingCrb, CrbTurnaround,
+MissingDocuments, ByBranch, ByProduct, ByStatus, DocumentsUploaded, DocumentActivity`.
+Registry returns all for `/reports` cards. CSV export: `streamedResponse` writing header +
+rows via `fputcsv`.
+
+## 6. OBSERVERS & EVENTS
+
+Register in `AppServiceProvider::boot`:
+- `DocumentObserver` (created → audit `document.uploaded`; deleted → `document.deleted`).
+- `ApplicationObserver` (updated: if `status` dirty → history row + audit `status.changed`;
+  if `assigned_user_id` dirty → audit).
+- `NoteObserver` (created → audit `note.added`).
+- `CrbClearanceObserver` (created/updated → audit only when not already logged by service —
+  use `$model->wasChanged` + a flag).
+
+## 7. ROUTES (`routes/web.php`)
+
+Auth (Breeze) + everything below inside `auth` middleware. File-serving routes additionally
+get `throttle:document-access` (see §17).
+
+```
+GET  /dashboard                       DashboardController@index
+
+# Applications
+GET  /applications                    ApplicationController@index        (tab: all|loan|membership via ?tab=)
+GET  /applications/loans              → @index tab=loan          name applications.loans
+GET  /applications/membership         → @index tab=membership    name applications.membership
+GET  /applications/create             @create   (?type=loan|membership)
+POST /applications                    @store
+GET  /applications/{application}      @show                        (detail page w/ tabs)
+GET  /applications/{application}/print      @print   (single-application summary sheet, print-friendly)
+PATCH /applications/{application}/status    StatusController@update
+PATCH /applications/{application}/assign    AssignController@update
+POST /applications/{application}/notes      NoteController@store
+
+# Documents
+POST   /applications/{application}/documents        DocumentController@store
+GET    /documents/{document}/view                   @view      (inline stream, throttled)
+GET    /documents/{document}/download                @download  (attachment stream, throttled)
+POST   /documents/{document}/replace                @replace   (new version)
+DELETE /documents/{document}                        @destroy
+GET    /documents                                   DocumentRepositoryController@index  (filters: type, branch, q — branch-scoped, see §4/§8)
+GET    /documents/missing                           MissingDocumentsController@index                 (branch-scoped, see §4/§8)
+
+# CRB
+GET   /clearance                      CrbQueueController@index    (?status= filter, tab queue|history)
+POST  /applications/{application}/crb/submit        CrbController@submit
+PATCH /applications/{application}/crb               CrbController@outcome   (cleared|flagged|failed|requires_review)
+POST  /clearance/batch-submit         CrbController@batchSubmit
+
+# Search & reports & audit
+GET /search                           SearchController@index
+GET /reports                          ReportController@index
+GET /reports/{report}                 ReportController@show       (?format=csv|print)
+
+# Admin (middleware role:admin)
+resource /admin/users                 UserController
+resource /admin/branches              BranchController
+resource /admin/document-types        DocumentTypeController
+GET|PATCH /admin/settings             SettingController@edit@update
+GET /audit                            AuditLogController@index    (?filter=docs|status|crb|notes|sys)
+```
+
+Route names consistently for sidebar active states (`request()->routeIs()`). Every route
+that resolves an `Application` by ID must apply `visibleTo($user)` before `findOrFail` —
+prefer `Application::visibleTo(auth()->user())->findOrFail($id)` over route-model binding
+where scoping matters, so an out-of-branch ID 404s instead of leaking existence via a 403.
+
+## 8. AUTHORIZATION (Policies)
+
+Two independent axes govern access: **role** decides *which actions* are permitted at all;
+the user's own `branch->is_head_office` flag (§4) decides *which branches' records* those
+actions can be performed against. A capability marked ✔ below is still subject to branch
+visibility — e.g. a `credit_officer` who can "Approve / reject" only does so for applications
+their `visibleTo` scope actually returns.
+
+Role matrix (implement in Policies + a `role:` middleware alias for admin section):
+
+| Capability | admin | records_officer | credit_officer | viewer |
+|---|---|---|---|---|
+| View records (within visible branches) | ✔ | ✔ | ✔ | ✔ |
+| Create/edit applications | ✔ | ✔ | ✔ | ✘ |
+| Upload/replace documents | ✔ | ✔ | ✔ | ✘ |
+| Delete documents | ✔ | ✔ | ✘ | ✘ |
+| Advance status (non-final) | ✔ | ✔ | ✔ | ✘ |
+| Approve / reject application | ✔ | ✘ | ✔ | ✘ |
+| Submit CRB | ✔ | ✔ | ✔ | ✘ |
+| Record CRB outcome | ✔ | ✘ | ✔ | ✘ |
+| Admin section / audit log | ✔ | ✘ (audit read ✔) | ✘ | ✘ |
+
+**Which branches** a user's "View"/"Create"/"Upload" etc. actually reach is separate and
+purely a function of `isHeadOffice()` (§4): a head-office user of *any* role reaches every
+branch; a non-head-office user of *any* role — including admin — reaches only their own
+branch, **except** the Admin section/audit log and Admin CRUD (users, branches,
+document-types, settings), which remain global for the `admin` role regardless of branch,
+since reference data isn't branch-owned.
+
+`ApplicationPolicy`, `DocumentPolicy`, `CrbClearancePolicy`. Every policy method that takes an
+`Application` (or a `Document`/`CrbClearance` via its parent application) must first check
+`$user->isHeadOffice() || $application->branch_id === $user->branch_id` — a non-head-office
+user is denied on an out-of-branch record even for capabilities their role would otherwise
+grant (e.g. a `credit_officer` cannot record a CRB outcome on another branch's application
+just because outcome-recording is generally allowed to their role). Enforce in controllers
+via `$this->authorize()` / `Gate`. Viewer role: every mutating route denied, everywhere.
+
+## 9. SEARCH
+
+`SearchController@index` reads GET params (all optional): `q, application_number,
+membership_number, applicant_name, national_id, phone, type, loan_product_id, branch_id,
+status, crb_status, date_from, date_to`.
+
+Query: `Application::visibleTo(auth()->user())->with(['member','branch','loanDetail.product'])`
+- free `q`: LIKE across application_number, applicant_name, members.membership_number,
+  members.national_id, applications.national_id, phone (use `where(fn) OR` group).
+- exact-ish filters: `where` / `whereHas('member', …)` / `whereHas('loanDetail.product', …)`.
+- If the requesting user is not head-office and passes a `branch_id` filter for a branch
+  other than their own, ignore it (don't let a filter param bypass `visibleTo`).
+- date range on `application_date`. Paginate 20, `->withQueryString()`.
+Display: result table like mockup + "matched on" hints + result count/time.
+
+## 10. SEEDERS
+
+`DatabaseSeeder` calls, in order:
+1. **BranchSeeder** — 5 branches from mockup (LUS-01 Lusaka Main … CHP-01 Chipata), with
+   **LUS-01 Lusaka Main flagged `is_head_office = true`** and the other 4 `false`.
+2. **UserSeeder** — Grace Zimba (admin, assigned to LUS-01 head office → sees all branches),
+   Mary Banda (records_officer, LUS-01 head office → sees all branches, to demonstrate that
+   head-office visibility isn't role-gated), Peter Phiri (records_officer, assigned to a
+   non-head-office branch → sees only that branch), Thoko Musonda (credit_officer, a
+   different non-head-office branch), Chipo Levy (viewer, non-head-office branch,
+   suspended). Password `password`. This spread deliberately covers: head-office admin,
+   head-office non-admin, and branch-only users of two different roles.
+3. **DocumentTypeSeeder** — 10 types exactly as mockup admin screen (Loan Application Form,
+   Membership Form, National ID, Payslip, Bank Statement, Employment Confirmation,
+   **Collateral (allows_multiple=true)**, **KYC Documents (allows_multiple=true)**,
+   CRB Report (category clearance, is_required=false/system), Other Supporting
+   (allows_multiple=true)).
+4. **LoanProductSeeder** — Salary Advance, Personal Loan, Business Loan, School Fees Loan,
+   Asset Finance (requires_collateral), Emergency Loan.
+5. **SettingSeeder** — org_name, loan_number_format `LA-{000000}`, membership_number_format,
+   crb_sla_days `2`, reminders_enabled `1`, escalation_enabled `1`, retention_years `7`,
+   default_branch_id `1`, **branch_scoping_enabled `1`**.
+6. **DemoDataSeeder** (env-gated, skip in production) — pin a fixed `Faker` seed (e.g.
+   `fake()->seed(2024)`) so re-running the seeder produces the same demo dataset every time;
+   ~15 members, ~25 applications covering EVERY status + CRB status **and spread across at
+   least 3 different branches** (to exercise scoping), documents rows pointing at fixture
+   PDFs in `database/seeders/fixtures/` (ship 2–3 small sample PDFs), matching pivots
+   (including at least one multi-file Collateral/KYC example), crb_clearances, status
+   history, notes, and audit_logs consistent with the mockup dataset (John Banda LA-000125,
+   Jane Phiri LA-000126, etc.).
+
+## 11. FRONTEND / BLADE STRUCTURE
+
+- `layouts/app.blade.php` — shell from mockup: sidebar partial, topbar (global search,
+  live clock JS, New Application button), `<main>` yield, toast partial (reads
+  `session('success'|'warning'|'error')`), sprite `<svg>` symbols block.
+- `partials/sidebar.blade.php` — nav groups exactly as mockup; counts from cached queries
+  scoped via `Application::visibleTo(auth()->user())` (LoanApplications::count(), awaiting
+  CRB count, missing docs count) so a branch-scoped officer's sidebar counts match what
+  they can actually see; active via `routeIs()`.
+- Blade components (`resources/views/components`):
+  `x-status-badge :status`, `x-crb-badge :status`, `x-doc-bar :percent`, `x-avatar :user`,
+  `x-page-header :title :sub :kick`, `x-card`, `x-stat-tile`, `x-modal :id`, `x-toast`,
+  `x-empty`, `x-pagination` (custom view matching mockup pager).
+- Pages (mirror mockup pages 1:1):
+  `dashboard.blade.php`, `applications/index.blade.php` (chips filter via query param),
+  `applications/create.blade.php` (modal-like full page or reuse modal),
+  `applications/show.blade.php` (**heart**: header strip, statstrip, tabs
+  Overview | Applicant | Documents | CRB Clearance | History | Notes),
+  `applications/print.blade.php` (minimal-CSS, browser-print summary sheet: applicant
+  details, status, document checklist, CRB result — for physical file jackets),
+  `clearance/index.blade.php` (queue + history tabs, bulk bar, SLA coloring),
+  `documents/index.blade.php`, `documents/missing.blade.php`, `search/index.blade.php`,
+  `reports/index.blade.php` (+ `reports/print.blade.php` minimal styles for print-PDF),
+  `audit/index.blade.php`, `admin/users|branches|document-types|settings`.
+- Document upload UI must reflect `document_type.allows_multiple`: single-type slots show
+  one file card with a "Replace" action once filled; multi-type slots show a list of
+  attached files with "Add another" plus per-file "Replace"/"Delete".
+- Alpine usage: tabs (`x-data="{tab:'ov'}"`), status dropdown, modals (capture + document
+  viewer), bulk-select bar (checkbox change → count), toasts auto-dismiss.
+- **Document viewer modal**: iframe pointing at `/documents/{id}/view` for PDFs, `<img>` for
+  images; zoom = CSS transform on wrapper; page counter only needed for PDF.js later —
+  MVP keeps iframe + download/print/fullscreen buttons.
+- Status filter chips on registers: server-side via query string (`?status=awaiting_crb`),
+  keep chip counts from grouped counts (also scoped via `visibleTo`).
+
+## 12. FILE HANDLING DETAILS
+
+- `.env`: no public exposure; disk `private` → `storage/app/private`.
+- Upload validation (FormRequest): `file` required; **verify actual file content type via
+  `finfo_file`/magic-byte sniffing**, not just the client-supplied MIME header, and confirm
+  the sniffed type is consistent with `document_type.accepted_formats` (reject mismatches,
+  e.g. a `.pdf`-named file whose magic bytes say `application/x-php`); max
+  `document_type.max_size_mb * 1024`; `document_type_id` must exist, be active, and apply
+  to the application's type. For `allows_multiple = false` types, reject duplicates with a
+  clear error pointing at "Replace" instead; for `allows_multiple = true` types, duplicates
+  are allowed (each is a separate attachment).
+- `DocumentController@view`: `$this->authorize('view',$doc)` (which itself checks branch
+  visibility via the parent application, §8);
+  `return response()->file($doc->stored_path, ['Content-Disposition' => 'inline'])`.
+- `@download`: same with attachment + original_filename.
+- Never expose `stored_path` in any response/JSON.
+
+## 13. DASHBOARD QUERY SPEC
+
+All counts below are computed against `Application::visibleTo(auth()->user())`, so a
+non-head-office user's dashboard reflects only their own branch, regardless of role; a
+head-office user's dashboard reflects totals across all branches.
+
+- Loans total `visibleTo($user)->where('application_type','loan')->count()`; membership same.
+- Awaiting CRB: `whereIn('crb_status', ['submitted','awaiting_response'])` (+ overdue count
+  via submitted_at < now − sla_days).
+- Cleared this month / flagged totals.
+- Missing docs: `docs_completion < 100` & active statuses count.
+- By-status bars: `select status, count(*) group by status` (active statuses).
+- Queue preview: top 5 awaiting by `submitted_at asc`.
+- Recently captured: latest 8 with type badges.
+- Activity feed: latest 8 audit_logs, filtered to applications visible to the user, with
+  user + `->diffForHumans()`.
+
+## 14. VALIDATION (Form Requests)
+
+`StoreApplicationRequest` — common: applicant resolution (existing member_id OR typed
+applicant_name + national_id), branch_id exists (and for non-head-office users, must equal
+`auth()->user()->branch_id` — enforced as a validation rule, not just left to the UI; a
+head-office user may pick any branch),
+application_date date, assigned_user_id exists; if type=loan: loan_product_id exists,
+requested_amount numeric min 0, term_months int; if type=membership: applicant_type in enum.
+`StoreDocumentRequest` (includes MIME-sniff rule per §12, and the allows_multiple-aware
+duplicate check), `ReplaceDocumentRequest`, `UpdateStatusRequest` (status in enum + custom
+rule `ValidStatusTransition` checking §3 map + role for approved/rejected), `CrbOutcomeRequest`
+(outcome in cleared|flagged|failed|requires_review, result/remarks nullable),
+`StoreNoteRequest` (body max 2000).
+
+## 15. SCHEDULED COMMANDS (Phase 6+)
+
+- `app:reminders:send` — daily 08:00: applications in awaiting_documents older than X →
+  audit `reminder.sent` (email/SMS stub via Log for MVP).
+- `app:crb:escalate` — awaiting_response past SLA → audit + dashboard flag.
+- `app:checklist:refresh` — recompute docs_completion for all active applications.
+- `app:retention:sweep` — daily: applications in `archived` status older than
+  `settings.retention_years` past `archived_at` → audit `retention.flagged` (list-only for
+  MVP; do not auto-delete). Gives a concrete home for the `retention_years` setting that v1
+  defined but never used. Actual purge/anonymization left as a manual admin action for now.
+Register in `routes/console.php` via `Schedule::command(...)`.
+
+## 16. TESTING (Pest preferred)
+
+Feature tests minimum:
+1. Loan application capture → number issued `LA-000001`, child row created, history row exists.
+2. Membership approval → member created + MEM number linked.
+3. Document upload → pivot created, checklist % recomputed (3/5 → 60%).
+4. Replace document → version 2, old superseded, pivot swapped.
+5. Invalid status transition rejected (draft → approved ⇒ 403/422).
+6. Viewer role cannot upload/advance (403).
+7. CRB submit → awaiting_response; outcome cleared → app status crb_cleared.
+8. Download blocked for unauthorized user (403) and for deleted doc (404).
+9. Search by national_id and by applicant name returns right rows.
+10. CSV export streams correct headers + row count.
+11. Audit log entry created for each: upload, replace, delete, status change, crb submit/outcome.
+12. **Branch scoping**: a user (of any role — test at least `records_officer` and `admin`)
+    posted at a non-head-office branch cannot see, open, or act on another branch's
+    application via index, show, search, or direct document view/download URL (404, not
+    leaking existence via 403). A user posted at the head-office branch — including a
+    non-admin `records_officer` — sees and can act across every branch. This confirms
+    visibility follows `branch->is_head_office`, not role.
+13. **Document repository scoping**: a non-head-office user hitting `/documents` or
+    `/documents/missing` — including with an explicit `?branch=<other>` query param — only
+    ever sees documents belonging to applications in their own branch; a head-office user
+    sees the full repository.
+14. **Multi-document types**: uploading a second file to a `allows_multiple=true` type (e.g.
+    Collateral) succeeds and both remain active; uploading a second file to an
+    `allows_multiple=false` type is rejected with a "use Replace" error.
+15. **Concurrent status advance**: two simultaneous `advance()` calls on the same application
+    result in exactly one successful transition and one rejected (no double-transition, no
+    lost history row).
+16. **MIME spoofing**: a file renamed with a `.pdf` extension but non-PDF magic bytes is
+    rejected by `StoreDocumentRequest`.
+
+## 17. SECURITY CHECKLIST
+
+Private disk + authorized streaming only · file mime/size validation via **actual content
+sniffing, not just client-reported MIME** · role middleware on admin routes · policies on
+every document action, each enforcing branch visibility · CSRF everywhere (Blade forms) ·
+login rate-limiting (Breeze default) · **`throttle:document-access` middleware (e.g. 60/min
+per user) on `/documents/{id}/view` and `/documents/{id}/download`** to slow down
+enumeration attempts against otherwise-authorized routes · audit log not deletable from UI ·
+no mass-assignment holes (`$fillable` only) · `->withQueryString()` not leaking sensitive
+params · branch scoping applied consistently across index/show/search/reports/dashboard **and the
+document repository listing (`/documents`, `/documents/missing`)**, not just the main
+applications list · virus/malware scanning explicitly out of scope for this
+MVP (noted here as a conscious decision, not an oversight — revisit before production use
+with high-risk uploads, e.g. via ClamAV).
+
+## 18. DELIVERY PHASES (build in this order; demo-able after each)
+
+**Phase 0 — Foundation**: install, Breeze auth, DB schema ALL tables (§2) + migrations,
+enums, models with relationships (including `scopeVisibleTo`), layout shell (sidebar/topbar
+from mockup), settings table, seeders 1–5. ✅ Login → empty dashboard shell renders.
+
+**Phase 1 — Admin data**: users/branches/document-types CRUD + settings screen (including
+`branch_scoping_enabled` toggle). ✅ Admin can manage reference data.
+
+**Phase 2 — Application capture & tracking**: NumberingService, create/show/index for both
+types (branch-scoped for non-head-office users of any role), status advance (with locking) +
+history, assign officer (with notification stub), notes, single-application print view.
+✅ Full record lifecycle minus docs, with branch scoping demonstrable.
+
+**Phase 3 — Documents**: upload/replace/delete (with MIME sniffing and
+allows_multiple-aware pivot logic), versions, checklist service + completion %, viewer
+(inline stream, throttled), repository + missing-docs pages. ✅ John Banda shows 60% with
+missing rows as in mockup; a Collateral slot accepts multiple files.
+
+**Phase 4 — CRB**: queue page (filters, days waiting, SLA colors, bulk submit), submit +
+outcome flow, history tab, auto status linkage. ✅ Queue matches mockup table.
+
+**Phase 5 — Search & Dashboard**: SearchService + advanced search page, dashboard widgets
+with real queries, all scoped via `visibleTo`. ✅ Every dashboard tile populated from DB and
+correctly branch-scoped.
+
+**Phase 6 — Reports & audit**: 11 reports (cards + CSV + print view, scoped via
+`visibleTo`), audit trail page with filters, observers fully wired, retention sweep command.
+✅ Reports export, audit shows real entries, retention sweep flags stale archives.
+
+**Phase 7 — Polish & hardening**: policies review (branch-scoping edge cases), tests green
+(including branch-scoping, multi-doc, concurrency, MIME-spoofing tests from §16), scheduled
+commands, empty states, pagination, flash toasts, seed demo dataset fidelity pass.
+
+## 19. WORKING AGREEMENT
+
+- When I say **"Build Phase N"**, deliver every file needed for that phase with full code:
+  migrations, models, enums, services, requests, policies, controllers, Blade views,
+  route additions, seeder changes — each under a clear `path/to/file.php` heading.
+- Follow existing conventions; reuse the mockup's CSS classes verbatim.
+- After each phase, list: what was built, how to verify it (click-path), and any decisions made.
+- No TODO placeholders — working code only. Prefer simple over clever.
+
+Start by confirming you understand the schema (§2), the status/transition model (§3), the
+head-office-based branch-scoping rule — visibility follows `branch->is_head_office`, not
+role (§0.5 / §2.1 / §4 / §8) — and the multi-document-per-type rule (§2.11 / §5.2 / §5.3),
+then wait for my "Build Phase 0".
+
+---
+
+## APPENDIX A — MOCKUP SOURCE (embedded, authoritative)
+
+The full mockup markup/CSS/JS is embedded verbatim below. **This is the complete and only
+mockup you need** — do not search the project directory, working folder, or filesystem for
+a `mockup.html`, `mockup/`, or similarly named file, and do not pause to ask for one to be
+uploaded. Treat the fenced HTML block below as if it were the contents of `mockup.html`
+sitting on disk: copy its CSS into `resources/css/app.css`, replicate its markup structure
+and component classes exactly in the Blade views (§11), and port its inline `<script>`
+behavior to Alpine.js directives. Every other reference to "the mockup" elsewhere in this
+prompt (sidebar structure, badge classes, page layouts, pager, seeded demo data matching
+the mockup's sample rows, etc.) refers to this appendix.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mulonga Sacco — Records & Clearance Desk (UI Mockup)</title>
+<!--
+  ═══════════════════════════════════════════════════════════════
+  MULONGA SACCO · RECORDS & CLEARANCE DESK — FULL UI MOCKUP
+  Screen → future Laravel route mapping:
+    #pg-dashboard   → /dashboard
+    #pg-loans       → /applications/loans
+    #pg-memberships → /applications/membership
+    #pg-allapps     → /applications
+    #pg-crb         → /clearance/crb        (Queue + History tabs)
+    #pg-detail      → /applications/{application}
+    #pg-docs        → /documents
+    #pg-missing     → /documents/missing
+    #pg-search      → /search
+    #pg-reports     → /reports
+    #pg-audit       → /audit
+    #pg-admin       → /admin/*  (Users · Branches · Doc Types · Settings)
+  Flow modelled: capture → attach docs → classify → track →
+  route for clearance → search/report → audit trail.
+  ═══════════════════════════════════════════════════════════════
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ───────────────────────── tokens & base ───────────────────────── */
+:root{
+  --pine-950:#071b15; --pine-900:#0a231c; --pine-800:#0e2e25; --pine-700:#14402f;
+  --paper:#f2f4ee; --card:#ffffff; --line:#e1e5d9; --line2:#edf0e6;
+  --ink:#182420; --ink2:#47564d; --ink3:#7c8a80;
+  --green:#0e7b52; --green-d:#0a5f40; --green-t:#e4f2ea;
+  --gold:#c9971c; --gold-d:#9a7311; --gold-t:#faf3da;
+  --amber:#b45309; --amber-t:#fdf0dc;
+  --red:#bb3a31; --red-t:#fbe9e6;
+  --blue:#2b6cb0; --blue-t:#e4eef8;
+  --violet:#5f53b8; --violet-t:#eceafa;
+  --slate:#5d6b72; --slate-t:#eceff0;
+  --orange:#c05621; --orange-t:#fdeee2;
+  --r:11px; --sh:0 1px 2px rgba(16,35,28,.05),0 8px 24px -18px rgba(16,35,28,.25);
+  --disp:'Bricolage Grotesque',sans-serif; --body:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);font-size:13.5px;color:var(--ink);background:var(--paper);
+  background-image:radial-gradient(rgba(14,46,37,.055) 1px,transparent 1px);background-size:22px 22px;}
+::selection{background:#cde7d9}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#c6cec0;border-radius:9px;border:2px solid var(--paper)}
+button{font-family:inherit;cursor:pointer}
+a{color:inherit;text-decoration:none}
+.ic{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.mono{font-family:var(--mono)}
+kbd{font-family:var(--mono);font-size:10px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--ink3);background:#fff}
+
+/* ───────────────────────── shell ───────────────────────── */
+.shell{display:flex;min-height:100vh}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.content{padding:26px 30px 60px;max-width:1480px;width:100%;margin:0 auto}
+
+/* ───────────────────────── sidebar ───────────────────────── */
+.side{width:250px;flex:none;background:linear-gradient(180deg,var(--pine-900),var(--pine-950));
+  color:#a9c0b3;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;
+  border-right:1px solid rgba(255,255,255,.04)}
+.side::-webkit-scrollbar-thumb{background:#1d4436;border-color:var(--pine-950)}
+.brand{display:flex;gap:11px;align-items:center;padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.mark{width:38px;height:38px;flex:none;border-radius:10px;background:linear-gradient(135deg,#17996a,#0c5c3d);
+  display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:20px;color:#fff;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 4px 12px -4px rgba(0,0,0,.6);position:relative}
+.mark::after{content:"";position:absolute;right:4px;bottom:4px;width:6px;height:6px;border-radius:2px;background:var(--gold)}
+.bt b{display:block;font-family:var(--disp);font-weight:700;letter-spacing:.14em;font-size:14px;color:#fff}
+.bt span{font-size:10px;letter-spacing:.06em;color:#7f9a8d}
+.side nav{padding:12px 10px;flex:1}
+.grp{display:flex;align-items:center;gap:8px;margin:16px 10px 6px;font-size:10px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:#6f8d7f;white-space:nowrap}
+.grp::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.07)}
+.nv{display:flex;align-items:center;gap:10px;padding:7.5px 11px;margin:1px 0;border-radius:8px;font-size:13px;
+  color:#a9c0b3;position:relative;transition:.16s;white-space:nowrap;cursor:pointer}
+.nv:hover{color:#fff;background:rgba(255,255,255,.05)}
+.nv.on{color:#fff;background:rgba(255,255,255,.07)}
+.nv.on::before{content:"";position:absolute;left:-10px;top:6px;bottom:6px;width:3px;border-radius:3px;background:var(--gold)}
+.nv .cnt{margin-left:auto;font-family:var(--mono);font-size:10px;padding:1.5px 7px;border-radius:99px;background:rgba(255,255,255,.08);color:#cfe0d6}
+.nv .cnt.hot{background:rgba(201,151,28,.22);color:#f2ce71}
+.sysbox{margin:8px 14px;padding:11px 12px;border-radius:10px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)}
+.sys{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;color:#cfe0d6}
+.meter{height:4px;border-radius:9px;background:rgba(255,255,255,.12);margin:9px 0 5px;overflow:hidden}
+.meter i{display:block;height:100%;width:68%;border-radius:9px;background:linear-gradient(90deg,#17996a,#c9971c)}
+.sysdim{font-family:var(--mono);font-size:9.5px;color:#6f8d7f}
+.pulse{width:7px;height:7px;border-radius:99px;background:#2fbf7f;flex:none;animation:pulse 1.8s infinite}
+.pulse.gold{background:var(--gold)}
+.pulse.red{background:#e0574c}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,191,127,.5)}70%{box-shadow:0 0 0 7px rgba(47,191,127,0)}100%{box-shadow:0 0 0 0 rgba(47,191,127,0)}}
+.me{display:flex;align-items:center;gap:10px;padding:13px 16px;border-top:1px solid rgba(255,255,255,.06)}
+.me .un b{color:#fff}
+.me .ic{margin-left:auto;color:#6f8d7f}
+.av{width:32px;height:32px;flex:none;border-radius:99px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff}
+.av-mb{background:#0e7b52}.av-pp{background:#2b6cb0}.av-tm{background:#c9971c}.av-ad{background:#5f53b8}.av-gz{background:#bb3a31}
+body.slim .side{width:66px}
+body.slim .txt,body.slim .grp span,body.slim .cnt,body.slim .sysbox,body.slim .me .un{display:none}
+body.slim .brand{justify-content:center;padding:20px 8px 16px}
+body.slim .nv{justify-content:center;padding:9px}
+
+/* ───────────────────────── topbar ───────────────────────── */
+.top{position:sticky;top:0;z-index:40;height:60px;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 24px}
+.gsearch{display:flex;align-items:center;gap:9px;background:#fbfcf9;border:1px solid var(--line);border-radius:9px;
+  padding:0 11px;height:38px;width:min(430px,40vw);transition:.18s;color:var(--ink3)}
+.gsearch:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgba(14,123,82,.12);background:#fff}
+.gsearch input{border:0;outline:0;background:none;flex:1;font:inherit;font-size:13px;color:var(--ink)}
+.top .tr{margin-left:auto;display:flex;align-items:center;gap:12px}
+.clock{font-size:11.5px;color:var(--ink3);border:1px solid var(--line);border-radius:8px;padding:7px 11px;background:#fff}
+.clock b{color:var(--ink);font-weight:600}
+.ibtn{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;
+  color:var(--ink2);transition:.15s;position:relative}
+.ibtn:hover{border-color:var(--green);color:var(--green);transform:translateY(-1px)}
+.ndot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:9px;background:var(--red);border:1.5px solid #fff}
+.uchip{display:flex;align-items:center;gap:9px;padding:4px 6px 4px 4px;border:1px solid var(--line);border-radius:99px;background:#fff}
+.uchip .un{font-size:12px;font-weight:600;line-height:1.15;padding-right:8px}
+.uchip .un b{display:block;font-size:9.5px;font-weight:500;color:var(--ink3)}
+
+/* ───────────────────────── buttons / chips / forms ───────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:8px;border:1px solid transparent;font-size:13px;
+  font-weight:600;padding:8.5px 15px;transition:.16s;white-space:nowrap}
+.btn-pri{background:var(--green);color:#fff;box-shadow:0 6px 14px -8px rgba(14,123,82,.7)}
+.btn-pri:hover{background:var(--green-d);transform:translateY(-1px)}
+.btn-gold{background:var(--gold);color:#231a02;box-shadow:0 6px 14px -8px rgba(160,120,20,.6)}
+.btn-gold:hover{background:#b3850f;transform:translateY(-1px)}
+.btn-line{background:#fff;border-color:var(--line);color:var(--ink2)}
+.btn-line:hover{border-color:var(--green);color:var(--green);background:var(--green-t)}
+.btn-ghost{color:var(--ink2)}
+.btn-ghost:hover{background:#ecefe6}
+.btn-danger{background:#fff;border-color:#eac9c4;color:var(--red)}
+.btn-danger:hover{background:var(--red-t);border-color:var(--red)}
+.btn-sm{padding:5.5px 11px;font-size:12px;border-radius:7px}
+.chiprow{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5.5px 13px;font-size:12px;font-weight:600;
+  color:var(--ink2);transition:.15s;display:inline-flex;gap:6px;align-items:center}
+.chip small{font-family:var(--mono);font-weight:500;color:var(--ink3)}
+.chip:hover{border-color:var(--green);color:var(--green)}
+.chip.on{background:var(--pine-800);border-color:var(--pine-800);color:#fff}
+.chip.on small{color:#bcd3c6}
+.in{width:100%;border:1px solid var(--line);border-radius:8px;background:#fcfdfa;padding:8.5px 11px;font:inherit;
+  font-size:13px;color:var(--ink);transition:.15s;outline:0}
+.in:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(14,123,82,.12);background:#fff}
+select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink3) 50%),linear-gradient(135deg,var(--ink3) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 55%,calc(100% - 11px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+.lb{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin:0 0 5px}
+.frm{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.frm .w2{grid-column:span 2}.frm .w4{grid-column:span 4}
+
+/* ───────────────────────── cards / tables ───────────────────────── */
+.grid{display:grid;gap:16px;margin-bottom:16px}
+.g12{grid-template-columns:repeat(12,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;min-width:0}
+.rise{animation:rise .45s cubic-bezier(.2,.7,.3,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.card.pad{padding:16px 18px}
+.card-h{display:flex;align-items:center;gap:10px;padding:13px 17px;border-bottom:1px solid var(--line2)}
+.card-h h3{font-size:13px;font-weight:700;letter-spacing:.01em}
+.card-h .hint{font-size:11.5px;color:var(--ink3);font-weight:400}
+.card-h .sp{flex:1}
+.lk{font-size:12px;font-weight:600;color:var(--green);cursor:pointer;margin-left:auto;white-space:nowrap}
+.lk:hover{text-decoration:underline}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.ph .kick{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:5px}
+.ph h1{font-family:var(--disp);font-size:27px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.ph p{color:var(--ink3);font-size:12.5px;margin-top:5px}
+.ph-a{display:flex;gap:9px;flex-wrap:wrap}
+.tblwrap{overflow:auto;max-height:640px}
+.tbl{width:100%;border-collapse:collapse;min-width:880px}
+.tbl th{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);text-align:left;
+  padding:9px 13px;border-bottom:1px solid var(--line);background:#fafbf7;position:sticky;top:0;z-index:2}
+.tbl td{padding:9.5px 13px;border-bottom:1px solid var(--line2);font-size:13px;vertical-align:middle}
+.tbl tbody tr{transition:background .12s}
+.tbl tbody tr:hover{background:#f6f8f1}
+.page.on .tbl tbody tr{animation:rise .4s both}
+.tbl tbody tr:nth-child(2){animation-delay:.03s}.tbl tbody tr:nth-child(3){animation-delay:.06s}
+.tbl tbody tr:nth-child(4){animation-delay:.09s}.tbl tbody tr:nth-child(5){animation-delay:.12s}
+.tbl tbody tr:nth-child(6){animation-delay:.15s}.tbl tbody tr:nth-child(7){animation-delay:.18s}
+.tbl tbody tr:nth-child(8){animation-delay:.21s}.tbl tbody tr:nth-child(9){animation-delay:.24s}
+.tbl tbody tr:nth-child(10){animation-delay:.27s}.tbl tbody tr:nth-child(n+11){animation-delay:.3s}
+.tbl .num{text-align:right;font-family:var(--mono);font-size:12.5px}
+.tbl th.num{text-align:right}
+.appno{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--green);cursor:pointer;white-space:nowrap}
+.appno:hover{text-decoration:underline}
+.sub-l{display:block;font-size:10.5px;color:var(--ink3);font-family:var(--mono);margin-top:1px}
+.tfoot{display:flex;align-items:center;gap:10px;padding:11px 17px;font-size:12px;color:var(--ink3);border-top:1px solid var(--line2)}
+.tfoot .pg{margin-left:auto;display:flex;gap:4px}
+.pgbtn{min-width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:#fff;font:inherit;font-size:12px;color:var(--ink2);transition:.13s;padding:0 7px}
+.pgbtn:hover{border-color:var(--green);color:var(--green)}
+.pgbtn.on{background:var(--pine-800);border-color:var(--pine-800);color:#fff}
+
+/* ───────────────────────── badges ───────────────────────── */
+.bdg{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:3.5px 10px;border-radius:99px;white-space:nowrap;line-height:1.3}
+.bdg i{width:5.5px;height:5.5px;border-radius:9px;flex:none}
+.b-draft{background:var(--slate-t);color:var(--slate)}.b-draft i{background:var(--slate)}
+.b-sub{background:var(--blue-t);color:var(--blue)}.b-sub i{background:var(--blue)}
+.b-rev{background:var(--violet-t);color:var(--violet)}.b-rev i{background:var(--violet)}
+.b-adoc{background:var(--amber-t);color:var(--amber)}.b-adoc i{background:var(--amber)}
+.b-acrb{background:var(--gold-t);color:var(--gold-d)}.b-acrb i{background:var(--gold)}
+.b-cleared{background:var(--green-t);color:var(--green)}.b-cleared i{background:var(--green)}
+.b-appr{background:var(--green);color:#fff}.b-appr i{background:#fff}
+.b-flag{background:var(--red-t);color:var(--red)}.b-flag i{background:var(--red)}
+.b-rej{background:var(--red);color:#fff}.b-rej i{background:#fff}
+.b-arch{background:var(--slate-t);color:var(--ink3)}.b-arch i{background:var(--ink3)}
+.c-none{background:var(--slate-t);color:var(--slate)}.c-none i{background:var(--slate)}
+.c-await{background:var(--amber-t);color:var(--amber)}.c-await i{background:var(--amber)}
+.c-sub{background:var(--blue-t);color:var(--blue)}.c-sub i{background:var(--blue)}
+.c-resp{background:var(--gold-t);color:var(--gold-d)}.c-resp i{background:var(--gold);animation:pulse 2s infinite}
+.c-clear{background:var(--green-t);color:var(--green)}.c-clear i{background:var(--green)}
+.c-flag{background:var(--red-t);color:var(--red)}.c-flag i{background:var(--red)}
+.c-fail{background:#4a1512;color:#ffd9d4}.c-fail i{background:#ff8d80}
+.c-rev{background:var(--orange-t);color:var(--orange)}.c-rev i{background:var(--orange)}
+.d-ver{background:var(--green-t);color:var(--green)}
+.d-rev{background:var(--amber-t);color:var(--amber)}
+.d-miss{background:var(--red-t);color:var(--red);border:1px dashed #e5aaa3}
+.d-req{background:var(--gold-t);color:var(--gold-d)}
+.type-l{background:var(--green-t);color:var(--green);border-radius:6px;padding:2.5px 8px;font-size:10.5px;font-weight:700}
+.type-m{background:var(--blue-t);color:var(--blue);border-radius:6px;padding:2.5px 8px;font-size:10.5px;font-weight:700}
+.pc{font-family:var(--mono);font-size:11.5px;font-weight:600}
+.pc.hi{color:var(--green)}.pc.mid{color:var(--amber)}.pc.lo{color:var(--red)}
+.dwait{font-family:var(--mono);font-size:12.5px;font-weight:600}
+.dwait.warn{color:var(--amber)}.dwait.late{color:var(--red);font-weight:700}
+
+/* progress */
+.pbar{height:7px;border-radius:9px;background:#e8ece1;overflow:hidden;min-width:56px}
+.pbar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#17996a,#0e7b52);transition:width .9s cubic-bezier(.2,.7,.3,1)}
+.pbar.mid i{background:linear-gradient(90deg,#e0a63a,#b45309)}
+.pbar.lo i{background:linear-gradient(90deg,#e07a5f,#bb3a31)}
+.docbar{display:flex;align-items:center;gap:8px}
+.hbar{display:grid;grid-template-columns:130px 1fr 34px;align-items:center;gap:10px;padding:6.5px 0}
+.hbar label{font-size:12px;color:var(--ink2);font-weight:500}
+.hbar .tr{height:9px;border-radius:9px;background:#edf0e6;overflow:hidden}
+.hbar .tr i{display:block;height:100%;width:0;border-radius:9px;transition:width 1s cubic-bezier(.2,.7,.3,1)}
+.hbar b{font-family:var(--mono);font-size:12px;text-align:right}
+
+/* dashboard bits */
+.bigrow{display:flex;align-items:stretch;gap:20px;padding:16px 18px 8px}
+.big{flex:1}
+.big .kn,.big2{font-family:var(--disp);font-weight:800;font-size:42px;line-height:1;letter-spacing:-.02em}
+.big label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-top:7px}
+.trend{display:inline-block;font-size:11px;font-weight:600;margin-top:6px;padding:2.5px 8px;border-radius:99px}
+.trend.up{background:var(--green-t);color:var(--green)}
+.vr{width:1px;background:var(--line)}
+.spark{width:150px;flex:none;align-self:center}
+.ratio{height:9px;border-radius:9px;overflow:hidden;display:flex;margin:12px 18px 6px;background:#edf0e6}
+.ratio i{display:block;height:100%;background:linear-gradient(90deg,#17996a,#0e7b52);width:0;transition:width 1.1s ease}
+.ratio em{display:block;height:100%;flex:1;background:linear-gradient(90deg,#e0b23a,#c9971c)}
+.ratio-l{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink3);padding:0 18px 15px}
+.crb-tile{cursor:pointer;transition:.18s}
+.crb-tile:hover{transform:translateY(-2px);box-shadow:0 12px 28px -16px rgba(16,35,28,.4)}
+.crb-tile .big2{display:block;padding:6px 18px 2px;color:var(--gold-d)}
+.crb-tile .sub{font-size:11.5px;color:var(--ink3);padding:0 18px 4px}
+.crb-tile .lk{padding:0 18px 14px;display:inline-block}
+.mini{display:flex;align-items:center;gap:16px;padding:15px 18px;flex:1}
+.mini .kn{font-family:var(--disp);font-weight:800;font-size:31px}
+.mini.ok .kn{color:var(--green)}.mini.bad .kn{color:var(--red)}
+.mini b{display:block;font-size:12.5px}.mini small{color:var(--ink3);font-size:11px}
+.feed{padding:6px 17px 12px}
+.fi{display:flex;gap:11px;padding:9.5px 0;border-bottom:1px dashed var(--line2);font-size:12.5px;line-height:1.45}
+.fi:last-child{border:0}
+.fi .tm{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3);white-space:nowrap;padding-top:2px}
+.fi code{font-family:var(--mono);font-size:11px;background:#f1f4ec;border:1px solid var(--line2);padding:.5px 5px;border-radius:5px}
+.miss-row{display:flex;align-items:center;gap:12px;padding:10px 17px;border-bottom:1px dashed var(--line2)}
+.miss-row:last-child{border:0}
+.miss-row .nm{font-size:12.5px;font-weight:600}
+.miss-row .ms{font-size:11px;color:var(--ink3)}
+
+/* tabs */
+.tabbar{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 17px;flex-wrap:wrap}
+.tbtn{background:none;border:0;border-bottom:2.5px solid transparent;margin-bottom:-1px;padding:11px 14px;font-size:13px;
+  font-weight:600;color:var(--ink3);transition:.14s;display:inline-flex;gap:7px;align-items:center}
+.tbtn:hover{color:var(--ink)}
+.tbtn.on{color:var(--green);border-color:var(--green)}
+.tbtn .cnt{font-family:var(--mono);font-size:10px;background:#eef1e8;border-radius:99px;padding:1px 7px;color:var(--ink2)}
+.tbtn.on .cnt{background:var(--green-t);color:var(--green)}
+.pane{display:none;padding:18px}
+.pane.on{display:block;animation:rise .3s both}
+
+/* detail page */
+.dhead{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:16px;overflow:hidden}
+.dhead .strip{height:4px;background:linear-gradient(90deg,var(--green),var(--gold) 60%,transparent)}
+.dhead .in-h{padding:18px 22px 0}
+.dhead .kick{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--green);font-weight:600}
+.dhead h1{font-family:var(--disp);font-size:34px;font-weight:800;letter-spacing:-.01em;line-height:1.1;margin:3px 0 9px}
+.dhead h1 span{color:var(--ink3);font-weight:600;font-size:20px;letter-spacing:0}
+.dmeta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink2)}
+.dmeta .sep{color:var(--line)}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0 4px}
+.badge-doc{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);background:#fbfcf9;border-radius:99px;padding:4px 12px 4px 6px}
+.badge-doc .pbar{width:56px}
+.dacts{display:flex;gap:9px;margin-left:auto;align-items:center;flex-wrap:wrap}
+.statstrip{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line2);margin-top:16px}
+.statstrip>div{padding:12px 22px;border-right:1px solid var(--line2)}
+.statstrip>div:last-child{border-right:0}
+.statstrip label{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:3px}
+.statstrip b{font-size:13.5px;font-weight:600}
+.statstrip .mono{font-size:12.5px}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:0}
+.kv>div{display:contents}
+.kv dt{font-size:12px;color:var(--ink3);padding:7.5px 0;border-bottom:1px dashed var(--line2)}
+.kv dd{font-size:13px;font-weight:500;padding:7.5px 0;border-bottom:1px dashed var(--line2)}
+.kv dd .mono{font-size:12.5px}
+.next-act{border:1px solid #ecd9a8;background:var(--gold-t);border-radius:10px;padding:13px 15px;font-size:12.5px;display:flex;gap:11px;margin-top:14px}
+.next-act .ic{color:var(--gold-d);margin-top:1px}
+.next-act b{color:var(--gold-d)}
+.ckrow{display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px dashed var(--line2);font-size:13px}
+.ckrow:last-child{border:0}
+.ckic{width:22px;height:22px;border-radius:99px;display:grid;place-items:center;flex:none}
+.ckic .ic{width:12px;height:12px;stroke-width:2.6}
+.ckic.ok{background:var(--green);color:#fff}
+.ckic.miss{background:var(--red-t);color:var(--red)}
+.ckic.pend{background:var(--amber-t);color:var(--amber)}
+.ckic.sys{background:#ecefe6;color:var(--ink3)}
+.ckrow .st{margin-left:auto;font-size:11px;font-weight:600}
+.st.ok{color:var(--green)}.st.miss{color:var(--red)}.st.pend{color:var(--amber)}.st.sys{color:var(--ink3)}
+.docrow{display:grid;grid-template-columns:38px 1fr 110px 60px 150px 130px 118px 100px;gap:12px;align-items:center;
+  padding:10px 17px;border-bottom:1px solid var(--line2);font-size:12.5px;transition:.12s}
+.docrow:hover{background:#f6f8f1}
+.docrow.hd{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);background:#fafbf7;border-bottom:1px solid var(--line)}
+.fic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-size:9px;font-weight:700}
+.fic.pdf{background:var(--red-t);color:var(--red)}
+.fic.img{background:var(--blue-t);color:var(--blue)}
+.acts{display:flex;gap:4px;justify-content:flex-end}
+.iact{width:28px;height:28px;border-radius:7px;border:1px solid transparent;display:grid;place-items:center;color:var(--ink3);transition:.13s;background:none}
+.iact:hover{border-color:var(--line);background:#fff;color:var(--green)}
+.iact.del:hover{color:var(--red)}
+.missline{border:1.5px dashed #d9c9a3;background:#fdf9ee;border-radius:10px;margin:8px 17px;padding:11px 14px;
+  display:flex;align-items:center;gap:12px;font-size:12.5px}
+.missline b{color:var(--amber)}
+.drop{margin:14px 17px 17px;border:2px dashed #cfd8c8;border-radius:12px;padding:22px;text-align:center;color:var(--ink3);
+  transition:.18s;cursor:pointer;background:#fbfcf9}
+.drop:hover{border-color:var(--green);background:var(--green-t);color:var(--green)}
+.drop .ic{width:22px;height:22px;margin-bottom:6px}
+.tl{position:relative;padding-left:26px;margin:6px 4px}
+.tl::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tli{position:relative;padding:0 0 18px}
+.tli::before{content:"";position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:99px;background:#fff;border:2.5px solid var(--green)}
+.tli.now::before{border-color:var(--gold);animation:pulse 2s infinite}
+.tli.idle::before{border-color:var(--line)}
+.tli .tm{font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.tli p{font-size:13px;margin:2px 0}
+.tli small{color:var(--ink3);font-size:11.5px}
+.note{border:1px solid var(--line);border-radius:10px;padding:12px 15px;margin-bottom:11px;background:#fbfcf9;animation:rise .3s both}
+.note .nh{display:flex;gap:9px;align-items:center;margin-bottom:7px}
+.note .nh b{font-size:12.5px}
+.note .nh .tm{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.note p{font-size:13px;line-height:1.55;color:var(--ink2)}
+textarea.in{resize:vertical;min-height:74px}
+
+/* donut */
+.donutwrap{display:flex;gap:22px;align-items:center;padding:18px}
+.donut{width:150px;height:150px;flex:none;border-radius:50%;position:relative;
+  background:conic-gradient(var(--green) 0 52%,var(--gold) 52% 71%,var(--blue) 71% 84%,var(--red) 84% 92%,var(--slate) 92% 100%);
+  -webkit-mask:radial-gradient(circle,transparent 0 52px,#000 53px);mask:radial-gradient(circle,transparent 0 52px,#000 53px)}
+.donutc{width:150px;height:150px;flex:none;position:relative;margin-right:-150px;display:grid;place-items:center;text-align:center;pointer-events:none}
+.donutc b{font-family:var(--disp);font-size:26px;font-weight:800;display:block}
+.donutc span{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em}
+.leg{flex:1;display:grid;gap:7px}
+.leg li{display:flex;align-items:center;gap:9px;font-size:12px;list-style:none}
+.leg i{width:9px;height:9px;border-radius:3px;flex:none}
+.leg b{margin-left:auto;font-family:var(--mono);font-size:11.5px}
+
+/* stat tiles */
+.stiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.stile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:15px 17px;display:flex;gap:13px;align-items:center;transition:.16s}
+.stile:hover{transform:translateY(-2px)}
+.stile .n{font-family:var(--disp);font-size:30px;font-weight:800;line-height:1}
+.stile label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:4px}
+.stile small{font-size:11px;color:var(--ink3)}
+.stic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;flex:none}
+.stic.g{background:var(--gold-t);color:var(--gold-d)}.stic.gr{background:var(--green-t);color:var(--green)}
+.stic.r{background:var(--red-t);color:var(--red)}.stic.b{background:var(--blue-t);color:var(--blue)}
+
+/* bulk bar */
+.bulk{display:none;align-items:center;gap:12px;background:var(--pine-800);color:#fff;border-radius:10px;padding:9px 15px;margin:0 17px 14px;font-size:12.5px;animation:rise .2s both}
+.bulk.on{display:flex}
+.bulk .btn{padding:5px 12px;font-size:12px}
+.bulk .btn-line{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+.bulk .btn-line:hover{background:rgba(255,255,255,.1);color:#fff;border-color:#fff}
+
+/* reports */
+.repgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:14px}
+.rep{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--sh);transition:.18s;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
+.rep::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green)}
+.rep.crb::before{background:var(--gold)}.rep.doc::before{background:var(--blue)}
+.rep:hover{transform:translateY(-3px);box-shadow:0 14px 30px -16px rgba(16,35,28,.35)}
+.rep .ric{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--green-t);color:var(--green)}
+.rep.crb .ric{background:var(--gold-t);color:var(--gold-d)}.rep.doc .ric{background:var(--blue-t);color:var(--blue)}
+.rep h4{font-size:13.5px;font-weight:700}
+.rep p{font-size:11.5px;color:var(--ink3);line-height:1.5;flex:1}
+.rep .rf{display:flex;align-items:center;justify-content:space-between;border-top:1px dashed var(--line2);padding-top:9px}
+.rep .rf small{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+
+/* audit */
+.aitem{display:flex;gap:13px;padding:13px 18px;border-bottom:1px solid var(--line2);font-size:13px;line-height:1.5;align-items:flex-start}
+.aitem:hover{background:#f6f8f1}
+.aitem code{font-family:var(--mono);font-size:11.5px;background:#f1f4ec;border:1px solid var(--line2);padding:1px 6px;border-radius:5px}
+.aitem .tm{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink3);white-space:nowrap;padding-top:3px}
+.atag{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-radius:5px;padding:2px 7px;margin-left:8px}
+.atag.docs{background:var(--blue-t);color:var(--blue)}.atag.crb{background:var(--gold-t);color:var(--gold-d)}
+.atag.status{background:var(--violet-t);color:var(--violet)}.atag.notes{background:var(--green-t);color:var(--green)}
+.atag.sys{background:var(--slate-t);color:var(--slate)}
+
+/* dropdown */
+.dd{position:relative}
+.ddm{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 18px 40px -14px rgba(16,35,28,.4);min-width:215px;padding:6px;display:none;z-index:60}
+.ddm.open{display:block;animation:rise .18s both}
+.ddm a{display:flex;gap:9px;align-items:center;padding:8px 11px;border-radius:7px;font-size:12.5px;font-weight:500;color:var(--ink2)}
+.ddm a:hover{background:var(--green-t);color:var(--green)}
+
+/* modal & viewer */
+.ovl{position:fixed;inset:0;background:rgba(7,20,15,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.ovl.on{display:flex}
+.modal{background:#fff;border-radius:14px;width:min(660px,96vw);max-height:92vh;overflow:auto;animation:pop .28s cubic-bezier(.2,.9,.3,1.15) both;box-shadow:0 40px 90px -30px rgba(0,0,0,.55)}
+@keyframes pop{from{opacity:0;transform:translateY(16px) scale(.97)}}
+.modal-h{display:flex;align-items:center;gap:11px;padding:16px 20px;border-bottom:1px solid var(--line2);position:sticky;top:0;background:#fff;z-index:2}
+.modal-h h3{font-family:var(--disp);font-size:17px;font-weight:700}
+.modal-h .x{margin-left:auto}
+.modal-b{padding:20px}
+.modal-f{display:flex;justify-content:flex-end;gap:9px;padding:14px 20px;border-top:1px solid var(--line2);background:#fbfcf9;border-radius:0 0 14px 14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:18px}
+.seg button{flex:1;background:#fff;border:0;padding:9px;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink3)}
+.seg button.on{background:var(--pine-800);color:#fff}
+.viewer{width:min(1020px,96vw);height:min(760px,92vh);display:flex;flex-direction:column;overflow:hidden;padding:0}
+.vtool{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line2);background:#fbfcf9;flex-wrap:wrap}
+.vtool .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+.vbody{flex:1;overflow:auto;background:repeating-linear-gradient(45deg,#e7eae2 0 12px,#e3e6dd 12px 24px);padding:34px 20px;display:flex;justify-content:center}
+.vpage{width:640px;min-height:820px;flex:none;background:#fff;box-shadow:0 12px 40px -12px rgba(0,0,0,.4);padding:52px 58px;
+  transform-origin:top center;transition:transform .2s;font-size:12.5px;line-height:1.65;color:#26302b}
+.vlh{display:flex;justify-content:space-between;border-bottom:2.5px solid #0a231c;padding-bottom:14px;margin-bottom:20px}
+.vlh .b{font-family:var(--disp);font-weight:800;font-size:17px;letter-spacing:.06em}
+.vlh small{color:#6b7a71;font-size:10px;display:block;text-align:right;line-height:1.5}
+.vpage h2{font-family:var(--disp);font-size:15px;text-align:center;margin:8px 0 2px;letter-spacing:.04em}
+.vpage .vm{text-align:center;font-size:10.5px;color:#6b7a71;margin-bottom:18px}
+.vpage table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11.5px}
+.vpage td{border:1px solid #d8ddd2;padding:6px 10px}
+.vpage td:first-child{background:#f4f6f0;width:60%}
+.vpage .sig{margin-top:34px;display:flex;justify-content:space-between;font-size:10.5px;color:#6b7a71}
+.vpage .pgno{text-align:center;margin-top:30px;font-size:10px;color:#9aa69e;font-family:var(--mono)}
+
+/* toast */
+#toasts{position:fixed;right:22px;bottom:22px;z-index:200;display:flex;flex-direction:column;gap:9px}
+.toast{background:var(--pine-900);color:#e8f2ec;border-radius:10px;padding:12px 16px 12px 13px;font-size:12.5px;display:flex;gap:10px;
+  align-items:center;box-shadow:0 16px 40px -12px rgba(0,0,0,.5);animation:tin .3s cubic-bezier(.2,.9,.3,1.2) both;max-width:360px;border-left:3px solid var(--green)}
+.toast.warn{border-left-color:var(--gold)}.toast.bad{border-left-color:var(--red)}
+.toast .ic{color:#7ed6a8}
+@keyframes tin{from{opacity:0;transform:translateX(30px)}}
+
+/* pages */
+.page{display:none}
+.page.on{display:block}
+
+@media (max-width:1150px){
+  .g12>*{grid-column:span 12 !important}
+  .frm{grid-template-columns:repeat(2,1fr)}
+  .statstrip{grid-template-columns:repeat(3,1fr)}
+  .stiles{grid-template-columns:repeat(2,1fr)}
+  .docrow{grid-template-columns:38px 1fr 100px 118px 100px}
+  .docrow .hidem{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ ICON SPRITE ═══════════ -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-files" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 15.3c2.2.6 3.6 2.2 4 4.7"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c1-3.8 4-5.7 7.5-5.7s6.5 1.9 7.5 5.7"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 21.5s7.5-3.2 7.5-9.5V5.5L12 2.5l-7.5 3V12c0 6.3 7.5 9.5 7.5 9.5Z"/><path d="m9 11.5 2.2 2.2L15.5 9"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 6.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20.5 20.5-4.9-4.9"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3.5 3.5v17h17"/><path d="M8.5 16.5v-5M13 16.5V7.5M17.5 16.5v-3"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-6M4 9V3M12 21v-10M12 5V3M20 21v-4M20 11V3"/><path d="M1.5 15h5M9.5 8h5M17.5 17h5"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.3 9a5.7 5.7 0 0 1 11.4 0c0 5 2 6.3 2 6.3H4.3s2-1.3 2-6.3Z"/><path d="M10.2 19.5a2 2 0 0 0 3.6 0"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8 12 3.5 16.5 8"/><path d="M4 15v3.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V15"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 11 12 15.5 16.5 11"/><path d="M4 16v2.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V16"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M20.5 3.5v4.6h-4.6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5L19.5 7"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 4.2 2.7 17.5a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5v4M12 16.8h.01"/></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><path d="M7 8V3.5h10V8"/><rect x="7" y="14" width="10" height="6.5" rx="1"/><path d="M7 17H4.5a2 2 0 0 1-2-2v-4.5a2 2 0 0 1 2-2h15a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2H17"/></symbol>
+<symbol id="i-zin" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20.5 20.5-4.9-4.9M11 8.5v5M8.5 11h5"/></symbol>
+<symbol id="i-zout" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20.5 20.5-4.9-4.9M8.5 11h5"/></symbol>
+<symbol id="i-max" viewBox="0 0 24 24"><path d="M8.5 3.5H5.5a2 2 0 0 0-2 2v3M15.5 3.5h3a2 2 0 0 1 2 2v3M15.5 20.5h3a2 2 0 0 0 2-2v-3M8.5 20.5h-3a2 2 0 0 1-2-2v-3"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24"><path d="M3.5 5h17l-6.5 7.5v5L10 20v-7.5Z"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10.5h17"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="17" rx="1"/><path d="M9.5 20.5v-4h5v4M8.5 7.5h.01M12 7.5h.01M15.5 7.5h.01M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M15.5 14.5h.01"/></symbol>
+<symbol id="i-chd" viewBox="0 0 24 24"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></symbol>
+<symbol id="i-chl" viewBox="0 0 24 24"><path d="m14.5 6.5-5.5 5.5 5.5 5.5"/></symbol>
+<symbol id="i-arrowl" viewBox="0 0 24 24"><path d="M20 12H4M10.5 5.5 4 12l6.5 6.5"/></symbol>
+<symbol id="i-message" viewBox="0 0 24 24"><path d="M20.5 14.5a2 2 0 0 1-2 2H8l-4.5 4V5.5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 10.5 13.5M21 3l-6.8 18-3.7-7.5L3 9.8Z"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V3.8"/><path d="M5 4.2c2.1-1.3 4.2-1.3 6.3 0 2 1.2 4 1.2 6.2 0v8.3c-2.2 1.3-4.2 1.3-6.2 0-2.1-1.3-4.2-1.3-6.3 0"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="M2.5 10h19M6 14.5h4"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M21 16.5v2.6a1.9 1.9 0 0 1-2.1 1.9 19 19 0 0 1-8.3-3 18.7 18.7 0 0 1-5.7-5.7 19 19 0 0 1-3-8.3A1.9 1.9 0 0 1 3.8 2h2.7a1.9 1.9 0 0 1 1.9 1.6c.1.9.3 1.9.6 2.8a1.9 1.9 0 0 1-.4 2L7.4 9.6a15.2 15.2 0 0 0 5.9 5.9l1.2-1.2a1.9 1.9 0 0 1 2-.4c.9.3 1.9.5 2.8.6a1.9 1.9 0 0 1 1.7 2Z"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M19.5 10c0 5.8-7.5 11.5-7.5 11.5S4.5 15.8 4.5 10a7.5 7.5 0 0 1 15 0Z"/><circle cx="12" cy="10" r="2.8"/></symbol>
+<symbol id="i-case" viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="13.5" rx="2"/><path d="M8.5 7V4.8a1.8 1.8 0 0 1 1.8-1.8h3.4A1.8 1.8 0 0 1 15.5 4.8V7M2.5 12.5h19"/></symbol>
+<symbol id="i-inbox" viewBox="0 0 24 24"><path d="M21.5 12.5h-5.3l-1.7 2.8h-5l-1.7-2.8H2.5"/><path d="M4.5 5.2 2.5 12.5V17a2 2 0 0 0 2 2h15a2 2 0 0 0 2-2v-4.5L19.5 5.2A1.5 1.5 0 0 0 18 4H6a1.5 1.5 0 0 0-1.5 1.2Z"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><rect x="8" y="2.5" width="8" height="3.5" rx="1"/><path d="M16 4.5h2.5a2 2 0 0 1 2 2V19.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2H8"/><path d="M8.5 11.5h7M8.5 15.5h7"/></symbol>
+<symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8.5" ry="3"/><path d="M3.5 5.5v13c0 1.7 3.8 3 8.5 3s8.5-1.3 8.5-3v-13"/><path d="M3.5 12c0 1.7 3.8 3 8.5 3s8.5-1.3 8.5-3"/></symbol>
+<symbol id="i-out" viewBox="0 0 24 24"><path d="M9.5 21h-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 16.5 20.5 12 16 7.5M20.5 12h-11"/></symbol>
+<symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6L3.5 8.5"/><path d="M3.5 3.5v5h5"/><path d="M12 7.5V12l3.5 2"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.6 13.3 13.3 20.6a1.8 1.8 0 0 1-2.6 0L3 13V3h10l7.6 7.7a1.8 1.8 0 0 1 0 2.6Z"/><circle cx="7.6" cy="7.6" r="1.3"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17"/></symbol>
+</svg>
+
+<div class="shell">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="side">
+  <div class="brand">
+    <div class="mark">M</div>
+    <div class="bt txt"><b>MULONGA</b><span>Sacco · Records Desk</span></div>
+  </div>
+  <nav>
+    <a class="nv on" data-go="dashboard" onclick="go('dashboard')"><svg class="ic"><use href="#i-grid"/></svg><span class="txt">Dashboard</span></a>
+
+    <div class="grp"><span class="txt">Applications</span></div>
+    <a class="nv" data-go="loans" onclick="go('loans')"><svg class="ic"><use href="#i-file"/></svg><span class="txt">Loan Applications</span><span class="cnt txt">342</span></a>
+    <a class="nv" data-go="memberships" onclick="go('memberships')"><svg class="ic"><use href="#i-users"/></svg><span class="txt">Membership Applications</span><span class="cnt txt">187</span></a>
+    <a class="nv" data-go="allapps" onclick="go('allapps')"><svg class="ic"><use href="#i-files"/></svg><span class="txt">All Applications</span></a>
+
+    <div class="grp"><span class="txt">Clearance</span></div>
+    <a class="nv" data-go="crb" onclick="go('crb')"><svg class="ic"><use href="#i-shield"/></svg><span class="txt">CRB Clearance</span><span class="cnt hot txt">14</span></a>
+    <a class="nv" data-go="crb" onclick="go('crb')"><svg class="ic"><use href="#i-clock"/></svg><span class="txt">Pending Clearance</span></a>
+    <a class="nv" data-go="crb" onclick="go('crb','hist')"><svg class="ic"><use href="#i-history"/></svg><span class="txt">CRB History</span></a>
+
+    <div class="grp"><span class="txt">Documents</span></div>
+    <a class="nv" data-go="docs" onclick="go('docs')"><svg class="ic"><use href="#i-folder"/></svg><span class="txt">Document Repository</span></a>
+    <a class="nv" data-go="missing" onclick="go('missing')"><svg class="ic"><use href="#i-alert"/></svg><span class="txt">Missing Documents</span><span class="cnt hot txt">9</span></a>
+    <a class="nv" data-go="admin" data-sub="dt" onclick="go('admin','dt')"><svg class="ic"><use href="#i-tag"/></svg><span class="txt">Document Types</span></a>
+
+    <div class="grp"><span class="txt">Reports</span></div>
+    <a class="nv" data-go="reports" onclick="go('reports')"><svg class="ic"><use href="#i-clip"/></svg><span class="txt">Application Register</span></a>
+    <a class="nv" data-go="reports" onclick="go('reports')"><svg class="ic"><use href="#i-chart"/></svg><span class="txt">CRB Reports</span></a>
+    <a class="nv" data-go="reports" onclick="go('reports')"><svg class="ic"><use href="#i-db"/></svg><span class="txt">Document Reports</span></a>
+
+    <div class="grp"><span class="txt">Administration</span></div>
+    <a class="nv" data-go="admin" data-sub="us" onclick="go('admin','us')"><svg class="ic"><use href="#i-user"/></svg><span class="txt">Users</span></a>
+    <a class="nv" data-go="admin" data-sub="br" onclick="go('admin','br')"><svg class="ic"><use href="#i-building"/></svg><span class="txt">Branches</span></a>
+    <a class="nv" data-go="admin" data-sub="dt" onclick="go('admin','dt')"><svg class="ic"><use href="#i-tag"/></svg><span class="txt">Document Types</span></a>
+    <a class="nv" data-go="admin" data-sub="st" onclick="go('admin','st')"><svg class="ic"><use href="#i-sliders"/></svg><span class="txt">Application Settings</span></a>
+    <a class="nv" data-go="audit" onclick="go('audit')"><svg class="ic"><use href="#i-history"/></svg><span class="txt">Audit Trail</span></a>
+  </nav>
+
+  <div class="sysbox txt">
+    <div class="sys"><i class="pulse"></i> CRB Gateway · Online</div>
+    <div class="meter"><i></i></div>
+    <div class="sysdim">Storage 6.8 GB of 10 GB · MySQL</div>
+  </div>
+  <div class="me">
+    <span class="av av-mb txt">MB</span>
+    <span class="un txt">Mary Banda<b>Records Officer</b></span>
+    <svg class="ic txt"><use href="#i-out"/></svg>
+  </div>
+</aside>
+
+<div class="main">
+<!-- ═══════════ TOPBAR ═══════════ -->
+<header class="top">
+  <button class="ibtn" title="Toggle sidebar" onclick="document.body.classList.toggle('slim')"><svg class="ic"><use href="#i-menu"/></svg></button>
+  <div class="gsearch"><svg class="ic"><use href="#i-search"/></svg>
+    <input id="gq" placeholder="Search application no., member, NRC, phone…" onkeydown="if(event.key==='Enter'){go('search');document.getElementById('qMain').value=this.value}">
+    <kbd>/</kbd>
+  </div>
+  <div class="tr">
+    <div class="clock mono"><span>Mon, 17 Aug 2026</span> · <b id="clk">10:42:05</b></div>
+    <button class="ibtn" onclick="toast('3 notifications — CRB responses ready','warn')"><svg class="ic"><use href="#i-bell"/></svg><i class="ndot"></i></button>
+    <button class="btn btn-pri" onclick="openM('mNew')"><svg class="ic"><use href="#i-plus"/></svg> New Application</button>
+    <div class="uchip"><span class="av av-mb">MB</span><span class="un">Mary Banda<b>Records Officer</b></span></div>
+  </div>
+</header>
+
+<div class="content">
+
+<!-- ════════════════════════════════════════
+     PAGE · DASHBOARD
+════════════════════════════════════════ -->
+<section class="page on" id="pg-dashboard">
+  <div class="ph">
+    <div>
+      <div class="kick">Records &amp; Clearance Desk</div>
+      <h1>Good morning, Mary</h1>
+      <p>Monday, 17 August 2026 · 14 applications awaiting CRB clearance · 9 records missing documents</p>
+    </div>
+    <div class="ph-a">
+      <button class="btn btn-line" onclick="toast('Daily summary exported to PDF')"><svg class="ic"><use href="#i-download"/></svg> Daily summary</button>
+      <button class="btn btn-pri" onclick="openM('mNew')"><svg class="ic"><use href="#i-plus"/></svg> Capture application</button>
+    </div>
+  </div>
+
+  <div class="grid g12">
+    <!-- applications on file -->
+    <div class="card rise" style="grid-column:span 6">
+      <div class="card-h"><h3>Applications on file</h3><span class="hint">all records</span><span class="lk" onclick="go('allapps')">View all →</span></div>
+      <div class="bigrow">
+        <div class="big"><span class="kn" data-n="342">0</span><label>Loan applications</label><span class="trend up">▲ 12 this week</span></div>
+        <div class="vr"></div>
+        <div class="big"><span class="kn" data-n="187">0</span><label>Membership applications</label><span class="trend up">▲ 5 this week</span></div>
+        <svg class="spark" viewBox="0 0 150 48">
+          <path d="M2 40 L20 34 L38 36 L56 27 L74 29 L92 20 L110 22 L128 12 L148 8 L148 48 L2 48 Z" fill="rgba(14,123,82,.12)"/>
+          <polyline points="2,40 20,34 38,36 56,27 74,29 92,20 110,22 128,12 148,8" fill="none" stroke="#0e7b52" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="148" cy="8" r="3" fill="#0e7b52"/>
+          <text x="2" y="12" font-size="7.5" fill="#7c8a80" font-family="IBM Plex Mono">8-week capture trend</text>
+        </svg>
+      </div>
+      <div class="ratio"><i data-w="64.6"></i><em></em></div>
+      <div class="ratio-l mono"><span>■ Loans · 65%</span><span>Membership · 35% ■</span></div>
+    </div>
+
+    <!-- awaiting CRB -->
+    <div class="card rise crb-tile" style="grid-column:span 3" onclick="go('crb')">
+      <div class="card-h"><h3>Awaiting CRB clearance</h3><i class="pulse gold"></i></div>
+      <span class="kn big2" data-n="14">0</span>
+      <p class="sub">3 past the 2-day SLA · oldest 6 days</p>
+      <span class="lk">Open clearance queue →</span>
+    </div>
+
+    <!-- cleared / flagged -->
+    <div class="rise" style="grid-column:span 3;display:flex;flex-direction:column;gap:16px">
+      <div class="card mini ok"><span class="kn" data-n="63">0</span><div><b>CRB cleared</b><small>this month · avg turnaround 1.8 days</small></div></div>
+      <div class="card mini bad"><span class="kn" data-n="6">0</span><div><b>Rejected / flagged</b><small>2 require senior review</small></div></div>
+    </div>
+  </div>
+
+  <div class="grid g12">
+    <!-- by status -->
+    <div class="card rise" style="grid-column:span 4">
+      <div class="card-h"><h3>Applications by status</h3><span class="hint">81 active</span></div>
+      <div style="padding:10px 17px 16px">
+        <div class="hbar"><label>Approved</label><div class="tr"><i data-w="100" style="background:#0e7b52"></i></div><b>41</b></div>
+        <div class="hbar"><label>Under Review</label><div class="tr"><i data-w="58" style="background:#5f53b8"></i></div><b>24</b></div>
+        <div class="hbar"><label>Submitted</label><div class="tr"><i data-w="39" style="background:#2b6cb0"></i></div><b>16</b></div>
+        <div class="hbar"><label>Awaiting CRB</label><div class="tr"><i data-w="34" style="background:#c9971c"></i></div><b>14</b></div>
+        <div class="hbar"><label>Awaiting Docs</label><div class="tr"><i data-w="29" style="background:#b45309"></i></div><b>12</b></div>
+        <div class="hbar"><label>Draft</label><div class="tr"><i data-w="22" style="background:#5d6b72"></i></div><b>9</b></div>
+        <div class="hbar"><label>CRB Flagged</label><div class="tr"><i data-w="15" style="background:#bb3a31"></i></div><b>6</b></div>
+      </div>
+    </div>
+
+    <!-- crb queue preview -->
+    <div class="card rise" style="grid-column:span 5">
+      <div class="card-h"><h3>CRB clearance — longest waiting</h3><span class="lk" onclick="go('crb')">Full queue →</span></div>
+      <div class="tblwrap" style="max-height:none">
+      <table class="tbl" style="min-width:0">
+        <thead><tr><th>App No.</th><th>Applicant</th><th>Submitted</th><th>CRB Status</th><th class="num">Days</th></tr></thead>
+        <tbody>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000121</span></td><td>Sarah Phiri</td><td class="mono">11 Aug</td><td><span class="bdg c-rev"><i></i>Requires Review</span></td><td class="num"><span class="dwait late">6</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000123</span></td><td>Clement Zulu</td><td class="mono">12 Aug</td><td><span class="bdg c-sub"><i></i>Submitted</span></td><td class="num"><span class="dwait late">5</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000125</span></td><td>John Banda</td><td class="mono">15 Aug</td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td class="num"><span class="dwait">2</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000127</span></td><td>Emmanuel Sakala</td><td class="mono">15 Aug</td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td class="num"><span class="dwait">2</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000130</span></td><td>Agnes Lungu</td><td class="mono">16 Aug</td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td class="num"><span class="dwait">1</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <!-- missing docs -->
+    <div class="card rise" style="grid-column:span 3">
+      <div class="card-h"><h3>Missing documents</h3><span class="hint">9 records</span></div>
+      <div class="miss-row"><div><div class="nm"><span class="appno" onclick="go('detail')">LA-000125</span></div><div class="ms">Employment Confirmation, Bank Statement</div></div><span class="pc mid" style="margin-left:auto">60%</span></div>
+      <div class="miss-row"><div><div class="nm"><span class="appno" onclick="go('detail')">LA-000129</span></div><div class="ms">Payslip, Bank Statement, Collateral</div></div><span class="pc mid" style="margin-left:auto">55%</span></div>
+      <div class="miss-row"><div><div class="nm"><span class="appno" onclick="go('detail')">MA-000092</span></div><div class="ms">Proof of Residence, Spouse ID</div></div><span class="pc lo" style="margin-left:auto">40%</span></div>
+      <div class="miss-row"><div><div class="nm"><span class="appno" onclick="go('detail')">LA-000132</span></div><div class="ms">Payslip, Bank Statement</div></div><span class="pc lo" style="margin-left:auto">40%</span></div>
+      <div style="padding:11px 17px"><button class="btn btn-line btn-sm" style="width:100%;justify-content:center" onclick="go('missing')">Open missing-documents worklist</button></div>
+    </div>
+  </div>
+
+  <div class="grid g12">
+    <!-- recently captured -->
+    <div class="card rise" style="grid-column:span 7">
+      <div class="card-h"><h3>Recently captured records</h3><span class="lk" onclick="go('allapps')">All records →</span></div>
+      <div class="tblwrap" style="max-height:none">
+      <table class="tbl" style="min-width:0">
+        <thead><tr><th>App No.</th><th>Applicant</th><th>Type</th><th>Captured</th><th>Status</th><th>Docs</th></tr></thead>
+        <tbody>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000132</span></td><td>Grace Tembo</td><td><span class="type-l">Loan</span></td><td class="mono">Today · 08:55</td><td><span class="bdg b-sub"><i></i>Submitted</span></td><td><span class="pc lo">40%</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">MA-000094</span></td><td>Felix Bwalya</td><td><span class="type-m">Membership</span></td><td class="mono">Today · 08:31</td><td><span class="bdg b-sub"><i></i>Submitted</span></td><td><span class="pc mid">60%</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000131</span></td><td>David Mwape</td><td><span class="type-l">Loan</span></td><td class="mono">Today · 08:12</td><td><span class="bdg b-draft"><i></i>Draft</span></td><td><span class="pc lo">20%</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">MA-000093</span></td><td>Mercy Kunda</td><td><span class="type-m">Membership</span></td><td class="mono">Sun · 16:40</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="pc mid">80%</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000130</span></td><td>Agnes Lungu</td><td><span class="type-l">Loan</span></td><td class="mono">Sun · 14:03</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="pc mid">80%</span></td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000129</span></td><td>Joseph Kabwe</td><td><span class="type-l">Loan</span></td><td class="mono">Sun · 11:27</td><td><span class="bdg b-adoc"><i></i>Awaiting Documents</span></td><td><span class="pc mid">55%</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <!-- activity feed -->
+    <div class="card rise" style="grid-column:span 5">
+      <div class="card-h"><h3>Recent activity</h3><span class="lk" onclick="go('audit')">Audit trail →</span></div>
+      <div class="feed">
+        <div class="fi"><span class="av av-ad" style="width:26px;height:26px;font-size:9px">AD</span><div>Admin replaced <code>Payslip.pdf</code> on <code>LA-000126</code><span class="atag docs">Docs</span></div><span class="tm">11:20</span></div>
+        <div class="fi"><span class="av av-pp" style="width:26px;height:26px;font-size:9px">PP</span><div>Peter Phiri changed CRB status <code>Submitted → Cleared</code> on <code>LA-000126</code><span class="atag crb">CRB</span></div><span class="tm">11:05</span></div>
+        <div class="fi"><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span><div>Mary Banda uploaded <code>CRB_Report.pdf</code> to <code>LA-000126</code><span class="atag docs">Docs</span></div><span class="tm">10:32</span></div>
+        <div class="fi"><span class="av av-tm" style="width:26px;height:26px;font-size:9px">TM</span><div>Thoko Musonda added a note on <code>MA-000092</code><span class="atag notes">Notes</span></div><span class="tm">09:58</span></div>
+        <div class="fi"><span class="av" style="width:26px;height:26px;font-size:9px;background:#5d6b72">SY</span><div>Reminder sent — Employment Confirmation outstanding on <code>LA-000125</code><span class="atag sys">System</span></div><span class="tm">09:47</span></div>
+        <div class="fi"><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span><div>Mary Banda moved <code>LA-000125</code> from Submitted to <b>Under Review</b><span class="atag status">Status</span></div><span class="tm">09:15</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · LOAN APPLICATIONS
+════════════════════════════════════════ -->
+<section class="page" id="pg-loans">
+  <div class="ph">
+    <div><div class="kick">Applications</div><h1>Loan Application Records</h1><p>342 records · 61 captured in August 2026 · K4.82M total requested this month</p></div>
+    <div class="ph-a">
+      <button class="btn btn-line" onclick="toast('Register exported to CSV')"><svg class="ic"><use href="#i-download"/></svg> Export</button>
+      <button class="btn btn-pri" onclick="openM('mNew')"><svg class="ic"><use href="#i-plus"/></svg> New Loan Application</button>
+    </div>
+  </div>
+  <div class="chiprow" id="loanChips">
+    <button class="chip on" data-g="tblLoans" data-f="all" onclick="fchip(this)">All <small>342</small></button>
+    <button class="chip" data-g="tblLoans" data-f="draft" onclick="fchip(this)">Draft <small>9</small></button>
+    <button class="chip" data-g="tblLoans" data-f="sub" onclick="fchip(this)">Submitted <small>16</small></button>
+    <button class="chip" data-g="tblLoans" data-f="rev" onclick="fchip(this)">Under Review <small>24</small></button>
+    <button class="chip" data-g="tblLoans" data-f="adoc" onclick="fchip(this)">Awaiting Documents <small>12</small></button>
+    <button class="chip" data-g="tblLoans" data-f="acrb" onclick="fchip(this)">Awaiting CRB <small>14</small></button>
+    <button class="chip" data-g="tblLoans" data-f="appr" onclick="fchip(this)">Approved <small>41</small></button>
+    <button class="chip" data-g="tblLoans" data-f="rej" onclick="fchip(this)">Rejected <small>17</small></button>
+  </div>
+  <div class="card rise">
+    <div class="tblwrap">
+    <table class="tbl" id="tblLoans">
+      <thead><tr><th>App No.</th><th>Applicant</th><th>Date</th><th>Branch</th><th>Product</th><th class="num">Requested</th><th>Status</th><th>Docs</th><th>CRB</th><th>Officer</th><th></th></tr></thead>
+      <tbody>
+        <tr data-s="sub"><td><span class="appno" onclick="go('detail')">LA-000132</span><span class="sub-l">MEM-002501</span></td><td>Grace Tembo</td><td class="mono">17 Aug 2026</td><td>Lusaka Main</td><td>Salary Advance</td><td class="num">K15,000</td><td><span class="bdg b-sub"><i></i>Submitted</span></td><td><div class="docbar"><div class="pbar lo"><i data-w="40"></i></div><span class="pc lo">40%</span></div></td><td><span class="bdg c-none"><i></i>Not Submitted</span></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px" title="Mary Banda">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="draft"><td><span class="appno" onclick="go('detail')">LA-000131</span><span class="sub-l">MEM-002499</span></td><td>David Mwape</td><td class="mono">17 Aug 2026</td><td>Kitwe</td><td>Personal Loan</td><td class="num">K45,000</td><td><span class="bdg b-draft"><i></i>Draft</span></td><td><div class="docbar"><div class="pbar lo"><i data-w="20"></i></div><span class="pc lo">20%</span></div></td><td><span class="bdg c-none"><i></i>Not Submitted</span></td><td>—</td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="rev"><td><span class="appno" onclick="go('detail')">LA-000130</span><span class="sub-l">MEM-002340</span></td><td>Agnes Lungu</td><td class="mono">16 Aug 2026</td><td>Ndola</td><td>School Fees Loan</td><td class="num">K22,500</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="80"></i></div><span class="pc mid">80%</span></div></td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td><span class="av av-pp" style="width:26px;height:26px;font-size:9px" title="Peter Phiri">PP</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="adoc"><td><span class="appno" onclick="go('detail')">LA-000129</span><span class="sub-l">MEM-002188</span></td><td>Joseph Kabwe</td><td class="mono">16 Aug 2026</td><td>Lusaka Main</td><td>Business Loan</td><td class="num">K120,000</td><td><span class="bdg b-adoc"><i></i>Awaiting Documents</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="55"></i></div><span class="pc mid">55%</span></div></td><td><span class="bdg c-none"><i></i>Not Submitted</span></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="rev"><td><span class="appno" onclick="go('detail')">LA-000128</span><span class="sub-l">MEM-002075</span></td><td>Naomi Chanda</td><td class="mono">15 Aug 2026</td><td>Livingstone</td><td>Asset Finance</td><td class="num">K85,000</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><div class="docbar"><div class="pbar"><i data-w="100"></i></div><span class="pc hi">100%</span></div></td><td><span class="bdg c-sub"><i></i>Submitted</span></td><td><span class="av av-tm" style="width:26px;height:26px;font-size:9px">TM</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="acrb"><td><span class="appno" onclick="go('detail')">LA-000127</span><span class="sub-l">MEM-001930</span></td><td>Emmanuel Sakala</td><td class="mono">15 Aug 2026</td><td>Kitwe</td><td>Emergency Loan</td><td class="num">K8,000</td><td><span class="bdg b-acrb"><i></i>Awaiting CRB</span></td><td><div class="docbar"><div class="pbar"><i data-w="100"></i></div><span class="pc hi">100%</span></div></td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td><span class="av av-pp" style="width:26px;height:26px;font-size:9px">PP</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="rev"><td><span class="appno" onclick="go('detail')">LA-000126</span><span class="sub-l">MEM-002114</span></td><td>Jane Phiri</td><td class="mono">14 Aug 2026</td><td>Lusaka Main</td><td>Personal Loan</td><td class="num">K30,000</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><div class="docbar"><div class="pbar"><i data-w="100"></i></div><span class="pc hi">100%</span></div></td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td><span class="av av-pp" style="width:26px;height:26px;font-size:9px">PP</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="rev"><td><span class="appno" onclick="go('detail')">LA-000125</span><span class="sub-l">MEM-002458</span></td><td><b>John Banda</b></td><td class="mono">15 Aug 2026</td><td>Lusaka Main</td><td>Salary Advance</td><td class="num">K25,000</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="60"></i></div><span class="pc mid">60%</span></div></td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="acrb"><td><span class="appno" onclick="go('detail')">LA-000123</span><span class="sub-l">MEM-001802</span></td><td>Clement Zulu</td><td class="mono">12 Aug 2026</td><td>Ndola</td><td>Business Loan</td><td class="num">K200,000</td><td><span class="bdg b-acrb"><i></i>Awaiting CRB</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="80"></i></div><span class="pc mid">80%</span></div></td><td><span class="bdg c-sub"><i></i>Submitted</span></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="rev"><td><span class="appno" onclick="go('detail')">LA-000121</span><span class="sub-l">MEM-001755</span></td><td>Sarah Phiri</td><td class="mono">11 Aug 2026</td><td>Chipata</td><td>Personal Loan</td><td class="num">K18,000</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="75"></i></div><span class="pc mid">75%</span></div></td><td><span class="bdg c-rev"><i></i>Requires Review</span></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="appr"><td><span class="appno" onclick="go('detail')">LA-000117</span><span class="sub-l">MEM-001640</span></td><td>Patrick Moyo</td><td class="mono">09 Aug 2026</td><td>Lusaka Main</td><td>Salary Advance</td><td class="num">K12,000</td><td><span class="bdg b-appr"><i></i>Approved</span></td><td><div class="docbar"><div class="pbar"><i data-w="100"></i></div><span class="pc hi">100%</span></div></td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td><span class="av av-pp" style="width:26px;height:26px;font-size:9px">PP</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="rej"><td><span class="appno" onclick="go('detail')">LA-000116</span><span class="sub-l">MEM-001599</span></td><td>Beatrice Chisanga</td><td class="mono">08 Aug 2026</td><td>Kitwe</td><td>Business Loan</td><td class="num">K95,000</td><td><span class="bdg b-rej"><i></i>Rejected</span></td><td><div class="docbar"><div class="pbar"><i data-w="100"></i></div><span class="pc hi">100%</span></div></td><td><span class="bdg c-flag"><i></i>Flagged</span></td><td><span class="av av-tm" style="width:26px;height:26px;font-size:9px">TM</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr data-s="rev"><td><span class="appno" onclick="go('detail')">LA-000099</span><span class="sub-l">MEM-001210</span></td><td>George Mulenga</td><td class="mono">02 Aug 2026</td><td>Ndola</td><td>Personal Loan</td><td class="num">K20,000</td><td><span class="bdg b-arch"><i></i>Archived</span></td><td><div class="docbar"><div class="pbar"><i data-w="100"></i></div><span class="pc hi">100%</span></div></td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="tfoot">Showing 1–13 of 342 loan applications
+      <div class="pg"><button class="pgbtn"><svg class="ic" style="width:13px;height:13px"><use href="#i-chl"/></svg></button><button class="pgbtn on">1</button><button class="pgbtn">2</button><button class="pgbtn">3</button><button class="pgbtn">…</button><button class="pgbtn">27</button><button class="pgbtn" style="transform:rotate(180deg)"><svg class="ic" style="width:13px;height:13px"><use href="#i-chl"/></svg></button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · MEMBERSHIP APPLICATIONS
+════════════════════════════════════════ -->
+<section class="page" id="pg-memberships">
+  <div class="ph">
+    <div><div class="kick">Applications</div><h1>Membership Application Records</h1><p>187 records · 22 captured in August · KYC verification in progress on 9</p></div>
+    <div class="ph-a">
+      <button class="btn btn-line" onclick="toast('Register exported to CSV')"><svg class="ic"><use href="#i-download"/></svg> Export</button>
+      <button class="btn btn-pri" onclick="openM('mNew','mem')"><svg class="ic"><use href="#i-plus"/></svg> New Membership Application</button>
+    </div>
+  </div>
+  <div class="card rise">
+    <div class="tblwrap">
+    <table class="tbl">
+      <thead><tr><th>App No.</th><th>Applicant</th><th>Date</th><th>Branch</th><th>Applicant Type</th><th>Status</th><th>Docs</th><th>Officer</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000094</span><span class="sub-l">Pending allocation</span></td><td>Felix Bwalya</td><td class="mono">17 Aug 2026</td><td>Kitwe</td><td>Individual</td><td><span class="bdg b-sub"><i></i>Submitted</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="60"></i></div><span class="pc mid">60%</span></div></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000093</span><span class="sub-l">Pending allocation</span></td><td>Mercy Kunda</td><td class="mono">16 Aug 2026</td><td>Lusaka Main</td><td>Individual</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="80"></i></div><span class="pc mid">80%</span></div></td><td><span class="av av-pp" style="width:26px;height:26px;font-size:9px">PP</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000092</span><span class="sub-l">Pending allocation</span></td><td>Bright Njobvu</td><td class="mono">15 Aug 2026</td><td>Livingstone</td><td>Joint</td><td><span class="bdg b-adoc"><i></i>Awaiting Documents</span></td><td><div class="docbar"><div class="pbar lo"><i data-w="40"></i></div><span class="pc lo">40%</span></div></td><td><span class="av av-tm" style="width:26px;height:26px;font-size:9px">TM</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000091</span><span class="sub-l">MEM-002510</span></td><td>Lombe Mulenga</td><td class="mono">14 Aug 2026</td><td>Ndola</td><td>Individual</td><td><span class="bdg b-appr"><i></i>Approved</span></td><td><div class="docbar"><div class="pbar"><i data-w="100"></i></div><span class="pc hi">100%</span></div></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000090</span><span class="sub-l">Pending allocation</span></td><td>Kelvin Daka</td><td class="mono">13 Aug 2026</td><td>Chipata</td><td>Individual</td><td><span class="bdg b-sub"><i></i>Submitted</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="60"></i></div><span class="pc mid">60%</span></div></td><td><span class="av av-pp" style="width:26px;height:26px;font-size:9px">PP</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000089</span><span class="sub-l">Pending allocation</span></td><td>Irene Tembo</td><td class="mono">12 Aug 2026</td><td>Lusaka Main</td><td>Corporate</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><div class="docbar"><div class="pbar mid"><i data-w="70"></i></div><span class="pc mid">70%</span></div></td><td><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span></td><td><button class="iact" onclick="go('detail')"><svg class="ic"><use href="#i-eye"/></svg></button></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="tfoot">Showing 1–6 of 187 membership applications
+      <div class="pg"><button class="pgbtn on">1</button><button class="pgbtn">2</button><button class="pgbtn">…</button><button class="pgbtn">16</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · ALL APPLICATIONS
+════════════════════════════════════════ -->
+<section class="page" id="pg-allapps">
+  <div class="ph">
+    <div><div class="kick">Applications</div><h1>All Applications</h1><p>529 central records — loans and membership on one register</p></div>
+    <div class="ph-a"><button class="btn btn-line" onclick="go('search')"><svg class="ic"><use href="#i-search"/></svg> Advanced search</button></div>
+  </div>
+  <div class="card rise">
+    <div class="tblwrap">
+    <table class="tbl">
+      <thead><tr><th>App No.</th><th>Type</th><th>Applicant</th><th>Date</th><th>Branch</th><th>Status</th><th>Docs</th><th>CRB</th><th>Officer</th></tr></thead>
+      <tbody>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000132</span></td><td><span class="type-l">Loan</span></td><td>Grace Tembo</td><td class="mono">17 Aug</td><td>Lusaka Main</td><td><span class="bdg b-sub"><i></i>Submitted</span></td><td><span class="pc lo">40%</span></td><td><span class="bdg c-none"><i></i>Not Submitted</span></td><td>Mary Banda</td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000094</span></td><td><span class="type-m">Membership</span></td><td>Felix Bwalya</td><td class="mono">17 Aug</td><td>Kitwe</td><td><span class="bdg b-sub"><i></i>Submitted</span></td><td><span class="pc mid">60%</span></td><td><span class="bdg c-none"><i></i>N/A</span></td><td>Mary Banda</td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000126</span></td><td><span class="type-l">Loan</span></td><td>Jane Phiri</td><td class="mono">14 Aug</td><td>Lusaka Main</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="pc hi">100%</span></td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td>Peter Phiri</td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000125</span></td><td><span class="type-l">Loan</span></td><td>John Banda</td><td class="mono">15 Aug</td><td>Lusaka Main</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="pc mid">60%</span></td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td>Mary Banda</td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000092</span></td><td><span class="type-m">Membership</span></td><td>Bright Njobvu</td><td class="mono">15 Aug</td><td>Livingstone</td><td><span class="bdg b-adoc"><i></i>Awaiting Documents</span></td><td><span class="pc lo">40%</span></td><td><span class="bdg c-none"><i></i>N/A</span></td><td>Thoko Musonda</td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000124</span></td><td><span class="type-l">Loan</span></td><td>Ruth Mwansa</td><td class="mono">13 Aug</td><td>Chipata</td><td><span class="bdg b-flag"><i></i>CRB Flagged</span></td><td><span class="pc hi">100%</span></td><td><span class="bdg c-flag"><i></i>Flagged</span></td><td>Thoko Musonda</td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000091</span></td><td><span class="type-m">Membership</span></td><td>Lombe Mulenga</td><td class="mono">14 Aug</td><td>Ndola</td><td><span class="bdg b-appr"><i></i>Approved</span></td><td><span class="pc hi">100%</span></td><td><span class="bdg c-none"><i></i>N/A</span></td><td>Mary Banda</td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000117</span></td><td><span class="type-l">Loan</span></td><td>Patrick Moyo</td><td class="mono">09 Aug</td><td>Lusaka Main</td><td><span class="bdg b-appr"><i></i>Approved</span></td><td><span class="pc hi">100%</span></td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td>Peter Phiri</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="tfoot">Showing 1–8 of 529 records · <span class="mono">applications</span> is the central table — loan &amp; membership detail hang off it
+      <div class="pg"><button class="pgbtn on">1</button><button class="pgbtn">2</button><button class="pgbtn">3</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · CRB CLEARANCE QUEUE
+════════════════════════════════════════ -->
+<section class="page" id="pg-crb">
+  <div class="ph">
+    <div><div class="kick">Clearance</div><h1>CRB Clearance Queue</h1><p>Applications routed to the Credit Reference Bureau · SLA target 2 working days</p></div>
+    <div class="ph-a">
+      <button class="btn btn-line" onclick="toast('Queue exported to Excel')"><svg class="ic"><use href="#i-download"/></svg> Export</button>
+      <button class="btn btn-gold" onclick="toast('4 applications batch-submitted to CRB gateway','warn')"><svg class="ic"><use href="#i-send"/></svg> Batch submit to CRB</button>
+    </div>
+  </div>
+
+  <div class="stiles">
+    <div class="stile rise"><div class="stic g"><svg class="ic"><use href="#i-clock"/></svg></div><div><label>Awaiting response</label><span class="n">9</span><small>3 past SLA</small></div></div>
+    <div class="stile rise" style="animation-delay:.05s"><div class="stic gr"><svg class="ic"><use href="#i-shield"/></svg></div><div><label>Cleared · 7 days</label><span class="n">23</span><small>0 reversed</small></div></div>
+    <div class="stile rise" style="animation-delay:.1s"><div class="stic r"><svg class="ic"><use href="#i-flag"/></svg></div><div><label>Flagged</label><span class="n">3</span><small>2 in senior review</small></div></div>
+    <div class="stile rise" style="animation-delay:.15s"><div class="stic b"><svg class="ic"><use href="#i-history"/></svg></div><div><label>Avg turnaround</label><span class="n">1.8<span style="font-size:15px">d</span></span><small>target ≤ 2.0 days</small></div></div>
+  </div>
+
+  <div class="card rise">
+    <div class="tabbar">
+      <button class="tbtn on" data-tg="crb" data-tp="queue" onclick="tab(this)"><svg class="ic"><use href="#i-inbox"/></svg> Queue <span class="cnt">24</span></button>
+      <button class="tbtn" data-tg="crb" data-tp="hist" onclick="tab(this)"><svg class="ic"><use href="#i-history"/></svg> History <span class="cnt">128</span></button>
+    </div>
+
+    <!-- QUEUE pane -->
+    <div class="pane on" data-tg="crb" data-tp="queue" style="padding:14px 0 0">
+      <div style="display:flex;gap:9px;align-items:center;padding:0 17px 13px;flex-wrap:wrap">
+        <div class="chiprow" style="margin:0" id="crbChips">
+          <button class="chip on" data-g="tblCrb" data-f="all" onclick="fchip(this)">All</button>
+          <button class="chip" data-g="tblCrb" data-f="resp" onclick="fchip(this)">Awaiting Response</button>
+          <button class="chip" data-g="tblCrb" data-f="sub" onclick="fchip(this)">Submitted</button>
+          <button class="chip" data-g="tblCrb" data-f="clear" onclick="fchip(this)">Cleared</button>
+          <button class="chip" data-g="tblCrb" data-f="flag" onclick="fchip(this)">Flagged</button>
+        </div>
+        <select class="in" style="width:150px;margin-left:auto"><option>All branches</option><option>Lusaka Main</option><option>Kitwe</option><option>Ndola</option><option>Livingstone</option><option>Chipata</option></select>
+      </div>
+      <div class="bulk" id="bulk"><b id="bulkN">0 selected</b>
+        <button class="btn btn-gold" onclick="toast('Selected records submitted to CRB','warn')">Submit to CRB</button>
+        <button class="btn btn-line" onclick="toast('Officer assignment dialog (mock)')">Assign officer</button>
+        <button class="btn btn-ghost" style="color:#cfe0d6;margin-left:auto" onclick="document.querySelectorAll('.sel').forEach(c=>c.checked=false);updBulk()">Clear selection</button>
+      </div>
+      <div class="tblwrap">
+      <table class="tbl" id="tblCrb">
+        <thead><tr><th style="width:34px"><input type="checkbox" onclick="document.querySelectorAll('.sel').forEach(c=>c.checked=this.checked);updBulk()"></th><th>App No.</th><th>Applicant</th><th>Type</th><th>Submitted</th><th>CRB Status</th><th class="num">Days Waiting</th><th>Officer</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr data-c="resp"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000125</span></td><td><b>John Banda</b></td><td><span class="type-l">Loan</span></td><td class="mono">15 Aug 2026</td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td class="num"><span class="dwait">2</span></td><td>Mary Banda</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="clear"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000126</span></td><td>Jane Phiri</td><td><span class="type-l">Loan</span></td><td class="mono">14 Aug 2026</td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td class="num">—</td><td>Peter Phiri</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="resp"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000127</span></td><td>Emmanuel Sakala</td><td><span class="type-l">Loan</span></td><td class="mono">15 Aug 2026</td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td class="num"><span class="dwait">2</span></td><td>Peter Phiri</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="resp"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000130</span></td><td>Agnes Lungu</td><td><span class="type-l">Loan</span></td><td class="mono">16 Aug 2026</td><td><span class="bdg c-resp"><i></i>Awaiting Response</span></td><td class="num"><span class="dwait">1</span></td><td>Peter Phiri</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="sub"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000128</span></td><td>Naomi Chanda</td><td><span class="type-l">Loan</span></td><td class="mono">15 Aug 2026</td><td><span class="bdg c-sub"><i></i>Submitted</span></td><td class="num"><span class="dwait">2</span></td><td>Thoko Musonda</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="sub"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000123</span></td><td>Clement Zulu</td><td><span class="type-l">Loan</span></td><td class="mono">12 Aug 2026</td><td><span class="bdg c-sub"><i></i>Submitted</span></td><td class="num"><span class="dwait late">5</span></td><td>Mary Banda</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="flag"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000124</span></td><td>Ruth Mwansa</td><td><span class="type-l">Loan</span></td><td class="mono">13 Aug 2026</td><td><span class="bdg c-flag"><i></i>Flagged</span></td><td class="num">—</td><td>Thoko Musonda</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="rev"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000121</span></td><td>Sarah Phiri</td><td><span class="type-l">Loan</span></td><td class="mono">11 Aug 2026</td><td><span class="bdg c-rev"><i></i>Requires Review</span></td><td class="num"><span class="dwait late">6</span></td><td>Mary Banda</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="await"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000129</span></td><td>Joseph Kabwe</td><td><span class="type-l">Loan</span></td><td class="mono">16 Aug 2026</td><td><span class="bdg c-await"><i></i>Awaiting Submission</span></td><td class="num">—</td><td>Mary Banda</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+          <tr data-c="fail"><td><input type="checkbox" class="sel" onchange="updBulk()"></td><td><span class="appno" onclick="go('detail')">LA-000119</span></td><td>Oscar Banda</td><td><span class="type-l">Loan</span></td><td class="mono">10 Aug 2026</td><td><span class="bdg c-fail"><i></i>Failed</span></td><td class="num"><span class="dwait late">7</span></td><td>Peter Phiri</td><td><button class="btn btn-line btn-sm" onclick="go('detail')">View</button></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="tfoot">9 records awaiting bureau response · sorted by days waiting ↓<div class="pg"><button class="pgbtn on">1</button><button class="pgbtn">2</button><button class="pgbtn">3</button></div></div>
+    </div>
+
+    <!-- HISTORY pane -->
+    <div class="pane" data-tg="crb" data-tp="hist" style="padding:14px 0 0">
+      <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>App No.</th><th>Applicant</th><th>CRB Ref.</th><th>Submitted</th><th>Response</th><th class="num">Turnaround</th><th>Outcome</th><th>Processed By</th></tr></thead>
+        <tbody>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000126</span></td><td>Jane Phiri</td><td class="mono">CRB/2026/08846</td><td class="mono">16 Aug · 09:10</td><td class="mono">17 Aug · 10:28</td><td class="num">1.1 d</td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td>Peter Phiri</td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000117</span></td><td>Patrick Moyo</td><td class="mono">CRB/2026/08812</td><td class="mono">10 Aug · 11:00</td><td class="mono">11 Aug · 14:20</td><td class="num">1.1 d</td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td>Peter Phiri</td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000124</span></td><td>Ruth Mwansa</td><td class="mono">CRB/2026/08820</td><td class="mono">13 Aug · 10:15</td><td class="mono">14 Aug · 16:45</td><td class="num">1.3 d</td><td><span class="bdg c-flag"><i></i>Flagged</span></td><td>Thoko Musonda</td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000114</span></td><td>Mwaba Chileshe</td><td class="mono">CRB/2026/08790</td><td class="mono">07 Aug · 08:40</td><td class="mono">11 Aug · 09:05</td><td class="num">2.0 d</td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td>Mary Banda</td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000116</span></td><td>Beatrice Chisanga</td><td class="mono">CRB/2026/08798</td><td class="mono">08 Aug · 14:22</td><td class="mono">09 Aug · 10:10</td><td class="num">0.8 d</td><td><span class="bdg c-flag"><i></i>Flagged</span></td><td>Thoko Musonda</td></tr>
+          <tr><td><span class="appno" onclick="go('detail')">LA-000111</span></td><td>Dennis Kalaba</td><td class="mono">CRB/2026/08771</td><td class="mono">05 Aug · 09:30</td><td class="mono">06 Aug · 11:00</td><td class="num">1.1 d</td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td>Mary Banda</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="tfoot">128 clearances processed in 2026 · average 1.8 days</div>
+    </div>
+  </div>
+
+  <div class="grid g12" style="margin-top:16px">
+    <div class="card rise" style="grid-column:span 5">
+      <div class="card-h"><h3>Outcome mix — last 30 days</h3><span class="hint">128 checks</span></div>
+      <div class="donutwrap">
+        <div style="position:relative"><div class="donut"></div><div class="donutc"><div><b>128</b><span>checks</span></div></div></div>
+        <ul class="leg">
+          <li><i style="background:var(--green)"></i>Cleared<b>67</b></li>
+          <li><i style="background:var(--gold)"></i>Awaiting response<b>24</b></li>
+          <li><i style="background:var(--blue)"></i>Submitted<b>17</b></li>
+          <li><i style="background:var(--red)"></i>Flagged<b>10</b></li>
+          <li><i style="background:var(--slate)"></i>Failed / not sent<b>10</b></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card rise" style="grid-column:span 7">
+      <div class="card-h"><h3>Turnaround by branch</h3><span class="hint">days to bureau response</span></div>
+      <div style="padding:10px 17px 16px">
+        <div class="hbar"><label>Lusaka Main</label><div class="tr"><i data-w="72" style="background:#0e7b52"></i></div><b>1.4</b></div>
+        <div class="hbar"><label>Kitwe</label><div class="tr"><i data-w="82" style="background:#0e7b52"></i></div><b>1.6</b></div>
+        <div class="hbar"><label>Ndola</label><div class="tr"><i data-w="90" style="background:#c9971c"></i></div><b>1.8</b></div>
+        <div class="hbar"><label>Livingstone</label><div class="tr"><i data-w="95" style="background:#c9971c"></i></div><b>1.9</b></div>
+        <div class="hbar"><label>Chipata</label><div class="tr"><i data-w="100" style="background:#b45309"></i></div><b>2.3</b></div>
+      </div>
+      <div style="padding:0 17px 16px;font-size:11.5px;color:var(--ink3)">⚠ Chipata is above the 2-day SLA — 3 escalations this week.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · APPLICATION DETAIL (LA-000125)
+════════════════════════════════════════ -->
+<section class="page" id="pg-detail">
+  <div style="margin-bottom:12px"><a class="lk" onclick="go('loans')" style="font-size:12.5px;display:inline-flex;gap:6px;align-items:center"><svg class="ic" style="width:14px;height:14px"><use href="#i-arrowl"/></svg> Back to Loan Applications</a></div>
+
+  <div class="dhead rise">
+    <div class="strip"></div>
+    <div class="in-h">
+      <div class="kick">Loan Application</div>
+      <h1>LA-000125 <span>·</span></h1>
+      <div class="dmeta">
+        <b style="font-size:15px">John Banda</b><span class="sep">•</span>
+        <span>Member No: <b class="mono">MEM-002458</b></span><span class="sep">•</span>
+        <span>Lusaka Main</span><span class="sep">•</span>
+        <span class="mono" style="font-size:12px">Captured 15 Aug 2026, 09:38</span>
+      </div>
+      <div class="badges">
+        <span class="bdg b-rev"><i></i>Under Review</span>
+        <span class="bdg b-acrb"><i></i>Awaiting CRB</span>
+        <span class="badge-doc"><div class="pbar mid"><i data-w="60"></i></div><span class="pc mid">Documents 60%</span></span>
+        <div class="dacts">
+          <div class="dd" onclick="dd(event)">
+            <button class="btn btn-pri btn-sm">Advance status <svg class="ic" style="width:13px;height:13px"><use href="#i-chd"/></svg></button>
+            <div class="ddm">
+              <a onclick="toast('Status moved to Awaiting Documents')"><svg class="ic"><use href="#i-alert"/></svg> Awaiting Documents</a>
+              <a onclick="toast('Status moved to Awaiting CRB','warn')"><svg class="ic"><use href="#i-shield"/></svg> Awaiting CRB</a>
+              <a onclick="toast('Application approved','ok')"><svg class="ic"><use href="#i-check"/></svg> Approve</a>
+              <a onclick="toast('Application rejected','bad')"><svg class="ic"><use href="#i-x"/></svg> Reject</a>
+            </div>
+          </div>
+          <button class="btn btn-line btn-sm" onclick="document.querySelector('[data-tg=\'detail\'][data-tp=\'docs\']').click()"><svg class="ic"><use href="#i-upload"/></svg> Upload documents</button>
+          <button class="iact" onclick="toast('Sent to printer')"><svg class="ic"><use href="#i-printer"/></svg></button>
+          <button class="iact" onclick="toast('More actions (mock)')"><svg class="ic"><use href="#i-dots"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="statstrip">
+      <div><label>Application date</label><b class="mono">15 Aug 2026</b></div>
+      <div><label>Loan product</label><b>Salary Advance</b></div>
+      <div><label>Requested amount</label><b class="mono">K25,000.00</b></div>
+      <div><label>Term</label><b class="mono">24 months</b></div>
+      <div><label>Assigned officer</label><b>Mary Banda</b></div>
+      <div><label>Created by</label><b>Mary Banda</b></div>
+    </div>
+    <div class="tabbar">
+      <button class="tbtn on" data-tg="detail" data-tp="ov" onclick="tab(this)">Overview</button>
+      <button class="tbtn" data-tg="detail" data-tp="ap" onclick="tab(this)">Applicant</button>
+      <button class="tbtn" data-tg="detail" data-tp="docs" onclick="tab(this)">Documents <span class="cnt">3</span></button>
+      <button class="tbtn" data-tg="detail" data-tp="crb" onclick="tab(this)">CRB Clearance</button>
+      <button class="tbtn" data-tg="detail" data-tp="hist" onclick="tab(this)">History <span class="cnt">8</span></button>
+      <button class="tbtn" data-tg="detail" data-tp="notes" onclick="tab(this)">Notes <span class="cnt" id="noteCnt">2</span></button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="pane on" data-tg="detail" data-tp="ov">
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:22px">
+        <div>
+          <h4 style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px">Application facts</h4>
+          <dl class="kv">
+            <div><dt>Application number</dt><dd class="mono">LA-000125</dd></div>
+            <div><dt>Application type</dt><dd><span class="type-l">Loan</span> — Salary Advance</dd></div>
+            <div><dt>Requested amount</dt><dd class="mono">K25,000.00 · 24 months @ 1.2%/m</dd></div>
+            <div><dt>Purpose stated</dt><dd>School fees &amp; home renovations</dd></div>
+            <div><dt>Branch</dt><dd>Lusaka Main</dd></div>
+            <div><dt>Application date</dt><dd class="mono">15 Aug 2026</dd></div>
+            <div><dt>Assigned officer</dt><dd>Mary Banda · Records Officer</dd></div>
+            <div><dt>Repayment channel</dt><dd>Payroll deduction (ZESCO)</dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4 style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px">Document completion</h4>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
+            <span style="font-family:var(--disp);font-size:38px;font-weight:800;color:var(--amber)">60%</span>
+            <div style="flex:1"><div class="pbar mid" style="height:10px"><i data-w="60"></i></div><small style="color:var(--ink3);font-size:11px">3 of 5 required documents received</small></div>
+          </div>
+          <div class="ckrow"><span class="ckic ok"><svg class="ic"><use href="#i-check"/></svg></span> Loan Application Form <span class="st ok">Received</span></div>
+          <div class="ckrow"><span class="ckic ok"><svg class="ic"><use href="#i-check"/></svg></span> National ID (NRC) <span class="st ok">Received</span></div>
+          <div class="ckrow"><span class="ckic ok"><svg class="ic"><use href="#i-check"/></svg></span> Payslip <span class="st ok">v2 · under review</span></div>
+          <div class="ckrow"><span class="ckic miss"><svg class="ic"><use href="#i-x"/></svg></span> Bank Statement <span class="st miss">Missing</span></div>
+          <div class="ckrow"><span class="ckic pend"><svg class="ic"><use href="#i-clock"/></svg></span> Employment Confirmation <span class="st pend">Requested 16 Aug</span></div>
+          <div class="ckrow"><span class="ckic sys"><svg class="ic"><use href="#i-shield"/></svg></span> CRB Report <span class="st sys">Generated on clearance</span></div>
+          <div class="next-act"><svg class="ic"><use href="#i-alert"/></svg><div><b>Next action:</b> follow up Employment Confirmation with ZESCO HR on <b>18 Aug</b>; bureau response due by <b>18 Aug</b>.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPLICANT -->
+    <div class="pane" data-tg="detail" data-tp="ap">
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:24px">
+        <div style="border:1px solid var(--line);border-radius:12px;padding:20px;text-align:center;background:#fbfcf9">
+          <div class="av" style="width:64px;height:64px;font-size:21px;margin:0 auto 12px;background:var(--pine-800)">JB</div>
+          <b style="font-size:16px;font-family:var(--disp)">John Banda</b>
+          <div class="mono" style="font-size:12px;color:var(--ink3);margin:3px 0 10px">MEM-002458</div>
+          <span class="bdg b-appr" style="margin-bottom:12px"><i></i>Active member since 2021</span>
+          <div style="text-align:left;margin-top:12px">
+            <dl class="kv">
+              <div><dt>Previous loans</dt><dd>1 · cleared 2024</dd></div>
+              <div><dt>Share capital</dt><dd class="mono">K6,240.00</dd></div>
+              <div><dt>Monthly savings</dt><dd class="mono">K850.00</dd></div>
+            </dl>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px">KYC &amp; employment</h4>
+          <dl class="kv">
+            <div><dt>National ID (NRC)</dt><dd class="mono">345678/10/1</dd></div>
+            <div><dt>Phone</dt><dd class="mono">+260 97 555 1234</dd></div>
+            <div><dt>Email</dt><dd>j.banda@example.com</dd></div>
+            <div><dt>Employer</dt><dd>ZESCO Ltd — Metering Department</dd></div>
+            <div><dt>Employment type</dt><dd>Permanent · 6 years service</dd></div>
+            <div><dt>Gross monthly income</dt><dd class="mono">K18,500.00</dd></div>
+            <div><dt>Residential address</dt><dd>Plot 214, Chelstone, Lusaka</dd></div>
+            <div><dt>Next of kin</dt><dd>Maria Banda · +260 96 210 8844</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div class="pane" data-tg="detail" data-tp="docs" style="padding:16px 0">
+      <div style="display:flex;align-items:center;gap:14px;padding:0 17px 12px">
+        <div style="flex:1"><div class="pbar mid" style="height:10px;max-width:340px"><i data-w="60"></i></div></div>
+        <b style="font-family:var(--disp);font-size:20px;color:var(--amber)">60%</b>
+        <span style="font-size:12px;color:var(--ink3)">Document Completion — 3 of 5 required</span>
+      </div>
+      <div class="docrow hd"><span></span><span>Document</span><span class="hidem">Type</span><span class="hidem">Ver.</span><span class="hidem">Uploaded by / date</span><span>Status</span><span>Description</span><span style="text-align:right">Actions</span></div>
+      <div class="docrow">
+        <div class="fic pdf">PDF</div>
+        <div><b>Loan_Application_Form_Banda.pdf</b><span class="sub-l">812 KB</span></div>
+        <span class="hidem">Application Form</span><span class="hidem mono">v1</span>
+        <span class="hidem">Mary Banda<span class="sub-l">15 Aug 2026 · 09:41</span></span>
+        <span><span class="bdg d-ver">Verified</span></span>
+        <span class="hidem" style="color:var(--ink3)">Signed original</span>
+        <div class="acts">
+          <button class="iact" title="View" onclick="openDoc('Loan_Application_Form_Banda.pdf','Application Form','LA-000125','v1 · 812 KB · Mary Banda · 15 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button>
+          <button class="iact" title="Download" onclick="toast('Downloading Loan_Application_Form_Banda.pdf')"><svg class="ic"><use href="#i-download"/></svg></button>
+          <button class="iact" title="Replace" onclick="toast('Replace flow — new version becomes v2','warn')"><svg class="ic"><use href="#i-refresh"/></svg></button>
+          <button class="iact del" title="Delete" onclick="toast('Document deleted (audit logged)','bad')"><svg class="ic"><use href="#i-trash"/></svg></button>
+        </div>
+      </div>
+      <div class="docrow">
+        <div class="fic img">JPG</div>
+        <div><b>NRC_345678_copy.jpg</b><span class="sub-l">1.2 MB</span></div>
+        <span class="hidem">National ID</span><span class="hidem mono">v1</span>
+        <span class="hidem">Mary Banda<span class="sub-l">15 Aug 2026 · 09:42</span></span>
+        <span><span class="bdg d-ver">Verified</span></span>
+        <span class="hidem" style="color:var(--ink3)">Front &amp; back</span>
+        <div class="acts">
+          <button class="iact" onclick="openDoc('NRC_345678_copy.jpg','National ID','LA-000125','v1 · 1.2 MB · Mary Banda · 15 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button>
+          <button class="iact" onclick="toast('Downloading NRC_345678_copy.jpg')"><svg class="ic"><use href="#i-download"/></svg></button>
+          <button class="iact" onclick="toast('Replace flow (mock)','warn')"><svg class="ic"><use href="#i-refresh"/></svg></button>
+          <button class="iact del" onclick="toast('Document deleted (audit logged)','bad')"><svg class="ic"><use href="#i-trash"/></svg></button>
+        </div>
+      </div>
+      <div class="docrow">
+        <div class="fic pdf">PDF</div>
+        <div><b>Payslip_Jul_2026.pdf</b> <span class="bdg d-req" style="margin-left:4px">v2 replaces v1</span><span class="sub-l">344 KB</span></div>
+        <span class="hidem">Payslip</span><span class="hidem mono">v2</span>
+        <span class="hidem">Admin<span class="sub-l">16 Aug 2026 · 11:20</span></span>
+        <span><span class="bdg d-rev">Under Review</span></span>
+        <span class="hidem" style="color:var(--ink3)">July payroll run</span>
+        <div class="acts">
+          <button class="iact" onclick="openDoc('Payslip_Jul_2026.pdf','Payslip','LA-000125','v2 · 344 KB · Admin · 16 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button>
+          <button class="iact" onclick="toast('Downloading Payslip_Jul_2026.pdf')"><svg class="ic"><use href="#i-download"/></svg></button>
+          <button class="iact" onclick="toast('Replace flow (mock)','warn')"><svg class="ic"><use href="#i-refresh"/></svg></button>
+          <button class="iact del" onclick="toast('Document deleted (audit logged)','bad')"><svg class="ic"><use href="#i-trash"/></svg></button>
+        </div>
+      </div>
+
+      <div class="missline"><svg class="ic" style="color:var(--amber)"><use href="#i-alert"/></svg><div><b>Bank Statement</b> — required, not yet received.</div><button class="btn btn-line btn-sm" style="margin-left:auto" onclick="toast('Document request sent to applicant')">Request from applicant</button></div>
+      <div class="missline"><svg class="ic" style="color:var(--gold-d)"><use href="#i-clock"/></svg><div><b>Employment Confirmation</b> — requested from ZESCO HR on 16 Aug.</div><button class="btn btn-line btn-sm" style="margin-left:auto" onclick="toast('Reminder sent to ZESCO HR','warn')">Send reminder</button></div>
+
+      <div class="drop" onclick="toast('File picker (mock) — files land in storage/app/documents')">
+        <svg class="ic"><use href="#i-upload"/></svg><br>
+        <b>Drop files here</b> or click to browse<br>
+        <small>PDF, JPG, PNG · up to 10 MB · classify against a document type on upload</small>
+      </div>
+    </div>
+
+    <!-- CRB CLEARANCE -->
+    <div class="pane" data-tg="detail" data-tp="crb">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div>
+          <div style="border:1px solid var(--line);border-radius:12px;padding:18px;background:#fbfcf9">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <span class="bdg c-resp" id="crbBadge" style="font-size:12.5px;padding:5px 13px"><i></i>Awaiting Response</span>
+              <span style="font-size:11.5px;color:var(--ink3)">response due <b style="color:var(--amber)">18 Aug</b> · SLA 2 days</span>
+            </div>
+            <dl class="kv">
+              <div><dt>CRB reference</dt><dd class="mono">CRB/2026/08841</dd></div>
+              <div><dt>Submitted</dt><dd class="mono">15 Aug 2026 · 10:30 by Mary Banda</dd></div>
+              <div><dt>Bureau</dt><dd>Zenith Credit Bureau (api v2)</dd></div>
+              <div><dt>Response received</dt><dd style="color:var(--ink3)">— pending —</dd></div>
+              <div><dt>Result / remarks</dt><dd style="color:var(--ink3)">No bureau response yet.</dd></div>
+            </dl>
+            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+              <button class="btn btn-pri btn-sm" onclick="crbAct('clear')"><svg class="ic"><use href="#i-check"/></svg> Mark Cleared</button>
+              <button class="btn btn-danger btn-sm" onclick="crbAct('flag')"><svg class="ic"><use href="#i-flag"/></svg> Flag</button>
+              <button class="btn btn-line btn-sm" onclick="toast('Response capture form (mock)')">Record response</button>
+              <button class="btn btn-ghost btn-sm" onclick="toast('Resubmitted to CRB gateway','warn')"><svg class="ic"><use href="#i-refresh"/></svg> Re-submit</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:12px">Clearance timeline</h4>
+          <div class="tl">
+            <div class="tli"><span class="tm">15 Aug · 10:15</span><p><b>Request prepared</b></p><small>Consent form verified, identity matched to NRC.</small></div>
+            <div class="tli"><span class="tm">15 Aug · 10:30</span><p><b>Submitted to CRB</b></p><small>Ref CRB/2026/08841 · transmitted via gateway.</small></div>
+            <div class="tli now"><span class="tm">now</span><p><b>Awaiting bureau response</b></p><small>Day 2 of 2-day SLA.</small></div>
+            <div class="tli idle"><span class="tm">—</span><p>Response received</p></div>
+            <div class="tli idle"><span class="tm">—</span><p>Decision recorded (Cleared / Flagged)</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="pane" data-tg="detail" data-tp="hist">
+      <div class="tblwrap" style="max-height:none">
+      <table class="tbl" style="min-width:0">
+        <thead><tr><th>When</th><th>Event</th><th>Change</th><th>Actor</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">17 Aug · 09:47</td><td>Reminder sent</td><td>Employment Confirmation outstanding</td><td><span class="atag sys">System</span></td></tr>
+          <tr><td class="mono">17 Aug · 09:15</td><td>Status change</td><td><code>Submitted</code> → <code>Under Review</code></td><td>Mary Banda</td></tr>
+          <tr><td class="mono">16 Aug · 11:20</td><td>Document replaced</td><td><code>Payslip</code> v1 → v2</td><td>Admin</td></tr>
+          <tr><td class="mono">16 Aug · 08:30</td><td>Officer assigned</td><td>Mary Banda (Records Officer)</td><td>Admin</td></tr>
+          <tr><td class="mono">15 Aug · 10:30</td><td>CRB submitted</td><td>Ref <code>CRB/2026/08841</code></td><td>Mary Banda</td></tr>
+          <tr><td class="mono">15 Aug · 10:02</td><td>Status change</td><td><code>Draft</code> → <code>Submitted</code></td><td>Mary Banda</td></tr>
+          <tr><td class="mono">15 Aug · 09:41</td><td>Documents uploaded</td><td>3 files attached</td><td>Mary Banda</td></tr>
+          <tr><td class="mono">15 Aug · 09:38</td><td>Record created</td><td>Application number <code>LA-000125</code> issued</td><td>Mary Banda</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="pane" data-tg="detail" data-tp="notes" style="max-width:760px">
+      <div id="noteList">
+        <div class="note"><div class="nh"><span class="av av-pp" style="width:26px;height:26px;font-size:9px">PP</span><b>Peter Phiri</b><span class="tm">17 Aug 2026 · 09:20</span></div><p>Previous loan (LA-000078, 2024) cleared without issue. Salary channel verified against payroll register — deduction capacity is sufficient.</p></div>
+        <div class="note"><div class="nh"><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span><b>Mary Banda</b><span class="tm">16 Aug 2026 · 14:05</span></div><p>Requested employment confirmation from ZESCO HR. If nothing received by Tue 18 Aug, call the applicant directly on file number.</p></div>
+      </div>
+      <div style="border-top:1px dashed var(--line2);padding-top:14px;margin-top:6px">
+        <label class="lb">Add a note</label>
+        <textarea class="in" id="noteTxt" placeholder="Visible to all officers on this record…"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:9px"><button class="btn btn-pri btn-sm" onclick="addNote()"><svg class="ic"><use href="#i-message"/></svg> Add note</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · DOCUMENT REPOSITORY
+════════════════════════════════════════ -->
+<section class="page" id="pg-docs">
+  <div class="ph">
+    <div><div class="kick">Documents</div><h1>Document Repository</h1><p>1,284 documents on file · 46 uploaded this week · 12 pending review</p></div>
+    <div class="ph-a"><button class="btn btn-pri" onclick="toast('File picker (mock)')"><svg class="ic"><use href="#i-upload"/></svg> Upload document</button></div>
+  </div>
+  <div class="card rise">
+    <div style="display:flex;gap:9px;padding:14px 17px;border-bottom:1px solid var(--line2);flex-wrap:wrap">
+      <div class="gsearch" style="width:min(340px,60vw)"><svg class="ic"><use href="#i-search"/></svg><input placeholder="Search file name, application, applicant…"></div>
+      <select class="in" style="width:190px"><option>All document types</option><option>Application Form</option><option>National ID</option><option>Payslip</option><option>Bank Statement</option><option>Employment Confirmation</option><option>Collateral</option><option>CRB Report</option><option>KYC Documents</option></select>
+      <select class="in" style="width:160px"><option>All branches</option><option>Lusaka Main</option><option>Kitwe</option></select>
+      <select class="in" style="width:160px;margin-left:auto"><option>Latest first</option><option>Oldest first</option><option>Largest size</option></select>
+    </div>
+    <div class="tblwrap">
+    <table class="tbl">
+      <thead><tr><th>Document</th><th>Type</th><th>Application</th><th class="hidem">Applicant</th><th>Ver.</th><th class="hidem">Uploaded by</th><th>Date</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><div style="display:flex;gap:10px;align-items:center"><div class="fic pdf">PDF</div><b>CRB_Report.pdf</b></div></td><td>CRB Report</td><td><span class="appno" onclick="go('detail')">LA-000126</span></td><td class="hidem">Jane Phiri</td><td class="mono">v1</td><td class="hidem">Mary Banda</td><td class="mono">17 Aug · 10:32</td><td><span class="bdg d-ver">Verified</span></td><td><div class="acts"><button class="iact" onclick="openDoc('CRB_Report.pdf','CRB Report','LA-000126','v1 · 640 KB · Mary Banda · 17 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button><button class="iact" onclick="toast('Downloading…')"><svg class="ic"><use href="#i-download"/></svg></button></div></td></tr>
+        <tr><td><div style="display:flex;gap:10px;align-items:center"><div class="fic pdf">PDF</div><b>Payslip.pdf</b></div></td><td>Payslip</td><td><span class="appno" onclick="go('detail')">LA-000126</span></td><td class="hidem">Jane Phiri</td><td class="mono">v2</td><td class="hidem">Admin</td><td class="mono">17 Aug · 11:20</td><td><span class="bdg d-rev">Under Review</span></td><td><div class="acts"><button class="iact" onclick="openDoc('Payslip.pdf','Payslip','LA-000126','v2 · 310 KB · Admin · 17 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button><button class="iact" onclick="toast('Downloading…')"><svg class="ic"><use href="#i-download"/></svg></button></div></td></tr>
+        <tr><td><div style="display:flex;gap:10px;align-items:center"><div class="fic pdf">PDF</div><b>Loan_Application_Form_Banda.pdf</b></div></td><td>Application Form</td><td><span class="appno" onclick="go('detail')">LA-000125</span></td><td class="hidem">John Banda</td><td class="mono">v1</td><td class="hidem">Mary Banda</td><td class="mono">15 Aug · 09:41</td><td><span class="bdg d-ver">Verified</span></td><td><div class="acts"><button class="iact" onclick="openDoc('Loan_Application_Form_Banda.pdf','Application Form','LA-000125','v1 · 812 KB · Mary Banda · 15 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button><button class="iact" onclick="toast('Downloading…')"><svg class="ic"><use href="#i-download"/></svg></button></div></td></tr>
+        <tr><td><div style="display:flex;gap:10px;align-items:center"><div class="fic img">JPG</div><b>NRC_345678_copy.jpg</b></div></td><td>National ID</td><td><span class="appno" onclick="go('detail')">LA-000125</span></td><td class="hidem">John Banda</td><td class="mono">v1</td><td class="hidem">Mary Banda</td><td class="mono">15 Aug · 09:42</td><td><span class="bdg d-ver">Verified</span></td><td><div class="acts"><button class="iact" onclick="openDoc('NRC_345678_copy.jpg','National ID','LA-000125','v1 · 1.2 MB · Mary Banda · 15 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button><button class="iact" onclick="toast('Downloading…')"><svg class="ic"><use href="#i-download"/></svg></button></div></td></tr>
+        <tr><td><div style="display:flex;gap:10px;align-items:center"><div class="fic pdf">PDF</div><b>KYC_Packet_Kunda.pdf</b></div></td><td>KYC Documents</td><td><span class="appno" onclick="go('detail')">MA-000093</span></td><td class="hidem">Mercy Kunda</td><td class="mono">v1</td><td class="hidem">Peter Phiri</td><td class="mono">16 Aug · 10:12</td><td><span class="bdg d-ver">Verified</span></td><td><div class="acts"><button class="iact" onclick="openDoc('KYC_Packet_Kunda.pdf','KYC Documents','MA-000093','v1 · 2.4 MB · Peter Phiri · 16 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button><button class="iact" onclick="toast('Downloading…')"><svg class="ic"><use href="#i-download"/></svg></button></div></td></tr>
+        <tr><td><div style="display:flex;gap:10px;align-items:center"><div class="fic pdf">PDF</div><b>Collateral_Title_Deed.pdf</b></div></td><td>Collateral</td><td><span class="appno" onclick="go('detail')">LA-000128</span></td><td class="hidem">Naomi Chanda</td><td class="mono">v1</td><td class="hidem">Thoko Musonda</td><td class="mono">15 Aug · 13:40</td><td><span class="bdg d-rev">Under Review</span></td><td><div class="acts"><button class="iact" onclick="openDoc('Collateral_Title_Deed.pdf','Collateral','LA-000128','v1 · 3.1 MB · Thoko Musonda · 15 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button><button class="iact" onclick="toast('Downloading…')"><svg class="ic"><use href="#i-download"/></svg></button></div></td></tr>
+        <tr><td><div style="display:flex;gap:10px;align-items:center"><div class="fic pdf">PDF</div><b>Bank_Statement_Zanaco.pdf</b></div></td><td>Bank Statement</td><td><span class="appno" onclick="go('detail')">LA-000130</span></td><td class="hidem">Agnes Lungu</td><td class="mono">v1</td><td class="hidem">Peter Phiri</td><td class="mono">16 Aug · 09:30</td><td><span class="bdg d-ver">Verified</span></td><td><div class="acts"><button class="iact" onclick="openDoc('Bank_Statement_Zanaco.pdf','Bank Statement','LA-000130','v1 · 1.8 MB · Peter Phiri · 16 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button><button class="iact" onclick="toast('Downloading…')"><svg class="ic"><use href="#i-download"/></svg></button></div></td></tr>
+        <tr><td><div style="display:flex;gap:10px;align-items:center"><div class="fic pdf">PDF</div><b>Business_Permit.pdf</b></div></td><td>Supporting</td><td><span class="appno" onclick="go('detail')">LA-000123</span></td><td class="hidem">Clement Zulu</td><td class="mono">v1</td><td class="hidem">Mary Banda</td><td class="mono">12 Aug · 09:05</td><td><span class="bdg d-ver">Verified</span></td><td><div class="acts"><button class="iact" onclick="openDoc('Business_Permit.pdf','Supporting','LA-000123','v1 · 950 KB · Mary Banda · 12 Aug 2026')"><svg class="ic"><use href="#i-eye"/></svg></button><button class="iact" onclick="toast('Downloading…')"><svg class="ic"><use href="#i-download"/></svg></button></div></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="tfoot">Showing 1–8 of 1,284 documents<div class="pg"><button class="pgbtn on">1</button><button class="pgbtn">2</button><button class="pgbtn">3</button><button class="pgbtn">…</button></div></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · MISSING DOCUMENTS
+════════════════════════════════════════ -->
+<section class="page" id="pg-missing">
+  <div class="ph">
+    <div><div class="kick">Documents</div><h1>Missing Documents</h1><p>9 applications cannot advance until required documents are received</p></div>
+    <div class="ph-a"><button class="btn btn-line" onclick="toast('Bulk reminder SMS/emails queued','warn')"><svg class="ic"><use href="#i-send"/></svg> Send all reminders</button></div>
+  </div>
+  <div class="card rise">
+    <div class="tblwrap">
+    <table class="tbl">
+      <thead><tr><th>Application</th><th>Applicant</th><th>Missing items</th><th style="width:160px">Completion</th><th>Age</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000125</span><span class="sub-l">Salary Advance</span></td><td>John Banda</td><td><span class="bdg d-miss">Bank Statement</span> <span class="bdg d-req">Employment Confirmation · requested</span></td><td><div class="docbar"><div class="pbar mid" style="flex:1"><i data-w="60"></i></div><span class="pc mid">60%</span></div></td><td class="mono">2 d</td><td><button class="btn btn-line btn-sm" onclick="toast('Reminder sent to applicant')">Remind</button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000129</span><span class="sub-l">Business Loan</span></td><td>Joseph Kabwe</td><td><span class="bdg d-miss">Payslip</span> <span class="bdg d-miss">Bank Statement</span> <span class="bdg d-miss">Collateral</span></td><td><div class="docbar"><div class="pbar mid" style="flex:1"><i data-w="55"></i></div><span class="pc mid">55%</span></div></td><td class="mono">1 d</td><td><button class="btn btn-line btn-sm" onclick="toast('Reminder sent to applicant')">Remind</button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000092</span><span class="sub-l">Joint membership</span></td><td>Bright Njobvu</td><td><span class="bdg d-miss">Proof of Residence</span> <span class="bdg d-miss">Spouse ID</span></td><td><div class="docbar"><div class="pbar lo" style="flex:1"><i data-w="40"></i></div><span class="pc lo">40%</span></div></td><td class="mono">2 d</td><td><button class="btn btn-line btn-sm" onclick="toast('Reminder sent to applicant')">Remind</button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000132</span><span class="sub-l">Salary Advance</span></td><td>Grace Tembo</td><td><span class="bdg d-miss">Payslip</span> <span class="bdg d-miss">Bank Statement</span></td><td><div class="docbar"><div class="pbar lo" style="flex:1"><i data-w="40"></i></div><span class="pc lo">40%</span></div></td><td class="mono">0 d</td><td><button class="btn btn-line btn-sm" onclick="toast('Reminder sent to applicant')">Remind</button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000121</span><span class="sub-l">Personal Loan</span></td><td>Sarah Phiri</td><td><span class="bdg d-miss">Bank Statement</span></td><td><div class="docbar"><div class="pbar mid" style="flex:1"><i data-w="75"></i></div><span class="pc mid">75%</span></div></td><td class="mono">6 d</td><td><button class="btn btn-line btn-sm" onclick="toast('Reminder sent to applicant')">Remind</button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000090</span><span class="sub-l">Individual</span></td><td>Kelvin Daka</td><td><span class="bdg d-miss">Proof of Residence</span></td><td><div class="docbar"><div class="pbar mid" style="flex:1"><i data-w="60"></i></div><span class="pc mid">60%</span></div></td><td class="mono">4 d</td><td><button class="btn btn-line btn-sm" onclick="toast('Reminder sent to applicant')">Remind</button></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · SEARCH
+════════════════════════════════════════ -->
+<section class="page" id="pg-search">
+  <div class="ph">
+    <div><div class="kick">Records search</div><h1>Search</h1><p>Cross-cutting search across applications, members and documents</p></div>
+  </div>
+  <div class="card rise pad" style="margin-bottom:16px">
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div class="gsearch" style="flex:1;height:46px;width:auto"><svg class="ic"><use href="#i-search"/></svg><input id="qMain" placeholder="Quick search — try “Banda”, “345678”, “LA-0001”, “0975…”" style="font-size:14px"></div>
+      <button class="btn btn-pri" style="height:46px" onclick="toast('Search executed — 6 results in 0.12 s')">Search</button>
+    </div>
+    <div class="frm">
+      <div><label class="lb">Application No.</label><input class="in" placeholder="LA-000125 / MA-00009"></div>
+      <div><label class="lb">Membership No.</label><input class="in" placeholder="MEM-002458"></div>
+      <div><label class="lb">Applicant name</label><input class="in" placeholder="Surname, first names"></div>
+      <div><label class="lb">National ID (NRC)</label><input class="in" placeholder="345678/10/1"></div>
+      <div><label class="lb">Phone number</label><input class="in" placeholder="+260…"></div>
+      <div><label class="lb">Application type</label><select class="in"><option>Any</option><option>Loan</option><option>Membership</option></select></div>
+      <div><label class="lb">Loan product</label><select class="in"><option>Any</option><option>Salary Advance</option><option>Personal Loan</option><option>Business Loan</option><option>School Fees</option><option>Asset Finance</option><option>Emergency</option></select></div>
+      <div><label class="lb">Branch</label><select class="in"><option>All</option><option>Lusaka Main</option><option>Kitwe</option><option>Ndola</option><option>Livingstone</option><option>Chipata</option></select></div>
+      <div><label class="lb">Application status</label><select class="in"><option>Any</option><option>Draft</option><option>Submitted</option><option>Under Review</option><option>Awaiting Documents</option><option>Awaiting CRB</option><option>CRB Cleared</option><option>CRB Flagged</option><option>Approved</option><option>Rejected</option><option>Archived</option></select></div>
+      <div><label class="lb">CRB status</label><select class="in"><option>Any</option><option>Not Submitted</option><option>Awaiting Submission</option><option>Submitted</option><option>Awaiting Response</option><option>Cleared</option><option>Flagged</option><option>Failed</option><option>Requires Review</option></select></div>
+      <div><label class="lb">Date from</label><input class="in" type="date" value="2026-08-01"></div>
+      <div><label class="lb">Date to</label><input class="in" type="date" value="2026-08-17"></div>
+      <div class="w4" style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-ghost" onclick="toast('Filters reset')">Reset</button><button class="btn btn-line" onclick="toast('Search saved as “Flagged — Chipata”')">Save search</button><button class="btn btn-pri" onclick="toast('Search executed — 6 results in 0.12 s')"><svg class="ic"><use href="#i-search"/></svg> Run search</button></div>
+    </div>
+  </div>
+  <div class="card rise">
+    <div class="card-h"><h3>Results</h3><span class="hint">“Banda” · 6 matches · 0.12 s</span><span class="lk" onclick="toast('Results exported')">Export results →</span></div>
+    <div class="tblwrap">
+    <table class="tbl">
+      <thead><tr><th>App No.</th><th>Type</th><th>Applicant</th><th>Matched on</th><th>Date</th><th>Status</th><th>CRB</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000125</span></td><td><span class="type-l">Loan</span></td><td><b>John Banda</b></td><td><span class="atag docs">Name</span></td><td class="mono">15 Aug 2026</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="bdg c-resp"><i></i>Awaiting</span></td><td><button class="btn btn-line btn-sm" onclick="go('detail')">Open</button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000119</span></td><td><span class="type-l">Loan</span></td><td><b>Oscar Banda</b></td><td><span class="atag docs">Name</span></td><td class="mono">10 Aug 2026</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="bdg c-fail"><i></i>Failed</span></td><td><button class="btn btn-line btn-sm" onclick="go('detail')">Open</button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">LA-000078</span></td><td><span class="type-l">Loan</span></td><td><b>John Banda</b></td><td><span class="atag docs">Name</span></td><td class="mono">12 Mar 2024</td><td><span class="bdg b-arch"><i></i>Archived</span></td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td><button class="btn btn-line btn-sm" onclick="go('detail')">Open</button></td></tr>
+        <tr><td><span class="appno" onclick="go('detail')">MA-000061</span></td><td><span class="type-m">Membership</span></td><td><b>Chanda Banda</b></td><td><span class="atag docs">Name</span></td><td class="mono">02 Feb 2025</td><td><span class="bdg b-appr"><i></i>Approved</span></td><td><span class="bdg c-none"><i></i>N/A</span></td><td><button class="btn btn-line btn-sm" onclick="go('detail')">Open</button></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · REPORTS
+════════════════════════════════════════ -->
+<section class="page" id="pg-reports">
+  <div class="ph">
+    <div><div class="kick">Reports</div><h1>Reports</h1><p>Registers, clearance analytics and document activity — export to CSV, Excel or PDF</p></div>
+  </div>
+  <div class="repgrid" style="margin-bottom:20px">
+    <div class="rep rise"><div class="ric"><svg class="ic"><use href="#i-clip"/></svg></div><h4>Loan Application Register</h4><p>Full register with product, amount, status, officer and dates.</p><div class="rf"><small>Last run · today 07:00</small><button class="btn btn-line btn-sm" onclick="toast('Report generated — 61 rows')">Run</button></div></div>
+    <div class="rep rise" style="animation-delay:.03s"><div class="ric"><svg class="ic"><use href="#i-users"/></svg></div><h4>Membership Register</h4><p>Membership applications with applicant type and KYC status.</p><div class="rf"><small>Last run · 15 Aug</small><button class="btn btn-line btn-sm" onclick="toast('Report generated — 22 rows')">Run</button></div></div>
+    <div class="rep rise" style="animation-delay:.06s"><div class="ric"><svg class="ic"><use href="#i-clock"/></svg></div><h4>Pending Applications</h4><p>Everything not yet approved or rejected, aged by days open.</p><div class="rf"><small>Last run · 16 Aug</small><button class="btn btn-line btn-sm" onclick="toast('Report generated — 81 rows')">Run</button></div></div>
+    <div class="rep crb rise" style="animation-delay:.09s"><div class="ric"><svg class="ic"><use href="#i-shield"/></svg></div><h4>Awaiting CRB Clearance</h4><p>Live clearance queue snapshot with days waiting and SLA breaches.</p><div class="rf"><small>Last run · today 09:00</small><button class="btn btn-line btn-sm" onclick="toast('Report generated — 14 rows')">Run</button></div></div>
+    <div class="rep crb rise" style="animation-delay:.12s"><div class="ric"><svg class="ic"><use href="#i-history"/></svg></div><h4>CRB Clearance Turnaround</h4><p>Submission-to-response time by branch, officer and month.</p><div class="rf"><small>Last run · 14 Aug</small><button class="btn btn-line btn-sm" onclick="toast('Report generated')">Run</button></div></div>
+    <div class="rep doc rise" style="animation-delay:.15s"><div class="ric"><svg class="ic"><use href="#i-alert"/></svg></div><h4>Missing Documents</h4><p>Applications blocked by outstanding documents, with completion %.</p><div class="rf"><small>Last run · today 08:30</small><button class="btn btn-line btn-sm" onclick="toast('Report generated — 9 rows')">Run</button></div></div>
+    <div class="rep rise" style="animation-delay:.18s"><div class="ric"><svg class="ic"><use href="#i-building"/></svg></div><h4>Applications by Branch</h4><p>Volume and approval rates per branch, monthly comparison.</p><div class="rf"><small>Last run · 11 Aug</small><button class="btn btn-line btn-sm" onclick="toast('Report generated')">Run</button></div></div>
+    <div class="rep rise" style="animation-delay:.21s"><div class="ric"><svg class="ic"><use href="#i-tag"/></svg></div><h4>Applications by Loan Product</h4><p>Demand by product with average amounts and rejection reasons.</p><div class="rf"><small>Last run · 11 Aug</small><button class="btn btn-line btn-sm" onclick="toast('Report generated')">Run</button></div></div>
+    <div class="rep rise" style="animation-delay:.24s"><div class="ric"><svg class="ic"><use href="#i-chart"/></svg></div><h4>Applications by Status</h4><p>Pipeline distribution across all ten workflow statuses.</p><div class="rf"><small>Last run · 16 Aug</small><button class="btn btn-line btn-sm" onclick="toast('Report generated')">Run</button></div></div>
+    <div class="rep doc rise" style="animation-delay:.27s"><div class="ric"><svg class="ic"><use href="#i-folder"/></svg></div><h4>Documents Uploaded</h4><p>Upload volume by type, officer and branch; storage consumption.</p><div class="rf"><small>Last run · 12 Aug</small><button class="btn btn-line btn-sm" onclick="toast('Report generated')">Run</button></div></div>
+    <div class="rep doc rise" style="animation-delay:.3s"><div class="ric"><svg class="ic"><use href="#i-db"/></svg></div><h4>Document Activity / Audit</h4><p>Every upload, replacement, view and deletion — filterable by record.</p><div class="rf"><small>Last run · today 11:40</small><button class="btn btn-line btn-sm" onclick="go('audit')">Open</button></div></div>
+  </div>
+
+  <div class="card rise">
+    <div class="card-h"><h3>Preview — Loan Application Register</h3>
+      <span class="hint mono">01 Aug 2026 → 17 Aug 2026</span><span class="sp"></span>
+      <button class="btn btn-line btn-sm" onclick="toast('Exported to CSV')"><svg class="ic"><use href="#i-download"/></svg> CSV</button>
+      <button class="btn btn-line btn-sm" onclick="toast('Exported to Excel')">Excel</button>
+      <button class="btn btn-line btn-sm" onclick="toast('Exported to PDF')">PDF</button>
+    </div>
+    <div class="tblwrap">
+    <table class="tbl">
+      <thead><tr><th>App No.</th><th>Applicant</th><th>Product</th><th class="num">Amount</th><th>Status</th><th>CRB</th><th>Officer</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">LA-000132</td><td>Grace Tembo</td><td>Salary Advance</td><td class="num">K15,000</td><td><span class="bdg b-sub"><i></i>Submitted</span></td><td><span class="bdg c-none"><i></i>—</span></td><td>Mary Banda</td></tr>
+        <tr><td class="mono">LA-000131</td><td>David Mwape</td><td>Personal Loan</td><td class="num">K45,000</td><td><span class="bdg b-draft"><i></i>Draft</span></td><td><span class="bdg c-none"><i></i>—</span></td><td>—</td></tr>
+        <tr><td class="mono">LA-000130</td><td>Agnes Lungu</td><td>School Fees</td><td class="num">K22,500</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="bdg c-resp"><i></i>Awaiting</span></td><td>Peter Phiri</td></tr>
+        <tr><td class="mono">LA-000126</td><td>Jane Phiri</td><td>Personal Loan</td><td class="num">K30,000</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="bdg c-clear"><i></i>Cleared</span></td><td>Peter Phiri</td></tr>
+        <tr><td class="mono">LA-000125</td><td>John Banda</td><td>Salary Advance</td><td class="num">K25,000</td><td><span class="bdg b-rev"><i></i>Under Review</span></td><td><span class="bdg c-resp"><i></i>Awaiting</span></td><td>Mary Banda</td></tr>
+        <tr style="background:#fafbf7"><td colspan="3"><b>Totals — 61 applications in range</b></td><td class="num"><b>K1,482,500</b></td><td colspan="3"></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · AUDIT TRAIL
+════════════════════════════════════════ -->
+<section class="page" id="pg-audit">
+  <div class="ph">
+    <div><div class="kick">Administration</div><h1>Audit Trail</h1><p>Every capture, upload, replacement, status change and clearance decision — immutable log</p></div>
+    <div class="ph-a"><button class="btn btn-line" onclick="toast('Audit log exported to CSV')"><svg class="ic"><use href="#i-download"/></svg> Export log</button></div>
+  </div>
+  <div class="chiprow" id="auditChips">
+    <button class="chip on" data-f="all" onclick="achip(this)">All</button>
+    <button class="chip" data-f="docs" onclick="achip(this)">Documents</button>
+    <button class="chip" data-f="status" onclick="achip(this)">Status changes</button>
+    <button class="chip" data-f="crb" onclick="achip(this)">CRB</button>
+    <button class="chip" data-f="notes" onclick="achip(this)">Notes</button>
+    <button class="chip" data-f="sys" onclick="achip(this)">System</button>
+  </div>
+  <div class="card rise" id="auditList">
+    <div class="aitem" data-t="docs"><span class="av av-ad" style="width:30px;height:30px;font-size:10px">AD</span><div><b>Admin</b> replaced <code>Payslip.pdf</code> on <code>LA-000126</code> (v1 → v2)<span class="atag docs">Docs</span></div><span class="tm">17 Aug 2026 · 11:20 AM</span></div>
+    <div class="aitem" data-t="crb"><span class="av av-pp" style="width:30px;height:30px;font-size:10px">PP</span><div><b>Peter Phiri</b> changed CRB status from <code>Submitted</code> to <code>Cleared</code> on <code>LA-000126</code><span class="atag crb">CRB</span></div><span class="tm">17 Aug 2026 · 11:05 AM</span></div>
+    <div class="aitem" data-t="docs"><span class="av av-mb" style="width:30px;height:30px;font-size:10px">MB</span><div><b>Mary Banda</b> uploaded <code>CRB_Report.pdf</code> to <code>LA-000126</code><span class="atag docs">Docs</span></div><span class="tm">17 Aug 2026 · 10:32 AM</span></div>
+    <div class="aitem" data-t="notes"><span class="av av-tm" style="width:30px;height:30px;font-size:10px">TM</span><div><b>Thoko Musonda</b> added a note on <code>MA-000092</code> — “Spouse will bring ID on Thursday”<span class="atag notes">Notes</span></div><span class="tm">17 Aug 2026 · 09:58 AM</span></div>
+    <div class="aitem" data-t="sys"><span class="av" style="width:30px;height:30px;font-size:10px;background:#5d6b72">SY</span><div><b>System</b> sent reminder — Employment Confirmation outstanding on <code>LA-000125</code><span class="atag sys">System</span></div><span class="tm">17 Aug 2026 · 09:47 AM</span></div>
+    <div class="aitem" data-t="status"><span class="av av-mb" style="width:30px;height:30px;font-size:10px">MB</span><div><b>Mary Banda</b> changed status from <code>Submitted</code> to <code>Under Review</code> on <code>LA-000125</code><span class="atag status">Status</span></div><span class="tm">17 Aug 2026 · 09:15 AM</span></div>
+    <div class="aitem" data-t="crb"><span class="av av-pp" style="width:30px;height:30px;font-size:10px">PP</span><div><b>Peter Phiri</b> submitted <code>LA-000127</code> to CRB — ref <code>CRB/2026/08849</code><span class="atag crb">CRB</span></div><span class="tm">17 Aug 2026 · 08:52 AM</span></div>
+    <div class="aitem" data-t="status"><span class="av av-ad" style="width:30px;height:30px;font-size:10px">AD</span><div><b>Admin</b> assigned <code>LA-000130</code> to Peter Phiri<span class="atag status">Status</span></div><span class="tm">16 Aug 2026 · 04:40 PM</span></div>
+    <div class="aitem" data-t="docs"><span class="av av-mb" style="width:30px;height:30px;font-size:10px">MB</span><div><b>Mary Banda</b> deleted superseded <code>Bank_Statement_v1.pdf</code> on <code>LA-000129</code><span class="atag docs">Docs</span></div><span class="tm">16 Aug 2026 · 03:12 PM</span></div>
+    <div class="aitem" data-t="sys"><span class="av av-ad" style="width:30px;height:30px;font-size:10px">AD</span><div><b>Admin</b> captured new membership record <code>MA-000093</code><span class="atag sys">System</span></div><span class="tm">16 Aug 2026 · 11:03 AM</span></div>
+    <div class="aitem" data-t="crb"><span class="av av-mb" style="width:30px;height:30px;font-size:10px">MB</span><div><b>Mary Banda</b> submitted <code>LA-000125</code> to CRB — ref <code>CRB/2026/08841</code><span class="atag crb">CRB</span></div><span class="tm">15 Aug 2026 · 10:30 AM</span></div>
+    <div class="aitem" data-t="docs"><span class="av av-mb" style="width:30px;height:30px;font-size:10px">MB</span><div><b>Mary Banda</b> uploaded 3 documents to <code>LA-000125</code> (Form, NRC, Payslip)<span class="atag docs">Docs</span></div><span class="tm">15 Aug 2026 · 09:41 AM</span></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PAGE · ADMINISTRATION
+════════════════════════════════════════ -->
+<section class="page" id="pg-admin">
+  <div class="ph">
+    <div><div class="kick">Administration</div><h1>System Administration</h1><p>Users, branches, document types and workflow settings</p></div>
+  </div>
+  <div class="card rise">
+    <div class="tabbar">
+      <button class="tbtn on" data-tg="adm" data-tp="us" onclick="tab(this)"><svg class="ic"><use href="#i-user"/></svg> Users</button>
+      <button class="tbtn" data-tg="adm" data-tp="br" onclick="tab(this)"><svg class="ic"><use href="#i-building"/></svg> Branches</button>
+      <button class="tbtn" data-tg="adm" data-tp="dt" onclick="tab(this)"><svg class="ic"><use href="#i-tag"/></svg> Document Types</button>
+      <button class="tbtn" data-tg="adm" data-tp="st" onclick="tab(this)"><svg class="ic"><use href="#i-sliders"/></svg> Application Settings</button>
+    </div>
+
+    <div class="pane on" data-tg="adm" data-tp="us" style="padding:0">
+      <div class="tblwrap" style="max-height:none">
+      <table class="tbl">
+        <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Branch</th><th>Status</th><th>Last active</th></tr></thead>
+        <tbody>
+          <tr><td><div style="display:flex;gap:10px;align-items:center"><span class="av av-gz">GZ</span><b>Grace Zimba</b></div></td><td class="mono" style="font-size:11.5px">g.zimba@mulonga.co.zm</td><td><span class="bdg b-rej" style="background:var(--pine-800)"><i></i>Administrator</span></td><td>Lusaka Main</td><td><span class="bdg b-appr"><i></i>Active</span></td><td class="mono">Now</td></tr>
+          <tr><td><div style="display:flex;gap:10px;align-items:center"><span class="av av-mb">MB</span><b>Mary Banda</b></div></td><td class="mono" style="font-size:11.5px">m.banda@mulonga.co.zm</td><td><span class="bdg b-sub"><i></i>Records Officer</span></td><td>Lusaka Main</td><td><span class="bdg b-appr"><i></i>Active</span></td><td class="mono">Now</td></tr>
+          <tr><td><div style="display:flex;gap:10px;align-items:center"><span class="av av-pp">PP</span><b>Peter Phiri</b></div></td><td class="mono" style="font-size:11.5px">p.phiri@mulonga.co.zm</td><td><span class="bdg b-sub"><i></i>Records Officer</span></td><td>Ndola</td><td><span class="bdg b-appr"><i></i>Active</span></td><td class="mono">11:05</td></tr>
+          <tr><td><div style="display:flex;gap:10px;align-items:center"><span class="av av-tm">TM</span><b>Thoko Musonda</b></div></td><td class="mono" style="font-size:11.5px">t.musonda@mulonga.co.zm</td><td><span class="bdg b-rev"><i></i>Credit Officer</span></td><td>Livingstone</td><td><span class="bdg b-appr"><i></i>Active</span></td><td class="mono">09:58</td></tr>
+          <tr><td><div style="display:flex;gap:10px;align-items:center"><span class="av" style="background:#5d6b72">CL</span><b>Chipo הלוי Levy</b></div></td><td class="mono" style="font-size:11.5px">c.levy@mulonga.co.zm</td><td><span class="bdg b-draft"><i></i>Viewer</span></td><td>Kitwe</td><td><span class="bdg b-arch"><i></i>Suspended</span></td><td class="mono">02 Aug</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="pane" data-tg="adm" data-tp="br" style="padding:0">
+      <table class="tbl" style="min-width:0">
+        <thead><tr><th>Code</th><th>Branch</th><th>Region</th><th>Officer in charge</th><th class="num">Applications</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">LUS-01</td><td><b>Lusaka Main</b></td><td>Lusaka</td><td>Grace Zimba</td><td class="num">184</td></tr>
+          <tr><td class="mono">KIT-01</td><td>Kitwe</td><td>Copperbelt</td><td>Peter Phiri</td><td class="num">121</td></tr>
+          <tr><td class="mono">NDO-01</td><td>Ndola</td><td>Copperbelt</td><td>Peter Phiri</td><td class="num">98</td></tr>
+          <tr><td class="mono">LIV-01</td><td>Livingstone</td><td>Southern</td><td>Thoko Musonda</td><td class="num">66</td></tr>
+          <tr><td class="mono">CHP-01</td><td>Chipata</td><td>Eastern</td><td>Mary Banda</td><td class="num">60</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pane" data-tg="adm" data-tp="dt" style="padding:0">
+      <div class="tblwrap" style="max-height:none">
+      <table class="tbl">
+        <thead><tr><th>Document type</th><th>Required for</th><th>Accepted formats</th><th>Checklist item</th><th>Active</th></tr></thead>
+        <tbody>
+          <tr><td><b>Loan Application Form</b></td><td><span class="type-l">Loan</span></td><td class="mono">PDF</td><td>✔ required</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>Membership Application Form</b></td><td><span class="type-m">Membership</span></td><td class="mono">PDF</td><td>✔ required</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>National ID (NRC)</b></td><td><span class="type-l">Loan</span> <span class="type-m">Membership</span></td><td class="mono">PDF · JPG</td><td>✔ required</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>Payslip</b></td><td><span class="type-l">Loan</span></td><td class="mono">PDF</td><td>✔ required</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>Bank Statement</b></td><td><span class="type-l">Loan</span></td><td class="mono">PDF</td><td>✔ required</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>Employment Confirmation</b></td><td><span class="type-l">Loan</span></td><td class="mono">PDF</td><td>✔ required</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>Collateral Documents</b></td><td><span class="type-l">Loan</span></td><td class="mono">PDF · JPG</td><td>by product</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>KYC Documents</b></td><td><span class="type-m">Membership</span></td><td class="mono">PDF · JPG</td><td>✔ required</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>CRB Report</b></td><td><span class="type-l">Loan</span></td><td class="mono">PDF</td><td>system-generated</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+          <tr><td><b>Other Supporting</b></td><td><span class="type-l">Loan</span> <span class="type-m">Membership</span></td><td class="mono">any</td><td>optional</td><td><span class="bdg b-appr"><i></i>Yes</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="pane" data-tg="adm" data-tp="st">
+      <div class="frm" style="grid-template-columns:repeat(2,1fr);max-width:820px">
+        <div class="w2"><label class="lb">Organisation name</label><input class="in" value="Mulonga Savings & Credit Cooperative Ltd"></div>
+        <div><label class="lb">Loan application numbering</label><input class="in mono" value="LA-{000000}"></div>
+        <div><label class="lb">Membership numbering</label><input class="in mono" value="MA-{000000}"></div>
+        <div><label class="lb">CRB SLA (working days)</label><input class="in" type="number" value="2"></div>
+        <div><label class="lb">Default branch</label><select class="in"><option>Lusaka Main</option><option>Kitwe</option></select></div>
+        <div><label class="lb">Document storage</label><select class="in"><option>Local filesystem (private)</option><option>S3-compatible</option></select></div>
+        <div><label class="lb">Record retention (years)</label><input class="in" type="number" value="7"></div>
+        <div class="w2" style="display:flex;flex-direction:column;gap:9px">
+          <label style="display:flex;gap:9px;align-items:center;font-size:13px"><input type="checkbox" checked> Auto-remind applicants about missing documents (SMS + email)</label>
+          <label style="display:flex;gap:9px;align-items:center;font-size:13px"><input type="checkbox" checked> Escalate CRB requests past SLA to supervisor</label>
+          <label style="display:flex;gap:9px;align-items:center;font-size:13px"><input type="checkbox"> Require second-officer sign-off before approval</label>
+        </div>
+        <div class="w2" style="display:flex;justify-content:flex-end;gap:9px"><button class="btn btn-ghost">Cancel</button><button class="btn btn-pri" onclick="toast('Settings saved')">Save settings</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ═══════════ MODAL · NEW APPLICATION ═══════════ -->
+<div class="ovl" id="mNew" onclick="if(event.target===this)closeM('mNew')">
+  <div class="modal">
+    <div class="modal-h">
+      <svg class="ic" style="color:var(--green)"><use href="#i-plus"/></svg><h3>Capture new application</h3>
+      <button class="ibtn x" onclick="closeM('mNew')"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-b">
+      <div class="seg">
+        <button class="on" id="segLoan" onclick="capType('loan')">Loan Application</button>
+        <button id="segMem" onclick="capType('mem')">Membership Application</button>
+      </div>
+      <div id="capLoan">
+        <div class="frm">
+          <div class="w2"><label class="lb">Applicant / member</label><input class="in" placeholder="Search member no., name or NRC — e.g. MEM-002458 or “Banda”"></div>
+          <div><label class="lb">Application date</label><input class="in" type="date" value="2026-08-17"></div>
+          <div><label class="lb">Branch</label><select class="in"><option>Lusaka Main</option><option>Kitwe</option><option>Ndola</option><option>Livingstone</option><option>Chipata</option></select></div>
+          <div><label class="lb">Loan product</label><select class="in"><option>Salary Advance</option><option>Personal Loan</option><option>Business Loan</option><option>School Fees Loan</option><option>Asset Finance</option><option>Emergency Loan</option></select></div>
+          <div><label class="lb">Requested amount (ZMW)</label><input class="in" placeholder="K 0.00"></div>
+          <div><label class="lb">Term (months)</label><input class="in" type="number" value="24"></div>
+          <div><label class="lb">Assigned officer</label><select class="in"><option>Mary Banda</option><option>Peter Phiri</option><option>Thoko Musonda</option></select></div>
+          <div class="w2"><label class="lb">Purpose / notes</label><textarea class="in" style="min-height:56px" placeholder="Stated purpose, remarks…"></textarea></div>
+          <div class="w2" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink3)"><svg class="ic"><use href="#i-upload"/></svg> Documents (form, NRC, payslip…) are attached on the record page after capture.</div>
+        </div>
+      </div>
+      <div id="capMem" style="display:none">
+        <div class="frm">
+          <div class="w2"><label class="lb">Applicant name</label><input class="in" placeholder="Full names"></div>
+          <div><label class="lb">Applicant type</label><select class="in"><option>Individual</option><option>Joint</option><option>Corporate</option></select></div>
+          <div><label class="lb">Application date</label><input class="in" type="date" value="2026-08-17"></div>
+          <div><label class="lb">Branch</label><select class="in"><option>Lusaka Main</option><option>Kitwe</option><option>Ndola</option></select></div>
+          <div><label class="lb">Assigned officer</label><select class="in"><option>Mary Banda</option><option>Peter Phiri</option></select></div>
+          <div class="w2"><label class="lb">KYC notes</label><textarea class="in" style="min-height:56px" placeholder="KYC documents will be required: NRC, proof of residence…"></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-ghost" onclick="closeM('mNew')">Cancel</button>
+      <button class="btn btn-line" onclick="closeM('mNew');toast('Saved as Draft — LA-000133')">Save as draft</button>
+      <button class="btn btn-pri" onclick="closeM('mNew');toast('Application LA-000133 captured · route: /applications/loan_applications')">Capture application</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODAL · DOCUMENT VIEWER ═══════════ -->
+<div class="ovl" id="mDoc" onclick="if(event.target===this)closeM('mDoc')">
+  <div class="modal viewer">
+    <div class="modal-h">
+      <div class="fic pdf" style="width:30px;height:30px;font-size:8px">PDF</div>
+      <div><h3 id="vName" style="font-size:14px">CRB_Report.pdf</h3><small id="vMeta" style="color:var(--ink3);font-size:11px">CRB Report · LA-000126</small></div>
+      <button class="ibtn x" style="margin-left:auto" onclick="closeM('mDoc')"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="vtool">
+      <button class="iact" onclick="vzoom(-0.15)" title="Zoom out"><svg class="ic"><use href="#i-zout"/></svg></button>
+      <span class="mono" id="vz" style="font-size:11.5px;min-width:40px;text-align:center">100%</span>
+      <button class="iact" onclick="vzoom(0.15)" title="Zoom in"><svg class="ic"><use href="#i-zin"/></svg></button>
+      <span class="sep"></span>
+      <button class="iact" onclick="vpage(-1)"><svg class="ic"><use href="#i-chl"/></svg></button>
+      <span class="mono" id="vp" style="font-size:11.5px">Page 1 of 4</span>
+      <button class="iact" onclick="vpage(1)" style="transform:rotate(180deg)"><svg class="ic"><use href="#i-chl"/></svg></button>
+      <span class="sep"></span>
+      <button class="iact" onclick="toast('Searching document text…')"><svg class="ic"><use href="#i-search"/></svg></button>
+      <span style="flex:1"></span>
+      <button class="btn btn-line btn-sm" onclick="toast('Downloading original file')"><svg class="ic"><use href="#i-download"/></svg> Download</button>
+      <button class="btn btn-line btn-sm" onclick="toast('Sent to printer')"><svg class="ic"><use href="#i-printer"/></svg> Print</button>
+      <button class="btn btn-line btn-sm" onclick="fs()"><svg class="ic"><use href="#i-max"/></svg> Full screen</button>
+    </div>
+    <div class="vbody">
+      <div class="vpage" id="vpage">
+        <div class="vlh">
+          <div><div class="b">ZENITH CREDIT BUREAU</div><small style="text-align:left">Licensed under the Banking &amp; Financial Services Act · Lusaka, Zambia</small></div>
+          <small>Report ref: CRB/2026/08846<br>Generated: 17 Aug 2026, 10:28 AM<br>Enquiry by: Mulonga Sacco Ltd</small>
+        </div>
+        <h2>CREDIT CLEARANCE REPORT</h2>
+        <div class="vm">Subject: <b>JANE PHIRI</b> · NRC 211034/61/1 · Member ref LA-000126</div>
+        <table>
+          <tr><td>Active credit facilities</td><td><b>2</b> — total exposure K18,200</td></tr>
+          <tr><td>Accounts in arrears</td><td><b>0</b></td></tr>
+          <tr><td>Defaults / adverse listings</td><td><b>0</b></td></tr>
+          <tr><td>Enquiries (last 12 months)</td><td><b>3</b></td></tr>
+          <tr><td>Repayment behaviour (12 m)</td><td>98% on time · rating <b>A2</b></td></tr>
+        </table>
+        <p><b>Finding.</b> The subject has no adverse listing with participating credit providers as at the date of this report. Historical obligations reflect consistent repayment behaviour and no account is currently in arrears.</p>
+        <p><b>Recommendation.</b> The subject is <b>cleared</b> for further credit consideration by the enquiring institution, subject to its own lending policies.</p>
+        <p style="color:#6b7a71;font-size:10.5px;margin-top:14px">This report is confidential and intended solely for the enquiring institution. Data sourced from participating banks, microfinance institutions and utility providers. Disputes may be lodged within 30 days under Regulation 14.</p>
+        <div class="sig"><span>____________________<br>Chief Credit Analyst<br>Zenith Credit Bureau</span><span>Digitally signed ✓<br>SHA-256 verified<br>17 Aug 2026 · 10:28</span></div>
+        <div class="pgno">— PAGE 1 OF 4 —</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ───────── navigation ───────── */
+function go(p, sub){
+  document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));
+  const el=document.getElementById('pg-'+p); if(!el) return;
+  el.classList.add('on');
+  document.querySelectorAll('.nv').forEach(a=>{
+    const ok = a.dataset.go===p && (!a.dataset.sub || a.dataset.sub===(sub||''));
+    a.classList.toggle('on', ok && !(p==='crb'&&!sub&&a.dataset.sub));
+  });
+  if(p==='crb'&&!sub){ document.querySelector('.nv[data-go="crb"]').classList.add('on'); }
+  window.scrollTo({top:0,behavior:'smooth'});
+  animate(el);
+  if(sub){ const b=document.querySelector('#pg-'+p+' .tbtn[data-tp="'+sub+'"]'); if(b) tab(b); }
+  if(p==='dashboard') counts();
+}
+function animate(scope){
+  scope.querySelectorAll('.pbar i[data-w]').forEach(i=>{ i.style.width='0%'; requestAnimationFrame(()=>requestAnimationFrame(()=>i.style.width=i.dataset.w+'%')); });
+  scope.querySelectorAll('.hbar .tr i[data-w], .ratio i[data-w]').forEach(i=>{ i.style.width='0%'; requestAnimationFrame(()=>requestAnimationFrame(()=>i.style.width=i.dataset.w+'%')); });
+}
+/* count-up */
+let counted=false;
+function counts(){
+  document.querySelectorAll('#pg-dashboard .kn').forEach(el=>{
+    const target=+el.dataset.n, t0=performance.now(), dur=850;
+    (function tick(t){ const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3);
+      el.textContent=Math.round(target*e);
+      if(k<1) requestAnimationFrame(tick); })(t0);
+  });
+}
+/* tabs */
+function tab(btn){
+  const g=btn.dataset.tg,t=btn.dataset.tp;
+  document.querySelectorAll('.tbtn[data-tg="'+g+'"]').forEach(b=>b.classList.toggle('on',b===btn));
+  document.querySelectorAll('.pane[data-tg="'+g+'"]').forEach(p=>p.classList.toggle('on',p.dataset.tp===t));
+  animate(btn.closest('.page'));
+}
+/* filters */
+function fchip(btn){
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); btn.classList.add('on');
+  const f=btn.dataset.f;
+  document.querySelectorAll('#'+btn.dataset.g+' tbody tr').forEach(r=>{
+    r.style.display=(f==='all'||r.dataset.s===f||r.dataset.c===f)?'':'none';
+  });
+}
+function achip(btn){
+  document.querySelectorAll('#auditChips .chip').forEach(c=>c.classList.remove('on')); btn.classList.add('on');
+  const f=btn.dataset.f;
+  document.querySelectorAll('#auditList .aitem').forEach(i=>i.style.display=(f==='all'||i.dataset.t===f)?'':'none');
+}
+/* bulk select */
+function updBulk(){
+  const n=document.querySelectorAll('#tblCrb .sel:checked').length;
+  const b=document.getElementById('bulk');
+  b.classList.toggle('on',n>0); document.getElementById('bulkN').textContent=n+' selected';
+}
+/* dropdowns */
+function dd(e){ e.stopPropagation(); const m=e.currentTarget.querySelector('.ddm');
+  document.querySelectorAll('.ddm.open').forEach(x=>x!==m&&x.classList.remove('open')); m.classList.toggle('open'); }
+document.addEventListener('click',()=>document.querySelectorAll('.ddm.open').forEach(m=>m.classList.remove('open')));
+/* modals */
+function openM(id,mode){ document.getElementById(id).classList.add('on'); if(id==='mNew'&&mode==='mem')capType('mem'); else if(id==='mNew')capType('loan'); }
+function closeM(id){ document.getElementById(id).classList.remove('on'); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ closeM('mNew'); closeM('mDoc'); }
+  if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); document.getElementById('gq').focus(); }
+});
+function capType(t){
+  document.getElementById('segLoan').classList.toggle('on',t==='loan');
+  document.getElementById('segMem').classList.toggle('on',t==='mem');
+  document.getElementById('capLoan').style.display=t==='loan'?'':'none';
+  document.getElementById('capMem').style.display=t==='mem'?'':'none';
+}
+/* toast */
+function toast(msg,type){
+  const t=document.createElement('div'); t.className='toast'+(type==='warn'?' warn':type==='bad'?' bad':'');
+  const ic = type==='bad' ? 'i-x' : type==='warn' ? 'i-alert' : 'i-check';
+  t.innerHTML='<svg class="ic"><use href="#'+ic+'"/></svg><span>'+msg+'</span>';
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='.4s'; setTimeout(()=>t.remove(),400); },3600);
+}
+/* notes */
+function addNote(){
+  const tx=document.getElementById('noteTxt'); if(!tx.value.trim())return;
+  const d=document.createElement('div'); d.className='note';
+  d.innerHTML='<div class="nh"><span class="av av-mb" style="width:26px;height:26px;font-size:9px">MB</span><b>Mary Banda</b><span class="tm">17 Aug 2026 · just now</span></div><p></p>';
+  d.querySelector('p').textContent=tx.value.trim();
+  document.getElementById('noteList').prepend(d);
+  tx.value=''; document.getElementById('noteCnt').textContent=+document.getElementById('noteCnt').textContent+1;
+  toast('Note added to LA-000125');
+}
+/* CRB quick actions */
+function crbAct(a){
+  const b=document.getElementById('crbBadge');
+  if(a==='clear'){ b.className='bdg c-clear'; b.style.cssText='font-size:12.5px;padding:5px 13px'; b.innerHTML='<i></i>Cleared';
+    toast('LA-000125 marked CRB Cleared — audit entry recorded'); }
+  else{ b.className='bdg c-flag'; b.style.cssText='font-size:12.5px;padding:5px 13px'; b.innerHTML='<i></i>Flagged';
+    toast('LA-000125 flagged for senior review','bad'); }
+}
+/* document viewer */
+let vz=1,vp=1;
+function openDoc(name,type,app,meta){
+  document.getElementById('vName').textContent=name;
+  document.getElementById('vMeta').textContent=type+' · '+app+' · '+meta;
+  vz=1;vp=1; document.getElementById('vz').textContent='100%'; document.getElementById('vp').textContent='Page 1 of 4';
+  document.getElementById('vpage').style.transform='scale(1)';
+  openM('mDoc');
+}
+function vzoom(d){ vz=Math.min(1.8,Math.max(.55,+(vz+d).toFixed(2)));
+  document.getElementById('vpage').style.transform='scale('+vz+')';
+  document.getElementById('vz').textContent=Math.round(vz*100)+'%'; }
+function vpage(d){ vp=Math.min(4,Math.max(1,vp+d)); document.getElementById('vp').textContent='Page '+vp+' of 4'; }
+function fs(){ const el=document.getElementById('mDoc'); (el.requestFullscreen&&el.requestFullscreen().catch(()=>toast('Full screen blocked by browser','warn'))); }
+/* clock */
+setInterval(()=>{ const d=new Date();
+  document.getElementById('clk').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+},1000);
+/* init */
+window.addEventListener('load',()=>{ counts(); animate(document.getElementById('pg-dashboard')); });
+</script>
+</body>
+</html>
+```
+

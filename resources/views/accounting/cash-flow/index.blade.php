@@ -1,88 +1,170 @@
 <x-app-layout>
-    <x-list-header title="{{ __('Cash Flow Statement') }}" />
+    @php
+        $cs = $currencySymbol ?? '$';
+        $currentPeriodLabel = \Carbon\Carbon::parse($dateFrom)->format('M Y') . ' – ' . \Carbon\Carbon::parse($dateTo)->format('M Y');
+        $drillParams = http_build_query(array_filter([
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'branch_id' => $branchId,
+        ]));
+    @endphp
 
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="GET" action="{{ route('accounting.cash-flow.index') }}" class="flex items-end gap-4">
-                    <div class="flex-1">
-                        <x-input-label for="date_from" value="{{ __('Date From') }}" />
-                        <x-text-input id="date_from" name="date_from" type="date" class="mt-1 block w-full" :value="$dateFrom" />
-                    </div>
-                    <div class="flex-1">
-                        <x-input-label for="date_to" value="{{ __('Date To') }}" />
-                        <x-text-input id="date_to" name="date_to" type="date" class="mt-1 block w-full" :value="$dateTo" />
-                    </div>
-                    <div class="flex-1">
-                        <x-input-label for="branch_id" value="{{ __('Branch (Optional)') }}" />
-                        <x-scoped-search-field
-                            name="branch_id"
-                            entity="branch"
-                            search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
-                            :value="request('branch_id')"
-                            :label="request('branch_id') ? ($branches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
-                            placeholder="{{ __('All Branches') }}"
-                        />
-                    </div>
-                    <div class="flex gap-2">
-                        <x-primary-button type="submit">{{ __('Generate') }}</x-primary-button>
-                        <a href="{{ route('accounting.cash-flow.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Clear') }}
-                        </a>
-                    </div>
-                </form>
+    <div class="fr-wrap">
+        <div class="fr-head">
+            <div>
+                <h1>{{ __('Cash Flow Statement') }}</h1>
+                <div class="fr-sub">{{ $currentPeriodLabel }} · {{ $cs }}</div>
             </div>
+            <div class="fr-actions">
+                <button type="button" class="fr-btn fr-btn-ghost fr-btn-sm" onclick="window.print()">Print</button>
+                <a href="{{ route('accounting.cash-flow.export-pdf', request()->query()) }}" class="fr-btn fr-btn-ghost fr-btn-sm">PDF</a>
+                <a href="{{ route('accounting.cash-flow.export-csv', request()->query()) }}" class="fr-btn fr-btn-ghost fr-btn-sm">Excel</a>
+            </div>
+        </div>
 
-            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+        <form method="GET" action="{{ route('accounting.cash-flow.index') }}" class="fr-filters">
+            <div class="fr-f">
+                <label for="date_from">{{ __('Date From') }}</label>
+                <input type="date" id="date_from" name="date_from" value="{{ $dateFrom }}">
+            </div>
+            <div class="fr-f">
+                <label for="date_to">{{ __('Date To') }}</label>
+                <input type="date" id="date_to" name="date_to" value="{{ $dateTo }}">
+            </div>
+            <div class="fr-f">
+                <label for="branch_id">{{ __('Branch') }}</label>
+                <select id="branch_id" name="branch_id">
+                    <option value="">{{ __('All Branches') }}</option>
+                    @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" {{ (int)($branchId ?? 0) === $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div style="display:flex;gap:.5rem">
+                <button type="submit" class="fr-btn fr-btn-cta fr-btn-sm">Generate</button>
+                <a href="{{ route('accounting.cash-flow.index') }}" class="fr-btn fr-btn-ghost fr-btn-sm">Clear</a>
+            </div>
+        </form>
 
-            <x-report.card>
-                <x-report.header
-                    :company="$currentCompany->name ?? config('app.name')"
-                    title="Cash Flow Statement"
-                    :range="\Carbon\Carbon::parse($dateFrom)->format('M d, Y') . ' — ' . \Carbon\Carbon::parse($dateTo)->format('M d, Y')"
-                />
+        @if($mismatch)
+            <div class="fr-banner err">
+                <div class="fr-banner-ic">✗</div>
+                <span>Ending cash ({{ format_number($ending_cash) }}) does not match actual bank balances ({{ format_number($actual_ending_cash) }}). Difference: {{ format_number(abs($mismatch)) }}</span>
+            </div>
+        @endif
 
-                <x-report.toolbar
-                    :csvRoute="route('accounting.cash-flow.export-csv', request()->query())"
-                    :pdfRoute="route('accounting.cash-flow.export-pdf', request()->query())"
-                />
+        <div class="fr-kpis">
+            <div class="fr-kpi hero"><div class="fr-kpi-l">Net Change</div><div class="fr-kpi-v {{ $net_change < 0 ? 'red' : '' }}">{{ format_number($net_change) }}</div></div>
+            <div class="fr-kpi"><div class="fr-kpi-l">Operating</div><div class="fr-kpi-v {{ $operating_total < 0 ? 'red' : 'green' }}">{{ format_number($operating_total) }}</div></div>
+            <div class="fr-kpi"><div class="fr-kpi-l">Investing</div><div class="fr-kpi-v {{ $investing_total < 0 ? 'red' : 'green' }}">{{ format_number($investing_total) }}</div></div>
+            <div class="fr-kpi"><div class="fr-kpi-l">Financing</div><div class="fr-kpi-v {{ $financing_total < 0 ? 'red' : 'green' }}">{{ format_number($financing_total) }}</div></div>
+        </div>
 
-                <x-report.col-bar left="Description" :right="'Amount ('.$cs.')'" />
+        <div class="fr-card">
+            <div class="fr-card-head">
+                <h2>Cash Flow Statement</h2>
+                <div style="margin-left:auto;font-size:.75rem;color:var(--muted,#5f7476)">{{ $cs }}</div>
+            </div>
+            <div class="fr-table-wrap">
+                <table class="fr-table">
+                    <thead>
+                        <tr>
+                            <th style="width:60%">Description</th>
+                            <th class="r" style="width:20%">Inflow</th>
+                            <th class="r" style="width:20%">Outflow</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{-- OPERATING --}}
+                        <tr class="fr-section-header"><td colspan="3">Operating Activities</td></tr>
+                        <tr>
+                            <td class="fr-tl" style="padding-left:1.5rem">Net Income</td>
+                            <td class="r">{{ $net_income > 0 ? format_number($net_income) : '–' }}</td>
+                            <td class="r">{{ $net_income < 0 ? format_number(abs($net_income)) : '–' }}</td>
+                        </tr>
+                        @foreach($non_cash_expenses['items'] ?? [] as $item)
+                            @if(abs($item['amount']) > 0)
+                                <tr>
+                                    <td class="fr-tl" style="padding-left:1.5rem">
+                                        <a href="{{ route('accounting.general-ledger.account', $item['account']->id).'?'.$drillParams }}" class="fr-tl">{{ $item['account']->name }}</a>
+                                    </td>
+                                    <td class="r">{{ $item['amount'] > 0 ? format_number($item['amount']) : '–' }}</td>
+                                    <td class="r">{{ $item['amount'] < 0 ? format_number(abs($item['amount'])) : '–' }}</td>
+                                </tr>
+                            @endif
+                        @endforeach
+                        @foreach($sections['operating'] as $item)
+                            @if(abs($item['cash_effect']) > 0)
+                                <tr>
+                                    <td class="fr-tl" style="padding-left:1.5rem">
+                                        <a href="{{ route('accounting.general-ledger.account', $item['account']->id).'?'.$drillParams }}" class="fr-tl">{{ ($item['change'] > 0 ? 'Increase in ' : 'Decrease in ') . $item['account']->name }}</a>
+                                    </td>
+                                    <td class="r">{{ $item['cash_effect'] > 0 ? format_number($item['cash_effect']) : '–' }}</td>
+                                    <td class="r">{{ $item['cash_effect'] < 0 ? format_number(abs($item['cash_effect'])) : '–' }}</td>
+                                </tr>
+                            @endif
+                        @endforeach
+                        <tr class="fr-subtotal">
+                            <td class="fr-tn">Net Cash from Operating</td>
+                            <td class="r fr-tn">{{ $operating_total > 0 ? format_number($operating_total) : '–' }}</td>
+                            <td class="r fr-tn">{{ $operating_total < 0 ? format_number(abs($operating_total)) : '–' }}</td>
+                        </tr>
 
-                <x-report.section-bar>Operating Activities</x-report.section-bar>
-                <x-report.line desc="Net Income" :amount="format_number($net_income)" />
-                @foreach($non_cash_expenses['items'] as $item)
-                    <x-report.line :desc="'Add: '.$item['account']->name" :amount="format_number($item['amount'])" :zero="abs($item['amount']) <= 0" />
-                @endforeach
-                @foreach($sections['operating'] as $item)
-                    <x-report.line :desc="($item['change'] > 0 ? 'Increase in' : 'Decrease in').' '.$item['account']->name" :amount="format_number($item['cash_effect'])" :zero="abs($item['cash_effect']) <= 0" />
-                @endforeach
-                <x-report.subtotal desc="Net Cash from Operating" :amount="format_number($operating_total)" />
+                        {{-- INVESTING --}}
+                        <tr class="fr-section-header"><td colspan="3">Investing Activities</td></tr>
+                        @forelse($sections['investing'] as $item)
+                            @if(abs($item['cash_effect']) > 0)
+                                <tr>
+                                    <td class="fr-tl" style="padding-left:1.5rem">
+                                        <a href="{{ route('accounting.general-ledger.account', $item['account']->id).'?'.$drillParams }}" class="fr-tl">{{ ($item['change'] > 0 ? 'Increase in ' : 'Decrease in ') . $item['account']->name }}</a>
+                                    </td>
+                                    <td class="r">{{ $item['cash_effect'] > 0 ? format_number($item['cash_effect']) : '–' }}</td>
+                                    <td class="r">{{ $item['cash_effect'] < 0 ? format_number(abs($item['cash_effect'])) : '–' }}</td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr><td class="fr-tl" style="padding-left:1.5rem;color:var(--faint,#8aa5a7)">No investing activities</td><td class="r">–</td><td class="r">–</td></tr>
+                        @endforelse
+                        <tr class="fr-subtotal">
+                            <td class="fr-tn">Net Cash from Investing</td>
+                            <td class="r fr-tn">{{ $investing_total > 0 ? format_number($investing_total) : '–' }}</td>
+                            <td class="r fr-tn">{{ $investing_total < 0 ? format_number(abs($investing_total)) : '–' }}</td>
+                        </tr>
 
-                <x-report.section-bar>Investing Activities</x-report.section-bar>
-                @forelse($sections['investing'] as $item)
-                    <x-report.line :desc="($item['change'] > 0 ? 'Increase in' : 'Decrease in').' '.$item['account']->name" :amount="format_number($item['cash_effect'])" :zero="abs($item['cash_effect']) <= 0" />
-                @empty
-                    <x-report.line desc="No investing activities" :amount="format_number(0)" :zero="true" />
-                @endforelse
-                <x-report.subtotal desc="Net Cash from Investing" :amount="format_number($investing_total)" />
+                        {{-- FINANCING --}}
+                        <tr class="fr-section-header"><td colspan="3">Financing Activities</td></tr>
+                        @forelse($sections['financing'] as $item)
+                            @if(abs($item['cash_effect']) > 0)
+                                <tr>
+                                    <td class="fr-tl" style="padding-left:1.5rem">
+                                        <a href="{{ route('accounting.general-ledger.account', $item['account']->id).'?'.$drillParams }}" class="fr-tl">{{ ($item['change'] > 0 ? 'Increase in ' : 'Decrease in ') . $item['account']->name }}</a>
+                                    </td>
+                                    <td class="r">{{ $item['cash_effect'] > 0 ? format_number($item['cash_effect']) : '–' }}</td>
+                                    <td class="r">{{ $item['cash_effect'] < 0 ? format_number(abs($item['cash_effect'])) : '–' }}</td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr><td class="fr-tl" style="padding-left:1.5rem;color:var(--faint,#8aa5a7)">No financing activities</td><td class="r">–</td><td class="r">–</td></tr>
+                        @endforelse
+                        <tr class="fr-subtotal">
+                            <td class="fr-tn">Net Cash from Financing</td>
+                            <td class="r fr-tn">{{ $financing_total > 0 ? format_number($financing_total) : '–' }}</td>
+                            <td class="r fr-tn">{{ $financing_total < 0 ? format_number(abs($financing_total)) : '–' }}</td>
+                        </tr>
 
-                <x-report.section-bar>Financing Activities</x-report.section-bar>
-                @forelse($sections['financing'] as $item)
-                    <x-report.line :desc="($item['change'] > 0 ? 'Increase in' : 'Decrease in').' '.$item['account']->name" :amount="format_number($item['cash_effect'])" :zero="abs($item['cash_effect']) <= 0" />
-                @empty
-                    <x-report.line desc="No financing activities" :amount="format_number(0)" :zero="true" />
-                @endforelse
-                <x-report.subtotal desc="Net Cash from Financing" :amount="format_number($financing_total)" />
+                        {{-- SUMMARY --}}
+                        <tr class="fr-section-header"><td colspan="3">Summary</td></tr>
+                        <tr><td class="fr-tl">Net Change in Cash</td><td class="r" colspan="2" style="font-weight:800">{{ format_number($net_change) }}</td></tr>
+                        <tr><td class="fr-tl">Beginning Cash Balance</td><td class="r" colspan="2">{{ format_number($beginning_cash) }}</td></tr>
+                        <tr class="fr-net-total"><td class="fr-tn" style="font-size:.9375rem">Ending Cash Balance</td><td class="r fr-tn" colspan="2" style="font-size:.9375rem">{{ format_number($ending_cash) }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <x-report.total desc="Net Change in Cash" :amount="format_number($net_change)" />
-                <x-report.line desc="Beginning Cash Balance" :amount="format_number($beginning_cash)" />
-                <x-report.subtotal desc="Ending Cash Balance" :amount="format_number($ending_cash)" />
-            </x-report.card>
-
-            @if($mismatch)
-                <x-feedback.alert variant="error" class="mt-4">Warning: Ending cash does not match actual bank balances. Difference: {{ format_number($mismatch) }}</x-feedback.alert>
-            @endif
+        <div class="fr-actionbar">
+            <a href="{{ route('accounting.cash-flow.export-csv', request()->query()) }}" class="fr-btn fr-btn-ghost">Export CSV</a>
+            <a href="{{ route('accounting.cash-flow.export-pdf', request()->query()) }}" class="fr-btn fr-btn-cta">Print / PDF</a>
         </div>
     </div>
 </x-app-layout>

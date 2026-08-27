@@ -1,0 +1,365 @@
+AUTHORIZATION & APPROVAL MANAGEMENT — CENTRAL ENGINE — FULL IMPLEMENTATION SPEC (LARAVEL)
+(SELF-CONTAINED — complete reference mockup HTML in APPENDIX A.)
+SCOPE: one central authorization engine (RBAC + ABAC + workflow). Modules REGISTER their
+hierarchy; the engine DECIDES. No permission logic hard-coded inside accounting modules.
+
+SYSTEM CONSTRAINTS: currency from system setting (never hard-coded); system live-search
+results overlay above all content (z-index ≥ 9999); pages render as mocked.
+
+HARD GUARD — existing modules keep behaviour; they call the engine via helper/middleware.
+Existing role usage migrates into `roles` without losing grants.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate users/roles tables, existing permission checks, module list, pay-run/PO/journal
+models (trackables), mail + scheduler setup.
+0.2 Inventory current scattered checks to replace with engine calls (drives §9 audit).
+
+==================== 1 · SCHEMA (migrations) ====================
+auth_modules(id, code UQ, name, sort, active)
+auth_sections(id, module_id FK, code, name, sort)
+auth_features(id, section_id FK, code UQ e.g. 'gl.journals', name, sort)
+auth_actions(id, code UQ, name, category ENUM[ACCESS,TRANSACTION,ADMINISTRATIVE])
+  — seed catalog: view,create,edit,delete,search,export,print | submit,review,verify,
+  approve,reject,return,cancel,reverse,post,unpost,void | configure,override,unlock,
+  reopen,close,recalculate
+auth_permissions(id, feature_id FK, action_id FK, UQ(feature,action))
+roles(id, code UQ, name, active)
+role_permissions(id, role_id FK, permission_id FK, UQ(role,permission))
+user_roles(id, user_id FK, role_id FK, UQ(user,role))
+user_overrides(id, user_id FK, permission_id FK, grant BOOL, limit_amount DEC NULL,
+  conditions JSON NULL, starts_at, expires_at NULL, created_by FK, reason)
+approval_workflows(id, code UQ, name, feature_id FK, active, settings JSON
+  {same_person_guard,skip_under_limit,escalation_days,reject_comment_required})
+approval_levels(id, workflow_id FK, level INT, approver_kind ENUM[ROLE,USER,POSITION],
+  approver_value, limit_from NULL, limit_to NULL, conditions JSON)
+approval_limits(id, approver_kind, approver_value, min_amount, max_amount NULL,
+  conditions JSON, active)
+approval_requests(id, trackable_type, trackable_id, workflow_id FK, current_level INT,
+  status ENUM[PENDING,IN_REVIEW,APPROVED,REJECTED,RETURNED,CANCELLED], initiated_by,
+  initiated_at)  + idx(trackable)
+approval_steps(id, request_id FK, level, approver_kind, approver_value,
+  status ENUM[PENDING,APPROVED,REJECTED,RETURNED,SKIPPED], acted_by, acted_at, comment)
+delegations(id, delegator_id FK users, delegate_id FK users, scope_kind ENUM[PERMISSION,
+  WORKFLOW], scope_id NULL, starts_at, ends_at, status ENUM[ACTIVE,EXPIRED,CANCELLED])
+sod_rules(id, name, actions JSON e.g. ["create","approve","post"], scope JSON,
+  severity ENUM[HIGH,MEDIUM,LOW], mode ENUM[BLOCK,WARN], active)
+sod_conflicts(id, user_id, rule_id, combination, module_id, severity,
+  status ENUM[OPEN,RESOLVED], resolved_by, resolved_at)
+auth_audit(id, user_id, module/section/feature/action ids NULL, entity_type, entity_id,
+  old_value TEXT, new_value TEXT, ip, device, reason, created_at)
+
+==================== 2 · MODULE REGISTRATION ====================
+Each module ships config/authz/{module}.php (module→sections→features→actions). Command
+`php artisan authz:sync` upserts catalog + auth_permissions WITHOUT touching grants.
+Adding a module later = new config file + sync.
+
+==================== 3 · ENGINE (app/Services/Authz) ====================
+Authz::can(User $u, string $feature, string $action, $context=null): bool
+  1) active delegation covering (permission) → delegate inherits;
+  2) user_overrides (grant/deny) within dates + limit + ABAC conditions;
+  3) role_permissions via user_roles;
+  4) default deny. Cache per request; invalidate on change events.
+AbacEvaluator::passes(conditions, context): branch, department, cost_centre, project,
+  account, type, supplier, customer, employee, currency, budget_available.
+LimitResolver::requiredApprover(amount, context) from approval_limits.
+Blade: @canfeat('gl.journals','approve') … @endcanfeat; helper authz_can().
+
+==================== 4 · WORKFLOW ENGINE ====================
+ApprovalEngine::start($trackable): pick workflow by feature; create request + steps per
+levels; if settings.skip_under_limit, mark steps above amount's band SKIPPED.
+approve($request,$level,$user,$comment): same_person_guard (user must not have acted an
+earlier level); advance current_level; final → status APPROVED + event
+ApprovalApproved{trackable} → module listener flips model status.
+reject/return: reject_comment_required enforced; RETURNED allows resubmit.
+Escalation: scheduler `authz:escalate` notifies next level after escalation_days.
+Pending Approvals queue screen lists steps where approver resolves to $user (role/user/
+position) incl. delegations.
+
+==================== 5 · MIDDLEWARE & POLICIES ====================
+Route middleware `authz:{feature},{action}` → Authz::can else 403 (JSON for AJAX).
+`authz.sod:{actions}` on approve/post routes: BLOCK mode aborts if creator==actor per
+sod_rules; WARN mode logs conflict + shows banner.
+Base Policies call Authz::can (no duplicated logic). Models use Approvable trait
+(start/approve hooks).
+
+==================== 6 · DELEGATIONS & EXPIRY ====================
+Delegation active when now within range + status ACTIVE; scheduler
+`authz:expire-delegations` daily; evaluation also checks live. UI shows Active/Expired.
+
+==================== 7 · AUDIT ====================
+Observer writes auth_audit on: grants/overrides/limits/workflows/delegations/roles changes
+(old→new), approval actions, SoD resolutions; captures ip + user-agent + reason.
+Never log passwords/keys.
+
+==================== 8 · SCREENS (routes, match APPENDIX A) ====================
+/authz dashboard (6 KPIs + tiles) · /authz/matrix (role select, ✓/— grid) ·
+/authz/workflows (+designer: levels, settings toggles, conditions) · /authz/limits ·
+/authz/roles · /authz/users (overrides with expiry badges) · /authz/sod (rules + conflicts
+resolve) · /authz/delegations · /authz/pending · /authz/audit. All admin-only
+(authz:authz.*,configure).
+
+==================== 9 · PERMISSIONS / A11Y / CONSTRAINTS ====================
+Manage authorization: System Admin + Chief Accountant (view). SoD on the module itself:
+grant ≠ approve-of-grant where configured. Tables scroll; text 90–125; no overflow;
+pixel parity with APPENDIX A; system currency; search overlay top-most.
+
+==================== 10 · VERIFY ====================
+10.1 authz:sync builds catalog from configs; re-run idempotent. 10.2 can(): override >
+role; delegation inherits; expiry respected; ABAC conditions evaluated. 10.3 Workflow:
+levels, skip-under-limit, same-person guard, reject comment, final event flips model.
+10.4 Middleware 403s unauthorized; SoD blocks/warns. 10.5 Audit rows with old→new.
+10.6 Screens match APPENDIX A; no console errors.
+REPORT: migration list; engine decision trace samples; workflow trace; middleware map;
+audit samples; parity confirmation; NO SCREEN SKIPPED.
+
+==================== APPENDIX A — EMBEDDED REFERENCE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authorization & Approval Management — mockups</title>
+<style>
+  :root{--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--ink:#0B2A2D;--sub:#41585c;--muted:#5f7476;--faint:#8aa5a7;--border:#dceaea;--line:#e2ecec;--green:#15803d;--red-2:#b91c1c;--amber-2:#b45309;--hair:#EEF3F1;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;font-size:14px;-webkit-font-smoothing:antialiased}
+  :focus-visible{outline:2px solid #94a3b8;outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 0 6px}
+  .page-head h1{font-size:22px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border-radius:12px;font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .btn-ghost{background:#e8f0f0;border-color:var(--border);color:var(--ink)}
+  .btn-sec{color:#fff;background:var(--sec);box-shadow:0 8px 18px -8px rgba(18,143,142,.5)}
+  .btn-cta{color:#fff;background:var(--deep-2);font-weight:700;box-shadow:0 10px 22px -10px rgba(8,40,44,.55)}
+  .btn-sm{height:34px;padding:0 13px;font-size:12px;border-radius:10px}
+  .card{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h .ic{width:34px;height:34px;border-radius:10px;background:rgba(18,143,142,.1);display:grid;place-items:center;font-size:15px}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pad{padding:20px 24px}
+  .mb{margin-bottom:16px}
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:14px 0 16px}
+  @media (max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:700px){.kpis{grid-template-columns:1fr 1fr}}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.94)}
+  .kpi .l{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{margin-top:5px;font-size:1.3rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi .n{margin-top:3px;font-size:10.5px;font-weight:700;color:var(--muted)}
+  .kpi.hero{background:var(--sec);border:none}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}.kpi.hero .n{color:#dff7f6}
+  .kpi.warn .v{color:var(--red-2)}
+  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+  @media (max-width:1100px){.grid2{grid-template-columns:1fr}}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:860px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  th.num,td.num{text-align:right}
+  th.ctr,td.ctr{text-align:center}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--sub)}
+  td.num{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .name{font-weight:600;color:var(--ink)}
+  .em{color:var(--muted)}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-ok{background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.4);color:var(--green)}.b-ok .bdot{background:#22c55e}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:#d97706}
+  .b-rev{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-rev .bdot{background:var(--red-2)}
+  .b-post{background:rgba(18,143,142,.10);border:1px solid rgba(18,143,142,.4);color:var(--sec)}.b-post .bdot{background:var(--sec)}
+  .b-off{background:rgba(138,165,167,.15);border:1px solid rgba(138,165,167,.5);color:var(--muted)}.b-off .bdot{background:var(--muted)}
+  .mk{color:var(--sec);font-weight:800}
+  .mx{color:var(--faint)}
+  .tchip{display:inline-flex;padding:4px 11px;border-radius:999px;font-size:10.5px;font-weight:700}
+  .t-role{background:rgba(18,143,142,.1);border:1px solid rgba(18,143,142,.35);color:var(--sec)}
+  .t-ovr{background:rgba(180,83,9,.1);border:1px solid rgba(180,83,9,.35);color:var(--amber-2)}
+  .tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  @media (max-width:1100px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{border:1px solid var(--border);border-radius:13px;background:rgba(255,255,255,.94);padding:14px;display:flex;gap:10px;align-items:center;text-decoration:none;color:var(--ink);font-size:12px;font-weight:700}
+  .tile:hover{border-color:rgba(18,143,142,.45)}
+  .tile .ic{width:32px;height:32px;border-radius:9px;background:rgba(18,143,142,.1);display:grid;place-items:center;font-size:14px;flex:none}
+  .tl{position:relative;padding-left:22px}
+  .tl::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:2px;background:var(--line)}
+  .tl .st{position:relative;padding:7px 0}
+  .tl .st::before{content:"";position:absolute;left:-19px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--sec);border:2px solid #fff}
+  .tl .st.pend::before{background:var(--amber-2)}
+  .tl .st.off::before{background:var(--faint)}
+  .tl .st .t{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .tl .st .s{font-size:11px;color:var(--muted)}
+  .sw{width:44px;height:25px;border-radius:999px;background:#CBD8D6;position:relative;transition:.2s;flex:none;cursor:pointer}
+  .sw.on{background:var(--sec)}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .sw.on::after{left:22px}
+  .swrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--hair)}
+  .swrow:last-child{border-bottom:none}
+  .swrow .t{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .swrow .s{font-size:11px;color:var(--muted);margin-top:2px}
+  .dl{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--hair);font-size:12.5px}
+  .dl:last-child{border-bottom:none}
+  .dl .l{color:var(--muted);font-weight:600}
+  .dl .v{font-weight:700;color:var(--ink)}
+  .f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .f .in{width:100%;height:42px;border-radius:11px;border:1px solid var(--border);background:#fff;padding:0 13px;font-size:13.5px;color:var(--ink);font-family:inherit}
+  .f select.in{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 13px center;padding-right:32px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- 1 · DASHBOARD -->
+<div><span class="opt-tag">1 · Authorization Dashboard</span>
+  <div class="page-head"><div><h1>Authorization &amp; Approval Management</h1><div class="sub">Central RBAC + ABAC + workflow engine — one place for who can do what, and who must approve.</div></div>
+    <button class="btn btn-cta">＋ New Authorization Rule</button></div>
+  <div class="kpis">
+    <div class="kpi hero"><div class="l">Total Permissions</div><div class="v">1,248</div><div class="n">across 10 modules</div></div>
+    <div class="kpi"><div class="l">Active Workflows</div><div class="v">86</div><div class="n">multi-level</div></div>
+    <div class="kpi"><div class="l">Pending Approvals</div><div class="v">34</div><div class="n">all queues</div></div>
+    <div class="kpi warn"><div class="l">Conflicts</div><div class="v">7</div><div class="n">segregation of duties</div></div>
+    <div class="kpi"><div class="l">User Overrides</div><div class="v">12</div><div class="n">individual grants</div></div>
+    <div class="kpi warn"><div class="l">Expired</div><div class="v">4</div><div class="n">need review</div></div>
+  </div>
+  <div class="tiles">
+    <a class="tile" href="#"><span class="ic">▦</span>Authorization Matrix</a>
+    <a class="tile" href="#"><span class="ic">🧭</span>Approval Workflows</a>
+    <a class="tile" href="#"><span class="ic">👥</span>Roles &amp; Permissions</a>
+    <a class="tile" href="#"><span class="ic">👤</span>User Authorizations</a>
+    <a class="tile" href="#"><span class="ic">💰</span>Approval Limits</a>
+    <a class="tile" href="#"><span class="ic">🔁</span>Delegations</a>
+    <a class="tile" href="#"><span class="ic">⚡</span>Overrides</a>
+    <a class="tile" href="#"><span class="ic">🛡</span>Separation of Duties</a>
+    <a class="tile" href="#"><span class="ic">⚠</span>Conflicts</a>
+    <a class="tile" href="#"><span class="ic">📚</span>Templates</a>
+    <a class="tile" href="#"><span class="ic">⏳</span>Pending Approvals</a>
+    <a class="tile" href="#"><span class="ic">🔐</span>Audit Trail</a>
+  </div>
+</div>
+
+<!-- 2 · AUTHORIZATION MATRIX -->
+<div><span class="opt-tag">2 · Authorization Matrix</span>
+  <div class="page-head"><div><h1>Authorization Matrix</h1><div class="sub">At-a-glance permissions per role · module → section → feature → action.</div></div>
+    <div class="f" style="min-width:220px"><label>Viewing role</label><select class="in"><option>Finance Manager</option><option>Finance Officer</option><option>Procurement Manager</option><option>Chief Accountant</option></select></div></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>Module</th><th>Feature</th><th class="ctr">View</th><th class="ctr">Create</th><th class="ctr">Edit</th><th class="ctr">Delete</th><th class="ctr">Submit</th><th class="ctr">Approve</th><th class="ctr">Post</th><th class="ctr">Export</th></tr></thead><tbody>
+    <tr><td class="name">General Ledger</td><td>Journals</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td></tr>
+    <tr><td class="name">Accounts Payable</td><td>Invoices</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td></tr>
+    <tr><td class="name">Accounts Receivable</td><td>Receipts</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td></tr>
+    <tr><td class="name">Banking</td><td>Transfers</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mx">—</td></tr>
+    <tr><td class="name">Procurement</td><td>Purchase Orders</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td></tr>
+    <tr><td class="name">Payroll</td><td>Payroll Processing</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td></tr>
+    <tr><td class="name">Budgeting</td><td>Budgets</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td></tr>
+  </tbody></table></div></div>
+</div>
+
+<!-- 3 · WORKFLOW DESIGNER -->
+<div><span class="opt-tag">3 · Approval Workflow Designer · Purchase Order</span>
+  <div class="page-head"><div><h1>Approval Workflow Designer</h1><div class="sub">Multi-level workflows configured without code.</div></div>
+    <button class="btn btn-cta">＋ Add Level</button></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><span class="ic">🧭</span><h2>Purchase Order · PO-WF-01</h2><div class="right"><span class="badge b-ok"><span class="bdot"></span>Active</span></div></div>
+      <div class="pad"><div class="tl">
+        <div class="st off"><div class="t">Created</div><div class="s">Procurement Officer</div></div>
+        <div class="st off"><div class="t">Submitted</div><div class="s">Procurement Officer</div></div>
+        <div class="st"><div class="t">Level 1 · Review</div><div class="s">Procurement Manager · ≤ K5,000,000</div></div>
+        <div class="st"><div class="t">Level 2 · Approval</div><div class="s">Finance Officer</div></div>
+        <div class="st"><div class="t">Level 3 · Approval</div><div class="s">Finance Manager · ≤ K25,000,000</div></div>
+        <div class="st pend"><div class="t">Level 4 · Final Approval</div><div class="s">Chief Accountant · above K25,000,000</div></div>
+        <div class="st off"><div class="t">Approved</div><div class="s">→ becomes available for posting</div></div>
+      </div></div></div>
+    <div>
+      <div class="card mb"><div class="card-h"><span class="ic">⚙</span><h2>Workflow Settings</h2></div>
+        <div class="pad">
+          <div class="swrow"><div><div class="t">Same-person guard</div><div class="s">one user can't approve two levels</div></div><span class="sw on"></span></div>
+          <div class="swrow"><div><div class="t">Skip level when under limit</div><div class="s">route by approval limits</div></div><span class="sw on"></span></div>
+          <div class="swrow"><div><div class="t">Escalate after 3 days</div><div class="s">notify next level + HR</div></div><span class="sw on"></span></div>
+          <div class="swrow"><div><div class="t">Require comment on reject</div><div class="s">mandatory reason</div></div><span class="sw on"></span></div>
+        </div></div>
+      <div class="card"><div class="card-h"><span class="ic">🎯</span><h2>Applies To (conditions)</h2></div>
+        <div class="pad">
+          <div class="dl"><span class="l">Module / Feature</span><span class="v">Procurement · Purchase Orders</span></div>
+          <div class="dl"><span class="l">Branch</span><span class="v">All</span></div>
+          <div class="dl"><span class="l">Department</span><span class="v">All</span></div>
+          <div class="dl"><span class="l">Amount basis</span><span class="v">Transaction total (system currency)</span></div>
+        </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 · APPROVAL LIMITS -->
+<div><span class="opt-tag">4 · Approval Limits</span>
+  <div class="page-head"><div><h1>Approval Limits</h1><div class="sub">Amount-based routing · conditions on branch, department, cost centre, project, account, type.</div></div>
+    <button class="btn btn-cta">＋ New Limit Band</button></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th class="num">From</th><th class="num">To</th><th>Approver</th><th>Conditions</th><th>Status</th><th></th></tr></thead><tbody>
+    <tr><td class="num">0</td><td class="num">500,000</td><td><span class="tchip t-role">Supervisor</span></td><td class="em">All branches</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+    <tr><td class="num">500,001</td><td class="num">5,000,000</td><td><span class="tchip t-role">Manager</span></td><td class="em">All branches</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+    <tr><td class="num">5,000,001</td><td class="num">25,000,000</td><td><span class="tchip t-role">Finance Manager</span></td><td class="em">All branches</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+    <tr><td class="num">25,000,001</td><td class="num">∞</td><td><span class="tchip t-role">CFO</span></td><td class="em">All branches</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+  </tbody></table></div></div>
+</div>
+
+<!-- 5 · ROLES & USER OVERRIDES -->
+<div><span class="opt-tag">5 · Roles &amp; User Authorizations</span>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><span class="ic">👥</span><h2>Roles</h2><div class="right"><button class="btn btn-ghost btn-sm">＋ New Role</button></div></div>
+      <div class="li-wrap"><table><thead><tr><th>Role</th><th class="num">Permissions</th><th class="num">Users</th><th>Status</th></tr></thead><tbody>
+        <tr><td class="name">Finance Manager</td><td class="num">212</td><td class="num">3</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td></tr>
+        <tr><td class="name">Finance Officer</td><td class="num">164</td><td class="num">6</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td></tr>
+        <tr><td class="name">Procurement Manager</td><td class="num">98</td><td class="num">2</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td></tr>
+        <tr><td class="name">Chief Accountant</td><td class="num">240</td><td class="num">1</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td></tr>
+      </tbody></table></div></div>
+    <div class="card"><div class="card-h"><span class="ic">👤</span><h2>User Authorizations &amp; Overrides</h2></div>
+      <div class="li-wrap"><table><thead><tr><th>User</th><th>Role</th><th>Override</th></tr></thead><tbody>
+        <tr><td class="name">John Banda</td><td><span class="tchip t-role">Finance Officer</span></td><td><span class="tchip t-ovr">Individual override · approve ≤ K10,000,000 · expires 30 Sep 2026</span></td></tr>
+        <tr><td class="name">Mary Phiri</td><td><span class="tchip t-role">Procurement Manager</span></td><td class="em">—</td></tr>
+        <tr><td class="name">Grace Mbewe</td><td><span class="tchip t-role">Finance Officer</span></td><td><span class="tchip t-ovr">Export reports · expires 31 Dec 2026</span></td></tr>
+      </tbody></table></div></div>
+  </div>
+</div>
+
+<!-- 6 · SEPARATION OF DUTIES / CONFLICTS -->
+<div><span class="opt-tag">6 · Separation of Duties &amp; Conflicts</span>
+  <div class="page-head"><div><h1>Separation of Duties</h1><div class="sub">Detect Create → Approve → Post combinations on the same person.</div></div></div>
+  <div class="grid2">
+    <div class="card"><div class="card-h"><span class="ic">⚠</span><h2>Detected Conflicts</h2></div>
+      <div class="li-wrap"><table><thead><tr><th>User</th><th>Combination</th><th>Module</th><th>Severity</th><th></th></tr></thead><tbody>
+        <tr><td class="name">John Banda</td><td>Create → Approve</td><td class="em">Banking · Transfers</td><td><span class="badge b-rev"><span class="bdot"></span>High</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Resolve</button></td></tr>
+        <tr><td class="name">Anna Tembo</td><td>Approve → Post</td><td class="em">GL · Journals</td><td><span class="badge b-pend"><span class="bdot"></span>Medium</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Resolve</button></td></tr>
+      </tbody></table></div></div>
+    <div class="card"><div class="card-h"><span class="ic">🛡</span><h2>SoD Rules</h2></div>
+      <div class="pad">
+        <div class="swrow"><div><div class="t">Creator ≠ Approver</div><div class="s">payments, journals, POs</div></div><span class="sw on"></span></div>
+        <div class="swrow"><div><div class="t">Approver ≠ Poster</div><div class="s">all posted transactions</div></div><span class="sw on"></span></div>
+        <div class="swrow"><div><div class="t">Creator ≠ Poster</div><div class="s">banking + cash</div></div><span class="sw on"></span></div>
+        <div class="swrow"><div><div class="t">Warn instead of block</div><div class="s">medium severity only</div></div><span class="sw"></span></div>
+      </div></div>
+  </div>
+</div>
+
+<!-- 7 · DELEGATIONS -->
+<div><span class="opt-tag">7 · Temporary Delegations</span>
+  <div class="page-head"><div><h1>Delegations</h1><div class="sub">Time-boxed authority transfer with automatic expiry.</div></div>
+    <button class="btn btn-cta">＋ New Delegation</button></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>Delegator</th><th>Delegate</th><th>Permission</th><th>From</th><th>To</th><th>Status</th></tr></thead><tbody>
+    <tr><td class="name">Finance Manager</td><td class="name">Deputy Finance Manager</td><td class="em">Payment Approval</td><td class="em">01 Sep 2026</td><td class="em">15 Sep 2026</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td></tr>
+    <tr><td class="name">Chief Accountant</td><td class="name">Finance Manager</td><td class="em">Final PO Approval</td><td class="em">01 Aug 2026</td><td class="em">10 Aug 2026</td><td><span class="badge b-off"><span class="bdot"></span>Expired</span></td></tr>
+  </tbody></table></div></div>
+</div>
+
+<!-- 8 · AUDIT TRAIL -->
+<div><span class="opt-tag">8 · Authorization Audit Trail</span>
+  <div class="page-head"><div><h1>Audit Trail</h1><div class="sub">Every authorization change · old → new · who, when, where, why.</div></div>
+    <button class="btn btn-ghost">Export</button></div>
+  <div class="card"><div class="li-wrap"><table><thead><tr><th>Date / Time</th><th>User</th><th>Module · Feature · Action</th><th>Change</th><th>IP / Device</th><th>Reason</th></tr></thead><tbody>
+    <tr><td class="em">20 Aug 2026 10:12</td><td class="name">John Banda</td><td>Procurement · PO · Approve</td><td>Mary Phiri limit K5,000,000 → K10,000,000</td><td class="mono">10.0.4.12 · Chrome</td><td class="em">Board resolution 2026/08</td></tr>
+    <tr><td class="em">19 Aug 2026 15:44</td><td class="name">Chief Accountant</td><td>Banking · Transfers · Approve</td><td>Role grant added: Finance Manager</td><td class="mono">10.0.2.3 · Edge</td><td class="em">Delegation during leave</td></tr>
+    <tr><td class="em">18 Aug 2026 09:03</td><td class="name">System</td><td>Delegations · Expiry</td><td>Chief Accountant → Finance Manager expired</td><td class="mono">—</td><td class="em">Auto-expiry</td></tr>
+  </tbody></table></div></div>
+</div>
+
+</div>
+</body>
+</html>
+```

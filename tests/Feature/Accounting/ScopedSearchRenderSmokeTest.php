@@ -3,7 +3,6 @@
 namespace Tests\Feature\Accounting;
 
 use App\Models\Account;
-use App\Models\Asset;
 use App\Models\Branch;
 use App\Models\Company;
 use App\Models\CostCenter;
@@ -138,41 +137,6 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'type' => 'expense',
             'sub_type' => 'depreciation',
             'is_active' => true,
-        ]);
-        $category = \App\Models\AssetCategory::create([
-            'company_id' => $this->company->id,
-            'code' => 'MACH-01',
-            'name' => 'Machinery',
-            'depreciation_method_financial' => 'straight_line',
-            'useful_life_financial' => 60,
-            'residual_value_type_financial' => 'amount',
-            'residual_value_financial' => 1000,
-            'depreciation_method_tax' => 'straight_line',
-            'useful_life_tax' => 60,
-            'residual_value_type_tax' => 'amount',
-            'residual_value_tax' => 1000,
-            'is_active' => true,
-            'asset_account_id' => $this->incomeAccount->id,
-            'accumulated_depreciation_account_id' => $bank->id,
-            'depreciation_expense_account_id' => $depExp->id,
-        ]);
-        $asset = Asset::create([
-            'company_id' => $this->company->id,
-            'category_id' => $category->id,
-            'asset_code' => 'A-1001',
-            'name' => 'Laptop',
-            'acquisition_date' => '2024-01-01',
-            'in_service_date' => '2024-01-01',
-            'acquisition_cost' => 1000,
-            'useful_life' => 36,
-            'depreciation_method_financial' => 'straight_line',
-            'depreciation_method_tax' => 'straight_line',
-            'useful_life_tax' => 36,
-            'asset_account_id' => $this->incomeAccount->id,
-            'accumulated_depreciation_account_id' => $bank->id,
-            'depreciation_expense_account_id' => $depExp->id,
-            'is_active' => true,
-            'branch_id' => $branch->id,
         ]);
         $itemCategory = \App\Models\ItemCategory::create([
             'company_id' => $this->company->id,
@@ -670,6 +634,56 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'line_type' => 'expense',
         ]);
 
+        // ── FA fixtures ──────────────────────────────
+        $faAssetAcc = Account::create([
+            'company_id' => $this->company->id,
+            'code' => '1700',
+            'name' => 'Fixed Assets GL',
+            'type' => 'asset',
+            'sub_type' => 'fixed_asset',
+            'is_active' => true,
+        ]);
+        $faAccumAcc = Account::create([
+            'company_id' => $this->company->id,
+            'code' => '1800',
+            'name' => 'Accum Dep GL',
+            'type' => 'asset',
+            'sub_type' => 'accumulated_depreciation',
+            'is_active' => true,
+        ]);
+        $faDepExpAcc = Account::create([
+            'company_id' => $this->company->id,
+            'code' => '6500',
+            'name' => 'Dep Expense GL',
+            'type' => 'expense',
+            'sub_type' => 'depreciation',
+            'is_active' => true,
+        ]);
+        $faCategory = \App\Models\FixedAssets\FaCategory::create([
+            'company_id' => $this->company->id,
+            'code' => 'MACH',
+            'name' => 'Machinery',
+            'is_active' => true,
+        ]);
+        $faAsset = \App\Models\FixedAssets\FaAsset::create([
+            'company_id' => $this->company->id,
+            'category_id' => $faCategory->id,
+            'asset_code' => 'A-001',
+            'name' => 'Test Laptop',
+            'acquisition_date' => now()->subYear()->toDateString(),
+            'acquisition_cost' => 1500,
+            'net_book_value' => 1200,
+            'accumulated_depreciation' => 300,
+            'useful_life' => 36,
+            'asset_account_id' => $faAssetAcc->id,
+            'accum_dep_account_id' => $faAccumAcc->id,
+            'dep_expense_account_id' => $faDepExpAcc->id,
+            'depreciation_method' => 'straight_line',
+            'is_active' => true,
+            'status' => 'active',
+            'created_by' => $this->user->id,
+        ]);
+
         $routes = [
             'purchase-requisitions.index' => route('accounting.purchase-requisitions.index'),
             'purchase-requisitions.create' => route('accounting.purchase-requisitions.create'),
@@ -699,7 +713,6 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'vendor-payments.index' => route('accounting.vendor-payments.index'),
             'customer-payments.show' => route('accounting.customer-payments.show', $custPay),
             'vendor-payments.show' => route('accounting.vendor-payments.show', $vendPay),
-            'fixed-assets.create' => route('accounting.fixed-assets.create'),
             'goods-received-notes.create' => route('accounting.goods-received-notes.create'),
             'landed-costs.create' => route('accounting.landed-costs.create'),
             'vendor-credits.create' => route('accounting.vendor-credits.create'),
@@ -707,11 +720,6 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'purchase-orders.index' => route('accounting.purchase-orders.index'),
             'purchase-orders.edit' => route('accounting.purchase-orders.edit', $po),
             'purchase-orders.show' => route('accounting.purchase-orders.show', $po),
-            'asset-usage.index' => route('accounting.asset-usage.index'),
-            'asset-transfers.create' => route('accounting.asset-transfers.create'),
-            'asset-revaluations.create' => route('accounting.asset-revaluations.create'),
-            'asset-impairments.create' => route('accounting.asset-impairments.create'),
-            'asset-disposals.create' => route('accounting.asset-disposals.create'),
             'customer-statement' => route('accounting.reports.customer-statement'),
             'vendor-statement' => route('accounting.reports.vendor-statement'),
             'stock-movement' => route('accounting.reports.stock-movement'),
@@ -803,6 +811,26 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'rj.history' => route('accounting.rj.history'),
             'rj.reports' => route('accounting.rj.reports'),
             'rj.settings' => route('accounting.rj.settings'),
+            'fixed-assets.dashboard' => route('accounting.fixed-assets.dashboard'),
+            'fixed-assets.register' => route('accounting.fixed-assets.register'),
+            'fixed-assets.create' => route('accounting.fixed-assets.create'),
+            'fixed-assets.show' => route('accounting.fixed-assets.show', $faAsset),
+            'fixed-assets.edit' => route('accounting.fixed-assets.edit', $faAsset),
+            'fixed-assets.categories' => route('accounting.fixed-assets.categories'),
+            'fixed-assets.classes' => route('accounting.fixed-assets.classes'),
+            'fixed-assets.dep-methods' => route('accounting.fixed-assets.dep-methods'),
+            'fixed-assets.depreciation-runs' => route('accounting.fixed-assets.depreciation-runs'),
+            'fixed-assets.depreciation-runs.create' => route('accounting.fixed-assets.depreciation-runs.create'),
+            'fixed-assets.disposals' => route('accounting.fixed-assets.disposals'),
+            'fixed-assets.disposals.create' => route('accounting.fixed-assets.disposals.create', $faAsset),
+            'fixed-assets.transfers' => route('accounting.fixed-assets.transfers'),
+            'fixed-assets.transfers.create' => route('accounting.fixed-assets.transfers.create', $faAsset),
+            'fixed-assets.impairments' => route('accounting.fixed-assets.impairments'),
+            'fixed-assets.impairments.create' => route('accounting.fixed-assets.impairments.create', $faAsset),
+            'fixed-assets.revaluations' => route('accounting.fixed-assets.revaluations'),
+            'fixed-assets.revaluations.create' => route('accounting.fixed-assets.revaluations.create', $faAsset),
+            'fixed-assets.verifications' => route('accounting.fixed-assets.verifications'),
+            'fixed-assets.verifications.create' => route('accounting.fixed-assets.verifications.create'),
             'system-settings.company' => route('system-settings.index', 'company'),
             'system-settings.regional' => route('system-settings.index', 'regional'),
             'system-settings.currency' => route('system-settings.index', 'currency'),

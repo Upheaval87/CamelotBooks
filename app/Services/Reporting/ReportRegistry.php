@@ -14,7 +14,7 @@ class ReportRegistry
         'purchasing' => 'Purchasing / Accounts Payable',
         'inventory' => 'Inventory',
         'banking' => 'Banking',
-        'fixed_assets' => 'Fixed Assets',
+        // 'fixed_assets' => 'Fixed Assets', // rebuilt in Phase 11
         'budgeting' => 'Budgeting',
         'compliance' => 'Compliance & Audit',
         'analytics' => 'Analytics',
@@ -346,52 +346,7 @@ class ReportRegistry
                 'feature_flag' => ['banking'],
             ],
 
-            // ── Fixed Assets ──
-            'fixed_asset_register' => [
-                'key' => 'fixed_asset_register',
-                'name' => 'Fixed Asset Register',
-                'description' => 'Complete list of all fixed assets with acquisition and book values.',
-                'category' => 'fixed_assets',
-                'route' => 'accounting.fixed-assets.index',
-                'permission' => 'view_reports',
-                'feature_flag' => ['fixed_assets'],
-            ],
-            'depreciation_schedule' => [
-                'key' => 'depreciation_schedule',
-                'name' => 'Depreciation Schedule',
-                'description' => 'Per-asset depreciation schedule with accumulated totals.',
-                'category' => 'fixed_assets',
-                'route' => 'accounting.fixed-assets.index',
-                'permission' => 'view_reports',
-                'feature_flag' => ['fixed_assets'],
-            ],
-            'depreciation_runs' => [
-                'key' => 'depreciation_runs',
-                'name' => 'Depreciation Run History',
-                'description' => 'History of depreciation runs and posted amounts.',
-                'category' => 'fixed_assets',
-                'route' => 'accounting.depreciation.runs',
-                'permission' => 'view_reports',
-                'feature_flag' => ['fixed_assets'],
-            ],
-            'asset_revaluation' => [
-                'key' => 'asset_revaluation',
-                'name' => 'Asset Revaluation Report',
-                'description' => 'Revaluation events and resulting surplus movements.',
-                'category' => 'fixed_assets',
-                'route' => 'accounting.reports.asset-revaluation',
-                'permission' => 'view_reports',
-                'feature_flag' => ['fixed_assets'],
-            ],
-            'asset_impairment' => [
-                'key' => 'asset_impairment',
-                'name' => 'Asset Impairment Report',
-                'description' => 'Impairment and reversal events for a period.',
-                'category' => 'fixed_assets',
-                'route' => 'accounting.reports.asset-impairment',
-                'permission' => 'view_reports',
-                'feature_flag' => ['fixed_assets'],
-            ],
+            // ── Fixed Assets ── rebuilt in Phase 11 ──
 
             // ── Budgeting ──
             'budget_vs_actual' => [
@@ -486,24 +441,7 @@ class ReportRegistry
                 'permission' => 'view_reports',
                 'feature_flag' => ['banking'],
             ],
-            'asset_disposal_report' => [
-                'key' => 'asset_disposal_report',
-                'name' => 'Asset Disposal Report',
-                'description' => 'All asset disposals with proceeds, gain/loss, and disposal method.',
-                'category' => 'fixed_assets',
-                'route' => 'accounting.reports.asset-disposal-report',
-                'permission' => 'view_reports',
-                'feature_flag' => ['fixed_assets'],
-            ],
-            'tax_depreciation_schedule' => [
-                'key' => 'tax_depreciation_schedule',
-                'name' => 'Tax Depreciation Schedule',
-                'description' => 'Per-asset tax depreciation schedule with accumulated totals and net book value.',
-                'category' => 'fixed_assets',
-                'route' => 'accounting.reports.tax-depreciation-schedule',
-                'permission' => 'view_reports',
-                'feature_flag' => ['fixed_assets'],
-            ],
+            // Asset disposal + tax depreciation reports rebuilt in Phase 11
             'consolidated_balance_sheet' => [
                 'key' => 'consolidated_balance_sheet',
                 'name' => 'Consolidated Balance Sheet',

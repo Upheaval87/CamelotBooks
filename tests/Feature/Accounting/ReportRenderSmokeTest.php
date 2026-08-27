@@ -3,8 +3,6 @@
 namespace Tests\Feature\Accounting;
 
 use App\Models\Account;
-use App\Models\Asset;
-use App\Models\AssetCategory;
 use App\Models\Branch;
 use App\Models\Company;
 use App\Models\CostCenter;
@@ -90,41 +88,6 @@ class ReportRenderSmokeTest extends TestCase
             'type' => 'expense',
             'sub_type' => 'depreciation',
             'is_active' => true,
-        ]);
-        $category = AssetCategory::create([
-            'company_id' => $this->company->id,
-            'code' => 'MACH-01',
-            'name' => 'Machinery',
-            'depreciation_method_financial' => 'straight_line',
-            'useful_life_financial' => 60,
-            'residual_value_type_financial' => 'amount',
-            'residual_value_financial' => 1000,
-            'depreciation_method_tax' => 'straight_line',
-            'useful_life_tax' => 60,
-            'residual_value_type_tax' => 'amount',
-            'residual_value_tax' => 1000,
-            'is_active' => true,
-            'asset_account_id' => $this->incomeAccount->id,
-            'accumulated_depreciation_account_id' => $bank->id,
-            'depreciation_expense_account_id' => $depExp->id,
-        ]);
-        Asset::create([
-            'company_id' => $this->company->id,
-            'category_id' => $category->id,
-            'asset_code' => 'A-1001',
-            'name' => 'Laptop',
-            'acquisition_date' => '2024-01-01',
-            'in_service_date' => '2024-01-01',
-            'acquisition_cost' => 1000,
-            'useful_life' => 36,
-            'depreciation_method_financial' => 'straight_line',
-            'depreciation_method_tax' => 'straight_line',
-            'useful_life_tax' => 36,
-            'asset_account_id' => $this->incomeAccount->id,
-            'accumulated_depreciation_account_id' => $bank->id,
-            'depreciation_expense_account_id' => $depExp->id,
-            'is_active' => true,
-            'branch_id' => $branch->id,
         ]);
         PayrollRun::create([
             'company_id' => $this->company->id,
@@ -268,6 +231,6 @@ class ReportRenderSmokeTest extends TestCase
         }
 
         $this->assertEmpty($failures, implode("\n", $failures));
-        $this->assertCount(74, $routes);
+        $this->assertCount(67, $routes);
     }
 }

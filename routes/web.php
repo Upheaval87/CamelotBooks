@@ -24,12 +24,16 @@ use App\Http\Controllers\Accounting\CreditNoteController;
 use App\Http\Controllers\Accounting\CostCenterController;
 use App\Http\Controllers\Accounting\CustomerController;
 use App\Http\Controllers\Accounting\CustomerPaymentController;
+use App\Http\Controllers\Accounting\FixedAssets\FixedAssetsCentreController;
+use App\Http\Controllers\Accounting\FixedAssets\FixedAssetsController;
 
 use App\Http\Controllers\Accounting\GeneralLedgerController;
+use App\Http\Controllers\Accounting\FinancialReportPdfController;
 use App\Http\Controllers\Accounting\FiscalYearController;
 use App\Http\Controllers\Accounting\GlobalSearchController;
 use App\Http\Controllers\Accounting\ExchangeRateController;
 use App\Http\Controllers\Accounting\IncomeStatementController;
+use App\Http\Controllers\Accounting\ReportScheduleController;
 use App\Http\Controllers\Accounting\InventoryCentreController;
 
 use App\Http\Controllers\Accounting\InvoiceController;
@@ -660,6 +664,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('aging/ap-detail', [AgingReportController::class, 'apDetail'])->name('aging.ap-detail');
             Route::get('aging/export/csv', [AgingReportController::class, 'exportCsv'])->name('aging.export-csv');
 
+            // Financial Report PDF Engine (§9 shared editorial template)
+            Route::prefix('reports/financial')->name('reports.financial.')->group(function () {
+                Route::get('{report}/pdf', [FinancialReportPdfController::class, 'generate'])
+                    ->name('pdf')->whereIn('report', ['income','position','cashflow','ar-aging','ap-aging']);
+                Route::get('{report}/preview', [FinancialReportPdfController::class, 'preview'])
+                    ->name('preview')->whereIn('report', ['income','position','cashflow','ar-aging','ap-aging']);
+            });
+
+            // Financial Report Schedules (§9.11)
+            Route::prefix('report-schedules')->name('report-schedules.')->group(function () {
+                Route::get('/', [ReportScheduleController::class, 'index'])->name('index');
+                Route::get('/create', [ReportScheduleController::class, 'create'])->name('create');
+                Route::post('/', [ReportScheduleController::class, 'store'])->name('store');
+                Route::get('/{id}/edit', [ReportScheduleController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [ReportScheduleController::class, 'update'])->name('update');
+                Route::delete('/{id}', [ReportScheduleController::class, 'destroy'])->name('destroy');
+                Route::post('/{id}/toggle', [ReportScheduleController::class, 'toggle'])->name('toggle');
+            });
+
             // Budgeting module
             Route::middleware('feature:budgets')->prefix('budgeting')->name('budgets.')->group(function () {
                 // Literal routes FIRST — before /{budget} to avoid param-route shadowing
@@ -775,21 +798,86 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Employee Payslip Portal routes registered below (outside auth group)
 
-            Route::middleware('feature:fixed_assets')->group(function () {
             // Fixed Assets
-                Route::resource('asset-categories', \App\Http\Controllers\Accounting\AssetCategoryController::class);
-                Route::resource('fixed-assets', \App\Http\Controllers\Accounting\FixedAssetController::class);
-                Route::post('fixed-assets/{asset}/activate', [\App\Http\Controllers\Accounting\FixedAssetController::class, 'activate'])->name('fixed-assets.activate');
-                Route::get('fixed-assets/{asset}/schedule', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'schedule'])->name('fixed-assets.schedule');
-                Route::get('asset-depreciation/runs', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'runHistory'])->name('depreciation.runs');
-                Route::post('asset-depreciation/run', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'run'])->name('depreciation.run');
-                Route::resource('asset-disposals', \App\Http\Controllers\Accounting\AssetDisposalController::class);
-                Route::resource('asset-transfers', \App\Http\Controllers\Accounting\AssetTransferController::class);
-                Route::resource('asset-impairments', \App\Http\Controllers\Accounting\AssetImpairmentController::class);
-                Route::post('asset-impairments/reverse', [\App\Http\Controllers\Accounting\AssetImpairmentController::class, 'reverse'])->name('asset-impairments.reverse');
-                Route::resource('asset-revaluations', \App\Http\Controllers\Accounting\AssetRevaluationController::class);
-                Route::get('asset-usage', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'usageLog'])->name('asset-usage.index');
-                Route::post('asset-usage', [\App\Http\Controllers\Accounting\AssetDepreciationController::class, 'storeUsage'])->name('asset-usage.store');
+            Route::middleware('feature:fixed_assets')->prefix('fixed-assets')->name('fixed-assets.')->group(function () {
+                Route::get('/', [FixedAssetsCentreController::class, 'index'])->name('dashboard');
+
+                // Asset Register + CRUD
+                Route::get('/register', [FixedAssetsController::class, 'register'])->name('register');
+                Route::get('/create', [FixedAssetsController::class, 'create'])->name('create');
+                Route::post('/', [FixedAssetsController::class, 'store'])->name('store');
+                Route::get('/{asset}', [FixedAssetsController::class, 'show'])->name('show')->where('asset', '[0-9]+');
+                Route::get('/{asset}/edit', [FixedAssetsController::class, 'edit'])->name('edit')->where('asset', '[0-9]+');
+                Route::put('/{asset}', [FixedAssetsController::class, 'update'])->name('update')->where('asset', '[0-9]+');
+                Route::post('/{asset}/activate', [FixedAssetsController::class, 'activate'])->name('activate')->where('asset', '[0-9]+');
+                Route::delete('/{asset}', [FixedAssetsController::class, 'destroy'])->name('destroy')->where('asset', '[0-9]+');
+
+                // Categories
+                Route::get('/categories', [FixedAssetsController::class, 'categories'])->name('categories');
+                Route::post('/categories', [FixedAssetsController::class, 'storeCategory'])->name('categories.store');
+                Route::put('/categories/{category}', [FixedAssetsController::class, 'updateCategory'])->name('categories.update')->where('category', '[0-9]+');
+                Route::post('/categories/{category}/toggle', [FixedAssetsController::class, 'toggleCategory'])->name('categories.toggle')->where('category', '[0-9]+');
+
+                // Classes
+                Route::get('/classes', [FixedAssetsController::class, 'classes'])->name('classes');
+                Route::post('/classes', [FixedAssetsController::class, 'storeClass'])->name('classes.store');
+                Route::put('/classes/{class}', [FixedAssetsController::class, 'updateClass'])->name('classes.update')->where('class', '[0-9]+');
+                Route::post('/classes/{class}/toggle', [FixedAssetsController::class, 'toggleClass'])->name('classes.toggle')->where('class', '[0-9]+');
+
+                // Depreciation Methods
+                Route::get('/dep-methods', [FixedAssetsController::class, 'depMethods'])->name('dep-methods');
+                Route::post('/dep-methods', [FixedAssetsController::class, 'storeDepMethod'])->name('dep-methods.store');
+                Route::put('/dep-methods/{method}', [FixedAssetsController::class, 'updateDepMethod'])->name('dep-methods.update')->where('method', '[0-9]+');
+                Route::post('/dep-methods/{method}/toggle', [FixedAssetsController::class, 'toggleDepMethod'])->name('dep-methods.toggle')->where('method', '[0-9]+');
+
+                // Components (asset-scoped)
+                Route::post('/{asset}/components', [FixedAssetsController::class, 'addComponent'])->name('components.store')->where('asset', '[0-9]+');
+                Route::delete('/components/{component}', [FixedAssetsController::class, 'removeComponent'])->name('components.destroy')->where('component', '[0-9]+');
+
+                // Operations (asset-scoped)
+                Route::post('/{asset}/maintenance', [FixedAssetsController::class, 'storeMaintenance'])->name('maintenance.store')->where('asset', '[0-9]+');
+                Route::post('/{asset}/insurance', [FixedAssetsController::class, 'storeInsurance'])->name('insurance.store')->where('asset', '[0-9]+');
+                Route::post('/{asset}/warranty', [FixedAssetsController::class, 'storeWarranty'])->name('warranty.store')->where('asset', '[0-9]+');
+                Route::post('/{asset}/custody', [FixedAssetsController::class, 'storeCustody'])->name('custody.store')->where('asset', '[0-9]+');
+
+                // Verifications
+                Route::get('/verifications', [FixedAssetsController::class, 'verifications'])->name('verifications');
+                Route::get('/verifications/create', [FixedAssetsController::class, 'createVerification'])->name('verifications.create');
+                Route::post('/verifications', [FixedAssetsController::class, 'storeVerification'])->name('verifications.store');
+
+                // Depreciation Runs
+                Route::get('/depreciation-runs', [FixedAssetsController::class, 'depreciationRuns'])->name('depreciation-runs');
+                Route::get('/depreciation-runs/create', [FixedAssetsController::class, 'createDepreciationRun'])->name('depreciation-runs.create');
+                Route::post('/depreciation-runs', [FixedAssetsController::class, 'storeDepreciationRun'])->name('depreciation-runs.store');
+                Route::post('/depreciation-runs/{run}/post', [FixedAssetsController::class, 'postDepreciationRun'])->name('depreciation-runs.post')->where('run', '[0-9]+');
+                Route::post('/depreciation-runs/{run}/reverse', [FixedAssetsController::class, 'reverseDepreciationRun'])->name('depreciation-runs.reverse')->where('run', '[0-9]+');
+
+                // Disposals
+                Route::get('/disposals', [FixedAssetsController::class, 'disposals'])->name('disposals');
+                Route::get('/{asset}/disposal/create', [FixedAssetsController::class, 'createDisposal'])->name('disposals.create')->where('asset', '[0-9]+');
+                Route::post('/{asset}/disposal', [FixedAssetsController::class, 'storeDisposal'])->name('disposals.store')->where('asset', '[0-9]+');
+                Route::post('/disposals/{disposal}/approve', [FixedAssetsController::class, 'approveDisposal'])->name('disposals.approve')->where('disposal', '[0-9]+');
+                Route::post('/disposals/{disposal}/reject', [FixedAssetsController::class, 'rejectDisposal'])->name('disposals.reject')->where('disposal', '[0-9]+');
+
+                // Transfers
+                Route::get('/transfers', [FixedAssetsController::class, 'transfers'])->name('transfers');
+                Route::get('/{asset}/transfer/create', [FixedAssetsController::class, 'createTransfer'])->name('transfers.create')->where('asset', '[0-9]+');
+                Route::post('/{asset}/transfer', [FixedAssetsController::class, 'storeTransfer'])->name('transfers.store')->where('asset', '[0-9]+');
+                Route::post('/transfers/{transfer}/approve', [FixedAssetsController::class, 'approveTransfer'])->name('transfers.approve')->where('transfer', '[0-9]+');
+                Route::post('/transfers/{transfer}/reject', [FixedAssetsController::class, 'rejectTransfer'])->name('transfers.reject')->where('transfer', '[0-9]+');
+
+                // Impairments
+                Route::get('/impairments', [FixedAssetsController::class, 'impairments'])->name('impairments');
+                Route::get('/{asset}/impairment/create', [FixedAssetsController::class, 'createImpairment'])->name('impairments.create')->where('asset', '[0-9]+');
+                Route::post('/{asset}/impairment', [FixedAssetsController::class, 'storeImpairment'])->name('impairments.store')->where('asset', '[0-9]+');
+                Route::post('/impairments/{impairment}/approve', [FixedAssetsController::class, 'approveImpairment'])->name('impairments.approve')->where('impairment', '[0-9]+');
+
+                // Revaluations
+                Route::get('/revaluations', [FixedAssetsController::class, 'revaluations'])->name('revaluations');
+                Route::get('/{asset}/revaluation/create', [FixedAssetsController::class, 'createRevaluation'])->name('revaluations.create')->where('asset', '[0-9]+');
+                Route::post('/{asset}/revaluation', [FixedAssetsController::class, 'storeRevaluation'])->name('revaluations.store')->where('asset', '[0-9]+');
+                Route::post('/revaluations/{revaluation}/approve', [FixedAssetsController::class, 'approveRevaluation'])->name('revaluations.approve')->where('revaluation', '[0-9]+');
+                Route::post('/revaluations/{revaluation}/reject', [FixedAssetsController::class, 'rejectRevaluation'])->name('revaluations.reject')->where('revaluation', '[0-9]+');
             });
 
             // Account Classification
@@ -896,11 +984,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('reports/deposits-in-transit', [\App\Http\Controllers\Accounting\ReportControllers\DepositsInTransitController::class, 'index'])->name('reports.deposits-in-transit');
             });
 
-            Route::middleware('feature:fixed_assets')->group(function () {
-            // Fixed Assets
-                Route::get('reports/asset-revaluation', [\App\Http\Controllers\Accounting\ReportControllers\AssetRevaluationReportController::class, 'index'])->name('reports.asset-revaluation');
-                Route::get('reports/asset-impairment', [\App\Http\Controllers\Accounting\ReportControllers\AssetImpairmentReportController::class, 'index'])->name('reports.asset-impairment');
-            });
+            // Fixed Assets reports — replaced in Phase 11
 
             // Compliance
             Route::get('reports/period-lock-status', [\App\Http\Controllers\Accounting\ReportControllers\PeriodLockStatusController::class, 'index'])->name('reports.period-lock-status');
@@ -912,11 +996,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/unbilled-deliveries', [\App\Http\Controllers\Accounting\ReportControllers\UnbilledDeliveriesController::class, 'index'])->name('reports.unbilled-deliveries');
             Route::get('reports/cheque-register', [\App\Http\Controllers\Accounting\ReportControllers\ChequeRegisterController::class, 'index'])->name('reports.cheque-register');
 
-            Route::middleware('feature:fixed_assets')->group(function () {
-            // Fixed Assets
-                Route::get('reports/asset-disposal-report', [\App\Http\Controllers\Accounting\ReportControllers\AssetDisposalReportController::class, 'index'])->name('reports.asset-disposal-report');
-                Route::get('reports/tax-depreciation-schedule', [\App\Http\Controllers\Accounting\ReportControllers\TaxDepreciationScheduleController::class, 'index'])->name('reports.tax-depreciation-schedule');
-            });
+            // Fixed Assets reports — replaced in Phase 11
 
             // Consolidated
             Route::get('reports/consolidated-balance-sheet', [\App\Http\Controllers\Accounting\ReportControllers\ConsolidatedBalanceSheetController::class, 'index'])->name('reports.consolidated-balance-sheet');

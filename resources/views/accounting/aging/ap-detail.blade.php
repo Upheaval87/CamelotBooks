@@ -1,86 +1,107 @@
 <x-app-layout>
-    <x-list-header title="{{ __('A/P Aging Detail') }}" />
+    @php
+        $cs = $currencySymbol ?? '$';
+        $drillBranch = (int)($branchId ?? 0) ? '&branch_id='.$branchId : '';
+    @endphp
 
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-6 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="GET" action="{{ route('accounting.aging.ap-detail') }}" class="flex items-end gap-4">
-                    <div class="flex-1">
-                        <x-input-label for="as_of_date" value="{{ __('As Of Date') }}" />
-                        <x-text-input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$as_of_date" />
-                    </div>
-                    <div class="flex-1">
-                        <x-input-label for="branch_id" value="{{ __('Branch (Optional)') }}" />
-                        <x-scoped-search-field
-                            name="branch_id"
-                            entity="branch"
-                            search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
-                            :value="request('branch_id')"
-                            :label="request('branch_id') ? ($branches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
-                            placeholder="{{ __('All Branches') }}"
-                        />
-                    </div>
-                    <div class="flex gap-2">
-                        <x-primary-button type="submit">{{ __('Generate') }}</x-primary-button>
-                        <a href="{{ route('accounting.aging.ap-detail') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            {{ __('Clear') }}
-                        </a>
-                    </div>
-                </form>
+    <div class="fr-wrap">
+        <div class="fr-head">
+            <div>
+                <h1>{{ __('A/P Aging Detail') }}</h1>
+                <div class="fr-sub">As at {{ \Carbon\Carbon::parse($as_of_date)->format('d M Y') }} · {{ $cs }}</div>
             </div>
-
-            <div class="mb-4 flex gap-2">
-                <a href="{{ route('accounting.aging.ap-summary', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50">Summary</a>
-                <a href="{{ route('accounting.aging.ap-detail', request()->query()) }}" class="inline-flex items-center px-4 py-2 bg-gold-600 text-white rounded-md font-semibold text-xs uppercase tracking-widest shadow-sm">Detail</a>
+            <div class="fr-actions">
+                <button type="button" class="fr-btn fr-btn-ghost fr-btn-sm" onclick="window.print()">Print</button>
+                <a href="{{ route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ap'])) }}" class="fr-btn fr-btn-ghost fr-btn-sm">Excel</a>
             </div>
+        </div>
 
-            @php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
-
-            <x-report.card>
-                <x-report.header
-                    :company="$currentCompany->name ?? config('app.name')"
-                    title="A/P Aging Detail"
-                    :range="'As of ' . \Carbon\Carbon::parse($as_of_date)->format('M d, Y')"
+        <form method="GET" action="{{ route('accounting.aging.ap-detail') }}" class="fr-filters">
+            <div class="fr-f">
+                <label for="as_of_date">{{ __('As Of Date') }}</label>
+                <input type="date" id="as_of_date" name="as_of_date" value="{{ $as_of_date }}">
+            </div>
+            <div class="fr-f">
+                <label for="branch_id">{{ __('Branch') }}</label>
+                <x-scoped-search-field
+                    name="branch_id"
+                    entity="branch"
+                    search-url="{{ route('accounting.search.entity', ['entity' => 'branch']) }}"
+                    :value="request('branch_id')"
+                    :label="request('branch_id') ? ($branches->firstWhere('id', (int) request('branch_id'))?->name ?? '') : ''"
+                    placeholder="{{ __('All Branches') }}"
                 />
+            </div>
+            <div style="display:flex;gap:.5rem">
+                <button type="submit" class="fr-btn fr-btn-cta fr-btn-sm">Generate</button>
+                <a href="{{ route('accounting.aging.ap-detail') }}" class="fr-btn fr-btn-ghost fr-btn-sm">Clear</a>
+            </div>
+        </form>
 
-                <x-report.toolbar
-                    :csvRoute="route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ap']))"
-                />
+        <div class="fr-tabs">
+            <a href="{{ route('accounting.aging.ap-summary', request()->query()) }}" class="fr-tab">Summary</a>
+            <a href="{{ route('accounting.aging.ap-detail', request()->query()) }}" class="fr-tab active">Detail</a>
+        </div>
 
-                <table class="report-table">
+        <div class="fr-card">
+            <div class="fr-card-head">
+                <h2>A/P Aging Detail</h2>
+                <div style="margin-left:auto;font-size:.75rem;color:var(--muted,#5f7476)">{{ count($vendors) }} bill{{ count($vendors) !== 1 ? 's' : '' }}</div>
+            </div>
+            <div class="fr-table-wrap">
+                <table class="fr-table">
                     <thead>
                         <tr>
-                            <th>Vendor</th>
-                            <th>Bill #</th>
-                            <th>Due Date</th>
-                            <th>Days Overdue</th>
-                            <th class="report-col-amt">Amount Due ({{ $cs }})</th>
+                            <th style="width:22%">Vendor</th>
+                            <th style="width:14%">Bill #</th>
+                            <th class="r" style="width:14%">Due Date</th>
+                            <th class="r" style="width:14%">Days Overdue</th>
+                            <th class="r" style="width:18%">Amount Due</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($vendors as $row)
-                            @php $zero = $row['total'] <= 0; @endphp
-                            <tr class="@if($zero) zero @endif">
-                                <td>{{ $row['vendor_name'] }}</td>
-                                <td>{{ $row['bill_number'] ?? '-' }}</td>
-                                <td>{{ $row['due_date'] ?? '-' }}</td>
-                                <td>{{ $row['days_overdue'] ?? 0 }}</td>
-                                <td class="report-cell-amt">{{ format_number($row['total']) }}</td>
+                            <tr>
+                                <td>
+                                    <a href="{{ route('accounting.vendors.show', $row['vendor_id']).'?'.$drillBranch }}" class="fr-tl">{{ $row['vendor_name'] }}</a>
+                                </td>
+                                <td>
+                                    <a href="{{ route('accounting.bills.show', $row['bill_id']).'?'.$drillBranch }}" class="fr-tl" style="font-weight:500">{{ $row['bill_number'] ?? '-' }}</a>
+                                </td>
+                                <td class="r">{{ $row['due_date'] ? \Carbon\Carbon::parse($row['due_date'])->format('d M Y') : '-' }}</td>
+                                <td class="r">
+                                    @php $days = $row['days_overdue'] ?? 0; @endphp
+                                    @if($days > 90)
+                                        <span class="fr-badge fr-badge-red"><span class="fr-badge-dot"></span>{{ $days }}d</span>
+                                    @elseif($days > 30)
+                                        <span class="fr-badge fr-badge-amber"><span class="fr-badge-dot"></span>{{ $days }}d</span>
+                                    @elseif($days > 0)
+                                        <span class="fr-badge">{{ $days }}d</span>
+                                    @else
+                                        {{ $days }}
+                                    @endif
+                                </td>
+                                <td class="r" style="font-weight:700">{{ format_number($row['total']) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-ink-soft" style="padding:20px 14px">No outstanding bills found.</td>
+                                <td colspan="5" style="text-align:center;padding:2rem 1rem;color:var(--faint,#8aa5a7)">No outstanding bills found.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot>
-                        <tr class="report-total-row">
-                            <td colspan="4" style="text-align:right">Total</td>
-                            <td class="report-cell-amt report-total-val">{{ format_number($totals['total']) }}</td>
+                        <tr>
+                            <td colspan="4" style="text-align:right;font-weight:800">Total</td>
+                            <td class="r" style="font-weight:800">{{ format_number($totals['total']) }}</td>
                         </tr>
                     </tfoot>
                 </table>
-            </x-report.card>
+            </div>
+        </div>
+
+        <div class="fr-actionbar">
+            <a href="{{ route('accounting.aging.export-csv', array_merge(request()->query(), ['type' => 'ap'])) }}" class="fr-btn fr-btn-ghost">Export CSV</a>
+            <button type="button" class="fr-btn fr-btn-cta" onclick="window.print()">Print / PDF</button>
         </div>
     </div>
 </x-app-layout>

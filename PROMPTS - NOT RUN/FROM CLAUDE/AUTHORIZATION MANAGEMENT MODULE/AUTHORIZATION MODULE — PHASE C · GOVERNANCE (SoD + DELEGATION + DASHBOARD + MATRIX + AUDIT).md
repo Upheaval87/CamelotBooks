@@ -1,0 +1,220 @@
+AUTHORIZATION MODULE — PHASE C · GOVERNANCE (SoD + DELEGATION + DASHBOARD + MATRIX + AUDIT)
+— IMPLEMENTATION PROMPT (SELF-CONTAINED — mockup screens embedded in APPENDIX C.)
+Depends on Phases A+B. SCOPE (Phase C ONLY): SoD conflict detection/enforcement, temporary
+delegations (wired into Authz::can), dashboard, authorization matrix UI, audit trail UI.
+SYSTEM CONSTRAINTS: currency from system setting; live-search overlay z-index ≥ 9999.
+HARD GUARD — delegations/SoD wrap the Phase A evaluator and Phase B engine; no module
+changes; audit reads auth_audit written since Phase A.
+
+==================== 0 · DISCOVERY ====================
+0.1 Confirm Phases A+B present; locate auth_audit data; identify sensitive action pairs
+(create/approve/post) per module for seed sod_rules.
+
+==================== 1 · SCHEMA (migrations) ====================
+delegations(id, delegator_id FK users, delegate_id FK users, scope_kind ENUM[PERMISSION,
+  WORKFLOW], scope_id NULL, starts_at, ends_at, status ENUM[ACTIVE,EXPIRED,CANCELLED],
+  created_by FK)
+sod_rules(id, name, actions JSON e.g. ["create","approve","post"], scope JSON,
+  severity ENUM[HIGH,MEDIUM,LOW], mode ENUM[BLOCK,WARN], active)
+sod_conflicts(id, user_id, rule_id, combination, module_id, severity,
+  status ENUM[OPEN,RESOLVED], resolved_by, resolved_at)
+
+==================== 2 · ENGINE ADDITIONS ====================
+Delegations: Authz::can inserts step 0: active delegation (now within range + ACTIVE)
+covering the permission → delegate inherits delegator's grant; workflow approver
+resolution (Phase B) also accepts delegate. Scheduler `authz:expire-delegations` daily;
+live check on evaluation. UI shows Active/Expired.
+SoD enforcement: middleware `authz.sod:{actions}` on approve/post routes — BLOCK aborts
+if actor performed a conflicting earlier action on the same trackable (creator==actor);
+WARN logs sod_conflict + banner. Scanner command `authz:sod-scan` analyses role/override
+grants for conflicting combinations per scope → sod_conflicts (OPEN) for admin review.
+Resolve flow: remove/adjust grant or accept risk (reason + audit).
+
+==================== 3 · SCREENS (match APPENDIX C) ====================
+/authz            dashboard: 6 KPIs (Total Permissions/Active Workflows/Pending
+Approvals/Conflicts/Users with Overrides/Expired) + tiles to all sub-areas.
+/authz/matrix     role-select ✓/— grid (module→feature vs View/Create/Edit/Delete/Submit/
+Approve/Post/Export) computed live from engine.
+/authz/sod        rules toggles + detected conflicts table with Resolve.
+/authz/delegations delegator/delegate/scope/dates/status + New Delegation.
+/authz/audit      auth_audit browser (user, module·feature·action, old→new, ip/device,
+reason) + Export.
+Manage: System Admin (+ Chief Accountant view).
+
+==================== 4 · A11Y / CONSTRAINTS ====================
+Tables scroll; text 90–125; no overflow; pixel parity with APPENDIX C; system currency;
+search overlay top-most; no console errors.
+
+==================== 5 · VERIFY ====================
+5.1 Delegation: delegate passes can() within window; fails after expiry (scheduler +
+live); workflow steps accept delegate. 5.2 SoD: BLOCK aborts creator-approves-own; WARN
+logs + banner; scanner populates conflicts; resolve writes audit. 5.3 Matrix equals
+engine output for each role (spot-check vs can()). 5.4 Dashboard counts correct.
+5.5 Audit browser shows Phase A/B writes + Phase C resolutions; export works.
+5.6 Screens match APPENDIX C; no console errors.
+REPORT: migration list; delegation traces; SoD block/warn proofs; scanner output; matrix
+vs can() cross-check; parity confirmation; NO SCREEN SKIPPED.
+
+==================== APPENDIX C — PHASE C MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authorization — Phase C (Governance)</title>
+<style>
+  :root{--deep-1:#17565d;--deep-2:#0c3539;--sec:#128F8E;--ink:#0B2A2D;--sub:#41585c;--muted:#5f7476;--faint:#8aa5a7;--border:#dceaea;--line:#e2ecec;--green:#15803d;--red-2:#b91c1c;--amber-2:#b45309;--hair:#EEF3F1;
+    --shadow-card:0 1px 2px rgba(10,42,46,.04),0 10px 30px -10px rgba(10,42,46,.10),0 30px 60px -30px rgba(8,40,44,.12);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:#eef4f4;color:#374151;font-size:14px;-webkit-font-smoothing:antialiased}
+  :focus-visible{outline:2px solid #94a3b8;outline-offset:2px}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 28px 80px}
+  .opt-tag{display:inline-flex;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--deep-1);background:rgba(17,69,75,.08);border:1px solid rgba(17,69,75,.22);border-radius:999px;padding:5px 12px;margin:44px 0 14px}
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 0 6px}
+  .page-head h1{font-size:22px;font-weight:800;color:var(--ink)}
+  .page-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border-radius:12px;font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .btn-ghost{background:#e8f0f0;border-color:var(--border);color:var(--ink)}
+  .btn-sec{color:#fff;background:var(--sec);box-shadow:0 8px 18px -8px rgba(18,143,142,.5)}
+  .btn-cta{color:#fff;background:var(--deep-2);font-weight:700;box-shadow:0 10px 22px -10px rgba(8,40,44,.55)}
+  .btn-sm{height:34px;padding:0 13px;font-size:12px;border-radius:10px}
+  .card{background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-card);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .card-h .ic{width:34px;height:34px;border-radius:10px;background:rgba(18,143,142,.1);display:grid;place-items:center;font-size:15px}
+  .card-h h2{font-size:14px;font-weight:800;color:var(--ink)}
+  .card-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pad{padding:20px 24px}
+  .mb{margin-bottom:16px}
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:14px 0 16px}
+  @media (max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:700px){.kpis{grid-template-columns:1fr 1fr}}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.94)}
+  .kpi .l{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{margin-top:5px;font-size:1.3rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .kpi .n{margin-top:3px;font-size:10.5px;font-weight:700;color:var(--muted)}
+  .kpi.hero{background:var(--sec);border:none}.kpi.hero .l{color:#dff7f6}.kpi.hero .v{color:#fff}.kpi.hero .n{color:#dff7f6}
+  .kpi.warn .v{color:var(--red-2)}
+  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+  @media (max-width:1100px){.grid2{grid-template-columns:1fr}}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:860px}
+  thead th{background:linear-gradient(180deg,#f4f8f8,#e8f0f0);color:#111827;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(71,95,97,.45)}
+  th.num,td.num{text-align:right}
+  th.ctr,td.ctr{text-align:center}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--sub)}
+  td.num{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+  tbody tr:hover td{background:rgba(17,69,75,.04)}
+  tbody tr:last-child td{border-bottom:none}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .name{font-weight:600;color:var(--ink)}
+  .em{color:var(--muted)}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:10px;font-weight:800}
+  .badge .bdot{width:6px;height:6px;border-radius:50%}
+  .b-ok{background:rgba(22,163,74,.10);border:1px solid rgba(22,163,74,.4);color:var(--green)}.b-ok .bdot{background:#22c55e}
+  .b-pend{background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.35);color:var(--amber-2)}.b-pend .bdot{background:#d97706}
+  .b-rev{background:rgba(185,28,28,.08);border:1px solid rgba(185,28,28,.3);color:var(--red-2)}.b-rev .bdot{background:var(--red-2)}
+  .b-off{background:rgba(138,165,167,.15);border:1px solid rgba(138,165,167,.5);color:var(--muted)}.b-off .bdot{background:var(--muted)}
+  .mk{color:var(--sec);font-weight:800}
+  .mx{color:var(--faint)}
+  .tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  @media (max-width:1100px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{border:1px solid var(--border);border-radius:13px;background:rgba(255,255,255,.94);padding:14px;display:flex;gap:10px;align-items:center;text-decoration:none;color:var(--ink);font-size:12px;font-weight:700}
+  .tile:hover{border-color:rgba(18,143,142,.45)}
+  .tile .ic{width:32px;height:32px;border-radius:9px;background:rgba(18,143,142,.1);display:grid;place-items:center;font-size:14px;flex:none}
+  .sw{width:44px;height:25px;border-radius:999px;background:#CBD8D6;position:relative;transition:.2s;flex:none;cursor:pointer}
+  .sw.on{background:var(--sec)}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .sw.on::after{left:22px}
+  .swrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--hair)}
+  .swrow:last-child{border-bottom:none}
+  .swrow .t{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .swrow .s{font-size:11px;color:var(--muted);margin-top:2px}
+  .f label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .f .in{width:100%;height:42px;border-radius:11px;border:1px solid var(--border);background:#fff;padding:0 13px;font-size:13.5px;color:var(--ink);font-family:inherit}
+  .f select.in{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 13px center;padding-right:32px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Dashboard -->
+  <div><span class="opt-tag">Phase C · Authorization Dashboard</span>
+    <div class="page-head"><div><h1>Authorization &amp; Approval Management</h1><div class="sub">Central RBAC + ABAC + workflow engine — one place for who can do what, and who must approve.</div></div>
+      <button class="btn btn-cta">＋ New Authorization Rule</button></div>
+    <div class="kpis">
+      <div class="kpi hero"><div class="l">Total Permissions</div><div class="v">1,248</div><div class="n">across 10 modules</div></div>
+      <div class="kpi"><div class="l">Active Workflows</div><div class="v">86</div><div class="n">multi-level</div></div>
+      <div class="kpi"><div class="l">Pending Approvals</div><div class="v">34</div><div class="n">all queues</div></div>
+      <div class="kpi warn"><div class="l">Conflicts</div><div class="v">7</div><div class="n">segregation of duties</div></div>
+      <div class="kpi"><div class="l">User Overrides</div><div class="v">12</div><div class="n">individual grants</div></div>
+      <div class="kpi warn"><div class="l">Expired</div><div class="v">4</div><div class="n">need review</div></div>
+    </div>
+    <div class="tiles">
+      <a class="tile" href="#"><span class="ic">▦</span>Authorization Matrix</a>
+      <a class="tile" href="#"><span class="ic">🧭</span>Approval Workflows</a>
+      <a class="tile" href="#"><span class="ic">👥</span>Roles &amp; Permissions</a>
+      <a class="tile" href="#"><span class="ic">👤</span>User Authorizations</a>
+      <a class="tile" href="#"><span class="ic">💰</span>Approval Limits</a>
+      <a class="tile" href="#"><span class="ic">🔁</span>Delegations</a>
+      <a class="tile" href="#"><span class="ic">⚡</span>Overrides</a>
+      <a class="tile" href="#"><span class="ic">🛡</span>Separation of Duties</a>
+      <a class="tile" href="#"><span class="ic">⚠</span>Conflicts</a>
+      <a class="tile" href="#"><span class="ic">⏳</span>Pending Approvals</a>
+      <a class="tile" href="#"><span class="ic">🔐</span>Audit Trail</a>
+    </div>
+  </div>
+  <!-- Matrix -->
+  <div><span class="opt-tag">Phase C · Authorization Matrix</span>
+    <div class="page-head"><div><h1>Authorization Matrix</h1><div class="sub">At-a-glance permissions per role · module → section → feature → action.</div></div>
+      <div class="f" style="min-width:220px"><label>Viewing role</label><select class="in"><option>Finance Manager</option><option>Finance Officer</option><option>Procurement Manager</option><option>Chief Accountant</option></select></div></div>
+    <div class="card"><div class="li-wrap"><table><thead><tr><th>Module</th><th>Feature</th><th class="ctr">View</th><th class="ctr">Create</th><th class="ctr">Edit</th><th class="ctr">Delete</th><th class="ctr">Submit</th><th class="ctr">Approve</th><th class="ctr">Post</th><th class="ctr">Export</th></tr></thead><tbody>
+      <tr><td class="name">General Ledger</td><td>Journals</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td></tr>
+      <tr><td class="name">Accounts Payable</td><td>Invoices</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td></tr>
+      <tr><td class="name">Accounts Receivable</td><td>Receipts</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td></tr>
+      <tr><td class="name">Banking</td><td>Transfers</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mx">—</td></tr>
+      <tr><td class="name">Procurement</td><td>Purchase Orders</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td></tr>
+      <tr><td class="name">Payroll</td><td>Payroll Processing</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td></tr>
+      <tr><td class="name">Budgeting</td><td>Budgets</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td><td class="ctr mk">✓</td><td class="ctr mx">—</td><td class="ctr mk">✓</td></tr>
+    </tbody></table></div></div>
+  </div>
+  <!-- SoD -->
+  <div><span class="opt-tag">Phase C · Separation of Duties &amp; Conflicts</span>
+    <div class="page-head"><div><h1>Separation of Duties</h1><div class="sub">Detect Create → Approve → Post combinations on the same person.</div></div></div>
+    <div class="grid2">
+      <div class="card"><div class="card-h"><span class="ic">⚠</span><h2>Detected Conflicts</h2></div>
+        <div class="li-wrap"><table><thead><tr><th>User</th><th>Combination</th><th>Module</th><th>Severity</th><th></th></tr></thead><tbody>
+          <tr><td class="name">John Banda</td><td>Create → Approve</td><td class="em">Banking · Transfers</td><td><span class="badge b-rev"><span class="bdot"></span>High</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Resolve</button></td></tr>
+          <tr><td class="name">Anna Tembo</td><td>Approve → Post</td><td class="em">GL · Journals</td><td><span class="badge b-pend"><span class="bdot"></span>Medium</span></td><td class="row-act"><button class="btn btn-ghost btn-sm">Resolve</button></td></tr>
+        </tbody></table></div></div>
+      <div class="card"><div class="card-h"><span class="ic">🛡</span><h2>SoD Rules</h2></div>
+        <div class="pad">
+          <div class="swrow"><div><div class="t">Creator ≠ Approver</div><div class="s">payments, journals, POs</div></div><span class="sw on"></span></div>
+          <div class="swrow"><div><div class="t">Approver ≠ Poster</div><div class="s">all posted transactions</div></div><span class="sw on"></span></div>
+          <div class="swrow"><div><div class="t">Creator ≠ Poster</div><div class="s">banking + cash</div></div><span class="sw on"></span></div>
+          <div class="swrow"><div><div class="t">Warn instead of block</div><div class="s">medium severity only</div></div><span class="sw"></span></div>
+        </div></div>
+    </div>
+  </div>
+  <!-- Delegations -->
+  <div><span class="opt-tag">Phase C · Temporary Delegations</span>
+    <div class="page-head"><div><h1>Delegations</h1><div class="sub">Time-boxed authority transfer with automatic expiry.</div></div>
+      <button class="btn btn-cta">＋ New Delegation</button></div>
+    <div class="card"><div class="li-wrap"><table><thead><tr><th>Delegator</th><th>Delegate</th><th>Permission</th><th>From</th><th>To</th><th>Status</th></tr></thead><tbody>
+      <tr><td class="name">Finance Manager</td><td class="name">Deputy Finance Manager</td><td class="em">Payment Approval</td><td class="em">01 Sep 2026</td><td class="em">15 Sep 2026</td><td><span class="badge b-ok"><span class="bdot"></span>Active</span></td></tr>
+      <tr><td class="name">Chief Accountant</td><td class="name">Finance Manager</td><td class="em">Final PO Approval</td><td class="em">01 Aug 2026</td><td class="em">10 Aug 2026</td><td><span class="badge b-off"><span class="bdot"></span>Expired</span></td></tr>
+    </tbody></table></div></div>
+  </div>
+  <!-- Audit -->
+  <div><span class="opt-tag">Phase C · Authorization Audit Trail</span>
+    <div class="page-head"><div><h1>Audit Trail</h1><div class="sub">Every authorization change · old → new · who, when, where, why.</div></div>
+      <button class="btn btn-ghost">Export</button></div>
+    <div class="card"><div class="li-wrap"><table><thead><tr><th>Date / Time</th><th>User</th><th>Module · Feature · Action</th><th>Change</th><th>IP / Device</th><th>Reason</th></tr></thead><tbody>
+      <tr><td class="em">20 Aug 2026 10:12</td><td class="name">John Banda</td><td>Procurement · PO · Approve</td><td>Mary Phiri limit K5,000,000 → K10,000,000</td><td class="mono">10.0.4.12 · Chrome</td><td class="em">Board resolution 2026/08</td></tr>
+      <tr><td class="em">19 Aug 2026 15:44</td><td class="name">Chief Accountant</td><td>Banking · Transfers · Approve</td><td>Role grant added: Finance Manager</td><td class="mono">10.0.2.3 · Edge</td><td class="em">Delegation during leave</td></tr>
+      <tr><td class="em">18 Aug 2026 09:03</td><td class="name">System</td><td>Delegations · Expiry</td><td>Chief Accountant → Finance Manager expired</td><td class="mono">—</td><td class="em">Auto-expiry</td></tr>
+    </tbody></table></div></div>
+  </div>
+</div>
+</body>
+</html>
+```

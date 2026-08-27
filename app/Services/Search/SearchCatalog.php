@@ -3,8 +3,8 @@
 namespace App\Services\Search;
 
 use App\Models\Account;
-use App\Models\Asset;
-use App\Models\AssetCategory;
+use App\Models\FixedAssets\FaAsset as Asset;
+use App\Models\FixedAssets\FaCategory as AssetCategory;
 use App\Models\Bill;
 use App\Models\Budget;
 use App\Models\Employee;
@@ -46,8 +46,7 @@ class SearchCatalog
             $this->costCenter(),
             $this->user(),
             $this->bankAccount(),
-            $this->asset(),
-            $this->assetCategory(),
+            // asset + asset-category entries rebuilt in Phase 4
             $this->fiscalYear(),
             $this->invoice(),
             $this->bill(),
@@ -389,7 +388,7 @@ class SearchCatalog
                         'id' => $c->id,
                         'label' => $c->name,
                         'subtitle' => $c->code,
-                        'url' => route('accounting.asset-categories.show', $c->id),
+                        'url' => route('accounting.fixed-assets.categories'),
                     ])->values();
             },
         ];

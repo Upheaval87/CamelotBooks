@@ -1,0 +1,434 @@
+CHART OF ACCOUNTS — UNIFIED HIERARCHY + LIST (ONE PAGE) — FULL IMPLEMENTATION SPEC
+(SELF-CONTAINED — complete reference mockup HTML in APPENDIX A.)
+SCOPE: ONE COA page with a Hierarchy ⇄ List switcher (Hierarchy default), shared equation
+strip + filters, live roll-up balances, and a guarded deactivate/reactivate flow.
+SYSTEM CONSTRAINTS: currency from system setting (never hard-coded); system live-search
+results overlay above all content (z-index ≥ 9999); pages render as mocked.
+HARD GUARD — GL posting handler, journal engine, period/fiscal locking, COA mappings and
+all accounting routes remain EXACTLY as-is; the COA page is a read/consume surface plus
+account lifecycle CRUD; accounts are NEVER deleted (deactivate only).
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate accounts table/COA model, GL balance sources, period model, user-preference
+storage, audit-log infrastructure, role/permission catalog.
+0.2 List CURRENT COA screens/handlers + row actions (drives §11 audit).
+
+==================== 1 · SCHEMA (migrations) ====================
+accounts(id, code UQ, name, description NULL, account_type ENUM[asset,liability,equity,
+  revenue,expense], sub_type VARCHAR NULL (current_asset/non_current_asset/
+  current_liability/non_current_liability/equity/revenue/expense/contra), parent_id FK
+  accounts NULL (sub-account → control account), is_control BOOL DEF false,
+  is_contra BOOL DEF false, is_controlled BOOL DEF false (system-protected),
+  status ENUM[active,inactive] DEF active, opening_balance DEC(18,2) DEF 0,
+  sort INT, created_at, updated_at)  idx(account_type,sort), idx(parent_id)
+user_preferences(user_id FK UQ, coa_view ENUM[tree,list] DEF 'tree', …json)
+(If balances live in GL: current_balance computed; opening stored.)
+
+==================== 2 · HIERARCHY + ROLL-UPS ====================
+2.1 Tree derived as Type → Sub-type (grouped from account_type+sub_type) → Control
+(is_control or has children) → Sub (parent_id set). Group nodes are virtual (not rows).
+2.2 Roll-up: node.opening/Σ = Σ descendant leaf opening; same for current; contra values
+negative; API GET /api/coa/tree returns nested nodes with rolled figures + counts;
+cached, invalidated on posting/account change.
+2.3 Equation strip: Total Assets vs Liabilities+Equity from rolled currents; ✓ Balanced
+or red ⚠ with difference; imbalance blocks PDF/Excel export.
+
+==================== 3 · VIEW SWITCH + PREFERENCE ====================
+3.1 Segmented control [Hierarchy | List]; DEFAULT Hierarchy; switching swaps containers
+client-side without reload; state (filters, expanded nodes) kept per session.
+3.2 Persist choice: PUT /api/user/preferences/coa-view {tree|list}; load on render;
+fallback 'tree' when absent.
+
+==================== 4 · SHARED FILTERS ====================
+Search (code/name), Status select (Active/Inactive/Controlled), Hide zero-balance toggle,
+live "N accounts shown". Apply to BOTH views; tree auto-expands matches and hides empty
+groups; Expand/Collapse All act on tree.
+
+==================== 5 · GUARDED DEACTIVATE / REACTIVATE API ====================
+POST /api/accounts/{id}/deactivate {reason}
+  403 without accounts.deactivate; 422 if is_controlled; 422 if current_balance ≠ 0;
+  422 if activity in any OPEN period; 422 if referenced by unposted transactions;
+  else status→inactive + audit row (old→new, reason, ip/device, user).
+POST /api/accounts/{id}/reactivate → status→active + audit.
+UI: row ⋯ menu → Deactivate (modal, mandatory reason) / Reactivate; controlled rows show
+🔒 and disabled menu item; list + tree chips update (Active/Inactive/Controlled).
+
+==================== 6 · CONTROLLED ACCOUNTS ====================
+Seed is_controlled on system accounts (e.g. 1060 Cash-in-Drawer, 2400 Tax Payable,
+3900 Retained Earnings) + any account flagged by settings; excluded from edit/deactivate;
+shown with 🔒 chip in both views.
+
+==================== 7 · PERMISSIONS / SECURITY ====================
+View COA: all finance roles. Create/edit accounts: Accountant+; deactivate/reactivate:
+Finance Manager; manage controlled flag: System Admin. All lifecycle changes audited.
+
+==================== 8 · A11Y / RESPONSIVE ====================
+Tree carets keyboard-operable (aria-expanded); tables th scope; focus rings #94a3b8;
+≤900px tree collapses secondary columns; list tables horizontal-scroll; no horizontal
+PAGE scrollbar at 1280/1024/768; text-size matrix 90–125 no clipping; no console errors.
+
+==================== 9 · CONSTRAINTS (PIXEL PARITY) ====================
+Replicate APPENDIX A exactly: seg toggle (hierarchy default), equation strip, dashed
+connectors + level chips, red danger n/a here, hover row actions, ⋯ menu + modal,
+controlled 🔒 chips, save-bar n/a. System currency; search overlay top-most.
+
+==================== 10 · VERIFY ====================
+10.1 Routes/APIs: GET /api/coa/tree roll-ups correct (incl. contra negatives); preference
+read/write works; default tree. 10.2 Toggle swaps views keeping filters; both render same
+data. 10.3 Deactivate guards return 403/422 per §5 and never delete; reactivate restores;
+audit rows written; controlled blocked end-to-end. 10.4 Equation strip balanced check +
+export block on imbalance. 10.5 Filters behave in both views. 10.6 Screens match
+APPENDIX A; no console errors; GL/journal handlers untouched.
+REPORT: migration list; roll-up trace samples; API guard matrix (403/422 cases); preference
+persistence proof; audit samples; parity confirmation; NO SECTION SKIPPED.
+
+==================== APPENDIX A — EMBEDDED REFERENCE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chart of Accounts — Hierarchy + List (one page)</title>
+<style>
+  :root{--deep-2:#0c3539;--sec:#128F8E;--ink:#0B2A2D;--sub:#41585c;--muted:#5f7476;--faint:#8aa5a7;--border:#dceaea;--line:#e2ecec;--green:#15803d;--red:#b91c1c;--amber:#b45309;--hair:#EEF3F1;--bg:#eef4f4;
+    --shadow:0 1px 2px rgba(10,42,46,.04),0 12px 30px -14px rgba(10,42,46,.22);}
+  *{box-sizing:border-box;margin:0;padding:0}html,body{overflow-x:clip}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:#374151;font-size:14px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:24px 28px 60px}
+  .page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  h1{color:var(--ink);font-size:24px;font-weight:850}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:5px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:11px;border:1px solid transparent;cursor:pointer;font-family:inherit;font-weight:700;font-size:12.5px;white-space:nowrap}
+  .btn-cta{color:#fff;background:var(--deep-2)}
+  .btn-ghost{color:var(--ink);background:#e8f0f0;border-color:var(--border)}
+  .btn-danger{color:var(--red);background:#fff;border-color:rgba(185,28,28,.35)}
+  .eq{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .eq .cell .l{font-size:9.5px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .eq .cell .v{font-size:16px;font-weight:850;color:var(--ink);font-variant-numeric:tabular-nums}
+  .eq .sep{width:1px;height:30px;background:var(--line)}
+  .eq .bal{margin-left:auto;font-size:12px;font-weight:800;color:var(--green)}
+  .toolbar{background:#fff;border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar .search{flex:1;min-width:200px;height:40px;border-radius:11px;border:1px solid var(--border);padding:0 12px;font-family:inherit;font-size:13px;color:var(--ink)}
+  .toolbar select{height:40px;border-radius:11px;border:1px solid var(--border);background:#fff;padding:0 10px;font-family:inherit;font-size:12.5px;color:var(--ink)}
+  .seg{display:flex;background:#e8f0f0;border-radius:12px;padding:4px;gap:4px}
+  .seg button{border:none;background:transparent;height:34px;padding:0 14px;border-radius:9px;font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+  .seg button.on{background:#fff;color:var(--sec);box-shadow:0 1px 2px rgba(8,40,44,.12)}
+  .count{font-size:12px;color:var(--muted);font-weight:700}
+  .sw{width:38px;height:22px;border-radius:999px;background:#CBD8D6;position:relative;cursor:pointer;flex:none}
+  .sw.on{background:var(--sec)}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+  .sw.on::after{left:19px}
+  .tlabel{font-size:11px;font-weight:700;color:var(--muted)}
+  .view{display:none}
+  .view.on{display:block}
+  .tree{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+  .tree-h,.row{display:grid;grid-template-columns:26px 70px 1fr 110px 110px 120px 140px 92px;gap:8px;align-items:center}
+  .tree-h{padding:10px 16px;background:#f4f8f8;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  .padwrap{padding:10px 8px 14px}
+  .row{padding:8px 16px;border-radius:10px}
+  .row:hover{background:rgba(17,69,75,.04)}
+  .car{width:22px;height:22px;border-radius:7px;border:1px solid var(--border);background:#fff;color:var(--muted);display:grid;place-items:center;font-size:9px;cursor:pointer;transition:transform .15s}
+  .node.collapsed > .row .car{transform:rotate(-90deg)}
+  .node.collapsed > .kids{display:none}
+  .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:700;color:var(--ink)}
+  .nm{font-size:13px;color:var(--sub);font-weight:600}
+  .num{font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:600;color:var(--ink);text-align:right}
+  .kids{margin-left:34px;border-left:1px dashed var(--border);padding-left:6px}
+  .row.t{background:linear-gradient(180deg,#f8fbfb,#f1f7f6);border:1px solid var(--line)}
+  .row.t .nm{color:var(--ink);font-weight:850;font-size:13.5px}
+  .row.s .nm{color:var(--ink);font-weight:800}
+  .row.c .nm{color:var(--ink);font-weight:750}
+  .chip{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800}
+  .lv-t{background:rgba(12,53,57,.08);color:var(--deep-2);border:1px solid rgba(12,53,57,.25)}
+  .lv-s{background:rgba(18,143,142,.08);color:var(--sec);border:1px solid rgba(18,143,142,.3)}
+  .lv-c{background:rgba(70,112,140,.1);color:var(--sub);border:1px solid rgba(70,112,140,.3)}
+  .lv-l{background:rgba(138,165,167,.12);color:var(--muted);border:1px solid rgba(138,165,167,.35)}
+  .st-a{background:rgba(22,163,74,.1);color:var(--green);border:1px solid rgba(22,163,74,.35)}
+  .st-i{background:rgba(138,165,167,.15);color:var(--muted);border:1px solid rgba(138,165,167,.45)}
+  .st-c{background:rgba(12,53,57,.08);color:var(--deep-2);border:1px solid rgba(12,53,57,.3)}
+  .act{display:flex;gap:6px;justify-content:flex-end;opacity:0;transition:opacity .15s}
+  .row:hover .act,.lrow:hover .act{opacity:1}
+  .ib{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;color:var(--muted);font-size:11px}
+  .ib:hover{color:var(--sec);border-color:rgba(18,143,142,.4)}
+  .neg{color:var(--red)}
+  .sec{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow)}
+  .sec-h{display:flex;align-items:center;gap:10px;padding:13px 16px;background:linear-gradient(180deg,#fbfdfd,#f4f8f8)}
+  .sec-h .t{font-size:14px;font-weight:850;color:var(--ink)}
+  .sec-h .n{font-size:11px;color:var(--muted);font-weight:700}
+  .sec-h .tot{margin-left:auto;font-size:12px;font-weight:800;color:var(--deep-2)}
+  table{width:100%;border-collapse:collapse;min-width:900px}
+  .tbl-wrap{overflow-x:auto}
+  th{background:#f4f8f8;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th.num,td.num{text-align:right}
+  td{padding:10px 12px;border-bottom:1px solid var(--hair);font-size:13px;color:var(--sub)}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:rgba(17,69,75,.03)}
+  .aname{font-weight:700;color:var(--ink)}
+  .adesc{font-size:11px;color:var(--muted);margin-top:2px}
+  #menu{position:fixed;z-index:70;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 40px -16px rgba(8,40,44,.35);padding:6px;display:none;min-width:190px}
+  #menu.on{display:block}
+  #menu button{display:flex;width:100%;gap:8px;align-items:center;border:none;background:none;padding:9px 10px;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--sub);cursor:pointer;text-align:left}
+  #menu button:hover{background:var(--hair);color:var(--ink)}
+  #menu button.danger{color:var(--red)}
+  #menu button[disabled]{opacity:.45;cursor:not-allowed}
+  #menu .mhead{font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:6px 10px 4px}
+  .modal{position:fixed;inset:0;background:rgba(8,40,44,.5);display:none;place-items:center;z-index:90;padding:20px}
+  .modal.on{display:grid}
+  .mbox{width:min(480px,100%);background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 30px 60px -20px rgba(8,40,44,.5)}
+  .mbox-h{padding:18px 20px;border-bottom:1px solid var(--line)}
+  .mbox-h h3{color:var(--ink);font-size:16px;font-weight:850}
+  .mbox-b{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+  .warn{border:1px solid rgba(180,83,9,.4);background:rgba(180,83,9,.07);color:var(--amber);border-radius:11px;padding:10px 12px;font-size:12px;font-weight:700}
+  .f label{display:block;font-size:10.5px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .f textarea{width:100%;border-radius:11px;border:1px solid var(--border);padding:10px 12px;font-family:inherit;font-size:13px;color:var(--ink);min-height:74px}
+  .mbox-f{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--line);background:#fbfdfd}
+  @media(max-width:900px){.tree-h{display:none}.row{grid-template-columns:26px 60px 1fr 110px 92px}.row .hide-s{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="page-head">
+    <div><h1>Chart of Accounts</h1>
+      <div class="sub">42 accounts · 5 types · system currency (K) · controlled accounts protected</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="expandAll">Expand All</button>
+      <button class="btn btn-ghost" id="collapseAll">Collapse All</button>
+      <button class="btn btn-ghost">Export PDF</button>
+      <button class="btn btn-cta">＋ New Account</button>
+    </div>
+  </div>
+
+  <div class="eq">
+    <div class="cell"><span class="l">Total Assets</span><span class="v" id="eqA">—</span></div><div class="sep"></div>
+    <div class="cell"><span class="l">Total Liabilities</span><span class="v" id="eqL">—</span></div><div class="sep"></div>
+    <div class="cell"><span class="l">Total Equity</span><span class="v" id="eqE">—</span></div>
+    <span class="bal" id="eqBal">✓ Balanced — Assets = Liabilities + Equity</span>
+  </div>
+
+  <div class="toolbar">
+    <div class="seg" id="seg">
+      <button data-v="tree" class="on">🌲 Hierarchy</button>
+      <button data-v="list">☰ List</button>
+    </div>
+    <input class="search" id="q" placeholder="🔍 Filter by code or name…">
+    <select id="statusSel"><option value="">All statuses</option><option>Active</option><option>Inactive</option><option>Controlled</option></select>
+    <span class="tlabel">Hide zero-balance</span><span class="sw" id="zeroSw"></span>
+    <span class="count" id="count"></span>
+  </div>
+
+  <!-- ============ VIEW: HIERARCHY (default) ============ -->
+  <div class="view on" id="view-tree">
+    <div class="tree">
+      <div class="tree-h"><span></span><span>Code</span><span>Account</span><span>Level</span><span>Status</span><span style="text-align:right">Opening (K)</span><span style="text-align:right">Current (K)</span><span></span></div>
+      <div class="padwrap" id="treeBody">
+        <div class="node"><div class="row t"><span class="car">▼</span><span class="code"></span><span class="nm">ASSETS</span><span><span class="chip lv-t">Type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+          <div class="kids">
+            <div class="node"><div class="row s"><span class="car">▼</span><span class="code"></span><span class="nm">Current Assets</span><span><span class="chip lv-s">Sub-type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+              <div class="kids">
+                <div class="node"><div class="row c"><span class="car">▼</span><span class="code">1000</span><span class="nm">Cash and Cash Equivalents</span><span><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span class="act"><button class="ib">＋</button><button class="ib">👁</button></span></div>
+                  <div class="kids">
+                    <div class="row leaf" data-status="Active" data-open="0" data-cur="1500"><span></span><span class="code">1010</span><span class="nm">Petty Cash</span><span class="hide-s"><span class="chip lv-l">Sub</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">1,500.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+                    <div class="row leaf" data-status="Active" data-open="0" data-cur="2500"><span></span><span class="code">1050</span><span class="nm">Undeposited Funds</span><span class="hide-s"><span class="chip lv-l">Sub</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">2,500.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+                    <div class="row leaf" data-status="Controlled" data-open="0" data-cur="0" data-protected="1"><span></span><span class="code">1060</span><span class="nm">Cash-in-Drawer · POS</span><span class="hide-s"><span class="chip lv-l">Sub</span></span><span><span class="chip st-c">🔒 Controlled</span></span><span class="num">0.00</span><span class="num">0.00</span><span class="act"><button class="ib">👁</button></span></div>
+                    <div class="row leaf" data-status="Inactive" data-open="0" data-cur="0"><span></span><span class="code">1040</span><span class="nm">Legacy Bank Account</span><span class="hide-s"><span class="chip lv-l">Sub</span></span><span><span class="chip st-i">Inactive</span></span><span class="num">0.00</span><span class="num">0.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+                  </div></div>
+                <div class="row leaf" data-status="Active" data-open="0" data-cur="76000"><span></span><span class="code">1100</span><span class="nm">Accounts Receivable</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">76,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+                <div class="row leaf" data-status="Active" data-open="0" data-cur="95000"><span></span><span class="code">1300</span><span class="nm">Inventory</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">95,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+                <div class="row leaf" data-status="Active" data-open="0" data-cur="0"><span></span><span class="code">1320</span><span class="nm">Returnable Containers</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">0.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+              </div></div>
+            <div class="node"><div class="row s"><span class="car">▼</span><span class="code"></span><span class="nm">Non-Current Assets</span><span><span class="chip lv-s">Sub-type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+              <div class="kids">
+                <div class="row leaf" data-status="Active" data-open="0" data-cur="355000"><span></span><span class="code">1500</span><span class="nm">Property, Plant &amp; Equipment</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">355,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+                <div class="row leaf" data-status="Active" data-open="0" data-cur="-45000"><span></span><span class="code">1590</span><span class="nm">Accumulated Depreciation</span><span class="hide-s"><span class="chip lv-c">Contra</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num neg">(45,000.00)</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+              </div></div>
+          </div></div>
+        <div class="node"><div class="row t"><span class="car">▼</span><span class="code"></span><span class="nm">LIABILITIES</span><span><span class="chip lv-t">Type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+          <div class="kids">
+            <div class="node"><div class="row s"><span class="car">▼</span><span class="code"></span><span class="nm">Current Liabilities</span><span><span class="chip lv-s">Sub-type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+              <div class="kids">
+                <div class="row leaf" data-status="Active" data-open="0" data-cur="0"><span></span><span class="code">2000</span><span class="nm">Accounts Payable</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">0.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+                <div class="row leaf" data-status="Active" data-open="0" data-cur="2000"><span></span><span class="code">2300</span><span class="nm">Customer Bottle Credits</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">2,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+                <div class="row leaf" data-status="Controlled" data-open="0" data-cur="1000" data-protected="1"><span></span><span class="code">2400</span><span class="nm">Tax Payable</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-c">🔒 Controlled</span></span><span class="num">0.00</span><span class="num">1,000.00</span><span class="act"><button class="ib">👁</button></span></div>
+              </div></div>
+            <div class="node"><div class="row s"><span class="car">▼</span><span class="code"></span><span class="nm">Non-Current Liabilities</span><span><span class="chip lv-s">Sub-type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+              <div class="kids">
+                <div class="row leaf" data-status="Active" data-open="0" data-cur="180000"><span></span><span class="code">2600</span><span class="nm">Long-Term Loans</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">180,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+              </div></div>
+          </div></div>
+        <div class="node"><div class="row t"><span class="car">▼</span><span class="code"></span><span class="nm">EQUITY</span><span><span class="chip lv-t">Type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+          <div class="kids">
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="200000"><span></span><span class="code">3000</span><span class="nm">Share Capital</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">200,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+            <div class="row leaf" data-status="Controlled" data-open="0" data-cur="75000" data-protected="1"><span></span><span class="code">3900</span><span class="nm">Retained Earnings</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-c">🔒 Controlled</span></span><span class="num">0.00</span><span class="num">75,000.00</span><span class="act"><button class="ib">👁</button></span></div>
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="27000"><span></span><span class="code">3950</span><span class="nm">Current Year Profit</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">27,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+          </div></div>
+        <div class="node"><div class="row t"><span class="car">▼</span><span class="code"></span><span class="nm">REVENUE</span><span><span class="chip lv-t">Type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+          <div class="kids">
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="125000"><span></span><span class="code">4000</span><span class="nm">Sales Revenue</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">125,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="25000"><span></span><span class="code">4100</span><span class="nm">Service Revenue</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">25,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="0"><span></span><span class="code">4900</span><span class="nm">Bottle Deposit Revenue</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">0.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+          </div></div>
+        <div class="node"><div class="row t"><span class="car">▼</span><span class="code"></span><span class="nm">EXPENSES</span><span><span class="chip lv-t">Type</span></span><span></span><span class="num roll-op"></span><span class="num roll-cu"></span><span></span></div>
+          <div class="kids">
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="65000"><span></span><span class="code">5000</span><span class="nm">Cost of Goods Sold</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">65,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="30000"><span></span><span class="code">5100</span><span class="nm">Salaries &amp; Wages</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">30,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="8000"><span></span><span class="code">5200</span><span class="nm">Rent &amp; Utilities</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">8,000.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+            <div class="row leaf" data-status="Active" data-open="0" data-cur="2500"><span></span><span class="code">5500</span><span class="nm">Depreciation</span><span class="hide-s"><span class="chip lv-c">Control</span></span><span><span class="chip st-a">Active</span></span><span class="num">0.00</span><span class="num">2,500.00</span><span class="act"><button class="ib">👁</button><button class="ib">✎</button></span></div>
+          </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VIEW: LIST ============ -->
+  <div class="view" id="view-list">
+    <section class="sec"><div class="sec-h"><span class="t">Asset Accounts</span><span class="n">10</span><span class="tot">Current K485,000</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th style="width:70px">Code</th><th>Account</th><th>Sub-type</th><th>Status</th><th class="num">Opening (K)</th><th class="num">Current (K)</th><th style="width:110px"></th></tr></thead><tbody>
+        <tr class="lrow" data-status="Active" data-cur="4000"><td class="code">1000</td><td><div class="aname">Cash and Cash Equivalents</div><div class="adesc">Control · rolls up sub-accounts</div></td><td><span class="chip lv-c">current_asset</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">4,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="1500"><td class="code">1010</td><td><div class="aname">Petty Cash</div></td><td><span class="chip lv-l">current_asset</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">1,500.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="2500"><td class="code">1050</td><td><div class="aname">Undeposited Funds</div></td><td><span class="chip lv-l">current_asset</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">2,500.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Controlled" data-cur="0" data-protected="1"><td class="code">1060</td><td><div class="aname">Cash-in-Drawer · POS</div><div class="adesc">System account</div></td><td><span class="chip lv-l">current_asset</span></td><td><span class="chip st-c">🔒 Controlled</span></td><td class="num">0.00</td><td class="num">0.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="76000"><td class="code">1100</td><td><div class="aname">Accounts Receivable</div></td><td><span class="chip lv-c">current_asset</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">76,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="95000"><td class="code">1300</td><td><div class="aname">Inventory</div></td><td><span class="chip lv-c">current_asset</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">95,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="310000"><td class="code">1500</td><td><div class="aname">Property, Plant &amp; Equipment (net)</div></td><td><span class="chip lv-c">non_current</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">310,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Inactive" data-cur="0"><td class="code">1040</td><td><div class="aname">Legacy Bank Account</div></td><td><span class="chip lv-l">current_asset</span></td><td><span class="chip st-i">Inactive</span></td><td class="num">0.00</td><td class="num">0.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+      </tbody></table></div></section>
+    <section class="sec"><div class="sec-h"><span class="t">Liability Accounts</span><span class="n">4</span><span class="tot">Current K183,000</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th style="width:70px">Code</th><th>Account</th><th>Sub-type</th><th>Status</th><th class="num">Opening (K)</th><th class="num">Current (K)</th><th style="width:110px"></th></tr></thead><tbody>
+        <tr class="lrow" data-status="Active" data-cur="0"><td class="code">2000</td><td><div class="aname">Accounts Payable</div></td><td><span class="chip lv-c">current_liability</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">0.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="2000"><td class="code">2300</td><td><div class="aname">Customer Bottle Credits</div></td><td><span class="chip lv-c">current_liability</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">2,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Controlled" data-cur="1000" data-protected="1"><td class="code">2400</td><td><div class="aname">Tax Payable</div></td><td><span class="chip lv-c">current_liability</span></td><td><span class="chip st-c">🔒 Controlled</span></td><td class="num">0.00</td><td class="num">1,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="180000"><td class="code">2600</td><td><div class="aname">Long-Term Loans</div></td><td><span class="chip lv-c">non_current</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">180,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+      </tbody></table></div></section>
+    <section class="sec"><div class="sec-h"><span class="t">Equity Accounts</span><span class="n">3</span><span class="tot">Current K302,000</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th style="width:70px">Code</th><th>Account</th><th>Sub-type</th><th>Status</th><th class="num">Opening (K)</th><th class="num">Current (K)</th><th style="width:110px"></th></tr></thead><tbody>
+        <tr class="lrow" data-status="Active" data-cur="200000"><td class="code">3000</td><td><div class="aname">Share Capital</div></td><td><span class="chip lv-c">equity</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">200,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Controlled" data-cur="75000" data-protected="1"><td class="code">3900</td><td><div class="aname">Retained Earnings</div></td><td><span class="chip lv-c">equity</span></td><td><span class="chip st-c">🔒 Controlled</span></td><td class="num">0.00</td><td class="num">75,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="27000"><td class="code">3950</td><td><div class="aname">Current Year Profit</div></td><td><span class="chip lv-c">equity</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">27,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+      </tbody></table></div></section>
+    <section class="sec"><div class="sec-h"><span class="t">Revenue Accounts</span><span class="n">3</span><span class="tot">Current K150,000</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th style="width:70px">Code</th><th>Account</th><th>Sub-type</th><th>Status</th><th class="num">Opening (K)</th><th class="num">Current (K)</th><th style="width:110px"></th></tr></thead><tbody>
+        <tr class="lrow" data-status="Active" data-cur="125000"><td class="code">4000</td><td><div class="aname">Sales Revenue</div></td><td><span class="chip lv-c">revenue</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">125,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="25000"><td class="code">4100</td><td><div class="aname">Service Revenue</div></td><td><span class="chip lv-c">revenue</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">25,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="0"><td class="code">4900</td><td><div class="aname">Bottle Deposit Revenue</div></td><td><span class="chip lv-c">revenue</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">0.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+      </tbody></table></div></section>
+    <section class="sec"><div class="sec-h"><span class="t">Expense Accounts</span><span class="n">4</span><span class="tot">Current K105,500</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th style="width:70px">Code</th><th>Account</th><th>Sub-type</th><th>Status</th><th class="num">Opening (K)</th><th class="num">Current (K)</th><th style="width:110px"></th></tr></thead><tbody>
+        <tr class="lrow" data-status="Active" data-cur="65000"><td class="code">5000</td><td><div class="aname">Cost of Goods Sold</div></td><td><span class="chip lv-c">expense</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">65,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="30000"><td class="code">5100</td><td><div class="aname">Salaries &amp; Wages</div></td><td><span class="chip lv-c">expense</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">30,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="8000"><td class="code">5200</td><td><div class="aname">Rent &amp; Utilities</div></td><td><span class="chip lv-c">expense</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">8,000.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+        <tr class="lrow" data-status="Active" data-cur="2500"><td class="code">5500</td><td><div class="aname">Depreciation</div></td><td><span class="chip lv-c">expense</span></td><td><span class="chip st-a">Active</span></td><td class="num">0.00</td><td class="num">2,500.00</td><td><span class="act" style="opacity:1"><button class="ib">👁</button><button class="ib">✎</button><button class="ib more">⋯</button></span></td></tr>
+      </tbody></table></div></section>
+  </div>
+</div>
+
+<!-- row menu + deactivate modal (list view) -->
+<div id="menu">
+  <div class="mhead" id="menuTitle"></div>
+  <button data-a="ledger">👁 View ledger</button>
+  <button data-a="edit">✎ Edit account</button>
+  <button data-a="deact" id="menuDeact" class="danger">⃠ Deactivate account</button>
+</div>
+<div class="modal" id="modal">
+  <div class="mbox">
+    <div class="mbox-h"><h3 id="mTitle">Deactivate account</h3></div>
+    <div class="mbox-b">
+      <div class="warn">Future postings blocked; history retained. Permission-gated + audited.</div>
+      <div class="f"><label>Reason (mandatory)</label><textarea id="mReason" placeholder="e.g. Replaced by 1000 · no activity since 2024"></textarea></div>
+    </div>
+    <div class="mbox-f"><button class="btn btn-ghost" id="mCancel">Cancel</button><button class="btn btn-danger" id="mOk">Deactivate</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function fmt(n){var a=Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});return n<0?'('+a+')':a;}
+  function roll(node){var o=0,c=0;
+    node.querySelectorAll(':scope > .kids .leaf').forEach(function(l){o+=+l.dataset.open;c+=+l.dataset.cur;});
+    node.querySelectorAll(':scope > .kids .node').forEach(function(n){var r=roll(n);o+=r.o;c+=r.c;});
+    var h=node.querySelector(':scope > .row');
+    h.querySelector('.roll-op').textContent=fmt(o);
+    var cu=h.querySelector('.roll-cu');cu.textContent=fmt(c);cu.classList.toggle('neg',c<0);
+    return{o:o,c:c};}
+  var tops=document.querySelectorAll('#treeBody > .node');
+  var A=roll(tops[0]),L=roll(tops[1]),E=roll(tops[2]);roll(tops[3]);roll(tops[4]);
+  document.getElementById('eqA').textContent=fmt(A.c);
+  document.getElementById('eqL').textContent=fmt(L.c);
+  document.getElementById('eqE').textContent=fmt(E.c);
+  var bal=Math.abs(A.c-(L.c+E.c))<0.01,eqBal=document.getElementById('eqBal');
+  eqBal.textContent=bal?'✓ Balanced — Assets = Liabilities + Equity':'⚠ Out of balance by '+fmt(A.c-(L.c+E.c));
+  eqBal.style.color=bal?'var(--green)':'var(--red)';
+
+  document.getElementById('seg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    document.querySelectorAll('#seg button').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    document.getElementById('view-tree').classList.toggle('on',b.dataset.v==='tree');
+    document.getElementById('view-list').classList.toggle('on',b.dataset.v==='list');
+    apply();
+  });
+
+  document.querySelectorAll('.car').forEach(function(c){c.addEventListener('click',function(e){e.stopPropagation();c.closest('.node').classList.toggle('collapsed');});});
+  document.getElementById('expandAll').addEventListener('click',function(){document.querySelectorAll('.node').forEach(function(n){n.classList.remove('collapsed');});});
+  document.getElementById('collapseAll').addEventListener('click',function(){document.querySelectorAll('.node').forEach(function(n){n.classList.add('collapsed');});});
+
+  var q=document.getElementById('q'),st=document.getElementById('statusSel'),zero=document.getElementById('zeroSw'),count=document.getElementById('count');
+  function matches(el){
+    var term=q.value.trim().toLowerCase();
+    var hideQ=term&&el.textContent.toLowerCase().indexOf(term)===-1;
+    var hideS=st.value&&el.dataset.status!==st.value;
+    var hideZ=zero.classList.contains('on')&&+el.dataset.cur===0&&+el.dataset.open===0;
+    return !(hideQ||hideS||hideZ);
+  }
+  function apply(){
+    var shown=0;
+    document.querySelectorAll('#view-tree .leaf').forEach(function(l){var ok=matches(l);l.style.display=ok?'':'none';if(ok)shown++;});
+    document.querySelectorAll('#view-tree .node').forEach(function(n){
+      var has=[].slice.call(n.querySelectorAll('.leaf')).some(function(l){return l.style.display!=='none';});
+      n.style.display=has?'':'none';
+      if(q.value||st.value||zero.classList.contains('on'))n.classList.remove('collapsed');
+    });
+    document.querySelectorAll('#view-list .lrow').forEach(function(r){var ok=matches(r);r.style.display=ok?'':'none';if(ok)shown++;});
+    count.textContent=shown+' accounts shown';
+  }
+  q.addEventListener('input',apply);st.addEventListener('change',apply);
+  zero.addEventListener('click',function(){zero.classList.toggle('on');apply();});
+  apply();
+
+  var menu=document.getElementById('menu'),menuDeact=document.getElementById('menuDeact'),modal=document.getElementById('modal'),row=null;
+  document.addEventListener('click',function(e){
+    var more=e.target.closest('.more');
+    if(more){
+      row=more.closest('tr');
+      document.getElementById('menuTitle').textContent=row.querySelector('.code').textContent+' · '+row.querySelector('.aname').textContent;
+      var inactive=row.dataset.status==='Inactive',prot=row.dataset.protected==='1';
+      menuDeact.disabled=prot;
+      menuDeact.textContent=prot?'🔒 Controlled — cannot deactivate':(inactive?'↺ Reactivate account':'⃠ Deactivate account');
+      menuDeact.classList.toggle('danger',!prot&&!inactive);
+      var r=more.getBoundingClientRect();
+      menu.style.top=Math.min(r.bottom+6,innerHeight-200)+'px';
+      menu.style.left=Math.max(12,r.left-160)+'px';
+      menu.classList.add('on');e.stopPropagation();return;
+    }
+    if(!e.target.closest('#menu'))menu.classList.remove('on');
+  });
+  menu.addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b||b.disabled)return;
+    menu.classList.remove('on');
+    if(b.dataset.a!=='deact')return;
+    if(row.dataset.status==='Inactive'){row.dataset.status='Active';row.querySelector('.st-i').outerHTML='<span class="chip st-a">Active</span>';apply();return;}
+    document.getElementById('mTitle').textContent='Deactivate '+row.querySelector('.code').textContent+' · '+row.querySelector('.aname').textContent;
+    document.getElementById('mReason').value='';modal.classList.add('on');
+  });
+  document.getElementById('mCancel').addEventListener('click',function(){modal.classList.remove('on');});
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('on');});
+  document.getElementById('mOk').addEventListener('click',function(){
+    if(!document.getElementById('mReason').value.trim()){document.getElementById('mReason').focus();return;}
+    row.dataset.status='Inactive';
+    row.querySelector('.st-a').outerHTML='<span class="chip st-i">Inactive</span>';
+    modal.classList.remove('on');apply();
+  });
+})();
+</script>
+</body>
+</html>
+```

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Services\Reporting\AgingReportService;
+use App\Services\Reporting\ReportAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 
@@ -22,12 +23,21 @@ class AgingReportController extends Controller
 
         $result = $this->service->arAging($companyId, $branchId, $asOfDate);
 
+        $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('accounting.aging.ar-summary', array_merge($result, compact('branches', 'branchId', 'asOfDate')));
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'asOfDate'),
+        );
+
+        return view('accounting.aging.ar-summary', array_merge($result, compact('branches', 'branchId', 'asOfDate', 'currencySymbol')));
     }
 
     public function arDetail(Request $request)
@@ -37,13 +47,21 @@ class AgingReportController extends Controller
         $asOfDate = $request->input('as_of_date', now()->format('Y-m-d'));
 
         $result = $this->service->arAgingDetail($companyId, $branchId, $asOfDate);
+        $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
 
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('accounting.aging.ar-detail', array_merge($result, compact('branches', 'branchId', 'asOfDate')));
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'asOfDate'),
+        );
+
+        return view('accounting.aging.ar-detail', array_merge($result, compact('branches', 'branchId', 'asOfDate', 'currencySymbol')));
     }
 
     public function apSummary(Request $request)
@@ -54,12 +72,21 @@ class AgingReportController extends Controller
 
         $result = $this->service->apAging($companyId, $branchId, $asOfDate);
 
+        $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('accounting.aging.ap-summary', array_merge($result, compact('branches', 'branchId', 'asOfDate')));
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'asOfDate'),
+        );
+
+        return view('accounting.aging.ap-summary', array_merge($result, compact('branches', 'branchId', 'asOfDate', 'currencySymbol')));
     }
 
     public function apDetail(Request $request)
@@ -69,13 +96,21 @@ class AgingReportController extends Controller
         $asOfDate = $request->input('as_of_date', now()->format('Y-m-d'));
 
         $result = $this->service->apAgingDetail($companyId, $branchId, $asOfDate);
+        $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
 
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
-        return view('accounting.aging.ap-detail', array_merge($result, compact('branches', 'branchId', 'asOfDate')));
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'asOfDate'),
+        );
+
+        return view('accounting.aging.ap-detail', array_merge($result, compact('branches', 'branchId', 'asOfDate', 'currencySymbol')));
     }
 
     public function exportCsv(Request $request)
@@ -85,13 +120,17 @@ class AgingReportController extends Controller
         $asOfDate = $request->input('as_of_date', now()->format('Y-m-d'));
         $type = $request->input('type', 'ar');
 
-        if ($type === 'ar') {
-            $result = $this->service->arAging($companyId, $branchId, $asOfDate);
-            $filename = "ar_aging_{$asOfDate}.csv";
-        } else {
-            $result = $this->service->apAging($companyId, $branchId, $asOfDate);
-            $filename = "ap_aging_{$asOfDate}.csv";
-        }
+        $result = $type === 'ar' ? $this->service->arAging($companyId, $branchId, $asOfDate) : $this->service->apAging($companyId, $branchId, $asOfDate);
+
+        ReportAuditService::log(
+            userId: auth()->id(),
+            companyId: $companyId,
+            routeName: $request->route()->getName(),
+            filters: compact('branchId', 'asOfDate', 'type'),
+            outputFormat: 'csv',
+        );
+
+        $filename = $type === 'ar' ? "ar_aging_{$asOfDate}.csv" : "ap_aging_{$asOfDate}.csv";
 
         $headers = $type === 'ar' ? ['Customer', 'Current', '1-30 Days', '31-60 Days', '61-90 Days', '90+ Days', 'Total'] : ['Vendor', 'Current', '1-30 Days', '31-60 Days', '61-90 Days', '90+ Days', 'Total'];
         $rows = $type === 'ar' ? $result['customers'] : $result['vendors'];

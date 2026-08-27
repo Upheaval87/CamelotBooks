@@ -135,8 +135,15 @@
             <svg class="sidebar-chevron" :class="openSection === 'fixed-assets' ? 'rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
         <div x-show="openSection === 'fixed-assets'" x-collapse.duration.300ms>
-            <a href="{{ route('accounting.fixed-assets.index') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets') ? 'active' : '' }}">Asset Register</a>
-            <a href="{{ route('accounting.depreciation.runs') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.depreciation') ? 'active' : '' }}">Depreciation</a>
+            <a href="{{ route('accounting.fixed-assets.dashboard') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.dashboard') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('accounting.fixed-assets.register') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.register') ? 'active' : '' }}">Asset Register</a>
+            <a href="{{ route('accounting.fixed-assets.categories') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.categories') ? 'active' : '' }}">Categories</a>
+            <a href="{{ route('accounting.fixed-assets.classes') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.classes') ? 'active' : '' }}">Classes</a>
+            <a href="{{ route('accounting.fixed-assets.dep-methods') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.dep-methods') ? 'active' : '' }}">Dep. Methods</a>
+            <a href="{{ route('accounting.fixed-assets.depreciation-runs') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.depreciation') ? 'active' : '' }}">Depreciation Runs</a>
+            <a href="{{ route('accounting.fixed-assets.disposals') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.disposals') ? 'active' : '' }}">Disposals</a>
+            <a href="{{ route('accounting.fixed-assets.transfers') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.transfers') ? 'active' : '' }}">Transfers</a>
+            <a href="{{ route('accounting.fixed-assets.verifications') }}" class="sidebar-child {{ str_starts_with($routeName, 'accounting.fixed-assets.verifications') ? 'active' : '' }}">Verifications</a>
         </div>
 
         <div class="sidebar-section-label">Payroll</div>

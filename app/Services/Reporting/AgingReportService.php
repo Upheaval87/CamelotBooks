@@ -47,6 +47,7 @@ class AgingReportService
                 ];
             }
 
+
             $customerBuckets[$customerId][$bucket] += $amount;
             $customerBuckets[$customerId]['total'] += $amount;
         }
@@ -156,7 +157,9 @@ class AgingReportService
             $amount = (float) $invoice->amount - (float) $invoice->amount_paid;
 
             $lines[] = [
+                'customer_id' => $invoice->customer_id,
                 'customer_name' => $invoice->customer->name ?? 'Unknown',
+                'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
                 'due_date' => $invoice->due_date,
                 'days_overdue' => $daysOverdue,
@@ -196,7 +199,9 @@ class AgingReportService
             $amount = (float) $bill->amount - (float) $bill->amount_paid;
 
             $lines[] = [
+                'vendor_id' => $bill->vendor_id,
                 'vendor_name' => $bill->vendor->name ?? 'Unknown',
+                'bill_id' => $bill->id,
                 'bill_number' => $bill->bill_number,
                 'due_date' => $bill->due_date,
                 'days_overdue' => $daysOverdue,
