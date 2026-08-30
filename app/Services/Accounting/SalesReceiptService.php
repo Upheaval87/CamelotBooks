@@ -29,6 +29,8 @@ class SalesReceiptService
                 'sales_receipt'
             );
 
+            $currency = $data['currency'] ?? $this->systemCurrency($companyId);
+
             $subtotal = 0;
             $taxTotal = 0;
             $discountTotal = 0;
@@ -39,12 +41,13 @@ class SalesReceiptService
                 'branch_id' => $data['branch_id'] ?? null,
                 'cost_center_id' => $data['cost_center_id'] ?? null,
                 'customer_id' => $data['customer_id'] ?? null,
+                'invoice_id' => $data['invoice_id'] ?? null,
                 'receipt_number' => $receiptNumber,
                 'receipt_date' => $data['receipt_date'] ?? now()->toDateString(),
                 'reference' => $data['reference'] ?? null,
                 'memo' => $data['memo'] ?? null,
                 'status' => SalesReceipt::STATUS_DRAFT,
-                'currency' => $data['currency'] ?? 'USD',
+                'currency' => $currency,
                 'created_by' => $userId,
             ]);
 
@@ -110,7 +113,9 @@ class SalesReceiptService
                 'subtotal' => $subtotal,
                 'tax_total' => $taxTotal,
                 'discount_total' => $discountTotal,
-                'total' => $subtotal + $taxTotal,
+                'total' => ($data['invoice_id'] ?? null)
+                    ? round(array_sum(collect($data['payments'] ?? [])->pluck('amount')->all()), 2)
+                    : ($subtotal + $taxTotal),
             ]);
 
             $this->logReceiptAction($receipt, 'created', null, $receipt->toArray(), $userId);
@@ -166,6 +171,7 @@ class SalesReceiptService
                 'branch_id' => $data['branch_id'] ?? $receipt->branch_id,
                 'cost_center_id' => $data['cost_center_id'] ?? $receipt->cost_center_id,
                 'customer_id' => array_key_exists('customer_id', $data) ? $data['customer_id'] : $receipt->customer_id,
+                'invoice_id' => array_key_exists('invoice_id', $data) ? $data['invoice_id'] : $receipt->invoice_id,
                 'receipt_date' => $data['receipt_date'] ?? $receipt->receipt_date,
                 'reference' => $data['reference'] ?? $receipt->reference,
                 'memo' => $data['memo'] ?? $receipt->memo,
@@ -178,10 +184,10 @@ class SalesReceiptService
                 'subtotal' => $subtotal,
                 'tax_total' => $taxTotal,
                 'discount_total' => $discountTotal,
-                'total' => $subtotal + $taxTotal,
+                'total' => $receipt->invoice_id
+                    ? round(collect($data['payments'] ?? [])->sum('amount'), 2)
+                    : ($subtotal + $taxTotal),
             ]);
-
-            $this->recreatePayments($receipt, $data['payments'] ?? []);
 
             $this->logReceiptAction($receipt, 'updated', $oldValues, $receipt->toArray(), $userId);
 
@@ -218,30 +224,25 @@ class SalesReceiptService
         DB::beginTransaction();
 
         try {
-            // 1. Post journal entry via SalesPostingService
-            $context = $this->buildPostContext($receipt);
+            // 1. Post journal entry.
+            // Settlement receipts (linked to an invoice) reduce the customer's
+            // Accounts Receivable (the invoice already recognized revenue).
+            // Standalone receipts recognize revenue/tax/COGS as before.
+            $je = $this->postToLedger($receipt, $userId);
 
-            $je = $this->postingService->postSale([
-                'company_id' => $receipt->company_id,
-                'user_id' => $userId,
-                'source_module' => 'sales_receipt',
-                'document_number' => $receipt->receipt_number,
-                'date' => $receipt->receipt_date->format('Y-m-d'),
-                'memo' => $receipt->memo ?? "Sales Receipt {$receipt->receipt_number}",
-                'lines' => $context['lines'],
-                'payments' => $context['payments'],
-            ]);
-
-            // 2. Consume inventory
-            foreach ($receipt->lines as $line) {
-                if ($line->product && $line->product->tracked_as_inventory && $line->quantity > 0) {
-                    $this->inventoryService->consumeStock(
-                        $receipt->company_id,
-                        $line->product_id,
-                        $receipt->branch_id,
-                        $line->quantity,
-                        $receipt->receipt_date->format('Y-m-d')
-                    );
+            // 2. Consume inventory (standalone receipts only — a settlement
+            //    receipt never moves inventory).
+            if (!$receipt->invoice_id) {
+                foreach ($receipt->lines as $line) {
+                    if ($line->product && $line->product->tracked_as_inventory && $line->quantity > 0) {
+                        $this->inventoryService->consumeStock(
+                            $receipt->company_id,
+                            $line->product_id,
+                            $receipt->branch_id,
+                            $line->quantity,
+                            $receipt->receipt_date->format('Y-m-d')
+                        );
+                    }
                 }
             }
 
@@ -256,11 +257,206 @@ class SalesReceiptService
             $this->logReceiptAction($receipt, 'posted', null, $receipt->toArray(), $userId);
 
             DB::commit();
-            return $receipt->fresh(['journalEntry', 'lines', 'payments']);
+            return $receipt->fresh(['journalEntry', 'lines', 'payments', 'allocations']);
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Post a receipt to the ledger.
+     *
+     * Standalone receipt  -> Dr clearing/bank (payments) · Cr revenue per line,
+     *                         Cr tax, COGS/Inventory (existing SalesPostingService).
+     * Settlement receipt   -> Dr clearing/bank (payments) · Cr AR 1100 (applied).
+     *                         Inserts invoice_allocations, updates the invoice's
+     *                         amount_paid/settled/status. Overpayment handled per
+     *                         config (cap by default, customer-credit opt-in).
+     */
+    protected function postToLedger(SalesReceipt $receipt, int $userId): \App\Models\JournalEntry
+    {
+        if ($receipt->invoice_id) {
+            return $this->postSettlement($receipt, $userId);
+        }
+
+        $context = $this->buildPostContext($receipt);
+
+        return $this->postingService->postSale([
+            'company_id' => $receipt->company_id,
+            'user_id' => $userId,
+            'source_module' => 'sales_receipt',
+            'document_number' => $receipt->receipt_number,
+            'date' => $receipt->receipt_date->format('Y-m-d'),
+            'memo' => $receipt->memo ?? "Sales Receipt {$receipt->receipt_number}",
+            'lines' => $context['lines'],
+            'payments' => $context['payments'],
+        ]);
+    }
+
+    /**
+     * Post a settlement receipt: Dr clearing/bank per payment, Cr AR for the
+     * applied amount. The applied amount per payment is capped at the invoice's
+     * outstanding balance (or routed to a customer-credit liability per config).
+     */
+    protected function postSettlement(SalesReceipt $receipt, int $userId): \App\Models\JournalEntry
+    {
+        $companyId = $receipt->company_id;
+
+        $jeLines = $this->buildSettlementLines($receipt, $appliedTotal, $excess, $customerCreditAccount);
+
+        $je = $this->postingEngine()->post([
+            'company_id' => $companyId,
+            'date' => $receipt->receipt_date->format('Y-m-d'),
+            'reference' => "RCT-{$receipt->receipt_number}",
+            'memo' => $receipt->memo ?? "Sales Receipt {$receipt->receipt_number}",
+            'lines' => $jeLines,
+            'created_by' => $userId,
+            'source_module' => 'sales_receipt',
+        ]);
+
+        // Insert allocations (best-effort per payment; capped values row).
+        foreach ($this->computeAllocations($receipt) as $allocation) {
+            if ($allocation['applied_amount'] > 0) {
+                \App\Models\InvoiceAllocation::create($allocation);
+            }
+        }
+
+        // Update the invoice.
+        $invoice = \App\Models\Invoice::query()->whereKey($receipt->invoice_id)->first();
+        $newAmountPaid = round((float) $invoice->amount_paid + $appliedTotal, 2);
+        $newStatus = $newAmountPaid >= (float) $invoice->amount
+            ? \App\Models\Invoice::STATUS_PAID
+            : \App\Models\Invoice::STATUS_PARTIALLY_PAID;
+        $invoice->update([
+            'amount_paid' => $newAmountPaid,
+            'settled' => round((float) $invoice->settled + $appliedTotal, 2),
+            'status' => $newStatus,
+        ]);
+
+        $this->auditInvoiceSettlement($receipt, $invoice, $appliedTotal, $excess, (bool) $customerCreditAccount, $userId);
+
+        return $je;
+    }
+
+    /**
+     * Preview the settlement journal lines for the post-page, identical to the
+     * lines the actual posting will write. Pure — nothing is persisted.
+     */
+    public function previewSettlementLines(SalesReceipt $receipt): array
+    {
+        return $this->buildSettlementLines($receipt, $appliedTotal, $excess, $customerCreditAccount);
+    }
+
+    /**
+     * Build (and return) the settlement journal lines. Also populates the
+     * applied/excess totals and the customer-credit account (if used) by
+     * reference, so the caller can persist allocations + update the invoice.
+     */
+    protected function buildSettlementLines(SalesReceipt $receipt, &$appliedTotal, &$excess, &$customerCreditAccount): array
+    {
+        $companyId = $receipt->company_id;
+
+        $arAccount = $this->resolveAccountByMapping($companyId, 'accounts_receivable', '1100');
+        if (!$arAccount) {
+            throw new InvalidArgumentException('Accounts Receivable account could not be resolved.');
+        }
+
+        $customerCreditAccount = null;
+        $policy = config('sales_receipts.overpayment_policy', 'cap');
+        if ($policy === 'customer_credit') {
+            $customerCreditAccount = $this->resolveAccountByMapping($companyId, 'customer_credit', config('sales_receipts.customer_credit_account_code', '2200'));
+        }
+
+        $payments = $receipt->payments;
+        $totalPaid = $payments->sum('amount');
+        $remaining = 0;
+        $invoice = \App\Models\Invoice::query()->whereKey($receipt->invoice_id)->first();
+        if ($invoice) {
+            $remaining = round((float) $invoice->amount - (float) $invoice->amount_paid, 2);
+            if ($remaining < 0) {
+                $remaining = 0;
+            }
+        }
+
+        // Compute applied amounts (capped at the outstanding balance).
+        $leftToApply = $remaining;
+        $appliedTotal = 0;
+        foreach ($payments as $payment) {
+            $applied = round(min((float) $payment->amount, $leftToApply), 2);
+            if ($applied < 0) {
+                $applied = 0;
+            }
+            $leftToApply = round($leftToApply - $applied, 2);
+            $appliedTotal = round($appliedTotal + $applied, 2);
+        }
+        $excess = round($totalPaid - $appliedTotal, 2);
+
+        $customerCreditUsed = $customerCreditAccount && $excess > 0;
+
+        $jeLines = [];
+        foreach ($payments as $payment) {
+            $pm = $payment->paymentMethod;
+            $accountId = $payment->bank_account_id ?? $pm->clearing_account_id ?? null;
+            if (!$accountId) {
+                throw new InvalidArgumentException("Payment method '{$pm->name}' has no target account.");
+            }
+            $label = $payment->bank_account_id ? 'Bank Transfer' : $pm->name;
+            $this->accumulateDebit($jeLines, $accountId, (float) $payment->amount, "{$receipt->receipt_number} – {$label}");
+        }
+
+        if ($appliedTotal > 0) {
+            $this->accumulateCredit($jeLines, $arAccount->id, $appliedTotal, "{$receipt->receipt_number} – Applied to Invoice " . ($invoice->invoice_number ?? ''));
+        }
+        if ($customerCreditUsed && $excess > 0) {
+            $this->accumulateCredit($jeLines, $customerCreditAccount->id, $excess, "{$receipt->receipt_number} – Overpayment credit");
+        }
+
+        $totalDebits = round(array_sum(array_map(fn($l) => $l['debit'], $jeLines)), 2);
+        $totalCredits = round(array_sum(array_map(fn($l) => $l['credit'], $jeLines)), 2);
+        $diff = round($totalDebits - $totalCredits, 2);
+        if (abs($diff) > 0.001) {
+            if ($customerCreditAccount && $diff > 0) {
+                $this->accumulateCredit($jeLines, $customerCreditAccount->id, $diff, "{$receipt->receipt_number} – Overpayment credit");
+            } else {
+                throw new InvalidArgumentException("Receipt cannot be posted out of balance (difference {$diff}).");
+            }
+        }
+
+        return $jeLines;
+    }
+
+    /**
+     * Per-payment applied amounts (capped at the outstanding balance).
+     */
+    protected function computeAllocations(SalesReceipt $receipt): array
+    {
+        $remaining = 0;
+        $invoice = \App\Models\Invoice::query()->whereKey($receipt->invoice_id)->first();
+        if ($invoice) {
+            $remaining = round((float) $invoice->amount - (float) $invoice->amount_paid, 2);
+            if ($remaining < 0) {
+                $remaining = 0;
+            }
+        }
+
+        $allocations = [];
+        $leftToApply = $remaining;
+        foreach ($receipt->payments as $payment) {
+            $applied = round(min((float) $payment->amount, $leftToApply), 2);
+            if ($applied < 0) {
+                $applied = 0;
+            }
+            $leftToApply = round($leftToApply - $applied, 2);
+            $allocations[] = [
+                'invoice_id' => $receipt->invoice_id,
+                'receipt_id' => $receipt->id,
+                'payment_id' => $payment->id,
+                'applied_amount' => $applied,
+            ];
+        }
+
+        return $allocations;
     }
 
     public function void(SalesReceipt $receipt, string $reason, int $userId): SalesReceipt
@@ -277,19 +473,26 @@ class SalesReceiptService
                 $this->postingEngine()->reverse($receipt->journal_entry_id, $userId);
             }
 
-            // 2. Return inventory
-            foreach ($receipt->lines as $line) {
-                if ($line->product && $line->product->tracked_as_inventory && $line->quantity > 0) {
-                    $this->inventoryService->receiveStock(
-                        $receipt->company_id,
-                        $line->product_id,
-                        $receipt->branch_id,
-                        $line->quantity,
-                        $line->quantity > 0 ? $line->cost_of_goods / $line->quantity : 0,
-                        'sales_receipt_void',
-                        $receipt->id,
-                        $receipt->receipt_date->format('Y-m-d')
-                    );
+            // 1b. Reverse allocations + restore the linked invoice (if any).
+            if ($receipt->invoice_id) {
+                $this->reverseAllocations($receipt);
+            }
+
+            // 2. Return inventory (standalone only)
+            if (!$receipt->invoice_id) {
+                foreach ($receipt->lines as $line) {
+                    if ($line->product && $line->product->tracked_as_inventory && $line->quantity > 0) {
+                        $this->inventoryService->receiveStock(
+                            $receipt->company_id,
+                            $line->product_id,
+                            $receipt->branch_id,
+                            $line->quantity,
+                            $line->quantity > 0 ? $line->cost_of_goods / $line->quantity : 0,
+                            'sales_receipt_void',
+                            $receipt->id,
+                            $receipt->receipt_date->format('Y-m-d')
+                        );
+                    }
                 }
             }
 
@@ -309,6 +512,33 @@ class SalesReceiptService
             DB::rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Reverse this receipt's invoice allocations and restore the linked
+     * invoice's amount_paid/settled/status. Invoked on void.
+     */
+    protected function reverseAllocations(SalesReceipt $receipt): void
+    {
+        $allocations = $receipt->allocations()->get();
+        if ($allocations->isEmpty()) {
+            return;
+        }
+
+        $invoice = \App\Models\Invoice::query()->whereKey($receipt->invoice_id)->first();
+        if ($invoice) {
+            $reversedTotal = round($allocations->sum('applied_amount'), 2);
+            $newAmountPaid = round((float) $invoice->amount_paid - $reversedTotal, 2);
+            $invoice->update([
+                'amount_paid' => max($newAmountPaid, 0),
+                'settled' => max(round((float) $invoice->settled - $reversedTotal, 2), 0),
+                'status' => $newAmountPaid <= 0
+                    ? \App\Models\Invoice::STATUS_SENT
+                    : ($newAmountPaid < (float) $invoice->amount ? \App\Models\Invoice::STATUS_PARTIALLY_PAID : \App\Models\Invoice::STATUS_PAID),
+            ]);
+        }
+
+        $receipt->allocations()->delete();
     }
 
     protected function recreateLines(SalesReceipt $receipt, array $lines, float &$subtotal, float &$taxTotal, float &$discountTotal): void
@@ -395,5 +625,72 @@ class SalesReceiptService
     protected function postingEngine(): JournalPostingEngine
     {
         return app(JournalPostingEngine::class);
+    }
+
+    /**
+     * Resolve the system currency — never hard-coded. Uses the company's
+     * base currency, falling back to the 'USD' legacy default only when no
+     * company context exists.
+     */
+    protected function systemCurrency(int $companyId): string
+    {
+        $company = \App\Models\Company::find($companyId);
+        return $company?->base_currency ?: 'USD';
+    }
+
+    protected function resolveAccountByMapping(int $companyId, string $mappingKey, string $fallbackCode): ?Account
+    {
+        $account = \App\Models\DefaultAccountMapping::getAccount($companyId, $mappingKey);
+        if ($account) {
+            return $account;
+        }
+        return Account::where('company_id', $companyId)
+            ->where('code', $fallbackCode)
+            ->where('is_active', true)
+            ->first();
+    }
+
+    protected function accumulateDebit(array &$lines, int $accountId, float $amount, string $description): void
+    {
+        foreach ($lines as &$line) {
+            if ($line['account_id'] === $accountId && $line['debit'] > 0) {
+                $line['debit'] = round($line['debit'] + $amount, 2);
+                return;
+            }
+        }
+        $lines[] = ['account_id' => $accountId, 'debit' => round($amount, 2), 'credit' => 0, 'description' => $description];
+    }
+
+    protected function accumulateCredit(array &$lines, int $accountId, float $amount, string $description): void
+    {
+        foreach ($lines as &$line) {
+            if ($line['account_id'] === $accountId && $line['credit'] > 0) {
+                $line['credit'] = round($line['credit'] + $amount, 2);
+                return;
+            }
+        }
+        $lines[] = ['account_id' => $accountId, 'debit' => 0, 'credit' => round($amount, 2), 'description' => $description];
+    }
+
+    protected function auditInvoiceSettlement(SalesReceipt $receipt, \App\Models\Invoice $invoice, float $applied, float $excess, bool $customerCreditUsed, int $userId): void
+    {
+        \App\Models\AuditLog::log(
+            $receipt->company_id,
+            $userId,
+            \App\Models\Invoice::class,
+            $invoice->id,
+            'settled',
+            null,
+            [
+                'receipt_id' => $receipt->id,
+                'receipt_number' => $receipt->receipt_number,
+                'applied_amount' => $applied,
+                'excess' => $excess,
+                'customer_credit' => $customerCreditUsed,
+                'amount_paid' => (float) $invoice->amount_paid,
+                'status' => $invoice->status,
+            ],
+            "Invoice {$invoice->invoice_number} settled via receipt {$receipt->receipt_number}"
+        );
     }
 }

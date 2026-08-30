@@ -438,6 +438,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('sales-receipts/export', [SalesReceiptController::class, 'export'])->name('sales-receipts.export');
             Route::get('sales-receipts/create', [SalesReceiptController::class, 'create'])->name('sales-receipts.create');
             Route::post('sales-receipts', [SalesReceiptController::class, 'store'])->name('sales-receipts.store');
+            Route::get('sales-receipts/locate-invoices', [SalesReceiptController::class, 'locateInvoices'])->name('sales-receipts.locate-invoices');
             Route::get('sales-receipts/{salesReceipt}', [SalesReceiptController::class, 'show'])->name('sales-receipts.show');
             Route::get('sales-receipts/{salesReceipt}/edit', [SalesReceiptController::class, 'edit'])->name('sales-receipts.edit');
             Route::put('sales-receipts/{salesReceipt}', [SalesReceiptController::class, 'update'])->name('sales-receipts.update');

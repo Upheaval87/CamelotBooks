@@ -26,6 +26,7 @@ class Invoice extends Model
         'status',
         'amount',
         'amount_paid',
+        'settled',
         'currency',
         'exchange_rate',
         'base_amount',
@@ -44,6 +45,7 @@ class Invoice extends Model
         'due_date' => 'date',
         'amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
+        'settled' => 'decimal:2',
         'posted_at' => 'datetime',
         'voided_at' => 'datetime',
     ];
@@ -106,6 +108,11 @@ class Invoice extends Model
             ->using(CustomerPaymentAllocation::class);
     }
 
+    public function receiptAllocations(): HasMany
+    {
+        return $this->hasMany(InvoiceAllocation::class);
+    }
+
     public function isDraft(): bool
     {
         return $this->status === self::STATUS_DRAFT;
@@ -124,6 +131,12 @@ class Invoice extends Model
     public function getBalanceDueAttribute(): float
     {
         return (float) $this->amount - (float) $this->amount_paid;
+    }
+
+    public function scopeOutstanding($query)
+    {
+        return $query->whereIn('status', [self::STATUS_SENT, self::STATUS_PARTIALLY_PAID, self::STATUS_OVERDUE])
+            ->whereColumn('amount_paid', '<', 'amount');
     }
 
     public function scopeForCompany($query, int $companyId)

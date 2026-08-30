@@ -119,6 +119,7 @@
                         </button>
                     </div>
                 @else
+                    <button type="button" id="sr-invoice-btn" class="btn btn-cta-inv">{{ __('Receipt from Invoice') }}</button>
                     <button type="submit" name="action" value="save_and_new" form="receipt-form" class="btn btn-ghost btn-sm">{{ __('Save & New') }}</button>
                     <div class="seg">
                         <button type="submit" name="action" value="save_draft" form="receipt-form" class="btn btn-ghost btn-sm">{{ __('Save Draft') }}</button>
@@ -137,9 +138,13 @@
                 @method('PUT')
             @endif
 
-            <x-input-error :messages="$errors->get('error')" class="mb-4" />
+            <input type="hidden" id="invoice_id" name="invoice_id" value="{{ old('invoice_id', $preselectInvoiceId ?? $salesReceipt?->invoice_id ?? '') }}" />
+            <input type="hidden" id="sr-settlement-invoice-label" name="sr_settlement_invoice_label" value="" />
 
-            <div class="shell">
+            <x-input-error :messages="$errors->get('error')" class="mb-4" />
+            <x-input-error :messages="$errors->get('invoice_id')" class="mb-4" />
+
+            <div class="shell{{ $isEdit ? '' : ' shell--wide' }}">
                 <section class="card">
 
                     {{-- §2/§3 receipt details --}}
@@ -199,7 +204,7 @@
                     </div>
 
                     {{-- §2/§3 line items --}}
-                    <div class="card-sec">
+                    <div class="card-sec sr-standalone" id="sr-lines-section">
                         <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Line Items') }}</h2><span class="rule"></span>
                             <button type="button" id="sr-add-line" class="btn btn-ghost btn-sm" style="margin-left:12px">＋ {{ __('Add Line') }}</button></div>
                         <div class="li-wrap" style="margin-top:1rem">
@@ -223,8 +228,32 @@
                         <x-input-error :messages="$errors->get('lines')" class="mt-2" />
                     </div>
 
+                    {{-- Settlement-only panel (shown when an invoice is linked) --}}
+                    <div class="card-sec sr-settled" id="sr-settlement-card" style="display:none">
+                        <div class="sec-head"><span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M9 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ __('Invoice Settlement') }}</h2><span class="rule"></span>
+                            <button type="button" id="sr-clear-invoice" class="btn btn-ghost btn-sm" style="margin-left:12px">{{ __('× Clear') }}</button></div>
+                        <div class="settle-panel">
+                            <div class="sp-kicker">{{ __('Receipt from Invoice') }}</div>
+                            <div class="sp-inv" id="sp-invoice">—</div>
+                            <div class="sp-meta" id="sp-customer">—</div>
+                            <div class="sp-divider"></div>
+                            <div class="sp-row"><span>{{ __('Invoice Amount') }}</span><span class="v" id="sp-amount">0.00</span></div>
+                            <div class="sp-row"><span>{{ __('Already Paid') }}</span><span class="v" id="sp-paid">0.00</span></div>
+                            <div class="sp-row strong"><span>{{ __('Outstanding Balance') }}</span><span class="v" id="sp-balance">0.00</span></div>
+                            <div class="sp-divider"></div>
+                            <div class="sp-row"><span>{{ __('Applying Received') }}</span><span class="v" id="sp-applied">0.00</span></div>
+                            <div class="sp-row" id="sp-over-row" style="display:none"><span class="sp-over-label">{{ __('Overpayment') }}</span><span class="v sp-over-val" id="sp-over">0.00</span></div>
+                            <div class="sp-row sp-status-row"><span>{{ __('Resulting Status') }}</span><span class="v" id="sp-status"></span></div>
+                            <div class="sp-note" id="sp-note">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5m0 3h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <span>Payments received will be applied against this invoice's outstanding balance.</span>
+                            </div>
+                        </div>
+                        <x-input-error :messages="$errors->get('payments')" class="mt-2" />
+                    </div>
+
                     {{-- §2/§3 totals --}}
-                    <div class="card-sec">
+                    <div class="card-sec sr-standalone" id="sr-totals-section">
                         <div class="li-totals" style="margin-top:0"><div class="box">
                             <div class="trow"><span>{{ __('Subtotal') }}</span><span class="v" id="v-sub">0.00</span></div>
                             <div class="trow" id="r-disc" style="display:none"><span>{{ __('Discount') }}</span><span class="v" id="v-disc">0.00</span></div>
@@ -235,6 +264,7 @@
                     </div>
                 </section>
 
+                @if($isEdit)
                 {{-- §2/§3 rail --}}
                 <aside class="railsum">
                     <section class="card">
@@ -242,16 +272,19 @@
                             <div class="sec-head"><span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 7.5h8M8.5 12h.01M12 12h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><h2>{{ $isEdit ? __('Breakdown') : __('Summary') }}</h2></div>
                             <div style="margin-top:8px">
                                 <div class="srow"><span class="l">{{ __('Customer') }}</span><span class="v" id="p-cust">{{ $selectedCustomer?->name ?? __('Walk-in') }}</span></div>
+                                <div class="srow" id="p-inv-row" style="display:none"><span class="l">{{ __('Invoice') }}</span><span class="v" id="p-inv">—</span></div>
                                 <div class="srow"><span class="l">{{ __('Date') }}</span><span class="v" id="p-date">{{ $salesReceipt?->receipt_date?->format('M d, Y') ?? now()->format('M d, Y') }}</span></div>
                                 <div style="height:6px"></div>
-                                <div class="srow"><span class="l">{{ __('Subtotal') }}</span><span class="v" id="p-sub">0.00</span></div>
+                                <div class="srow sr-standalone"><span class="l">{{ __('Subtotal') }}</span><span class="v" id="p-sub">0.00</span></div>
                                 @if($isEdit)
-                                    <div class="srow"><span class="l">{{ __('Tax') }}</span><span class="v" id="p-tax">0.00</span></div>
-                                    <div class="srow strong"><span class="l">{{ __('Total') }}</span><span class="v" id="p-total">0.00</span></div>
-                                    <div class="srow"><span class="l">{{ __('Received') }}</span><span class="v" id="p-received">0.00</span></div>
+                                    <div class="srow sr-standalone"><span class="l">{{ __('Tax') }}</span><span class="v" id="p-tax">0.00</span></div>
+                                    <div class="srow strong sr-standalone"><span class="l">{{ __('Total') }}</span><span class="v" id="p-total">0.00</span></div>
+                                    <div class="srow sr-standalone"><span class="l">{{ __('Received') }}</span><span class="v" id="p-received">0.00</span></div>
                                 @else
-                                    <div class="srow"><span class="l">{{ __('Payments') }}</span><span class="v" id="p-pay">0.00</span></div>
+                                    <div class="srow sr-standalone"><span class="l">{{ __('Payments') }}</span><span class="v" id="p-pay">0.00</span></div>
                                 @endif
+                                <div class="srow sr-settled" style="display:none"><span class="l">{{ __('Applied to Invoice') }}</span><span class="v" id="p-applied">0.00</span></div>
+                                <div class="srow sr-settled" style="display:none" id="p-over-row"><span class="l">{{ __('Overpayment') }}</span><span class="v" id="p-over">0.00</span></div>
                             </div>
                             <div class="gt"><span class="l">{{ $isEdit ? __('Total Received') : __('Total') }}</span><span class="v" id="p-gt">{{ $cs }}0.00</span></div>
                         </div>
@@ -294,6 +327,7 @@
                         </div>
                     </section>
                 </aside>
+                @endif
             </div>
         </form>
 
@@ -303,6 +337,287 @@
             @method('DELETE')
         </form>
         @endif
+
+        {{-- Receipt from Invoice — locate outstanding invoice modal --}}
+        <div class="sr-modal-overlay" id="sr-invoice-modal" hidden>
+            <div class="sr-modal" role="dialog" aria-modal="true" aria-labelledby="sr-invoice-modal-title">
+                <div class="sr-modal-head">
+                    <div>
+                        <div class="sr-modal-eyebrow">{{ __('Receipt from Invoice') }}</div>
+                        <h2 id="sr-invoice-modal-title">{{ __('Locate Outstanding Invoice') }}</h2>
+                    </div>
+                    <button type="button" class="sr-modal-close" id="sr-invoice-close" aria-label="{{ __('Close') }}">✕</button>
+                </div>
+                <div class="sr-modal-search">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <input id="sr-invoice-search" type="text" placeholder="{{ __('Search by invoice number, reference or customer…') }}" autocomplete="off" />
+                </div>
+                <div class="sr-invoice-filters">
+                    <label for="sr-invoice-customer-ctx" class="sr-filter-chip" id="sr-customer-chip">
+                        <span id="sr-customer-filter-label">{{ __('Any customer') }}</span>
+                        <button type="button" id="sr-customer-filter-clear" title="{{ __('Clear') }}" aria-label="{{ __('Clear customer filter') }}">✕</button>
+                    </label>
+                </div>
+                <div class="sr-invoice-list" id="sr-invoice-list" role="listbox">
+                    <div class="sr-invoice-empty" id="sr-invoice-empty">{{ __('Search to find outstanding invoices…') }}</div>
+                </div>
+                <div class="sr-modal-foot">
+                    <span class="sr-modal-count" id="sr-invoice-count"></span>
+                    <button type="button" class="btn btn-ghost btn-sm" id="sr-invoice-cancel">{{ __('Cancel') }}</button>
+                </div>
+            </div>
+        </div>
+
+<script>
+    const SR_INVOICE_URL = @json(route('accounting.sales-receipts.locate-invoices'));
+
+    (function () {
+        const overlay = document.getElementById('sr-invoice-modal');
+        const list = document.getElementById('sr-invoice-list');
+        const searchInput = document.getElementById('sr-invoice-search');
+        const empty = document.getElementById('sr-invoice-empty');
+        const countEl = document.getElementById('sr-invoice-count');
+        const customerFilterLabel = document.getElementById('sr-customer-filter-label');
+        const customerClearBtn = document.getElementById('sr-customer-filter-clear');
+
+        let open = false;
+        let debounceTimer = null;
+        let activeInvoices = [];
+
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        function statusLabel(st) {
+            return ({ sent: 'Sent', partially_paid: 'Partially Paid', overdue: 'Overdue' })[st] || st;
+        }
+
+        function openModal(customerId) {
+            open = true;
+            overlay.hidden = false;
+            if (!customerId) {
+                customerFilterLabel.textContent = 'Any customer';
+                customerClearBtn.style.display = 'none';
+            } else {
+                customerFilterLabel.textContent = customerId ? ('Customer #' + customerId) : 'Any customer';
+                customerClearBtn.style.display = 'inline-flex';
+            }
+            searchInput.value = '';
+            searchInput.focus();
+            fetchInvoices();
+        }
+
+        function closeModal() {
+            open = false;
+            overlay.hidden = true;
+        }
+
+        async function fetchInvoices() {
+            const params = new URLSearchParams({ q: searchInput.value.trim() });
+            const chip = customerFilterLabel.textContent;
+            if (chip && chip !== 'Any customer') {
+                const id = chip.replace(/[^0-9]/g, '');
+                if (id) params.set('customer_id', id);
+            }
+            try {
+                const res = await fetch(SR_INVOICE_URL + '?' + params.toString(), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                if (!res.ok) throw new Error('Bad status');
+                const data = await res.json();
+                renderList(data.invoices || []);
+            } catch (err) {
+                list.innerHTML = '<div class="sr-invoice-empty">Unable to load invoices.</div>';
+                countEl.textContent = '';
+            }
+        }
+
+        function renderList(invoices) {
+            activeInvoices = invoices;
+            if (!invoices.length) {
+                list.innerHTML = '<div class="sr-invoice-empty">No outstanding invoices found.</div>';
+                countEl.textContent = '0 found';
+                return;
+            }
+            list.innerHTML = invoices.map(i => `
+                <button type="button" class="sr-invoice-row" role="option" data-id="${i.id}"
+                    data-number="${esc(i.invoice_number)}" data-customer="${esc(i.customer_name)}"
+                    data-customer-id="${i.customer_id}" data-amount="${i.amount}" data-paid="${i.amount_paid}"
+                    data-balance="${i.balance}" data-date="${esc(i.invoice_date)}">
+                    <span class="ir-mon" data-ir-text>${esc(i.invoice_number)}</span>
+                    <span class="ir-main">
+                        <span class="ir-name">${esc(i.customer_name)}</span>
+                        <span class="ir-meta">${fmtDate(i.invoice_date)} · ${statusLabel(i.status)}</span>
+                    </span>
+                    <span class="ir-bal">${SR_CS}${fmt(i.balance)}</span>
+                </button>
+            `).join('');
+            countEl.textContent = invoices.length + ' found';
+        }
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchInvoices, 250);
+        });
+
+        list.addEventListener('click', e => {
+            const row = e.target.closest('[data-id]');
+            if (!row) return;
+            selectInvoice(row);
+            closeModal();
+        });
+
+        list.addEventListener('keydown', e => {
+            if (e.key !== 'Enter') return;
+            const row = e.target.closest('[data-id]');
+            if (row) { selectInvoice(row); closeModal(); }
+        });
+
+        function selectInvoice(row) {
+            const d = row.dataset;
+            const invoiceId = d.id;
+            const invoiceNumber = d.number;
+            const customerId = d.customerId || '';
+            const customerName = d.customer;
+
+            document.getElementById('invoice_id').value = invoiceId;
+            document.getElementById('sr-settlement-invoice-label').value = invoiceNumber;
+
+            // Prefill the customer (only if one is set on the invoice).
+            if (customerId) {
+                const custInput = document.querySelector('[name="customer_id"][x-ref]') || document.querySelector('[name="customer_id"]');
+                if (custInput) {
+                    // scoped-search-field setter
+                    scopedSearchFieldSet(custInput, 'customer', { id: customerId, label: customerName, name: customerName });
+                }
+                srCustomerName = customerName;
+            }
+
+            // Store settlement context for the live preview.
+            window.__srSettlement = {
+                invoiceId, invoiceNumber,
+                customerId, customerName,
+                amount: parse(d.amount), paid: parse(d.paid), balance: parse(d.balance), date: d.date,
+            };
+            applySettlementMode();
+            srSync();
+        }
+
+        function applySettlementMode() {
+            const st = window.__srSettlement;
+            const settlement = !!st && !!document.getElementById('invoice_id').value;
+
+            document.querySelectorAll('.sr-standalone').forEach(el => el.style.display = settlement ? 'none' : '');
+            document.querySelectorAll('.sr-settled').forEach(el => el.style.display = settlement ? '' : 'none');
+            const pInvRow = document.getElementById('p-inv-row');
+            if (pInvRow) pInvRow.style.display = settlement ? '' : 'none';
+            const invBtn = document.getElementById('sr-invoice-btn');
+            if (invBtn) invBtn.style.display = settlement ? 'none' : '';
+            if (settlement) document.getElementById('sr-settlement-card').style.display = '';
+        }
+
+        function liveSettlementPreview() {
+            const st = window.__srSettlement;
+            if (!st || !document.getElementById('invoice_id').value) return;
+
+            document.getElementById('sp-invoice').textContent = st.invoiceNumber;
+            document.getElementById('sp-customer').textContent = st.customerName || '—';
+            document.getElementById('sp-amount').textContent = SR_CS + fmt(st.amount);
+            document.getElementById('sp-paid').textContent = SR_CS + fmt(st.paid);
+            document.getElementById('sp-balance').textContent = SR_CS + fmt(Math.max(st.balance, 0));
+
+            let payments = 0;
+            document.querySelectorAll('#sr-payments-body .sr-pay-amount').forEach(inp => { payments += parse(inp.value); });
+
+            const applied = Math.min(payments, Math.max(st.balance, 0));
+            const over = Math.max(payments - applied, 0);
+            const status = applied >= st.balance - 0.001 ? 'Paid' : (applied > 0 ? 'Partially Paid' : st.status || 'Sent');
+
+            document.getElementById('sp-applied').textContent = SR_CS + fmt(applied);
+            const overRow = document.getElementById('sp-over-row');
+            if (overRow) { overRow.style.display = over > 0 ? '' : 'none'; document.getElementById('sp-over').textContent = SR_CS + fmt(over); }
+            const statusEl = document.getElementById('sp-status');
+            statusEl.textContent = status;
+            statusEl.className = 'v sp-status ' + (status === 'Paid' ? 'is-paid' : (status === 'Partially Paid' ? 'is-partial' : ''));
+
+            const note = document.getElementById('sp-note');
+            note.style.display = '';
+            note.querySelector('span').textContent = over > 0
+                ? 'This receipt receives more than the invoice balance — the excess ' + (window.__overPolicy === 'credit' ? 'will be held as customer credit.' : 'will be capped at the outstanding balance.')
+                : 'Payments received will be applied against this invoice\'s outstanding balance.';
+
+            // Rail mirror (only present on edit)
+            const pInv = document.getElementById('p-inv');
+            if (pInv) pInv.textContent = st.invoiceNumber;
+            const pApplied = document.getElementById('p-applied');
+            if (pApplied) pApplied.textContent = SR_CS + fmt(applied);
+            const pOverRow = document.getElementById('p-over-row');
+            if (pOverRow) { pOverRow.style.display = over > 0 ? '' : 'none'; const pOver = document.getElementById('p-over'); if (pOver) pOver.textContent = SR_CS + fmt(over); }
+        }
+
+        document.getElementById('sr-invoice-btn').addEventListener('click', () => {
+            const custInput = document.querySelector('[name="customer_id"]');
+            const custId = custInput ? (custInput.value || '') : '';
+            openModal(custId);
+        });
+        document.getElementById('sr-invoice-close').addEventListener('click', closeModal);
+        document.getElementById('sr-invoice-cancel').addEventListener('click', closeModal);
+        customerClearBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            customerFilterLabel.textContent = 'Any customer';
+            customerClearBtn.style.display = 'none';
+            fetchInvoices();
+        });
+        overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && open) closeModal();
+        });
+        document.getElementById('sr-clear-invoice').addEventListener('click', () => {
+            document.getElementById('invoice_id').value = '';
+            document.getElementById('sr-settlement-invoice-label').value = '';
+            window.__srSettlement = null;
+            applySettlementMode();
+            srSync();
+            if (window.CB && window.CB.toast) window.CB.toast('info', 'Invoice unlinked', 'This receipt will be recorded as a standalone receipt.');
+        });
+
+        // Live preview on payment amount changes.
+        document.querySelector('.sr-form')?.addEventListener('input', e => {
+            if (e.target.closest('.sr-pay-amount')) { srUpdateTotals(); liveSettlementPreview(); }
+        });
+        document.querySelector('.sr-form')?.addEventListener('change', e => {
+            if (e.target.closest('.sr-pay-amount')) liveSettlementPreview();
+        });
+        window.addEventListener('srSettlementPreview', liveSettlementPreview);
+
+        // Preselect from query string on first load.
+        const preInvoiceId = @json($preselectInvoiceId ?? null);
+        if (preInvoiceId) {
+            (async () => {
+                const params = new URLSearchParams({ q: '' });
+                try {
+                    const res = await fetch(SR_INVOICE_URL + '?' + params.toString(), { headers: { 'Accept': 'application/json' } });
+                    const data = await res.json();
+                    const row = (data.invoices || []).find(i => String(i.id) === String(preInvoiceId));
+                    if (row) {
+                        window.__srSettlement = {
+                            invoiceId: row.id, invoiceNumber: row.invoice_number,
+                            customerId: row.customer_id || '', customerName: row.customer_name,
+                            amount: row.amount, paid: row.amount_paid, balance: row.balance, date: row.invoice_date,
+                            status: row.status,
+                        };
+                        if (row.customer_id) {
+                            const custInput = document.querySelector('[name="customer_id"]');
+                            if (custInput) scopedSearchFieldSet(custInput, 'customer', { id: row.customer_id, label: row.customer_name, name: row.customer_name });
+                            srCustomerName = row.customer_name;
+                        }
+                        applySettlementMode();
+                        srSync();
+                        liveSettlementPreview();
+                    }
+                } catch (err) {}
+            })();
+        }
+    })();
+</script>
     </div>
 </div>
 
@@ -317,6 +632,8 @@
     const SR_MOBILE_PROVIDERS = @json($mobileProviders->pluck('name')->values());
     const SR_INCOME_ACCOUNTS = @json($incomeAccounts->map(fn($a) => ['id' => $a->id, 'label' => $a->code . ' - ' . $a->name])->values());
     let srCustomerName = @json($selectedCustomer?->name ?? '');
+
+    window.__overPolicy = @json(config('sales_receipts.overpayment_policy', 'cap'));
 
     const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const parse = s => parseFloat(String(s == null ? '' : s).replace(/,/g, '')) || 0;
@@ -581,10 +898,14 @@
 
     /* ── preview sync ─────────────────────────────────────────── */
     function srSync() {
-        document.getElementById('p-cust').textContent = srCustomerName || '—';
-        document.getElementById('p-date').textContent = fmtDate(document.getElementById('receipt_date').value);
-        document.getElementById('p-foot').textContent = document.getElementById('memo').value || '—';
+        const pCust = document.getElementById('p-cust');
+        if (pCust) pCust.textContent = srCustomerName || '—';
+        const pDate = document.getElementById('p-date');
+        if (pDate) pDate.textContent = fmtDate(document.getElementById('receipt_date').value);
+        const foot = document.getElementById('p-foot');
+        if (foot) foot.textContent = document.getElementById('memo').value || '—';
         srUpdateTotals();
+        window.dispatchEvent(new CustomEvent('srSettlementPreview'));
     }
 
     function srCustomerSelected(id, item) {

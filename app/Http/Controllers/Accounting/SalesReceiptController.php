@@ -13,9 +13,61 @@ use App\Models\Product;
 use App\Models\SalesReceipt;
 use App\Services\Accounting\SalesReceiptService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class SalesReceiptController extends Controller
 {
+    /**
+     * Locate outstanding invoices for the "Receipt from Invoice" flow.
+     * Returns only invoices with a remaining balance > 0.
+     */
+    public function locateInvoices(Request $request)
+    {
+        $companyId = session('current_company_id');
+        $customerId = (int) $request->query('customer_id', 0) ?: null;
+
+        $query = \App\Models\Invoice::forCompany($companyId)
+            ->with('customer:id,name')
+            ->whereIn('status', [
+                \App\Models\Invoice::STATUS_SENT,
+                \App\Models\Invoice::STATUS_PARTIALLY_PAID,
+                \App\Models\Invoice::STATUS_OVERDUE,
+            ])
+            ->whereColumn('amount_paid', '<', 'amount');
+
+        if ($customerId) {
+            $query->where('customer_id', $customerId);
+        }
+
+        $q = trim((string) $request->query('q', ''));
+        if ($q !== '') {
+            $query->where(function ($q2) use ($q) {
+                $q2->where('invoice_number', 'like', "%{$q}%")
+                    ->orWhere('reference', 'like', "%{$q}%")
+                    ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$q}%"));
+            });
+        }
+
+        $invoices = $query
+            ->orderByDesc('invoice_date')
+            ->limit(50)
+            ->get()
+            ->map(fn($i) => [
+                'id' => $i->id,
+                'invoice_number' => $i->invoice_number,
+                'invoice_date' => $i->invoice_date?->format('Y-m-d'),
+                'due_date' => $i->due_date?->format('Y-m-d'),
+                'customer_name' => $i->customer?->name ?? '—',
+                'customer_id' => $i->customer_id,
+                'amount' => (float) $i->amount,
+                'amount_paid' => (float) $i->amount_paid,
+                'balance' => round((float) $i->amount - (float) $i->amount_paid, 2),
+                'status' => $i->status,
+            ]);
+
+        return response()->json(['invoices' => $invoices->values()]);
+    }
+
     public function index(Request $request)
     {
         $companyId = session('current_company_id');
@@ -94,7 +146,7 @@ class SalesReceiptController extends Controller
         }, $filename, ['Content-Type' => 'text/csv']);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $companyId = session('current_company_id');
         $customers = Customer::where('company_id', $companyId)->orderBy('name')->get();
@@ -107,15 +159,30 @@ class SalesReceiptController extends Controller
         $itemCategories = \App\Models\ItemCategory::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
         $products = Product::where('company_id', $companyId)->where('is_active', true)->orderBy('name')->get();
 
-        return view('accounting.sales-receipts.create', compact('customers', 'branches', 'costCenters', 'incomeAccounts', 'paymentMethods', 'mobileProviders', 'bankAccounts', 'itemCategories', 'products'));
+        $company = \App\Models\Company::find($companyId);
+        $systemCurrency = $company?->base_currency ?: 'MWK';
+
+        $preselectInvoiceId = ((int) $request->query('invoice_id', 0)) ?: null;
+
+        return view('accounting.sales-receipts.create', compact(
+            'customers', 'branches', 'costCenters', 'incomeAccounts', 'paymentMethods',
+            'mobileProviders', 'bankAccounts', 'itemCategories', 'products', 'systemCurrency', 'preselectInvoiceId'
+        ));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $companyId = session('current_company_id');
+
+        $invoiceId = $request->input('invoice_id');
+        $isSettlement = $invoiceId ? true : false;
+
+        $validated = $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
+            'invoice_id' => ['nullable', 'integer', 'exists:invoices,id'],
             'receipt_date' => 'required|date',
-            'lines' => 'required|array|min:1',
+            'currency' => ['nullable', 'string', 'max:10'],
+            'lines' => $isSettlement ? 'nullable|array' : 'required|array|min:1',
             'lines.*.description' => 'required|string|max:500',
             'lines.*.quantity' => 'required|numeric|min:0.01',
             'lines.*.unit_price' => 'required|numeric|min:0',
@@ -125,17 +192,32 @@ class SalesReceiptController extends Controller
             'payments.*.amount' => 'required|numeric|min:0.01',
         ]);
 
+        // For settlement receipts, bind the linked invoice to this company to
+        // prevent cross-company forging.
+        if ($isSettlement) {
+            $invoice = \App\Models\Invoice::whereKey($invoiceId)->first();
+            abort_unless($invoice && (int) $invoice->company_id === (int) $companyId, 403);
+
+            // A settlement against a fully-settled invoice is invalid.
+            if ((float) $invoice->amount - (float) $invoice->amount_paid <= 0) {
+                return redirect()->back()->withInput()->withErrors([
+                    'invoice_id' => "Invoice {$invoice->invoice_number} has no outstanding balance.",
+                ]);
+            }
+        }
+
         $receiptService = app(SalesReceiptService::class);
         $receipt = $receiptService->create([
             'company_id' => session('current_company_id'),
             'branch_id' => $request->branch_id,
             'cost_center_id' => $request->cost_center_id,
-            'customer_id' => $request->customer_id,
+            'customer_id' => $isSettlement ? ($invoice->customer_id ?? $request->customer_id) : $request->customer_id,
+            'invoice_id' => $isSettlement ? $invoice->id : null,
             'receipt_date' => $request->receipt_date,
             'reference' => $request->reference,
             'memo' => $request->memo,
             'currency' => $request->currency,
-            'lines' => $request->lines,
+            'lines' => $isSettlement ? ($request->lines ?? []) : $request->lines,
             'payments' => $request->payments,
         ], auth()->id());
 
@@ -155,7 +237,8 @@ class SalesReceiptController extends Controller
 
     public function show(SalesReceipt $salesReceipt)
     {
-        $salesReceipt->load(['lines.product', 'payments.paymentMethod', 'customer', 'branch', 'costCenter', 'createdByUser', 'postedByUser', 'journalEntry']);
+        abort_unless((int) $salesReceipt->company_id === (int) session('current_company_id'), 403);
+        $salesReceipt->load(['lines.product', 'payments.paymentMethod', 'customer', 'branch', 'costCenter', 'createdByUser', 'postedByUser', 'journalEntry', 'invoice', 'allocations.invoice']);
         return view('accounting.sales-receipts.show', compact('salesReceipt'));
     }
 
@@ -252,18 +335,24 @@ class SalesReceiptController extends Controller
             return redirect()->route('accounting.sales-receipts.show', $salesReceipt);
         }
 
-        $salesReceipt->load(['lines.product', 'payments.paymentMethod', 'customer', 'branch', 'costCenter', 'createdByUser']);
+        $salesReceipt->load(['lines.product', 'payments.paymentMethod', 'customer', 'branch', 'costCenter', 'createdByUser', 'invoice']);
 
-        $context = app(SalesReceiptService::class)->buildPostContext($salesReceipt);
-        $jeLines = app(\App\Services\Accounting\SalesPostingService::class)->buildSaleLines([
-            'company_id' => $salesReceipt->company_id,
-            'source_module' => 'sales_receipt',
-            'document_number' => $salesReceipt->receipt_number,
-            'date' => $salesReceipt->receipt_date->format('Y-m-d'),
-            'memo' => $salesReceipt->memo ?? "Sales Receipt {$salesReceipt->receipt_number}",
-            'lines' => $context['lines'],
-            'payments' => $context['payments'],
-        ]);
+        $service = app(SalesReceiptService::class);
+
+        if ($salesReceipt->invoice_id) {
+            $jeLines = $service->previewSettlementLines($salesReceipt);
+        } else {
+            $context = $service->buildPostContext($salesReceipt);
+            $jeLines = app(\App\Services\Accounting\SalesPostingService::class)->buildSaleLines([
+                'company_id' => $salesReceipt->company_id,
+                'source_module' => 'sales_receipt',
+                'document_number' => $salesReceipt->receipt_number,
+                'date' => $salesReceipt->receipt_date->format('Y-m-d'),
+                'memo' => $salesReceipt->memo ?? "Sales Receipt {$salesReceipt->receipt_number}",
+                'lines' => $context['lines'],
+                'payments' => $context['payments'],
+            ]);
+        }
 
         $accountIds = array_unique(array_map(fn($jl) => $jl['account_id'], $jeLines));
         $accounts = Account::whereIn('id', $accountIds)->get()->keyBy('id');

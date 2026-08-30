@@ -17,6 +17,7 @@ class SalesReceipt extends Model
         'branch_id',
         'cost_center_id',
         'customer_id',
+        'invoice_id',
         'receipt_number',
         'receipt_date',
         'reference',
@@ -69,6 +70,16 @@ class SalesReceipt extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(InvoiceAllocation::class, 'receipt_id');
     }
 
     public function lines(): HasMany

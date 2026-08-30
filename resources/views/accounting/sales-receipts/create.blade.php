@@ -9,6 +9,7 @@
         'products' => $products,
         'defaultIncomeAccountId' => $defaultIncomeAccountId ?? ($incomeAccounts->first()?->id ?? ''),
         'selectedCustomerId' => request()->query('customer_id', ''),
+        'preselectInvoiceId' => $preselectInvoiceId ?? null,
         'title' => __('Create Sales Receipt'),
     ])
 </x-app-layout>
