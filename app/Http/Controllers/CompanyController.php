@@ -88,7 +88,14 @@ class CompanyController extends Controller
             'base_currency' => 'required|string|max:10',
             'fiscal_year_start_month' => 'required|integer|min:1|max:12',
             'branch_limit' => 'required|integer|min:0',
+            'accounting_method' => 'sometimes|string|in:accrual,cash',
+            'reporting_preference' => 'sometimes|string|in:accrual_view,cash_view',
         ]);
+
+        // Persist method + reporting preference with their spec defaults when
+        // the creation surface omits them (back-compat with existing callers).
+        $validated['accounting_method'] = $validated['accounting_method'] ?? Company::METHOD_ACCRUAL;
+        $validated['reporting_preference'] = $validated['reporting_preference'] ?? Company::REPORTING_ACCRUAL_VIEW;
 
         $user = $request->user();
 

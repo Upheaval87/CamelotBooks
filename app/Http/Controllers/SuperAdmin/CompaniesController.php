@@ -53,7 +53,12 @@ class CompaniesController extends Controller
             'base_currency' => 'required|string|max:10',
             'fiscal_year_start_month' => 'required|integer|min:1|max:12',
             'branch_limit' => 'required|integer|min:0',
+            'accounting_method' => 'sometimes|string|in:accrual,cash',
+            'reporting_preference' => 'sometimes|string|in:accrual_view,cash_view',
         ]);
+
+        $validated['accounting_method'] = $validated['accounting_method'] ?? \App\Models\Company::METHOD_ACCRUAL;
+        $validated['reporting_preference'] = $validated['reporting_preference'] ?? \App\Models\Company::REPORTING_ACCRUAL_VIEW;
 
         $company = Company::create($validated + [
             'is_active' => true,

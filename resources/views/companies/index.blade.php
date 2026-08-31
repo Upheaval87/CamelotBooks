@@ -101,6 +101,11 @@
                                 <x-input-error :messages="$errors->get('branch_limit')" class="mt-2" />
                                 <p class="text-xs text-gray-500 mt-1">{{ __('Maximum branches this company can create (0 = none until raised).') }}</p>
                             </div>
+                            <div>
+                                <x-input-label value="{{ __('Accounting Method') }}" />
+                                <x-accounting.method-picker />
+                                <x-input-error :messages="$errors->get('accounting_method')" class="mt-2" />
+                            </div>
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">

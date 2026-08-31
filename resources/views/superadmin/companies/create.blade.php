@@ -126,6 +126,18 @@
                     </p>
                 </x-form-section>
 
+                {{-- Accounting Method (spec A, chosen ONCE at creation) --}}
+                <x-form-section icon="M14 3v2m0 0l2-2M14 5l-2-2m2 2L14 5m0 0v2m0-2L12 5m2 0L16 3m-2 2L12 5M4 21a4 4 0 018 0M3 21h18" title="{{ __('Accounting Method') }}" :columns="1">
+                    <div class="form-field form-field--full">
+                        <p class="sa-label">{{ __('How this company keeps its books') }}</p>
+                        <x-accounting.method-picker />
+                        <x-input-error :messages="$errors->get('accounting_method')" class="mt-2" />
+                        <p class="sa-help" style="margin-top: 12px;">
+                            {{ __('Chosen once at creation and inherited by the Chart of Accounts. You can switch a cash-basis company to accrual later via a controlled conversion.') }}
+                        </p>
+                    </div>
+                </x-form-section>
+
                 {{-- Tenant Database Preview --}}
                 <div class="sa-db-preview">
                     <span class="sa-db-preview-icon">

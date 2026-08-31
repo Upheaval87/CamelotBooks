@@ -14496,3 +14496,44 @@ select.pos-auth-input{appearance:none;-webkit-appearance:none;padding-right:2.25
 .dp2-suite td.dp2-mpm { white-space: nowrap; }
 .dp2-suite .dp2-row-sel { background: rgba(18,143,142,.06); }
 .dp2-suite .dp2-btn-xs { height: 30px; padding: 0 11px; font-size: 11px; }
+
+/* ============================================================
+   Accounting Method suite (spec §2) — scoped, reused by company
+   creation (modal + superadmin) and the Switch-to-Accrual flow.
+   ============================================================ */
+.am-suite {
+    --sec: #128F8E; --sec-2: #149897; --ink: #0B2A2D; --border: #dceaea;
+    --line: #e2ecec; --muted: #5f7476; --focus: #94a3b8; --green: #15803d;
+    --amber-2: #b45309; --deep-1: #17565d;
+}
+.am-suite .optcards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 900px) { .am-suite .optcards { grid-template-columns: 1fr; } }
+.am-suite .optcard {
+    border: 1.5px solid var(--border); border-radius: 16px; padding: 16px;
+    cursor: pointer; background: #fff; position: relative; display: block;
+}
+.am-suite .optcard:hover { border-color: rgba(17,69,75,.35); }
+.am-suite .optcard.sel { border-color: var(--sec); box-shadow: 0 0 0 4px rgba(18,143,142,.14); }
+.am-suite .optcard:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.am-suite .optcard .rd {
+    position: absolute; top: 14px; right: 14px; width: 18px; height: 18px;
+    border-radius: 50%; border: 2px solid var(--border);
+}
+.am-suite .optcard.sel .rd { border-color: var(--sec); background: var(--sec); box-shadow: inset 0 0 0 3px #fff; }
+.am-suite .optcard .t { font-size: 13.5px; font-weight: 800; color: var(--ink); padding-right: 24px; }
+.am-suite .optcard .d { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.am-suite .am-radio {
+    position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);
+}
+.am-suite .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .am-suite .grid2 { grid-template-columns: 1fr; } }
+.am-suite .warn {
+    display: flex; gap: 10px; align-items: flex-start; border: 1px solid rgba(217,119,6,.4);
+    background: rgba(217,119,6,.07); border-radius: 12px; padding: 12px 14px;
+    font-size: 12px; color: var(--amber-2); font-weight: 600; line-height: 1.5;
+}
+.am-suite .okchip {
+    display: inline-flex; align-items: flex-start; gap: 6px; border-radius: 999px;
+    padding: 6px 12px; font-size: 12px; font-weight: 800;
+    background: rgba(22,163,74,.10); border: 1px solid rgba(22,163,74,.35); color: var(--green);
+}
