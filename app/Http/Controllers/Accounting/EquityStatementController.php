@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Accounting\Concerns\StatementPdfMeta;
 use App\Models\Company;
 use App\Services\Reporting\EquityStatementService;
 use Illuminate\Http\Request;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Response;
 
 class EquityStatementController extends Controller
 {
+    use StatementPdfMeta;
+
     public function __construct(private EquityStatementService $service)
     {
     }
@@ -86,11 +89,19 @@ class EquityStatementController extends Controller
         $statement = $this->service->generate($companyId, $dateFrom, $dateTo, $branchId);
         $company = Company::findOrFail($companyId);
 
+        $periodLabel = 'For the period '
+            . \Carbon\Carbon::parse($dateFrom)->format('d M Y')
+            . ' — ' . \Carbon\Carbon::parse($dateTo)->format('d M Y');
+
+        $title = 'Statement of Changes in Equity';
+        $meta = $this->statementPdfMeta($company, $branchId, $this->statementPreparedBy(), $title, $periodLabel);
+
         $content = view('accounting.equity-statement.print', array_merge($statement, compact('company', 'dateFrom', 'dateTo')))->render();
 
         return response()->view('accounting.print-export', [
-            'title' => "Statement of Changes in Equity — {$dateFrom} to {$dateTo}",
+            'title'   => "Statement of Changes in Equity — {$dateFrom} to {$dateTo}",
             'content' => $content,
+            'meta'    => $meta,
         ])->header('Content-Type', 'text/html');
     }
 }

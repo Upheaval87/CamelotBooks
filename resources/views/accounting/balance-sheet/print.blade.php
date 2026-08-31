@@ -1,69 +1,95 @@
-@php $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+@php
+    $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+    $dp = (int) \App\Models\SystemSetting::getValue('currency', 'decimal_places', session('current_company_id'), '2');
+    $n = function ($v) use ($dp) {
+        $v = (float) $v;
+        return $v < 0 ? '('.number_format(abs($v), $dp, '.', ',').')' : number_format($v, $dp, '.', ',');
+    };
+    $sectionLabels = [
+        'asset'     => ['current_asset' => 'Current Assets', 'non_current_asset' => 'Non-Current Assets', 'other_asset' => 'Other Assets'],
+        'liability' => ['current_liability' => 'Current Liabilities', 'non_current_liability' => 'Non-Current Liabilities', 'other_liability' => 'Other Liabilities'],
+        'equity'    => ['equity' => 'Equity'],
+    ];
+    $secSub = ['asset' => 0, 'liability' => 0, 'equity' => 0];
+@endphp
 
-<div class="report-head">
-    <p class="company">{{ $company->name }}</p>
-    <p class="report-title">Balance Sheet</p>
-    <p class="report-range">As of {{ \Carbon\Carbon::parse($asOfDate)->format('M d, Y') }}</p>
-</div>
-
-<div class="report-toolbar">
-    <label class="zero-toggle">
-        <input type="checkbox" id="reportZeroToggle" checked onchange="toggleZeroRows()">
-        Show zero-balance accounts
-    </label>
-    <button class="btn-outline" onclick="window.print()">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-        Print
-    </button>
-</div>
-
-<div class="report-col-bar"><span>Description</span><span>Amount ({{ $currencySymbol }})</span></div>
-
-<div class="report-section-bar">Assets</div>
-@foreach($groups['asset'] as $subType => $items)
-    @if(!empty($items))
-        @foreach($items as $item)
-            @php $zero = abs($item['balance']) <= 0; @endphp
-            <div class="report-line @if($zero) zero @endif">
-                <span><span class="code">{{ $item['account']->code }}</span>{{ $item['account']->name }}</span>
-                <span class="amt">{{ format_number($item['balance']) }}</span>
-            </div>
+<table class="fs-table">
+    <thead>
+        <tr>
+            <th class="fs-lbl">Code</th>
+            <th class="fs-lbl">Account</th>
+            <th>{{ __('Balance').' ('.$cs.')' }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="fs-section">
+            <td class="fs-stub" colspan="3">Assets</td>
+        </tr>
+        @foreach($sectionLabels['asset'] as $subKey => $secLabel)
+            @if(!empty($groups['asset'][$subKey]))
+                <tr class="fs-subsection">
+                    <td class="fs-stub" colspan="3">{{ $secLabel }}</td>
+                </tr>
+                @foreach($groups['asset'][$subKey] as $item)
+                    <tr class="fs-zero">
+                        <td class="fs-amt"><span class="fs-code">{{ $item['account']->code }}</span></td>
+                        <td class="fs-name">{{ $item['account']->name }}</td>
+                        <td class="fs-amt">{{ $n($item['balance']) }}</td>
+                    </tr>
+                @endforeach
+            @endif
         @endforeach
-    @endif
-@endforeach
-<div class="report-subtotal"><span>Total Assets</span><span>{{ format_number($total_assets) }}</span></div>
+        <tr class="fs-subtotal">
+            <td class="fs-stub" colspan="2">Total Assets</td>
+            <td class="fs-amt">{{ $n($total_assets) }}</td>
+        </tr>
 
-<div class="report-section-bar">Liabilities</div>
-@foreach($groups['liability'] as $subType => $items)
-    @if(!empty($items))
-        @foreach($items as $item)
-            @php $zero = abs($item['balance']) <= 0; @endphp
-            <div class="report-line @if($zero) zero @endif">
-                <span><span class="code">{{ $item['account']->code }}</span>{{ $item['account']->name }}</span>
-                <span class="amt">{{ format_number($item['balance']) }}</span>
-            </div>
+        <tr class="fs-section">
+            <td class="fs-stub" colspan="3">Liabilities</td>
+        </tr>
+        @foreach($sectionLabels['liability'] as $subKey => $secLabel)
+            @if(!empty($groups['liability'][$subKey]))
+                <tr class="fs-subsection">
+                    <td class="fs-stub" colspan="3">{{ $secLabel }}</td>
+                </tr>
+                @foreach($groups['liability'][$subKey] as $item)
+                    <tr class="fs-zero">
+                        <td class="fs-amt"><span class="fs-code">{{ $item['account']->code }}</span></td>
+                        <td class="fs-name">{{ $item['account']->name }}</td>
+                        <td class="fs-amt">{{ $n($item['balance']) }}</td>
+                    </tr>
+                @endforeach
+            @endif
         @endforeach
-    @endif
-@endforeach
-<div class="report-subtotal"><span>Total Liabilities</span><span>{{ format_number($total_liabilities) }}</span></div>
+        <tr class="fs-subtotal">
+            <td class="fs-stub" colspan="2">Total Liabilities</td>
+            <td class="fs-amt">{{ $n($total_liabilities) }}</td>
+        </tr>
 
-<div class="report-section-bar">Equity</div>
-@foreach($groups['equity'] as $subType => $items)
-    @foreach($items as $item)
-        @php $zero = abs($item['balance']) <= 0; @endphp
-        <div class="report-line @if($zero) zero @endif">
-            <span><span class="code">{{ $item['account']->code }}</span>{{ $item['account']->name }}</span>
-            <span class="amt">{{ format_number($item['balance']) }}</span>
-        </div>
-    @endforeach
-@endforeach
-<div class="report-line">
-    <span>Current Year Earnings</span>
-    <span class="amt">{{ format_number($current_year_earnings) }}</span>
-</div>
-<div class="report-subtotal"><span>Total Equity</span><span>{{ format_number($total_equity) }}</span></div>
+        <tr class="fs-section">
+            <td class="fs-stub" colspan="3">Equity</td>
+        </tr>
+        @foreach($sectionLabels['equity'] as $subKey => $secLabel)
+            @foreach($groups['equity'][$subKey] ?? [] as $item)
+                <tr class="fs-zero">
+                    <td class="fs-amt"><span class="fs-code">{{ $item['account']->code }}</span></td>
+                    <td class="fs-name">{{ $item['account']->name }}</td>
+                    <td class="fs-amt">{{ $n($item['balance']) }}</td>
+                </tr>
+            @endforeach
+        @endforeach
+        <tr class="fs-subtotal">
+            <td class="fs-stub" colspan="2">Current Year Earnings</td>
+            <td class="fs-amt">{{ $n($current_year_earnings) }}</td>
+        </tr>
+        <tr class="fs-total">
+            <td class="fs-stub" colspan="2">Total Equity</td>
+            <td class="fs-amt">{{ $n($total_equity) }}</td>
+        </tr>
 
-<div class="report-total">
-    <span class="lbl">Total Liabilities &amp; Equity</span>
-    <span class="val">{{ format_number($total_liabilities + $total_equity) }}</span>
-</div>
+        <tr class="fs-total">
+            <td class="fs-stub" colspan="2">Total Liabilities &amp; Equity</td>
+            <td class="fs-amt">{{ $n($total_liabilities + $total_equity) }}</td>
+        </tr>
+    </tbody>
+</table>

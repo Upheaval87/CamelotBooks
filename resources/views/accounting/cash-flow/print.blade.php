@@ -1,90 +1,94 @@
-@php $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$'); @endphp
+@php
+    $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+    $dp = (int) \App\Models\SystemSetting::getValue('currency', 'decimal_places', session('current_company_id'), '2');
+    $n = function ($v) use ($dp) {
+        $v = (float) $v;
+        return $v < 0 ? '('.number_format(abs($v), $dp, '.', ',').')' : number_format($v, $dp, '.', ',');
+    };
+@endphp
 
-<div class="report-head">
-    <p class="company">{{ $company->name }}</p>
-    <p class="report-title">Cash Flow Statement</p>
-    <p class="report-range">{{ \Carbon\Carbon::parse($dateFrom)->format('M d, Y') }} — {{ \Carbon\Carbon::parse($dateTo)->format('M d, Y') }}</p>
-</div>
+<table class="fs-table">
+    <thead>
+        <tr>
+            <th class="fs-lbl">Code</th>
+            <th class="fs-lbl">Account</th>
+            <th>{{ __('Amount').' ('.$cs.')' }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="fs-section">
+            <td class="fs-stub" colspan="3">Cash Flows from Operating Activities</td>
+        </tr>
+        <tr>
+            <td class="fs-amt"><span class="fs-code"></span></td>
+            <td>Net Income</td>
+            <td class="fs-amt {{ $net_income < 0 ? 'fs-neg' : '' }}">{{ $n($net_income) }}</td>
+        </tr>
+        @foreach($non_cash_expenses['items'] as $nci)
+            <tr class="fs-zero">
+                <td class="fs-amt"><span class="fs-code"></span></td>
+                <td>Add: {{ $nci['account']->name }}</td>
+                <td class="fs-amt {{ $nci['amount'] < 0 ? 'fs-neg' : '' }}">{{ $n($nci['amount']) }}</td>
+            </tr>
+        @endforeach
+        @foreach($sections['operating'] as $item)
+            @php $zero = abs($item['cash_effect']) <= 0; @endphp
+            <tr class="@if($zero) fs-zero @endif">
+                <td class="fs-amt"><span class="fs-code">{{ $item['account']->code }}</span></td>
+                <td class="fs-name">{{ $item['account']->name }}</td>
+                <td class="fs-amt {{ $item['cash_effect'] < 0 ? 'fs-neg' : '' }}">{{ $n($item['cash_effect']) }}</td>
+            </tr>
+        @endforeach
+        <tr class="fs-subtotal">
+            <td class="fs-stub" colspan="2">Net Cash from Operating Activities</td>
+            <td class="fs-amt {{ $operating_total < 0 ? 'fs-neg' : '' }}">{{ $n($operating_total) }}</td>
+        </tr>
 
-<div class="report-toolbar">
-    <label class="zero-toggle">
-        <input type="checkbox" id="reportZeroToggle" checked onchange="toggleZeroRows()">
-        Show zero-balance accounts
-    </label>
-    <button class="btn-outline" onclick="window.print()">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-        Print
-    </button>
-</div>
+        <tr class="fs-section">
+            <td class="fs-stub" colspan="3">Cash Flows from Investing Activities</td>
+        </tr>
+        @foreach($sections['investing'] as $item)
+            @php $zero = abs($item['cash_effect']) <= 0; @endphp
+            <tr class="@if($zero) fs-zero @endif">
+                <td class="fs-amt"><span class="fs-code">{{ $item['account']->code }}</span></td>
+                <td class="fs-name">{{ $item['account']->name }}</td>
+                <td class="fs-amt {{ $item['cash_effect'] < 0 ? 'fs-neg' : '' }}">{{ $n($item['cash_effect']) }}</td>
+            </tr>
+        @endforeach
+        <tr class="fs-subtotal">
+            <td class="fs-stub" colspan="2">Net Cash from Investing Activities</td>
+            <td class="fs-amt {{ $investing_total < 0 ? 'fs-neg' : '' }}">{{ $n($investing_total) }}</td>
+        </tr>
 
-<div class="report-col-bar"><span>Description</span><span>Amount ({{ $cs }})</span></div>
+        <tr class="fs-section">
+            <td class="fs-stub" colspan="3">Cash Flows from Financing Activities</td>
+        </tr>
+        @foreach($sections['financing'] as $item)
+            @php $zero = abs($item['cash_effect']) <= 0; @endphp
+            <tr class="@if($zero) fs-zero @endif">
+                <td class="fs-amt"><span class="fs-code">{{ $item['account']->code }}</span></td>
+                <td class="fs-name">{{ $item['account']->name }}</td>
+                <td class="fs-amt {{ $item['cash_effect'] < 0 ? 'fs-neg' : '' }}">{{ $n($item['cash_effect']) }}</td>
+            </tr>
+        @endforeach
+        <tr class="fs-subtotal">
+            <td class="fs-stub" colspan="2">Net Cash from Financing Activities</td>
+            <td class="fs-amt {{ $financing_total < 0 ? 'fs-neg' : '' }}">{{ $n($financing_total) }}</td>
+        </tr>
 
-<div class="report-section-bar">Operating Activities</div>
-<div class="report-line">
-    <span>Net Income</span>
-    <span class="amt">{{ format_number($net_income) }}</span>
-</div>
-@foreach($non_cash_expenses['items'] as $item)
-    @php $zero = abs($item['amount']) <= 0; @endphp
-    <div class="report-line @if($zero) zero @endif">
-        <span>Add: {{ $item['account']->name }}</span>
-        <span class="amt">{{ format_number($item['amount']) }}</span>
-    </div>
-@endforeach
-@foreach($sections['operating'] as $item)
-    @php $zero = abs($item['cash_effect']) <= 0; @endphp
-    <div class="report-line @if($zero) zero @endif">
-        <span>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</span>
-        <span class="amt">{{ format_number($item['cash_effect']) }}</span>
-    </div>
-@endforeach
-<div class="report-subtotal"><span>Net Cash from Operating</span><span>{{ format_number($operating_total) }}</span></div>
-
-<div class="report-section-bar">Investing Activities</div>
-@forelse($sections['investing'] as $item)
-    @php $zero = abs($item['cash_effect']) <= 0; @endphp
-    <div class="report-line @if($zero) zero @endif">
-        <span>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</span>
-        <span class="amt">{{ format_number($item['cash_effect']) }}</span>
-    </div>
-@empty
-    <div class="report-line zero">
-        <span>No investing activities</span>
-        <span class="amt">{{ format_number(0) }}</span>
-    </div>
-@endforelse
-<div class="report-subtotal"><span>Net Cash from Investing</span><span>{{ format_number($investing_total) }}</span></div>
-
-<div class="report-section-bar">Financing Activities</div>
-@forelse($sections['financing'] as $item)
-    @php $zero = abs($item['cash_effect']) <= 0; @endphp
-    <div class="report-line @if($zero) zero @endif">
-        <span>{{ $item['change'] > 0 ? 'Increase in' : 'Decrease in' }} {{ $item['account']->name }}</span>
-        <span class="amt">{{ format_number($item['cash_effect']) }}</span>
-    </div>
-@empty
-    <div class="report-line zero">
-        <span>No financing activities</span>
-        <span class="amt">{{ format_number(0) }}</span>
-    </div>
-@endforelse
-<div class="report-subtotal"><span>Net Cash from Financing</span><span>{{ format_number($financing_total) }}</span></div>
-
-<div class="report-total">
-    <span class="lbl">Net Change in Cash</span>
-    <span class="val">{{ format_number($net_change) }}</span>
-</div>
-<div class="report-line">
-    <span>Beginning Cash Balance</span>
-    <span class="amt">{{ format_number($beginning_cash) }}</span>
-</div>
-<div class="report-subtotal">
-    <span>Ending Cash Balance</span>
-    <span>{{ format_number($ending_cash) }}</span>
-</div>
-
-@if($mismatch)
-    <div class="text-xs text-red-600 mt-4 p-3 bg-red-50 rounded" style="margin:16px -14px -24px;padding:10px 14px">
-        Warning: Ending cash does not match actual bank balances. Difference: {{ format_number($mismatch) }}
-    </div>
-@endif
+        <tr class="fs-total">
+            <td class="fs-stub" colspan="2">Net Change in Cash</td>
+            <td class="fs-amt {{ $net_change < 0 ? 'fs-neg' : '' }}">{{ $n($net_change) }}</td>
+        </tr>
+        <tr>
+            <td class="fs-amt"><span class="fs-code"></span></td>
+            <td>Beginning Cash Balance</td>
+            <td class="fs-amt {{ $beginning_cash < 0 ? 'fs-neg' : '' }}">{{ $n($beginning_cash) }}</td>
+        </tr>
+        <tr class="fs-total">
+            <td class="fs-amt"><span class="fs-code"></span></td>
+            <td>Ending Cash Balance</td>
+            <td class="fs-amt {{ $ending_cash < 0 ? 'fs-neg' : '' }}">{{ $n($ending_cash) }}</td>
+        </tr>
+    </tbody>
+</table>

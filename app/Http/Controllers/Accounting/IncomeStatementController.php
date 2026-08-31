@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Accounting\Concerns\StatementPdfMeta;
 use App\Models\Company;
 use App\Services\Reporting\IncomeStatementService;
 use App\Services\Reporting\ReportAuditService;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\View;
 
 class IncomeStatementController extends Controller
 {
+    use StatementPdfMeta;
+
     public function __construct(private IncomeStatementService $service)
     {
     }
@@ -139,6 +142,8 @@ class IncomeStatementController extends Controller
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo, null, $costCenterId);
         $company = Company::findOrFail($companyId);
 
+        $ytd = $this->computeYtd($companyId, $branchId, $costCenterId, $dateTo);
+
         ReportAuditService::log(
             userId: auth()->id(),
             companyId: $companyId,
@@ -147,11 +152,79 @@ class IncomeStatementController extends Controller
             outputFormat: 'pdf',
         );
 
-        $content = view('accounting.income-statement.print', array_merge($statement, compact('company', 'dateFrom', 'dateTo')))->render();
+        $content = view('accounting.income-statement.print', array_merge($statement, $ytd, compact('company', 'dateFrom', 'dateTo')))->render();
+
+        $periodLabel = 'For the period '
+            . \Carbon\Carbon::parse($dateFrom)->format('d M Y')
+            . ' — ' . \Carbon\Carbon::parse($dateTo)->format('d M Y');
+
+        $title = 'Income Statement';
+        $meta = $this->statementPdfMeta($company, $branchId, $this->statementPreparedBy(), $title, $periodLabel);
 
         return response()->view('accounting.print-export', [
             'title' => "Income Statement {$dateFrom} to {$dateTo}",
             'content' => $content,
+            'meta'  => $meta,
         ])->header('Content-Type', 'text/html');
+    }
+
+    /**
+     * Year-to-date income statement (fiscal year start -> dateTo), mirroring
+     * the IncomeStatementService net-sign convention per account.
+     */
+    private function computeYtd(int $companyId, ?int $branchId, ?int $costCenterId, string $dateTo): array
+    {
+        $yearStart = \App\Services\Reporting\FiReportContract::getFiscalYearStart($companyId, $dateTo);
+
+        $map = \App\Models\JournalEntryLine::select(
+            'account_id',
+            \Illuminate\Support\Facades\DB::raw('SUM(debit) as total_debit'),
+            \Illuminate\Support\Facades\DB::raw('SUM(credit) as total_credit')
+        )
+            ->whereHas('journalEntry', function ($q) use ($companyId, $yearStart, $dateTo) {
+                $q->where('company_id', $companyId)
+                    ->whereIn('status', [\App\Models\JournalEntry::STATUS_POSTED, \App\Models\JournalEntry::STATUS_REVERSED])
+                    ->where('date', '>=', $yearStart)
+                    ->where('date', '<=', $dateTo);
+            })
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($costCenterId, fn ($q) => $q->where('cost_center_id', $costCenterId))
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        $accounts = \App\Models\Account::where('company_id', $companyId)
+            ->active()
+            ->whereIn('type', ['income', 'expense'])
+            ->orderBy('code')
+            ->get();
+
+        $ytdNets = [];
+        foreach ($accounts as $account) {
+            $line = $map->get($account->id);
+            $debit = (float) ($line->total_debit ?? 0);
+            $credit = (float) ($line->total_credit ?? 0);
+            $ytdNets[$account->id] = $account->isCreditNormal() ? $credit - $debit : $debit - $credit;
+        }
+
+        $ytdIncome = 0;
+        $ytdExpenses = 0;
+        foreach ($accounts as $account) {
+            $net = $ytdNets[$account->id] ?? 0;
+            if ($account->type === 'income') {
+                $ytdIncome += $net;
+            } else {
+                $ytdExpenses += $net;
+            }
+        }
+
+        return [
+            'ytd_nets'      => $ytdNets,
+            'ytd_income'    => $ytdIncome,
+            'ytd_expenses'  => $ytdExpenses,
+            'ytd_net'       => $ytdIncome - $ytdExpenses,
+            'ytd_from'      => $yearStart,
+            'ytd_to'        => $dateTo,
+        ];
     }
 }

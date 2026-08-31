@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Accounting\Concerns\StatementPdfMeta;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\JournalEntry;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\View;
 
 class TrialBalanceController extends Controller
 {
+    use StatementPdfMeta;
+
     private function computeTrialBalance(int $companyId, string $asOfDate, ?int $branchId = null, ?int $costCenterId = null): array
     {
         $accounts = Account::where('company_id', $companyId)
@@ -172,6 +175,23 @@ class TrialBalanceController extends Controller
         $company = Company::findOrFail($companyId);
         $difference = $totalDebit - $totalCredit;
 
+        $title = 'Trial Balance';
+        $meta = $this->statementPdfMeta(
+            $company,
+            $branchId,
+            $this->statementPreparedBy(),
+            $title,
+            'As at ' . \Carbon\Carbon::parse($asOfDate)->format('d M Y')
+        );
+
+        $meta['check'] = $difference == 0
+            ? 'Balanced — Total Debit = Total Credit'
+            : null;
+        $meta['warn'] = $difference != 0
+            ? 'Out of balance by '.number_format(abs($difference), 2, '.', ',').' (Debit '
+                .number_format($totalDebit, 2, '.', ',').' · Credit '.number_format($totalCredit, 2, '.', ',').')'
+            : null;
+
         $content = view('accounting.trial-balance.print', compact(
             'trialBalance', 'totalDebit', 'totalCredit', 'difference', 'company', 'asOfDate'
         ))->render();
@@ -179,6 +199,7 @@ class TrialBalanceController extends Controller
         return response()->view('accounting.print-export', [
             'title' => "Trial Balance as of {$asOfDate}",
             'content' => $content,
+            'meta'  => $meta,
         ])->header('Content-Type', 'text/html');
     }
 }

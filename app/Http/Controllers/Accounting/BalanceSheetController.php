@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Accounting\Concerns\StatementPdfMeta;
 use App\Models\Company;
 use App\Services\Reporting\BalanceSheetService;
 use App\Services\Reporting\ReportAuditService;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\View;
 
 class BalanceSheetController extends Controller
 {
+    use StatementPdfMeta;
+
     public function __construct(private BalanceSheetService $service)
     {
     }
@@ -133,9 +136,25 @@ class BalanceSheetController extends Controller
 
         $content = view('accounting.balance-sheet.print', array_merge($statement, compact('company', 'asOfDate')))->render();
 
+        $title = 'Balance Sheet';
+        $meta = $this->statementPdfMeta(
+            $company,
+            $branchId,
+            $this->statementPreparedBy(),
+            $title,
+            'As at ' . \Carbon\Carbon::parse($asOfDate)->format('d M Y')
+        );
+        $meta['check'] = $statement['balanced']
+            ? 'Balanced — Assets = Liabilities + Equity'
+            : null;
+        $meta['warn'] = !$statement['balanced']
+            ? 'Out of balance — Assets do not equal Liabilities + Equity.'
+            : null;
+
         return response()->view('accounting.print-export', [
             'title' => "Balance Sheet as of {$asOfDate}",
             'content' => $content,
+            'meta'  => $meta,
         ])->header('Content-Type', 'text/html');
     }
 }

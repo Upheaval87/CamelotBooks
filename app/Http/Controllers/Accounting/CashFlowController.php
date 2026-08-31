@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Accounting\Concerns\StatementPdfMeta;
 use App\Models\Company;
 use App\Services\Reporting\CashFlowStatementService;
 use App\Services\Reporting\ReportAuditService;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\View;
 
 class CashFlowController extends Controller
 {
+    use StatementPdfMeta;
+
     public function __construct(private CashFlowStatementService $service)
     {
     }
@@ -133,11 +136,20 @@ class CashFlowController extends Controller
             outputFormat: 'pdf',
         );
 
+        $periodLabel = 'For the period '
+            . \Carbon\Carbon::parse($dateFrom)->format('d M Y')
+            . ' — ' . \Carbon\Carbon::parse($dateTo)->format('d M Y');
+
+        $title = 'Cash Flow Statement';
+        $meta = $this->statementPdfMeta($company, $branchId, $this->statementPreparedBy(), $title, $periodLabel);
+        $meta['check'] = $statement['mismatch'] === null ? 'Reconciled — Ending Cash equals actual bank balances' : null;
+
         $content = view('accounting.cash-flow.print', array_merge($statement, compact('company', 'dateFrom', 'dateTo')))->render();
 
         return response()->view('accounting.print-export', [
             'title' => "Cash Flow Statement {$dateFrom} to {$dateTo}",
             'content' => $content,
+            'meta'  => $meta,
         ])->header('Content-Type', 'text/html');
     }
 }
