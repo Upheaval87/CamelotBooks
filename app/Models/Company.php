@@ -16,6 +16,14 @@ class Company extends Model
     public const STATUS_SUSPENDED = 'suspended';
     public const STATUS_FAILED = 'failed';
 
+    public const METHOD_ACCRUAL = 'accrual';
+    public const METHOD_CASH = 'cash';
+
+    public const METHOD_OPTIONS = [self::METHOD_ACCRUAL, self::METHOD_CASH];
+
+    public const REPORTING_ACCRUAL_VIEW = 'accrual_view';
+    public const REPORTING_CASH_VIEW = 'cash_view';
+
     protected $fillable = [
         'name',
         'legal_name',
@@ -29,6 +37,8 @@ class Company extends Model
         'phone',
         'email',
         'base_currency',
+        'accounting_method',
+        'reporting_preference',
         'fiscal_year_start_month',
         'branch_limit',
         'branch_count',
@@ -52,10 +62,21 @@ class Company extends Model
         'fiscal_year_start_month' => 'integer',
         'branch_limit' => 'integer',
         'branch_count' => 'integer',
+        'accounting_method' => 'string',
+        'reporting_preference' => 'string',
         'provisioning_status' => 'string',
         'db_port' => 'integer',
         'db_password' => 'encrypted',
         'provisioned_at' => 'datetime',
+    ];
+
+    /**
+     * Sensible defaults so a company always has an accounting method even when
+     * a DB column default does not apply (e.g. the sqlite test schema).
+     */
+    protected $attributes = [
+        'accounting_method' => self::METHOD_ACCRUAL,
+        'reporting_preference' => self::REPORTING_ACCRUAL_VIEW,
     ];
 
     /**
@@ -68,6 +89,26 @@ class Company extends Model
     public function isProvisioned(): bool
     {
         return $this->provisioning_status === self::STATUS_ACTIVE;
+    }
+
+    public function isCashBasis(): bool
+    {
+        return $this->accounting_method === self::METHOD_CASH;
+    }
+
+    public function isAccrual(): bool
+    {
+        return $this->accounting_method === self::METHOD_ACCRUAL;
+    }
+
+    public function accountingMethodLabel(): string
+    {
+        return $this->isCashBasis() ? 'Cash' : 'Accrual';
+    }
+
+    public function reportingPreferenceLabel(): string
+    {
+        return $this->reporting_preference === self::REPORTING_CASH_VIEW ? 'Cash view' : 'Accrual view';
     }
 
     public function modules(): BelongsToMany

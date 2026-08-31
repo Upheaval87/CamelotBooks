@@ -18,6 +18,7 @@ class AccountingPeriod extends Model
         'start_date',
         'end_date',
         'status',
+        'basis',
         'closed_by',
         'closed_at',
     ];
@@ -25,6 +26,7 @@ class AccountingPeriod extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'basis' => 'string',
         'closed_at' => 'timestamp',
     ];
 
@@ -56,6 +58,16 @@ class AccountingPeriod extends Model
     public function isLocked(): bool
     {
         return $this->status === 'locked';
+    }
+
+    public function isCashBasis(): bool
+    {
+        return $this->basis === 'cash';
+    }
+
+    public function isAccrual(): bool
+    {
+        return $this->basis !== 'cash';
     }
 
     public function isDateInPeriod(\DateTimeInterface $date): bool
