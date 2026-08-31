@@ -4,22 +4,42 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
-use App\Models\BankTransaction;
-use App\Models\DefaultAccountMapping;
-use App\Models\JournalEntryLine;
-use App\Services\Accounting\JournalPostingEngine;
+use App\Models\BankDeposit;
+use App\Models\BankDepositLine;
+use App\Models\Company;
+use App\Models\Currency;
+use App\Services\Accounting\BankingDepositService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class BankingDepositController extends Controller
 {
-    public function __construct(protected JournalPostingEngine $postingEngine)
+    public function __construct(protected BankingDepositService $depositService)
     {
     }
 
-    public function index()
+    /**
+     * The system-set company currency symbol, resolved from the company's base
+     * currency via the central Currency catalog. Falls back to the configured
+     * system_settings symbol, then to '$'.
+     */
+    protected function currencySymbol(int $companyId): string
     {
+        $baseCurrency = Company::find($companyId)?->base_currency;
+        if ($baseCurrency) {
+            $symbol = Currency::where('code', $baseCurrency)->first()?->symbol;
+            if ($symbol) {
+                return $symbol;
+            }
+        }
+
+        return \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+    }
+
+    public function index(Request $request)
+    {
+        $this->requirePermission($request, 'deposits.view');
+
         $companyId = (int) session('current_company_id');
 
         $bankAccounts = Account::where('company_id', $companyId)
@@ -28,14 +48,58 @@ class BankingDepositController extends Controller
             ->orderBy('code')
             ->get();
 
-        $undepositedBalance = $this->undepositedFundsBalance($companyId);
-        $undepositedLines = $this->undepositedFundsLines($companyId);
+        $undepositedLines = $this->depositService->undepositedLines($companyId);
+        $undepositedBalance = $this->depositService->undepositedBalance($companyId);
 
-        return view('accounting.banking.deposits', compact('bankAccounts', 'undepositedBalance', 'undepositedLines'));
+        // Payment-method filter (server-side) + distinct method list for the select.
+        $paymentMethodList = $undepositedLines
+            ->pluck('payment_method')
+            ->filter(fn ($m) => $m && $m !== '—')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $filteredLines = $undepositedLines;
+        if ($request->has('payment_method') && $request->query('payment_method') !== '') {
+            $wanted = (string) $request->query('payment_method');
+            $filteredLines = $undepositedLines->filter(fn ($l) => $l['payment_method'] === $wanted);
+        }
+
+        $deposits = BankDeposit::forCompany($companyId)
+            ->with('bankAccount', 'createdBy', 'postedBy', 'voidedBy')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Mockup KPI row: Undeposited Funds = Σ undeposited; Bank Accounts count;
+        // Deposits This Month (posted) count.
+        $undepositedSum = (float) $undepositedLines->sum('amount');
+        $bankAccountCount = $bankAccounts->count();
+        $depositsThisMonth = $deposits
+            ->where('status', BankDeposit::STATUS_POSTED)
+            ->filter(fn ($d) => $d->deposit_date?->isSameMonth(now()))
+            ->count();
+
+        $cs = $this->currencySymbol($companyId);
+
+        return view('accounting.banking.deposits', [
+            'bankAccounts' => $bankAccounts,
+            'undepositedLines' => $filteredLines,
+            'undepositedBalance' => $undepositedBalance,
+            'deposits' => $deposits,
+            'undepositedSum' => $undepositedSum,
+            'bankAccountCount' => $bankAccountCount,
+            'depositsThisMonth' => $depositsThisMonth,
+            'cs' => $cs,
+            'paymentMethodList' => $paymentMethodList,
+            'currentPaymentMethod' => (string) $request->query('payment_method', ''),
+        ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $this->requirePermission($request, 'deposits.create');
+
         $companyId = (int) session('current_company_id');
 
         $bankAccounts = Account::where('company_id', $companyId)
@@ -44,152 +108,109 @@ class BankingDepositController extends Controller
             ->orderBy('code')
             ->get();
 
-        $undepositedLines = $this->undepositedFundsLines($companyId);
+        $undepositedLines = $this->depositService->undepositedLines($companyId);
 
-        return view('accounting.banking.deposit-form', compact('bankAccounts', 'undepositedLines'));
+        $preselected = [];
+        if ($request->has('line_ids')) {
+            $preselected = collect(explode(',', (string) $request->query('line_ids')))
+                ->filter(fn ($id) => $id !== '')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        $cs = $this->currencySymbol($companyId);
+
+        return view('accounting.banking.deposit-form', compact('bankAccounts', 'undepositedLines', 'preselected', 'cs'));
+    }
+
+    public function show(Request $request, int $deposit)
+    {
+        $this->requirePermission($request, 'deposits.view');
+
+        $companyId = (int) session('current_company_id');
+
+        $deposit = BankDeposit::forCompany($companyId)
+            ->with('lines', 'lines.salesReceipt', 'bankAccount', 'createdBy', 'postedBy', 'voidedBy', 'journalEntry')
+            ->findOrFail($deposit);
+
+        return view('accounting.banking.deposit-show', compact('deposit'));
     }
 
     public function store(Request $request)
     {
         $this->requirePermission($request, 'deposits.create');
+
         $companyId = (int) session('current_company_id');
 
         $validated = $request->validate([
             'bank_account_id' => ['required', 'integer', 'exists:accounts,id'],
             'date' => ['required', 'date'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
             'description' => ['nullable', 'string', 'max:500'],
             'reference' => ['nullable', 'string', 'max:255'],
-            'journal_entry_ids' => ['required', 'array', 'min:1'],
-            'journal_entry_ids.*' => ['integer'],
+            'line_ids' => ['required', 'array', 'min:1'],
+            'line_ids.*' => ['integer'],
+            'action' => ['nullable', 'string', 'in:post,draft'],
         ]);
 
-        $validated['company_id'] = $companyId;
+        $before = BankDepositLine::count();
+        $beforeDeposits = BankDeposit::count();
 
         try {
-            $this->createDeposit($validated, auth()->id());
+            $deposit = $this->depositService->create(
+                $companyId,
+                (int) $validated['bank_account_id'],
+                $validated['date'],
+                $validated['line_ids'],
+                auth()->id(),
+                [
+                    'description' => $validated['description'] ?? null,
+                    'reference' => $validated['reference'] ?? null,
+                    'post' => ($validated['action'] ?? null) === 'post',
+                ],
+            );
 
-            return redirect()->route('accounting.banking.register', $validated['bank_account_id'])
-                ->with('success', 'Deposit recorded successfully.');
+            $after = BankDepositLine::count();
+            $afterDeposits = BankDeposit::count();
+
+            logger()->info('BankDeposit.store', [
+                'deposit_id' => $deposit->id,
+                'deposit_no' => $deposit->deposit_no,
+                'status' => $deposit->status,
+                'lines_before' => $before,
+                'lines_after' => $after,
+                'deposits_before' => $beforeDeposits,
+                'deposits_after' => $afterDeposits,
+            ]);
+
+            return redirect()->route('accounting.banking.deposits')
+                ->with('success', $deposit->isPosted()
+                    ? "Deposit {$deposit->deposit_no} recorded and posted."
+                    : "Deposit {$deposit->deposit_no} saved as draft.");
         } catch (InvalidArgumentException $e) {
             return redirect()->back()->withInput()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
-    protected function undepositedFundsLines(int $companyId): \Illuminate\Support\Collection
+    public function void(Request $request, int $deposit)
     {
-        $undepositedAccount = DefaultAccountMapping::getAccount($companyId, 'undeposited_funds');
+        $this->requirePermission($request, 'deposits.void');
 
-        if (! $undepositedAccount) {
-            return collect();
+        $companyId = (int) session('current_company_id');
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $deposit = BankDeposit::forCompany($companyId)->findOrFail($deposit);
+
+        try {
+            $this->depositService->void($deposit, auth()->id(), $validated['reason'] ?? null);
+            return redirect()->route('accounting.banking.deposits')
+                ->with('success', "Deposit {$deposit->deposit_no} voided.");
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
-
-        $depositedJeIds = [];
-
-        foreach (BankTransaction::where('company_id', $companyId)
-            ->where('source_type', 'make_deposit')
-            ->whereNotNull('reference')
-            ->get() as $tx) {
-            $decoded = json_decode($tx->reference, true);
-            if (is_array($decoded)) {
-                $depositedJeIds = array_merge($depositedJeIds, $decoded);
-            }
-        }
-
-        $depositedJeIds = array_unique($depositedJeIds);
-
-        $query = JournalEntryLine::where('account_id', $undepositedAccount->id)
-            ->whereHas('journalEntry', function ($q) use ($companyId) {
-                $q->where('company_id', $companyId)->whereIn('status', ['posted']);
-            })
-            ->where('debit', '>', 0);
-
-        if (! empty($depositedJeIds)) {
-            $query->whereNotIn('journal_entry_id', $depositedJeIds);
-        }
-
-        return $query->with('journalEntry')->orderBy('created_at', 'asc')->get();
-    }
-
-    protected function undepositedFundsBalance(int $companyId): float
-    {
-        $undepositedAccount = DefaultAccountMapping::getAccount($companyId, 'undeposited_funds');
-
-        return $undepositedAccount ? (float) $undepositedAccount->current_balance : 0.0;
-    }
-
-    protected function createDeposit(array $data, int $userId): BankTransaction
-    {
-        foreach (['company_id', 'bank_account_id', 'date', 'amount', 'journal_entry_ids'] as $field) {
-            if (! isset($data[$field]) || (is_array($data[$field]) && empty($data[$field]))) {
-                throw new InvalidArgumentException("Field '{$field}' is required.");
-            }
-        }
-
-        $companyId = $data['company_id'];
-        $bankAccountId = $data['bank_account_id'];
-        $amount = (float) $data['amount'];
-
-        if ($amount <= 0) {
-            throw new InvalidArgumentException('Deposit amount must be greater than zero.');
-        }
-
-        $bankAccount = Account::where('id', $bankAccountId)
-            ->where('company_id', $companyId)
-            ->where('is_bank_account', true)
-            ->first();
-
-        if (! $bankAccount) {
-            throw new InvalidArgumentException("Bank account ID {$bankAccountId} not found or is not a bank account.");
-        }
-
-        $undepositedAccount = DefaultAccountMapping::getAccount($companyId, 'undeposited_funds');
-
-        if (! $undepositedAccount) {
-            throw new InvalidArgumentException('Undeposited Funds account not found.');
-        }
-
-        $selectedJEs = JournalEntryLine::whereIn('journal_entry_id', $data['journal_entry_ids'])
-            ->where('account_id', $undepositedAccount->id)
-            ->where('debit', '>', 0)
-            ->get();
-
-        $totalSelected = $selectedJEs->sum('debit');
-
-        if (round($totalSelected, 2) !== round($amount, 2)) {
-            throw new InvalidArgumentException(
-                'Selected amount (' . number_format($totalSelected, 2) .
-                ') does not match deposit amount (' . number_format($amount, 2) . ').'
-            );
-        }
-
-        return DB::transaction(function () use ($data, $userId, $companyId, $bankAccountId, $amount, $bankAccount, $undepositedAccount) {
-            $journalEntry = $this->postingEngine->post([
-                'company_id' => $companyId,
-                'created_by' => $userId,
-                'date' => $data['date'],
-                'source_module' => 'make_deposit',
-                'reference' => $data['reference'] ?? null,
-                'memo' => $data['description'] ?? "Deposit to {$bankAccount->name}",
-                'lines' => [
-                    ['account_id' => $bankAccountId, 'debit' => $amount, 'credit' => 0, 'memo' => $data['description'] ?? "Deposit to {$bankAccount->name}"],
-                    ['account_id' => $undepositedAccount->id, 'debit' => 0, 'credit' => $amount, 'memo' => $data['description'] ?? "Deposit to {$bankAccount->name}"],
-                ],
-            ]);
-
-            return BankTransaction::create([
-                'company_id' => $companyId,
-                'bank_account_id' => $bankAccountId,
-                'journal_entry_id' => $journalEntry->id,
-                'type' => 'deposit',
-                'source_type' => 'make_deposit',
-                'source_id' => $journalEntry->id,
-                'date' => $data['date'],
-                'description' => $data['description'] ?? "Deposit to {$bankAccount->name}",
-                'reference' => json_encode($data['journal_entry_ids']),
-                'amount' => $amount,
-                'created_by' => $userId,
-            ]);
-        });
     }
 }

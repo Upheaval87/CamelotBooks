@@ -60,6 +60,7 @@ class NumberingSequence extends Model
             'billing_quotation' => 'Branch Quotation',
             'transaction_reversal' => 'Reversal',
             'bottle_return_receipt' => 'Bottle Return Receipt',
+            'deposit' => 'Bank Deposit',
         ];
     }
 
@@ -91,6 +92,7 @@ class NumberingSequence extends Model
             ['document_type' => 'billing_quotation', 'prefix' => 'BQ-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'transaction_reversal', 'prefix' => 'REV-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'bottle_return_receipt', 'prefix' => 'BRR-', 'padding_width' => 5, 'reset_policy' => 'annually'],
+            ['document_type' => 'deposit', 'prefix' => 'DEP-', 'padding_width' => 4, 'reset_policy' => 'annually'],
         ];
     }
 }
