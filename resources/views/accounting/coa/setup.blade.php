@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="coa-wrap coa-rebuild">
         <div class="page-head">
-            <nav class="crumbs"><a href="{{ route('accounting.coa.dashboard') }}">Accounts</a> › <span class="here">Structure Setup</span></nav>
+            <nav class="crumbs"><a href="{{ route('accounting.accounts.index') }}">Accounts</a> › <span class="here">Structure Setup</span></nav>
             <div style="display:flex;gap:10px">
                 <button class="coa-btn coa-btn-ghost coa-btn-sm">Customize</button>
                 <button class="coa-btn coa-btn-cta coa-btn-sm">Activate &amp; Lock Format</button>
@@ -12,7 +12,9 @@
             <div class="coa-card coa-pad" style="display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);flex-wrap:wrap">
                 <h2 style="font-size:14px;font-weight:800;color:var(--ink)">Accounting method</h2>
                 <span class="chip" style="margin-left:8px">Inherited · {{ ucfirst($company->accounting_method ?? 'Accrual') }} (from company)</span>
-                <div style="margin-left:auto"><a href="{{ route('accounting.coa.setup') }}" class="coa-btn coa-btn-ghost" style="height:30px;padding:0 11px;font-size:11.5px;border-radius:9px">Change at company level</a></div>
+                @if(auth()->user()?->is_super_admin)
+                <div style="margin-left:auto"><a href="{{ route('superadmin.companies.edit', $company) }}" class="coa-btn coa-btn-ghost" style="height:30px;padding:0 11px;font-size:11.5px;border-radius:9px">Change at company level</a></div>
+                @endif
             </div>
             <div class="coa-pad">
                 <div class="warn">ⓘ <span>The method (accrual/cash) is set once at <b>Company Creation</b> and drives which accounts/modules are active. The coding structure below is independent of it.</span></div>
@@ -24,6 +26,16 @@
                 <h2 style="font-size:14px;font-weight:800;color:var(--ink)">Code structure · segments · generation · activate</h2>
             </div>
             <div class="coa-pad">
+                <div class="segrow" style="padding:2px 0 4px">
+                    <span class="nm">Default COA</span>
+                    <span class="chip" style="margin-left:8px">
+                        @if(($company->accounting_method ?? 'accrual') === 'cash')
+                            Cash template — AR/AP/inventory inactive
+                        @else
+                            Accrual template — AR/AP/inventory active
+                        @endif
+                    </span>
+                </div>
                 <div class="stepper">
                     <span class="st">1 · Code structure</span>
                     <span class="st">2 · Levels & segments</span>

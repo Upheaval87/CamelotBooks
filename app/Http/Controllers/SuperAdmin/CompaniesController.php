@@ -13,6 +13,7 @@ use App\Services\Tenancy\CompanyProvisioningService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CompaniesController extends Controller
 {
@@ -149,6 +150,8 @@ class CompaniesController extends Controller
             'email' => 'nullable|email|max:255',
             'base_currency' => 'required|string|max:10',
             'fiscal_year_start_month' => 'required|integer|min:1|max:12',
+            'accounting_method' => ['required', 'string', Rule::in([\App\Models\Company::METHOD_ACCRUAL, \App\Models\Company::METHOD_CASH])],
+            'reporting_preference' => ['required', 'string', Rule::in([\App\Models\Company::REPORTING_ACCRUAL_VIEW, \App\Models\Company::REPORTING_CASH_VIEW])],
         ]);
 
         $before = $company->only(array_keys($validated));

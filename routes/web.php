@@ -20,6 +20,7 @@ use App\Http\Controllers\Accounting\BillController;
 use App\Http\Controllers\Accounting\BudgetController;
 use App\Http\Controllers\Accounting\PayrollController;
 use App\Http\Controllers\Accounting\CashFlowController;
+use App\Http\Controllers\Accounting\CoaController;
 use App\Http\Controllers\Accounting\CreditNoteController;
 use App\Http\Controllers\Accounting\CostCenterController;
 use App\Http\Controllers\Accounting\CustomerController;
@@ -268,6 +269,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit');
             Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
             Route::patch('accounts/{account}/toggle', [AccountController::class, 'toggle'])->name('accounts.toggle');
+
+            // Chart of Accounts Structure Setup — inherits the company's
+            // accounting method; never chooses it (spec §4).
+            Route::get('coa/setup', [CoaController::class, 'setup'])->name('coa.setup');
 
             // Journal Entries
             Route::get('journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');

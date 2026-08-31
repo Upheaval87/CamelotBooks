@@ -116,6 +116,29 @@
                     </div>
             </x-form-section>
 
+            {{-- Accounting Method (company-level) --}}
+            <x-form-section icon="M4 6c0 1.657 3.582 3 8 3s8-1.343 8-3-3.582-3-8-3-8 1.343-8 3zm0 0v12c0 1.657 3.582 3 8 3 1.26 0 2.44-.15 3.5-.4M20 10v8m-4-4h8M4 12c0 1.657 3.582 3 8 3" title="{{ __('Accounting Method') }}">
+                <div class="form-field form-field--full">
+                    <label class="sa-label">{{ __('How this company keeps its books') }}</label>
+                    <x-accounting.method-picker :method="$company->accounting_method ?? 'accrual'" :reporting="$company->reporting_preference ?? 'accrual_view'" />
+                    <x-input-error :messages="$errors->get('accounting_method')" class="mt-1" />
+                </div>
+
+                <div class="form-section-grid" style="--sa-cols: 2; margin-top: 14px;">
+                    <div class="form-field">
+                        <label class="sa-label" for="reporting_preference">{{ __('Reporting Preference') }}</label>
+                        <select id="reporting_preference" name="reporting_preference" class="sa-input">
+                            <option value="accrual_view" @selected(old('reporting_preference', $company->reporting_preference ?? 'accrual_view') === 'accrual_view')>Accrual view (recommended)</option>
+                            <option value="cash_view" @selected(old('reporting_preference', $company->reporting_preference ?? 'accrual_view') === 'cash_view')>Cash view</option>
+                        </select>
+                        <x-input-error :messages="$errors->get('reporting_preference')" class="mt-1" />
+                    </div>
+                    <div class="form-field">
+                        <p class="sa-help" style="margin-top:30px">Reporting display only — never changes the books. A cash-method company on Cash view renders cash-based statements.</p>
+                    </div>
+                </div>
+            </x-form-section>
+
             {{-- Form actions --}}
             <div class="sa-form-actions">
                 <a href="{{ route('superadmin.companies.show', $company) }}" class="sa-btn sa-btn--ghost">{{ __('Cancel') }}</a>
