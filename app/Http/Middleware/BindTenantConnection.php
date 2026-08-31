@@ -44,7 +44,12 @@ class BindTenantConnection
             return $next($request);
         }
 
-        if (!$user->hasAccessToCompany((int) $companyId)) {
+        // Super admins enter any tenant company as explicit, audited support
+        // access (CompanyController::select logs ACTION_SUPPORT) and therefore
+        // are not bound to hasAccessToCompany(). The tenant connection is still
+        // gated below on provisioning + is_active, so they cannot bind to a
+        // bogus/inactive company.
+        if (!$user->isSuperAdmin() && !$user->hasAccessToCompany((int) $companyId)) {
             session()->forget('current_company_id');
 
             return redirect()

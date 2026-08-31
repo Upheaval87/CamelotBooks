@@ -14,6 +14,7 @@ use App\Models\JournalEntryLine;
 use App\Models\SystemSetting;
 use App\Services\Accounting\BankService;
 use App\Services\Accounting\PettyCashService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Response;
@@ -167,6 +168,19 @@ class CashPositionController extends Controller
         ];
     }
 
+    /**
+     * Exclusive upper bound for a date-based range filter. Column values are
+     * datetimes (often 00:00:00 of the day), so a plain `date <= 'Y-m-d'`
+     * comparison drops the last day's rows (e.g. a transaction on the month's
+     * final day compares `2026-08-31 00:00:00 <= '2026-08-31'` as FALSE on
+     * sqlite and text-compared engines). Comparing `date < (end + 1 day)` is
+     * engine-portable, index-friendly, and includes the entire final day.
+     */
+    protected function dateUpperBound(string $date): Carbon
+    {
+        return Carbon::parse($date)->startOfDay()->addDay();
+    }
+
     public function index(Request $request)
     {
         $companyId = (int) session('current_company_id');
@@ -282,7 +296,7 @@ class CashPositionController extends Controller
             ->whereIn('journal_entry_lines.account_id', $accountIds)
             ->whereIn('journal_entries.status', $statuses)
             ->when($dateFrom, fn ($q) => $q->where('journal_entries.date', '>=', $dateFrom))
-            ->when($dateTo, fn ($q) => $q->where('journal_entries.date', '<=', $dateTo))
+            ->when($dateTo, fn ($q) => $q->where('journal_entries.date', '<', $this->dateUpperBound($dateTo)))
             ->when($f['branch_id'], fn ($q) => $q->where('journal_entries.branch_id', $f['branch_id']))
             ->when($f['cost_center_id'], fn ($q) => $q->where('journal_entries.cost_center_id', $f['cost_center_id']))
             ->when($f['source_module'], fn ($q) => $q->where('journal_entries.source_module', $f['source_module']))
@@ -375,7 +389,7 @@ class CashPositionController extends Controller
             ->whereIn('bank_account_id', $accountIds)
             ->where('is_reconciled', false)
             ->where('date', '>=', $f['date_from'])
-            ->where('date', '<=', $f['date_to'])
+            ->where('date', '<', $this->dateUpperBound($f['date_to']))
             ->when($f['branch_id'], fn ($q) => $q->where('branch_id', $f['branch_id']))
             ->when($f['cost_center_id'], fn ($q) => $q->where('cost_center_id', $f['cost_center_id']))
             ->when($f['q'], function ($q) use ($f) {
@@ -421,7 +435,7 @@ class CashPositionController extends Controller
             ->where('bank_transactions.company_id', $companyId)
             ->whereIn('bank_transactions.bank_account_id', $accountIds)
             ->where('bank_transactions.date', '>=', $f['date_from'])
-            ->where('bank_transactions.date', '<=', $f['date_to'])
+            ->where('bank_transactions.date', '<', $this->dateUpperBound($f['date_to']))
             ->when($f['branch_id'], fn ($q) => $q->where('bank_transactions.branch_id', $f['branch_id']))
             ->when($f['cost_center_id'], fn ($q) => $q->where('bank_transactions.cost_center_id', $f['cost_center_id']))
             ->when($f['source_module'], fn ($q) => $q->where('journal_entries.source_module', $f['source_module']))

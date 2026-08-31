@@ -69,7 +69,7 @@
                 </div>
                 @if($company->logo)
                 <label class="inline-flex items-center gap-2 text-xs text-[#dc2626] cursor-pointer">
-                    <input type="checkbox" name="remove_logo" value="1" class="rounded border-[#dceaea] accent-[#128f8e]" />
+                    <input type="checkbox" name="remove_logo" value="1" class="rounded border-[#dceaea]" />
                     Remove current logo
                 </label>
                 @endif

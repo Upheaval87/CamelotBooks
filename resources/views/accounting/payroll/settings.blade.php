@@ -62,7 +62,7 @@
                                 <label>{{ __('Auto-calculate PAYE') }}</label>
                                 <div style="display:flex;align-items:center;gap:10px;height:48px">
                                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink)">
-                                        <input type="checkbox" name="auto_calculate_paye" value="1" {{ old('auto_calculate_paye', '1') ? 'checked' : '' }} style="width:18px;height:18px;accent-color:var(--sec)">
+                                        <input type="checkbox" name="auto_calculate_paye" value="1" {{ old('auto_calculate_paye', '1') ? 'checked' : '' }} style="width:18px;height:18px">
                                         {{ __('Automatically calculate PAYE on each run') }}
                                     </label>
                                 </div>
@@ -194,7 +194,7 @@
                                         <label>{{ __('Taxable') }}</label>
                                         <div style="display:flex;align-items:center;gap:10px;height:48px">
                                             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ink)">
-                                                <input type="checkbox" name="is_taxable" value="1" style="width:18px;height:18px;accent-color:var(--sec)">
+                                                <input type="checkbox" name="is_taxable" value="1" style="width:18px;height:18px">
                                                 {{ __('Subject to PAYE tax') }}
                                             </label>
                                         </div>

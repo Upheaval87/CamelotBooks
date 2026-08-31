@@ -170,7 +170,7 @@
                         <x-input-error :messages="$errors->get('branch_limit')" class="mt-1" />
                     </div>
                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                        <input type="checkbox" x-model="unlimited" class="h-4 w-4 rounded border-shell accent-gold-600" />
+                        <input type="checkbox" x-model="unlimited" class="h-4 w-4 rounded border-shell" />
                         {{ __('Unlimited') }}
                     </label>
                     <x-superadmin.btn type="submit">

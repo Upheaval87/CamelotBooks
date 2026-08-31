@@ -104,6 +104,11 @@ class Budget extends Model
 
     // ── Scopes ─────────────────────────────────────────────────
 
+    public function scopeForCompany($query, int $companyId)
+    {
+        return $query->where('company_id', $companyId);
+    }
+
     public function scopeForStatus($query, string $status)
     {
         return $query->where('status', $status);

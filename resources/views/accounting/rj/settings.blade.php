@@ -33,7 +33,7 @@
                                 <label for="approval_required">Approval Required</label>
                                 <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
                                     <input type="hidden" name="approval_required" value="0">
-                                    <input type="checkbox" id="approval_required" name="approval_required" value="1" @if(old('approval_required', $settings->approval_required ?? 0)) checked @endif style="width:18px;height:18px;accent-color:var(--sec,#107C7B)">
+                                    <input type="checkbox" id="approval_required" name="approval_required" value="1" @if(old('approval_required', $settings->approval_required ?? 0)) checked @endif style="width:18px;height:18px">
                                     <span class="em">Require approval before posting</span>
                                 </div>
                             </div>
@@ -58,7 +58,7 @@
                                 <label for="block_locked_periods">Block Locked Periods</label>
                                 <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
                                     <input type="hidden" name="block_locked_periods" value="0">
-                                    <input type="checkbox" id="block_locked_periods" name="block_locked_periods" value="1" @if(old('block_locked_periods', $settings->block_locked_periods ?? 0)) checked @endif style="width:18px;height:18px;accent-color:var(--sec,#107C7B)">
+                                    <input type="checkbox" id="block_locked_periods" name="block_locked_periods" value="1" @if(old('block_locked_periods', $settings->block_locked_periods ?? 0)) checked @endif style="width:18px;height:18px">
                                     <span class="em">Prevent posting to locked accounting periods</span>
                                 </div>
                             </div>

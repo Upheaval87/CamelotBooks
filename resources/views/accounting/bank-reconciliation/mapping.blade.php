@@ -80,7 +80,7 @@
                         <div style="margin:10px 0 6px">
                             <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.893rem;font-weight:700;color:var(--ink,#0B2A2D);cursor:pointer">
                                 <input type="hidden" name="has_header" value="0" />
-                                <input type="checkbox" name="has_header" value="1" style="width:15px;height:15px;accent-color:var(--sec,#128F8E)" @checked(old('has_header', $hasHeader ?? true)) />
+                                <input type="checkbox" name="has_header" value="1" style="width:15px;height:15px" @checked(old('has_header', $hasHeader ?? true)) />
                                 {{ __('This file has a header row (skip the first row)') }}
                             </label>
                         </div>

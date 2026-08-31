@@ -302,7 +302,9 @@ class CashPositionTest extends TestCase
         );
 
         $response->assertOk();
-        $response->assertSee('Account Statement', false);
+        // Period-aware opening: the drill pre-fills the statement's date fields with the
+        // selected range so the statement's Opening/Closing match the Cash Position page.
+        $response->assertSee('value="' . $dateFrom . '"', false);
         $response->assertSee('1,100.00'); // opening = opening_balance 1000 + pre-period 100
         $response->assertSee('250.00');   // period debit
         $response->assertSee('1,350.00'); // closing = 1100 + 250

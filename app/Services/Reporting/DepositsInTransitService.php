@@ -3,9 +3,10 @@
 namespace App\Services\Reporting;
 
 use App\Models\DefaultAccountMapping;
+use App\Models\BankDeposit;
+use App\Models\BankDepositLine;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
-use App\Models\BankTransaction;
 
 class DepositsInTransitService
 {
@@ -22,19 +23,13 @@ class DepositsInTransitService
             ];
         }
 
-        $depositedJeIds = [];
-        $depositTransactions = BankTransaction::where('company_id', $companyId)
-            ->where('source_type', 'make_deposit')
-            ->whereNotNull('reference')
-            ->get();
-
-        foreach ($depositTransactions as $tx) {
-            $decoded = json_decode($tx->reference, true);
-            if (is_array($decoded)) {
-                $depositedJeIds = array_merge($depositedJeIds, $decoded);
-            }
-        }
-        $depositedJeIds = array_unique($depositedJeIds);
+        // Durable exclusion: skip 1050 lines already claimed by a non-void deposit.
+        $claimedLineIds = BankDepositLine::whereExists(function ($q) {
+            $q->selectRaw(1)
+                ->from('bank_deposits')
+                ->whereColumn('bank_deposits.id', 'bank_deposit_lines.deposit_id')
+                ->where('bank_deposits.status', '!=', BankDeposit::STATUS_VOID);
+        })->pluck('source_id');
 
         $query = JournalEntryLine::where('account_id', $undepositedAccount->id)
             ->whereHas('journalEntry', function ($q) use ($companyId) {
@@ -44,8 +39,8 @@ class DepositsInTransitService
             ->where('debit', '>', 0)
             ->with('journalEntry');
 
-        if (!empty($depositedJeIds)) {
-            $query->whereNotIn('journal_entry_id', $depositedJeIds);
+        if ($claimedLineIds->isNotEmpty()) {
+            $query->whereNotIn('id', $claimedLineIds);
         }
 
         $outstandingLines = $query->orderBy('created_at', 'asc')->get();

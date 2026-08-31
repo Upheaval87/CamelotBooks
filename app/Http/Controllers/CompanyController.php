@@ -49,7 +49,10 @@ class CompanyController extends Controller
 
         $company = Company::query()->find($id);
 
-        if (!$company || !$user->hasAccessToCompany($id)) {
+        // Super admins enter any company as explicit, audited support access
+        // (ACTION_SUPPORT below) and so are not bound to hasAccessToCompany().
+        // A nonexistent/forged id still 404s via the falsy $company.
+        if (!$company || (!$user->isSuperAdmin() && !$user->hasAccessToCompany($id))) {
             abort(404);
         }
 

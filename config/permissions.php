@@ -55,7 +55,7 @@ return [
 
         // ── Banking ──
         'bank-accounts' => ['view', 'create', 'edit', 'void'],
-        'deposits'       => ['view', 'create'],
+        'deposits'       => ['view', 'create', 'void'],
         'cheques'        => ['view', 'create', 'edit', 'void'],
         'petty-cash'     => ['view', 'create', 'edit', 'void', 'expense', 'replenish', 'establish'],
         'bank-reconciliations' => ['view', 'create', 'edit', 'import', 'approve', 'complete', 'reverse', 'match', 'adjust'],
@@ -523,6 +523,7 @@ return [
                 // Banking
                 'bank-accounts.view',
                 'bank-reconciliations.view', 'bank-reconciliations.approve',
+                'deposits.view', 'deposits.void',
                 // Accounting — view only
                 'chart-of-accounts.view',
                 'accounting-periods.view',

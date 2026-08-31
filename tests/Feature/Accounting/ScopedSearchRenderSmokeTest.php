@@ -855,4 +855,42 @@ class ScopedSearchRenderSmokeTest extends TestCase
 
         $this->assertCount(count($routes), $routes);
     }
+
+    public function test_invoice_create_quick_search_panel_is_nested_in_line_items_section(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('accounting.invoices.create'));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // The shared quick-search overlay must be the FIRST child of the line-items section
+        // so it renders IN FRONT OF the card (the section is position:relative).
+        $sectionStart = strpos($html, '<section class="card card-sec relative z-30"');
+        $this->assertNotFalse($sectionStart, 'line-items section not found');
+
+        $beforeCard = substr($html, $sectionStart, 1200);
+        $panelPos = strpos($beforeCard, 'id="inv-quick"');
+        $this->assertNotFalse($panelPos, 'quick-search panel not found');
+
+        // Panel must appear BEFORE the sec-head of Line Items (it's the first child, overlaying).
+        $headPos = strpos($beforeCard, 'sec-head');
+        $this->assertNotFalse($headPos, 'sec-head not found');
+        $this->assertLessThan($headPos, $panelPos, 'quick-search panel must be the first child of the line-items section (overlay)');
+
+        // The line-items section itself carries the relative positioning the overlay anchors to.
+        $this->assertStringContainsString('relative z-30', $html);
+    }
+
+    public function test_topbar_banking_dropdown_lists_deposits_cheques_petty_cash(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('accounting.customers.index'));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // The Banking module nav group is feature-gated (banking enabled in setUp).
+        foreach (['Banking Centre', 'Bank Accounts', 'Transfers', 'Deposits', 'Cheques', 'Petty Cash', 'Bank Reconciliation'] as $label) {
+            $this->assertStringContainsString('>' . e($label) . '<', str_replace(['&#039;', '&quot;'], ["'", '"'], $html), "Banking nav missing: {$label}");
+        }
+    }
 }

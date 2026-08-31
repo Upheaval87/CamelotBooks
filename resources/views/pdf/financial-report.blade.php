@@ -27,7 +27,8 @@
 
      §9.9 PAGINATION: dompdf automatically repeats <thead> on page breaks.
      We use a wrapper table with <thead> for the column headers so they
-     repeat automatically. The header/footer chrome is applied via
+     repeat automatically. The report title renders inline in the body
+     (not in a brand band); only the footer chrome is applied via
      components/pdf/chrome included from the generating controller.
 
      RULES: no meta block; actual-year column headers; footer matches
@@ -162,18 +163,9 @@
   @endif
 </style>
 
-@if($pdfMode)
-  {{-- ── §9.1 HEADER (repeated on every page via page_text callback) ── --}}
-  @include('components.pdf.chrome', ['part' => 'header',
-      'title' => strtoupper($title),
-      'number' => $periodLabel,
-      'titleSmall' => false,
-  ])
-@else
-  {{-- ── HTML preview title ── --}}
-  <h1 class="frp-preview-title" style="font-size:18px;font-weight:800;margin:0 0 4px;color:#0c3539;">{{ strtoupper($title) }}</h1>
-  <p style="font-size:11px;color:#6b7280;margin:0 0 16px;">{{ $periodLabel }} | {{ $currency }}</p>
-@endif
+{{-- ── §9.1 REPORT TITLE (inline body header, no brand band) ── --}}
+<h1 class="frp-preview-title" style="font-size:{{ $pdfMode ? '14px' : '18px' }};font-weight:800;margin:0 0 4px;color:#0c3539;">{{ strtoupper($title) }}</h1>
+<p style="font-size:11px;color:#6b7280;margin:0 0 16px;">{{ $periodLabel }} | {{ $currency }}</p>
 
 <table class="frp-table">
   @if(count($columns) > 0)

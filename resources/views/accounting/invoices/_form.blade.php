@@ -175,6 +175,17 @@
 
                 {{-- (c) line items --}}
                 <section class="card card-sec relative z-30" style="margin-top:16px">
+                    {{-- quick item search overlay -- floats IN FRONT OF the line-items card while typing in a line's Item Name --}}
+                    <div id="inv-quick" class="qs-panel" style="display:none" role="listbox" aria-label="{{ __('Quick item search results') }}">
+                        <div class="qs-head">
+                            <span class="qs-title">{{ __('Quick Item Search') }}</span>
+                            <span class="qs-context" id="inv-quick-context"></span>
+                        </div>
+                        <div class="qs-results" id="inv-quick-results"></div>
+                        <div class="qs-state" id="inv-quick-loading" style="display:none">{{ __('Searching…') }}</div>
+                        <div class="qs-state" id="inv-quick-none" style="display:none">{{ __('No items match that search.') }}</div>
+                    </div>
+
                     <div class="sec-head">
                         <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
                         <h2>{{ __('Line Items') }}</h2>
@@ -291,14 +302,15 @@
                     <input type="text" class="bill-ci bill-sku" value="${esc(d.sku || '')}" placeholder="Code" readonly tabindex="-1" aria-label="Item code" />
                 </td>
                 <td>
-                    ${scopedSearchFieldHtml({
-                        name: `lines[${idx}][product_id]`,
-                        entity: 'product',
-                        searchUrl: PRODUCT_SEARCH_URL,
-                        value: d.product_id || '',
-                        label: d.label || '',
-                        placeholder: 'Search items…',
-                    })}
+                    <input type="hidden" name="lines[${idx}][product_id]" class="inv-product-id" value="${esc(d.product_id || '')}" />
+                    <input
+                        type="text"
+                        class="bill-ci inv-product-search"
+                        value="${esc(d.label || '')}"
+                        placeholder="Search items…"
+                        autocomplete="off"
+                        aria-label="Item name"
+                    />
                 </td>
                 <td>
                     <input type="text" name="lines[${idx}][description]" class="bill-ci" value="${esc(d.description || '')}" placeholder="Description" aria-label="Description" readonly />
@@ -370,8 +382,8 @@
         const num = sel => parse(g(sel));
 
         return {
-            product_id: g('[name*="[product_id]"]'),
-            label: (row.querySelector('.scoped-search-field input') || { value: '' }).value || '',
+            product_id: g('.inv-product-id'),
+            label: g('.inv-product-search'),
             sku: g('.bill-sku'),
             description: g('[name*="[description]"]'),
             quantity: num('.bill-qty'),
@@ -450,28 +462,28 @@
 
     document.getElementById('inv-add-line').addEventListener('click', () => invAddLine());
 
-    const invLinesBody = document.getElementById('inv-lines-body');
-    invLinesBody.addEventListener('item-selected', e => {
-        const row = e.target.closest('tr.inv-row');
-        if (!row || !row.querySelector('[name*="[product_id]"]')) return;
-        const item = e.detail.item || {};
+    // ---- shared quick item search panel (results appear ABOVE the line-items card) ----
+    const invQuick = document.getElementById('inv-quick');
+    const invQuickResults = document.getElementById('inv-quick-results');
+    const invQuickContext = document.getElementById('inv-quick-context');
+    const invQuickLoading = document.getElementById('inv-quick-loading');
+    const invQuickNone = document.getElementById('inv-quick-none');
 
-        if (item.sku != null) {
-            const sku = row.querySelector('.bill-sku');
-            if (sku) sku.value = item.sku;
-        }
-        if (item.description) {
-            const desc = row.querySelector('[name*="[description]"]');
-            if (desc) desc.value = item.description;
-        }
-        if (item.sales_price != null) {
-            const price = row.querySelector('.bill-price');
-            if (price) price.value = parse(item.sales_price).toFixed(2);
-        }
-        if (item.tax_rate != null) {
-            const rate = row.querySelector('.inv-tax-rate');
-            if (rate) rate.value = item.tax_rate;
-        }
+    let invActiveSearchRow = null;
+    let invQuickIndex = -1;
+    let invQuickItems = [];
+
+    function invFillRow(row, item) {
+        if (item.sku != null) { const sku = row.querySelector('.bill-sku'); if (sku) sku.value = item.sku; }
+        if (item.description) { const desc = row.querySelector('[name*="[description]"]'); if (desc) desc.value = item.description; }
+        if (item.sales_price != null) { const price = row.querySelector('.bill-price'); if (price) price.value = parse(item.sales_price).toFixed(2); }
+        if (item.tax_rate != null) { const rate = row.querySelector('.inv-tax-rate'); if (rate) rate.value = item.tax_rate; }
+
+        const pid = row.querySelector('.inv-product-id');
+        const search = row.querySelector('.inv-product-search');
+        if (pid && item.id !== undefined && item.id !== null) pid.value = item.id;
+        if (search && item.label != null) search.value = item.label;
+
         if (item.income_account_id) {
             const acctInput = row.querySelector('[name*="[income_account_id]"]');
             if (acctInput) {
@@ -483,13 +495,106 @@
             }
         }
         invUpdateTotals();
-    });
+    }
 
+    function invQuickShowState(state) {
+        invQuickResults.innerHTML = '';
+        invQuickLoading.style.display = state === 'loading' ? '' : 'none';
+        invQuickNone.style.display = state === 'none' ? '' : 'none';
+        invQuick.style.display = invActiveSearchRow ? '' : 'none';
+    }
+
+    function invQuickClose() {
+        invActiveSearchRow = null;
+        invQuickItems = [];
+        invQuickIndex = -1;
+        invQuick.style.display = 'none';
+        invQuickResults.innerHTML = '';
+        invQuickLoading.style.display = 'none';
+        invQuickNone.style.display = 'none';
+    }
+
+    async function invQuickRun(row, q) {
+        q = (q || '').trim();
+        if (!q) { invQuickClose(); return; }
+        invActiveSearchRow = row;
+        const rowIndex = Array.from(document.querySelectorAll('#inv-lines-body tr.inv-row')).indexOf(row) + 1;
+        invQuickContext.textContent = 'Row ' + rowIndex;
+        invQuickShowState('loading');
+
+        try {
+            const r = await fetch(PRODUCT_SEARCH_URL + '?q=' + encodeURIComponent(q));
+            if (!r.ok) throw new Error('search failed');
+            const items = await r.json();
+            if (invActiveSearchRow !== row) return;
+            invQuickItems = items;
+            invQuickIndex = -1;
+            if (!items.length) { invQuickShowState('none'); return; }
+
+            invQuickResults.innerHTML = items.map((it, i) => `
+                <div class="qs-option" data-index="${i}" role="option" aria-selected="false">
+                    <span class="qs-option-label">${esc(it.label || '')}</span>
+                    ${it.sku ? `<span class="qs-option-sku">${esc(it.sku)}</span>` : ''}
+                </div>`).join('');
+            invQuickLoading.style.display = 'none';
+            invQuick.style.display = '';
+        } catch (e) {
+            invQuickShowState('none');
+        }
+    }
+
+    function invQuickPick(row, item) {
+        invFillRow(row, item);
+        invQuickClose();
+        const qty = row.querySelector('.bill-qty');
+        if (qty) qty.focus();
+    }
+
+    function invQuickMove(dir) {
+        if (!invQuickItems.length) return;
+        invQuickIndex += dir;
+        if (invQuickIndex < 0) invQuickIndex = invQuickItems.length - 1;
+        if (invQuickIndex >= invQuickItems.length) invQuickIndex = 0;
+        Array.from(invQuickResults.children).forEach((el, i) => {
+            el.classList.toggle('is-highlighted', i === invQuickIndex);
+            el.setAttribute('aria-selected', i === invQuickIndex ? 'true' : 'false');
+        });
+    }
+
+    const invLinesBody = document.getElementById('inv-lines-body');
+    invLinesBody.addEventListener('focusin', e => {
+        const s = e.target.closest('.inv-product-search');
+        if (s && s.value.trim()) { const row = s.closest('tr.inv-row'); invQuickRun(row, s.value); }
+    });
     invLinesBody.addEventListener('input', e => {
+        const s = e.target.closest('.inv-product-search');
+        if (s) { const row = s.closest('tr.inv-row'); invQuickRun(row, s.value); return; }
         if (e.target.closest('.bill-qty, .bill-price, .bill-disc-pct')) invUpdateTotals();
     });
     invLinesBody.addEventListener('change', e => {
         if (e.target.closest('.bill-qty, .bill-price, .bill-disc-pct')) invUpdateTotals();
+    });
+    invLinesBody.addEventListener('keydown', e => {
+        if (!e.target.closest('.inv-product-search')) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); invQuickMove(1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); invQuickMove(-1); }
+        else if (e.key === 'Enter') {
+            e.preventDefault();
+            const row = e.target.closest('tr.inv-row');
+            if (!row || !invQuickItems.length) return;
+            const item = invQuickIndex >= 0 ? invQuickItems[invQuickIndex] : invQuickItems[0];
+            invQuickPick(row, item);
+        }
+        else if (e.key === 'Escape') { invQuickClose(); }
+    });
+    invQuickResults.addEventListener('click', e => {
+        const opt = e.target.closest('.qs-option');
+        if (!opt || !invActiveSearchRow) return;
+        const idx = parseInt(opt.getAttribute('data-index'), 10);
+        if (invQuickItems[idx]) invQuickPick(invActiveSearchRow, invQuickItems[idx]);
+    });
+    document.addEventListener('click', e => {
+        if (invActiveSearchRow && !e.target.closest('#inv-quick') && !e.target.closest('.inv-product-search')) invQuickClose();
     });
 
     document.getElementById('invoice-form').addEventListener('submit', invUpdateTotals);

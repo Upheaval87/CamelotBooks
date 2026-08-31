@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Company;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Response;
@@ -33,7 +34,8 @@ class GeneralLedgerController extends Controller
 
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereHas('journalEntry', function ($q) use ($request) {
-                $q->whereBetween('date', [$request->date_from, $request->date_to]);
+                $q->where('date', '>=', $request->date_from)
+                ->where('date', '<', $this->dateUpperBound($request->date_to));
             });
         }
 
@@ -117,6 +119,18 @@ class GeneralLedgerController extends Controller
         return view('accounting.general-ledger.index', compact('glPaginator', 'glStats', 'accounts', 'branches', 'costCenters'));
     }
 
+    /**
+     * Exclusive upper bound for a date-range filter. JournalEntry.date is a
+     * datetime; a plain `date BETWEEN 'from' AND 'to'` drops rows dated on the
+     * final calendar day (e.g. `2026-08-31 00:00:00 <= '2026-08-31'` is FALSE on
+     * sqlite/text-compared engines). Using `date >= from AND date < (to + 1 day)`
+     * is engine-portable, index-friendly, and includes the whole last day.
+     */
+    protected function dateUpperBound(string $date): Carbon
+    {
+        return Carbon::parse($date)->startOfDay()->addDay();
+    }
+
     public function account(Request $request, int $accountId)
     {
         $companyId = session('current_company_id');
@@ -132,7 +146,8 @@ class GeneralLedgerController extends Controller
 
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereHas('journalEntry', function ($q) use ($request) {
-                $q->whereBetween('date', [$request->date_from, $request->date_to]);
+                $q->where('date', '>=', $request->date_from)
+                ->where('date', '<', $this->dateUpperBound($request->date_to));
             });
         }
 
@@ -242,7 +257,8 @@ class GeneralLedgerController extends Controller
 
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereHas('journalEntry', function ($q) use ($request) {
-                $q->whereBetween('date', [$request->date_from, $request->date_to]);
+                $q->where('date', '>=', $request->date_from)
+                ->where('date', '<', $this->dateUpperBound($request->date_to));
             });
         }
 
@@ -319,7 +335,8 @@ class GeneralLedgerController extends Controller
 
         if ($request->filled('date_from') && $request->filled('date_to')) {
             $query->whereHas('journalEntry', function ($q) use ($request) {
-                $q->whereBetween('date', [$request->date_from, $request->date_to]);
+                $q->where('date', '>=', $request->date_from)
+                ->where('date', '<', $this->dateUpperBound($request->date_to));
             });
         }
 

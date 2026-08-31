@@ -269,6 +269,47 @@ class GlobalSearchTest extends TestCase
         $this->assertNotEmpty($response->json());
     }
 
+    public function test_global_search_includes_budgets_when_feature_enabled(): void
+    {
+        // Regression: the budget() catalog entity called Budget::forCompany(), which
+        // the model lacked → global search 500'd with "Call to undefined method
+        // App\Models\Budget::forCompany()" when the budgets feature was enabled.
+        \App\Services\FeatureManagement::enable($this->company->id, 'budgets');
+
+        $fy = \App\Models\FiscalYear::create([
+            'company_id' => $this->company->id,
+            'name' => 'FY 2026',
+            'label' => 'FY 2026',
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'status' => 'open',
+        ]);
+
+        \App\Models\Budget::create([
+            'company_id' => $this->company->id,
+            'name' => 'Marketing Budget',
+            'code' => 'BUD-0001',
+            'type' => 'operating',
+            'fiscal_year_id' => $fy->id,
+            'period' => 'annual',
+            'currency' => 'USD',
+            'status' => 'draft',
+            'total_income' => 100000,
+            'total_expenses' => 80000,
+            'prepared_by' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('accounting.search.global', ['q' => 'Marketing']));
+
+        $response->assertOk();
+        $budgetGroup = collect($response->json())->firstWhere('key', 'budget');
+        $this->assertNotNull($budgetGroup);
+        $this->assertCount(1, $budgetGroup['results']);
+        $this->assertStringContainsString('Marketing Budget', $budgetGroup['results'][0]['title']);
+        $this->assertArrayHasKey('url', $budgetGroup['results'][0]);
+    }
+
     public function test_global_search_respects_user_permissions(): void
     {
         // bookkeeper passes the expanded gate but lacks users.view / branches.view / fiscal-years.view

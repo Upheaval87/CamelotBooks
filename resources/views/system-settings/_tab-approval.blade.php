@@ -62,7 +62,7 @@
                         <input type="hidden" name="active.{{ $type }}" value="0">
                         <input type="checkbox" name="active.{{ $type }}" value="1"
                             id="active_{{ $type }}" {{ $active ? 'checked' : '' }}
-                            class="rounded border-[#dceaea] accent-[#128f8e] focus:ring-[#128f8e]" />
+                            class="rounded border-[#dceaea] focus:ring-[#128f8e]" />
                         <label for="active_{{ $type }}" class="text-sm font-medium text-[#0b2a2d]">{{ $label }}</label>
                     </div>
                     <div class="flex-1">

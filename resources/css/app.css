@@ -7,6 +7,29 @@
 /* Keep the pinned favourites rail (fixed-position) from ever causing horizontal scroll. */
 html, body { overflow-x: clip; }
 
+/* ===== GLOBAL CHECKBOX — #128F8E WHEN CHECKED (single source of truth) ===== */
+input[type="checkbox"]{
+  appearance:none;-webkit-appearance:none;
+  width:16px;height:16px;margin:0;flex:none;
+  border:1.5px solid #9AAEAE;border-radius:4px;background:#fff;
+  display:inline-grid;place-content:center;vertical-align:middle;
+  cursor:pointer;transition:border-color .12s,background .12s;
+}
+input[type="checkbox"]:hover:not(:checked){border-color:#128F8E}
+input[type="checkbox"]:checked{background:#128F8E;border-color:#128F8E}
+input[type="checkbox"]:checked::after{
+  content:"";width:9px;height:5px;margin-top:-2px;
+  border-left:2px solid #fff;border-bottom:2px solid #fff;
+  transform:rotate(-45deg);
+}
+input[type="checkbox"]:indeterminate{background:#128F8E;border-color:#128F8E}
+input[type="checkbox"]:indeterminate::after{content:"";width:8px;height:2px;background:#fff}
+input[type="checkbox"]:focus-visible{outline:2px solid #128F8E;outline-offset:2px}
+input[type="checkbox"]:disabled{opacity:.45;cursor:not-allowed}
+/* size variant where 16px is too small (tables may keep 16; modals same) */
+input[type="checkbox"].lg{width:18px;height:18px}
+
+
 :root {
     --ink: #0B2A2D;
     --ink-soft: #52696B;
@@ -2596,7 +2619,7 @@ html, body { overflow-x: clip; }
     display: inline-flex; align-items: center; gap: 8px; font-size: 0.893rem;
     color: var(--ink-soft); cursor: pointer; margin-right: auto; user-select: none;
 }
-.report-toolbar .zero-toggle input { accent-color: var(--gold-600, #0C6B6A); width: 14px; height: 14px; }
+.report-toolbar .zero-toggle input { cursor: pointer; }
 
 /* --- Column header bar (#E2ECEC) â€” appears once per report --- */
 .report-col-bar {
@@ -3294,14 +3317,8 @@ a.todo-link-chip:hover { background: #EFE5CE; }
     color: var(--ink);
 }
 .auth-login-checkbox {
-    width: 17px;
-    height: 17px;
-    border-radius: 6px;
-    border: 1.5px solid var(--border);
-    accent-color: var(--sec);
     cursor: pointer;
 }
-.auth-login-checkbox:checked { background-color: var(--sec); border-color: var(--sec); }
 
 /* Forgot password link */
 .auth-login-forgot {
@@ -3946,11 +3963,6 @@ select.sa-input {
     cursor: pointer;
 }
 .sa-check-item input[type="checkbox"] {
-    width: 15px;
-    height: 15px;
-    flex: none;
-    border-radius: 4px;
-    accent-color: var(--sa-accent);
     cursor: pointer;
 }
 
@@ -9328,8 +9340,7 @@ textarea.q-input {
 .br-tbl { min-width: 1080px; }
 .br-pag { padding: 14px 18px; border-top: 1px solid var(--line, #E2ECEC); }
 
-/* checkboxes inside suite tables */
-.suite table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--sec, #107C7B); cursor: pointer; }
+/* checkboxes inside suite tables — governed by the global checkbox rule */
 
 /* responsive */
 @media (max-width: 1100px) {
@@ -9809,7 +9820,7 @@ textarea.q-input {
 .ex-suite .att .name{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ex-suite .att .remove{display:inline-flex;align-items:center;gap:5px;color:var(--faint,#5F7A7C);cursor:pointer;font-size:0.714rem;font-weight:600}
 .ex-suite .att .remove:hover{color:var(--red,#dc2626)}
-.ex-suite .att .remove input{accent-color:var(--red,#dc2626)}
+.ex-suite .att .remove input{width:14px;height:14px}
 .ex-suite .drop{margin-top:16px;display:block;width:100%;border:1.5px dashed var(--border,#DCEAEA);border-radius:12px;background:rgba(238,244,244,.45);padding:22px 18px;text-align:center;cursor:pointer;color:var(--muted,#52696B);font-size:0.893rem;transition:all .15s}
 .ex-suite .drop:hover,.ex-suite .drop.over{border-color:var(--sec,#107C7B);background:rgba(223,247,246,.5);color:var(--ink,#0B2A2D)}
 .ex-suite .drop svg{margin:0 auto 8px;color:var(--faint,#5F7A7C)}
@@ -10552,7 +10563,7 @@ td.num .ac-ci { text-align: right }
 .ac-tsel { height: 36px; border-radius: 10px; border: 1px solid var(--ac-border); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f7476' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center; padding: 0 30px 0 11px; font-size: 12.5px; color: var(--ac-ink); font-family: inherit; appearance: none }
 .ac-tsel:focus { outline: none; border-color: var(--ac-sec); box-shadow: 0 0 0 3px rgba(18,143,142,.13) }
 .ac-ck { display: flex; align-items: center; gap: 8px; justify-content: flex-end; font-size: 11.5px; font-weight: 600; color: var(--ac-muted); cursor: pointer }
-.ac-ck input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--ac-sec) }
+.ac-ck input[type="checkbox"] { width: 16px; height: 16px }
 .ac-empty { padding: 34px; text-align: center; color: var(--ac-muted); font-size: 13px }
 .ac-empty .ac-empty-ic { width: 40px; height: 40px; border-radius: 12px; background: rgba(17,69,75,.06); display: grid; place-items: center; font-size: 17px; margin: 0 auto 10px }
 .ac-actionbar { position: sticky; bottom: 16px; display: flex; gap: 10px; justify-content: flex-end; padding: 14px 18px; margin-top: 16px }
@@ -11821,10 +11832,7 @@ select.wz-in { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 .pos .pos-split-row--active { border-color: var(--pos-sec); background: rgba(18,143,142,.03) }
 .pos .pos-split-label { display: flex; align-items: center; gap: 8px; cursor: pointer }
 .pos .pos-split-dot { width: 10px; height: 10px; border-radius: 50% }
-.pos .pos-checkbox { width: 16px; height: 16px; border-radius: 4px; accent-color: var(--pos-sec) }
-.pos .pos-checkbox--cash { accent-color: var(--pos-green) }
-.pos .pos-checkbox--card { accent-color: var(--pos-amber) }
-.pos .pos-checkbox--mobile { accent-color: var(--pos-sec) }
+.pos .pos-checkbox { width: 16px; height: 16px; border-radius: 4px }
 
 .pos .pos-in-lg { height: 52px; font-size: 22px; font-weight: 700 }
 .pos .pos-in-sm { height: 36px; font-size: 12px; padding: 0 10px; border-radius: 8px }
@@ -13257,7 +13265,7 @@ select.pos-auth-input{appearance:none;-webkit-appearance:none;padding-right:2.25
 
 /* Remember me */
 .pos-auth-remember{display:flex;align-items:center;gap:.5rem;margin-bottom:1.25rem;font-size:.8125rem;color:#5F7476;cursor:pointer}
-.pos-auth-remember input{width:16px;height:16px;border-radius:4px;accent-color:#128F8E;cursor:pointer}
+.pos-auth-remember input{cursor:pointer}
 
 /* Submit button */
 .pos-auth-submit{width:100%;height:2.75rem;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:none;border-radius:10px;font-family:inherit;font-size:.875rem;font-weight:700;color:#EAFFFF;background:linear-gradient(180deg,#17565D,#0C3539);box-shadow:0 6px 16px rgba(12,53,57,.25);cursor:pointer;transition:all .15s}
@@ -13694,7 +13702,7 @@ select.pos-auth-input{appearance:none;-webkit-appearance:none;padding-right:2.25
 .pos-m-split-due{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:#F5F7F6;border-radius:10px;margin-bottom:1rem;font-weight:700}
 .pos-m-split-row{border:1px solid #E4EAE8;border-radius:10px;padding:.75rem;margin-bottom:.5rem}
 .pos-m-split-toggle{display:flex;align-items:center;gap:.5rem;font-weight:600;font-size:.8125rem;cursor:pointer}
-.pos-m-split-toggle input[type="checkbox"]{accent-color:#0E6E67}
+.pos-m-split-toggle input[type="checkbox"]{width:16px;height:16px;cursor:pointer}
 .pos-m-split-fields{display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
 .pos-m-split-remaining{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;font-size:.875rem;font-weight:700}
 
@@ -14296,7 +14304,7 @@ select.pos-auth-input{appearance:none;-webkit-appearance:none;padding-right:2.25
 /* ---- toolbar (index select-all) ---- */
 .dp .dp-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line,#E2ECEC); }
 .dp .dp-check { display: inline-flex; align-items: center; gap: 8px; font-size: .86rem; color: var(--muted,#5F7476); cursor: pointer; }
-.dp .dp-checkbox { width: 16px; height: 16px; accent-color: var(--sec,#128F8E); }
+.dp .dp-checkbox { width: 16px; height: 16px; cursor: pointer; }
 .dp .dp-toolbar-actions { display: inline-flex; align-items: center; gap: 12px; }
 .dp .dp-toolbar-count { font-size: .82rem; color: var(--muted,#5F7476); }
 
@@ -14444,7 +14452,6 @@ select.pos-auth-input{appearance:none;-webkit-appearance:none;padding-right:2.25
 .dp2-suite tr:last-child td { border-bottom: none; }
 .dp2-suite td.dp2-num { font: 700 12.5px Inter, system-ui, sans-serif; color: var(--ink); font-variant-numeric: tabular-nums; }
 .dp2-suite .dp2-ref { font-weight: 700; color: var(--ink); }
-.dp2-suite input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--sec); cursor: pointer; }
 .dp2-suite .dp2-depbtn { width: 32px; height: 32px; border-radius: 9px; border: 1px solid rgba(18,143,142,.5); background: rgba(18,143,142,.08); color: var(--sec); cursor: pointer; font-size: 14px; }
 .dp2-suite .dp2-depbtn:hover { background: var(--sec); color: #fff; }
 .dp2-suite .dp2-xbtn { border: none; background: none; color: var(--red); cursor: pointer; font-size: 13px; }

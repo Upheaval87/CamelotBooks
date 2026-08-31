@@ -90,7 +90,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:5,1')
         ->name('companies.store');
 
-    Route::post('/companies/{id}/select', [CompanyController::class, 'select'])
+    // Accept both GET and POST. The POST form is the primary UI flow (CSRF-protected);
+    // GET is a convenience for direct navigation/bookmarks. In BOTH cases the select()
+    // method re-verifies server-side access via hasAccessToCompany() and 404s on forged
+    // or unauthorized ids, so a GET cannot escalate access.
+    Route::match(['get', 'post'], '/companies/{id}/select', [CompanyController::class, 'select'])
         ->middleware('throttle:20,1')
         ->name('companies.select');
 
@@ -580,6 +584,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('banking/deposits', [BankingDepositController::class, 'index'])->name('banking.deposits');
                 Route::get('banking/deposits/create', [BankingDepositController::class, 'create'])->name('banking.deposits.create');
                 Route::post('banking/deposits', [BankingDepositController::class, 'store'])->name('banking.deposits.store');
+                Route::get('banking/deposits/{deposit}', [BankingDepositController::class, 'show'])->name('banking.deposits.show');
+                Route::post('banking/deposits/{deposit}/void', [BankingDepositController::class, 'void'])->name('banking.deposits.void');
                 Route::get('banking/cheques', [BankingChequeController::class, 'index'])->name('banking.cheques');
                 Route::get('banking/cheques/create', [BankingChequeController::class, 'create'])->name('banking.cheques.create');
                 Route::post('banking/cheques', [BankingChequeController::class, 'store'])->name('banking.cheques.store');

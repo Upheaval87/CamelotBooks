@@ -86,7 +86,7 @@
                 <div class="pr-fc-bd" style="padding-top:16px">
                     <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
                         <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer">
-                            <input type="checkbox" id="select-all-employees" style="accent-color:var(--sec)">
+                            <input type="checkbox" id="select-all-employees">
                             {{ __('Select All') }} ({{ $employees->count() }})
                         </label>
                         @if($employees->count() > 0)
@@ -99,7 +99,7 @@
                             <thead>
                                 <tr>
                                     <th style="width:40px">
-                                        <input type="checkbox" id="select-all-employees-head" style="accent-color:var(--sec)">
+                                        <input type="checkbox" id="select-all-employees-head">
                                     </th>
                                     <th>{{ __('Employee #') }}</th>
                                     <th>{{ __('Name') }}</th>
@@ -112,7 +112,7 @@
                                 @forelse($employees as $employee)
                                     <tr>
                                         <td>
-                                            <input type="checkbox" name="employee_ids[]" value="{{ $employee->id }}" class="employee-checkbox" {{ in_array($employee->id, old('employee_ids', [])) ? 'checked' : '' }} style="accent-color:var(--sec)">
+                                            <input type="checkbox" name="employee_ids[]" value="{{ $employee->id }}" class="employee-checkbox" {{ in_array($employee->id, old('employee_ids', [])) ? 'checked' : '' }}>
                                         </td>
                                         <td class="pr-mono">{{ $employee->employee_number }}</td>
                                         <td style="font-weight:600;color:var(--ink)">{{ $employee->full_name }}</td>

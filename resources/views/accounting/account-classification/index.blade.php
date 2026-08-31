@@ -55,7 +55,7 @@
                                     </select>
                                 </td>
                                 <td style="text-align:center">
-                                    <input type="checkbox" name="is_non_cash[{{ $account->id }}]" value="1" {{ ($account->is_non_cash ?? false) ? 'checked' : '' }} style="width:16px;height:16px;accent-color:var(--ac-sec)">
+                                    <input type="checkbox" name="is_non_cash[{{ $account->id }}]" value="1" {{ ($account->is_non_cash ?? false) ? 'checked' : '' }} style="width:16px;height:16px">
                                 </td>
                             </tr>
                             @empty

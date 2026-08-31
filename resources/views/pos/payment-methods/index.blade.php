@@ -67,7 +67,7 @@
                             </div>
                             <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
                                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--pos-ink)">
-                                    <input type="checkbox" name="requires_reference" value="1" {{ old('requires_reference') ? 'checked' : '' }} style="width:16px;height:16px;accent-color:var(--pos-sec)">
+                                    <input type="checkbox" name="requires_reference" value="1" {{ old('requires_reference') ? 'checked' : '' }} style="width:16px;height:16px">
                                     Requires Reference Number
                                 </label>
                             </div>

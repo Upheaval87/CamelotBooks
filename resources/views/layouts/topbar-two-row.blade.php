@@ -91,6 +91,9 @@
             'children' => [
                 ['label' => __('Banking Centre'),'route' => 'accounting.banking.dashboard'],
                 ['label' => __('Bank Accounts'),  'route' => 'accounting.banking.accounts'],
+                ['label' => __('Transfers'),      'route' => 'accounting.banking.transfers'],
+                ['label' => __('Deposits'),       'route' => 'accounting.banking.deposits'],
+                ['label' => __('Cheques'),        'route' => 'accounting.banking.cheques'],
                 ['label' => __('Petty Cash'),     'route' => 'accounting.banking.petty'],
                 ['label' => __('Bank Reconciliation'),'route' => 'accounting.bank-reconciliation.index'],
                 ['label' => __('Cash Position'),'route' => 'accounting.cash-position.index'],
@@ -107,7 +110,7 @@
     // Fixed Assets menu rebuilt in Phase 2
     if ($feat('fixed_assets')) {
         $modules[] = (object)[
-            'label' => __('Fixed Assets'),
+            'label' => __('Assets'),
             'icon' => '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
             'children' => [
                 ['label' => __('Dashboard'),    'route' => 'accounting.fixed-assets.dashboard'],
@@ -152,27 +155,6 @@
         ],
     ];
 
-    if ($feat('analytics')) {
-        $analyticsChildren = [
-            ['label' => __('Financial Ratios'),     'route' => 'analytics.financial-ratios'],
-            ['label' => __('Revenue vs Expense'),   'route' => 'analytics.revenue-expense-trends'],
-            ['label' => __('Sales Analytics'),      'route' => 'analytics.sales'],
-            ['label' => __('Profitability'),        'route' => 'analytics.profitability'],
-            ['label' => __('Cash Flow Trend'),      'route' => 'analytics.cash-flow-trend'],
-        ];
-        if ($feat('purchasing')) {
-            $analyticsChildren[] = ['label' => __('Purchasing Analytics'), 'route' => 'analytics.purchasing'];
-        }
-        if ($feat('inventory')) {
-            $analyticsChildren[] = ['label' => __('Inventory Analytics'), 'route' => 'analytics.inventory'];
-        }
-        $modules[] = (object)[
-            'label' => __('Analytics'),
-            'icon' => '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
-            'children' => $analyticsChildren,
-        ];
-    }
-
     $taxationChildren = [
         ['label' => __('Dashboard'),             'route' => 'accounting.taxation.dashboard'],
         ['label' => __('Configuration'),         'route' => 'accounting.taxation.config'],
@@ -214,6 +196,27 @@
                 ['label' => __('EIS Terminals'),    'route' => 'pos.eis.terminals'],
                 ['label' => __('EIS Submissions'),  'route' => 'pos.eis.submissions'],
             ],
+        ];
+    }
+
+    if ($feat('analytics')) {
+        $analyticsChildren = [
+            ['label' => __('Financial Ratios'),     'route' => 'analytics.financial-ratios'],
+            ['label' => __('Revenue vs Expense'),   'route' => 'analytics.revenue-expense-trends'],
+            ['label' => __('Sales Analytics'),      'route' => 'analytics.sales'],
+            ['label' => __('Profitability'),        'route' => 'analytics.profitability'],
+            ['label' => __('Cash Flow Trend'),      'route' => 'analytics.cash-flow-trend'],
+        ];
+        if ($feat('purchasing')) {
+            $analyticsChildren[] = ['label' => __('Purchasing Analytics'), 'route' => 'analytics.purchasing'];
+        }
+        if ($feat('inventory')) {
+            $analyticsChildren[] = ['label' => __('Inventory Analytics'), 'route' => 'analytics.inventory'];
+        }
+        $modules[] = (object)[
+            'label' => __('Analytics'),
+            'icon' => '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+            'children' => $analyticsChildren,
         ];
     }
 

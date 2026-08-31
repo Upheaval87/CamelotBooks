@@ -93,7 +93,7 @@
                     <input type="hidden" name="is_active" value="0">
                     <label class="mt-4 flex cursor-pointer items-center gap-3">
                         <input type="checkbox" name="is_active" value="1" @checked(old('is_active', true))
-                            class="h-4 w-4 rounded border-[color:var(--border)] accent-[#128F8E]">
+                            class="h-4 w-4 rounded border-[color:var(--border)]">
                         <span class="text-[12.5px] font-bold" style="color:var(--ink)">Active — available at checkout immediately</span>
                     </label>
                 </div>

@@ -96,7 +96,6 @@
 </style>
 </head>
 <body>
-    @include('components.pdf.chrome', ['part' => 'header'])
     <div class="report-card-wrap">
         <div class="report-card">
             {!! $content !!}

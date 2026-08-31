@@ -8,15 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('fa_assets', function (Blueprint $table) {
-            $table->unsignedBigInteger('journal_entry_id')->nullable()->after('disposal_account_id');
-        });
+        if (! Schema::hasColumn('fa_assets', 'journal_entry_id')) {
+            Schema::table('fa_assets', function (Blueprint $table) {
+                $table->unsignedBigInteger('journal_entry_id')->nullable()->after('disposal_account_id');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('fa_assets', function (Blueprint $table) {
-            $table->dropColumn('journal_entry_id');
-        });
+        if (Schema::hasColumn('fa_assets', 'journal_entry_id')) {
+            Schema::table('fa_assets', function (Blueprint $table) {
+                $table->dropColumn('journal_entry_id');
+            });
+        }
     }
 };
