@@ -118,6 +118,8 @@ class FavouritesService
         'system-settings.index' => ['system-settings', 'System Settings', 'settings'],
         'system-settings.features' => ['features', 'Features', 'toggle'],
         'system-settings.audit-log' => ['settings-audit-log', 'Settings Audit Log', 'scroll'],
+        'settings.switch_accrual' => ['switch-accrual', 'Switch to Accrual', 'repeat'],
+        'accounting.coa.setup' => ['coa-setup', 'Chart of Accounts Structure Setup', 'book'],
         'admin.numbering-sequences.index' => ['numbering-sequences', 'Numbering Sequences', 'hash'],
         'admin.security.index' => ['security', 'Security', 'shield'],
         'admin.notifications.index' => ['notifications', 'Notifications', 'bell'],

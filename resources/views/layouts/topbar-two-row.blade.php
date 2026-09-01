@@ -6,6 +6,9 @@
     $isAdmin = $user && $user->hasAnyRole(['system_admin', 'company_admin']);
     $feat = fn($f) => \App\Services\FeatureManagement::isEnabled($companyId, $f);
 
+    $currentCompany ??= null;
+    $isCashCompany = $currentCompany?->isCashBasis() ?? false;
+
     $filterFeat = fn($items, $feature) => $feat($feature)
         ? $items
         : array_values(array_filter($items, fn($i) => !in_array($i['route'], [
@@ -228,6 +231,7 @@
                 ['label' => __('System Settings'),       'route' => 'system-settings.index'],
                 ['label' => __('Features'),              'route' => 'system-settings.features'],
                 ['label' => __('Settings Audit Log'),    'route' => 'system-settings.audit-log'],
+                ['label' => __('Switch to Accrual'),     'route' => 'settings.switch_accrual', 'when' => $isCashCompany],
                 ['label' => __('Numbering Sequences'),   'route' => 'admin.numbering-sequences.index'],
                 ['label' => __('Security'),              'route' => 'admin.security.index'],
                 ['label' => __('Notifications'),         'route' => 'admin.notifications.index'],
@@ -393,18 +397,20 @@
                                  @mouseleave="open = false"
                                  x-cloak>
                                 @foreach($mod->children as $child)
-                                    @php $cActive = $isActiveRoute($child['route']) || (($child['active'] ?? null) && str_starts_with($routeName, $child['active'])); @endphp
-                                    @if($child['moved'] ?? false)
-                                        <div class="dd-sep"></div>
-                                    @endif
-                                    <a href="{{ route($child['route'], $child['params'] ?? []) }}"
-                                       class="topbar-nav-dropdown-item @if($cActive) active @endif @if($child['moved'] ?? false) moved @endif"
-                                       @if($cActive) aria-current="page" @endif>
-                                        <span>{{ $child['label'] }}{!! ($child['moved'] ?? false) ? ' &#8594;' : '' !!}</span>
+                                    @if(($child['when'] ?? true))
+                                        @php $cActive = $isActiveRoute($child['route']) || (($child['active'] ?? null) && str_starts_with($routeName, $child['active'])); @endphp
                                         @if($child['moved'] ?? false)
-                                            <span class="tagnew">MOVED</span>
+                                            <div class="dd-sep"></div>
                                         @endif
-                                    </a>
+                                        <a href="{{ route($child['route'], $child['params'] ?? []) }}"
+                                           class="topbar-nav-dropdown-item @if($cActive) active @endif @if($child['moved'] ?? false) moved @endif"
+                                           @if($cActive) aria-current="page" @endif>
+                                            <span>{{ $child['label'] }}{!! ($child['moved'] ?? false) ? ' &#8594;' : '' !!}</span>
+                                            @if($child['moved'] ?? false)
+                                                <span class="tagnew">MOVED</span>
+                                            @endif
+                                        </a>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>

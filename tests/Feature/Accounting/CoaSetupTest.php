@@ -156,4 +156,17 @@ class CoaSetupTest extends TestCase
         $this->company->refresh();
         $this->assertSame(Company::METHOD_CASH, $this->company->accounting_method);
     }
+
+    public function test_coa_setup_and_switch_accrual_are_registered_for_rails_pinning(): void
+    {
+        $coa = \App\Services\FavouritesService::metaForRoute('accounting.coa.setup');
+        $this->assertNotNull($coa);
+        $this->assertSame('coa-setup', $coa['key']);
+        $this->assertSame('Chart of Accounts Structure Setup', $coa['label']);
+
+        $switch = \App\Services\FavouritesService::metaForRoute('settings.switch_accrual');
+        $this->assertNotNull($switch);
+        $this->assertSame('switch-accrual', $switch['key']);
+        $this->assertSame('Switch to Accrual', $switch['label']);
+    }
 }
