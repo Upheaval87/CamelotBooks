@@ -12,6 +12,7 @@ class ReportAuditService
     private const ROUTE_KEY_MAP = [
         'income-statement' => 'fin.income',
         'balance-sheet' => 'fin.position',
+        'equity-statement' => 'fin.equity',
         'cash-flow' => 'fin.cashflow',
         'aging' => null, // handled separately (ar/ap)
     ];

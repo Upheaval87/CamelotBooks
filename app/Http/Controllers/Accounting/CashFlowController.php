@@ -54,11 +54,6 @@ class CashFlowController extends Controller
 
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo);
 
-        if ($statement['mismatch'] !== null) {
-            return redirect()->route('accounting.cash-flow.index', $request->query())
-                ->withErrors(['export' => 'Export blocked: ending cash does not match actual bank balances.']);
-        }
-
         $filename = "cash_flow_{$dateFrom}_to_{$dateTo}.csv";
 
         ReportAuditService::log(
@@ -108,6 +103,12 @@ class CashFlowController extends Controller
             fputcsv($handle, ['Ending Cash Balance', '', number_format($statement['ending_cash'], 2, '.', '')]);
             fputcsv($handle, ['Actual Ending Cash', '', number_format($statement['actual_ending_cash'], 2, '.', '')]);
 
+            if ($statement['mismatch'] !== null) {
+                fputcsv($handle, ['', '', '']);
+                fputcsv($handle, ['WARNING', 'Ending cash does not match actual bank balances.', '']);
+                fputcsv($handle, ['Difference', '', number_format(abs($statement['mismatch']), 2, '.', '')]);
+            }
+
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv', 'Content-Disposition' => "attachment; filename=\"{$filename}\""]);
     }
@@ -120,11 +121,6 @@ class CashFlowController extends Controller
         $dateTo = $request->input('date_to', now()->format('Y-m-d'));
 
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo);
-
-        if ($statement['mismatch'] !== null) {
-            return redirect()->route('accounting.cash-flow.index', $request->query())
-                ->withErrors(['export' => 'Export blocked: ending cash does not match actual bank balances.']);
-        }
 
         $company = Company::findOrFail($companyId);
 
@@ -142,7 +138,18 @@ class CashFlowController extends Controller
 
         $title = 'Cash Flow Statement';
         $meta = $this->statementPdfMeta($company, $branchId, $this->statementPreparedBy(), $title, $periodLabel);
-        $meta['check'] = $statement['mismatch'] === null ? 'Reconciled — Ending Cash equals actual bank balances' : null;
+
+        if ($statement['mismatch'] === null) {
+            $meta['check'] = 'Reconciled — Ending Cash equals actual bank balances';
+        } else {
+            $meta['warn'] = 'Ending cash ('
+                . number_format($statement['ending_cash'], 2)
+                . ') does not match actual bank balances ('
+                . number_format($statement['actual_ending_cash'], 2)
+                . '). Difference: '
+                . number_format(abs($statement['mismatch']), 2)
+                . '.';
+        }
 
         $content = view('accounting.cash-flow.print', array_merge($statement, compact('company', 'dateFrom', 'dateTo')))->render();
 
