@@ -105,6 +105,13 @@ class TrialBalanceController extends Controller
 
         $difference = $totalDebit - $totalCredit;
 
+        $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+        $dp = (int) \App\Models\SystemSetting::getValue('currency', 'decimal_places', $companyId, '2');
+        $currency = $currencySymbol ? trim($currencySymbol) : '$';
+
+        $company = Company::findOrFail($companyId);
+        $preparedBy = $this->statementPreparedBy();
+
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
             ->orderBy('name')
@@ -123,7 +130,12 @@ class TrialBalanceController extends Controller
             'asOfDate',
             'branches',
             'costCenters',
-            'costCenterId'
+            'costCenterId',
+            'company',
+            'dp',
+            'currency',
+            'currencySymbol',
+            'preparedBy'
         ));
     }
 

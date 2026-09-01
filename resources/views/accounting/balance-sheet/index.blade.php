@@ -1,6 +1,8 @@
 <x-app-layout>
     @php
         $cs = $currencySymbol ?? '$';
+        $dp = $dp ?? 2;
+        $periodLabel = __('As at') . ' ' . \Carbon\Carbon::parse($asOfDate)->format('d M Y');
         $hasPrev = !empty($prevStatement);
         $currentAssets = $total_assets;
         $prevAssets = $hasPrev ? ($prevStatement['total_assets'] ?? 0) : null;
@@ -19,6 +21,16 @@
     @endphp
 
     <div class="fr-wrap" x-data="frExpandAll()">
+        {{-- branded header — hidden on screen, shown in @media print --}}
+        @include('accounting.statement-branded-header', [
+            'company' => $company,
+            'title' => 'Statement of Financial Position',
+            'periodLabel' => $periodLabel,
+            'currency' => $currency,
+            'cs' => $cs,
+            'basis' => 'Accrual',
+            'preparedBy' => $preparedBy ?? '—',
+        ])
         <div class="fr-head">
             <div>
                 <h1>{{ __('Statement of Financial Position') }}</h1>
@@ -276,9 +288,24 @@
             <a href="{{ route('accounting.balance-sheet.export-csv', request()->query()) }}" class="fr-btn fr-btn-ghost">Export CSV</a>
             <a href="{{ route('accounting.balance-sheet.export-pdf', request()->query()) }}" class="fr-btn fr-btn-cta">Print / PDF</a>
         </div>
+
+        {{-- branded footer — hidden on screen, shown in @media print --}}
+        @php
+            $_branchLine = $branchId ? ($branches->firstWhere('id', (int) $branchId)->name ?? null) : null;
+            $_orgLine = trim(implode(' · ', array_filter([$_branchLine, $company->tax_id ? 'TPIN '.$company->tax_id : null])));
+        @endphp
+        <footer class="co-foot">
+            <span>{{ $company->name ?? 'Company' }}{{ $_orgLine ? ' · '.$_orgLine : '' }}</span>
+            <span class="co-foot-pg">Statement of Financial Position · <span class="co-pageno"></span></span>
+        </footer>
     </div>
 
     @push('scripts')
+    <script>
+    document.querySelectorAll('.co-pageno').forEach(function (el) {
+        el.textContent = 'Page 1 of 1';
+    });
+    </script>
     <script>
     function frExpandAll() {
         const sections = @json(collect($groups)->flatMap(fn($subTypes, $type) => collect($subTypes)->filter()->keys()->map(fn($k) => $type[0].'-'.$k))->values()->all());

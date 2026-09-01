@@ -57,6 +57,11 @@ class IncomeStatementController extends Controller
         }
 
         $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+        $dp = (int) \App\Models\SystemSetting::getValue('currency', 'decimal_places', $companyId, '2');
+        $currency = $currencySymbol ? trim($currencySymbol) : '$';
+
+        $company = Company::findOrFail($companyId);
+        $preparedBy = $this->statementPreparedBy();
 
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
@@ -75,7 +80,7 @@ class IncomeStatementController extends Controller
             filters: compact('branchId', 'costCenterId', 'dateFrom', 'dateTo', 'compareMode'),
         );
 
-        return view('accounting.income-statement.index', array_merge($statement, compact('branches', 'branchId', 'costCenters', 'costCenterId', 'dateFrom', 'dateTo', 'compareMode', 'comparisonPeriodLabel', 'comparisonDateFrom', 'comparisonDateTo', 'currencySymbol')));
+        return view('accounting.income-statement.index', array_merge($statement, compact('branches', 'branchId', 'costCenters', 'costCenterId', 'dateFrom', 'dateTo', 'compareMode', 'comparisonPeriodLabel', 'comparisonDateFrom', 'comparisonDateTo', 'currencySymbol', 'company', 'dp', 'currency', 'preparedBy')));
     }
 
     public function exportCsv(Request $request)

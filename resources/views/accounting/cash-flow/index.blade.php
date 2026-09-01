@@ -1,6 +1,8 @@
 <x-app-layout>
     @php
         $cs = $currencySymbol ?? '$';
+        $dp = $dp ?? 2;
+        $periodLabel = __('For the period') . ' ' . \Carbon\Carbon::parse($dateFrom)->format('d M Y') . ' — ' . \Carbon\Carbon::parse($dateTo)->format('d M Y');
         $currentPeriodLabel = \Carbon\Carbon::parse($dateFrom)->format('M Y') . ' – ' . \Carbon\Carbon::parse($dateTo)->format('M Y');
         $drillParams = http_build_query(array_filter([
             'date_from' => $dateFrom,
@@ -10,6 +12,16 @@
     @endphp
 
     <div class="fr-wrap">
+        {{-- branded header — hidden on screen, shown in @media print --}}
+        @include('accounting.statement-branded-header', [
+            'company' => $company,
+            'title' => 'Cash Flow Statement',
+            'periodLabel' => $periodLabel,
+            'currency' => $currency,
+            'cs' => $cs,
+            'basis' => 'Accrual',
+            'preparedBy' => $preparedBy ?? '—',
+        ])
         <div class="fr-head">
             <div>
                 <h1>{{ __('Cash Flow Statement') }}</h1>
@@ -166,5 +178,22 @@
             <a href="{{ route('accounting.cash-flow.export-csv', request()->query()) }}" class="fr-btn fr-btn-ghost">Export CSV</a>
             <a href="{{ route('accounting.cash-flow.export-pdf', request()->query()) }}" class="fr-btn fr-btn-cta">Print / PDF</a>
         </div>
+
+        {{-- branded footer — hidden on screen, shown in @media print --}}
+        @php
+            $_branchLine = $branchId ? ($branches->firstWhere('id', (int) $branchId)->name ?? null) : null;
+            $_orgLine = trim(implode(' · ', array_filter([$_branchLine, $company->tax_id ? 'TPIN '.$company->tax_id : null])));
+        @endphp
+        <footer class="co-foot">
+            <span>{{ $company->name ?? 'Company' }}{{ $_orgLine ? ' · '.$_orgLine : '' }}</span>
+            <span class="co-foot-pg">Cash Flow Statement · <span class="co-pageno"></span></span>
+        </footer>
     </div>
+
+    @push('scripts')
+    <script>
+    document.querySelectorAll('.co-pageno').forEach(function (el) {
+        el.textContent = 'Page 1 of 1';
+    });
+    </script>
 </x-app-layout>

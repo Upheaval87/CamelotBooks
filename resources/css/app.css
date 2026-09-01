@@ -14656,3 +14656,71 @@ select.pos-auth-input{appearance:none;-webkit-appearance:none;padding-right:2.25
 @media (prefers-reduced-motion: reduce) {
     .amc-suite .amc-btn, .amc-suite .amc-card { transition: none; }
 }
+
+
+/* ────────────────────────────────────────────────────────────────
+   COMPANY-BRANDED TEMPLATE v2 — unified financial-statement chrome
+   Shared `.doc-h` / `.meta` / `.co-foot` brand lockup used by the
+   4 on-screen statement views (IS / BS / TB / CF), hidden on screen,
+   restored in @media print. PDF wrapper keeps its own fs-* chrome.
+   ---------------------------------------------------------------- */
+
+/* visibility matrix — brand chrome hidden on screen */
+.doc-h, .meta, .co-foot { display: none; }
+
+@media print {
+    /* screen-only chrome hidden */
+    .fr-head, .fr-filters, .fr-actions, .fr-actionbar, .fr-banner,
+    .fr-kpis, .fr-card-head, .topbar, .topbar-row-2, .fav-sidebar,
+    .fav-sidebar-toggle, .fav-float-toggle, nav, .fr-btn,
+    .gl-page-head, .gl-mb, .gl-card-h .right {
+        display: none !important;
+    }
+
+    /* flatten page chrome */
+    .fr-wrap, .gl-wrap { padding: 0 !important; max-width: none !important; margin: 0 !important; box-shadow: none !important; border: none !important; }
+    .fr-card, .gl-card { box-shadow: none !important; backdrop-filter: none !important; border: 1px solid #e5e7eb !important; page-break-inside: avoid; margin-bottom: 1rem !important; }
+    body { background: #fff; margin: 0; padding: 0; }
+
+    /* brand header lockup — logo + company on the SAME row */
+    .doc-h { display: flex; align-items: center; gap: 14px; }
+    .doc-h-logo {
+        width: 48px; height: 48px; border-radius: 12px; flex: 0 0 auto;
+        overflow: hidden; display: flex; align-items: center; justify-content: center;
+        position: relative; background: linear-gradient(180deg,#0E6E67,#0A5C56); color: #fff;
+    }
+    .doc-h-logo img { width: 100%; height: 100%; object-fit: contain; padding: 2px; background: #fff; }
+    .doc-h-mono { font-size: 21px; font-weight: 800; line-height: 1; color: #F4FBFB; }
+    .doc-h-logo::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: 4px; height: 3px; border-radius: 2px; background: linear-gradient(90deg,#C9A227,#D9B84A); }
+    .doc-h-id { min-width: 0; }
+    .doc-h-company { font-size: 19px; font-weight: 800; letter-spacing: .01em; color: #0B3437; line-height: 1.1; }
+    .doc-h-orgline { margin-top: 4px; font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #5f7476; }
+    .doc-h-rule { height: 2px; background: #0B3437; border: 0; margin: 18px 0 20px; }
+    .doc-h-title { font-size: 15px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: #0B3437; }
+    .doc-h-period { margin-top: 6px; font-size: 11px; font-weight: 600; color: #5f7476; }
+
+    /* meta strip — 4-cell hairline bar */
+    .meta { display: grid; grid-template-columns: repeat(4,1fr); margin: 18px 0 20px; border: 1px solid #dceaea; border-radius: 10px; overflow: hidden; }
+    .meta-cell { padding: 11px 14px; border-right: 1px solid #dceaea; }
+    .meta-cell:last-child { border-right: none; }
+    .meta-label { font-size: 8.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #8aa5a7; }
+    .meta-value { margin-top: 4px; font-size: 12px; font-weight: 700; color: #000; font-variant-numeric: tabular-nums; }
+
+    /* separated columns + row hierarchy on the statement tables */
+    .fr-table, .gl-table { table-layout: fixed; width: 100%; min-width: 0 !important; }
+    .fr-table th, .fr-table td, .gl-table th, .gl-table td { padding: 8px 14px; }
+    .fr-table th + th, .fr-table td + td, .gl-table th + th, .gl-table td + td { border-left: 1px solid #e2ecec !important; }
+    .fr-table td, .gl-table td { font-size: 12px; color: #0B3437; font-variant-numeric: tabular-nums; }
+    .fr-table td.r, .fr-table td.num, .gl-table td.num { white-space: nowrap; }
+    .fr-table th, .gl-table th { font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: #5f7476; white-space: nowrap; }
+    .fr-table tr, .gl-table tr { break-inside: avoid; }
+    .fr-table tr.fr-net-total td, .fr-table tr.fr-grand-total td, .gl-table tfoot tr td {
+        border-top: 2px solid #0B3437; border-bottom: 3px double #0B3437;
+        background: rgba(14,110,103,.06); font-weight: 800;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+
+    /* footer — co-foot hairline */
+    .co-foot { display: flex; justify-content: space-between; gap: 16px; margin-top: 38px; padding-top: 13px; border-top: 1px solid #dceaea; font-size: 10px; color: #5f7476; }
+    .co-foot .co-foot-pg { font-variant-numeric: tabular-nums; }
+}

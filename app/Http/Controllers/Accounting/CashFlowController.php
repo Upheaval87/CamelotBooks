@@ -29,6 +29,11 @@ class CashFlowController extends Controller
         $statement = $this->service->generate($companyId, $branchId, $dateFrom, $dateTo);
 
         $currencySymbol = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
+        $dp = (int) \App\Models\SystemSetting::getValue('currency', 'decimal_places', $companyId, '2');
+        $currency = $currencySymbol ? trim($currencySymbol) : '$';
+
+        $company = Company::findOrFail($companyId);
+        $preparedBy = $this->statementPreparedBy();
 
         $branches = \App\Models\Branch::where('company_id', $companyId)
             ->where('is_active', true)
@@ -42,7 +47,7 @@ class CashFlowController extends Controller
             filters: compact('branchId', 'dateFrom', 'dateTo'),
         );
 
-        return view('accounting.cash-flow.index', array_merge($statement, compact('branches', 'branchId', 'dateFrom', 'dateTo', 'currencySymbol')));
+        return view('accounting.cash-flow.index', array_merge($statement, compact('branches', 'branchId', 'dateFrom', 'dateTo', 'currencySymbol', 'company', 'dp', 'currency', 'preparedBy')));
     }
 
     public function exportCsv(Request $request)

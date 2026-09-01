@@ -1,6 +1,21 @@
 <x-app-layout>
+    @php
+        $cs = $currencySymbol ?? '$';
+        $dp = $dp ?? 2;
+        $periodLabel = __('As at') . ' ' . \Carbon\Carbon::parse($asOfDate)->format('d M Y');
+    @endphp
     <div class="gl-suite">
         <div class="gl-wrap">
+            {{-- branded header — hidden on screen, shown in @media print --}}
+            @include('accounting.statement-branded-header', [
+                'company' => $company,
+                'title' => 'Trial Balance',
+                'periodLabel' => $periodLabel,
+                'currency' => $currency,
+                'cs' => $cs,
+                'basis' => 'Accrual',
+                'preparedBy' => $preparedBy ?? '—',
+            ])
             <div class="gl-page-head">
                 <div>
                     <h1>Trial Balance</h1>
@@ -8,7 +23,8 @@
                 </div>
                 <div style="display:flex;gap:10px">
                     <a href="{{ route('accounting.trial-balance.export-csv', request()->query()) }}" class="btn btn-ghost">Export CSV</a>
-                    <a href="{{ route('accounting.trial-balance.export-pdf', request()->query()) }}" class="btn btn-ghost" target="_blank">🖨 Print</a>
+                    <button type="button" onclick="window.print()" class="btn btn-ghost">🖨 Print</button>
+                    <a href="{{ route('accounting.trial-balance.export-pdf', request()->query()) }}" class="btn btn-ghost" target="_blank">⬇ PDF</a>
                 </div>
             </div>
 
@@ -67,8 +83,8 @@
                                 <td class="gl-mono">{{ $acct->code ?? '—' }}</td>
                                 <td class="gl-name">{{ $acct->name ?? '—' }}</td>
                                 <td><span class="gl-tchip {{ $typeClass }}">{{ $acct->type ?? '—' }}</span></td>
-                                <td class="num">{{ ($row['debit_balance'] ?? 0) > 0 ? number_format($row['debit_balance'], 2) : '—' }}</td>
-                                <td class="num">{{ ($row['credit_balance'] ?? 0) > 0 ? number_format($row['credit_balance'], 2) : '—' }}</td>
+                                <td class="num">{{ ($row['debit_balance'] ?? 0) > 0 ? number_format($row['debit_balance'], $dp) : '—' }}</td>
+                                <td class="num">{{ ($row['credit_balance'] ?? 0) > 0 ? number_format($row['credit_balance'], $dp) : '—' }}</td>
                             </tr>
                             @empty
                             <tr>
@@ -83,14 +99,32 @@
                         <tfoot>
                             <tr>
                                 <td colspan="3">Total</td>
-                                <td class="num">{{ number_format($totalDebit, 2) }}</td>
-                                <td class="num">{{ number_format($totalCredit, 2) }}</td>
+                                <td class="num">{{ number_format($totalDebit, $dp) }}</td>
+                                <td class="num">{{ number_format($totalCredit, $dp) }}</td>
                             </tr>
                         </tfoot>
                         @endif
                     </table>
                 </div>
             </div>
+
+            {{-- branded footer — hidden on screen, shown in @media print --}}
+            @php
+                $_branchLine = $branchId ? ($branches->firstWhere('id', (int) $branchId)->name ?? null) : null;
+                $_orgLine = trim(implode(' · ', array_filter([$_branchLine, $company->tax_id ? 'TPIN '.$company->tax_id : null])));
+            @endphp
+            <footer class="co-foot">
+                <span>{{ $company->name ?? 'Company' }}{{ $_orgLine ? ' · '.$_orgLine : '' }}</span>
+                <span class="co-foot-pg">Trial Balance · <span class="co-pageno"></span></span>
+            </footer>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+    document.querySelectorAll('.co-pageno').forEach(function (el) {
+        el.textContent = 'Page 1 of 1';
+    });
+    </script>
+    @endpush
 </x-app-layout>
