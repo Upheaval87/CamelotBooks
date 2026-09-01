@@ -53,4 +53,19 @@ class MethodConversion extends Model
     {
         return $query->where('status', self::STATUS_DRAFT);
     }
+
+    public function conversionJournal(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'conversion_journal_id');
+    }
+
+    public function conversionJournalNumber(): ?string
+    {
+        return $this->conversionJournal?->journal_number;
+    }
+
+    public function isActivated(): bool
+    {
+        return $this->status === self::STATUS_ACTIVATED;
+    }
 }

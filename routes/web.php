@@ -21,6 +21,7 @@ use App\Http\Controllers\Accounting\BudgetController;
 use App\Http\Controllers\Accounting\PayrollController;
 use App\Http\Controllers\Accounting\CashFlowController;
 use App\Http\Controllers\Accounting\CoaController;
+use App\Http\Controllers\Accounting\SwitchToAccrualController;
 use App\Http\Controllers\Accounting\CreditNoteController;
 use App\Http\Controllers\Accounting\CostCenterController;
 use App\Http\Controllers\Accounting\CustomerController;
@@ -201,6 +202,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['tenant.bind', 'company.context', 'company.active'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
+
+        // Switch to Accrual — gated controlled conversion (spec §5). Admin +
+        // cash-method only; the controller enforces the gate.
+        Route::get('/accounting/settings/switch-accrual', [SwitchToAccrualController::class, 'show'])
+            ->middleware('role_or_permission:system_admin|company_admin|accountant|approver|viewer')
+            ->name('settings.switch_accrual');
+        Route::post('/accounting/settings/switch-accrual', [SwitchToAccrualController::class, 'store'])
+            ->middleware('role_or_permission:system_admin|company_admin')
+            ->name('settings.switch_accrual.store');
 
         Route::patch('/companies/{company}', [CompanyController::class, 'update'])
             ->name('companies.update');
