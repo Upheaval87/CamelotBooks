@@ -1,3 +1,5 @@
+@include('accounting.taxation._create-exemption')
+
 <div class="tx-card">
     <div class="tx-card-h">
         <span class="ic">&#128683;</span>

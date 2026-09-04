@@ -9,6 +9,8 @@
 
         @include('accounting.taxation._tabs', ['active' => 'jurisdictions'])
 
+        @include('accounting.taxation._create-jurisdiction')
+
         <div class="tx-card">
             <div class="tx-li-wrap">
                 <table class="tx-table" style="min-width:760px;">

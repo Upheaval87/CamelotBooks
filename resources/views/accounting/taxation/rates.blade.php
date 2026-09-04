@@ -9,6 +9,8 @@
 
         @include('accounting.taxation._tabs', ['active' => 'rates'])
 
+        @include('accounting.taxation._create-rate')
+
         <div class="tx-card">
             <div class="tx-li-wrap">
                 <table class="tx-table" style="min-width:800px;">

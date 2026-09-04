@@ -19,7 +19,7 @@ class WhtCertificateService
     ): WhtCertificate {
         $tx = TaxTransaction::findOrFail($transactionId);
 
-        abort_unless($tx->company_id === $companyId, 403);
+        abort_unless($tx->company_id === $companyId, 404);
         abort_unless($tx->side === 'INPUT', 400, 'WHT certificates apply to INPUT (withholding) transactions.');
         abort_unless($tx->status === 'POSTED', 400, 'Transaction must be posted.');
 
@@ -51,7 +51,7 @@ class WhtCertificateService
     public function revoke(int $companyId, int $certId, int $revokedByUserId): WhtCertificate
     {
         $cert = WhtCertificate::findOrFail($certId);
-        abort_unless($cert->company_id === $companyId, 403);
+        abort_unless($cert->company_id === $companyId, 404);
 
         $oldStatus = $cert->status;
         $cert->update(['status' => 'revoked']);
@@ -99,15 +99,27 @@ class WhtCertificateService
     {
         $certNumber = $this->nextCertNumber($companyId);
 
+        // Derive rate_pct from the supplied gross/tax, rounded to tax_code_rates
+        // precision (8,4). Reject an unrecoverable gross (fix #7).
+        $gross = (float) ($data['gross_amount'] ?? 0);
+        $wht   = (float) ($data['tax_amount'] ?? 0);
+
+        if ($gross <= 0) {
+            throw new \InvalidArgumentException('A gross amount is required to derive the certificate rate.');
+        }
+
+        $derivedRate = round(($wht / $gross) * 100, 4);
+        $this->flagRateDiscrepancy($companyId, $issuedByUserId, (int) $data['tax_code_id'], $derivedRate, $wht);
+
         $cert = WhtCertificate::create([
             'company_id'      => $companyId,
             'cert_number'     => $certNumber,
             'supplier_id'     => $data['supplier_id'],
             'tax_code_id'     => $data['tax_code_id'],
             'period_id'       => $data['period_id'],
-            'gross'           => $data['gross_amount'],
-            'wht_amount'      => $data['tax_amount'],
-            'rate_pct'        => 0,
+            'gross'           => $gross,
+            'wht_amount'      => $wht,
+            'rate_pct'        => $derivedRate,
             'status'          => 'issued',
             'issued_date'     => now()->toDateString(),
         ]);
@@ -115,6 +127,41 @@ class WhtCertificateService
         TaxAuditTrail::log($companyId, $issuedByUserId, 'WHT_CERTIFICATE', $cert->id, 'status', null, 'ISSUED', 'WHT certificate created from form.');
 
         return $cert;
+    }
+
+    /**
+     * Compare a form-derived rate against the tax code's active rate on the
+     * certificate date. When they differ by more than the tolerance (0.01
+     * percentage points), log a discrepancy notice on the audit trail (and
+     * storage) for later review — fix #7.
+     */
+    protected function flagRateDiscrepancy(int $companyId, int $issuedByUserId, int $taxCodeId, float $derivedRate, float $wht): void
+    {
+        $code = \App\Models\TaxCode::find($taxCodeId);
+        if (! $code) {
+            return;
+        }
+
+        $active = $code->activeRate(now()->toDateString());
+        if (! $active) {
+            return;
+        }
+
+        $activeRate = (float) $active->rate_pct;
+        $tolerance  = 0.01;
+
+        if (abs($derivedRate - $activeRate) > $tolerance) {
+            TaxAuditTrail::log(
+                $companyId,
+                $issuedByUserId,
+                'WHT_CERTIFICATE',
+                0,
+                'rate_discrepancy',
+                $activeRate,
+                $derivedRate,
+                "Form-entered WHT rate {$derivedRate}% differs from the tax code's active rate {$activeRate}% for code {$code->code}."
+            );
+        }
     }
 
     protected function nextCertNumber(int $companyId): string

@@ -13,6 +13,7 @@ use App\Models\TaxCode;
 use App\Models\TaxCodeRate;
 use App\Models\TaxExemption;
 use App\Models\TaxJurisdiction;
+use App\Models\TaxObligation;
 use App\Models\TaxPayment;
 use App\Models\TaxPeriod;
 use App\Models\TaxRecognitionRule;
@@ -21,6 +22,7 @@ use App\Models\TaxTransaction;
 use App\Models\TaxType;
 use App\Models\WhtCertificate;
 use App\Services\FeatureManagement;
+use App\Services\Tax\TaxObligationService;
 use App\Services\Tax\TaxPaymentService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -178,9 +180,10 @@ class TaxController extends Controller
     public function codes(Request $request)
     {
         $this->requirePermission($request, 'taxation.view');
+        $companyId = $this->companyId();
 
         $codes = TaxCode::query()
-            ->where('company_id', $this->companyId())
+            ->where('company_id', $companyId)
             ->with([
                 'taxType:id,code,name',
                 'jurisdiction:id,code,name',
@@ -189,7 +192,11 @@ class TaxController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.taxation.codes', compact('codes') + ['cs' => $this->cs()]);
+        $taxTypes = TaxType::query()->where('company_id', $companyId)->orderBy('code')->get(['id', 'code', 'name']);
+        $jurisdictions = TaxJurisdiction::query()->where('active', true)->orderBy('name')->get();
+        $glAccounts = Account::query()->where('company_id', $companyId)->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']);
+
+        return view('accounting.taxation.codes', compact('codes', 'taxTypes', 'jurisdictions', 'glAccounts') + ['cs' => $this->cs()]);
     }
 
     public function types(Request $request)
@@ -202,7 +209,9 @@ class TaxController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.taxation.types', compact('types') + ['cs' => $this->cs()]);
+        $taxTypes = TaxType::query()->where('company_id', $this->companyId())->orderBy('code')->get(['id', 'code', 'name']);
+
+        return view('accounting.taxation.types', compact('types', 'taxTypes') + ['cs' => $this->cs()]);
     }
 
     public function rates(Request $request)
@@ -216,7 +225,9 @@ class TaxController extends Controller
             ->orderBy('tax_code_id')
             ->get();
 
-        return view('accounting.taxation.rates', compact('rates') + ['cs' => $this->cs()]);
+        $taxCodes = TaxCode::query()->where('company_id', $this->companyId())->orderBy('code')->get(['id', 'code', 'name']);
+
+        return view('accounting.taxation.rates', compact('rates', 'taxCodes') + ['cs' => $this->cs()]);
     }
 
     public function exemptions(Request $request)
@@ -229,7 +240,9 @@ class TaxController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('accounting.taxation.exemptions', compact('exemptions') + ['cs' => $this->cs()]);
+        $taxTypes = TaxType::query()->where('company_id', $this->companyId())->orderBy('code')->get(['id', 'code', 'name']);
+
+        return view('accounting.taxation.exemptions', compact('exemptions', 'taxTypes') + ['cs' => $this->cs()]);
     }
 
     public function jurisdictions(Request $request)
@@ -242,6 +255,236 @@ class TaxController extends Controller
             ->get();
 
         return view('accounting.taxation.jurisdictions', compact('jurisdictions') + ['cs' => $this->cs()]);
+    }
+
+    public function storeType(Request $request)
+    {
+        $this->requirePermission($request, 'taxation.create');
+        $companyId = $this->companyId();
+
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:30'],
+            'name' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'in:VAT,WHT,PAYE,FBT,CORPORATE,PRESUMPTIVE,OTHER'],
+            'active' => ['nullable', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($companyId, $data, $request) {
+            $type = TaxType::create([
+                'company_id' => $companyId,
+                'code' => strtoupper($data['code']),
+                'name' => $data['name'],
+                'category' => $data['category'],
+                'active' => (bool) ($data['active'] ?? true),
+            ]);
+
+            TaxAuditTrail::log(
+                $companyId,
+                (int) $request->user()->id,
+                'tax_type',
+                $type->id,
+                'status',
+                null,
+                $type->active ? 'ACTIVE' : 'INACTIVE',
+                'Tax type created.'
+            );
+        });
+
+        return redirect(route('accounting.taxation.config', ['tab' => 'types']))->with('success', __('Tax type created.'));
+    }
+
+    public function storeCode(Request $request)
+    {
+        $this->requirePermission($request, 'taxation.create');
+        $companyId = $this->companyId();
+
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:30'],
+            'name' => ['required', 'string', 'max:255'],
+            'tax_type_id' => ['required', 'integer'],
+            'jurisdiction_id' => ['nullable', 'integer'],
+            'treatment' => ['required', 'in:STANDARD,ZERO_RATED,EXEMPT,DEDUCTED,CHARGED,REVERSE_CHARGE'],
+            'price_basis' => ['required', 'in:EXCLUSIVE,INCLUSIVE'],
+            'rounding_mode' => ['required', 'in:HALF_UP,HALF_DOWN,HALF_EVEN'],
+            'rounding_level' => ['required', 'in:LINE,DOCUMENT'],
+            'gl_output_acct' => ['nullable', 'integer'],
+            'gl_input_acct' => ['nullable', 'integer'],
+            'gl_payable_acct' => ['nullable', 'integer'],
+            'effective_from' => ['required', 'date'],
+            'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
+            'active' => ['nullable', 'boolean'],
+        ]);
+
+        $taxType = TaxType::find($data['tax_type_id']);
+        abort_unless($taxType !== null && (int) $taxType->company_id === $companyId, 404);
+
+        if (! empty($data['jurisdiction_id'])) {
+            $jurisdiction = TaxJurisdiction::find($data['jurisdiction_id']);
+            abort_unless($jurisdiction !== null && (int) $jurisdiction->company_id === $companyId, 404);
+        }
+
+        foreach (['gl_output_acct', 'gl_input_acct', 'gl_payable_acct'] as $glKey) {
+            if (! empty($data[$glKey])) {
+                $account = Account::find($data[$glKey]);
+                abort_unless($account !== null && (int) $account->company_id === $companyId, 404);
+            }
+        }
+
+        DB::transaction(function () use ($companyId, $data, $request) {
+            $code = TaxCode::create([
+                'company_id' => $companyId,
+                'code' => strtoupper($data['code']),
+                'name' => $data['name'],
+                'tax_type_id' => $data['tax_type_id'],
+                'jurisdiction_id' => $data['jurisdiction_id'] ?? null,
+                'treatment' => $data['treatment'],
+                'price_basis' => $data['price_basis'],
+                'rounding_mode' => $data['rounding_mode'],
+                'rounding_level' => $data['rounding_level'],
+                'gl_output_acct' => $data['gl_output_acct'] ?? null,
+                'gl_input_acct' => $data['gl_input_acct'] ?? null,
+                'gl_payable_acct' => $data['gl_payable_acct'] ?? null,
+                'effective_from' => $data['effective_from'],
+                'effective_to' => $data['effective_to'] ?? null,
+                'active' => (bool) ($data['active'] ?? true),
+            ]);
+
+            TaxAuditTrail::log(
+                $companyId,
+                (int) $request->user()->id,
+                'tax_code',
+                $code->id,
+                'status',
+                null,
+                $code->active ? 'ACTIVE' : 'INACTIVE',
+                'Tax code created.'
+            );
+        });
+
+        return redirect(route('accounting.taxation.config', ['tab' => 'codes']))->with('success', __('Tax code created.'));
+    }
+
+    public function storeRate(Request $request)
+    {
+        $this->requirePermission($request, 'taxation.create');
+        $companyId = $this->companyId();
+
+        $data = $request->validate([
+            'tax_code_id' => ['required', 'integer'],
+            'rate_pct' => ['required', 'numeric', 'min:0', 'max:100'],
+            'effective_from' => ['required', 'date'],
+            'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
+        ]);
+
+        $taxCode = TaxCode::find($data['tax_code_id']);
+        abort_unless($taxCode !== null && (int) $taxCode->company_id === $companyId, 404);
+
+        DB::transaction(function () use ($companyId, $data, $request) {
+            $rate = TaxCodeRate::create([
+                'tax_code_id' => $data['tax_code_id'],
+                'rate_pct' => $data['rate_pct'],
+                'effective_from' => $data['effective_from'],
+                'effective_to' => $data['effective_to'] ?? null,
+            ]);
+
+            TaxAuditTrail::log(
+                $companyId,
+                (int) $request->user()->id,
+                'tax_rate',
+                $rate->id,
+                'rate_pct',
+                null,
+                $rate->rate_pct,
+                'Tax rate created.'
+            );
+        });
+
+        return redirect(route('accounting.taxation.config', ['tab' => 'rates']))->with('success', __('Tax rate created.'));
+    }
+
+    public function storeExemption(Request $request)
+    {
+        $this->requirePermission($request, 'taxation.create');
+        $companyId = $this->companyId();
+
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:30'],
+            'name' => ['required', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:1000'],
+            'scope' => ['required', 'in:SALES,PURCHASES,BOTH'],
+            'tax_type_id' => ['required', 'integer'],
+            'effective_from' => ['required', 'date'],
+            'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
+            'active' => ['nullable', 'boolean'],
+        ]);
+
+        $taxType = TaxType::find($data['tax_type_id']);
+        abort_unless($taxType !== null && (int) $taxType->company_id === $companyId, 404);
+
+        DB::transaction(function () use ($companyId, $data, $request) {
+            $exemption = TaxExemption::create([
+                'company_id' => $companyId,
+                'code' => strtoupper($data['code']),
+                'name' => $data['name'],
+                'reason' => $data['reason'] ?? '',
+                'scope' => $data['scope'],
+                'tax_type_id' => $data['tax_type_id'],
+                'effective_from' => $data['effective_from'],
+                'effective_to' => $data['effective_to'] ?? null,
+                'active' => (bool) ($data['active'] ?? true),
+            ]);
+
+            TaxAuditTrail::log(
+                $companyId,
+                (int) $request->user()->id,
+                'tax_exemption',
+                $exemption->id,
+                'status',
+                null,
+                $exemption->active ? 'ACTIVE' : 'INACTIVE',
+                'Tax exemption created.'
+            );
+        });
+
+        return redirect(route('accounting.taxation.config', ['tab' => 'exemptions']))->with('success', __('Tax exemption created.'));
+    }
+
+    public function storeJurisdiction(Request $request)
+    {
+        $this->requirePermission($request, 'taxation.create');
+        $companyId = $this->companyId();
+
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:30'],
+            'name' => ['required', 'string', 'max:255'],
+            'country' => ['required', 'string', 'max:100'],
+            'authority' => ['required', 'string', 'max:200'],
+            'active' => ['nullable', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($companyId, $data, $request) {
+            $jurisdiction = TaxJurisdiction::create([
+                'company_id' => $companyId,
+                'code' => strtoupper($data['code']),
+                'name' => $data['name'],
+                'country' => $data['country'],
+                'authority' => $data['authority'],
+                'active' => (bool) ($data['active'] ?? true),
+            ]);
+
+            TaxAuditTrail::log(
+                $companyId,
+                (int) $request->user()->id,
+                'tax_jurisdiction',
+                $jurisdiction->id,
+                'status',
+                null,
+                $jurisdiction->active ? 'ACTIVE' : 'INACTIVE',
+                'Tax jurisdiction created.'
+            );
+        });
+
+        return redirect(route('accounting.taxation.config', ['tab' => 'jurisdictions']))->with('success', __('Tax jurisdiction created.'));
     }
 
     public function accounts(Request $request)
@@ -356,9 +599,25 @@ class TaxController extends Controller
         $taxPayableAccount = DefaultAccountMapping::getAccount($companyId, 'tax_payable');
         $taxReceivableAccount = DefaultAccountMapping::getAccount($companyId, 'tax_receivable');
 
+        // Lightweight option lists for the inline create forms.
+        $taxTypes = TaxType::query()
+            ->where('company_id', $companyId)
+            ->orderBy('code')
+            ->get(['id', 'code', 'name']);
+        $taxCodes = TaxCode::query()
+            ->where('company_id', $companyId)
+            ->orderBy('code')
+            ->get(['id', 'code', 'name']);
+        $glAccounts = Account::query()
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get(['id', 'code', 'name']);
+
         return view('accounting.taxation.config', compact(
             'activeTab', 'types', 'rates', 'codes', 'exemptions',
-            'jurisdictions', 'otherMappings', 'taxPayableAccount', 'taxReceivableAccount', 'cs'
+            'jurisdictions', 'otherMappings', 'taxPayableAccount', 'taxReceivableAccount',
+            'taxTypes', 'taxCodes', 'glAccounts', 'cs'
         ));
     }
 
@@ -608,44 +867,25 @@ class TaxController extends Controller
         $this->requirePermission($request, 'taxation.view');
         $companyId = $this->companyId();
 
-        $candidates = [
-            ['key' => 'income_statement', 'name' => 'Income Statement', 'description' => 'Revenue, expenses and profit for the period.', 'route' => 'accounting.income-statement.index'],
-            ['key' => 'balance_sheet', 'name' => 'Balance Sheet', 'description' => 'Assets, liabilities and equity at a point in time.', 'route' => 'accounting.balance-sheet.index'],
-            ['key' => 'cash_flow', 'name' => 'Cash Flow Statement', 'description' => 'Operating, investing and financing cash movements.', 'route' => 'accounting.cash-flow.index'],
-            ['key' => 'trial_balance', 'name' => 'Trial Balance', 'description' => 'Debit and credit totals across every account.', 'route' => 'accounting.trial-balance.index'],
-            ['key' => 'general_ledger', 'name' => 'General Ledger', 'description' => 'Full transaction detail for each account.', 'route' => 'accounting.general-ledger.index'],
-            ['key' => 'journal_report', 'name' => 'Journal Report', 'description' => 'Chronological list of journal entries.', 'route' => 'accounting.reports.journal'],
-            ['key' => 'sales_register', 'name' => 'Sales Register', 'description' => 'Chronological register of sales invoices.', 'route' => 'accounting.sales-register.index'],
-            ['key' => 'sales_by_customer', 'name' => 'Sales by Customer', 'description' => 'Invoice, receipt and POS totals per customer.', 'route' => 'accounting.reports.sales-by-customer'],
-            ['key' => 'sales_by_item', 'name' => 'Sales by Item', 'description' => 'Quantities and revenue sold per product.', 'route' => 'accounting.reports.sales-by-item'],
-            ['key' => 'customer_credit_balance', 'name' => 'Customer Credit Balance', 'description' => 'Customers currently holding credit balances.', 'route' => 'accounting.reports.customer-credit-balance'],
-            ['key' => 'purchase_register', 'name' => 'Purchase Register', 'description' => 'Chronological register of supplier bills.', 'route' => 'accounting.reports.purchase-register', 'feature' => 'purchasing'],
-            ['key' => 'purchases_by_vendor', 'name' => 'Purchases by Vendor', 'description' => 'Bill and payment totals per vendor.', 'route' => 'accounting.reports.purchases-by-vendor', 'feature' => 'purchasing'],
-            ['key' => 'purchases_by_item', 'name' => 'Purchases by Item', 'description' => 'Quantities and cost purchased per product.', 'route' => 'accounting.reports.purchases-by-item', 'feature' => 'purchasing'],
-            ['key' => 'vendor_credit_balance', 'name' => 'Vendor Credit Balance', 'description' => 'Vendors currently holding credit balances.', 'route' => 'accounting.reports.vendor-credit-balance', 'feature' => 'purchasing'],
-            ['key' => 'payroll_statutory', 'name' => 'Payroll Statutory Summary', 'description' => 'PAYE, pension and other statutory deductions.', 'route' => 'accounting.payroll.statutory.index', 'feature' => 'payroll'],
-            ['key' => 'tax_depreciation_schedule', 'name' => 'Tax Depreciation Schedule', 'description' => 'Depreciation schedule for fixed assets.', 'route' => 'accounting.reports.tax-depreciation-schedule', 'feature' => 'fixed_assets'],
-            ['key' => 'cheque_register', 'name' => 'Cheque Register', 'description' => 'Issued, cleared and voided cheques.', 'route' => 'accounting.reports.cheque-register', 'feature' => 'banking'],
-            ['key' => 'bank_balances', 'name' => 'Bank Balances', 'description' => 'Balances held across all bank accounts.', 'route' => 'accounting.reports.bank-balances', 'feature' => 'banking'],
-            ['key' => 'period_lock_status', 'name' => 'Period Lock Status', 'description' => 'Open, soft-closed and hard-locked periods.', 'route' => 'accounting.reports.period-lock-status'],
-            ['key' => 'eis_submission_status', 'name' => 'EIS Submission Status', 'description' => 'Employee insurance submission tracking.', 'route' => 'accounting.reports.eis-submission-status'],
-        ];
+        // #18: the report list is driven from ReportRegistry (permissions + feature
+        // flags + route availability all resolved centrally).
+        $grouped = \App\Services\Reporting\ReportRegistry::getAccessibleGrouped($request->user(), $companyId);
 
         $reports = [];
 
-        foreach ($candidates as $candidate) {
-            if (! Route::has($candidate['route'])) {
-                continue;
+        foreach ($grouped as $cat) {
+            foreach ($cat['reports'] as $report) {
+                if (! Route::has($report['route'])) {
+                    continue;
+                }
+
+                $reports[] = [
+                    'key'         => $report['key'],
+                    'name'        => $report['name'],
+                    'description' => $report['description'],
+                    'url'         => route($report['route']),
+                ];
             }
-
-            if (! empty($candidate['feature']) && ! FeatureManagement::isEnabled($companyId, $candidate['feature'])) {
-                continue;
-            }
-
-            unset($candidate['feature']);
-
-            $candidate['url'] = route($candidate['route']);
-            $reports[] = $candidate;
         }
 
         return view('accounting.taxation.reports', ['reports' => collect($reports), 'cs' => $this->cs()]);
@@ -884,7 +1124,7 @@ class TaxController extends Controller
             ->posted()
             ->whereHas('taxCode', fn ($q) => $q->whereHas('taxType', fn ($q2) => $q2->where('category', 'PAYE')))
             ->with('taxCode:id,code,name')
-            ->orderByDesc('posting_date')
+            ->orderByDesc('created_at')
             ->get();
 
         $whtTransactions = TaxTransaction::query()
@@ -892,7 +1132,7 @@ class TaxController extends Controller
             ->posted()
             ->whereHas('taxCode', fn ($q) => $q->whereHas('taxType', fn ($q2) => $q2->where('category', 'WHT')))
             ->with('taxCode:id,code,name')
-            ->orderByDesc('posting_date')
+            ->orderByDesc('created_at')
             ->get();
 
         $certificates = WhtCertificate::query()
@@ -1066,8 +1306,9 @@ class TaxController extends Controller
         abort_unless($period !== null, 404);
 
         try {
-            $service = new \App\Services\Tax\TaxReturnService();
-            $service->generateReturn($companyId, $period->id, (int) $request->user()->id);
+            // Gate: RECONCILED → RETURN_DRAFTED (obligation lifecycle).
+            app(\App\Services\Tax\TaxObligationService::class)
+                ->draftReturn($companyId, $period->id, (int) $request->user()->id);
             return back()->with('success', __('Tax return generated.'));
         } catch (\Throwable $e) {
             return back()->withErrors(['return' => $e->getMessage()]);
@@ -1080,11 +1321,11 @@ class TaxController extends Controller
         $companyId = $this->companyId();
 
         $return = TaxReturn::where('company_id', $companyId)->findOrFail($returnId);
-        abort_unless(in_array($return->status, ['DRAFT', 'FILED']), 422, 'Return cannot be approved in current status.');
 
         try {
-            $service = new \App\Services\Tax\TaxReturnService();
-            $service->approve($companyId, $returnId, (int) $request->user()->id);
+            // Gate: RETURN_DRAFTED → RETURN_APPROVED (obligation lifecycle).
+            app(\App\Services\Tax\TaxObligationService::class)
+                ->approveReturn($companyId, $return->period_id, (int) $request->user()->id);
             return back()->with('success', __('Tax return approved.'));
         } catch (\Throwable $e) {
             return back()->withErrors(['return' => $e->getMessage()]);
@@ -1100,9 +1341,12 @@ class TaxController extends Controller
             'reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $return = TaxReturn::where('company_id', $companyId)->findOrFail($returnId);
+
         try {
-            $service = new \App\Services\Tax\TaxReturnService();
-            $service->reject($companyId, $returnId, (int) $request->user()->id, $data['reason'] ?? null);
+            // Gate: RETURN_DRAFTED / RETURN_APPROVED → REJECTED (obligation lifecycle).
+            app(\App\Services\Tax\TaxObligationService::class)
+                ->rejectReturn($companyId, $return->period_id, (int) $request->user()->id, $data['reason'] ?? null);
             return back()->with('success', __('Tax return rejected.'));
         } catch (\Throwable $e) {
             return back()->withErrors(['return' => $e->getMessage()]);
@@ -1118,9 +1362,12 @@ class TaxController extends Controller
             'reference' => ['nullable', 'string', 'max:100'],
         ]);
 
+        $return = TaxReturn::where('company_id', $companyId)->findOrFail($returnId);
+
         try {
-            $service = new \App\Services\Tax\TaxReturnService();
-            $service->file($companyId, $returnId, $data['reference'] ?? null);
+            // Gate: RETURN_APPROVED → FILED (obligation lifecycle).
+            app(\App\Services\Tax\TaxObligationService::class)
+                ->fileReturn($companyId, $return->period_id, $data['reference'] ?? null);
             return back()->with('success', __('Tax return filed.'));
         } catch (\Throwable $e) {
             return back()->withErrors(['return' => $e->getMessage()]);
@@ -1201,6 +1448,148 @@ class TaxController extends Controller
         });
 
         return back()->with('success', __('Tax period closed.'));
+    }
+
+    /**
+     * Tax Obligations dashboard — one row per open obligation across all tax types.
+     */
+    public function obligations(Request $request)
+    {
+        $this->requirePermission($request, 'taxation.view');
+        $companyId = $this->companyId();
+
+        $obligations = TaxObligation::query()
+            ->forCompany($companyId)
+            ->with(['period:id,label,start_date,end_date,filing_due_date,status', 'taxType:id,code,name,category'])
+            ->active()
+            ->orderBy('status')
+            ->orderBy('created_at')
+            ->get();
+
+        $rows = [];
+
+        foreach ($obligations as $obligation) {
+            $period = $obligation->period;
+            if (! $period) {
+                continue;
+            }
+
+            $rows[] = [
+                'id'                    => $obligation->id,
+                'period_id'             => $period->id,
+                'period_label'          => $period->label,
+                'period_start'          => $period->start_date?->toDateString(),
+                'period_end'            => $period->end_date?->toDateString(),
+                'filing_due_date'       => $period->filing_due_date?->toDateString(),
+                'tax_type'              => $obligation->taxType?->name,
+                'tax_type_code'         => $obligation->taxType?->code,
+                'category'              => $obligation->taxType?->category,
+                'status'                => $obligation->status,
+                'is_overdue'            => $obligation->isOverdue(),
+                'blocked_reason'        => $obligation->blocked_reason,
+                'variance_waived'       => $obligation->variance_waived,
+                'nil_or_refund_flag'    => $obligation->nil_or_refund_flag,
+                'working_paper_url'     => route('accounting.taxation.returns.working-paper', ['periodId' => $period->id]),
+            ];
+        }
+
+        $openCount = $obligations->whereIn('status', [
+            TaxObligation::STATUS_OPEN,
+            TaxObligation::STATUS_CALCULATING,
+            TaxObligation::STATUS_READY_TO_RECONCILE,
+        ])->count();
+        $readyCount = $obligations->where('status', TaxObligation::STATUS_READY_TO_RECONCILE)->count();
+        $overdueCount = $obligations->filter(fn ($o) => $o->isOverdue())->count();
+
+        return view('accounting.taxation.obligations', [
+            'rows'         => collect($rows),
+            'openCount'    => $openCount,
+            'readyCount'   => $readyCount,
+            'overdueCount' => $overdueCount,
+            'totalCount'   => $obligations->count(),
+            'cs'           => $this->cs(),
+        ]);
+    }
+
+    public function reconcileObligation(Request $request, int $period)
+    {
+        $this->requirePermission($request, 'taxation.edit');
+        $companyId = $this->companyId();
+
+        $periodModel = TaxPeriod::where('company_id', $companyId)->find($period);
+        abort_unless($periodModel !== null, 404);
+
+        $data = $request->validate([
+            'waive'       => ['sometimes', 'boolean'],
+            'waive_reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        // Variance for the period: calculated (computed tax) minus expected (GL posted).
+        $aggregates = TaxTransaction::query()
+            ->where('company_id', $companyId)
+            ->where('period_id', $periodModel->id)
+            ->posted()
+            ->selectRaw('side, SUM(ROUND(base_amount * rate_pct / 100, 2)) AS expected_tax, SUM(tax_amount) AS calculated_tax')
+            ->groupBy('side')
+            ->get()
+            ->keyBy('side');
+
+        $outputCalculated = (float) ($aggregates['OUTPUT']->calculated_tax ?? 0);
+        $inputCalculated  = (float) ($aggregates['INPUT']->calculated_tax ?? 0);
+        $adjustments      = $this->approvedAdjustmentsNet($companyId, $periodModel->id);
+        $netCalculated    = round($outputCalculated - $inputCalculated + $adjustments, 2);
+
+        $payableId = DefaultAccountMapping::getAccountId($companyId, 'tax_payable');
+        $receivableId = DefaultAccountMapping::getAccountId($companyId, 'tax_receivable');
+
+        $glMovement = 0.0;
+        if ($payableId !== null || $receivableId !== null) {
+            $glMovement = round(
+                $this->glMovementForWindow(
+                    $companyId,
+                    $payableId ?? $receivableId,
+                    $periodModel->start_date,
+                    $periodModel->end_date
+                ),
+                2
+            );
+        }
+
+        $variance = round($netCalculated - $glMovement, 2);
+
+        try {
+            app(TaxObligationService::class)->reconcile(
+                $companyId,
+                $periodModel->id,
+                $variance,
+                (int) $request->user()->id,
+                (bool) ($data['waive'] ?? false),
+                $data['waive_reason'] ?? null
+            );
+            return back()->with('success', __('Tax obligation reconciled.'));
+        } catch (\Throwable $e) {
+            return back()->withErrors(['obligation' => $e->getMessage()]);
+        }
+    }
+
+    public function reopenObligation(Request $request, int $period)
+    {
+        $this->requirePermission($request, 'taxation.edit');
+        $companyId = $this->companyId();
+
+        $periodModel = TaxPeriod::where('company_id', $companyId)->find($period);
+        abort_unless($periodModel !== null, 404);
+
+        try {
+            app(TaxObligationService::class)->reopenRejected(
+                $companyId,
+                $periodModel->id,
+                (int) $request->user()->id
+            );
+            return back()->with('success', __('Rejected tax return reopened for correction.'));
+        } catch (\Throwable $e) {
+            return back()->withErrors(['obligation' => $e->getMessage()]);
+        }
     }
 
     public function recognitionRules(Request $request)

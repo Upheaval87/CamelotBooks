@@ -9,6 +9,8 @@
 
         @include('accounting.taxation._tabs', ['active' => 'exemptions'])
 
+        @include('accounting.taxation._create-exemption')
+
         <div class="tx-card">
             <div class="tx-li-wrap">
                 <table class="tx-table" style="min-width:860px;">

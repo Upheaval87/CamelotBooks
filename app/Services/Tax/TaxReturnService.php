@@ -21,7 +21,7 @@ class TaxReturnService
         ?string $taxTypeCode = null,
     ): TaxReturn {
         $period = TaxPeriod::findOrFail($periodId);
-        abort_unless($period->company_id === $companyId, 403);
+        abort_unless($period->company_id === $companyId, 404);
 
         $taxType = $taxTypeCode
             ? TaxType::where('company_id', $companyId)->where('code', $taxTypeCode)->firstOrFail()
@@ -80,7 +80,7 @@ class TaxReturnService
     public function approve(int $companyId, int $returnId, int $approvedByUserId): TaxReturn
     {
         $return = TaxReturn::findOrFail($returnId);
-        abort_unless($return->company_id === $companyId, 403);
+        abort_unless($return->company_id === $companyId, 404);
         abort_unless($return->status === 'submitted', 400, 'Only submitted returns can be approved.');
 
         $oldStatus = $return->status;
@@ -99,7 +99,7 @@ class TaxReturnService
     public function file(int $companyId, int $returnId, ?string $reference = null): TaxReturn
     {
         $return = TaxReturn::findOrFail($returnId);
-        abort_unless($return->company_id === $companyId, 403);
+        abort_unless($return->company_id === $companyId, 404);
         abort_unless(in_array($return->status, ['approved']), 400, 'Only approved returns can be filed.');
 
         $oldStatus = $return->status;
@@ -109,7 +109,7 @@ class TaxReturnService
             'reference'   => $reference ?? $return->reference,
         ]);
 
-        TaxAuditTrail::log($companyId, $return->prepared_by ?? 0, 'TAX_RETURN', $return->id, 'status', strtoupper($oldStatus), 'FILED', 'Tax return filed.');
+        TaxAuditTrail::log($companyId, $return->prepared_by ?? null, 'TAX_RETURN', $return->id, 'status', strtoupper($oldStatus), 'FILED', 'Tax return filed.');
 
         return $return->fresh();
     }
@@ -117,7 +117,7 @@ class TaxReturnService
     public function reject(int $companyId, int $returnId, int $rejectedByUserId, ?string $reason = null): TaxReturn
     {
         $return = TaxReturn::findOrFail($returnId);
-        abort_unless($return->company_id === $companyId, 403);
+        abort_unless($return->company_id === $companyId, 404);
         abort_unless(in_array($return->status, ['submitted', 'draft']), 400);
 
         $oldStatus = $return->status;

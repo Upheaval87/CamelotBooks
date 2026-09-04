@@ -9,6 +9,8 @@
 
         @include('accounting.taxation._tabs', ['active' => 'codes'])
 
+        @include('accounting.taxation._create-code')
+
         <div class="tx-card">
             <div class="tx-li-wrap">
                 <table class="tx-table" style="min-width:860px;">

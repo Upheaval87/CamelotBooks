@@ -7,16 +7,17 @@ use App\Models\Company;
 use App\Models\TaxCode;
 use App\Models\TaxCodeRate;
 use App\Models\TaxJurisdiction;
+use App\Models\TaxObligation;
 use App\Models\TaxPeriod;
 use App\Models\TaxType;
 use App\Models\User;
 use App\Services\Tax\TaxEngine;
-use App\Services\Tax\TaxReturnService;
+use App\Services\Tax\TaxObligationService;
 use App\Services\Tax\TaxPaymentService;
-use App\Services\Tax\WhtCertificateService;
 use App\Services\Tax\TaxRegistrationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TaxEndToEndTest extends TestCase
 {
@@ -69,20 +70,10 @@ class TaxEndToEndTest extends TestCase
             'sub_type' => 'current_liability',
             'is_active' => true,
         ]);
-        Account::create([
-            'company_id' => $this->companyId,
-            'code' => '1200',
-            'name' => 'Bank Account',
-            'type' => 'asset',
-            'sub_type' => 'current_asset',
-            'is_active' => true,
-            'is_bank_account' => true,
-        ]);
     }
 
-    public function test_full_vat_lifecycle(): void
+    public function test_full_vat_obligation_lifecycle_without_manual_status_forcing(): void
     {
-        // ── Stage 1: Create tax configuration ──
         $vat = TaxType::create([
             'company_id' => $this->companyId,
             'code' => 'VAT',
@@ -107,7 +98,7 @@ class TaxEndToEndTest extends TestCase
             'jurisdiction_id' => $jurisdiction->id,
             'treatment' => 'INCLUSIVE',
             'effective_from' => '2024-01-01',
-            'is_active' => true,
+            'active' => true,
         ]);
 
         TaxCodeRate::create([
@@ -127,21 +118,25 @@ class TaxEndToEndTest extends TestCase
             'status' => 'OPEN',
         ]);
 
-        // ── Stage 2: Tax registration ──
         $regService = app(TaxRegistrationService::class);
-        $this->assertFalse($regService->checkRegistration($this->companyId, 'company', $this->companyId, $vat->id));
         $regService->register($this->companyId, 'company', $this->companyId, $vat->id, $jurisdiction->id, 'REG-001', '2024-01-01');
-        $this->assertTrue($regService->checkRegistration($this->companyId, 'company', $this->companyId, $vat->id));
 
-        // ── Stage 2: Engine calculation ──
         $engine = app(TaxEngine::class);
         $salesAccount = Account::where('company_id', $this->companyId)->where('code', '4000')->first();
         $taxPayable = Account::where('company_id', $this->companyId)->where('code', '2300')->first();
 
-        $result = $engine->calculateAndPostTax([
+        // ── No obligation exists yet ──
+        $this->assertDatabaseMissing('tax_obligations', [
+            'company_id' => $this->companyId,
+            'period_id' => $period->id,
+        ]);
+
+        // ── First posted transaction auto-creates the obligation (OPEN → CALCULATING) ──
+        $r1 = $engine->calculateAndPostTax([
             'company_id' => $this->companyId,
             'date' => '2026-07-15',
             'source_module' => 'sales',
+            'source_kind' => 'sales',
             'source_id' => 1,
             'reference' => 'INV-001',
             'user_id' => $this->user->id,
@@ -153,16 +148,20 @@ class TaxEndToEndTest extends TestCase
             'side' => 'OUTPUT',
             'memo' => 'Sale to customer',
         ]);
+        $this->assertEqualsWithDelta(1000.00, $r1->base_amount, 0.01);
+        $this->assertEqualsWithDelta(165.00, $r1->tax_amount, 0.01);
 
-        $this->assertNotNull($result);
-        $this->assertEqualsWithDelta(1000.00, $result->base_amount, 0.01);
-        $this->assertEqualsWithDelta(165.00, $result->tax_amount, 0.01);
+        $obligation = TaxObligation::where('company_id', $this->companyId)
+            ->where('period_id', $period->id)->first();
+        $this->assertNotNull($obligation);
+        $this->assertNotEquals(TaxObligation::STATUS_OPEN, $obligation->status);
 
-        // Second transaction (input tax)
-        $result2 = $engine->calculateAndPostTax([
+        // ── Second (completing) posted transaction advances to READY_TO_RECONCILE ──
+        $r2 = $engine->calculateAndPostTax([
             'company_id' => $this->companyId,
             'date' => '2026-07-20',
             'source_module' => 'purchases',
+            'source_kind' => 'purchases',
             'source_id' => 1,
             'reference' => 'BILL-001',
             'user_id' => $this->user->id,
@@ -174,41 +173,59 @@ class TaxEndToEndTest extends TestCase
             'side' => 'INPUT',
             'memo' => 'Purchase from supplier',
         ]);
+        $this->assertEqualsWithDelta(500.00, $r2->base_amount, 0.01);
+        $this->assertEqualsWithDelta(82.50, $r2->tax_amount, 0.01);
 
-        $this->assertNotNull($result2);
-        $this->assertEqualsWithDelta(500.00, $result2->base_amount, 0.01);
-        $this->assertEqualsWithDelta(82.50, $result2->tax_amount, 0.01);
+        $obligation->refresh();
+        $this->assertEquals(TaxObligation::STATUS_READY_TO_RECONCILE, $obligation->status);
 
-        // ── Stage 3: Generate return ──
-        $returnService = app(TaxReturnService::class);
-        $return = $returnService->generateReturn($this->companyId, $period->id, $this->user->id);
+        // ── Reconcile. No GL was posted, so the working-paper variance is the full
+        // calculated net (82.50) — the clerk signs it off with a waiver → RECONCILED ──
+        $outputCalculated = (float) $r1->tax_amount;
+        $inputCalculated = (float) $r2->tax_amount;
+        $netCalculated = round($outputCalculated - $inputCalculated, 2); // 82.50
+        $variance = $netCalculated; // no GL was posted, so GL movement is 0
 
+        $service = app(TaxObligationService::class);
+        $reconciled = $service->reconcile(
+            $this->companyId,
+            $period->id,
+            $variance,
+            $this->user->id,
+            true,
+            'GL lines are booked by the referencing document post; working paper variance accepted.'
+        );
+        $this->assertEquals(TaxObligation::STATUS_RECONCILED, $reconciled->status);
+        $this->assertTrue($reconciled->variance_waived);
+        $this->assertNotNull($reconciled->variance_waived_reason);
+
+        // ── draft → RETURN_DRAFTED ──
+        $return = $service->draftReturn($this->companyId, $period->id, $this->user->id);
         $this->assertNotNull($return);
         $this->assertEquals('draft', $return->status);
         $this->assertEqualsWithDelta(165.00, $return->output_tax, 0.01);
         $this->assertEqualsWithDelta(82.50, $return->input_tax, 0.01);
         $this->assertEqualsWithDelta(82.50, $return->net_payable, 0.01);
-        $this->assertCount(5, $return->lines); // A, B, C, D + breakdown
+        $this->assertCount(5, $return->lines);
+        $reconciled->refresh();
+        $this->assertEquals(TaxObligation::STATUS_RETURN_DRAFTED, $reconciled->status);
 
-        // ── Stage 3: Approve return ──
-        // First need status = 'submitted' for approve to work
-        $return->update(['status' => 'submitted']);
-        $approved = $returnService->approve($this->companyId, $return->id, $this->user->id);
-        $this->assertEquals('approved', $approved->status);
+        // ── approve → RETURN_APPROVED ──
+        $approvedObligation = $service->approveReturn($this->companyId, $period->id, $this->user->id);
+        $this->assertEquals(TaxObligation::STATUS_RETURN_APPROVED, $approvedObligation->status);
+        $return->refresh();
+        $this->assertEquals('approved', $return->status);
 
-        // Period should be locked
-        $period->refresh();
-        $this->assertEquals('CLOSED', $period->status);
+        // ── file → FILED ──
+        $filedObligation = $service->fileReturn($this->companyId, $period->id, 'MRA-2026-001');
+        $this->assertEquals(TaxObligation::STATUS_FILED, $filedObligation->status);
+        $return->refresh();
+        $this->assertEquals('filed', $return->status);
+        $this->assertEquals('MRA-2026-001', $return->reference);
 
-        // ── Stage 3: File return ──
-        $filed = $returnService->file($this->companyId, $return->id, 'MRA-2026-001');
-        $this->assertEquals('filed', $filed->status);
-        $this->assertEquals('MRA-2026-001', $filed->reference);
-
-        // ── Stage 3: Record payment ──
-        $bankAccount = Account::where('company_id', $this->companyId)->where('code', '1200')->first();
-        $paymentService = app(TaxPaymentService::class);
-        $payment = $paymentService->recordPayment($this->companyId, [
+        // ── pay → PAID (payment covers net payable; advancePaidIfCovered auto-advances) ──
+        $bankAccount = Account::where('company_id', $this->companyId)->where('code', '1150')->first();
+        app(TaxPaymentService::class)->recordPayment($this->companyId, [
             'tax_type_id' => $vat->id,
             'period_id' => $period->id,
             'amount' => 82.50,
@@ -217,125 +234,183 @@ class TaxEndToEndTest extends TestCase
             'payment_ref' => 'TXP-001',
         ], $this->user->id);
 
-        $this->assertNotNull($payment);
-        $this->assertEquals('confirmed', $payment->status);
+        $this->assertEquals(
+            TaxObligation::STATUS_PAID,
+            TaxObligation::where('company_id', $this->companyId)
+                ->where('period_id', $period->id)->value('status')
+        );
 
-        // ── Stage 3: Void payment ──
-        $voided = $paymentService->voidPayment($this->companyId, $payment->id);
-        $this->assertEquals('voided', $voided->status);
+        // ── close → CLOSED ──
+        $closed = $service->close($this->companyId, $period->id, $this->user->id);
+        $this->assertEquals(TaxObligation::STATUS_CLOSED, $closed->status);
 
-        // ── Stage 3: WHT certificate ──
-        $whtType = TaxType::create([
-            'company_id' => $this->companyId,
-            'code' => 'WHT',
-            'name' => 'Withholding Tax',
-            'category' => 'WHT',
-        ]);
-
-        $whtCode = TaxCode::create([
-            'company_id' => $this->companyId,
-            'code' => 'WHT_STD',
-            'name' => 'Standard WHT',
-            'tax_type_id' => $whtType->id,
-            'jurisdiction_id' => $jurisdiction->id,
-            'treatment' => 'EXCLUSIVE',
-            'effective_from' => '2024-01-01',
-            'is_active' => true,
-        ]);
-
-        $whtCertService = app(WhtCertificateService::class);
-        $cert = $whtCertService->createFromForm($this->companyId, [
-            'supplier_id' => $bankAccount->id,
-            'tax_code_id' => $whtCode->id,
-            'period_id' => $period->id,
-            'gross_amount' => 500.00,
-            'tax_amount' => 75.00,
-        ], $this->user->id);
-
-        $this->assertNotNull($cert);
-        $this->assertEquals('issued', $cert->status);
-
-        // Revoke it
-        $revoked = $whtCertService->revoke($this->companyId, $cert->id, $this->user->id);
-        $this->assertEquals('revoked', $revoked->status);
-
-        // ── Stage 4: Route rendering ──
-        $routes = [
-            'accounting.taxation.dashboard',
-            'accounting.taxation.codes',
-            'accounting.taxation.types',
-            'accounting.taxation.rates',
-            'accounting.taxation.exemptions',
-            'accounting.taxation.jurisdictions',
-            'accounting.taxation.accounts',
-            'accounting.taxation.periods',
-            'accounting.taxation.reconciliation',
-            'accounting.taxation.reports',
-            'accounting.taxation.audit-trail',
-            'accounting.taxation.position',
-            'accounting.taxation.control-account',
-            'accounting.taxation.payments',
-            'accounting.taxation.recognition-rules',
-        ];
-
-        foreach ($routes as $route) {
-            $response = $this->actingAs($this->user)->get(route($route));
-            $response->assertStatus(200);
-        }
+        $period->refresh();
+        $this->assertEquals('CLOSED', $period->status);
+        $this->assertTrue((bool) $period->locked);
     }
 
-    public function test_adjustment_lifecycle(): void
+    public function test_reconcile_cannot_be_run_twice_once_reconciled(): void
     {
+        // Gate-block test: RECONCILED is a hard gate. Once reconciled, a second
+        // reconcile call is rejected (the service expects READY_TO_RECONCILE),
+        // so a period can never be reconciled twice.
         $vat = TaxType::create([
             'company_id' => $this->companyId,
             'code' => 'VAT',
-            'name' => 'VAT',
+            'name' => 'Value Added Tax',
             'category' => 'VAT',
         ]);
-
         $jurisdiction = TaxJurisdiction::create([
             'company_id' => $this->companyId,
             'code' => 'MWI',
             'name' => 'Malawi',
             'country' => 'MW',
-            'authority' => 'MRA',
+            'authority' => 'Malawi Revenue Authority',
             'active' => true,
         ]);
-
+        $code = TaxCode::create([
+            'company_id' => $this->companyId,
+            'code' => 'VAT_STD',
+            'name' => 'Standard VAT',
+            'tax_type_id' => $vat->id,
+            'jurisdiction_id' => $jurisdiction->id,
+            'treatment' => 'INCLUSIVE',
+            'effective_from' => '2024-01-01',
+            'active' => true,
+        ]);
+        TaxCodeRate::create([
+            'tax_code_id' => $code->id,
+            'rate_pct' => 16.5,
+            'effective_from' => '2024-01-01',
+            'effective_to' => null,
+        ]);
         $period = TaxPeriod::create([
             'company_id' => $this->companyId,
             'tax_type_id' => $vat->id,
-            'label' => 'Jul 2026',
-            'start_date' => '2026-07-01',
-            'end_date' => '2026-07-31',
-            'filing_due_date' => '2026-08-25',
+            'label' => 'Aug 2026',
+            'start_date' => '2026-08-01',
+            'end_date' => '2026-08-31',
+            'filing_due_date' => '2026-09-25',
             'status' => 'OPEN',
         ]);
 
-        // Create via controller route
-        $this->actingAs($this->user)->post(route('accounting.taxation.adjustments.store'), [
+        $salesAccount = Account::where('company_id', $this->companyId)->where('code', '4000')->first();
+        $taxPayable = Account::where('company_id', $this->companyId)->where('code', '2300')->first();
+        $engine = app(TaxEngine::class);
+
+        // A single posted transaction advances the obligation to READY_TO_RECONCILE.
+        $engine->calculateAndPostTax([
+            'company_id' => $this->companyId,
+            'date' => '2026-08-10',
+            'source_module' => 'sales',
+            'source_kind' => 'sales',
+            'source_id' => 1,
+            'reference' => 'INV-002',
+            'user_id' => $this->user->id,
             'period_id' => $period->id,
+            'account_id' => $salesAccount->id,
+            'tax_account_id' => $taxPayable->id,
+            'base_amount' => 1000.00,
+            'tax_code_id' => $code->id,
+            'side' => 'OUTPUT',
+            'memo' => 'Single sale',
+        ]);
+
+        $obligation = TaxObligation::where('company_id', $this->companyId)
+            ->where('period_id', $period->id)->first();
+        $this->assertEquals(TaxObligation::STATUS_READY_TO_RECONCILE, $obligation->status);
+
+        // First reconcile succeeds → RECONCILED (zero variance, no waiver needed).
+        $service = app(TaxObligationService::class);
+        $reconciled = $service->reconcile($this->companyId, $period->id, 0.0, $this->user->id);
+        $this->assertEquals(TaxObligation::STATUS_RECONCILED, $reconciled->status);
+
+        // Second reconcile is blocked (422) — the RECONCILED gate cannot be re-entered.
+        try {
+            $service->reconcile($this->companyId, $period->id, 0.0, $this->user->id);
+            $this->fail('A second reconcile after RECONCILED should be rejected.');
+        } catch (HttpException $e) {
+            $this->assertEquals(422, $e->getStatusCode());
+        }
+    }
+
+    public function test_reconcile_blocks_nonzero_variance_without_waiver(): void
+    {
+        $vat = TaxType::create([
+            'company_id' => $this->companyId,
+            'code' => 'VAT',
+            'name' => 'Value Added Tax',
+            'category' => 'VAT',
+        ]);
+        $jurisdiction = TaxJurisdiction::create([
+            'company_id' => $this->companyId,
+            'code' => 'MWI',
+            'name' => 'Malawi',
+            'country' => 'MW',
+            'authority' => 'Malawi Revenue Authority',
+            'active' => true,
+        ]);
+        $code = TaxCode::create([
+            'company_id' => $this->companyId,
+            'code' => 'VAT_STD',
+            'name' => 'Standard VAT',
             'tax_type_id' => $vat->id,
-            'amount' => 100,
-            'direction' => 'ADD',
-            'reason' => 'Late filing fee',
-        ])->assertRedirect();
+            'jurisdiction_id' => $jurisdiction->id,
+            'treatment' => 'INCLUSIVE',
+            'effective_from' => '2024-01-01',
+            'active' => true,
+        ]);
+        TaxCodeRate::create([
+            'tax_code_id' => $code->id,
+            'rate_pct' => 16.5,
+            'effective_from' => '2024-01-01',
+            'effective_to' => null,
+        ]);
+        $period = TaxPeriod::create([
+            'company_id' => $this->companyId,
+            'tax_type_id' => $vat->id,
+            'label' => 'Sep 2026',
+            'start_date' => '2026-09-01',
+            'end_date' => '2026-09-30',
+            'filing_due_date' => '2026-10-25',
+            'status' => 'OPEN',
+        ]);
 
-        $adj = \App\Models\TaxAdjustment::where('company_id', $this->companyId)->first();
-        $this->assertNotNull($adj);
-        $this->assertEquals('PENDING', $adj->status);
+        $salesAccount = Account::where('company_id', $this->companyId)->where('code', '4000')->first();
+        $taxPayable = Account::where('company_id', $this->companyId)->where('code', '2300')->first();
+        $engine = app(TaxEngine::class);
 
-        // Approve
-        $this->actingAs($this->user)
-            ->post(route('accounting.taxation.adjustments.approve', $adj->id))
-            ->assertRedirect();
-        $adj->refresh();
-        $this->assertEquals('APPROVED', $adj->status);
+        // Post two transactions so the obligation reaches READY_TO_RECONCILE.
+        foreach (['sales', 'purchases'] as $kind) {
+            $engine->calculateAndPostTax([
+                'company_id' => $this->companyId,
+                'date' => '2026-09-10',
+                'source_module' => $kind,
+                'source_kind' => $kind,
+                'source_id' => 1,
+                'reference' => 'REF-' . $kind,
+                'user_id' => $this->user->id,
+                'period_id' => $period->id,
+                'account_id' => $salesAccount->id,
+                'tax_account_id' => $taxPayable->id,
+                'base_amount' => 1000.00,
+                'tax_code_id' => $code->id,
+                'side' => $kind === 'sales' ? 'OUTPUT' : 'INPUT',
+                'memo' => 'Transaction',
+            ]);
+        }
 
-        // Audit trail should have both entries
-        $logs = \App\Models\TaxAuditTrail::where('company_id', $this->companyId)
-            ->where('entity_kind', 'TAX_ADJUSTMENT')
-            ->get();
-        $this->assertCount(2, $logs);
+        $obligation = TaxObligation::where('company_id', $this->companyId)
+            ->where('period_id', $period->id)->first();
+        $this->assertEquals(TaxObligation::STATUS_READY_TO_RECONCILE, $obligation->status);
+
+        // Non-zero variance and no waiver → reconcile is blocked (422).
+        // Reconcile with a non-zero variance and no waiver is rejected (422).
+        try {
+            app(TaxObligationService::class)->reconcile($this->companyId, $period->id, 5.00, $this->user->id);
+            $this->fail('A non-zero variance without a waiver should be rejected.');
+        } catch (HttpException $e) {
+            $this->assertEquals(422, $e->getStatusCode());
+        }
     }
 }

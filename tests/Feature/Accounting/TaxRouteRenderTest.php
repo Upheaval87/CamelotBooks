@@ -68,7 +68,7 @@ class TaxRouteRenderTest extends TestCase
             'jurisdiction_id' => $jurisdiction->id,
             'treatment' => 'INCLUSIVE',
             'effective_from' => '2024-01-01',
-            'is_active' => true,
+            'active' => true,
         ]);
         TaxCodeRate::create([
             'tax_code_id' => $code1->id,
@@ -85,7 +85,7 @@ class TaxRouteRenderTest extends TestCase
             'jurisdiction_id' => $jurisdiction->id,
             'treatment' => 'DEDUCTED',
             'effective_from' => '2024-01-01',
-            'is_active' => true,
+            'active' => true,
         ]);
         TaxCodeRate::create([
             'tax_code_id' => $code2->id,
@@ -119,6 +119,7 @@ class TaxRouteRenderTest extends TestCase
 
         $routes = [
             'dashboard'         => route('accounting.taxation.dashboard'),
+            'obligations'       => route('accounting.taxation.obligations'),
             'config'            => route('accounting.taxation.config'),
             'config-types'      => route('accounting.taxation.config', ['tab' => 'types']),
             'config-rates'      => route('accounting.taxation.config', ['tab' => 'rates']),
@@ -143,7 +144,7 @@ class TaxRouteRenderTest extends TestCase
             'recognition-rules' => route('accounting.taxation.recognition-rules'),
         ];
 
-        $this->assertCount(23, $routes);
+        $this->assertCount(24, $routes);
 
         foreach ($routes as $name => $url) {
             $response = $this->get($url);

@@ -743,10 +743,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/', [TaxController::class, 'dashboard'])->name('dashboard');
                 Route::get('/config', [TaxController::class, 'config'])->name('config');
                 Route::get('/codes', [TaxController::class, 'codes'])->name('codes');
+                Route::post('/codes', [TaxController::class, 'storeCode'])->middleware('permission:taxation.create')->name('codes.store');
                 Route::get('/types', [TaxController::class, 'types'])->name('types');
+                Route::post('/types', [TaxController::class, 'storeType'])->middleware('permission:taxation.create')->name('types.store');
                 Route::get('/rates', [TaxController::class, 'rates'])->name('rates');
+                Route::post('/rates', [TaxController::class, 'storeRate'])->middleware('permission:taxation.create')->name('rates.store');
                 Route::get('/exemptions', [TaxController::class, 'exemptions'])->name('exemptions');
+                Route::post('/exemptions', [TaxController::class, 'storeExemption'])->middleware('permission:taxation.create')->name('exemptions.store');
                 Route::get('/jurisdictions', [TaxController::class, 'jurisdictions'])->name('jurisdictions');
+                Route::post('/jurisdictions', [TaxController::class, 'storeJurisdiction'])->middleware('permission:taxation.create')->name('jurisdictions.store');
                 Route::get('/accounts', [TaxController::class, 'accounts'])->name('accounts');
                 Route::get('/periods', [TaxController::class, 'periods'])->name('periods');
                 Route::get('/returns/{periodId}/working-paper', [TaxController::class, 'returnWorkingPaper'])->name('returns.working-paper');
@@ -772,6 +777,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/payments/{payment}/void', [TaxController::class, 'voidPayment'])->name('payments.void');
                 Route::post('/periods/{period}/close', [TaxController::class, 'closePeriod'])->name('periods.close');
                 Route::get('/recognition-rules', [TaxController::class, 'recognitionRules'])->name('recognition-rules');
+                Route::get('/obligations', [TaxController::class, 'obligations'])->name('obligations');
+                Route::post('/obligations/{period}/reconcile', [TaxController::class, 'reconcileObligation'])->name('obligations.reconcile');
+                Route::post('/obligations/{period}/reopen', [TaxController::class, 'reopenObligation'])->name('obligations.reopen');
             });
 
             // Payroll Centre

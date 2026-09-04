@@ -1,3 +1,5 @@
+@include('accounting.taxation._create-jurisdiction')
+
 <div class="tx-card">
     <div class="tx-card-h">
         <span class="ic">&#127758;</span>

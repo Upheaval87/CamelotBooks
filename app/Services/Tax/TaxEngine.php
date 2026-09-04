@@ -87,7 +87,12 @@ class TaxEngine
         }
 
         // Round-trip validation (§1.9)
-        $roundMode = $taxCode->rounding_mode ?? 'HALF_UP';
+        // A context-level `round_mode` overrides the tax code's rounding_mode.
+        // This is how documents whose tax code has rounding_level='DOCUMENT'
+        // pass a single document-wide rounding mode (§1.9D / fix #3).
+        $roundMode = $context['round_mode']
+            ?? $taxCode->rounding_mode
+            ?? 'HALF_UP';
         if ($context['round_line'] ?? true) {
             $taxAmount = $this->roundTax($taxAmount, $roundMode);
             $grossAmount = $calc['gross_amount'];
@@ -141,6 +146,10 @@ class TaxEngine
             'is_reversal'             => false,
             'status'                  => 'POSTED',
         ]);
+
+        // Obligation lifecycle (Step 1c): auto-create on first transaction and
+        // advance OPEN → CALCULATING → READY_TO_RECONCILE once all posts are made.
+        $this->obligationService()->reconcileAfterTransaction($companyId, $period->id, $taxCode->tax_type_id);
 
         // Audit trail (§1.8)
         TaxAuditTrail::log(
@@ -196,7 +205,7 @@ class TaxEngine
 
             if ($side === 'OUTPUT') {
                 $receivableAcct = $this->resolveAccount($companyId, 'tax_receivable', '1150');
-                $payableAcct    = $this->resolveAccount($companyId, 'tax_payable', '2100');
+                $payableAcct    = $this->resolveAccount($companyId, 'tax_payable', '2300');
 
                 $jeLines[] = [
                     'account_id'     => $receivableAcct->id,
@@ -220,7 +229,7 @@ class TaxEngine
 
             } elseif ($side === 'INPUT') {
                 $receivableAcct = $this->resolveAccount($companyId, 'tax_receivable', '1150');
-                $payableAcct    = $this->resolveAccount($companyId, 'tax_payable', '2100');
+                $payableAcct    = $this->resolveAccount($companyId, 'tax_payable', '2300');
 
                 $jeLines[] = [
                     'account_id'     => $payableAcct->id,
@@ -433,47 +442,71 @@ class TaxEngine
         // Determine period
         $period = $this->resolveOrCreatePeriod($context['company_id'], $taxCode->tax_type_id, $date);
 
-        // Create the output side (reverse charge)
+        $jurisdictionId = $context['jurisdiction_id'] ?? $taxCode->jurisdiction_id;
+        $sourceKind     = strtoupper($context['source_kind'] ?? 'MANUAL');
+        $sourceId       = $context['source_id'] ?? null;
+
+        // Apportionment reduces the INPUT side only (fix #4). The OUTPUT side is
+        // the full reverse-charge liability; the INPUT side is the recoverable
+        // amount actually available for input-tax relief.
+        $apportionmentPct     = null;
+        $recoverableTaxAmount = null;
+        if (isset($context['apportionment_pct']) && (float) $context['apportionment_pct'] < 100) {
+            $apportionmentPct     = (float) $context['apportionment_pct'];
+            $recoverableTaxAmount = round($calc['tax_amount'] * $apportionmentPct / 100, 2);
+        }
+
+        // Create the output side (reverse charge) — full amount.
         TaxTransaction::create([
-            'company_id'     => $context['company_id'],
-            'period_id'      => $period->id,
-            'tax_code_id'    => $taxCode->id,
-            'rate_pct'       => $rateRow->rate_pct,
-            'side'           => 'OUTPUT',
-            'source_kind'    => strtoupper($context['source_kind'] ?? 'MANUAL'),
-            'source_id'      => $context['source_id'] ?? null,
-            'base_amount'    => $baseAmount,
-            'tax_amount'     => $calc['tax_amount'],
-            'gross_amount'   => $calc['gross_amount'],
-            'net_amount'     => $calc['net_amount'],
-            'jurisdiction_id' => $context['jurisdiction_id'] ?? $taxCode->jurisdiction_id,
-            'gl_account_id'  => $taxCode->gl_output_acct,
+            'company_id'        => $context['company_id'],
+            'period_id'         => $period->id,
+            'tax_code_id'       => $taxCode->id,
+            'rate_pct'          => $rateRow->rate_pct,
+            'side'              => 'OUTPUT',
+            'source_kind'       => $sourceKind,
+            'source_id'         => $sourceId,
+            'base_amount'       => $baseAmount,
+            'tax_amount'        => $calc['tax_amount'],
+            'gross_amount'      => $calc['gross_amount'],
+            'net_amount'        => $calc['net_amount'],
+            'apportionment_pct' => null,
+            'recoverable_tax_amount' => null,
+            'jurisdiction_id'   => $jurisdictionId,
+            'gl_account_id'     => $taxCode->gl_output_acct,
             'recognition_basis' => 'INVOICE',
-            'recognized_at'  => now(),
-            'is_reversal'    => false,
-            'status'         => 'POSTED',
+            'recognized_at'     => now(),
+            'is_reversal'       => false,
+            'status'            => 'POSTED',
         ]);
 
-        // Create the input side (reverse charge)
+        // Create the input side (reverse charge) — recoverable amount after
+        // apportionment (fix #4).
         TaxTransaction::create([
-            'company_id'     => $context['company_id'],
-            'period_id'      => $period->id,
-            'tax_code_id'    => $taxCode->id,
-            'rate_pct'       => $rateRow->rate_pct,
-            'side'           => 'INPUT',
-            'source_kind'    => strtoupper($context['source_kind'] ?? 'MANUAL'),
-            'source_id'      => $context['source_id'] ?? null,
-            'base_amount'    => $baseAmount,
-            'tax_amount'     => $calc['tax_amount'],
-            'gross_amount'   => $calc['gross_amount'],
-            'net_amount'     => $calc['net_amount'],
-            'jurisdiction_id' => $context['jurisdiction_id'] ?? $taxCode->jurisdiction_id,
-            'gl_account_id'  => $taxCode->gl_input_acct,
+            'company_id'        => $context['company_id'],
+            'period_id'         => $period->id,
+            'tax_code_id'       => $taxCode->id,
+            'rate_pct'          => $rateRow->rate_pct,
+            'side'              => 'INPUT',
+            'source_kind'       => $sourceKind,
+            'source_id'         => $sourceId,
+            'base_amount'       => $baseAmount,
+            'tax_amount'        => $recoverableTaxAmount ?? $calc['tax_amount'],
+            'gross_amount'      => $calc['gross_amount'],
+            'net_amount'        => $calc['net_amount'],
+            'apportionment_pct' => $apportionmentPct,
+            'recoverable_tax_amount' => $recoverableTaxAmount,
+            'jurisdiction_id'   => $jurisdictionId,
+            'gl_account_id'     => $taxCode->gl_input_acct,
             'recognition_basis' => 'INVOICE',
-            'recognized_at'  => now(),
-            'is_reversal'    => false,
-            'status'         => 'POSTED',
+            'recognized_at'     => now(),
+            'is_reversal'       => false,
+            'status'            => 'POSTED',
         ]);
+
+        // Obligation lifecycle: enforce/gate state from the period (Step 1c).
+        $this->obligationService()->reconcileAfterTransaction(
+            $context['company_id'], $period->id, $taxCode->tax_type_id
+        );
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -555,5 +588,10 @@ class TaxEngine
             );
         }
         return $account;
+    }
+
+    protected function obligationService(): TaxObligationService
+    {
+        return app(TaxObligationService::class);
     }
 }

@@ -30,7 +30,7 @@
                         <tbody>
                             @forelse ($payeTransactions as $txn)
                                 <tr>
-                                    <td class="tx-em">{{ $txn->posting_date?->format('d M Y') ?? '&mdash;' }}</td>
+                                    <td class="tx-em">{{ $txn->created_at?->format('d M Y') ?? '&mdash;' }}</td>
                                     <td><span class="tx-tchip tx-t-paye">{{ $txn->taxCode?->code ?? '&mdash;' }}</span></td>
                                     <td class="num">{{ number_format((float) $txn->base_amount, 2) }}</td>
                                     <td class="num">{{ number_format((float) $txn->tax_amount, 2) }}</td>
@@ -72,7 +72,7 @@
                         <tbody>
                             @forelse ($whtTransactions as $txn)
                                 <tr>
-                                    <td class="tx-em">{{ $txn->posting_date?->format('d M Y') ?? '&mdash;' }}</td>
+                                    <td class="tx-em">{{ $txn->created_at?->format('d M Y') ?? '&mdash;' }}</td>
                                     <td><span class="tx-tchip tx-t-wht">{{ $txn->taxCode?->code ?? '&mdash;' }}</span></td>
                                     <td class="num">{{ number_format((float) $txn->base_amount, 2) }}</td>
                                     <td class="num">{{ number_format((float) $txn->tax_amount, 2) }}</td>

@@ -12,10 +12,20 @@ use Illuminate\Support\Facades\DB;
 
 class TaxModuleSeeder extends Seeder
 {
-    public function run(): void
+    public function run(?int $companyId = null): void
     {
-        $companyId = session('current_company_id') ?? 1;
+        $this->runForCompany($companyId ?? (session('current_company_id') ?? 1));
+    }
 
+    /**
+     * Seed the tax configuration for a single, explicit company. Idempotent:
+     * every row is created via firstOrCreate keyed on (company_id, code), so
+     * calling this repeatedly — or once per tenant during provisioning — never
+     * duplicates the shared tax types/codes/rates/rules. This is the per-company
+     * path provisioning should invoke instead of depending on the session.
+     */
+    public function runForCompany(int $companyId): void
+    {
         // ── Tax Types ──────────────────────────────────────────────
         $vat = TaxType::firstOrCreate(
             ['company_id' => $companyId, 'code' => 'VAT'],

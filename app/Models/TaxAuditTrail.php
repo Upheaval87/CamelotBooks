@@ -40,7 +40,7 @@ class TaxAuditTrail extends Model
         return $this->belongsTo(User::class);
     }
 
-    public static function log(int $companyId, int $userId, string $entityKind, int $entityId, ?string $field, mixed $oldValue, mixed $newValue, ?string $reason = null, ?string $approval = null): self
+    public static function log(int $companyId, ?int $userId, string $entityKind, int $entityId, ?string $field, mixed $oldValue, mixed $newValue, ?string $reason = null, ?string $approval = null): self
     {
         return static::create([
             'company_id' => $companyId,

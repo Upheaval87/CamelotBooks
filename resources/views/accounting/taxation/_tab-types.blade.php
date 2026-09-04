@@ -1,3 +1,5 @@
+@include('accounting.taxation._create-type')
+
 <div class="tx-chips" style="grid-template-columns:repeat(4,1fr)">
     <div class="tx-chipbox">
         <span class="l">{{ __('Total Types') }}</span>

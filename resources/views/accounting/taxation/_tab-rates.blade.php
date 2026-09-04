@@ -5,6 +5,8 @@
     $today = \Illuminate\Support\Carbon::now();
 @endphp
 
+@include('accounting.taxation._create-rate')
+
 <div class="tx-card">
     <div class="tx-card-h">
         <span class="ic">&#128200;</span>

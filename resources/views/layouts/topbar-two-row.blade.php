@@ -160,6 +160,7 @@
 
     $taxationChildren = [
         ['label' => __('Dashboard'),             'route' => 'accounting.taxation.dashboard'],
+        ['label' => __('Obligations'),           'route' => 'accounting.taxation.obligations'],
         ['label' => __('Configuration'),         'route' => 'accounting.taxation.config'],
         ['label' => __('Periods'),               'route' => 'accounting.taxation.periods'],
         ['label' => __('Reconciliation'),        'route' => 'accounting.taxation.reconciliation'],

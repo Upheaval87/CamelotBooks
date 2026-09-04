@@ -12,8 +12,11 @@
 
         @php
             $entityKindLabels = [
+                'tax_type' => __('Tax type'),
                 'tax_code' => __('Tax code'),
                 'tax_rate' => __('Tax rate'),
+                'tax_exemption' => __('Tax exemption'),
+                'tax_jurisdiction' => __('Tax jurisdiction'),
                 'tax_period' => __('Tax period'),
                 'tax_return' => __('Tax return'),
                 'tax_adjustment' => __('Adjustment'),

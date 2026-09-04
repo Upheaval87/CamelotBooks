@@ -68,7 +68,7 @@ class TaxWorkflowTest extends TestCase
             'jurisdiction_id' => $this->jurisdiction->id,
             'treatment' => 'INCLUSIVE',
             'effective_from' => '2024-01-01',
-            'is_active' => true,
+            'active' => true,
         ]);
 
         TaxCodeRate::create([
