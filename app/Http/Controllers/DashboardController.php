@@ -2,58 +2,86 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Account;
-use App\Models\JournalEntry;
-use App\Models\TodoTask;
+use App\Models\User;
+use App\Services\Dashboard\DashboardOverviewService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $companyId = session('current_company_id');
+        /** @var User $user */
+        $user = $request->user();
 
-        $totalAccounts = Account::where('company_id', $companyId)
-            ->where('is_active', true)
-            ->count();
+        /** @var DashboardOverviewService $service */
+        $service = app(DashboardOverviewService::class);
 
-        $journalEntriesThisMonth = JournalEntry::where('company_id', $companyId)
-            ->whereMonth('date', Carbon::now()->month)
-            ->whereYear('date', Carbon::now()->year)
-            ->count();
+        $companyId = (int) session('current_company_id');
+        $preset = $service->normalizePreset($request->query('period'));
 
-        $pendingApprovals = JournalEntry::where('company_id', $companyId)
-            ->where('status', JournalEntry::STATUS_PENDING_APPROVAL)
-            ->count();
+        $data = $service->build($companyId, $preset, $user->id);
 
-        // Personal task summary (company + current user only).
-        $myTasks = TodoTask::query()
-            ->forCompany((int) $companyId)
-            ->forUser(auth()->id())
-            ->active()
-            ->get(['id', 'title', 'deadline_date', 'deadline_granularity']);
+        $greeting = match (true) {
+            now()->hour < 12 => 'Good morning',
+            now()->hour < 17 => 'Good afternoon',
+            default => 'Good evening',
+        };
+        $firstName = trim(explode(' ', (string) $user->name)[0]);
 
-        $todoOverdue = 0;
-        $todoToday = 0;
+        $gates = [
+            'invoice' => $user->can('invoices.create'),
+            'bill' => $user->can('bills.create'),
+            'payment' => $user->can('customer-payments.create'),
+            'journal' => $user->can('journal-entries.create'),
+            'customer' => $user->can('customers.create'),
+            'reconcile' => $user->can('bank-reconciliations.create'),
+        ];
 
-        foreach ($myTasks as $task) {
-            $bucket = TodoTask::bucketKey($task->deadline_date, $task->deadline_granularity);
+        return view('dashboard', [
+            ...$data,
+            'greeting' => $greeting . ', ' . $firstName . '.',
+            'subhead' => 'Here\'s your cash, receivables and performance at a glance.',
+            'can' => $gates,
+            'exportUrl' => route('dashboard.export', ['period' => $preset]),
+        ]);
+    }
 
-            if ($bucket === TodoTask::BUCKET_OVERDUE) {
-                $todoOverdue++;
-            } elseif ($bucket === TodoTask::BUCKET_TODAY) {
-                $todoToday++;
+    public function export(Request $request)
+    {
+        /** @var DashboardOverviewService $service */
+        $service = app(DashboardOverviewService::class);
+
+        $companyId = (int) session('current_company_id');
+        $preset = $service->normalizePreset($request->query('period'));
+
+        $data = $service->build($companyId, $preset, $request->user()?->id);
+
+        $rows = [
+            [
+                'Metric',
+                'Period (' . $data['range_label'] . ')',
+            ],
+            ['Total Revenue', number_format($data['kpi']['revenue']['value'], $data['decimals'], '.', '')],
+            ['Total Expenses', number_format($data['kpi']['expenses']['value'], $data['decimals'], '.', '')],
+            ['Net Profit', number_format($data['kpi']['net']['value'], $data['decimals'], '.', '')],
+            ['Margin (%)', $data['kpi']['net']['margin'] ?? 0],
+            ['Outstanding Invoices', number_format($data['kpi']['outstanding']['value'], $data['decimals'], '.', '')],
+            ['Bills Payable', number_format($data['kpi']['payables']['value'], $data['decimals'], '.', '')],
+            ['Cash & Bank', number_format($data['kpi']['cash']['value'], $data['decimals'], '.', '')],
+            ['Aging — Current', number_format($data['aging']['buckets'][0]['amount'], $data['decimals'], '.', '')],
+            ['Aging — 1–30 days', number_format($data['aging']['buckets'][1]['amount'], $data['decimals'], '.', '')],
+            ['Aging — 31–60 days', number_format($data['aging']['buckets'][2]['amount'], $data['decimals'], '.', '')],
+            ['Aging — 60+ days', number_format($data['aging']['buckets'][3]['amount'], $data['decimals'], '.', '')],
+        ];
+
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+            foreach ($rows as $row) {
+                fputcsv($handle, $row);
             }
-        }
-
-        return view('dashboard', compact(
-            'totalAccounts',
-            'journalEntriesThisMonth',
-            'pendingApprovals',
-            'myTasks',
-            'todoOverdue',
-            'todoToday',
-        ));
+            fclose($handle);
+        }, 'dashboard-' . $preset . '-' . now()->format('Y-m-d') . '.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
     }
 }

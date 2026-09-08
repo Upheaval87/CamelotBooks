@@ -116,9 +116,17 @@ class AnalyticsModuleTest extends TestCase
     public function test_report_registry_returns_analytics_reports(): void
     {
         $reports = ReportRegistry::getAnalyticsReports();
-        $this->assertCount(7, $reports);
+        $this->assertCount(15, $reports);
         $this->assertArrayHasKey('financial_ratios', $reports);
         $this->assertArrayHasKey('cash_flow_trend', $reports);
+        $this->assertArrayHasKey('analytics_overview', $reports);
+        $this->assertArrayHasKey('expense_analytics', $reports);
+        $this->assertArrayHasKey('customer_analytics', $reports);
+        $this->assertArrayHasKey('working_capital_analytics', $reports);
+        $this->assertArrayHasKey('budget_vs_actual', $reports);
+        $this->assertArrayHasKey('tax_analytics', $reports);
+        $this->assertArrayHasKey('forecast_analytics', $reports);
+        $this->assertArrayHasKey('branch_analytics', $reports);
     }
 
     public function test_report_registry_access_check(): void
@@ -179,6 +187,49 @@ class AnalyticsModuleTest extends TestCase
     public function test_cash_flow_trend_view_loads(): void
     {
         $this->get(route('analytics.cash-flow-trend'))->assertOk();
+    }
+
+    public function test_overview_view_loads(): void
+    {
+        $this->get(route('analytics.overview'))->assertOk();
+    }
+
+    public function test_expenses_view_loads(): void
+    {
+        $this->requiresMySQL();
+        $this->get(route('analytics.expenses'))->assertOk();
+    }
+
+    public function test_customers_view_loads(): void
+    {
+        $this->get(route('analytics.customers'))->assertOk();
+    }
+
+    public function test_working_capital_view_loads(): void
+    {
+        $this->get(route('analytics.working-capital'))->assertOk();
+    }
+
+    public function test_budget_vs_actual_view_loads(): void
+    {
+        $this->get(route('analytics.budget-vs-actual'))->assertOk();
+    }
+
+    public function test_tax_view_loads(): void
+    {
+        $this->requiresMySQL();
+        $this->get(route('analytics.tax'))->assertOk();
+    }
+
+    public function test_forecasts_view_loads(): void
+    {
+        $this->requiresMySQL();
+        $this->get(route('analytics.forecasts'))->assertOk();
+    }
+
+    public function test_branches_view_loads(): void
+    {
+        $this->get(route('analytics.branches'))->assertOk();
     }
 
     // =============================================
@@ -397,6 +448,106 @@ class AnalyticsModuleTest extends TestCase
         $this->assertArrayHasKey('top_vendors', $data);
         $this->assertArrayHasKey('ppv_trend', $data);
         $this->assertEmpty($data['monthly_summary']);
+    }
+
+    // =============================================
+    // NEW ANALYTICS SERVICES (empty data)
+    // =============================================
+
+    private function period(): array
+    {
+        return [
+            'key' => 'month',
+            'from' => now()->startOfMonth()->format('Y-m-d'),
+            'to' => now()->format('Y-m-d'),
+            'prev_from' => now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
+            'prev_to' => now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d'),
+            'as_of' => now()->format('Y-m-d'),
+        ];
+    }
+
+    public function test_overview_service_empty_data(): void
+    {
+        $service = new \App\Services\Reporting\Analytics\OverviewAnalyticsService();
+        $data = $service->calculate($this->company->id, $this->period());
+
+        $this->assertArrayHasKey('kpis', $data);
+        $this->assertEquals(0, $data['kpis']['revenue']['value']);
+        $this->assertEquals(0, $data['kpis']['expense']['value']);
+    }
+
+    public function test_expense_service_empty_data(): void
+    {
+        $this->requiresMySQL();
+        $service = new \App\Services\Reporting\Analytics\ExpenseAnalyticsService();
+        $data = $service->calculate($this->company->id, $this->period());
+
+        $this->assertArrayHasKey('kpis', $data);
+        $this->assertArrayHasKey('accounts', $data);
+        $this->assertEquals(0, $data['kpis']['total_expense']['value']);
+    }
+
+    public function test_customer_service_empty_data(): void
+    {
+        $service = new \App\Services\Reporting\Analytics\CustomerAnalyticsService();
+        $data = $service->calculate($this->company->id, $this->period());
+
+        $this->assertArrayHasKey('kpis', $data);
+        $this->assertEquals(0, $data['kpis']['active']['value']);
+    }
+
+    public function test_working_capital_service_empty_data(): void
+    {
+        $service = new \App\Services\Reporting\Analytics\WorkingCapitalAnalyticsService();
+        $data = $service->calculate($this->company->id, $this->period());
+
+        $this->assertArrayHasKey('kpis', $data);
+        $this->assertArrayHasKey('ar', $data);
+        $this->assertArrayHasKey('ap', $data);
+        $this->assertEquals(0, $data['ar']['total']);
+        $this->assertEquals(0, $data['ap']['total']);
+    }
+
+    public function test_budget_vs_actual_service_empty_data_when_no_budgets(): void
+    {
+        $service = new \App\Services\Reporting\Analytics\BudgetVsActualAnalyticsService();
+        $data = $service->calculate($this->company->id, $this->period());
+
+        $this->assertFalse($data['has_budget']);
+        $this->assertEmpty($data['lines']);
+        $this->assertEquals(0, $data['total_budgeted']);
+    }
+
+    public function test_tax_service_empty_data(): void
+    {
+        $this->requiresMySQL();
+        $service = new \App\Services\Reporting\Analytics\TaxAnalyticsService();
+        $data = $service->calculate($this->company->id, $this->period());
+
+        $this->assertArrayHasKey('kpis', $data);
+        $this->assertArrayHasKey('vat_payable', $data['kpis']);
+        $this->assertEquals(0, $data['kpis']['vat_payable']['value']);
+    }
+
+    public function test_forecast_service_empty_data(): void
+    {
+        $this->requiresMySQL();
+        $service = new \App\Services\Reporting\Analytics\ForecastAnalyticsService();
+        $data = $service->calculate($this->company->id, $this->period());
+
+        $this->assertArrayHasKey('labels', $data);
+        $this->assertArrayHasKey('actual', $data);
+        $this->assertArrayHasKey('forecast', $data);
+    }
+
+    public function test_branches_service_empty_data(): void
+    {
+        $service = new \App\Services\Reporting\Analytics\BranchesAnalyticsService();
+        $data = $service->calculate($this->company->id, $this->period());
+
+        $this->assertArrayHasKey('rows', $data);
+        $this->assertEquals(0, $data['total_revenue']);
+        $this->assertEquals(0, $data['total_profit']);
     }
 
     // =============================================

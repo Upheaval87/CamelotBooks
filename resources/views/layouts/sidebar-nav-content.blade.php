@@ -11,8 +11,8 @@
         'fixed-assets'    => ['accounting.fixed-assets', 'accounting.asset-depreciation', 'accounting.depreciation'],
         'payroll'         => ['accounting.payroll.'],
         'reports'         => ['accounting.report', 'accounting.income-statement', 'accounting.balance-sheet', 'accounting.cash-flow'],
-        'analytics'       => ['analytics.financial-ratios', 'analytics.revenue-expense-trends', 'analytics.sales', 'analytics.purchasing', 'analytics.inventory', 'analytics.profitability', 'analytics.budget-vs-actual-trend', 'analytics.cash-flow-trend'],
-        'bi'              => ['bi.true-total-cost', 'bi.customer-lifetime-value', 'bi.employee-productivity', 'bi.branch-profitability'],
+        'analytics'       => ['analytics.overview', 'analytics.financial-ratios', 'analytics.revenue-expense-trends', 'analytics.sales', 'analytics.purchasing', 'analytics.inventory', 'analytics.profitability', 'analytics.expenses', 'analytics.customers', 'analytics.working-capital', 'analytics.budget-vs-actual', 'analytics.tax', 'analytics.forecasts', 'analytics.cash-flow-trend', 'analytics.branches'],
+        'bi'              => ['bi.overview', 'bi.branch', 'bi.clv', 'bi.employee', 'bi.truecost', 'bi.product', 'bi.supplier', 'bi.workcap', 'bi.scenarios', 'bi.variance', 'bi.pvm', 'bi.breakeven', 'bi.cohorts', 'bi.board'],
         'pos'             => ['pos.terminals', 'pos.payment-methods', 'pos.till-sessions', 'pos.returns', 'pos.sales', 'pos.settlements', 'pos.reports', 'pos.eis'],
         'settings'        => ['system-settings', 'admin'],
     ];
@@ -189,14 +189,21 @@
             <svg class="sidebar-chevron" :class="openSection === 'analytics' ? 'rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
         <div x-show="openSection === 'analytics'" x-collapse.duration.300ms>
+            <a href="{{ route('analytics.overview') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.overview') ? 'active' : '' }}">Overview</a>
             <a href="{{ route('analytics.financial-ratios') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.financial-ratios') ? 'active' : '' }}">Financial Ratios</a>
             <a href="{{ route('analytics.revenue-expense-trends') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.revenue-expense-trends') ? 'active' : '' }}">Revenue vs Expense</a>
-            <a href="{{ route('analytics.sales') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.sales') ? 'active' : '' }}">Sales Analytics</a>
-            <a href="{{ route('analytics.purchasing') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.purchasing') ? 'active' : '' }}">Purchasing Analytics</a>
-            <a href="{{ route('analytics.inventory') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.inventory') ? 'active' : '' }}">Inventory Analytics</a>
+            <a href="{{ route('analytics.sales') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.sales') ? 'active' : '' }}">Sales</a>
+            <a href="{{ route('analytics.purchasing') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.purchasing') ? 'active' : '' }}">Purchasing</a>
+            <a href="{{ route('analytics.inventory') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.inventory') ? 'active' : '' }}">Inventory</a>
             <a href="{{ route('analytics.profitability') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.profitability') ? 'active' : '' }}">Profitability</a>
-            <a href="{{ route('analytics.budget-vs-actual-trend') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.budget-vs-actual-trend') ? 'active' : '' }}">Budget vs Actual</a>
+            <a href="{{ route('analytics.expenses') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.expenses') ? 'active' : '' }}">Expenses</a>
+            <a href="{{ route('analytics.customers') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.customers') ? 'active' : '' }}">Customers</a>
+            <a href="{{ route('analytics.working-capital') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.working-capital') ? 'active' : '' }}">Working Capital</a>
+            <a href="{{ route('analytics.budget-vs-actual') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.budget-vs-actual') ? 'active' : '' }}">Budget vs Actual</a>
+            <a href="{{ route('analytics.tax') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.tax') ? 'active' : '' }}">Tax</a>
+            <a href="{{ route('analytics.forecasts') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.forecasts') ? 'active' : '' }}">Forecasts</a>
             <a href="{{ route('analytics.cash-flow-trend') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.cash-flow-trend') ? 'active' : '' }}">Cash Flow Trend</a>
+            <a href="{{ route('analytics.branches') }}" class="sidebar-child {{ str_starts_with($routeName, 'analytics.branches') ? 'active' : '' }}">Branches</a>
         </div>
 
         <div class="sidebar-section-label">Business Intelligence
@@ -210,10 +217,20 @@
             <svg class="sidebar-chevron" :class="openSection === 'bi' ? 'rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
         <div x-show="openSection === 'bi'" x-collapse.duration.300ms>
-            <a href="{{ route('bi.true-total-cost') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.true-total-cost') ? 'active' : '' }}">True Total Cost</a>
-            <a href="{{ route('bi.customer-lifetime-value') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.customer-lifetime-value') ? 'active' : '' }}">Customer LTV</a>
-            <a href="{{ route('bi.employee-productivity') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.employee-productivity') ? 'active' : '' }}">Employee Productivity</a>
-            <a href="{{ route('bi.branch-profitability') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.branch-profitability') ? 'active' : '' }}">Branch Profitability</a>
+            <a href="{{ route('bi.overview') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.overview') ? 'active' : '' }}">Overview</a>
+            <a href="{{ route('bi.branch') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.branch') ? 'active' : '' }}">Branch Profitability</a>
+            <a href="{{ route('bi.clv') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.clv') ? 'active' : '' }}">Customer LTV</a>
+            <a href="{{ route('bi.employee') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.employee') ? 'active' : '' }}">Employee Productivity</a>
+            <a href="{{ route('bi.truecost') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.truecost') ? 'active' : '' }}">True Total Cost</a>
+            <a href="{{ route('bi.product') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.product') ? 'active' : '' }}">Product ABC</a>
+            <a href="{{ route('bi.supplier') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.supplier') ? 'active' : '' }}">Supplier Scorecard</a>
+            <a href="{{ route('bi.workcap') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.workcap') ? 'active' : '' }}">Working Capital</a>
+            <a href="{{ route('bi.scenarios') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.scenarios') ? 'active' : '' }}">Cash Scenarios</a>
+            <a href="{{ route('bi.variance') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.variance') ? 'active' : '' }}">Budget Variance</a>
+            <a href="{{ route('bi.pvm') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.pvm') ? 'active' : '' }}">Price-Volume-Mix</a>
+            <a href="{{ route('bi.breakeven') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.breakeven') ? 'active' : '' }}">Break Even</a>
+            <a href="{{ route('bi.cohorts') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.cohorts') ? 'active' : '' }}">Cohorts & Churn</a>
+            <a href="{{ route('bi.board') }}" class="sidebar-child {{ str_starts_with($routeName, 'bi.board') ? 'active' : '' }}">Board Pack</a>
         </div>
 
         <div class="sidebar-section-label">Point of Sale</div>

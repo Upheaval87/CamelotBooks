@@ -1,60 +1,136 @@
 <x-app-layout>
-    <x-list-header title="Financial Ratios" />
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 py-6 an-wrap">
+        @php
+            $page = 'financial-ratios';
+            $title = 'Financial Ratios';
+            $subtitle = 'Key ratios computed from the balance sheet and income statement as at ' . $period['as_of'] . '.';
 
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-report-filters mode="point_in_time" :showBranch="true" :showCostCenter="true" :action="route('analytics.financial-ratios')" />
+            $RATIO_META = [
+                'liquidity' => [
+                    'name' => 'Liquidity', 'icon' => '&#128737;',
+                    'rows' => [
+                        'current_ratio' => ['label' => 'Current Ratio', 'unit' => 'x', 'money' => false],
+                        'quick_ratio' => ['label' => 'Quick Ratio', 'unit' => 'x', 'money' => false],
+                        'working_capital' => ['label' => 'Working Capital', 'unit' => '', 'money' => true],
+                    ],
+                ],
+                'profitability' => [
+                    'name' => 'Profitability', 'icon' => '&#10003;',
+                    'rows' => [
+                        'gross_margin' => ['label' => 'Gross Margin', 'unit' => '%', 'money' => false],
+                        'net_margin' => ['label' => 'Net Margin', 'unit' => '%', 'money' => false],
+                        'roa' => ['label' => 'Return on Assets', 'unit' => '%', 'money' => false],
+                        'roe' => ['label' => 'Return on Equity', 'unit' => '%', 'money' => false],
+                    ],
+                ],
+                'efficiency' => [
+                    'name' => 'Efficiency', 'icon' => '&#9881;',
+                    'rows' => [
+                        'ar_turnover' => ['label' => 'AR Turnover', 'unit' => 'x', 'money' => false],
+                        'dso' => ['label' => 'Days Sales Outstanding', 'unit' => 'days', 'money' => false],
+                        'ap_turnover' => ['label' => 'AP Turnover', 'unit' => 'x', 'money' => false],
+                        'dpo' => ['label' => 'Days Payable Outstanding', 'unit' => 'days', 'money' => false],
+                        'inventory_turnover' => ['label' => 'Inventory Turnover', 'unit' => 'x', 'money' => false],
+                        'dio' => ['label' => 'Days Inventory Outstanding', 'unit' => 'days', 'money' => false],
+                        'cash_conversion_cycle' => ['label' => 'Cash Conversion Cycle', 'unit' => 'days', 'money' => false],
+                    ],
+                ],
+                'leverage' => [
+                    'name' => 'Leverage', 'icon' => '&#9878;',
+                    'rows' => [
+                        'debt_to_equity' => ['label' => 'Debt to Equity', 'unit' => 'x', 'money' => false],
+                        'debt_to_assets' => ['label' => 'Debt to Assets', 'unit' => 'x', 'money' => false],
+                    ],
+                ],
+            ];
+        @endphp
+        @include('analytics._nav')
+        @include('analytics._head')
 
-            @if(isset($data['error']))
-                <div class="bg-white shadow-sm sm:rounded-lg p-6 text-gray-500">{{ $data['error'] }}</div>
-            @else
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    @foreach($data['ratios'] as $category => $ratios)
-                        <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 capitalize">{{ str_replace('_', ' ', $category) }}</h3>
-                            <div class="space-y-3">
-                                @foreach($ratios as $key => $ratio)
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">{{ str_replace('_', ' ', ucfirst($key)) }}</span>
-                                        @if($ratio === null)
-                                            <span class="text-sm font-medium text-gray-400">N/A</span>
-                                        @else
-                                            <div class="text-right">
-                                                <span class="text-sm font-medium {{ isset($ratio['target']) && $ratio['target'] !== null && ($key !== 'working_capital' && !str_contains($key, 'turnover') && !str_contains($key, 'days') && !str_contains($key, 'dso') && !str_contains($key, 'dpo') && !str_contains($key, 'dio') && !str_contains($key, 'ccc')) ? ($ratio['value'] >= $ratio['target'] ? 'text-green-600' : 'text-red-600') : 'text-gray-900' }}">
-                                                    @if(in_array($key, ['gross_margin', 'net_margin', 'roa', 'roe']))
-                                                        {{ number_format($ratio['value'] * 100, 1) }}%
-                                                    @elseif(isset($ratio['unit']) && $ratio['unit'] === 'days')
-                                                        {{ number_format($ratio['value'], 0) }} days
-                                                    @elseif($key === 'working_capital')
-                                                        @money($ratio['value'])
-                                                    @else
-                                                        {{ format_money($ratio['value']) }}
-                                                    @endif
-                                                </span>
-                                                @if(isset($ratio['target']) && $ratio['target'] !== null)
-                                                    <span class="text-xs text-gray-400">Target: {{ $ratio['target'] }}</span>
-                                                @endif
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endforeach
+        <div class="an-kpis an-kpis--4">
+            @foreach ([
+                'total_assets' => ['label' => 'Total Assets'],
+                'current_assets' => ['label' => 'Current Assets'],
+                'current_liabilities' => ['label' => 'Current Liabilities'],
+                'net_income' => ['label' => 'Net Income (FYTD)'],
+            ] as $k => $spec)
+                <div class="an-kpi">
+                    <div class="l">{{ $spec['label'] }}</div>
+                    <div class="v">@money($data['summary'][$k] ?? 0)</div>
                 </div>
+            @endforeach
+        </div>
 
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Summary</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        @foreach($data['summary'] as $key => $value)
-                            <div>
-                                <div class="text-xs text-gray-500 uppercase">{{ str_replace('_', ' ', $key) }}</div>
-                                <div class="text-lg font-semibold text-gray-800">@money($value)</div>
-                            </div>
-                        @endforeach
+        <div class="an-grid an-grid--2">
+            @foreach ($RATIO_META as $group => $meta)
+                <div class="an-card">
+                    <h2 class="an-card-t">{!! $meta['icon'] !!} {{ $meta['name'] }}</h2>
+                    <div class="an-tbl-wrap">
+                        <table class="an-tbl">
+                            <thead>
+                                <tr>
+                                    <th>Ratio</th>
+                                    <th class="r">Value</th>
+                                    <th class="r">Target</th>
+                                    <th class="r">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($meta['rows'] as $key => $row)
+                                    @php
+                                        $r = $data['ratios'][$group][$key] ?? null;
+                                        $value = $r['value'] ?? null;
+                                        $target = $r['target'] ?? null;
+                                        $status = (is_numeric($value) && is_numeric($target) && (float) $target != 0)
+                                            ? (abs((float) $value - (float) $target) / abs((float) $target) <= 0.2 ? 'ok' : 'warn')
+                                            : null;
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $row['label'] }}</td>
+                                        <td class="r">
+                                            @if ($value === null)
+                                                &mdash;
+                                            @elseif ($row['money'])
+                                                @money($value)
+                                            @elseif ($row['unit'] === '%')
+                                                {{ format_number($value * 100, 1) }}%
+                                            @elseif ($row['unit'] === 'days' || $row['unit'] === 'x')
+                                                {{ format_number($value, 2) }} {{ $row['unit'] }}
+                                            @else
+                                                {{ format_number($value, 2) }}
+                                            @endif
+                                        </td>
+                                        <td class="r">
+                                            @if ($target === null || $target === '')
+                                                &mdash;
+                                            @elseif ($row['money'])
+                                                @money($target)
+                                            @elseif ($row['unit'] === '%')
+                                                {{ format_number($target * 100, 1) }}%
+                                            @else
+                                                {{ format_number($target, 2) }} {{ $row['unit'] }}
+                                            @endif
+                                        </td>
+                                        <td class="r">
+                                            @if ($status === 'ok')
+                                                <span class="an-chip c-ok">On target</span>
+                                            @elseif ($status === 'warn')
+                                                <span class="an-chip c-warn">Off target</span>
+                                            @else
+                                                <span class="an-chip c-nt">n/a</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="4" class="c an-empty-cell">No ratio data.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            @endif
+            @endforeach
         </div>
+
+        <div class="an-note">Ratios use balances as at {{ $period['as_of'] }} and fiscal-year-to-date income statement values. Targets are read from Settings &rarr; Accounting &rarr; Ratio Targets where configured.</div>
     </div>
 </x-app-layout>

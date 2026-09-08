@@ -196,4 +196,5 @@
         el.textContent = 'Page 1 of 1';
     });
     </script>
+    @endpush
 </x-app-layout>

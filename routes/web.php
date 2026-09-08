@@ -200,6 +200,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware(['tenant.bind', 'company.context', 'company.active'])->group(function () {
+        Route::get('/dashboard/export', [DashboardController::class, 'export'])
+            ->name('dashboard.export');
+
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
 
@@ -1118,22 +1121,47 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Analytics
         Route::prefix('analytics')->name('analytics.')->middleware('feature:analytics')->group(function () {
+            Route::get('/', [\App\Http\Controllers\AnalyticsController::class, 'overview'])->name('overview');
             Route::get('financial-ratios', [\App\Http\Controllers\AnalyticsController::class, 'financialRatios'])->name('financial-ratios');
             Route::get('revenue-expense-trends', [\App\Http\Controllers\AnalyticsController::class, 'revenueExpenseTrends'])->name('revenue-expense-trends');
             Route::get('sales', [\App\Http\Controllers\AnalyticsController::class, 'sales'])->name('sales');
+            Route::get('profitability', [\App\Http\Controllers\AnalyticsController::class, 'profitability'])->name('profitability');
+            Route::get('cash-flow-trend', [\App\Http\Controllers\AnalyticsController::class, 'cashFlowTrend'])->name('cash-flow-trend');
             Route::get('purchasing', [\App\Http\Controllers\AnalyticsController::class, 'purchasing'])->name('purchasing');
             Route::get('inventory', [\App\Http\Controllers\AnalyticsController::class, 'inventory'])->name('inventory');
-            Route::get('profitability', [\App\Http\Controllers\AnalyticsController::class, 'profitability'])->name('profitability');
-            // Budget vs Actual analytics route removed — will be rebuilt with budgeting module
-            Route::get('cash-flow-trend', [\App\Http\Controllers\AnalyticsController::class, 'cashFlowTrend'])->name('cash-flow-trend');
+            Route::get('expenses', [\App\Http\Controllers\AnalyticsController::class, 'expenses'])->name('expenses');
+            Route::get('customers', [\App\Http\Controllers\AnalyticsController::class, 'customers'])->name('customers');
+            Route::get('working-capital', [\App\Http\Controllers\AnalyticsController::class, 'workingCapital'])->name('working-capital');
+            Route::get('budget-vs-actual', [\App\Http\Controllers\AnalyticsController::class, 'budgetVsActual'])->name('budget-vs-actual');
+            Route::get('tax', [\App\Http\Controllers\AnalyticsController::class, 'tax'])->name('tax');
+            Route::get('forecasts', [\App\Http\Controllers\AnalyticsController::class, 'forecasts'])->name('forecasts');
+            Route::get('branches', [\App\Http\Controllers\AnalyticsController::class, 'branches'])->name('branches');
+            Route::get('export', [\App\Http\Controllers\AnalyticsController::class, 'export'])->name('export');
+            Route::get('print', [\App\Http\Controllers\AnalyticsController::class, 'printPage'])->name('print');
         });
 
         // Business Intelligence (BI)
-        Route::prefix('bi')->name('bi.')->middleware('feature:bi')->group(function () {
-            Route::get('true-total-cost', [\App\Http\Controllers\BiController::class, 'trueTotalCost'])->name('true-total-cost');
-            Route::get('customer-lifetime-value', [\App\Http\Controllers\BiController::class, 'customerLifetimeValue'])->name('customer-lifetime-value');
-            Route::get('employee-productivity', [\App\Http\Controllers\BiController::class, 'employeeProductivity'])->name('employee-productivity');
-            Route::get('branch-profitability', [\App\Http\Controllers\BiController::class, 'branchProfitability'])->name('branch-profitability');
+        Route::prefix('bi')->name('bi.')->middleware(['feature:bi', 'permission:bi.view'])->group(function () {
+            Route::get('/', [\App\Http\Controllers\BiController::class, 'overview'])->name('overview');
+            Route::get('branch', [\App\Http\Controllers\BiController::class, 'branch'])->name('branch');
+            Route::get('clv', [\App\Http\Controllers\BiController::class, 'clv'])->name('clv');
+            Route::get('employee', [\App\Http\Controllers\BiController::class, 'employee'])->name('employee');
+            Route::get('truecost', [\App\Http\Controllers\BiController::class, 'truecost'])->name('truecost');
+            Route::get('product', [\App\Http\Controllers\BiController::class, 'product'])->name('product');
+            Route::get('supplier', [\App\Http\Controllers\BiController::class, 'supplier'])->name('supplier');
+            Route::get('workcap', [\App\Http\Controllers\BiController::class, 'workcap'])->name('workcap');
+            Route::get('scenarios', [\App\Http\Controllers\BiController::class, 'scenarios'])->name('scenarios');
+            Route::get('variance', [\App\Http\Controllers\BiController::class, 'variance'])->name('variance');
+            Route::get('pvm', [\App\Http\Controllers\BiController::class, 'pvm'])->name('pvm');
+            Route::get('breakeven', [\App\Http\Controllers\BiController::class, 'breakeven'])->name('breakeven');
+            Route::get('cohorts', [\App\Http\Controllers\BiController::class, 'cohorts'])->name('cohorts');
+            Route::get('board', [\App\Http\Controllers\BiController::class, 'board'])->name('board');
+            Route::get('export', [\App\Http\Controllers\BiController::class, 'export'])->name('export');
+            Route::get('print', [\App\Http\Controllers\BiController::class, 'printPage'])->name('print');
+            Route::post('scenarios/save', [\App\Http\Controllers\BiController::class, 'saveScenarios'])->name('scenarios.save')->middleware('permission:bi.exec');
+            Route::post('allocation/save', [\App\Http\Controllers\BiController::class, 'saveAllocation'])->name('allocation.save')->middleware('permission:bi.exec');
+            Route::post('expense-class/save', [\App\Http\Controllers\BiController::class, 'saveExpenseClass'])->name('expense-class.save')->middleware('permission:bi.exec');
+            Route::post('actions/save', [\App\Http\Controllers\BiController::class, 'saveAction'])->name('actions.save')->middleware('permission:bi.exec');
         });
 
         //PDFS

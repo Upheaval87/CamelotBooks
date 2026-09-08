@@ -116,7 +116,7 @@ return [
 
         // ── Analytics & BI ──
         'analytics' => ['view'],
-        'bi'        => ['view'],
+        'bi'        => ['view', 'exec'],
 
         // ── Tax ──
         'taxation'       => ['view', 'create', 'edit', 'void', 'approve'],
@@ -369,6 +369,10 @@ return [
                 'audit-log.export',
                 'system-health.view',
                 'features.view',
+                // Analytics & BI (view + run scenario/assumption saves)
+                'analytics.view',
+                'bi.view',
+                'bi.exec',
             ],
         ],
 
@@ -497,6 +501,9 @@ return [
                 'reports.payroll_summary.view',
                 'reports.employee_cost_by_branch.view',
                 'reports.report_center.view',
+                // Analytics & BI — read-only
+                'analytics.view',
+                'bi.view',
                 // System — minimal
                 'audit-log.view',
                 'system-health.view',
@@ -538,6 +545,10 @@ return [
                 'reports.pending_approvals_aging.view',
                 'reports.payroll_summary.view',
                 'reports.report_center.view',
+                // Analytics & BI — view + executive saves (scenarios, board actions)
+                'analytics.view',
+                'bi.view',
+                'bi.exec',
                 // System
                 'audit-log.view',
                 'system-health.view',
@@ -716,6 +727,9 @@ return [
                 'branch-requests.view',
                 // Reports — all read-only
                 'reports.*',
+                // Analytics & BI — read-only
+                'analytics.view',
+                'bi.view',
                 // System — minimal
                 'audit-log.view',
                 'system-health.view',

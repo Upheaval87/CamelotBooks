@@ -130,6 +130,7 @@ class TrialBalanceController extends Controller
             'asOfDate',
             'branches',
             'costCenters',
+            'branchId',
             'costCenterId',
             'company',
             'dp',

@@ -1,138 +1,147 @@
 <x-app-layout>
-    <x-list-header title="Inventory Analytics" />
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 py-6 an-wrap">
+        @php
+            $page = 'inventory';
+            $title = 'Inventory';
+            $subtitle = 'Stock value, valuation trend and movement for the period as of ' . $period['as_of'] . '.';
+        @endphp
+        @include('analytics._nav')
+        @include('analytics._head')
 
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <form method="GET" action="{{ route('analytics.inventory') }}" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <x-input-label for="as_of_date" value="As of Date" />
-                        <x-text-input id="as_of_date" name="as_of_date" type="date" :value="$asOfDate" class="mt-1 block w-full" />
-                    </div>
-                    <div>
-                        <x-input-label for="date_from" value="From" />
-                        <x-text-input id="date_from" name="date_from" type="date" :value="$dateFrom" class="mt-1 block w-full" />
-                    </div>
-                    <div>
-                        <x-input-label for="date_to" value="To" />
-                        <x-text-input id="date_to" name="date_to" type="date" :value="$dateTo" class="mt-1 block w-full" />
-                    </div>
-                    <div>
-                        <x-input-label for="slow_moving_days" value="Slow Moving Days" />
-                        <x-text-input id="slow_moving_days" name="slow_moving_days" type="number" :value="$slowMovingDays" class="mt-1 block w-full" />
-                    </div>
-                </div>
-                <div class="mt-4 flex justify-end">
-                    <x-primary-button>Apply</x-primary-button>
-                </div>
-            </form>
+        <form method="GET" action="{{ route('analytics.inventory') }}" class="an-filters">
+            <span class="an-flabel">Period
+                <select name="period" class="an-input">
+                    @foreach (['month' => 'This month', 'quarter' => 'This quarter', 'ytd' => 'Year to date'] as $k => $lbl)
+                        <option value="{{ $k }}" @selected($period['key'] === $k)>{{ $lbl }}</option>
+                    @endforeach
+                </select>
+            </span>
+            <span class="an-flabel">Slow-moving threshold (days)
+                <input type="number" name="slow_moving_days" class="an-input" min="1" max="365" value="{{ request('slow_moving_days', $slowMovingDays) }}">
+            </span>
+            <button class="an-btn an-btn-cta" type="submit">Apply</button>
+            <a href="{{ route('analytics.inventory') }}" class="an-btn an-btn-ghost">Clear</a>
+        </form>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <div class="text-xs text-gray-500 uppercase">Total Stock Value</div>
-                    <div class="text-2xl font-bold text-gold-700">@money($data['current_value']['total_value'])</div>
-                </div>
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <div class="text-xs text-gray-500 uppercase">Total Quantity</div>
-                    <div class="text-2xl font-bold text-gray-800">{{ number_format($data['current_value']['total_quantity'], 0) }}</div>
-                </div>
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <div class="text-xs text-gray-500 uppercase">Tracked Items</div>
-                    <div class="text-2xl font-bold text-gray-800">{{ $data['current_value']['item_count'] }}</div>
-                </div>
-            </div>
+        @php
+            $cur = $data['current_value'] ?? [];
+            $turnover = $data['turnover'] ?? [];
+            $adjs = (int) array_sum(array_column($data['stockouts'] ?? [], 'adjustment_count'));
+        @endphp
+        <div class="an-kpis an-kpis--4">
+            <div class="an-kpi"><div class="l">Total Stock Value</div><div class="v">@money($cur['total_value'] ?? 0)</div></div>
+            <div class="an-kpi"><div class="l">Total Quantity</div><div class="v">{{ format_number($cur['total_quantity'] ?? 0, 0) }}</div></div>
+            <div class="an-kpi"><div class="l">Tracked Items</div><div class="v">{{ format_number($cur['item_count'] ?? 0, 0) }}</div></div>
+            <div class="an-kpi"><div class="l">Stockout Adjustments</div><div class="v {{ $adjs > 0 ? 'dn' : 'up' }}">{{ number_format($adjs, 0) }}</div></div>
+        </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Stock Value Trend</h3>
-                <x-chart type="line" :id="'stock-value-trend'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                    ['label' => 'Stock Value', 'data' => $data['value_data'], 'borderColor' => '#128F8E', 'backgroundColor' => 'rgba(18,143,142,0.1)', 'fill' => true],
-                ])" height="300" />
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Slow-Moving Stock (>{{ $slowMovingDays }} days)</h3>
-                    <div class="overflow-x-auto max-h-80 overflow-y-auto">
-                        <table class="datasheet">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th class="text-right">Qty</th>
-                                    <th class="text-right">Value</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($data['slow_moving'] as $item)
-                                    <tr>
-                                        <td>{{ $item['product_name'] }} <span class="text-ink-soft">({{ $item['sku'] }})</span></td>
-                                        <td class="numeric">{{ number_format($item['old_quantity'], 0) }}</td>
-                                        <td class="numeric">@money($item['old_value'])</td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="3" class="text-ink-soft text-center">No slow-moving items</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+        <div class="an-card">
+            <h2 class="an-card-t">Stock Value Trend</h2>
+            @php
+                $labels = $data['labels'] ?? [];
+                $values = $data['value_data'] ?? [];
+                $maxV = max(array_merge([1], array_map('abs', $values)));
+            @endphp
+            @if ($labels)
+                <div class="an-bars">
+                    @foreach ($labels as $i => $label)
+                        <div class="an-bar">
+                            <span class="an-bar-v" title="{{ $label }}: @money($values[$i] ?? 0)">{{ format_number($values[$i] ?? 0, 0) }}</span>
+                            <div class="an-bar-cols">
+                                <i class="an-bar-b rev" style="height:{{ ((abs($values[$i] ?? 0)) / $maxV) * 100 }}%"></i>
+                            </div>
+                            <span class="an-bar-l">{{ $label }}</span>
+                        </div>
+                    @endforeach
                 </div>
+            @else
+                <div class="an-empty">No valuation history in this window.</div>
+            @endif
+        </div>
 
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Low Stock Items</h3>
-                    <div class="overflow-x-auto max-h-80 overflow-y-auto">
-                        <table class="datasheet">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th class="text-right">On Hand</th>
-                                    <th class="text-right">Reorder Point</th>
-                                    <th class="text-right">Shortage</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($data['low_stock'] as $item)
-                                    <tr>
-                                        <td>{{ $item['product_name'] }} <span class="text-ink-soft">({{ $item['sku'] }})</span></td>
-                                        <td class="numeric">{{ number_format($item['quantity_on_hand'], 0) }}</td>
-                                        <td class="numeric">{{ number_format($item['reorder_point'], 0) }}</td>
-                                        <td class="numeric font-medium text-red-600">{{ number_format($item['shortage'], 0) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="4" class="text-ink-soft text-center">All stock levels OK</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Turnover by Product</h3>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
+        <div class="an-grid an-grid--2">
+            <div class="an-card">
+                <h2 class="an-card-t">Low Stock Items</h2>
+                <div class="an-tbl-wrap">
+                    <table class="an-tbl">
                         <thead>
                             <tr>
                                 <th>Product</th>
-                                <th class="text-right">Value</th>
-                                <th class="text-right">Avg Cost</th>
-                                <th class="text-right">Turnover</th>
-                                <th class="text-right">Days on Hand</th>
+                                <th class="r">On Hand</th>
+                                <th class="r">Reorder Point</th>
+                                <th class="r">Shortage</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($data['turnover'] as $item)
+                            @forelse (($data['low_stock'] ?? []) as $row)
                                 <tr>
-                                    <td>{{ $item['product_name'] }} <span class="text-ink-soft">({{ $item['sku'] }})</span></td>
-                                    <td class="numeric">@money($item['total_value'])</td>
-                                    <td class="numeric">{{ format_money($item['avg_cost'], null, 4) }}</td>
-                                    <td class="numeric">{{ $item['turnover'] !== null ? number_format($item['turnover'], 1) : 'N/A' }}</td>
-                                    <td class="numeric">{{ $item['days_on_hand'] !== null ? number_format($item['days_on_hand'], 0) : 'N/A' }}</td>
+                                    <td>{{ $row['product_name'] }} <span class="an-chip c-nt">{{ $row['sku'] }}</span></td>
+                                    <td class="r">{{ format_number($row['quantity_on_hand'] ?? 0, 0) }}</td>
+                                    <td class="r">{{ format_number($row['reorder_point'] ?? 0, 0) }}</td>
+                                    <td class="r dn">@money($row['shortage'] ?? 0)</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="text-ink-soft text-center">No data</td></tr>
+                                <tr><td colspan="4" class="c an-empty-cell">All stock levels OK</td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <div class="an-card">
+                <h2 class="an-card-t">Slow-Moving Stock (&gt;{{ request('slow_moving_days', $slowMovingDays) }} days)</h2>
+                <div class="an-tbl-wrap">
+                    <table class="an-tbl">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="r">Qty</th>
+                                <th class="r">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse (($data['slow_moving'] ?? []) as $row)
+                                <tr>
+                                    <td>{{ $row['product_name'] }} <span class="an-chip c-nt">{{ $row['sku'] }}</span></td>
+                                    <td class="r">{{ format_number($row['old_quantity'] ?? 0, 0) }}</td>
+                                    <td class="r">@money($row['old_value'] ?? 0)</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="3" class="c an-empty-cell">No slow-moving items</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="an-card">
+            <h2 class="an-card-t">Turnover by Product</h2>
+            <div class="an-tbl-wrap">
+                <table class="an-tbl">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th class="r">Value</th>
+                            <th class="r">Avg Cost</th>
+                            <th class="r">Turnover</th>
+                            <th class="r">Days on Hand</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($turnover as $row)
+                            <tr>
+                                <td>{{ $row['product_name'] }} <span class="an-chip c-nt">{{ $row['sku'] }}</span></td>
+                                <td class="r">@money($row['total_value'] ?? 0)</td>
+                                <td class="r">{{ format_money($row['avg_cost'] ?? 0, null, 4) }}</td>
+                                <td class="r">{{ ($row['turnover'] ?? null) !== null ? format_number($row['turnover'], 1) : 'N/A' }}</td>
+                                <td class="r">{{ ($row['days_on_hand'] ?? null) !== null ? format_number($row['days_on_hand'], 0) : 'N/A' }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="c an-empty-cell">No data</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

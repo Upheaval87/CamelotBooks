@@ -23,11 +23,24 @@ use App\Models\Vendor;
 use App\Services\FeatureManagement;
 use App\Services\Reporting\ReportRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ReportRenderSmokeTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Analytics pages whose SQL uses DATE_FORMAT / YEARWEEK and only runs on MySQL.
+     */
+    private const ANALYTICS_MYSQL_ONLY = [
+        'sales_analytics',
+        'purchasing_analytics',
+        'inventory_analytics',
+        'expense_analytics',
+        'tax_analytics',
+        'forecast_analytics',
+    ];
 
     protected Company $company;
     protected User $user;
@@ -220,6 +233,9 @@ class ReportRenderSmokeTest extends TestCase
 
         $failures = [];
         foreach ($routes as $key => $url) {
+            if (in_array($key, self::ANALYTICS_MYSQL_ONLY, true) && DB::getDriverName() !== 'mysql') {
+                continue;
+            }
             $response = $this->actingAs($this->user)->get($url);
             if ($response->status() !== 200) {
                 $ex = $response->exception
@@ -231,6 +247,6 @@ class ReportRenderSmokeTest extends TestCase
         }
 
         $this->assertEmpty($failures, implode("\n", $failures));
-        $this->assertCount(67, $routes);
+        $this->assertCount(84, $routes);
     }
 }

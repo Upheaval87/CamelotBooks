@@ -1,89 +1,115 @@
 <x-app-layout>
-    <x-list-header title="Cash Flow Trend & Projection" />
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 py-6 an-wrap">
+        @php
+            $page = 'cash-flow-trend';
+            $title = 'Cash Flow';
+            $subtitle = 'Historical net cash flow by operating, investing and financing activity, with a forecast (' . $period['from'] . ' onward).';
+            $hc = (int) ($data['historical_count'] ?? 0);
+            $pc = (int) ($data['projection_count'] ?? 0);
+        @endphp
+        @include('analytics._nav')
+        @include('analytics._head')
 
-    <div class="pb-12">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <form method="GET" action="{{ route('analytics.cash-flow-trend') }}" class="bg-white shadow-sm sm:rounded-lg p-4 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <x-input-label for="date_from" value="From" />
-                        <x-text-input id="date_from" name="date_from" type="date" :value="$dateFrom" class="mt-1 block w-full" />
-                    </div>
-                    <div>
-                        <x-input-label for="date_to" value="To" />
-                        <x-text-input id="date_to" name="date_to" type="date" :value="$dateTo" class="mt-1 block w-full" />
-                    </div>
-                    <div>
-                        <x-input-label for="projection_months" value="Projection Months" />
-                        <x-text-input id="projection_months" name="projection_months" type="number" :value="$projectionMonths" class="mt-1 block w-full" min="1" max="24" />
-                    </div>
-                    <div class="flex items-end">
-                        <x-primary-button>Apply</x-primary-button>
-                    </div>
+        <form method="GET" action="{{ route('analytics.cash-flow-trend') }}" class="an-filters">
+            <span class="an-flabel">From
+                <input type="date" name="date_from" class="an-input" value="{{ request('date_from', $period['from']) }}">
+            </span>
+            <span class="an-flabel">To
+                <input type="date" name="date_to" class="an-input" value="{{ request('date_to', $period['to']) }}">
+            </span>
+            <span class="an-flabel">Projection months
+                <input type="number" name="projection_months" class="an-input" min="1" max="24" value="{{ request('projection_months', $projectionMonths) }}">
+            </span>
+            <button class="an-btn an-btn-cta" type="submit">Apply</button>
+            <a href="{{ route('analytics.cash-flow-trend') }}" class="an-btn an-btn-ghost">Clear</a>
+        </form>
+
+        @php
+            $labels = $data['labels'] ?? [];
+            $netAll = array_merge($data['net'] ?? [], $data['projection_net'] ?? []);
+            $sumNet = array_sum($netAll);
+            $projSum = array_sum($data['projection_net'] ?? []);
+            $lastHist = ($data['net'][$hc - 1] ?? 0);
+        @endphp
+        <div class="an-kpis an-kpis--4">
+            <div class="an-kpi"><div class="l">Total Net Cash Flow</div><div class="v {{ $sumNet >= 0 ? 'up' : 'dn' }}">@money($sumNet)</div></div>
+            <div class="an-kpi"><div class="l">Projected Net ({!! $data['projection_count'] ?? 0 !!} mo)</div><div class="v {{ $projSum >= 0 ? 'up' : 'dn' }}">@money($projSum)</div></div>
+            <div class="an-kpi"><div class="l">Last Historical Month</div><div class="v {{ $lastHist >= 0 ? 'up' : 'dn' }}">@money($lastHist)</div></div>
+            <div class="an-kpi"><div class="l">Historical Periods</div><div class="v">{{ $hc }}</div></div>
+        </div>
+
+        <div class="an-card">
+            <div class="an-card-h">
+                <div>
+                    <h2 class="an-card-t">Net Cash Flow</h2>
+                    <p class="an-card-s">Historical and projected net cash flow by period.</p>
                 </div>
-            </form>
-
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Net Cash Flow Trend</h3>
-                <x-chart type="line" :id="'cash-flow-trend'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                    ['label' => 'Historical Operating', 'data' => array_merge($data['operating'], array_fill(0, $data['projection_count'], null)), 'borderColor' => '#128F8E', 'backgroundColor' => 'rgba(18,143,142,0.1)', 'fill' => true],
-                    ['label' => 'Projected Operating', 'data' => array_merge(array_fill(0, $data['historical_count'], null), $data['projection_operating']), 'borderColor' => '#128F8E', 'borderDash' => [5,5], 'backgroundColor' => 'transparent', 'fill' => false],
-                    ['label' => 'Historical Investing', 'data' => array_merge($data['investing'], array_fill(0, $data['projection_count'], null)), 'borderColor' => '#f59e0b', 'backgroundColor' => 'transparent', 'fill' => false],
-                    ['label' => 'Projected Investing', 'data' => array_merge(array_fill(0, $data['historical_count'], null), $data['projection_investing']), 'borderColor' => '#f59e0b', 'borderDash' => [5,5], 'backgroundColor' => 'transparent', 'fill' => false],
-                    ['label' => 'Historical Financing', 'data' => array_merge($data['financing'], array_fill(0, $data['projection_count'], null)), 'borderColor' => '#10b981', 'backgroundColor' => 'transparent', 'fill' => false],
-                    ['label' => 'Projected Financing', 'data' => array_merge(array_fill(0, $data['historical_count'], null), $data['projection_financing']), 'borderColor' => '#10b981', 'borderDash' => [5,5], 'backgroundColor' => 'transparent', 'fill' => false],
-                ])" height="400" />
+                <div class="an-legend">
+                    <span class="an-legend-k"><i class="sw net"></i>Net</span>
+                    <span class="an-legend-k"><i class="sw proj"></i>Projected</span>
+                </div>
             </div>
+            @php
+                $maxN = max(array_merge([1], array_map('abs', $netAll)));
+            @endphp
+            @if ($labels)
+                <div class="an-bars">
+                    @foreach ($labels as $i => $label)
+                        @php
+                            $isProj = $i >= $hc;
+                            $net = $isProj ? ($data['projection_net'][$i - $hc] ?? 0) : ($data['net'][$i] ?? 0);
+                        @endphp
+                        <div class="an-bar">
+                            <span class="an-bar-v" title="{{ $label }}: @money($net)">{{ format_number($net, 0) }}</span>
+                            <div class="an-bar-cols">
+                                <i class="an-bar-b {{ $net >= 0 ? 'net' : 'neg' }} {{ $isProj ? 'proj' : '' }}" style="height:{{ (abs($net) / $maxN) * 100 }}%"></i>
+                            </div>
+                            <span class="an-bar-l">{{ $label }}{!! $isProj ? '<i class="an-chip c-warn">proj</i>' : '' !!}</span>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="an-empty">No cash-movement data in this window.</div>
+            @endif
+        </div>
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Net Cash Flow (Combined)</h3>
-                <x-chart type="bar" :id="'net-cash-flow'" :labels="json_encode($data['labels'])" :datasets="json_encode([
-                    ['label' => 'Historical Net', 'data' => array_merge($data['net'], array_fill(0, $data['projection_count'], null)), 'backgroundColor' => array_merge(array_map(fn($v) => $v >= 0 ? '#10b981' : '#ef4444', $data['net']), array_fill(0, $data['projection_count'], '#9ca3af'))],
-                    ['label' => 'Projected Net', 'data' => array_merge(array_fill(0, $data['historical_count'], null), $data['projection_net']), 'backgroundColor' => '#d1d5db', 'borderDash' => [5,5]],
-                ])" height="300" />
-            </div>
-
-            <x-feedback.alert variant="warning" title="Projection Disclaimer" class="mb-4">{{ $data['projection_note'] }}</x-feedback.alert>
-
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly Breakdown</h3>
-                <div class="overflow-x-auto">
-                    <table class="datasheet">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th class="text-right">Operating</th>
-                                <th class="text-right">Investing</th>
-                                <th class="text-right">Financing</th>
-                                <th class="text-right">Net</th>
+        <div class="an-card">
+            <h2 class="an-card-t">Monthly Breakdown</h2>
+            <div class="an-tbl-wrap">
+                <table class="an-tbl">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th class="r">Operating</th>
+                            <th class="r">Investing</th>
+                            <th class="r">Financing</th>
+                            <th class="r">Net</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($labels as $i => $label)
+                            @php
+                                $isProj = $i >= $hc;
+                                $idx = $i - $hc;
+                                $operating = $isProj ? ($data['projection_operating'][$idx] ?? 0) : ($data['operating'][$i] ?? 0);
+                                $investing = $isProj ? ($data['projection_investing'][$idx] ?? 0) : ($data['investing'][$i] ?? 0);
+                                $financing = $isProj ? ($data['projection_financing'][$idx] ?? 0) : ($data['financing'][$i] ?? 0);
+                                $net = $isProj ? ($data['projection_net'][$idx] ?? 0) : ($data['net'][$i] ?? 0);
+                            @endphp
+                            <tr class="{{ $isProj ? 'an-proj-row' : '' }}">
+                                <td>{{ $label }}@if($isProj) <span class="an-chip c-warn">Projected</span>@endif</td>
+                                <td class="r">@money($operating)</td>
+                                <td class="r">@money($investing)</td>
+                                <td class="r">@money($financing)</td>
+                                <td class="r {{ $net >= 0 ? 'up' : 'dn' }}">@money($net)</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @for($i = 0; $i < count($data['labels']); $i++)
-                                @php
-                                    $isProjection = $i >= $data['historical_count'];
-                                    $operating = $isProjection ? ($data['projection_operating'][$i - $data['historical_count']] ?? 0) : ($data['operating'][$i] ?? 0);
-                                    $investing = $isProjection ? ($data['projection_investing'][$i - $data['historical_count']] ?? 0) : ($data['investing'][$i] ?? 0);
-                                    $financing = $isProjection ? ($data['projection_financing'][$i - $data['historical_count']] ?? 0) : ($data['financing'][$i] ?? 0);
-                                    $net = $isProjection ? ($data['projection_net'][$i - $data['historical_count']] ?? 0) : ($data['net'][$i] ?? 0);
-                                @endphp
-                                <tr class="{{ $isProjection ? 'text-ink-soft' : '' }}">
-                                    <td>
-                                        {{ $data['labels'][$i] }}
-                                        @if($isProjection)
-                                            <span class="text-xs text-amber-600 ml-1">(Projected)</span>
-                                        @endif
-                                    </td>
-                                    <td class="numeric">@money($operating)</td>
-                                    <td class="numeric">@money($investing)</td>
-                                    <td class="numeric">@money($financing)</td>
-                                    <td class="numeric font-medium {{ $net >= 0 ? 'text-green-600' : 'text-red-600' }}">@money($net)</td>
-                                </tr>
-                            @endfor
-                        </tbody>
-                    </table>
-                </div>
+                        @empty
+                            <tr><td colspan="5" class="c an-empty-cell">No data</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
+            <p class="an-note">{{ $data['projection_note'] ?? 'Projected values are based on trend analysis and are not a guarantee of future performance.' }}</p>
         </div>
     </div>
 </x-app-layout>

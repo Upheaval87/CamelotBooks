@@ -150,7 +150,8 @@
                             {{ __('Analytics') }}
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-52 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                        <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-60 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                            <a href="{{ route('analytics.overview') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Analytics Overview') }}</a>
                             <a href="{{ route('analytics.financial-ratios') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Financial Ratios') }}</a>
                             <a href="{{ route('analytics.revenue-expense-trends') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Revenue & Expense Trends') }}</a>
                             <a href="{{ route('analytics.sales') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Sales Analytics') }}</a>
@@ -161,10 +162,16 @@
                             <a href="{{ route('analytics.inventory') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Inventory Analytics') }}</a>
                             @endif
                             <a href="{{ route('analytics.profitability') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Profitability Analytics') }}</a>
+                            <a href="{{ route('analytics.expenses') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Expenses') }}</a>
+                            <a href="{{ route('analytics.customers') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Customers') }}</a>
+                            <a href="{{ route('analytics.working-capital') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Working Capital') }}</a>
                             @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'budgets'))
-                            <a href="{{ route('analytics.budget-vs-actual-trend') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Budget vs Actual Trend') }}</a>
+                            <a href="{{ route('analytics.budget-vs-actual') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Budget vs Actual') }}</a>
                             @endif
+                            <a href="{{ route('analytics.tax') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Tax') }}</a>
+                            <a href="{{ route('analytics.forecasts') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Forecasts') }}</a>
                             <a href="{{ route('analytics.cash-flow-trend') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Cash Flow Trend') }}</a>
+                            <a href="{{ route('analytics.branches') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Branches') }}</a>
                         </div>
                     </div>
                     @endif
@@ -176,10 +183,10 @@
                             <svg class="ms-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="ddOpen" x-transition x-cloak class="absolute z-50 mt-1 w-56 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
-                            <a href="{{ route('bi.true-total-cost') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('True Total Cost per Branch') }}</a>
-                            <a href="{{ route('bi.customer-lifetime-value') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Customer Lifetime Value') }}</a>
-                            <a href="{{ route('bi.employee-productivity') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Employee Productivity') }}</a>
-                            <a href="{{ route('bi.branch-profitability') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Branch Profitability') }}</a>
+                            <a href="{{ route('bi.overview') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('BI Overview') }}</a>
+                            <a href="{{ route('bi.clv') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Customer Lifetime Value') }}</a>
+                            <a href="{{ route('bi.employee') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Employee Productivity') }}</a>
+                            <a href="{{ route('bi.branch') }}" class="block px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100">{{ __('Branch Profitability') }}</a>
                         </div>
                     </div>
                     @endif
@@ -384,6 +391,7 @@
             <x-responsive-nav-link :href="route('accounting.aging.ap-summary')" :active="request()->routeIs('accounting.aging.*')">{{ __('A/P Aging') }}</x-responsive-nav-link>
             @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'analytics'))
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Analytics</div>
+            <x-responsive-nav-link :href="route('analytics.overview')" :active="request()->routeIs('analytics.overview')">{{ __('Overview') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('analytics.financial-ratios')" :active="request()->routeIs('analytics.financial-ratios')">{{ __('Financial Ratios') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('analytics.revenue-expense-trends')" :active="request()->routeIs('analytics.revenue-expense-trends')">{{ __('Revenue & Expense Trends') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('analytics.sales')" :active="request()->routeIs('analytics.sales')">{{ __('Sales Analytics') }}</x-responsive-nav-link>
@@ -394,17 +402,23 @@
             <x-responsive-nav-link :href="route('analytics.inventory')" :active="request()->routeIs('analytics.inventory')">{{ __('Inventory Analytics') }}</x-responsive-nav-link>
             @endif
             <x-responsive-nav-link :href="route('analytics.profitability')" :active="request()->routeIs('analytics.profitability')">{{ __('Profitability Analytics') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics.expenses')" :active="request()->routeIs('analytics.expenses')">{{ __('Expenses') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics.customers')" :active="request()->routeIs('analytics.customers')">{{ __('Customers') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics.working-capital')" :active="request()->routeIs('analytics.working-capital')">{{ __('Working Capital') }}</x-responsive-nav-link>
             @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'budgets'))
-            <x-responsive-nav-link :href="route('analytics.budget-vs-actual-trend')" :active="request()->routeIs('analytics.budget-vs-actual-trend')">{{ __('Budget vs Actual') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics.budget-vs-actual')" :active="request()->routeIs('analytics.budget-vs-actual')">{{ __('Budget vs Actual') }}</x-responsive-nav-link>
             @endif
+            <x-responsive-nav-link :href="route('analytics.tax')" :active="request()->routeIs('analytics.tax')">{{ __('Tax') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics.forecasts')" :active="request()->routeIs('analytics.forecasts')">{{ __('Forecasts') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('analytics.cash-flow-trend')" :active="request()->routeIs('analytics.cash-flow-trend')">{{ __('Cash Flow Trend') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analytics.branches')" :active="request()->routeIs('analytics.branches')">{{ __('Branches') }}</x-responsive-nav-link>
             @endif
             @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'bi'))
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">Business Intelligence</div>
-            <x-responsive-nav-link :href="route('bi.true-total-cost')" :active="request()->routeIs('bi.true-total-cost')">{{ __('True Total Cost') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('bi.customer-lifetime-value')" :active="request()->routeIs('bi.customer-lifetime-value')">{{ __('Customer Lifetime Value') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('bi.employee-productivity')" :active="request()->routeIs('bi.employee-productivity')">{{ __('Employee Productivity') }}</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('bi.branch-profitability')" :active="request()->routeIs('bi.branch-profitability')">{{ __('Branch Profitability') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('bi.overview')" :active="request()->routeIs('bi.overview')">{{ __('BI Overview') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('bi.clv')" :active="request()->routeIs('bi.clv')">{{ __('Customer Lifetime Value') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('bi.employee')" :active="request()->routeIs('bi.employee')">{{ __('Employee Productivity') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('bi.branch')" :active="request()->routeIs('bi.branch')">{{ __('Branch Profitability') }}</x-responsive-nav-link>
             @endif
             @if(\App\Services\FeatureManagement::isEnabled(session('current_company_id') ?? 0, 'pos'))
             <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase">POS</div>

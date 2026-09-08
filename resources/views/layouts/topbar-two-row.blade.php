@@ -205,17 +205,25 @@
 
     if ($feat('analytics')) {
         $analyticsChildren = [
-            ['label' => __('Financial Ratios'),     'route' => 'analytics.financial-ratios'],
-            ['label' => __('Revenue vs Expense'),   'route' => 'analytics.revenue-expense-trends'],
-            ['label' => __('Sales Analytics'),      'route' => 'analytics.sales'],
-            ['label' => __('Profitability'),        'route' => 'analytics.profitability'],
-            ['label' => __('Cash Flow Trend'),      'route' => 'analytics.cash-flow-trend'],
+            ['label' => __('Overview'),              'route' => 'analytics.overview'],
+            ['label' => __('Financial Ratios'),      'route' => 'analytics.financial-ratios'],
+            ['label' => __('Revenue vs Expense'),    'route' => 'analytics.revenue-expense-trends'],
+            ['label' => __('Sales'),                 'route' => 'analytics.sales'],
+            ['label' => __('Profitability'),         'route' => 'analytics.profitability'],
+            ['label' => __('Cash Flow Trend'),       'route' => 'analytics.cash-flow-trend'],
+            ['label' => __('Expenses'),              'route' => 'analytics.expenses'],
+            ['label' => __('Customers'),             'route' => 'analytics.customers'],
+            ['label' => __('Working Capital'),       'route' => 'analytics.working-capital'],
+            ['label' => __('Budget vs Actual'),      'route' => 'analytics.budget-vs-actual'],
+            ['label' => __('Tax'),                   'route' => 'analytics.tax'],
+            ['label' => __('Forecasts'),             'route' => 'analytics.forecasts'],
+            ['label' => __('Branches'),              'route' => 'analytics.branches'],
         ];
         if ($feat('purchasing')) {
-            $analyticsChildren[] = ['label' => __('Purchasing Analytics'), 'route' => 'analytics.purchasing'];
+            $analyticsChildren[] = ['label' => __('Purchasing'), 'route' => 'analytics.purchasing'];
         }
         if ($feat('inventory')) {
-            $analyticsChildren[] = ['label' => __('Inventory Analytics'), 'route' => 'analytics.inventory'];
+            $analyticsChildren[] = ['label' => __('Inventory'), 'route' => 'analytics.inventory'];
         }
         $modules[] = (object)[
             'label' => __('Analytics'),
@@ -452,7 +460,7 @@
                     <a href="{{ route('todo.index') }}" class="topbar-overflow-item">{{ __('My Tasks') }}</a>
                     @if($feat('bi'))
                         <div class="mx-3 my-1 border-t border-white/10"></div>
-                        <a href="{{ route('bi.true-total-cost') }}" class="topbar-overflow-item">{{ __('BI') }}</a>
+                        <a href="{{ route('bi.overview') }}" class="topbar-overflow-item">{{ __('BI') }}</a>
                     @endif
                     @if($user?->is_super_admin)
                         <div class="mx-3 my-1 border-t border-white/10"></div>

@@ -152,7 +152,7 @@ class ReportCenterTest extends TestCase
 
         $content = $response->getContent();
 
-        $this->assertSame(74, substr_count($content, '\\u0022description\\u0022'));
+        $this->assertSame(84, substr_count($content, '\\u0022description\\u0022'));
 
         foreach ([
             'Financial Statements',
@@ -160,7 +160,7 @@ class ReportCenterTest extends TestCase
             'Purchasing / Accounts Payable',
             'Inventory',
             'Banking',
-            'Fixed Assets',
+            'Budgeting',
             'Payroll',
             'Compliance & Audit',
             'Analytics',
@@ -179,7 +179,7 @@ class ReportCenterTest extends TestCase
             'purchase_register',
             'cheque_register',
             'payslip_report',
-            'asset_disposal_report',
+            'budget_vs_actual',
         ] as $key) {
             $this->assertStringContainsString('\\u0022key\\u0022:\\u0022' . $key . '\\u0022', $content);
         }

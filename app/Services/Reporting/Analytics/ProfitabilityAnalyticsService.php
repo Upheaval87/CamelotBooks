@@ -100,7 +100,7 @@ class ProfitabilityAnalyticsService
                 SUM(CASE WHEN accounts.type = \'income\' THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE 0 END) as revenue,
                 SUM(CASE WHEN accounts.type = \'expense\' THEN journal_entry_lines.debit - journal_entry_lines.credit ELSE 0 END) as expenses
             ')
-            ->groupByRaw('COALESCE(journal_entry_lines.branch_id, 0)')
+            ->groupByRaw('COALESCE(journal_entry_lines.branch_id, 0), COALESCE(branches.name, \'Consolidated\')')
             ->get();
         
         $results = [];
@@ -137,7 +137,7 @@ class ProfitabilityAnalyticsService
                 SUM(CASE WHEN accounts.type = \'income\' THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE 0 END) as revenue,
                 SUM(CASE WHEN accounts.type = \'expense\' THEN journal_entry_lines.debit - journal_entry_lines.credit ELSE 0 END) as expenses
             ')
-            ->groupByRaw('COALESCE(journal_entry_lines.cost_center_id, 0)')
+            ->groupByRaw('COALESCE(journal_entry_lines.cost_center_id, 0), COALESCE(cost_centers.name, \'Unclassified\')')
             ->get();
         
         $results = [];
