@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journals — confirm-gated actions + view-gated reverse</title>
+<style>
+  :root{--deep:#0B3437;--sec:#128F8E;--steel:#46708C;--ink:#13292C;--sub:#3E5658;--muted:#5F7476;--faint:#9AAEAE;--line:#E4EAE8;--hair:#EEF3F1;--bg:#F5F7F6;--green:#1B7F4D;--red:#C2453F;--amber:#A9761B;
+    --sh:0 1px 2px rgba(14,36,38,.06),0 12px 30px -14px rgba(14,36,38,.16)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--sub);font-size:14px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:26px 22px 80px}
+  .phead{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+  .phead h1{font:800 22px Inter;letter-spacing:-.02em;color:var(--ink)}
+  .phead .sub{font:500 12.5px Inter;color:var(--muted);margin-top:4px}
+  .acts{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .me{font:700 11px Inter;color:var(--sec);background:rgba(18,143,142,.08);border:1px solid rgba(18,143,142,.3);border-radius:999px;padding:6px 12px}
+  .btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:11px;border:1px solid transparent;font:700 12.5px Inter;cursor:pointer}
+  .btn:active{transform:scale(.98)}
+  .btn-p{color:#fff;background:var(--sec);box-shadow:0 10px 20px -10px rgba(14,110,103,.5)}
+  .btn-g{color:var(--sub);background:#fff;border-color:var(--line);box-shadow:var(--sh)}
+  .btn-g:hover{border-color:var(--sec);color:var(--sec)}
+  .btn-danger{color:#fff;background:var(--red)}
+  .btn-warn{color:#fff;background:var(--amber)}
+  .btn-warnline{color:var(--amber);background:#fff;border-color:rgba(169,118,27,.45)}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .filters{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:14px 16px;margin-bottom:14px}
+  .frow{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1.4fr auto auto;gap:10px;align-items:end}
+  @media(max-width:1100px){.frow{grid-template-columns:1fr 1fr}.frow .mode{grid-column:1/-1}}
+  .lbl{display:block;font:800 9.5px Inter;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .in{width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;font:500 12.5px Inter;color:var(--ink)}
+  .in:focus{outline:none;border-color:var(--sec);box-shadow:0 0 0 4px rgba(18,143,142,.12)}
+  .mode{display:flex;gap:6px;background:#EDF2F1;padding:4px;border-radius:10px}
+  .mode button{border:none;background:transparent;height:32px;padding:0 14px;border-radius:8px;font:800 11px Inter;color:var(--muted);cursor:pointer}
+  .mode button.on{background:#fff;color:var(--sec);box-shadow:0 1px 2px rgba(8,40,44,.1)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .tabs button{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;font:700 12px Inter;color:var(--sub);cursor:pointer}
+  .tabs button .n{background:rgba(14,110,103,.08);color:var(--sec);border-radius:999px;padding:1px 8px;font:800 10.5px Inter}
+  .tabs button.on{background:var(--deep);border-color:var(--deep);color:#fff}
+  .tabs button.on .n{background:rgba(255,255,255,.16);color:#fff}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);overflow:hidden}
+  .li-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:960px}
+  th{font:800 9.5px Inter;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:11px 14px;background:#F8FAFA;border-bottom:1px solid var(--line)}
+  th.num,td.num{text-align:right}
+  td{padding:12px 14px;border-bottom:1px solid var(--hair);font:500 12.5px Inter;color:var(--sub);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:#FAFCFB}
+  td.num{font:700 12.5px Inter;color:var(--ink);font-variant-numeric:tabular-nums}
+  .jno{font:700 11.5px "SF Mono",Menlo,monospace;color:var(--sec);background:rgba(18,143,142,.08);border:1px solid rgba(18,143,142,.25);border-radius:7px;padding:3px 8px;white-space:nowrap;cursor:pointer}
+  .jno:hover{text-decoration:underline}
+  .desc{font:600 12.5px Inter;color:var(--ink)}
+  .desc small{display:block;font:500 11px Inter;color:var(--muted);margin-top:2px}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 11px;font:800 10px Inter;white-space:nowrap}
+  .pill.unfin{color:var(--amber);background:rgba(169,118,27,.1);border:1px solid rgba(169,118,27,.35)}
+  .pill.unpost{color:var(--steel);background:rgba(70,112,140,.1);border:1px solid rgba(70,112,140,.35)}
+  .pill.posted{color:var(--sec);background:rgba(18,143,142,.1);border:1px solid rgba(18,143,142,.4)}
+  .pill.reversed{color:var(--red);background:rgba(194,69,63,.08);border:1px solid rgba(194,69,63,.4)}
+  .rowact{display:flex;gap:6px;justify-content:flex-end}
+  .ib{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:12px;color:var(--muted);display:grid;place-items:center}
+  .ib:hover{border-color:var(--sec);color:var(--sec)}
+  .ib.del:hover{border-color:var(--red);color:var(--red)}
+  .ib.rev:hover{border-color:var(--red);color:var(--red)}
+  .ib[disabled]{opacity:.4;cursor:not-allowed}
+  .ib[disabled]:hover{border-color:var(--line);color:var(--muted)}
+  .tfoot{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--hair);font:600 12px Inter;color:var(--muted)}
+  .modal{position:fixed;inset:0;background:rgba(11,52,55,.5);display:none;place-items:center;z-index:90;padding:20px}
+  .modal.on{display:grid}
+  .mbox{width:min(560px,100%);background:#fff;border-radius:18px;box-shadow:0 30px 60px -20px rgba(8,40,44,.5);overflow:hidden}
+  .mbox.wide{width:min(1120px,100%)}
+  .mbox-h{display:flex;align-items:center;gap:10px;padding:16px 22px;border-bottom:1px solid var(--hair)}
+  .mbox-h b{font:800 15px Inter;color:var(--ink)}
+  .mbox-h .x{margin-left:auto;border:none;background:none;font-size:16px;color:var(--muted);cursor:pointer}
+  .mbox-b{padding:18px 22px;font:500 13px Inter;line-height:1.7;color:var(--sub)}
+  .mbox-b .warn{display:flex;gap:10px;background:rgba(169,118,27,.08);border:1px solid rgba(169,118,27,.35);border-radius:11px;padding:11px 14px;font:600 12px Inter;color:var(--amber);margin-bottom:12px}
+  .mbox-b .danger{display:flex;gap:10px;background:rgba(194,69,63,.06);border:1px solid rgba(194,69,63,.35);border-radius:11px;padding:11px 14px;font:600 12px Inter;color:var(--red);margin-bottom:12px}
+  .lbl2{display:block;font:800 9.5px Inter;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rad{display:flex;gap:14px;margin-top:6px}
+  .rad label{display:flex;gap:8px;align-items:center;font:600 12.5px Inter;color:var(--sub);cursor:pointer}
+  .rad input{accent-color:var(--sec)}
+  .mbox-f{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:14px 22px;border-top:1px solid var(--hair);background:#F8FAFA;flex-wrap:wrap}
+  .mnote{font:600 11.5px Inter;color:var(--muted);background:var(--hair);border-radius:9px;padding:8px 12px;margin-right:auto}
+  .mbox-b .li-wrap{overflow:visible}
+  .jmeta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .jchip{border:1px solid var(--line);background:#F8FAFA;border-radius:999px;padding:4px 11px;font:700 10.5px Inter;color:var(--muted)}
+  .jmemo{background:#F8FAFA;border:1px solid var(--hair);border-radius:10px;padding:10px 14px;font:500 12.5px Inter;color:var(--sub);margin-bottom:12px}
+  .jlines{width:100%;border-collapse:collapse;min-width:0;table-layout:auto}
+  .jlines th{padding:10px 12px;white-space:nowrap}
+  .jlines th:nth-child(2){width:34%}
+  .jlines td{padding:10px 12px;font-size:12.5px;white-space:normal;word-break:break-word;vertical-align:top}
+  .jlines .code{font:700 10.5px "SF Mono",Menlo,monospace;color:var(--sec);background:rgba(18,143,142,.08);border:1px solid rgba(18,143,142,.25);border-radius:6px;padding:2px 7px;margin-right:6px}
+  .jlines .lin{height:34px;border:1px solid var(--line);border-radius:8px;padding:0 9px;font:600 12px Inter;color:var(--ink);width:100%}
+  .jlines .lin:focus{outline:none;border-color:var(--sec)}
+  .jlines tr.tot td{border-top:2px solid var(--deep);background:#F8FAFA;font:800 13px Inter;color:var(--ink)}
+  .bal{display:inline-flex;align-items:center;gap:6px;color:var(--green);background:rgba(27,127,77,.1);border:1px solid rgba(27,127,77,.35);border-radius:999px;padding:3px 10px;font:800 10.5px Inter}
+  .bal.bad{color:var(--red);background:rgba(194,69,63,.08);border-color:rgba(194,69,63,.4)}
+  .addline{margin-top:10px;width:100%;height:36px;border:1.5px dashed var(--faint);border-radius:10px;background:none;font:700 12px Inter;color:var(--muted);cursor:pointer}
+  .addline:hover{border-color:var(--sec);color:var(--sec)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--deep);color:#fff;font:700 12.5px Inter;border-radius:999px;padding:11px 20px;box-shadow:0 14px 30px -12px rgba(8,40,44,.6);opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="phead">
+    <div><h1>Journals</h1><div class="sub">Open a journal to review every line — finalize, post, reopen and reverse are confirm-gated.</div></div>
+    <div class="acts"><span class="me">Signed in as Elvis Seyama · ES</span><button class="btn btn-g">⤓ Export</button><button class="btn btn-p">＋ New Journal</button></div>
+  </div>
+
+  <div class="filters">
+    <div class="frow">
+      <div class="mode" id="mode"><button class="on" data-mode="range">Date range</button><button data-mode="period">Period</button></div>
+      <div id="rangeWrap"><label class="lbl">From</label><input class="in" type="date" id="from" value="2026-01-01"></div>
+      <div id="rangeWrap2"><label class="lbl">To</label><input class="in" type="date" id="to" value="2026-09-30"></div>
+      <div id="periodWrap" style="display:none"><label class="lbl">Period</label>
+        <select class="in" id="period"><option>This Month (Sep 2026)</option><option>Last Month</option><option>This Quarter</option><option>YTD</option><option>FY 2026</option></select></div>
+      <div><label class="lbl">Type</label><select class="in" id="ftype"><option value="">All types</option><option>General</option><option>Payments</option><option>Payroll</option><option>Depreciation</option><option>Inventory</option><option>Reversal</option></select></div>
+      <div><label class="lbl">Branch</label><select class="in" id="fbranch"><option value="">All branches</option><option>Head Office</option><option>Branch 01</option><option>Branch 02</option></select></div>
+      <div><label class="lbl">Search</label><input class="in" id="fq" placeholder="№, memo or reference…"></div>
+      <button class="btn btn-p" id="apply">Apply</button>
+      <button class="btn btn-g" id="clear">Clear</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="on" data-tab="all">All <span class="n" data-c="all">8</span></button>
+    <button data-tab="unfinalized">Unfinalized <span class="n" data-c="unfinalized">2</span></button>
+    <button data-tab="unposted">Unposted · Finalized <span class="n" data-c="unposted">2</span></button>
+    <button data-tab="posted">Posted <span class="n" data-c="posted">3</span></button>
+    <button data-tab="reversed">Reversed <span class="n" data-c="reversed">1</span></button>
+  </div>
+
+  <div class="card">
+    <div class="li-wrap">
+      <table>
+        <thead><tr><th>Journal №</th><th>Date</th><th>Type</th><th>Description</th><th>Source</th><th class="num">Lines</th><th class="num">Total (K)</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+        <tbody id="rows">
+          <tr data-status="posted" data-creator="ES" data-date="2026-01-02" data-type="General" data-text="JE-2026-0001 opening balances seed">
+            <td><span class="jno">JE-2026-0001</span></td><td>02 Jan 2026</td><td>General</td>
+            <td class="desc">Opening balances<small>FY2026 carry-forward</small></td><td>seed</td>
+            <td class="num">4</td><td class="num">1,250,000.00</td><td><span class="pill posted">● Posted</span></td>
+            <td><div class="rowact"></div></td></tr>
+          <tr data-status="posted" data-creator="ES" data-date="2026-01-31" data-type="Depreciation" data-text="JE-2026-0004 depreciation jan system">
+            <td><span class="jno">JE-2026-0004</span></td><td>31 Jan 2026</td><td>Depreciation</td>
+            <td class="desc">Depreciation — January<small>Monthly run · 6 assets</small></td><td>system</td>
+            <td class="num">2</td><td class="num">48,200.00</td><td><span class="pill posted">● Posted</span></td>
+            <td><div class="rowact"></div></td></tr>
+          <tr data-status="reversed" data-creator="ES" data-date="2026-01-24" data-type="Payments" data-text="JE-2026-0007 collection customer REC-001">
+            <td><span class="jno">JE-2026-0007</span></td><td>24 Jan 2026</td><td>Payments</td>
+            <td class="desc">Collection from customer<small>Reversed by JE-2026-0012</small></td><td>REC-001</td>
+            <td class="num">2</td><td class="num">7,500.00</td><td><span class="pill reversed">● Reversed</span></td>
+            <td><div class="rowact"></div></td></tr>
+          <tr data-status="posted" data-creator="ES" data-date="2026-09-18" data-type="Reversal" data-text="JE-2026-0012 reversal of JE-2026-0007">
+            <td><span class="jno">JE-2026-0012</span></td><td>18 Sep 2026</td><td>Reversal</td>
+            <td class="desc">Reversal of JE-2026-0007<small>Mirrored lines · posted</small></td><td>manual</td>
+            <td class="num">2</td><td class="num">7,500.00</td><td><span class="pill posted">● Posted</span></td>
+            <td><div class="rowact"></div></td></tr>
+          <tr data-status="unfinalized" data-creator="MB" data-date="2026-09-12" data-type="General" data-text="JE-2026-0013 accrued utilities sep draft">
+            <td><span class="jno">JE-2026-0013</span></td><td>12 Sep 2026</td><td>General</td>
+            <td class="desc">Accrued utilities — September<small>Draft · creator M. Banda</small></td><td>manual</td>
+            <td class="num">2</td><td class="num">84,000.00</td><td><span class="pill unfin">● Unfinalized</span></td>
+            <td><div class="rowact"></div></td></tr>
+          <tr data-status="unfinalized" data-creator="ES" data-date="2026-09-14" data-type="Inventory" data-text="JE-2026-0014 stock adjustment branch 01 draft">
+            <td><span class="jno">JE-2026-0014</span></td><td>14 Sep 2026</td><td>Inventory</td>
+            <td class="desc">Stock adjustment — Branch 01<small>Draft · creator E. Seyama</small></td><td>manual</td>
+            <td class="num">2</td><td class="num">12,400.00</td><td><span class="pill unfin">● Unfinalized</span></td>
+            <td><div class="rowact"></div></td></tr>
+          <tr data-status="unposted" data-creator="PP" data-date="2026-09-15" data-type="Payroll" data-text="JE-2026-0015 payroll accrual sep finalized">
+            <td><span class="jno">JE-2026-0015</span></td><td>15 Sep 2026</td><td>Payroll</td>
+            <td class="desc">Payroll accrual — September<small>Finalized · awaiting post</small></td><td>payroll</td>
+            <td class="num">4</td><td class="num">1,860,000.00</td><td><span class="pill unpost">● Unposted</span></td>
+            <td><div class="rowact"></div></td></tr>
+          <tr data-status="unposted" data-creator="ES" data-date="2026-09-16" data-type="General" data-text="JE-2026-0016 prepayment amortisation finalized">
+            <td><span class="jno">JE-2026-0016</span></td><td>16 Sep 2026</td><td>General</td>
+            <td class="desc">Prepayment amortisation<small>Finalized · awaiting post</small></td><td>manual</td>
+            <td class="num">2</td><td class="num">45,000.00</td><td><span class="pill unpost">● Unposted</span></td>
+            <td><div class="rowact"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tfoot"><span id="count">8 journals</span><span>Showing <b id="shown">8</b> of 8</span></div>
+  </div>
+</div>
+
+<!-- JOURNAL VIEWER / EDITOR (wide) -->
+<div class="modal" id="jModal"><div class="mbox wide">
+  <div class="mbox-h"><b id="jTitle">Journal</b><span class="pill posted" id="jPill"></span><button class="x" data-close="jModal">✕</button></div>
+  <div class="mbox-b">
+    <div class="jmeta" id="jMeta"></div>
+    <div class="jmemo" id="jMemo"></div>
+    <table class="jlines"><thead><tr><th style="width:24%">Account</th><th>Description</th><th class="num" style="width:120px">Debit</th><th class="num" style="width:120px">Credit</th><th style="width:110px">Cost Centre</th><th id="jRmCol" style="display:none;width:44px"></th></tr></thead>
+    <tbody id="jLines"></tbody></table>
+    <button class="addline" id="jAdd" style="display:none">＋ Add line</button>
+  </div>
+  <div class="mbox-f" id="jFoot"></div>
+</div></div>
+
+<!-- GENERIC CONFIRMATION BOX (post / finalize / reverse-confirm) -->
+<div class="modal" id="cfModal"><div class="mbox">
+  <div class="mbox-h"><b id="cfTitle">Confirm</b><button class="x" data-close="cfModal">✕</button></div>
+  <div class="mbox-b"><div id="cfMsg"></div></div>
+  <div class="mbox-f"><button class="btn btn-g" data-close="cfModal">Cancel</button><button class="btn btn-p" id="cfYes">Confirm</button></div>
+</div></div>
+
+<!-- DELETE (confirmation box) -->
+<div class="modal" id="delModal"><div class="mbox">
+  <div class="mbox-h"><b>🗑 Delete journal <span id="delNo"></span></b><button class="x" data-close="delModal">✕</button></div>
+  <div class="mbox-b">
+    <div class="danger">⚠ This permanently removes the draft journal and its lines. Only <b>unfinalized</b> journals can be deleted — and only by their creator.</div>
+    Deletion is audit-logged with your user and timestamp. This cannot be undone.
+  </div>
+  <div class="mbox-f"><button class="btn btn-g" data-close="delModal">Cancel</button><button class="btn btn-danger" id="delConfirm">Delete permanently</button></div>
+</div></div>
+
+<!-- REOPEN (confirmation box with reason) -->
+<div class="modal" id="reopenModal"><div class="mbox">
+  <div class="mbox-h"><b>⤺ Reopen journal <span id="reNo"></span></b><button class="x" data-close="reopenModal">✕</button></div>
+  <div class="mbox-b">
+    <div class="warn">⚠ Reopening returns this finalized journal to <b>Unfinalized (draft)</b>. It has NOT been posted, so no GL impact exists yet.</div>
+    Reason (audit-visible): <input class="in" style="margin-top:6px" placeholder="e.g. correction to accrual amount">
+  </div>
+  <div class="mbox-f"><button class="btn btn-g" data-close="reopenModal">Cancel</button><button class="btn btn-warn" id="reConfirm">Reopen as draft</button></div>
+</div></div>
+
+<!-- REVERSE (form; its confirm button triggers the confirmation box) -->
+<div class="modal" id="revModal"><div class="mbox">
+  <div class="mbox-h"><b>⟲ Reverse journal <span id="rvNo"></span></b><button class="x" data-close="revModal">✕</button></div>
+  <div class="mbox-b">
+    <div class="g2">
+      <div><label class="lbl2">Reversal date</label><input class="in" type="date" value="2026-09-18"></div>
+      <div><label class="lbl2">Reference</label><input class="in" id="rvRef" value="REV-JE-2026-0001"></div>
+    </div>
+    <label class="lbl2">Memo (required, audit-visible)</label>
+    <input class="in" placeholder="Reason for reversal">
+    <label class="lbl2">After saving</label>
+    <div class="rad"><label><input type="radio" name="rpost" checked> Post immediately</label><label><input type="radio" name="rpost"> Save as draft</label></div>
+  </div>
+  <div class="mbox-f"><button class="btn btn-g" data-close="revModal">Cancel</button><button class="btn btn-danger" id="rvConfirm">⟲ Confirm Reversal</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var ME='ES', NAMES={ES:'E. Seyama',MB:'M. Banda',PP:'P. Phiri'};
+  var curTab='all', target=null, jMode='view', jNo=null, viewed={};
+
+  var JDATA={
+    'JE-2026-0001':{memo:'Opening balances FY2026 carry-forward.',type:'General',date:'02 Jan 2026',source:'seed',branch:'Head Office',creator:'ES',lines:[
+      {a:'1000',n:'Cash and Cash Equivalents',d:'Opening cash',dr:500000,cr:null,cc:'—'},
+      {a:'1100',n:'Accounts Receivable',d:'Opening receivables',dr:350000,cr:null,cc:'—'},
+      {a:'1300',n:'Inventory',d:'Opening stock',dr:400000,cr:null,cc:'—'},
+      {a:'3000',n:'Owner Equity',d:'Opening capital',dr:null,cr:1250000,cc:'—'}]},
+    'JE-2026-0004':{memo:'Monthly depreciation run — January.',type:'Depreciation',date:'31 Jan 2026',source:'system',branch:'Head Office',creator:'ES',lines:[
+      {a:'6020',n:'Depreciation Expense',d:'Jan run · 6 assets',dr:48200,cr:null,cc:'—'},
+      {a:'1510',n:'Accumulated Depreciation',d:'Jan run',dr:null,cr:48200,cc:'—'}]},
+    'JE-2026-0007':{memo:'Collection from customer — REC-001.',type:'Payments',date:'24 Jan 2026',source:'REC-001',branch:'Head Office',creator:'ES',lines:[
+      {a:'1000',n:'Cash and Cash Equivalents',d:'Collection',dr:7500,cr:null,cc:'—'},
+      {a:'1100',n:'Accounts Receivable',d:'Clear receivable',dr:null,cr:7500,cc:'—'}]},
+    'JE-2026-0012':{memo:'Reversal of JE-2026-0007 (mirrored).',type:'Reversal',date:'18 Sep 2026',source:'manual',branch:'Head Office',creator:'ES',lines:[
+      {a:'1100',n:'Accounts Receivable',d:'Reversal of JE-2026-0007',dr:7500,cr:null,cc:'—'},
+      {a:'1000',n:'Cash and Cash Equivalents',d:'Reversal of JE-2026-0007',dr:null,cr:7500,cc:'—'}]},
+    'JE-2026-0013':{memo:'Accrued utilities — September estimate.',type:'General',date:'12 Sep 2026',source:'manual',branch:'Head Office',creator:'MB',lines:[
+      {a:'6040',n:'Utilities Expense',d:'Sep accrual',dr:84000,cr:null,cc:'HQ'},
+      {a:'2100',n:'Accrued Liabilities',d:'Sep accrual',dr:null,cr:84000,cc:'HQ'}]},
+    'JE-2026-0014':{memo:'Stock adjustment — Branch 01 count variance.',type:'Inventory',date:'14 Sep 2026',source:'manual',branch:'Branch 01',creator:'ES',lines:[
+      {a:'5000',n:'Cost of Goods Sold',d:'Count variance',dr:12400,cr:null,cc:'B01'},
+      {a:'1300',n:'Inventory',d:'Count variance',dr:null,cr:12400,cc:'B01'}]},
+    'JE-2026-0015':{memo:'Payroll accrual — September.',type:'Payroll',date:'15 Sep 2026',source:'payroll',branch:'Head Office',creator:'PP',lines:[
+      {a:'6010',n:'Salaries & Wages',d:'Sep accrual',dr:1500000,cr:null,cc:'—'},
+      {a:'6011',n:'PAYE Expense',d:'Sep accrual',dr:200000,cr:null,cc:'—'},
+      {a:'6012',n:'Pension Expense',d:'Sep accrual',dr:160000,cr:null,cc:'—'},
+      {a:'2110',n:'Payroll Payable',d:'Sep accrual',dr:null,cr:1860000,cc:'—'}]},
+    'JE-2026-0016':{memo:'Prepayment amortisation — Q3.',type:'General',date:'16 Sep 2026',source:'manual',branch:'Head Office',creator:'ES',lines:[
+      {a:'6050',n:'Amortisation Expense',d:'Q3 prepayments',dr:45000,cr:null,cc:'—'},
+      {a:'1400',n:'Prepayments',d:'Q3 amortisation',dr:null,cr:45000,cc:'—'}]}
+  };
+
+  function fmt(n){ return n==null||n===''?'—':n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function rows(){ return Array.prototype.slice.call(document.querySelectorAll('#rows tr[data-status]')); }
+  function rowOf(no){ return rows().filter(function(r){return r.querySelector('.jno').textContent===no;})[0]; }
+
+  /* ROW ACTIONS — Reverse on Posted appears ONLY after the journal has been viewed */
+  function actionsFor(tr){
+    var st=tr.dataset.status, cr=tr.dataset.creator, mine=cr===ME, no=tr.querySelector('.jno').textContent;
+    if(st==='unfinalized'){
+      var ed = mine ? '<button class="ib" data-act="edit" title="Open & edit (creator)">✎</button>' : '<button class="ib" disabled title="Only the creator ('+NAMES[cr]+') can edit">✎</button>';
+      var del = mine ? '<button class="ib del" data-act="delete" title="Delete">🗑</button>' : '<button class="ib del" disabled title="Only the creator ('+NAMES[cr]+') can delete">🗑</button>';
+      return '<button class="ib" data-act="view" title="Open journal">👁</button>'+ed+del;
+    }
+    if(st==='unposted') return '<button class="ib" data-act="view" title="Open journal">👁</button><button class="ib" data-act="reopen" title="Reopen">⤺</button>';
+    if(st==='posted'){
+      var rev = viewed[no] ? '<button class="ib rev" data-act="reverse" title="Reverse">⟲</button>' : '';
+      return '<button class="ib" data-act="view" title="Open journal">👁</button>'+rev+'<button class="ib" data-act="print" title="Print">🖨</button>';
+    }
+    return '<button class="ib" data-act="view" title="Open journal">👁</button><button class="ib" data-act="openrev" title="Open reversal">⟲</button>';
+  }
+  function refreshActions(){ rows().forEach(function(tr){ tr.querySelector('.rowact').innerHTML=actionsFor(tr); }); }
+
+  /* tabs + filters */
+  function counts(){ var c={all:0,unfinalized:0,unposted:0,posted:0,reversed:0};
+    rows().forEach(function(r){ if(r.style.display==='none')return; c.all++; c[r.dataset.status]++; });
+    document.querySelectorAll('[data-c]').forEach(function(s){ s.textContent=c[s.dataset.c]; });
+    document.getElementById('shown').textContent=c.all; }
+  function refresh(){ rows().forEach(function(r){ var pass=r.dataset.filt!=='0';
+      var tabOk=(curTab==='all'||r.dataset.status===curTab); r.style.display=(pass&&tabOk)?'':'none'; }); counts(); }
+  document.getElementById('tabs').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b)return;
+    this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); curTab=b.dataset.tab; refresh(); });
+  document.getElementById('mode').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b)return;
+    this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on');
+    var p=b.dataset.mode==='period'; document.getElementById('periodWrap').style.display=p?'':'none';
+    document.getElementById('rangeWrap').style.display=p?'none':''; document.getElementById('rangeWrap2').style.display=p?'none':''; });
+  document.getElementById('apply').onclick=function(){ var f=document.getElementById('from').value,t=document.getElementById('to').value,
+    ty=document.getElementById('ftype').value,q=document.getElementById('fq').value.toLowerCase();
+    rows().forEach(function(r){ var ok=true; if(f&&r.dataset.date<f)ok=false; if(t&&r.dataset.date>t)ok=false;
+      if(ty&&r.dataset.type!==ty)ok=false; if(q&&r.dataset.text.toLowerCase().indexOf(q)<0)ok=false; r.dataset.filt=ok?'1':'0'; });
+    refresh(); toast('Filters applied'); };
+  document.getElementById('clear').onclick=function(){ document.getElementById('ftype').value='';document.getElementById('fbranch').value='';
+    document.getElementById('fq').value=''; rows().forEach(function(r){r.dataset.filt='1';}); refresh(); toast('Filters cleared'); };
+
+  /* modal plumbing */
+  function openM(id){ document.getElementById(id).classList.add('on'); }
+  function closeM(id){ document.getElementById(id).classList.remove('on'); }
+  document.querySelectorAll('[data-close]').forEach(function(b){ b.onclick=function(){ closeM(b.dataset.close); }; });
+  document.querySelectorAll('.modal').forEach(function(m){ m.addEventListener('click',function(e){ if(e.target===m)m.classList.remove('on'); }); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape')document.querySelectorAll('.modal.on').forEach(function(m){m.classList.remove('on');}); });
+
+  /* generic confirmation box */
+  var cfCb=null;
+  function askConfirm(o){
+    document.getElementById('cfTitle').textContent=o.title;
+    document.getElementById('cfMsg').innerHTML=o.msg;
+    var y=document.getElementById('cfYes'); y.textContent=o.label; y.className='btn '+(o.cls||'btn-p');
+    cfCb=o.onYes; openM('cfModal');
+  }
+  document.getElementById('cfYes').onclick=function(){ closeM('cfModal'); if(cfCb){ var f=cfCb; cfCb=null; f(); } };
+
+  function totals(lines){ var dr=0,cr=0; lines.forEach(function(l){ dr+=+l.dr||0; cr+=+l.cr||0; }); return {dr:dr,cr:cr}; }
+
+  function openJournal(no,mode){
+    jNo=no; jMode=mode; viewed[no]=true;                 /* mark as viewed → unlocks Reverse on posted rows */
+    var J=JDATA[no], tr=rowOf(no), st=tr.dataset.status;
+    document.getElementById('jTitle').textContent='Journal '+no;
+    var pill=document.getElementById('jPill');
+    var map={unfinalized:['unfin','● Unfinalized'],unposted:['unpost','● Unposted · Finalized'],posted:['posted','● Posted'],reversed:['reversed','● Reversed']};
+    pill.className='pill '+map[st][0]; pill.textContent=map[st][1];
+    document.getElementById('jMeta').innerHTML=
+      '<span class="jchip">'+J.type+'</span><span class="jchip">'+J.date+'</span><span class="jchip">'+J.branch+'</span>'+
+      '<span class="jchip">Source: '+J.source+'</span><span class="jchip">Creator: '+NAMES[J.creator]+'</span>';
+    document.getElementById('jMemo').textContent=J.memo;
+    renderLines(J,mode); renderFoot(st,mode,J.creator);
+    refreshActions(); openM('jModal');
+  }
+  function renderLines(J,mode){
+    var edit=mode==='edit';
+    document.getElementById('jRmCol').style.display=edit?'':'none';
+    document.getElementById('jAdd').style.display=edit?'':'none';
+    document.getElementById('jLines').innerHTML=J.lines.map(function(l,i){
+      if(!edit) return '<tr><td><span class="code">'+l.a+'</span>'+l.n+'</td><td>'+l.d+'</td><td class="num">'+fmt(l.dr)+'</td><td class="num">'+fmt(l.cr)+'</td><td>'+l.cc+'</td><td></td></tr>';
+      return '<tr data-i="'+i+'"><td><span class="code">'+l.a+'</span>'+l.n+'</td>'+
+        '<td><input class="lin" data-f="d" value="'+l.d+'"></td>'+
+        '<td class="num"><input class="lin" data-f="dr" style="text-align:right" value="'+(l.dr==null?'':l.dr)+'"></td>'+
+        '<td class="num"><input class="lin" data-f="cr" style="text-align:right" value="'+(l.cr==null?'':l.cr)+'"></td>'+
+        '<td>'+l.cc+'</td><td style="text-align:center"><button class="ib del" data-rm="'+i+'" title="Remove line">🗑</button></td></tr>';
+    }).join('')+
+    '<tr class="tot"><td colspan="2">Totals</td><td class="num" id="tDr"></td><td class="num" id="tCr"></td><td colspan="2"><span class="bal" id="tBal">✓ Balanced</span></td></tr>';
+    recalc();
+  }
+  function currentLines(){ var J=JDATA[jNo];
+    document.querySelectorAll('#jLines tr[data-i]').forEach(function(tr){
+      var l=J.lines[+tr.dataset.i];
+      tr.querySelectorAll('.lin').forEach(function(inp){ var f=inp.dataset.f; l[f]=(f==='d')?inp.value:(inp.value===''?null:+inp.value); });
+    });
+    return J.lines; }
+  function recalc(){ var J=JDATA[jNo]; if(jMode==='edit') currentLines();
+    var t=totals(J.lines); var d=document.getElementById('tDr'),c=document.getElementById('tCr'),b=document.getElementById('tBal');
+    if(!d)return; d.textContent=fmt(t.dr); c.textContent=fmt(t.cr);
+    var ok=Math.abs(t.dr-t.cr)<0.005; b.className='bal'+(ok?'':' bad'); b.textContent=ok?'✓ Balanced':'⚠ Unbalanced';
+    var save=document.getElementById('jSave'); if(save) save.disabled=!ok; }
+  document.getElementById('jLines').addEventListener('input',recalc);
+  document.getElementById('jLines').addEventListener('click',function(e){ var b=e.target.closest('[data-rm]'); if(!b)return;
+    JDATA[jNo].lines.splice(+b.dataset.rm,1); renderLines(JDATA[jNo],'edit'); });
+  document.getElementById('jAdd').onclick=function(){ JDATA[jNo].lines.push({a:'1000',n:'Cash and Cash Equivalents',d:'',dr:null,cr:null,cc:'—'}); renderLines(JDATA[jNo],'edit'); };
+
+  function renderFoot(st,mode,creator){
+    var f=document.getElementById('jFoot'), mine=creator===ME, h='';
+    if(mode==='edit'){
+      h='<span class="mnote">Edit mode — review every line; totals must balance before saving.</span>'+
+        '<button class="btn btn-g" data-fact="canceledit">Cancel edit</button>'+
+        '<button class="btn btn-p" data-fact="save" id="jSave">✓ Save for Authorisation / Posting (Finalize)</button>';
+    } else if(st==='unfinalized'){
+      h = mine ? '<span class="mnote">Draft — review all lines below, then finalize from here.</span><button class="btn btn-g" data-fact="print">🖨 Print</button><button class="btn btn-p" data-fact="edit">✓ Finalize — check / edit &amp; save for posting</button>'
+               : '<span class="mnote">Draft — only the creator ('+NAMES[creator]+') can finalize.</span><button class="btn btn-g" data-fact="print">🖨 Print</button>';
+    } else if(st==='unposted'){
+      h='<span class="mnote">Finalized — review all lines before posting.</span><button class="btn btn-warnline" data-fact="reopen">⤺ Reopen</button><button class="btn btn-p" data-fact="post">▶ Post</button>';
+    } else if(st==='posted'){
+      h='<span class="mnote">Posted — immutable; reverse to correct.</span><button class="btn btn-g" data-fact="print">🖨 Print</button><button class="btn btn-danger" data-fact="reverse">⟲ Reverse</button>';
+    } else {
+      h='<span class="mnote">Reversed — see the reversing journal.</span><button class="btn btn-g" data-fact="openrev">⟲ Open reversal</button>';
+    }
+    f.innerHTML=h;
+  }
+
+  /* footer actions — Post / Finalize / Reverse all confirm-gated */
+  document.getElementById('jFoot').addEventListener('click',function(e){
+    var b=e.target.closest('[data-fact]'); if(!b)return;
+    var tr=rowOf(jNo), no=jNo, act=b.dataset.fact;
+    if(act==='edit') openJournal(no,'edit');
+    if(act==='canceledit') openJournal(no,'view');
+    if(act==='save'){
+      askConfirm({title:'Finalize journal '+no, cls:'btn-p', label:'✓ Finalize',
+        msg:'Finalizing locks the lines and saves the journal for <b>authorisation / posting</b>. Confirm every line is correct and balanced.',
+        onYes:function(){ setStatus(tr,'unposted'); closeM('jModal'); toast('✓ '+no+' finalized — saved for authorisation / posting'); }});
+    }
+    if(act==='post'){
+      askConfirm({title:'Post journal '+no, cls:'btn-p', label:'▶ Post',
+        msg:'Posting writes all lines to the <b>General Ledger</b> and locks the journal. This action is audit-logged and cannot be edited afterwards (reverse only).',
+        onYes:function(){ setStatus(tr,'posted'); closeM('jModal'); toast('✓ '+no+' posted to General Ledger'); }});
+    }
+    if(act==='reopen'){ target=tr; document.getElementById('reNo').textContent=no; closeM('jModal'); openM('reopenModal'); }
+    if(act==='reverse'){ target=tr; document.getElementById('rvNo').textContent=no; document.getElementById('rvRef').value='REV-'+no; closeM('jModal'); openM('revModal'); }
+    if(act==='print') toast('🖨 '+no+' sent to print / PDF');
+    if(act==='openrev') toast('⟲ Opening reversing journal');
+  });
+
+  /* row interactions */
+  document.getElementById('rows').addEventListener('click',function(e){
+    var jn=e.target.closest('.jno');
+    if(jn){ openJournal(jn.textContent,'view'); return; }
+    var b=e.target.closest('[data-act]'); if(!b||b.disabled)return;
+    target=b.closest('tr'); var no=target.querySelector('.jno').textContent;
+    var act=b.dataset.act;
+    if(act==='view') openJournal(no,'view');
+    if(act==='edit') openJournal(no,'edit');
+    if(act==='delete'){ document.getElementById('delNo').textContent=no; openM('delModal'); }
+    if(act==='reopen'){ document.getElementById('reNo').textContent=no; openM('reopenModal'); }
+    if(act==='reverse'){ document.getElementById('rvNo').textContent=no; document.getElementById('rvRef').value='REV-'+no; openM('revModal'); }
+    if(act==='print') toast('🖨 '+no+' sent to print / PDF');
+    if(act==='openrev') toast('⟲ Opening reversing journal');
+  });
+
+  /* reversal form confirm → confirmation box → execute */
+  document.getElementById('rvConfirm').onclick=function(){
+    var tr=target, no=tr.querySelector('.jno').textContent;
+    askConfirm({title:'Confirm reversal '+no, cls:'btn-danger', label:'⟲ Reverse',
+      msg:'A reversing journal mirroring all lines will be created and posted. The original will be marked <b>Reversed</b> and both journals cross-linked.',
+      onYes:function(){ setStatus(tr,'reversed'); tr.querySelector('.desc small').textContent='Reversed by JE-2026-0017';
+        closeM('revModal'); toast('✓ Reversal JE-2026-0017 created & posted · '+no+' marked Reversed'); }});
+  };
+
+  function setStatus(tr,st){
+    tr.dataset.status=st;
+    var pill=tr.querySelector('.pill');
+    var map={unfinalized:['unfin','● Unfinalized'],unposted:['unpost','● Unposted · Finalized'],posted:['posted','● Posted'],reversed:['reversed','● Reversed']};
+    pill.className='pill '+map[st][0]; pill.textContent=map[st][1];
+    refreshActions(); refresh();
+  }
+  document.getElementById('delConfirm').onclick=function(){ var no=target.querySelector('.jno').textContent;
+    target.remove(); closeM('delModal'); refresh(); toast('🗑 '+no+' deleted (audit-logged)'); };
+  document.getElementById('reConfirm').onclick=function(){ var no=target.querySelector('.jno').textContent;
+    setStatus(target,'unfinalized'); closeM('reopenModal'); toast('⤺ '+no+' reopened as draft'); };
+
+  function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('on');},3000); }
+
+  rows().forEach(function(r){ r.dataset.filt='1'; });
+  refreshActions(); refresh();
+})();
+</script>
+</body>
+</html>

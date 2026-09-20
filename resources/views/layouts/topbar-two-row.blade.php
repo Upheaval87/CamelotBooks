@@ -381,7 +381,7 @@
                 @foreach($modules as $mod)
                     @php $hasChildren = count($mod->children) > 0; @endphp
                     @if($hasChildren)
-                        <div class="topbar-nav-dropdown-root"
+                        <div class="topbar-nav-dropdown-root @if($loop->last) drop-left @endif"
                              x-data="{ open: false }"
                              :class="open ? 'open' : ''"
                              @mouseenter="open = true"

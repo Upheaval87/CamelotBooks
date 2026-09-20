@@ -261,6 +261,189 @@ class JournalPostingEngine
         });
     }
 
+    /**
+     * Move a draft entry to "finalized" (pending approval/posting).
+     *
+     * Additive to the register rebuild: this NEVER writes to the ledger. It may
+     * optionally replace the entry's lines first (the register's inline editor).
+     */
+    public function finalize(int $journalEntryId, int $userId, ?array $lines = null): JournalEntry
+    {
+        return DB::transaction(function () use ($journalEntryId, $userId, $lines) {
+            $entry = JournalEntry::with('lines')->findOrFail($journalEntryId);
+
+            if ($entry->status !== JournalEntry::STATUS_DRAFT) {
+                throw new InvalidArgumentException('Only unfinalized (draft) entries can be finalized.');
+            }
+
+            if ($lines !== null) {
+                $entry->lines()->delete();
+                foreach ($lines as $line) {
+                    $entry->lines()->create([
+                        'company_id' => $entry->company_id,
+                        'account_id' => $line['account_id'],
+                        'debit' => $line['debit'] ?? 0,
+                        'credit' => $line['credit'] ?? 0,
+                        'memo' => $line['memo'] ?? null,
+                        'branch_id' => $line['branch_id'] ?? null,
+                        'cost_center_id' => $line['cost_center_id'] ?? null,
+                    ]);
+                }
+                $entry->load('lines');
+            }
+
+            $this->validateEntry($this->buildValidationData($entry));
+
+            $oldStatus = $entry->status;
+            $entry->status = JournalEntry::STATUS_PENDING_APPROVAL;
+            $entry->save();
+
+            $this->logAction($entry, 'finalized', ['status' => $oldStatus], ['status' => JournalEntry::STATUS_PENDING_APPROVAL], $userId);
+
+            return $entry;
+        });
+    }
+
+    /**
+     * Post a previously finalized entry to the General Ledger.
+     */
+    public function postFinalized(int $journalEntryId, int $userId): JournalEntry
+    {
+        return DB::transaction(function () use ($journalEntryId, $userId) {
+            $entry = JournalEntry::with('lines.account')->findOrFail($journalEntryId);
+
+            if ($entry->status !== JournalEntry::STATUS_PENDING_APPROVAL) {
+                throw new InvalidArgumentException('Only finalized (unposted) entries can be posted.');
+            }
+
+            $this->validateEntry($this->buildValidationData($entry));
+
+            $oldStatus = $entry->status;
+            $entry->status = JournalEntry::STATUS_POSTED;
+            $entry->posted_by = $userId;
+            $entry->posted_at = now();
+            $entry->save();
+
+            $this->logAction($entry, 'posted', ['status' => $oldStatus], ['status' => JournalEntry::STATUS_POSTED], $userId);
+
+            return $entry;
+        });
+    }
+
+    /**
+     * Return a finalized entry to the draft state, recording the reason.
+     */
+    public function reopen(int $journalEntryId, int $userId, ?string $reason = null): JournalEntry
+    {
+        return DB::transaction(function () use ($journalEntryId, $userId, $reason) {
+            $entry = JournalEntry::findOrFail($journalEntryId);
+
+            if ($entry->status !== JournalEntry::STATUS_PENDING_APPROVAL) {
+                throw new InvalidArgumentException('Only finalized (unposted) entries can be reopened.');
+            }
+
+            $oldStatus = $entry->status;
+            $entry->status = JournalEntry::STATUS_DRAFT;
+            $entry->save();
+
+            $this->logAction(
+                $entry,
+                'reopened',
+                ['status' => $oldStatus],
+                ['status' => JournalEntry::STATUS_DRAFT, 'reason' => $reason],
+                $userId,
+                $reason
+            );
+
+            return $entry;
+        });
+    }
+
+    /**
+     * Permanently delete an unfinalized (draft) entry. Audited before removal.
+     */
+    public function deleteDraft(JournalEntry $entry, int $userId): void
+    {
+        DB::transaction(function () use ($entry, $userId) {
+            if ($entry->status !== JournalEntry::STATUS_DRAFT) {
+                throw new InvalidArgumentException('Only unfinalized (draft) entries can be deleted.');
+            }
+
+            $this->logAction(
+                $entry,
+                'deleted',
+                ['status' => $entry->status, 'journal_number' => $entry->journal_number],
+                null,
+                $userId
+            );
+
+            $entry->lines()->delete();
+            $entry->delete();
+        });
+    }
+
+    public function postReversalDraft(JournalEntry $draft, int $userId): JournalEntry
+    {
+        return DB::transaction(function () use ($draft, $userId) {
+            if ($draft->status !== JournalEntry::STATUS_DRAFT) {
+                throw new InvalidArgumentException('Only draft reversal entries can be posted.');
+            }
+
+            if ($draft->source_module !== 'reversal') {
+                throw new InvalidArgumentException('Only entries with source module "reversal" can be posted here.');
+            }
+
+            $this->validateEntry($this->buildValidationData($draft));
+
+            $original = $draft->linkedEntry;
+
+            if (! $original) {
+                throw new InvalidArgumentException('The reversal entry has no linked original entry.');
+            }
+
+            if ($original->status !== JournalEntry::STATUS_POSTED) {
+                throw new InvalidArgumentException('Only posted entries can be reversed.');
+            }
+
+            $oldStatus = $draft->status;
+            $draft->status = JournalEntry::STATUS_POSTED;
+            $draft->posted_by = $userId;
+            $draft->posted_at = now();
+            $draft->save();
+
+            $this->logAction($draft, 'posted', ['status' => $oldStatus], ['status' => JournalEntry::STATUS_POSTED], $userId);
+
+            $original->status = JournalEntry::STATUS_REVERSED;
+            $original->reversal_entry_id = $draft->id;
+            $original->save();
+
+            return $draft;
+        });
+    }
+
+    protected function buildValidationData(JournalEntry $draft): array
+    {
+        $lines = $draft->lines->map(function (JournalEntryLine $line) {
+            return [
+                'account_id' => $line->account_id,
+                'branch_id' => $line->branch_id,
+                'cost_center_id' => $line->cost_center_id,
+                'debit' => $line->debit,
+                'credit' => $line->credit,
+                'memo' => $line->memo,
+                'entity_type' => $line->entity_type,
+                'entity_id' => $line->entity_id,
+            ];
+        })->toArray();
+
+        return [
+            'company_id' => $draft->company_id,
+            'date' => $draft->date->format('Y-m-d'),
+            'lines' => $lines,
+            'skip_inactive_account_check' => true,
+        ];
+    }
+
     public function closePeriod(AccountingPeriod $period, int $userId): ?JournalEntry
     {
         return DB::transaction(function () use ($period, $userId) {
@@ -603,7 +786,7 @@ class JournalPostingEngine
         return $total;
     }
 
-    protected function logAction(?JournalEntry $entry, string $action, ?array $oldValues, ?array $newValues, int $userId): void
+    protected function logAction(?JournalEntry $entry, string $action, ?array $oldValues, ?array $newValues, int $userId, ?string $notes = null): void
     {
         AccountAuditLog::create([
             'company_id' => $entry?->company_id ?? ($newValues['company_id'] ?? 0),
@@ -613,6 +796,7 @@ class JournalPostingEngine
             'old_values' => $oldValues,
             'new_values' => $newValues,
             'user_id' => $userId,
+            'notes' => $notes,
             'created_at' => now(),
         ]);
     }

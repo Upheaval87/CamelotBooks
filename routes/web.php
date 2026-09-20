@@ -290,6 +290,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Journal Entries
             Route::get('journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');
             Route::get('journal-entries/create', [JournalEntryController::class, 'create'])->name('journal-entries.create');
+            Route::get('journal-entries/export', [JournalEntryController::class, 'exportCsv'])->name('journal-entries.export')->middleware('permission:journal-entries.view');
             Route::get('journal-entries/{journalEntry}/edit', [JournalEntryController::class, 'edit'])->name('journal-entries.edit');
             Route::post('journal-entries', [JournalEntryController::class, 'store'])->name('journal-entries.store');
             Route::patch('journal-entries/{journalEntry}', [JournalEntryController::class, 'update'])->name('journal-entries.update');
@@ -298,6 +299,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('journal-entries/{journalEntry}/approve', [JournalEntryController::class, 'approve'])->name('journal-entries.approve')->middleware(['permission:journal-entries.approve', 'sod:journalEntry']);
             Route::post('journal-entries/{journalEntry}/reject', [JournalEntryController::class, 'reject'])->name('journal-entries.reject')->middleware(['permission:journal-entries.approve', 'sod:journalEntry']);
             Route::post('journal-entries/{journalEntry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal-entries.reverse')->middleware(['permission:journal-entries.reverse', 'sod:journalEntry']);
+            Route::post('journal-entries/{journalEntry}/post-reversal', [JournalEntryController::class, 'postReversal'])->name('journal-entries.post-reversal')->middleware(['permission:journal-entries.reverse', 'sod:journalEntry']);
+            Route::post('journal-entries/{journalEntry}/discard-reversal', [JournalEntryController::class, 'discardReversal'])->name('journal-entries.discard-reversal')->middleware(['permission:journal-entries.reverse', 'sod:journalEntry']);
+            Route::post('journal-entries/{journalEntry}/finalize', [JournalEntryController::class, 'finalize'])->name('journal-entries.finalize')->middleware('permission:journal-entries.edit');
+            Route::post('journal-entries/{journalEntry}/post', [JournalEntryController::class, 'postFinalized'])->name('journal-entries.post')->middleware(['permission:journal-entries.post', 'sod:journalEntry']);
+            Route::post('journal-entries/{journalEntry}/reopen', [JournalEntryController::class, 'reopen'])->name('journal-entries.reopen')->middleware('permission:journal-entries.edit');
+            Route::delete('journal-entries/{journalEntry}', [JournalEntryController::class, 'destroy'])->name('journal-entries.destroy')->middleware('permission:journal-entries.edit');
 
             // General Ledger
             Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');

@@ -2,16 +2,18 @@
     $cs = $systemCurrency;
     $accountStats = $stats;
 
-    function _coaFlattenAccounts($accounts, $depth = 0) {
-        $out = [];
-        foreach ($accounts as $a) {
-            $a['_depth'] = $depth;
-            $out[] = $a;
-            if (!empty($a['children'])) {
-                $out = array_merge($out, _coaFlattenAccounts($a['children'], $depth + 1));
+    if (!function_exists('_coaFlattenAccounts')) {
+        function _coaFlattenAccounts($accounts, $depth = 0) {
+            $out = [];
+            foreach ($accounts as $a) {
+                $a['_depth'] = $depth;
+                $out[] = $a;
+                if (!empty($a['children'])) {
+                    $out = array_merge($out, _coaFlattenAccounts($a['children'], $depth + 1));
+                }
             }
+            return $out;
         }
-        return $out;
     }
 @endphp
 

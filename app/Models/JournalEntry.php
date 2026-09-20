@@ -23,8 +23,9 @@ class JournalEntry extends Model
         'memo',
         'status',
         'is_adjusting_entry',
-        'source_module',
+'source_module',
         'linked_entry_id',
+        'reversal_entry_id',
         'recurring_template_id',
         'created_by',
         'posted_by',
@@ -115,9 +116,14 @@ class JournalEntry extends Model
         return $this->belongsTo(User::class, 'rejected_by');
     }
 
-    public function linkedEntry(): BelongsTo
+public function linkedEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class, 'linked_entry_id');
+    }
+
+    public function reversalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'reversal_entry_id');
     }
 
     public function reversingEntries(): HasMany

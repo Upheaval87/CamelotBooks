@@ -777,6 +777,7 @@ class ScopedSearchRenderSmokeTest extends TestCase
             'reports.sales-receipts.cashbook' => route('accounting.reports.sales-receipts.cashbook'),
             'journal-entries.index' => route('accounting.journal-entries.index'),
             'journal-entries.create' => route('accounting.journal-entries.create'),
+            'journal-entries.edit' => route('accounting.journal-entries.edit', $je),
             'journal-entries.show' => route('accounting.journal-entries.show', $je),
             'journal-entries.show-pending' => route('accounting.journal-entries.show', $jePending),
             'bank-accounts.index' => route('accounting.banking.accounts'),
