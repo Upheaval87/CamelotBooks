@@ -19,10 +19,12 @@ const MY_TASKS = {
 };
 
 const ICONS = {
-    dashboard: 'M12 3a9 9 0 109 9 9 9 0 00-9-9zM12 12l3.5-3.5M12 8V3',
-    'list-check': 'M3 17l2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8',
+    // dashboard (gauge) and list-check (checklist) are raw markup — the design
+    // mockup draws them as circle+path / two-path shapes, not a single path.
+    dashboard: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    'list-check': '<svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
     users: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 11a4 4 0 100-8 4 4 0 000 8z',
-    truck: 'M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
+    truck: '<svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5a2 2 0 01-2 2h-1"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
     box: 'M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.27 6.96L12 12.01l8.73-5.05M12 22.08V12',
     user: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z',
     invoice: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
@@ -44,7 +46,7 @@ const ICONS = {
     anchor: 'M12 22V8M5 12H2a10 10 0 0020 0h-3M12 8a3 3 0 100-6 3 3 0 000 6z',
     scale: 'M12 3v18M3 7h18M6 7l-3 5 3 5m12-10l3 5-3 5M7 21h10',
     'alert-triangle': 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01',
-    bank: 'M3 21h18M3 10h18M5 10v11M19 10v11M10 10v11M14 10v11M3 10l9-6 9 6M3 21h18',
+    bank: '<svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>',
     'arrow-left-right': 'M8 3L4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4',
     'arrow-down-circle': 'M12 22a10 10 0 100-20 10 10 0 000 20zM12 8v8M8 12l4 4 4-4',
     'credit-card': 'M1 10h22M1 6a2 2 0 012-2h18a2 2 0 012 2v12a2 2 0 01-2 2H3a2 2 0 01-2-2zM1 10h22',
@@ -84,13 +86,24 @@ const ICONS = {
     wand: 'M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M15 9h.01M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5',
     'git-branch': 'M6 3v12M18 9a4 4 0 100-8 4 4 0 000 8zM6 21a4 4 0 100-8 4 4 0 000 8zM18 9c-1.5 0-3 .8-4 2s-2.5 2-4 2',
     star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z',
-    pin: 'M12 17v5M9 2h6l1 7 3 3v2H5v-2l3-3z',
+    pin: 'M12 2v6m0 0l3-3m-3 3l-3-3m3 12v4m-4-4h8',
+    'chevron-collapse': 'M11 17l-5-5 5-5M18 17l-5-5 5-5',
+    'chevron-expand': 'M13 17l5-5-5-5M6 17l5-5-5-5',
     'chevron-left': 'M15 18l-6-6 6-6',
     x: 'M18 6L6 18M6 6l12 12',
     plus: 'M12 5v14M5 12h14',
 };
 
+/**
+ * Renders an icon. A map value that is raw `<svg>` markup (used for the handful
+ * of icons that must match the design mockup element-for-element) is emitted
+ * as-is with the shared stroke attributes injected; everything else is a plain
+ * path `d` string and gets wrapped.
+ */
 function svg(d) {
+    if (d.charAt(0) === '<') {
+        return d.replace('<svg ', '<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ');
+    }
     return '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">'
         + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="' + d + '"/></svg>';
 }
@@ -118,6 +131,12 @@ function buildStore() {
         holdingKey: null,
         dragArmed: null,
         suppressClick: null,
+        // Collapsed-state rail tooltip. Rendered as a single child of the rail
+        // (outside .fav-nav-scroll, whose overflow would clip a per-item pseudo
+        // element) and positioned from the hovered item's box.
+        tip: false,
+        tipLabel: '',
+        tipTop: 0,
 
         init() {
             var self = this;
@@ -163,12 +182,30 @@ function buildStore() {
 
         toggleCollapse() {
             this.collapsed = !this.collapsed;
+            this.hideTip();
         },
 
         expand() {
             if (this.collapsed) {
                 this.collapsed = false;
+                this.hideTip();
             }
+        },
+
+        showTip(e, label) {
+            if (!this.collapsed) return;
+            const item = e.currentTarget;
+            const rail = item && item.closest ? item.closest('.fav-sidebar') : null;
+            if (!rail) return;
+            const box = item.getBoundingClientRect();
+            const railBox = rail.getBoundingClientRect();
+            this.tipLabel = label;
+            this.tipTop = box.top - railBox.top + box.height / 2;
+            this.tip = true;
+        },
+
+        hideTip() {
+            this.tip = false;
         },
 
         // Press-and-hold arms drag-reorder; a plain click just navigates.

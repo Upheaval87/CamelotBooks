@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Favorites Rail — White Accent Bar</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #e8f4f4 0%, #d4e8e8 100%);
+    display: flex;
+    gap: 60px;
+    padding: 60px;
+    min-height: 100vh;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* ============ RAIL CONTAINER ============ */
+  .rail {
+    background: linear-gradient(180deg, #f8fafb 0%, #f1f5f6 100%);
+    border: 1px solid #dceaea;
+    border-radius: 16px;
+    box-shadow: 
+      0 1px 2px rgba(10,42,46,0.04),
+      0 12px 30px -14px rgba(10,42,46,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.8);
+    display: flex;
+    flex-direction: column;
+    padding: 12px 8px;
+    position: relative;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* --- EXPANDED STATE (88px, Stacked) --- */
+  .rail.expanded { width: 88px; }
+
+  /* --- COLLAPSED STATE (56px, Icon-only) --- */
+  .rail.collapsed { width: 56px; }
+
+  /* ============ HEADER ============ */
+  .rail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e2ecec;
+  }
+
+  .rail-title {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #5f7476;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .rail.collapsed .rail-title { display: none; }
+
+  .pin-btn {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 7px;
+    border: 1px solid #dceaea;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #8aa5a7;
+  }
+
+  .pin-btn:hover {
+    background: rgba(18,143,142,0.08);
+    border-color: rgba(18,143,142,0.3);
+    color: #128F8E;
+  }
+
+  .pin-btn svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ============ NAV ITEMS ============ */
+  .rail-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .rail-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #41585c;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+  }
+
+  .rail-item:hover {
+    background: rgba(18,143,142,0.06);
+    color: #0B2A2D;
+    transform: translateY(-1px);
+  }
+
+  .rail-item:hover .rail-icon {
+    background: rgba(18,143,142,0.12);
+    color: #128F8E;
+    border-color: rgba(18,143,142,0.25);
+  }
+
+  /* Hide text in collapsed state */
+  .rail.collapsed .rail-item { padding: 10px 0; gap: 0; }
+  .rail.collapsed .rail-item span { display: none; }
+
+  /* Active state */
+  .rail-item.active {
+    background: linear-gradient(180deg, #149897 0%, #128F8E 100%);
+    color: #fff;
+    box-shadow: 
+      0 4px 12px -4px rgba(18,143,142,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+
+  /* --- WHITE ACCENT BAR (Replaces Gold) --- */
+  .rail-item.active::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 24px;
+    background: #ffffff;
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 8px rgba(255,255,255,0.6); /* Soft white glow */
+  }
+
+  .rail.collapsed .rail-item.active::before {
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    transform: none;
+    height: auto;
+    border-radius: 3px;
+  }
+
+  .rail-item.active .rail-icon {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.3);
+    color: #fff;
+  }
+
+  /* Icon tile */
+  .rail-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid #dceaea;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(10,42,46,0.04);
+  }
+
+  .rail-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ============ FOOTER ============ */
+  .rail-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid #e2ecec;
+    margin-top: 8px;
+  }
+
+  .rail-action {
+    width: 100%;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid #dceaea;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #8aa5a7;
+  }
+
+  .rail-action:hover {
+    background: rgba(18,143,142,0.08);
+    border-color: rgba(18,143,142,0.3);
+    color: #128F8E;
+  }
+
+  .rail-action svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .collapse-btn {
+    width: 100%;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(18,143,142,0.06);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #5f7476;
+  }
+
+  .collapse-btn:hover {
+    background: rgba(18,143,142,0.12);
+    color: #128F8E;
+  }
+
+  .collapse-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ============ TOOLTIPS (For Collapsed State) ============ */
+  .rail.collapsed .rail-item::after {
+    content: attr(data-label);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #0c3539;
+    color: #eaffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    box-shadow: 0 8px 20px -8px rgba(6,32,35,0.6);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .rail.collapsed .rail-item:hover::after {
+    opacity: 1;
+    visibility: visible;
+    left: calc(100% + 16px);
+  }
+
+  /* ============ LABELS ============ */
+  .variant-label {
+    position: absolute;
+    top: -32px;
+    left: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5f7476;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .rail-wrap { position: relative; }
+</style>
+</head>
+<body>
+
+<!-- EXPANDED STATE (Stacked Layout) -->
+<div class="rail-wrap">
+  <span class="variant-label">Expanded (Stacked)</span>
+  <aside class="rail expanded">
+    <div class="rail-header">
+      <span class="rail-title">Favs</span>
+      <button class="pin-btn" title="Pin rail">
+        <svg viewBox="0 0 24 24"><path d="M12 2v6m0 0l3-3m-3 3l-3-3m3 12v4m-4-4h8"/></svg>
+      </button>
+    </div>
+
+    <nav class="rail-nav">
+      <a class="rail-item active" href="#" data-label="My Tasks">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        <span>My Tasks</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Vendors">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5a2 2 0 01-2 2h-1"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
+        <span>Vendors</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Invoices">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        </div>
+        <span>Invoices</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Cash Position">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+        </div>
+        <span>Cash Position</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Chart of Accounts">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+        </div>
+        <span>Chart of Accounts</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Dashboard">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <span>Dashboard</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Customers">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <span>Customers</span>
+      </a>
+    </nav>
+
+    <div class="rail-footer">
+      <button class="rail-action" title="Add to favorites">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </button>
+      <button class="collapse-btn" title="Collapse to icons">
+        <svg viewBox="0 0 24 24"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+      </button>
+    </div>
+  </aside>
+</div>
+
+<!-- COLLAPSED STATE (Icon-Only) -->
+<div class="rail-wrap">
+  <span class="variant-label">Collapsed (Icon-Only)</span>
+  <aside class="rail collapsed">
+    <div class="rail-header">
+      <span class="rail-title">Favs</span>
+      <button class="pin-btn" title="Pin rail">
+        <svg viewBox="0 0 24 24"><path d="M12 2v6m0 0l3-3m-3 3l-3-3m3 12v4m-4-4h8"/></svg>
+      </button>
+    </div>
+
+    <nav class="rail-nav">
+      <a class="rail-item active" href="#" data-label="My Tasks">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        <span>My Tasks</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Vendors">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5a2 2 0 01-2 2h-1"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
+        <span>Vendors</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Invoices">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        </div>
+        <span>Invoices</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Cash Position">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+        </div>
+        <span>Cash Position</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Chart of Accounts">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+        </div>
+        <span>Chart of Accounts</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Dashboard">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <span>Dashboard</span>
+      </a>
+
+      <a class="rail-item" href="#" data-label="Customers">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <span>Customers</span>
+      </a>
+    </nav>
+
+    <div class="rail-footer">
+      <button class="rail-action" title="Add to favorites">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </button>
+      <button class="collapse-btn" title="Expand to stacked">
+        <svg viewBox="0 0 24 24"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
+      </button>
+    </div>
+  </aside>
+</div>
+
+<script>
+  // Toggle active state on click for demonstration
+  document.querySelectorAll('.rail-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      const rail = this.closest('.rail');
+      rail.querySelectorAll('.rail-item').forEach(i => i.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // Toggle pin button
+  document.querySelectorAll('.pin-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      this.style.background = this.style.background ? '' : 'rgba(18,143,142,0.12)';
+      this.style.color = this.style.color ? '' : '#128F8E';
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -212,4 +212,95 @@ class FavouritesTest extends TestCase
     {
         $this->getJson(route('favourites.index'))->assertUnauthorized();
     }
+
+    public function test_normalise_url_strips_scheme_host_and_port(): void
+    {
+        // The stored url is a snapshot from creation time, so a dev port or a
+        // different vhost must not leak into the link the tile renders.
+        $this->assertSame(
+            '/accounting/customers',
+            FavouritesService::normaliseUrl('http://camelotbooks.local:8080/accounting/customers')
+        );
+        $this->assertSame(
+            '/accounting/customers/5',
+            FavouritesService::normaliseUrl('http://127.0.0.1:8000/accounting/customers/5')
+        );
+        $this->assertSame(
+            '/accounting/invoices?status=draft&page=2',
+            FavouritesService::normaliseUrl('https://camelotbooks.test/accounting/invoices?status=draft&page=2')
+        );
+        $this->assertSame('/already/relative', FavouritesService::normaliseUrl('/already/relative'));
+        $this->assertSame('/', FavouritesService::normaliseUrl(''));
+        // Protocol-relative snapshots must not walk off to the old host.
+        $this->assertSame(
+            '/accounting/customers',
+            FavouritesService::normaliseUrl('//camelotbooks.local:8080/accounting/customers')
+        );
+        // A host:port prefix without a scheme still resolves via parse_url.
+        $this->assertSame(
+            '/accounting/customers?q=a',
+            FavouritesService::normaliseUrl('camelotbooks.local:8080/accounting/customers?q=a')
+        );
+        // A scheme-less host is indistinguishable from a path, so it stays on
+        // this origin as a path rather than being guessed at.
+        $this->assertSame(
+            '/camelotbooks.local/accounting/customers',
+            FavouritesService::normaliseUrl('camelotbooks.local/accounting/customers')
+        );
+    }
+
+    public function test_index_serves_host_relative_urls_even_when_a_stale_port_was_stored(): void
+    {
+        $this->actingAs($this->user)->postJson(route('favourites.store'), [
+            'page_key' => 'vendors',
+            'label' => 'Vendors',
+            'icon' => 'users',
+            'url' => 'http://camelotbooks.local:8080/accounting/vendors',
+        ])->assertOk();
+
+        // Written relative, so the stale origin is never persisted again.
+        $this->assertSame(
+            '/accounting/vendors',
+            $this->user->favourites()->first()->url
+        );
+
+        $this->actingAs($this->user)
+            ->getJson(route('favourites.index'))
+            ->assertOk()
+            ->assertJsonPath('favourites.0.url', '/accounting/vendors');
+    }
+
+    public function test_index_heals_a_dead_stored_path_for_registry_pages(): void
+    {
+        // `cheques` moved during the banking rebuild: the stored snapshot
+        // points at a route that no longer exists, so the registry wins.
+        $this->actingAs($this->user)->postJson(route('favourites.store'), [
+            'page_key' => 'cheques',
+            'label' => 'Cheques',
+            'icon' => 'bank',
+            'url' => 'http://camelotbooks.local:8080/accounting/cheques',
+        ])->assertOk();
+
+        $this->actingAs($this->user)
+            ->getJson(route('favourites.index'))
+            ->assertOk()
+            ->assertJsonPath('favourites.0.url', '/accounting/banking/cheques');
+    }
+
+    public function test_index_falls_back_to_a_relative_path_for_record_favourites(): void
+    {
+        // Record keys (customer:5) have no registry route, so the stored
+        // snapshot is reduced to a path instead.
+        $this->actingAs($this->user)->postJson(route('favourites.store'), [
+            'page_key' => 'customer:5',
+            'label' => 'Customer 5',
+            'icon' => 'users',
+            'url' => 'http://camelotbooks.local:8080/accounting/customers/5',
+        ])->assertOk();
+
+        $this->actingAs($this->user)
+            ->getJson(route('favourites.index'))
+            ->assertOk()
+            ->assertJsonPath('favourites.0.url', '/accounting/customers/5');
+    }
 }

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\UserFavourite;
 use App\Models\UserPreference;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Favourites registry + persistence.
@@ -312,6 +313,80 @@ class FavouritesService
         ];
     }
 
+    /**
+     * Reverse-resolve a stored `page_key` back to its registry route name.
+     * Lets a stale stored URL be regenerated rather than trusted.
+     */
+    public static function routeNameForKey(string $pageKey): ?string
+    {
+        foreach (self::PAGES as $routeName => $meta) {
+            if (($meta[0] ?? null) === $pageKey) {
+                return $routeName;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Reduce a URL to a path (+ query) so it always resolves against the
+     * current host.
+     *
+     * `user_favourites.url` is a snapshot taken when the favourite was
+     * created, so an absolute snapshot rots as soon as the app is served
+     * from a different host or port (dev on :8080, another vhost, …) and
+     * sends the tile to a dead origin. Relative paths are immune.
+     */
+    public static function normaliseUrl(string $url): string
+    {
+        $url = trim($url);
+
+        if ($url === '') {
+            return '/';
+        }
+
+        // Protocol-relative (`//host/path`) — drop the origin like any other
+        // absolute snapshot, otherwise it walks off to the old host.
+        if (str_starts_with($url, '//')) {
+            $url = 'http:'.$url;
+        }
+
+        // Already a path — keep it verbatim.
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        $parts = parse_url($url);
+
+        if ($parts === false || !isset($parts['path']) || $parts['path'] === '') {
+            return '/';
+        }
+
+        // A missing leading slash is tolerated. A scheme-less host is
+        // indistinguishable from a path segment, so it is left as a path
+        // rather than guessed at — still same-origin, which is the point.
+        $path = '/'.ltrim($parts['path'], '/');
+
+        return isset($parts['query']) ? $path.'?'.$parts['query'] : $path;
+    }
+
+    /**
+     * The URL a stored favourite row should link to: regenerated from the
+     * registry when the key still maps to a live route (this also heals
+     * paths that moved during a module rebuild), otherwise the stored
+     * snapshot reduced to a path.
+     */
+    private static function resolveUrl(UserFavourite $favourite): string
+    {
+        $routeName = self::routeNameForKey($favourite->page_key);
+
+        if ($routeName !== null && Route::has($routeName)) {
+            return route($routeName, absolute: false);
+        }
+
+        return self::normaliseUrl($favourite->url);
+    }
+
     public static function svg(string $icon): string
     {
         $d = self::ICONS[$icon] ?? self::ICONS['star'];
@@ -327,7 +402,7 @@ class FavouritesService
             'page_key' => $f->page_key,
             'label' => $f->label,
             'icon' => $f->icon,
-            'url' => $f->url,
+            'url' => self::resolveUrl($f),
         ]);
     }
 
@@ -352,7 +427,7 @@ class FavouritesService
 
         return UserFavourite::updateOrCreate(
             ['user_id' => $user->id, 'page_key' => $pageKey],
-            ['label' => $label, 'icon' => $icon, 'url' => $url, 'sort_order' => $user->favourites()->count()],
+            ['label' => $label, 'icon' => $icon, 'url' => self::normaliseUrl($url), 'sort_order' => $user->favourites()->count()],
         );
     }
 
