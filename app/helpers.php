@@ -55,8 +55,12 @@ if (!function_exists('amount_to_words')) {
      * @param  string|null  $currencyName  Currency name, e.g. "Malawi Kwacha".
      *                                     Omitted entirely when null/blank.
      * @param  int  $decimals  Decimal places to read as minor units (default 2)
+     * @param  string|null  $minorUnit  Name of the fractional unit, resolved by the
+     *                                  caller from company settings / the ISO 4217
+     *                                  catalogue. Never derived from a hardcoded
+     *                                  currency here (spec R6).
      */
-    function amount_to_words($amount, ?string $currencyName = null, int $decimals = 2): string
+    function amount_to_words($amount, ?string $currencyName = null, int $decimals = 2, ?string $minorUnit = null): string
     {
         $amount = round((float) $amount, $decimals);
         $negative = $amount < 0;
@@ -72,8 +76,9 @@ if (!function_exists('amount_to_words')) {
         if ($minor > 0) {
             $minorWords = trim(_number_to_words_major($minor));
             if ($minorWords !== '') {
+                $unit = trim((string) ($minorUnit ?: _minor_unit_label($decimals)));
                 $words .= ($majorIsZero ? '' : ' and ')
-                    . $minorWords . ' ' . ($minor === 1 ? _minor_unit_label() : _minor_unit_label() . 's');
+                    . $minorWords . ' ' . ($minor === 1 || str_ends_with($unit, 's') ? $unit : $unit . 's');
             }
         }
 
@@ -143,13 +148,24 @@ if (!function_exists('_number_to_words_major')) {
 
 if (!function_exists('_minor_unit_label')) {
     /**
-     * Name for the fractional part, chosen by magnitude.
+     * Generic fallback name for the fractional part, chosen by magnitude.
+     *
+     * This is a GENERIC exponent word, not a currency assumption: the caller
+     * supplies the real minor-unit name (Tambala, Cent, Pence, …) from company
+     * settings or the ISO 4217 catalogue. Keeping the fallback currency-neutral
+     * is what lets a printed voucher honour R6 for any currency.
      *
      * @internal used by amount_to_words()
      */
-    function _minor_unit_label(): string
+    function _minor_unit_label(int $decimals = 2): string
     {
-        return 'Cent';
+        return match (true) {
+            $decimals >= 4 => 'Ten-thousandth',
+            $decimals === 3 => 'Thousandth',
+            $decimals === 2 => 'Hundredth',
+            $decimals === 1 => 'Tenth',
+            default => 'Fraction',
+        };
     }
 }
 

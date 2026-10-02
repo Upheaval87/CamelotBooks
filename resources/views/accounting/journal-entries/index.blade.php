@@ -20,6 +20,16 @@
         'reversed' => ['label' => 'Reversed', 'count' => $stats['reversed']],
     ];
 
+    /* §2.1 — the signed-in chip carries an initials avatar. */
+    $meName = (string) (auth()->user()?->name ?? '—');
+    $meInitials = strtoupper(
+        mb_substr($meName, 0, 1)
+        . (str_contains($meName, ' ') ? mb_substr((string) strrchr($meName, ' '), 1, 1) : '')
+    );
+
+    /* R5 / §2.5 — a reversed journal is opened, never printed from the row. */
+    $printableStatuses = ['posted'];
+
     $jrConfig = [
         'entries' => $payload,
         'can' => $can,
@@ -29,9 +39,17 @@
 @endphp
 
 <x-app-layout>
+    {{--
+        The in-page voucher overlays reuse the standalone print sheet's stylesheet.
+        layouts/app.blade.php renders @stack('styles') BEFORE {{ $slot }}, so a
+        @push('styles') from this child view would arrive too late; the link is
+        emitted here instead (the register is the only page that needs it).
+    --}}
+    @vite('resources/css/journal-voucher.css')
+
     <div class="jr-wrap"
          x-data="journalRegister({{ Js::from($jrConfig) }})"
-         @keydown.escape.window="closeAll()">
+         @keydown.escape.window="closeTop()">
 
         <div class="jr-phead">
             <div>
@@ -39,39 +57,38 @@
                 <div class="sub">Open a journal to review every line — finalize, post, reopen and reverse are confirm-gated.</div>
             </div>
             <div class="jr-acts">
-                <span class="jr-me">Signed in as {{ auth()->user()?->name ?? '—' }} · {{ strtoupper(substr(auth()->user()?->name ?? '—', 0, 1) . (str_contains(auth()->user()?->name ?? '', ' ') ? substr(strrchr(auth()->user()->name, ' '), 1, 1) : '')) }}</span>
+                <span class="jr-me"><i class="jr-meava">{{ $meInitials }}</i> Signed in as {{ $meName }}</span>
                 <a href="{{ route('accounting.journal-entries.export', request()->query()) }}" class="jr-btn jr-btn-g">⤓ Export</a>
                 <a href="{{ route('accounting.journal-entries.create') }}" class="jr-btn jr-btn-p">＋ New Journal</a>
             </div>
         </div>
 
         <form method="GET" action="{{ route('accounting.journal-entries.index') }}" class="jr-filters">
+            <input type="hidden" name="mode" value="{{ $filters['mode'] }}">
+
             <div class="jr-frow">
                 <div class="jr-mode">
                     <button type="button" :class="filterMode === 'range' ? 'on' : ''" @click="setMode('range')">Date range</button>
                     <button type="button" :class="filterMode === 'period' ? 'on' : ''" @click="setMode('period')">Period</button>
-                    <input type="hidden" name="mode" :value="filterMode">
                 </div>
 
                 <div x-show="filterMode === 'range'">
                     <label class="jr-lbl">From</label>
-                    <input class="jr-in" type="date" name="date_from" x-ref="jrFrom"
+                    <input class="jr-in {{ $dateError ? 'is-bad' : '' }}" type="date" name="date_from" x-ref="jrFrom"
                            value="{{ $filters['date_from'] }}"
-                           :disabled="filterMode === 'period'"
                            @change="syncBounds()">
                 </div>
 
                 <div x-show="filterMode === 'range'">
                     <label class="jr-lbl">To</label>
-                    <input class="jr-in" type="date" name="date_to" x-ref="jrTo"
+                    <input class="jr-in {{ $dateError ? 'is-bad' : '' }}" type="date" name="date_to" x-ref="jrTo"
                            value="{{ $filters['date_to'] }}"
-                           :disabled="filterMode === 'period'"
                            @change="syncBounds()">
                 </div>
 
                 <div x-show="filterMode === 'period'">
                     <label class="jr-lbl">Period</label>
-                    <select class="jr-in" name="period" :disabled="filterMode !== 'period'">
+                    <select class="jr-in" name="period">
                         @foreach($periodOptions as $value => $label)
                             <option value="{{ $value }}" {{ $filters['period'] === $value ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
@@ -100,7 +117,7 @@
 
                 <div>
                     <label class="jr-lbl">Search</label>
-                    <input class="jr-in" type="text" name="search" placeholder="№, memo or reference…" value="{{ $filters['search'] }}">
+                    <input class="jr-in" type="text" name="search" placeholder="№, description or reference…" value="{{ $filters['search'] }}">
                 </div>
 
                 <input type="hidden" name="status" value="{{ $activeTab === 'all' ? '' : $activeTab }}">
@@ -109,6 +126,11 @@
                         @click="if (filterMode === 'range' && !validateDates()) return; $el.form.submit()">Apply</button>
                 <a href="{{ route('accounting.journal-entries.index') }}" class="jr-btn jr-btn-g">Clear</a>
             </div>
+
+            {{-- §2.2: an inverted range is reported server-side and NOT applied. --}}
+            @if($dateError)
+                <p class="jr-fail" role="alert">{{ $dateError }}</p>
+            @endif
         </form>
 
         <div class="jr-tabs">
@@ -137,18 +159,9 @@
                     <tbody>
                         @forelse($journalEntries as $entry)
                             @php
-                                $isMine = (int) $entry->created_by === (int) auth()->id();
-                                $creatorName = $entry->createdBy?->name ?? '—';
-                                $sub = match (true) {
-                                    $entry->status === 'draft' => 'Draft · creator ' . $creatorName,
-                                    in_array($entry->status, ['pending_approval', 'approved'], true) => 'Finalized · awaiting post',
-                                    $entry->status === 'reversed' => 'Reversed by ' . ($entry->reversalEntry?->journal_number ?? 'a reversal'),
-                                    $entry->source_module === 'reversal' && $entry->status === 'posted' => 'Mirrored lines · posted',
-                                    default => $entry->reference ?? '',
-                                };
                                 $pillClass = match ($entry->status) {
-                                    'draft' => 'unfin',
-                                    'pending_approval', 'approved' => 'unpost',
+                                    'draft' => 'unfinalized',
+                                    'pending_approval', 'approved' => 'unposted',
                                     'posted' => 'posted',
                                     default => 'reversed',
                                 };
@@ -157,6 +170,16 @@
                                     'pending_approval', 'approved' => 'Unposted',
                                     'posted' => 'Posted',
                                     default => 'Reversed',
+                                };
+
+                                /* R2: attribution is a bare timestamp or a plain
+                                     reference — never "by <actor>" prefixes. */
+                                $sub = match (true) {
+                                    $entry->status === 'draft' => 'Draft',
+                                    in_array($entry->status, ['pending_approval', 'approved'], true) => 'Finalized · awaiting post',
+                                    $entry->status === 'reversed' => 'Reversed',
+                                    $entry->source_module === 'reversal' && $entry->status === 'posted' => 'Mirrored lines · posted',
+                                    default => $entry->reference ?? '',
                                 };
                             @endphp
                             <tr>
@@ -171,38 +194,54 @@
                                 </td>
                                 <td>{{ $entry->source_module ?: 'manual' }}</td>
                                 <td class="num">{{ $entry->lines_count }}</td>
-                                <td class="num">{{ format_number($entry->total_debit) }}</td>
+                                <td class="num">{{ format_number($entry->total_debit, $decimals) }}</td>
                                 <td><span class="jr-pill {{ $pillClass }}">● {{ $pillLabel }}</span></td>
                                 <td>
-                                    {{-- R5 / A4.2: Actions column is view + print ONLY.
-                                         Every lifecycle action (finalize, post, reopen,
-                                         delete, reverse) lives in the journal modal footer. --}}
+                                    {{-- R5 / §2.5: view always; print only for a posted
+                                         journal. Every lifecycle action lives in the
+                                         journal modal footer. Reversed rows are
+                                         open-only — no reverse icon, no print icon. --}}
                                     <div class="jr-rowact">
                                         <button type="button" class="jr-ib" title="Open journal" @click="open({{ $entry->id }}, 'view')">👁</button>
-                                        @if(in_array($entry->status, ['posted', 'reversed'], true))
-                                            <button type="button" class="jr-ib" title="Print voucher" @click="printEntry({{ $entry->id }})">🖨</button>
+                                        @if(in_array($entry->status, $printableStatuses, true))
+                                            <button type="button" class="jr-ib" title="Print voucher" @click="openPrint({{ $entry->id }})">🖨</button>
                                         @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" style="text-align:center;padding:40px">
-                                    No journals match the current filters.
+                                <td colspan="9">
+                                    <div class="jr-empty">
+                                        <strong>No journals match the current filters.</strong>
+                                        <span>Adjust or clear the filters to see the ledger.</span>
+                                    </div>
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
+
+            {{-- §2.6 --}}
             <div class="jr-tfoot">
-                <span>{{ $journalEntries->total() }} {{ \Illuminate\Support\Str::plural('journal', $journalEntries->total()) }}</span>
-                <span>Showing {{ $journalEntries->firstItem() ?? 0 }}–{{ $journalEntries->lastItem() ?? 0 }} of {{ $journalEntries->total() }}</span>
+                <span>Showing {{ $journalEntries->firstItem() ?? 0 }}–{{ $journalEntries->lastItem() ?? 0 }} of {{ $journalEntries->total() }} journals</span>
+                <span class="jr-tnote">Finalize, Post &amp; Reverse live inside the journal modal only</span>
             </div>
         </div>
 
-        @include('accounting.journal-entries._jr-modals', ['preserved' => $preserved])
+        @include('accounting.journal-entries._jr-modals', [
+            'entries' => $payload,
+            'can' => $can,
+            'preserved' => $preserved,
+            'decimals' => $decimals,
+            'cs' => $cs,
+        ])
 
-        <div class="jr-toast" :class="{ on: toastOpen }" x-text="toastMsg"></div>
+        @include('accounting.journal-entries._jr-print-overlays', [
+            'vouchers' => $vouchers,
+        ])
+
+        <div class="jr-toast" :class="{ on: toastOpen }" x-text="toastMsg" role="status" aria-live="polite"></div>
     </div>
 </x-app-layout>

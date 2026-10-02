@@ -14,22 +14,21 @@ document.addEventListener('alpine:init', () => {
         entries: config.entries || [],
         can: config.can || {},
         me: config.me || 0,
-        defaultAccount: config.defaultAccount || null,
 
         filterMode: 'range',
 
-        journalOpen: false,
-        mode: 'view',
+        /* §2.7 — the modal CONTENT is server-rendered. These reactive handles
+           only decide which pre-rendered layer is visible and recalculate the
+           editable totals. */
         currentId: null,
+        mode: 'view',
         lines: [],
-        viewed: {},
+        reverseId: null,
+        deleteId: null,
+        reopenId: null,
+        printId: null,
 
         cf: { open: false, title: '', msg: '', label: 'Confirm', cls: 'jr-btn-p', form: '' },
-
-        deleteOpen: false,
-        reopenOpen: false,
-        reverseOpen: false,
-        rv: { date: '', reference: '', memo: '', post_mode: 'immediate' },
 
         toastOpen: false,
         toastMsg: '',
@@ -42,7 +41,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         get(id) {
-            return this.entries.find((entry) => entry.id === id) || null;
+            return this.entries.find((entry) => Number(entry.id) === Number(id)) || null;
         },
 
         currentEntry() {
@@ -69,24 +68,8 @@ document.addEventListener('alpine:init', () => {
             return jrNum(value);
         },
 
-        pillClass(status) {
-            if (status === 'draft') return 'unfin';
-            if (status === 'pending_approval' || status === 'approved') return 'unpost';
-            if (status === 'posted') return 'posted';
-
-            return 'reversed';
-        },
-
-        pillLabel(status) {
-            const map = {
-                draft: 'Unfinalized',
-                pending_approval: 'Unposted',
-                approved: 'Unposted',
-                posted: 'Posted',
-                reversed: 'Reversed',
-            };
-
-            return map[status] || status;
+        cloneLines(entry) {
+            return entry ? JSON.parse(JSON.stringify(entry.lines || [])) : [];
         },
 
         open(id, mode = 'view') {
@@ -98,9 +81,13 @@ document.addEventListener('alpine:init', () => {
 
             this.currentId = id;
             this.mode = mode === 'edit' ? 'edit' : 'view';
-            this.lines = JSON.parse(JSON.stringify(entry.lines || []));
-            this.viewed[id] = true;
-            this.journalOpen = true;
+            this.lines = this.cloneLines(entry);
+        },
+
+        closeJournal() {
+            this.currentId = null;
+            this.mode = 'view';
+            this.lines = [];
         },
 
         startEdit() {
@@ -110,115 +97,52 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            this.lines = JSON.parse(JSON.stringify(entry.lines || []));
+            this.lines = this.cloneLines(entry);
             this.mode = 'edit';
         },
 
         cancelEdit() {
-            const entry = this.currentEntry();
-
-            this.lines = entry ? JSON.parse(JSON.stringify(entry.lines || [])) : [];
+            this.lines = this.cloneLines(this.currentEntry());
             this.mode = 'view';
-        },
-
-        addLine() {
-            this.lines.push({
-                account_id: this.defaultAccount ? this.defaultAccount.id : null,
-                a: this.defaultAccount ? this.defaultAccount.code : '—',
-                n: this.defaultAccount ? this.defaultAccount.name : '',
-                d: '',
-                dr: null,
-                cr: null,
-                cc: '—',
-            });
-        },
-
-        removeLine(index) {
-            if (this.lines.length > 1) {
-                this.lines.splice(index, 1);
-            }
         },
 
         openDelete(id) {
             this.currentId = id;
-            this.deleteOpen = true;
+            this.deleteId = id;
+        },
+
+        closeDelete() {
+            this.deleteId = null;
         },
 
         openReopen(id) {
             this.currentId = id;
-            this.reopenOpen = true;
+            this.reopenId = id;
+        },
+
+        closeReopen() {
+            this.reopenId = null;
         },
 
         openReverse(id) {
-            const entry = this.get(id);
-
-            if (!entry) {
-                return;
-            }
-
             this.currentId = id;
-            this.rv = {
-                date: new Date().toISOString().slice(0, 10),
-                reference: 'REV-' + entry.no,
-                memo: '',
-                post_mode: 'immediate',
-            };
-            this.reverseOpen = true;
+            this.reverseId = id;
         },
 
-        // A4.1: the mirrored preview. A debit line reappears as a credit and a
-        // credit line as a debit - that is the entire reversal, so show it
-        // verbatim rather than describing it in prose.
-        mirrorLines() {
-            const entry = this.currentEntry();
-
-            if (!entry || !Array.isArray(entry.lines)) {
-                return [];
-            }
-
-            return entry.lines.map((line) => ({
-                side: line.dr != null ? 'CR' : 'DR',
-                code: line.a,
-                name: line.n,
-                amount: line.dr != null ? line.dr : line.cr,
-            }));
+        closeReverse() {
+            this.reverseId = null;
         },
 
-        openReversal(id) {
-            const entry = this.get(id);
-
-            if (!entry) {
-                return;
-            }
-
-            const reversal = entry.reversalId ? this.get(entry.reversalId) : null;
-
-            if (reversal) {
-                this.open(reversal.id, 'view');
-            } else {
-                window.location.href = entry.urls.show;
-            }
+        openPrint(id) {
+            this.printId = id;
         },
 
-        printEntry(id) {
-            const entry = this.get(id);
+        closePrint() {
+            this.printId = null;
+        },
 
-            if (!entry || !entry.urls || !entry.urls.print) {
-                return;
-            }
-
-            // A4.4: the Print action opens the standalone voucher preview page,
-            // exactly like Ctrl+P on the journal detail screen. It is never
-            // window.print() from the register, which would print the whole app.
-            const win = window.open(entry.urls.print, '_blank');
-
-            if (!win) {
-                window.CB?.toast(
-                    'warning',
-                    'Print tab blocked',
-                    'Allow pop-ups for this site to open the voucher preview.',
-                );
-            }
+        doPrint() {
+            window.print();
         },
 
         askConfirm(cfg) {
@@ -249,12 +173,18 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            if (!this.balanced()) {
+                this.toast('⚠ The journal must balance before it can be finalized');
+
+                return;
+            }
+
             this.askConfirm({
                 title: 'Finalize journal ' + entry.no,
                 label: '✓ Finalize',
                 cls: 'jr-btn-p',
                 msg: 'This locks the lines and sends <b>' + entry.no + '</b> to <b>Unposted</b> for a second person to post. The ledger is untouched until it is posted.',
-                form: 'jr-finalize-form',
+                form: 'jr-finalize-' + entry.id,
             });
         },
 
@@ -270,7 +200,7 @@ document.addEventListener('alpine:init', () => {
                 label: '✓ Post to Ledger',
                 cls: 'jr-btn-p',
                 msg: 'This writes <b>' + entry.no + '</b> to the General Ledger and locks it. Posted journals can only be corrected by reversing them.',
-                form: 'jr-post-form',
+                form: 'jr-post-' + entry.id,
             });
         },
 
@@ -281,47 +211,22 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
-            if (!this.rv.memo || !this.rv.memo.trim()) {
+            const form = document.getElementById('jr-reverse-' + entry.id);
+            const memo = form ? form.querySelector('[name="memo"]') : null;
+
+            if (!memo || !memo.value.trim()) {
                 this.toast('⚠ A reason is required for the reversal');
 
                 return;
             }
 
             this.askConfirm({
-                title: 'Confirm reversal ' + entry.no,
-                label: '⟲ Reverse',
+                title: 'Confirm reversal of ' + entry.no + '?',
+                label: '⟲ Confirm reversal',
                 cls: 'jr-btn-danger',
-                msg: 'A mirroring journal will be created and posted, cross-linked to <b>' + entry.no + '</b>. The original stays on the register as <b>Reversed</b>.',
-                form: 'jr-reverse-form',
+                msg: 'This creates a mirroring journal — every debit becomes a credit and vice versa — posts it, marks <b>' + entry.no + '</b> Reversed and cross-links the two entries.',
+                form: 'jr-reverse-' + entry.id,
             });
-        },
-
-        footerNote() {
-            const entry = this.currentEntry();
-
-            if (!entry) {
-                return '';
-            }
-
-            if (this.mode === 'edit') {
-                return 'Editing lines — totals update live. Finalize sends it for posting.';
-            }
-
-            if (entry.status === 'draft') {
-                return this.isMine(entry)
-                    ? 'Unfinalized draft — you are the creator, so you can edit, finalize or delete it.'
-                    : 'Unfinalized draft — only the creator (' + entry.creatorName + ') can edit, finalize or delete it.';
-            }
-
-            if (entry.status === 'pending_approval' || entry.status === 'approved') {
-                return 'Finalized and awaiting a second person to post it to the ledger.';
-            }
-
-            if (entry.status === 'posted') {
-                return 'Posted to the ledger — immutable. Use Reverse to correct it.';
-            }
-
-            return entry.reversalNo ? 'Reversed by ' + entry.reversalNo + '.' : 'Reversed.';
         },
 
         setMode(mode) {
@@ -377,12 +282,13 @@ document.addEventListener('alpine:init', () => {
             }, 3200);
         },
 
-        closeAll() {
-            this.journalOpen = false;
-            this.cf.open = false;
-            this.deleteOpen = false;
-            this.reopenOpen = false;
-            this.reverseOpen = false;
+        closeTop() {
+            if (this.cf.open) { this.cf.open = false; return; }
+            if (this.printId !== null) { this.printId = null; return; }
+            if (this.deleteId !== null) { this.deleteId = null; return; }
+            if (this.reopenId !== null) { this.reopenId = null; return; }
+            if (this.reverseId !== null) { this.reverseId = null; return; }
+            if (this.currentId !== null) { this.closeJournal(); }
         },
     }));
 });

@@ -15378,11 +15378,10 @@ textarea.jr-in { height: auto; padding: 9px 11px; resize: vertical }
 
 @media print {
     body * { visibility: hidden !important }
-    #jr-journal { position: absolute !important; inset: 0 !important; display: block !important; background: #fff !important; padding: 0 !important; backdrop-filter: none !important }
-    #jr-journal, #jr-journal * { visibility: visible !important }
-    #jr-journal .jr-mbox { width: 100% !important; max-height: none !important; box-shadow: none !important; border-radius: 0 !important }
-    #jr-journal .jr-mbox-f, #jr-journal .jr-x { display: none !important }
-    #jr-journal .jr-li-wrap { overflow: visible !important }
+    .jr-print.on { position: absolute !important; inset: 0 !important; display: block !important; background: #fff !important; padding: 0 !important; overflow: visible !important }
+    .jr-print.on, .jr-print.on * { visibility: visible !important }
+    .jr-print.on .jr-print-tbar { display: none !important }
+    .jr-print.on .jr-print-sheet { max-width: none !important; margin: 0 !important }
 }
 
 
@@ -18784,4 +18783,66 @@ textarea.jr-in { height: auto; padding: 9px 11px; resize: vertical }
 @media (max-width: 720px) {
     .jr-mline { grid-template-columns: 30px 52px minmax(0, 1fr); row-gap: 4px; }
     .jr-mirr-amt { grid-column: 3; }
+}
+
+/* ── JOURNALS REGISTER — server-rendered modal + in-page voucher overlay ──
+   Appendix A deltas: the shared DIALOG SYSTEM block pins every `.jr-modal`
+   to the generic scrim + z-index, so the register layers are re-pinned here
+   (journal 90 · reversal 120 · confirm 140 · print 200, toast 300). */
+.jr-wrap .jr-modal { z-index: 90 !important; }
+.jr-wrap .jr-modal--rev { z-index: 120 !important; }
+.jr-wrap .jr-modal.jr-cf { z-index: 140 !important; }
+
+.jr-mbox--journal { width: min(920px, calc(100vw - 48px)); max-height: calc(100vh - 48px); }
+.jr-mbox--cf { width: min(460px, 100%); }
+
+.jr-mbox-h {
+    background: linear-gradient(180deg, var(--deep-1, #17565D), var(--deep-3, #0A2E32));
+    border-bottom: 0;
+    color: #fff;
+}
+.jr-mbox-h b { color: #fff; }
+.jr-mbox-h .jr-x { color: rgba(255, 255, 255, .75); }
+.jr-mbox-h .jr-x:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+.jr-mbox-h .jr-pill.unfin { background: rgba(255, 255, 255, .16); color: #FFE9B8; border-color: rgba(255, 233, 184, .35); }
+.jr-mbox-h .jr-pill.unpost,
+.jr-mbox-h .jr-pill.posted,
+.jr-mbox-h .jr-pill.reversed { background: rgba(255, 255, 255, .16); color: #EAFEFE; border-color: rgba(234, 254, 254, .30); }
+
+.jr-empty { padding: 34px 18px; text-align: center; }
+.jr-empty strong { display: block; font-size: 14px; color: var(--jr-ink); }
+.jr-empty span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--jr-sub); }
+
+.jr-fail { margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--jr-red); }
+
+.jr-me { display: inline-flex; align-items: center; }
+.jr-meava {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; margin-right: 6px; border-radius: 999px;
+    background: linear-gradient(180deg, var(--sec-2, #149897), var(--sec, #128F8E));
+    color: #fff; font-size: 10px; font-weight: 800; font-style: normal;
+}
+.jr-tnote { color: var(--jr-faint); }
+
+.jr-print {
+    position: fixed; inset: 0; display: none; z-index: 200;
+    background: rgba(11, 42, 45, .36); overflow: auto; padding: 24px 18px;
+}
+.jr-print.on { display: block; }
+.jr-print-tbar {
+    position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px;
+    max-width: 794px; margin: 0 auto 12px; padding: 10px 14px;
+    background: #fff; border: 1px solid var(--border, #DCEAEA); border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(12, 53, 57, .12);
+}
+.jr-print-t {
+    flex: 1; font-size: 13px; font-weight: 700; color: var(--jr-ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.jr-print-sheet { max-width: 794px; margin: 0 auto; }
+
+@media (max-width: 900px) {
+    .jr-mbox--journal { width: 100%; max-height: calc(100vh - 24px); }
+    .jr-print { padding: 14px 8px; }
+    .jr-print-tbar { border-radius: 10px; }
 }

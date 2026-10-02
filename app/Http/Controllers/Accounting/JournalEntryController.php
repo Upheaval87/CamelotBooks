@@ -39,6 +39,18 @@ class JournalEntryController extends Controller
 
         $filters = $this->resolveFilters($request);
 
+        /* §2.2 — From <= To is SERVER-validated: an inverted range is reported
+           with a red field and is never applied, so the register silently shows
+           an unfiltered ledger today instead. Purely presentational: no filter
+           is dropped and no data is written. */
+        $dateError = null;
+        if ($filters['date_from'] && $filters['date_to']
+            && $filters['date_from'] > $filters['date_to']) {
+            $dateError = __('The Start date must be on or before the End date.');
+            $filters['date_from'] = null;
+            $filters['date_to'] = null;
+        }
+
         $journalEntries = $this->baseQuery($companyId, $filters)
             ->with(['createdBy', 'branch', 'reversalEntry'])
             ->withCount('lines')
@@ -72,12 +84,26 @@ class JournalEntryController extends Controller
 
         $cs = $this->currencySymbol($companyId);
 
+        /* R6 + §5.1 — one voucher sheet per printable row, rendered on the
+           server. The shared settings context is resolved once and handed to
+           every row so the page issues no extra per-row setting queries. */
+        $voucherContext = $this->voucherContext($companyId);
+        $vouchers = [];
+        foreach ($journalEntries as $entry) {
+            if (in_array($entry->status, [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED], true)) {
+                $vouchers[$entry->id] = $this->voucherPayloadFor($entry, $voucherContext);
+            }
+        }
+
         $can = [
             'finalize' => (bool) $user?->can('journal-entries.edit'),
             'post' => (bool) $user?->can('journal-entries.post'),
             'reverse' => (bool) $user?->can('journal-entries.reverse'),
             'delete' => (bool) $user?->can('journal-entries.edit'),
         ];
+
+        $currencyCode = $voucherContext['currencyCode'];
+        $decimals = $voucherContext['decimals'];
 
         return view('accounting.journal-entries.index', compact(
             'journalEntries',
@@ -90,7 +116,11 @@ class JournalEntryController extends Controller
             'periodLabel',
             'defaultAccount',
             'cs',
-            'can'
+            'can',
+            'vouchers',
+            'currencyCode',
+            'decimals',
+            'dateError'
         ));
     }
 
@@ -645,28 +675,27 @@ class JournalEntryController extends Controller
             404,
         );
 
+        return $this->voucherPayloadFor(
+            $journalEntry,
+            $this->voucherContext($companyId),
+        );
+    }
+
+    /**
+     * Per-entry voucher payload against an ALREADY-resolved settings context.
+     *
+     * Split out of voucherPayload() so the register can build one sheet per
+     * printable row (§5.1) without repeating the Company / Currency /
+     * SystemSetting lookups for every journal on the page.
+     *
+     * @param  array<string, mixed>  $ctx  Output of voucherContext()
+     * @return array<string, mixed>
+     */
+    private function voucherPayloadFor(JournalEntry $journalEntry, array $ctx): array
+    {
         $journalEntry->loadMissing(['lines.account', 'branch']);
 
-        $company = Company::find($companyId);
-        $baseCurrency = $company?->base_currency;
-        $currencyRow = $baseCurrency ? Currency::where('code', $baseCurrency)->first() : null;
-
-        $cs = $currencyRow?->symbol ?: ($baseCurrency
-            ? SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$')
-            : '$');
-
-        $decimals = (int) SystemSetting::getValue('currency', 'decimal_places', $companyId, 2);
-        $dateFormat = (string) SystemSetting::getValue('regional', 'date_format', $companyId, 'Y-m-d');
-        $currencyCode = (string) ($currencyRow?->code ?: ($baseCurrency ?: ''));
-
-        $statusLabel = match ($journalEntry->status) {
-            'draft' => 'Draft',
-            'pending_approval' => 'Pending Approval',
-            'approved' => 'Approved',
-            'posted' => 'Posted',
-            'reversed' => 'Reversed',
-            default => ucfirst(str_replace('_', ' ', (string) $journalEntry->status)),
-        };
+        $statusLabel = $this->voucherStatusLabel($journalEntry->status);
 
         /* Same classifier the detail screen and the journal register use, so the
            printed type can never disagree with the register's Type column. */
@@ -678,7 +707,7 @@ class JournalEntryController extends Controller
             $typeLabel = 'General Journal';
         }
 
-        $period = AccountingPeriod::where('company_id', $companyId)
+        $period = AccountingPeriod::where('company_id', $journalEntry->company_id)
             ->where('start_date', '<=', $journalEntry->date)
             ->where('end_date', '>=', $journalEntry->date)
             ->first();
@@ -689,12 +718,12 @@ class JournalEntryController extends Controller
 
         return [
             'journalEntry' => $journalEntry,
-            'company' => $company,
-            'currencyRow' => $currencyRow,
-            'currencyCode' => $currencyCode,
-            'cs' => $cs,
-            'decimals' => $decimals,
-            'dateFormat' => $dateFormat,
+            'company' => $ctx['company'],
+            'currencyRow' => $ctx['currencyRow'],
+            'currencyCode' => $ctx['currencyCode'],
+            'cs' => $ctx['cs'],
+            'decimals' => $ctx['decimals'],
+            'dateFormat' => $ctx['dateFormat'],
             'typeLabel' => $typeLabel,
             'statusLabel' => $statusLabel,
             'isReversed' => $journalEntry->isReversed(),
@@ -704,9 +733,9 @@ class JournalEntryController extends Controller
                 : 'Manual entry',
 
             /* R6: money and dates are always rendered through company settings. */
-            'fmtMoney' => fn ($value) => format_number((float) $value, $decimals),
+            'fmtMoney' => fn ($value) => format_number((float) $value, $ctx['decimals']),
             'fmtDate' => fn ($value) => $value
-                ? \Illuminate\Support\Carbon::parse($value)->format($dateFormat)
+                ? \Illuminate\Support\Carbon::parse($value)->format($ctx['dateFormat'])
                 : '—',
 
             'totalDebit' => $totalDebit,
@@ -718,10 +747,55 @@ class JournalEntryController extends Controller
                numeric totals (R7). */
             'amountWords' => amount_to_words(
                 $totalDebit,
-                $currencyRow?->name ?: ($currencyCode ?: ''),
+                $ctx['currencyRow']?->name ?: ($ctx['currencyCode'] ?: ''),
+                $ctx['decimals'],
+                $ctx['minorUnit'],
             ),
 
             /* Company letterhead for the printed voucher. */
+            'companyName' => $ctx['companyName'],
+            'addressBits' => $ctx['addressBits'],
+            'taxId' => $ctx['taxId'],
+            'companyPhone' => $ctx['companyPhone'],
+
+            /* R3: printed attributions are bare timestamps, never actor names. */
+            'printedStamp' => now()->format('d M Y · H:i'),
+        ];
+    }
+
+    /**
+     * Company/currency settings every voucher needs, resolved ONCE per request.
+     *
+     * The register renders one voucher sheet per printable row (§5.1), so the
+     * per-entry builder must not re-query Company / Currency / SystemSetting for
+     * every row. Callers that only need one voucher keep the identical values.
+     *
+     * @return array<string, mixed>
+     */
+    private function voucherContext(int $companyId): array
+    {
+        $company = Company::find($companyId);
+        $baseCurrency = $company?->base_currency;
+        $currencyRow = $baseCurrency ? Currency::where('code', $baseCurrency)->first() : null;
+
+        $cs = $currencyRow?->symbol ?: ($baseCurrency
+            ? SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$')
+            : SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$'));
+
+        $decimals = (int) SystemSetting::getValue('currency', 'decimal_places', $companyId, 2);
+
+        return [
+            'company' => $company,
+            'currencyRow' => $currencyRow,
+            'currencyCode' => (string) ($currencyRow?->code ?: ($baseCurrency ?: '')),
+            'cs' => $cs,
+            'decimals' => $decimals,
+            'dateFormat' => (string) SystemSetting::getValue('regional', 'date_format', $companyId, 'Y-m-d'),
+
+            /* R6: the minor-unit word is settings/catalogue driven, never a
+               hardcoded currency assumption baked into the voucher. */
+            'minorUnit' => $this->minorUnitLabel($currencyRow, $decimals),
+
             'companyName' => $company?->legal_name ?: ($company?->name ?: ''),
             'addressBits' => array_values(array_filter([
                 $company?->address,
@@ -732,10 +806,58 @@ class JournalEntryController extends Controller
             ])),
             'taxId' => $company?->tax_id,
             'companyPhone' => $company?->phone,
-
-            /* R3: printed attributions are bare timestamps, never actor names. */
-            'printedStamp' => now()->format('d M Y · H:i'),
         ];
+    }
+
+    /**
+     * ISO 4217 minor-unit name for the active currency.
+     *
+     * Resolution order (all settings/catalogue driven):
+     *   1. an explicit company setting `currency.minor_unit_<CODE>`
+     *   2. the ISO 4217 catalogue keyed on the currency's NAME
+     *   3. a currency-neutral exponent word from _minor_unit_label()
+     */
+    private function minorUnitLabel(?Currency $currencyRow, int $decimals): ?string
+    {
+        if (! $currencyRow || $decimals < 1) {
+            return null;
+        }
+
+        $setting = SystemSetting::getValue(
+            'currency',
+            'minor_unit_' . strtoupper((string) $currencyRow->code),
+        );
+
+        if (is_string($setting) && trim($setting) !== '') {
+            return trim($setting);
+        }
+
+        $iso = [
+            'kwacha' => 'tambala',
+            'us dollar' => 'cent',
+            'australian dollar' => 'cent',
+            'canadian dollar' => 'cent',
+            'new zealand dollar' => 'cent',
+            'singapore dollar' => 'cent',
+            'euro' => 'cent',
+            'rand' => 'cent',
+            'pound sterling' => 'penny',
+            'yen' => 'sen',
+        ];
+
+        return $iso[strtolower(trim((string) $currencyRow->name))] ?? null;
+    }
+
+    private function voucherStatusLabel(?string $status): string
+    {
+        return match ($status) {
+            'draft' => 'Draft',
+            'pending_approval' => 'Pending Approval',
+            'approved' => 'Approved',
+            'posted' => 'Posted',
+            'reversed' => 'Reversed',
+            default => ucfirst(str_replace('_', ' ', (string) $status)),
+        };
     }
 
     /** Filename shared by the toolbar download link and the PDF response. */

@@ -163,6 +163,8 @@ class JournalRegisterTest extends TestCase
         $response->assertSee('Unposted · Finalized');
         $response->assertSee('New Journal');
         $response->assertSee('All types');
+        // The in-page voucher overlays pull in the standalone print stylesheet.
+        $response->assertSee('journal-voucher', false);
     }
 
     public function test_status_tab_filters_entries(): void
@@ -418,7 +420,9 @@ class JournalRegisterTest extends TestCase
             ->get(route('accounting.journal-entries.index'));
 
         $response->assertOk();
-        $response->assertSee('creator ' . $draft->createdBy?->name, false);
+        // The server-rendered modal names the creator in its metadata chip and
+        // explains that only that person can edit the draft.
+        $response->assertSee('Creator: ' . $draft->createdBy?->name, false);
         $response->assertSee($this->user->name);
     }
 
@@ -474,7 +478,8 @@ class JournalRegisterTest extends TestCase
         $html = $response->getContent();
 
         $this->assertStringContainsString('Reversal preview (lines mirrored)', $html);
-        $this->assertStringContainsString('mirrorLines()', $html);
+        // The mirror is server-rendered (no client mirrorLines() builder).
+        $this->assertStringContainsString('jr-mirr', $html);
         // The readonly mono reference field.
         $this->assertStringContainsString('New reference', $html);
         $this->assertStringContainsString('jr-in-mono', $html);

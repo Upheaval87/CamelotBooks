@@ -173,10 +173,8 @@
         </div>
     </div>
 
-    {{-- 5.6 footer: margin-top:auto pins it to the sheet bottom.
-         The spec's third cell is "PAGE {n} OF {m}"; browsers expose no API for it
-         and CSS page counters cannot inject text, so it is deliberately omitted
-         rather than printing a wrong literal. --}}
+    {{-- 5.6 footer: margin-top:auto pins it to the sheet bottom. The voucher is a
+         single A4 sheet, so the spec's page cell is the fixed literal "PAGE 1 OF 1". --}}
     <div class="glj-vfoot">
         <span class="fa">AUDIT · created {{ $journalEntry->created_at ? $fmtDate($journalEntry->created_at) : '—' }}{{ $journalEntry->posted_at ? ' · posted ' . $fmtDate($journalEntry->posted_at) : '' }}</span>
         {{-- Fixed legal wording: it is the definition of a valid voucher, not a
@@ -184,6 +182,6 @@
              current status (a REVERSED entry would otherwise read "...while status
              is REVERSED"). --}}
         <span class="fb">Computer-generated journal voucher — valid without signature while status is POSTED</span>
-        <span class="fc">{{ $journalEntry->journal_number }} · {{ $typeLabel }}</span>
+        <span class="fc">PAGE 1 OF 1</span>
     </div>
 </div>
