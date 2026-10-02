@@ -50,12 +50,12 @@
                             <td class="num">{{ $period->locked_entries_count ?? 0 }}</td>
                             <td class="ac-row-act">
                                 @if($period->isOpen())
-                                <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" style="display:inline" onsubmit="return confirm('Lock {{ $period->label }}? No new entries will be accepted.')">
+                                <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Lock {{ $period->label }}? No new entries will be accepted.', { type: 'action' })">
                                     @csrf
                                     <button type="submit" class="ac-btn ac-btn-ghost ac-btn-sm">Lock</button>
                                 </form>
                                 @elseif($period->isLocked())
-                                <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" style="display:inline" onsubmit="return confirm('Reopen {{ $period->label }}?')">
+                                <form method="POST" action="{{ route('accounting.periods.reopen', $period) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Reopen {{ $period->label }}?', { type: 'action' })">
                                     @csrf
                                     <button type="submit" class="ac-btn ac-btn-ghost ac-btn-sm">Unlock</button>
                                 </form>

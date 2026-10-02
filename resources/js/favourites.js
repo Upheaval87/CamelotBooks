@@ -123,9 +123,13 @@ function buildStore() {
         dropdownOpen: false,
         pickerOpen: false,
         pickerQuery: '',
+        filter: '',
         pages: [],
         pagesLoaded: false,
         currentKey: '',
+        currentLabel: '',
+        currentIcon: 'star',
+        currentUrl: '',
         dragId: null,
         holdTimer: null,
         holdingKey: null,
@@ -158,6 +162,30 @@ function buildStore() {
             return [tasks].concat(this.items);
         },
 
+        // Popover (Favourites Manager) computeds.
+        get pinnedItems() {
+            return this.visibleItems;
+        },
+
+        get availableItems() {
+            var self = this;
+            var q = this.filter.trim().toLowerCase();
+            return this.pages.filter(function (p) {
+                if (self.isFav(p.page_key)) return false;
+                if (!q) return true;
+                return p.label.toLowerCase().indexOf(q) !== -1
+                    || p.page_key.toLowerCase().indexOf(q) !== -1;
+            });
+        },
+
+        get pinCount() {
+            return this.items.length + 1;
+        },
+
+        get availCount() {
+            return this.availableItems.length;
+        },
+
         isFav(key) {
             return this.items.some(function (f) { return f.page_key === key; });
         },
@@ -177,7 +205,48 @@ function buildStore() {
             if (this.dropdownOpen) {
                 this.pickerOpen = false;
                 this.pickerQuery = '';
+                this.filter = '';
+                this.loadPages();
             }
+        },
+
+        loadPages() {
+            if (this.pagesLoaded) return;
+            var self = this;
+            fetchJson(window.favouritesPagesUrl || '/favourites/pages')
+                .then(function (data) {
+                    self.pages = data.pages || [];
+                    self.pagesLoaded = true;
+                })
+                .catch(function () {});
+        },
+
+        async unpinAllWithConfirm() {
+            var ok = false;
+            if (window.CB) {
+                ok = await window.CB.confirm({
+                    type: 'danger',
+                    title: 'Unpin all favourites?',
+                    message: 'This removes every pinned page from your rail. My Tasks stays pinned.',
+                    confirmLabel: 'Unpin all',
+                });
+            } else if (window.confirm) {
+                ok = window.confirm('Unpin all favourites?');
+            }
+            if (!ok) return;
+            this.unpinAll();
+        },
+
+        unpinAll() {
+            if (!this.items.length) return;
+            this.items.slice().forEach(function (f) {
+                var url = window.favouritesDestroyUrl
+                    ? window.favouritesDestroyUrl.replace(':pageKey', encodeURIComponent(f.page_key))
+                    : '/favourites/' + encodeURIComponent(f.page_key);
+                fetchJson(url, { method: 'DELETE' }).catch(function () {});
+            });
+            this.items = [];
+            if (window.atlasToast) window.atlasToast('Unpinned all favourites from the sidebar.');
         },
 
         toggleCollapse() {
@@ -326,15 +395,7 @@ function buildStore() {
         openPicker() {
             this.pickerOpen = true;
             this.pickerQuery = '';
-            var self = this;
-            if (!this.pagesLoaded) {
-                fetchJson(window.favouritesPagesUrl || '/favourites/pages')
-                    .then(function (data) {
-                        self.pages = data.pages || [];
-                        self.pagesLoaded = true;
-                    })
-                    .catch(function () {});
-            }
+            this.loadPages();
         },
 
         get filteredPages() {
@@ -446,7 +507,10 @@ document.addEventListener('alpine:init', () => {
         },
         init() {
             var store = Alpine.store('favourites');
-            if (!store.currentKey) store.currentKey = this.pageKey;
+            store.currentKey = this.pageKey;
+            store.currentLabel = this.label;
+            store.currentIcon = this.icon;
+            store.currentUrl = this.url;
             if (this.locked && !store.isFav(this.pageKey)) {
                 store.items.unshift({
                     page_key: this.pageKey,

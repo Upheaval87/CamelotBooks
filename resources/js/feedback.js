@@ -26,13 +26,51 @@
  *   window.fbConfirmOnly(event, message, opts)
  *   window.atlasToast(message, type)
  *
- * z-index map (spec): nav >= 60 · sticky heads 40 · scrim 80 · dialogs 85 · toasts 95
+ * z-index map (spec): sticky heads 40 · nav >= 60 · dialogs 90 · confirmations
+ * 140 · global search 200 · toasts 220. All of those numbers live in
+ * resources/css/app.css as --z-* and are read from the cascade here, so the map
+ * has exactly one definition.
  */
 (function () {
     'use strict';
 
     var TOAST_DURATION = { success: 4000, info: 4000, warning: 6000, system: 6000, error: 0 };
     var MAX_TOASTS = 4;
+
+    /* ---- layers: top-most-only Esc + scroll-lock reference counting ----------
+     * Every dialog family registers here (CB dialogs, CB.modal, the busy
+     * overlay, <x-modal> instances and the global search). One Escape closes
+     * exactly the top-most layer and never unwinds a parent dialog. */
+    var layers = [];
+
+    function pushLayer(close, opts) {
+        opts = opts || {};
+        var layer = { close: close, onEscape: opts.onEscape !== false };
+        layers.push(layer);
+        return layer;
+    }
+    function dropLayer(layer) {
+        var i = layers.indexOf(layer);
+        if (i !== -1) layers.splice(i, 1);
+    }
+    function topLayer() {
+        return layers.length ? layers[layers.length - 1] : null;
+    }
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || e.defaultPrevented) return;
+        var top = topLayer();
+        if (!top) return;
+        // A registered top-most layer owns Escape: swallow it even when the
+        // layer is non-dismissible (e.g. the busy overlay), so unrelated legacy
+        // window/document Escape handlers never fire underneath an active modal.
+        e.preventDefault();
+        e.stopPropagation();
+        if (top.onEscape) top.close();
+    }, true);
+
+    /* Layers opened outside this file (Blade <x-modal>, global search) push
+     * themselves through this hook so Esc stays top-most-only app-wide. */
+    window.DialogLayer = { push: pushLayer, drop: dropLayer, top: topLayer, count: function () { return layers.length; } };
 
     /* ---- icons (teal set) ---- */
     var ICON_X = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -59,6 +97,7 @@
     var root = null;
     var lastFocused = null;
     var busyDepth = 0;
+    var busyLayer = null;
     var modalOpen = null;
 
     function esc(html) {
@@ -95,8 +134,14 @@
         return Array.prototype.slice.call(el.querySelectorAll(selector)).filter(function (node) { return node.offsetParent !== null || node === document.activeElement; });
     }
 
+    /* Body scroll lock is REFERENCE COUNTED. The layer stack allows nesting (a
+     * confirmation on top of a form modal, a busy overlay on top of either), and
+     * a plain toggle would unlock the page as soon as the inner layer closed
+     * while an outer one was still open. */
+    var lockCount = 0;
     function lockBody(lock) {
-        document.body.classList.toggle('overflow-y-hidden', lock);
+        lockCount = lock ? lockCount + 1 : Math.max(0, lockCount - 1);
+        document.body.classList.toggle('overflow-y-hidden', lockCount > 0);
     }
 
     /* ---- toast ---- */
@@ -195,27 +240,54 @@
         }
     }
 
-    /* ---- shared dialog shell ---- */
+    /* ---- shared dialog shell ----
+     * Every CB dialog is built from the same three parts: a deep-teal header
+     * band, a scrollable body and an action footer. `headBand` and `foot` below
+     * are the only places that markup is produced, so confirm / dialog / prompt
+     * / busy are structurally identical. */
+    function headBand(opts) {
+        return '<div class="dlg-head">'
+            + '<span class="dlg-head-ic' + (opts.tone ? ' dlg-head-ic--' + opts.tone : '') + '">' + opts.icon + '</span>'
+            + '<div class="dlg-head-txt">'
+            + '<h3 id="' + opts.titleId + '" class="dlg-head-title">' + esc(opts.title) + '</h3>'
+            + '</div>'
+            + (opts.pill ? '<span class="dlg-head-pill' + (opts.pillTone ? ' dlg-head-pill--' + opts.pillTone : '') + '">'
+                + (opts.pillDot ? '<span class="dot"></span>' : '') + esc(opts.pill) + '</span>' : '')
+            + '<button type="button" class="dlg-head-x" data-cb-close aria-label="Close">' + ICON_X + '</button>'
+            + '</div>';
+    }
 
+    function foot(actions, split) {
+        return '<div class="dlg-foot' + (split ? ' dlg-foot--split' : '') + '">' + actions + '</div>';
+    }
+
+    /* Legacy class names are kept on the same elements so any existing selector
+     * (and every stylesheet rule written before v2) keeps matching. */
     function mountDialog(innerHtml, dialogClass, labelledBy) {
         var r = ensureRoot();
         r.querySelectorAll('.cb-scrim--leaving').forEach(function (el) {
             if (el.parentNode) el.parentNode.removeChild(el);
         });
         if (r.querySelector('.cb-dialog:not(.cb-dialog--processing)')) return null;
+        var cls = 'cb-dialog ' + (dialogClass || '');
+        // Confirmations live one layer above plain dialogs.
+        var isConfirm = /(^|\s)cb-dialog--(danger|action|confirm)(\s|$)/.test(' ' + (dialogClass || '') + ' ');
         var wrap = document.createElement('div');
-        wrap.className = 'cb-scrim';
-        wrap.innerHTML = '<div class="cb-dialog ' + (dialogClass || '') + '" role="alertdialog" aria-modal="true" aria-labelledby="' + labelledBy + '">'
+        wrap.className = 'cb-scrim' + (isConfirm ? ' cb-scrim--confirm' : '');
+        wrap.innerHTML = '<div class="' + cls.trim() + '" role="alertdialog" aria-modal="true" aria-labelledby="' + labelledBy + '">'
             + innerHtml
             + '</div>';
         r.appendChild(wrap);
         lastFocused = document.activeElement;
         lockBody(true);
-        return {
+        var layer = pushLayer(function () { instance && instance.onEscape(); });
+        var instance = {
             wrap: wrap,
             modal: wrap.querySelector('.cb-dialog'),
+            onEscape: function () {},
             close: function (finish) {
                 if (!wrap.isConnected) return;
+                dropLayer(layer);
                 lockBody(false);
                 wrap.classList.add('cb-scrim--leaving');
                 wrap.querySelector('.cb-dialog').classList.add('cb-dialog--leaving');
@@ -240,6 +312,7 @@
                 }
             },
         };
+        return instance;
     }
 
     function factStrip(chip, context) {
@@ -257,18 +330,17 @@
         var type = config.type === 'danger' ? 'danger' : 'action';
         return new Promise(function (resolve) {
             var m = mountDialog(
-                '<button type="button" class="cb-dialog__close" data-cb-close aria-label="Close">' + ICON_X + '</button>'
-                + '<div class="cb-halo cb-halo--' + type + '">' + (config.icon || HALO[type]) + '</div>'
-                + '<h3 id="cb-dialog-title" class="cb-dialog__title">' + esc(config.title || '') + '</h3>'
-                + (config.message ? '<p class="cb-dialog__sub">' + esc(config.message) + '</p>' : '')
-                + (config.sub && !config.message ? '<p class="cb-dialog__sub">' + esc(config.sub) + '</p>' : '')
+                headBand({ icon: config.icon || HALO[type], tone: type, title: config.title, titleId: 'cb-dialog-title' })
+                + '<div class="dlg-body">'
+                + (config.message ? '<p class="dlg-sub">' + esc(config.message) + '</p>' : '')
+                + (config.sub && !config.message ? '<p class="dlg-sub">' + esc(config.sub) + '</p>' : '')
                 + factStrip(config.chip, config.context)
                 + summaryHtml(config.summary)
                 + (config.typeToConfirm ? typeField(config.typeToConfirm) : '')
-                + '<div class="cb-actions">'
-                + '<button type="button" class="cb-btn cb-btn--ghost" data-cb-cancel>' + esc(config.cancelLabel || 'Cancel') + '</button>'
-                + '<button type="button" class="cb-btn ' + (type === 'danger' ? 'cb-btn--red' : 'cb-btn--cta') + '" data-cb-ok disabled>' + esc(config.confirmLabel || (type === 'danger' ? 'Confirm' : 'Continue')) + '</button>'
-                + '</div>',
+                + '</div>'
+                + foot('<button type="button" class="dlg-btn dlg-btn--ghost" data-cb-cancel>' + esc(config.cancelLabel || 'Cancel') + '</button>'
+                    + '<button type="button" class="dlg-btn ' + (type === 'danger' ? 'dlg-btn--danger' : 'dlg-btn--cta') + '" data-cb-ok disabled>'
+                    + esc(config.confirmLabel || (type === 'danger' ? 'Confirm' : 'Continue')) + '</button>'),
                 'cb-dialog--' + type,
                 'cb-dialog-title'
             );
@@ -288,6 +360,7 @@
                 cancelled = true;
                 finish(false);
             }
+            m.onEscape = cancel;
 
             if (typeInput) {
                 typeInput.addEventListener('input', function () {
@@ -298,10 +371,7 @@
                 });
             }
 
-            m.modal.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') { e.stopPropagation(); cancel(); return; }
-                m.trap(e);
-            });
+            m.modal.addEventListener('keydown', function (e) { m.trap(e); });
             m.wrap.addEventListener('click', function (e) {
                 if (e.target === m.wrap) cancel();
             });
@@ -324,9 +394,9 @@
     }
 
     function typeField(text) {
-        return '<div class="cb-field" style="margin-top:16px">'
-            + '<label for="cb-type-input">Type <strong>' + esc(text) + '</strong> to confirm</label>'
-            + '<input id="cb-type-input" class="cb-input" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(text) + '">'
+        return '<div class="dlg-field">'
+            + '<label class="dlg-label" for="cb-type-input">Type <strong>' + esc(text) + '</strong> to confirm</label>'
+            + '<input id="cb-type-input" class="dlg-input" type="text" autocomplete="off" spellcheck="false" placeholder="' + esc(text) + '">'
             + '</div>';
     }
 
@@ -335,29 +405,24 @@
     function dialog(config) {
         config = config || {};
         var type = (config.type === 'warning' || config.type === 'info') ? config.type : 'success';
-        var btnClass = type === 'success' ? 'cb-btn--sec' : type === 'warning' ? 'cb-btn--warn' : 'cb-btn--cta';
+        var btnClass = type === 'success' ? 'dlg-btn--cta' : type === 'warning' ? 'dlg-btn--warn' : 'dlg-btn--cta';
         var okLabel = config.okLabel || (type === 'success' ? 'Done' : type === 'warning' ? 'Continue' : 'Got it');
-        var closeBtn = type === 'success' ? '' : '<button type="button" class="cb-dialog__close" data-cb-close aria-label="Close">' + ICON_X + '</button>';
         return new Promise(function (resolve) {
             var m = mountDialog(
-                closeBtn
-                + '<div class="cb-halo cb-halo--' + type + '">' + (config.icon || HALO[type]) + '</div>'
-                + '<h3 id="cb-dialog-title" class="cb-dialog__title">' + esc(config.title || '') + '</h3>'
-                + (config.message ? '<p class="cb-dialog__sub">' + esc(config.message) + '</p>' : '')
+                headBand({ icon: config.icon || HALO[type], tone: type, title: config.title, titleId: 'cb-dialog-title' })
+                + '<div class="dlg-body">'
+                + (config.message ? '<p class="dlg-sub">' + esc(config.message) + '</p>' : '')
                 + factStrip(config.chip, config.context)
-                + '<div class="cb-actions">'
-                + '<button type="button" class="cb-btn ' + btnClass + '" data-cb-ok>' + esc(okLabel) + '</button>'
-                + '</div>',
+                + '</div>'
+                + foot('<button type="button" class="dlg-btn ' + btnClass + '" data-cb-ok>' + esc(okLabel) + '</button>'),
                 'cb-dialog--' + type,
                 'cb-dialog-title'
             );
             if (!m) return;
 
             function finish() { m.close(function () { resolve(); }); }
-            m.modal.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') { e.stopPropagation(); finish(); return; }
-                m.trap(e);
-            });
+            m.onEscape = finish;
+            m.modal.addEventListener('keydown', function (e) { m.trap(e); });
             m.wrap.addEventListener('click', function (e) { if (e.target === m.wrap) finish(); });
             var closeBtnEl = m.modal.querySelector('[data-cb-close]');
             if (closeBtnEl) closeBtnEl.addEventListener('click', finish);
@@ -372,18 +437,16 @@
         config = config || {};
         return new Promise(function (resolve) {
             var m = mountDialog(
-                '<button type="button" class="cb-dialog__close" data-cb-close aria-label="Close">' + ICON_X + '</button>'
-                + '<div class="cb-halo cb-halo--action">' + HALO.form + '</div>'
-                + '<h3 id="cb-dialog-title" class="cb-dialog__title">' + esc(config.title || '') + '</h3>'
-                + (config.message ? '<p class="cb-dialog__sub">' + esc(config.message) + '</p>' : '')
-                + '<div class="cb-field" style="margin-top:16px">'
-                + '<label for="cb-prompt-input">' + esc(config.label || 'Reason') + '</label>'
-                + '<input id="cb-prompt-input" class="cb-input" type="text" autocomplete="off" placeholder="' + esc(config.placeholder || '') + '">'
+                headBand({ icon: HALO.form, tone: 'action', title: config.title, titleId: 'cb-dialog-title' })
+                + '<div class="dlg-body">'
+                + (config.message ? '<p class="dlg-sub">' + esc(config.message) + '</p>' : '')
+                + '<div class="dlg-field">'
+                + '<label class="dlg-label" for="cb-prompt-input">' + esc(config.label || 'Reason') + '</label>'
+                + '<input id="cb-prompt-input" class="dlg-input" type="text" autocomplete="off" placeholder="' + esc(config.placeholder || '') + '">'
                 + '</div>'
-                + '<div class="cb-actions">'
-                + '<button type="button" class="cb-btn cb-btn--ghost" data-cb-cancel>' + esc(config.cancelLabel || 'Cancel') + '</button>'
-                + '<button type="button" class="cb-btn cb-btn--cta" data-cb-ok>' + esc(config.confirmLabel || 'Confirm') + '</button>'
-                + '</div>',
+                + '</div>'
+                + foot('<button type="button" class="dlg-btn dlg-btn--ghost" data-cb-cancel>' + esc(config.cancelLabel || 'Cancel') + '</button>'
+                    + '<button type="button" class="dlg-btn dlg-btn--cta" data-cb-ok>' + esc(config.confirmLabel || 'Confirm') + '</button>'),
                 'cb-dialog--wide cb-dialog--form',
                 'cb-dialog-title'
             );
@@ -393,11 +456,9 @@
 
             function finish(value) { m.close(function () { resolve(value); }); }
             function cancel() { finish(null); }
+            m.onEscape = cancel;
 
-            m.modal.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') { e.stopPropagation(); cancel(); return; }
-                m.trap(e);
-            });
+            m.modal.addEventListener('keydown', function (e) { m.trap(e); });
             m.wrap.addEventListener('click', function (e) { if (e.target === m.wrap) cancel(); });
             m.modal.querySelector('[data-cb-close]').addEventListener('click', cancel);
             m.modal.querySelector('[data-cb-cancel]').addEventListener('click', cancel);
@@ -434,9 +495,9 @@
             modalOpen = { el: el, origin: origin, next: nextSib, wrap: wrap, dlg: dlg, onClose: opts.onClose || null };
             lastFocused = document.activeElement;
             lockBody(true);
+            modalOpen.layer = pushLayer(function () { modalApi.close(); });
 
             dlg.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') { e.stopPropagation(); modalApi.close(); return; }
                 var f = focusables(dlg);
                 if (!f.length) return;
                 var first = f[0], last = f[f.length - 1];
@@ -451,6 +512,7 @@
             if (!modalOpen) return;
             var state = modalOpen;
             modalOpen = null;
+            if (state.layer) dropLayer(state.layer);
             lockBody(false);
             state.wrap.classList.add('cb-scrim--leaving');
             state.dlg.classList.add('cb-dialog--leaving');
@@ -473,12 +535,18 @@
         if (r.querySelector('.cb-dialog--processing')) return;
         var wrap = document.createElement('div');
         wrap.className = 'cb-scrim cb-scrim--processing';
-        wrap.innerHTML = '<div class="cb-dialog cb-dialog--processing" role="status" aria-live="polite">'
+        wrap.innerHTML = '<div class="cb-dialog cb-dialog--processing dlg-card--busy" role="status" aria-live="polite">'
             + '<div class="cb-spinner"></div>'
-            + '<h3 class="cb-dialog__title" style="font-size:15px">' + esc(label || 'Processing…') + '</h3>'
-            + '<p class="cb-dialog__sub" style="margin-top:6px">Please wait…</p>'
+            + '<h3 class="dlg-busy-title">' + esc(label || 'Processing…') + '</h3>'
+            + '<p class="dlg-busy-sub">Please wait…</p>'
             + '</div>';
         r.appendChild(wrap);
+        lockBody(true);
+        // A processing overlay is not dismissable, so it must not answer Esc —
+        // but it MUST be popped in busyStop, otherwise a leaked non-escape layer
+        // would sit on top of the stack and swallow Esc for the dialog that is
+        // waiting on this request.
+        busyLayer = pushLayer(function () {}, { onEscape: false });
     }
 
     function busyStop() {
@@ -487,6 +555,8 @@
         var r = ensureRoot();
         var wrap = r.querySelector('.cb-scrim--processing');
         if (!wrap) return;
+        if (busyLayer) { dropLayer(busyLayer); busyLayer = null; }
+        lockBody(false);
         wrap.classList.add('cb-scrim--leaving');
         wrap.querySelector('.cb-dialog').classList.add('cb-dialog--leaving');
         var done = function () {
@@ -585,6 +655,25 @@
         toast: toast,
         busy: busy,
         busyStop: busyStop,
+    };
+
+    /* Sanctioned shared entry point. `window.CB` stays as the internal-facing
+     * name; new code should call `Dialog`. Both resolve to the same shell. */
+    window.Dialog = {
+        open: function (elOrId, opts) { return modalApi.open(elOrId, opts); },
+        close: function () { return modalApi.close(); },
+        confirm: function (config) { return confirm(config || {}); },
+        alert: function (message) { return toast('error', message); },
+        notify: function (type, title, message, opts) { return toast(type, title, message, opts); },
+        prompt: function (config) { return prompt(config || {}); },
+        toast: toast,
+        busy: busy,
+        busyStop: busyStop,
+        isOpen: function () { return !!topLayer(); },
+        /* Reference-counted body scroll lock. Any overlay that is not built by
+         * this file (Blade <x-modal>, suite modals) must take a lock through
+         * this so nested layers cannot unlock the page early. */
+        scrollLock: lockBody,
     };
 
     window.feedback = api;

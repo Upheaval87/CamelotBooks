@@ -61,7 +61,7 @@
                                         </button>
                                     </form>
                                     <a href="{{ route('accounting.report-schedules.edit', $schedule->id) }}" class="fr-btn fr-btn--ghost fr-btn--sm">Edit</a>
-                                    <form action="{{ route('accounting.report-schedules.destroy', $schedule->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete this schedule?')">
+                                    <form action="{{ route('accounting.report-schedules.destroy', $schedule->id) }}" method="POST" class="inline" onsubmit="return fbConfirmSubmit(event, 'Delete this schedule?', { type: 'danger' })">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="fr-btn fr-btn--danger fr-btn--sm">Delete</button>

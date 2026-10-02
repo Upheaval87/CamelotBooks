@@ -98,6 +98,15 @@ class CompanyProvisioningTest extends TestCase
         $this->assertGreaterThan(0, DB::connection($tenant)->table('numbering_sequences')->count());
         $this->assertSame(1, DB::connection($tenant)->table('fiscal_years')->count());
         $this->assertSame(12, DB::connection($tenant)->table('accounting_periods')->count());
+
+        $today = now()->toDateString();
+        $currentPeriod = DB::connection($tenant)->table('accounting_periods')
+            ->where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->first();
+        $this->assertNotNull($currentPeriod, 'A period must cover the current date.');
+        $this->assertSame('open', $currentPeriod->status, 'The current accounting period must be open after provisioning.');
+
         $this->assertSame(1, DB::connection($tenant)->table('approval_settings')->count());
         $this->assertGreaterThan(0, DB::connection($tenant)->table('approval_thresholds')->count());
 

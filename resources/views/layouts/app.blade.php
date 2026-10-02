@@ -124,22 +124,21 @@
 
         {{-- My Tasks modal (opened from the topbar, no page reload) --}}
         <x-modal name="my-tasks" maxWidth="4xl">
-            <div class="todo-modal-shell" x-data="todoModal()"
+            <div class="dlg-head">
+                <div class="dlg-head-txt">
+                    <h3 class="dlg-head-title">{{ __('My Tasks') }}</h3>
+                </div>
+                <button type="button" class="dlg-head-x" title="{{ __('Close') }}" aria-label="{{ __('Close') }}" @click="$dispatch('close-modal', 'my-tasks')">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="dlg-body"
+                 x-data="todoModal()"
                  @open-modal.window="$event.detail === 'my-tasks' ? refresh() : null"
                  @todo-delete.window="onDelete($event.detail)"
-                 @todo-refresh.window="refresh()">
-                <div class="todo-modal-head">
-                    <div>
-                        <p class="todo-modal-eyebrow">{{ __('Personal') }}</p>
-                        <h3 class="todo-modal-title">{{ __('My Tasks') }}</h3>
-                    </div>
-                    <button type="button" class="icon-btn" title="{{ __('Close') }}" aria-label="{{ __('Close') }}" @click="$dispatch('close-modal', 'my-tasks')">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="todo-modal-body" x-ref="wrap">
-                    <div x-ref="list"></div>
-                </div>
+                 @todo-refresh.window="refresh()"
+                 x-ref="wrap">
+                <div x-ref="list"></div>
             </div>
         </x-modal>
 
@@ -150,26 +149,25 @@
             @open-task-detail.window="openTask($event.detail)"
         >
             <x-modal name="task-detail" maxWidth="lg">
-                <div class="todo-modal" @item-selected="onLinkSelected($event)">
-                    <form method="POST" :action="updateUrl" id="task-update-form" @submit.prevent="saveUpdate($event)">
+                <div class="dlg-head">
+                    <span class="todo-priority-dot" :class="'todo-priority-' + priority" style="width:10px;height:10px;flex-shrink:0"></span>
+                    <div class="dlg-head-txt">
+                        <input
+                            type="text"
+                            name="title"
+                            form="task-update-form"
+                            x-model="title"
+                            class="todo-modal-title-input"
+                            required
+                            maxlength="255"
+                        />
+                    </div>
+                    <span class="dlg-head-pill" :class="isOverdue ? 'dlg-head-pill--bad' : 'dlg-head-pill--ok'" x-text="deadlineLabel"></span>
+                </div>
+
+                <form method="POST" :action="updateUrl" id="task-update-form" class="dlg-body" @submit.prevent="saveUpdate($event)" @item-selected="onLinkSelected($event)">
                         @csrf
                         @method('PUT')
-
-                        {{-- Title row --}}
-                        <div class="todo-modal-header">
-                            <div class="flex items-center gap-3 flex-1 min-w-0">
-                                <span class="todo-priority-dot" :class="'todo-priority-' + priority" style="width:10px;height:10px;flex-shrink:0"></span>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    x-model="title"
-                                    class="todo-modal-title-input"
-                                    required
-                                    maxlength="255"
-                                />
-                            </div>
-                            <span class="todo-modal-status" :class="isOverdue ? 'is-overdue' : ''" x-text="deadlineLabel"></span>
-                        </div>
 
                         {{-- Linked record (prominent display) --}}
                         <div class="todo-modal-section">
@@ -242,20 +240,17 @@
                             <input type="hidden" name="link_label" :value="linkLabel" />
                             <input type="hidden" name="link_url" :value="linkUrl" />
                         </div>
+                </form>
 
-                        {{-- Footer actions --}}
-                        <div class="todo-modal-footer">
-                            <button
-                                type="button"
-                                class="btn-danger btn-md"
-                                @click="confirmDelete()"
-                            >{{ __('Delete') }}</button>
-                            <div class="flex gap-3">
-                                <button type="button" class="btn-ghost btn-md" @click="$dispatch('close-modal', 'task-detail')">{{ __('Cancel') }}</button>
-                                <button type="submit" class="btn-primary btn-md">{{ __('Save Changes') }}</button>
-                            </div>
-                        </div>
-                    </form>
+                {{-- Footer actions --}}
+                <div class="dlg-foot">
+                    <button
+                        type="button"
+                        class="btn-danger btn-md mr-auto"
+                        @click="confirmDelete()"
+                    >{{ __('Delete') }}</button>
+                    <button type="button" class="btn-ghost btn-md" @click="$dispatch('close-modal', 'task-detail')">{{ __('Cancel') }}</button>
+                    <button type="submit" form="task-update-form" class="btn-primary btn-md">{{ __('Save Changes') }}</button>
                 </div>
             </x-modal>
         </div>

@@ -441,7 +441,25 @@ class JournalReversalTest extends TestCase
             ->assertSee('Reverse')
             ->assertSee('reversal-modal')
             ->assertSee('Create reversal')
-            ->assertSee('Post immediately');
+            // The chooser, its explanatory copy and the two advisory notes were
+            // removed: post_mode is now a fixed hidden "immediate", the reason is
+            // a single-line input, and the derived date/reference are readonly.
+            ->assertSee('name="post_mode" value="immediate"', false)
+            ->assertSee('<input type="text" id="memo"', false)
+            ->assertDontSee('Post immediately')
+            ->assertDontSee('Save as draft')
+            ->assertDontSee('Next reversal ref')
+            ->assertDontSee('irreversible in effect');
+    }
+
+    public function test_reversal_modal_date_and_reference_are_readonly(): void
+    {
+        $original = $this->postedEntry();
+
+        $this->get(route('accounting.journal-entries.show', $original))
+            ->assertOk()
+            ->assertSee('id="reversal_date" name="reversal_date" readonly', false)
+            ->assertSee('id="reference" name="reference" readonly', false);
     }
 
     public function test_identity_confirm_required_when_threshold_met(): void

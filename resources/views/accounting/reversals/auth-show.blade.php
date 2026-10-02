@@ -142,14 +142,14 @@
                     <div style="border-top:1px solid var(--line);margin:1rem 0"></div>
 
                     {{-- Reject --}}
-                    <form method="POST" action="{{ route('accounting.reversals.auth.reject', $authorization->id) }}" id="rejectForm">
+                    <form method="POST" action="{{ route('accounting.reversals.auth.reject', $authorization->id) }}" id="rejectForm" onsubmit="return fbConfirmSubmit(event, 'Are you sure you want to reject this reversal request?', { type: 'danger' })">
                         @csrf
                         <div class="rv-field" style="margin-bottom:.75rem">
                             <label class="rv-label">{{ __('Rejection Reason') }} *</label>
                             <textarea name="reason" class="rv-textarea" required placeholder="{{ __('Provide a reason for rejection...') }}" minlength="10"></textarea>
                             @error('reason')<span class="rv-error">{{ $message }}</span>@enderror
                         </div>
-                        <button type="submit" class="rv-btn rv-btn--reject" data-fb-confirm="return confirm('Are you sure you want to reject this reversal request?')">
+                        <button type="submit" class="rv-btn rv-btn--reject">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             {{ __('Reject Reversal') }}
                         </button>

@@ -49,7 +49,7 @@
                                 <form method="POST" action="{{ route('accounting.rj.destroy', $t) }}" style="display:inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger-o btn-sm" onclick="return confirm('Delete this template?')">🗑</button>
+                                    <button type="submit" class="btn btn-danger-o btn-sm" onclick="return fbConfirmButton(event, 'Delete this template?', { type: 'danger' })">🗑</button>
                                 </form>
                             </div>
                         </div>

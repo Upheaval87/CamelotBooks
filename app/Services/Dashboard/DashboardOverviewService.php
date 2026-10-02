@@ -64,6 +64,7 @@ class DashboardOverviewService
 
         $symbol = (string) SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
         $decimals = (int) SystemSetting::getValue('currency', 'decimal_places', $companyId, 2);
+        $dateFormat = (string) SystemSetting::getValue('regional', 'date_format', $companyId, 'Y-m-d');
 
         $isCurrent = $this->incomeStatement->generate($companyId, null, $from, $to);
         $isPrior = $this->incomeStatement->generate($companyId, null, $prevFrom, $prevTo);
@@ -80,10 +81,13 @@ class DashboardOverviewService
         $cash = $this->cashPosition($companyId);
 
         $chart = $this->chartData($companyId);
+        $chart['total_revenue'] = round(array_sum($chart['revenue']), 2);
+        $chart['total_expenses'] = round(array_sum($chart['expenses']), 2);
+
         $aging = $this->receivablesAging($companyId);
-        $upcoming = $this->upcomingBillsAndTaxes($companyId);
+        $upcoming = $this->upcomingBillsAndTaxes($companyId, $symbol, $decimals, $dateFormat);
         $tasks = $this->tasks($companyId, $userId);
-        $activity = $this->recentActivity($companyId);
+        $activity = $this->recentActivity($companyId, $symbol, $decimals, $dateFormat);
 
         $empty = $this->isEmptyCompany($companyId);
 
@@ -92,6 +96,16 @@ class DashboardOverviewService
             self::PRESET_QUARTER => 'Q' . (int) floor(($from->month - 1) / 3 + 1) . ' ' . $from->year,
             default => (string) $to->year . ' YTD',
         };
+
+        // The data window deliberately stops at "today" (month-to-date), but the
+        // label must advertise the selected PERIOD, not the elapsed window —
+        // otherwise a mid-month dashboard reads "Oct 1 - Oct 2".
+        $labelTo = match ($preset) {
+            self::PRESET_MONTH => $from->copy()->endOfMonth(),
+            self::PRESET_QUARTER => $from->copy()->endOfQuarter(),
+            default => $from->copy()->endOfYear(),
+        };
+        $rangeLabel = $from->format('M j') . ' – ' . $labelTo->format('M j');
 
         $margin = $revenue != 0.0 ? $net / $revenue * 100 : 0.0;
         $netKpi = $this->kpiValue($net, $priorNet, 'Net profit for ' . $periodSub);
@@ -103,13 +117,15 @@ class DashboardOverviewService
             'preset_label' => self::PRESETS[$preset]['label'],
             'vs_label' => 'vs ' . self::PRESETS[$preset]['vs'],
             'period_sub' => $periodSub,
-            'range_label' => $from->format('M j') . ' – ' . $to->format('M j'),
+            'range_label' => $rangeLabel,
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
-            'sec_range' => $from->format('M j') . ' – ' . $to->format('M j') . ' · How money came in, went out, and stands right now.',
+            'sec_range' => $rangeLabel . ' · How money came in, went out, and stands right now.',
             'cs' => $symbol,
             'code' => (string) SystemSetting::getValue('currency', 'base_currency', $companyId, ''),
             'decimals' => $decimals,
+            'date_format' => $dateFormat,
+            'today_display' => $now->format('l, ') . $now->format($dateFormat),
             'kpi' => [
                 'revenue' => $this->kpiValue($revenue, $priorRevenue, 'Total Income for ' . $periodSub),
                 'expenses' => $this->kpiValue($expenses, $priorExpenses, 'Total Expenses for ' . $periodSub),
@@ -117,14 +133,22 @@ class DashboardOverviewService
                 'outstanding' => [
                     'value' => $outstanding['total'],
                     'sub' => $outstanding['unpaid'] . ' unpaid · ' . $outstanding['overdue'] . ' overdue',
+                    'unpaid' => $outstanding['unpaid'],
+                    'overdue' => $outstanding['overdue'],
+                    'href' => route('accounting.invoices.index', ['status' => 'unpaid']),
                 ],
                 'payables' => [
                     'value' => $payables['total'],
                     'sub' => $payables['open'] . ' open · ' . $payables['due_week'] . ' due this week',
+                    'open' => $payables['open'],
+                    'overdue' => $payables['overdue'],
+                    'overdue_amount' => $payables['overdue_amount'],
+                    'href' => route('accounting.bills.index', ['status' => 'unpaid']),
                 ],
                 'cash' => [
                     'value' => $cash['total'],
                     'sub' => count($cash['rows']) . ' accounts',
+                    'num_accounts' => $cash['num_accounts'],
                 ],
             ],
             'cash' => $cash,
@@ -225,10 +249,22 @@ class DashboardOverviewService
             ->whereBetween('due_date', [Carbon::today(), Carbon::today()->endOfWeek()])
             ->count('id');
 
+        $overdueQuery = (clone $base)->where(function ($q) {
+            $q->where('status', Bill::STATUS_OVERDUE)
+                ->orWhere('due_date', '<', Carbon::today());
+        });
+
+        $overdue = (int) (clone $overdueQuery)->count('id');
+        $overdueAmount = (float) (clone $overdueQuery)
+            ->selectRaw('SUM(amount - amount_paid) as overdue_balance')
+            ->value('overdue_balance');
+
         return [
             'total' => $total,
             'open' => $open,
             'due_week' => $dueWeek,
+            'overdue' => $overdue,
+            'overdue_amount' => $overdueAmount,
             'rows' => [],
         ];
     }
@@ -355,43 +391,93 @@ class DashboardOverviewService
 
         $maxBucket = max(array_column($buckets, 'amount'));
         $widthBase = $maxBucket > 0 ? $maxBucket : 1.0;
+        $total = (float) $open->sum(fn (Invoice $inv) => (float) $inv->balance_due);
 
         foreach ($buckets as &$bucket) {
             $bucket['pct'] = (float) number_format($bucket['amount'] / $widthBase * 100, 1, '.', '');
+            $bucket['pct_total'] = $total > 0
+                ? (float) number_format($bucket['amount'] / $total * 100, 1, '.', '')
+                : 0.0;
         }
         unset($bucket);
 
         return [
-            'total' => (float) $open->sum(fn (Invoice $inv) => (float) $inv->balance_due),
+            'total' => $total,
             'buckets' => $buckets,
         ];
     }
 
     /**
-     * @return array{bills: array, taxes: array, count: int}
+     * @return array{bills: array, taxes: array, items: array, count: int, overdue_total: float}
      */
-    private function upcomingBillsAndTaxes(int $companyId): array
+    private function upcomingBillsAndTaxes(int $companyId, string $symbol, int $decimals, string $dateFormat): array
     {
-        $cutoff = Carbon::today()->addDays(45);
+        $today = Carbon::today();
+        $cutoff = $today->copy()->addDays(45);
 
         $bills = Bill::query()
             ->forCompany($companyId)
             ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE])
             ->whereColumn('amount_paid', '<', 'amount')
             ->whereHas('vendor')
-            ->with('vendor:id,name')
+            ->with([
+                'vendor:id,name,payment_terms,payment_terms_days',
+                'purchaseOrder:id,po_number',
+            ])
             ->orderBy('due_date')
             ->take(5)
             ->get()
-            ->map(function (Bill $bill) use ($cutoff) {
+            ->map(function (Bill $bill) use ($today, $dateFormat) {
+                $due = $bill->due_date;
+                $daysUntil = $due ? (int) $today->diffInDays($due, false) : 0;
+                $overdue = $due ? $due->lt($today) : false;
+                $ref = $bill->bill_number ?: $bill->internal_number;
+                $vendorName = $bill->vendor?->name;
+
+                $terms = $bill->vendor?->payment_terms
+                    ?: ($bill->vendor?->payment_terms_days ? 'Net ' . $bill->vendor->payment_terms_days : null);
+                $poNumber = $bill->po_number ?: $bill->purchaseOrder?->po_number;
+
+                $rows = [];
+                $rows[] = ['l' => 'Vendor', 'v' => $vendorName ?: '—', 'chip' => null];
+                $rows[] = ['l' => 'Issue date', 'v' => $this->fmtDate($bill->bill_date, $dateFormat) ?: '—', 'chip' => null];
+                $rows[] = [
+                    'l' => 'Due date',
+                    'v' => $this->fmtDate($due, $dateFormat) ?: '—',
+                    'chip' => $overdue
+                        ? ['tone' => 'over', 'text' => 'Overdue by ' . $this->dayWord(abs($daysUntil))]
+                        : null,
+                ];
+
+                if ($terms) {
+                    $rows[] = ['l' => 'Terms', 'v' => $terms, 'chip' => null];
+                }
+                if ($poNumber) {
+                    $rows[] = ['l' => 'Linked PO', 'v' => $poNumber, 'chip' => null];
+                }
+
+                $rows[] = ['l' => 'Status', 'v' => '', 'chip' => ['tone' => 'bad', 'text' => 'Unpaid']];
+
                 return [
+                    'kind' => 'bill',
+                    'icon' => 'doc',
                     'id' => $bill->id,
-                    'ref' => $bill->bill_number,
-                    'name' => $bill->vendor?->name ?? (string) $bill->bill_number,
-                    'due' => $bill->due_date?->format('M j'),
-                    'date' => $bill->due_date,
+                    'ref' => $ref,
+                    'name' => $vendorName ?: $ref,
+                    'ref_line' => $ref,
+                    'due' => $this->fmtDate($due, $dateFormat),
+                    'due_label' => $overdue
+                        ? 'Overdue'
+                        : ($due ? 'Due ' . $due->format('j M') : 'No due date'),
+                    'due_tone' => $overdue ? 'over' : ($daysUntil >= 0 && $daysUntil <= 14 ? 'soon' : null),
+                    'date' => $due,
+                    'date_ts' => $due ? $due->getTimestamp() : 0,
                     'amount' => (float) $bill->balance_due,
-                    'overdue' => $bill->due_date ? $bill->due_date->isPast() : false,
+                    'overdue' => $overdue,
+                    'overdue_days' => $overdue ? abs($daysUntil) : 0,
+                    'href' => route('accounting.bills.show', $bill->id),
+                    'rows' => $rows,
+                    'desc' => $bill->supplier_notes ?: $bill->memo,
                 ];
             })
             ->filter(fn ($row) => $row['date'] && $row['date']->lte($cutoff))
@@ -429,22 +515,78 @@ class DashboardOverviewService
 
         $taxes = [];
         foreach ($obligations as $obligation) {
+            $due = $obligation->period->filing_due_date;
+            $daysUntil = (int) $today->diffInDays($due, false);
+            $overdue = $due->lt($today);
+            $status = $obligation->status;
+
+            [$statusText, $statusTone] = match (true) {
+                in_array($status, [TaxObligation::STATUS_FILED, TaxObligation::STATUS_PAID, TaxObligation::STATUS_CLOSED], true) => ['Filed', 'ok'],
+                in_array($status, [TaxObligation::STATUS_RETURN_APPROVED, TaxObligation::STATUS_RETURN_DRAFTED], true) => ['Return ready', 'wait'],
+                $status === TaxObligation::STATUS_RECONCILED => ['Reconciled', 'wait'],
+                $status === TaxObligation::STATUS_REJECTED => ['Rejected', 'bad'],
+                default => ['Not filed', 'wait'],
+            };
+
+            $rows = [];
+            $rows[] = ['l' => 'Period', 'v' => (string) ($obligation->period?->label ?: '—'), 'chip' => null];
+            $rows[] = [
+                'l' => 'Due date',
+                'v' => $this->fmtDate($due, $dateFormat) ?: '—',
+                'chip' => $overdue
+                    ? ['tone' => 'over', 'text' => 'Overdue by ' . $this->dayWord(abs($daysUntil))]
+                    : ($daysUntil <= 14 ? ['tone' => 'soon', 'text' => 'Due in ' . $this->dayWord($daysUntil)] : null),
+            ];
+            $rows[] = ['l' => 'Status', 'v' => '', 'chip' => ['tone' => $statusTone, 'text' => $statusText]];
+
+            $code = (string) ($obligation->taxType?->code ?: 'TAX');
+
             $taxes[] = [
+                'kind' => 'tax',
+                'icon' => 'tax',
                 'id' => $obligation->id,
-                'ref' => $obligation->taxType?->code ?? 'TAX',
-                'name' => (string) ($obligation->taxType?->name ?? 'Tax obligation'),
-                'period' => (string) ($obligation->period?->label ?? ''),
-                'due' => $obligation->period->filing_due_date->format('M j'),
-                'date' => $obligation->period->filing_due_date,
-                'amount' => $returnsByPeriod[(int) $obligation->period_id] ?? 0.0,
-                'overdue' => $obligation->period->filing_due_date->isPast(),
+                'ref' => $code,
+                'name' => (string) ($obligation->taxType?->name ?: 'Tax obligation'),
+                'period' => (string) ($obligation->period?->label ?: ''),
+                'ref_line' => 'STATUTORY' . ($code !== 'TAX' ? ' · ' . $code : ''),
+                'due' => $this->fmtDate($due, $dateFormat),
+                'due_label' => $overdue ? 'Overdue' : 'Due ' . $due->format('j M'),
+                'due_tone' => $overdue ? 'over' : ($daysUntil <= 14 ? 'soon' : null),
+                'date' => $due,
+                'date_ts' => $due->getTimestamp(),
+                'amount' => (float) ($returnsByPeriod[(int) $obligation->period_id] ?? 0.0),
+                'overdue' => $overdue,
+                'overdue_days' => $overdue ? abs($daysUntil) : 0,
+                'href' => route('accounting.taxation.dashboard'),
+                'rows' => $rows,
+                'desc' => null,
             ];
         }
+
+        $items = collect($bills)
+            ->merge($taxes)
+            ->sortBy('date_ts')
+            ->values()
+            ->all();
+
+        $overdueBills = (float) Bill::query()
+            ->forCompany($companyId)
+            ->whereIn('status', [Bill::STATUS_APPROVED, Bill::STATUS_PARTIALLY_PAID, Bill::STATUS_OVERDUE])
+            ->whereColumn('amount_paid', '<', 'amount')
+            ->where(function ($q) use ($today) {
+                $q->where('status', Bill::STATUS_OVERDUE)->orWhere('due_date', '<', $today);
+            })
+            ->selectRaw('SUM(amount - amount_paid) as overdue_balance')
+            ->value('overdue_balance');
+
+        $overdueTaxes = (float) collect($taxes)->where('overdue', true)->sum('amount');
 
         return [
             'bills' => $bills,
             'taxes' => $taxes,
+            'items' => $items,
             'count' => count($bills) + count($taxes),
+            'overdue_total' => round((float) $overdueBills + $overdueTaxes, 2),
         ];
     }
 
@@ -513,15 +655,15 @@ class DashboardOverviewService
     }
 
     /**
-     * @return array<int, array{at: Carbon, cls: string, ic: string, desc: string, amount: float, when: string, url: ?string}>
+     * @return array<int, array{at: ?Carbon, kind: string, title: string, party: ?string, party_dir: ?string, party_label: ?string, ref: ?string, module: string, recorded_by: string, status: string, status_tone: string, memo: ?string, amount: float, amount_display: string, dir: ?string, tone: string, when: string, url: ?string, href: ?string, date_display: string, time_display: string, lines: array, desc: string}>
      */
-    private function recentActivity(int $companyId): array
+    private function recentActivity(int $companyId, string $symbol, int $decimals, string $dateFormat): array
     {
         $events = new Collection();
 
         CustomerPayment::query()
             ->forCompany($companyId)
-            ->with('customer:id,name')
+            ->with(['customer:id,name', 'journalEntry.lines.account'])
             ->whereHas('customer')
             ->orderByDesc('payment_date')
             ->take(6)
@@ -529,17 +671,27 @@ class DashboardOverviewService
             ->each(static function (CustomerPayment $payment) use ($events) {
                 $events->push([
                     'at' => $payment->payment_date,
-                    'cls' => 'pos',
-                    'ic' => 'ic--in',
-                    'desc' => 'Payment received — ' . ($payment->customer->name ?? 'Customer') . ' · ' . $payment->payment_number,
+                    'kind' => 'customer_payment',
+                    'title' => 'Payment received',
+                    'party' => $payment->customer?->name,
+                    'party_dir' => 'in',
+                    'ref' => $payment->payment_number,
+                    'module' => 'Sales',
+                    'by_id' => $payment->created_by,
+                    'status' => 'Cleared',
+                    'status_tone' => 'ok',
+                    'memo' => $payment->memo,
                     'amount' => (float) $payment->amount,
+                    'dir' => 'in',
+                    'tone' => 'green',
                     'url' => route('accounting.customer-payments.show', $payment->id),
+                    'journal' => $payment->journalEntry,
                 ]);
             });
 
         VendorPayment::query()
             ->forCompany($companyId)
-            ->with('vendor:id,name')
+            ->with(['vendor:id,name', 'journalEntry.lines.account'])
             ->whereHas('vendor')
             ->orderByDesc('payment_date')
             ->take(4)
@@ -547,17 +699,27 @@ class DashboardOverviewService
             ->each(static function (VendorPayment $payment) use ($events) {
                 $events->push([
                     'at' => $payment->payment_date,
-                    'cls' => 'neg',
-                    'ic' => 'ic--out',
-                    'desc' => 'Payment made — ' . ($payment->vendor->name ?? 'Vendor') . ' · ' . $payment->payment_number,
+                    'kind' => 'vendor_payment',
+                    'title' => 'Payment posted',
+                    'party' => $payment->vendor?->name,
+                    'party_dir' => 'out',
+                    'ref' => $payment->payment_number,
+                    'module' => 'Purchasing',
+                    'by_id' => $payment->created_by,
+                    'status' => 'Posted',
+                    'status_tone' => 'ok',
+                    'memo' => $payment->memo ?? $payment->reference,
                     'amount' => (float) $payment->amount,
-                    'url' => null,
+                    'dir' => 'out',
+                    'tone' => 'amber',
+                    'url' => route('accounting.vendor-payments.show', $payment->id),
+                    'journal' => $payment->journalEntry,
                 ]);
             });
 
         Invoice::query()
             ->forCompany($companyId)
-            ->with('customer:id,name')
+            ->with(['customer:id,name', 'journalEntry.lines.account'])
             ->where('status', '!=', Invoice::STATUS_DRAFT)
             ->orderByDesc('invoice_date')
             ->take(6)
@@ -565,17 +727,27 @@ class DashboardOverviewService
             ->each(static function (Invoice $invoice) use ($events) {
                 $events->push([
                     'at' => $invoice->invoice_date,
-                    'cls' => 'ink',
-                    'ic' => 'ic--up',
-                    'desc' => 'Invoice ' . ($invoice->invoice_date->isPast() ? 'sent' : 'raised') . ' — ' . ($invoice->customer->name ?? 'Customer') . ' · ' . $invoice->invoice_number,
+                    'kind' => 'invoice',
+                    'title' => 'Invoice ' . ($invoice->invoice_date?->isPast() ? 'sent' : 'raised'),
+                    'party' => $invoice->customer?->name,
+                    'party_dir' => 'in',
+                    'ref' => $invoice->invoice_number,
+                    'module' => 'Sales',
+                    'by_id' => $invoice->created_by,
+                    'status' => 'Sent',
+                    'status_tone' => 'ok',
+                    'memo' => $invoice->memo ?? $invoice->reference,
                     'amount' => (float) $invoice->amount,
+                    'dir' => 'in',
+                    'tone' => 'teal',
                     'url' => route('accounting.invoices.show', $invoice->id),
+                    'journal' => $invoice->journalEntry,
                 ]);
             });
 
         Bill::query()
             ->forCompany($companyId)
-            ->with('vendor:id,name')
+            ->with(['vendor:id,name', 'journalEntry.lines.account'])
             ->where('status', '!=', Bill::STATUS_DRAFT)
             ->orderByDesc('bill_date')
             ->take(6)
@@ -583,16 +755,27 @@ class DashboardOverviewService
             ->each(static function (Bill $bill) use ($events) {
                 $events->push([
                     'at' => $bill->bill_date,
-                    'cls' => 'neg',
-                    'ic' => 'ic--sum',
-                    'desc' => 'Bill recorded — ' . ($bill->vendor->name ?? 'Vendor') . ' · ' . ($bill->bill_number ?? $bill->internal_number),
+                    'kind' => 'bill',
+                    'title' => 'Bill recorded',
+                    'party' => $bill->vendor?->name,
+                    'party_dir' => 'out',
+                    'ref' => $bill->bill_number ?: $bill->internal_number,
+                    'module' => 'Purchasing',
+                    'by_id' => $bill->created_by,
+                    'status' => 'Recorded',
+                    'status_tone' => 'ok',
+                    'memo' => $bill->supplier_notes ?: $bill->memo,
                     'amount' => (float) $bill->amount,
+                    'dir' => 'out',
+                    'tone' => 'amber',
                     'url' => route('accounting.bills.show', $bill->id),
+                    'journal' => $bill->journalEntry,
                 ]);
             });
 
         JournalEntry::query()
             ->forCompany($companyId)
+            ->with('lines.account')
             ->whereIn('status', [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED])
             ->orderByDesc('date')
             ->take(6)
@@ -604,30 +787,117 @@ class DashboardOverviewService
                 }
                 $events->push([
                     'at' => $entry->date,
-                    'cls' => 'neg',
-                    'ic' => 'ic--je',
-                    'desc' => 'Journal posted — ' . $label,
+                    'kind' => 'journal',
+                    'title' => 'Journal posted',
+                    'party' => null,
+                    'party_dir' => null,
+                    'ref' => $label,
+                    'module' => $entry->source_module
+                        ? ucfirst(str_replace('_', ' ', (string) $entry->source_module))
+                        : 'Accounting',
+                    'by_id' => $entry->created_by,
+                    'status' => 'Posted',
+                    'status_tone' => 'ok',
+                    'memo' => $entry->memo,
                     'amount' => (float) $entry->total_debit,
+                    'dir' => null,
+                    'tone' => 'teal',
                     'url' => route('accounting.journal-entries.show', $entry->id),
+                    'journal' => $entry,
                 ]);
             });
 
         $events = $events->sortByDesc(fn ($e) => $e['at'])->values()->take(8);
 
-        return $events->map(function (array $event) {
-            /** @var Carbon $at */
+        $names = $this->userNameMap($events->pluck('by_id')->all());
+
+        return $events->map(function (array $event) use ($names, $symbol, $decimals, $dateFormat) {
+            /** @var Carbon|null $at */
             $at = $event['at'];
 
             $when = match (true) {
+                $at === null => '—',
                 $at->isToday() => 'Today · ' . $at->format('H:i'),
                 $at->isYesterday() => 'Yesterday',
                 default => $at->format('M j'),
             };
 
+            $party = $event['party'];
+
             $event['when'] = $when;
+            $event['href'] = $event['url'];
+            $event['recorded_by'] = $names[$event['by_id']] ?? '—';
+            $event['party_label'] = $event['party_dir'] === 'out'
+                ? 'Payee'
+                : ($event['party_dir'] === 'in' ? 'Payer' : null);
+            $event['date_display'] = $at ? $at->format($dateFormat) : '—';
+            $event['time_display'] = $at ? $at->format('H:i') : '';
+            $event['amount_display'] = $this->money((float) $event['amount'], $symbol, $decimals);
+            $event['lines'] = $this->journalLines($event['journal'] ?? null, $symbol, $decimals);
+
+            $event['desc'] = $event['title']
+                . ($party ? ' — ' . $party : '')
+                . ($event['ref'] ? ' · ' . $event['ref'] : '');
+
+            unset($event['journal'], $event['by_id']);
 
             return $event;
         })->all();
+    }
+
+    /**
+     * @param  array<int, mixed>  $ids
+     * @return array<int|string, string>
+     */
+    private function userNameMap(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter($ids, fn ($id) => $id !== null)));
+
+        if (! $ids) {
+            return [];
+        }
+
+        return User::query()->whereIn('id', $ids)->pluck('name', 'id')->all();
+    }
+
+    /**
+     * @return array<int, array{side: string, code: string, name: string, amt: string}>
+     */
+    private function journalLines(?JournalEntry $entry, string $symbol, int $decimals): array
+    {
+        if (! $entry) {
+            return [];
+        }
+
+        $lines = $entry->relationLoaded('lines') ? $entry->lines : $entry->lines()->with('account')->get();
+
+        return $lines->map(function ($line) use ($symbol, $decimals) {
+            $debit = (float) $line->debit;
+            $credit = (float) $line->credit;
+            $isDebit = $debit > 0;
+
+            return [
+                'side' => $isDebit ? 'DR' : 'CR',
+                'code' => (string) ($line->account?->code ?? ''),
+                'name' => (string) ($line->account?->name ?? ''),
+                'amt' => $this->money($isDebit ? $debit : $credit, $symbol, $decimals),
+            ];
+        })->values()->all();
+    }
+
+    private function money(float $value, string $symbol, int $decimals): string
+    {
+        return ($value < 0 ? '-' : '') . $symbol . number_format(abs($value), $decimals, '.', ',');
+    }
+
+    private function fmtDate(?Carbon $date, string $format): ?string
+    {
+        return $date ? $date->format($format) : null;
+    }
+
+    private function dayWord(int $days): string
+    {
+        return $days . ' ' . ($days === 1 ? 'day' : 'days');
     }
 
     private function isEmptyCompany(int $companyId): bool

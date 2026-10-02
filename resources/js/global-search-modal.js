@@ -60,7 +60,9 @@ document.addEventListener('alpine:init', () => {
                     this.openModal();
                     return;
                 }
-                if (e.key === 'Escape' && this.open) {
+                // Escape is handled by the shared layer stack (top-most only) once
+                // registered; this is only a fallback for the no-layer case.
+                if (e.key === 'Escape' && this.open && !window.DialogLayer) {
                     this.close();
                 }
             });
@@ -86,6 +88,9 @@ document.addEventListener('alpine:init', () => {
 
         openModal(initialQuery = '', entity = '', fieldRef = null, fieldId = null) {
             this.open = true;
+            if (window.DialogLayer && this.$el && !this.$el.__gsLayer) {
+                this.$el.__gsLayer = window.DialogLayer.push(() => this.close());
+            }
             this.query = initialQuery || '';
             this.entity = entity || '';
             this._fieldRef = fieldRef || null;
@@ -107,6 +112,10 @@ document.addEventListener('alpine:init', () => {
         close() {
             this.open = false;
             this.highlightIndex = -1;
+            if (window.DialogLayer && this.$el && this.$el.__gsLayer) {
+                window.DialogLayer.drop(this.$el.__gsLayer);
+                this.$el.__gsLayer = null;
+            }
         },
 
         async doSearch() {

@@ -187,7 +187,23 @@
             <span class="jr-x" @click="reverseOpen = false">✕</span>
         </div>
         <div class="jr-mbox-b">
-            <p>A mirroring journal is created with debits and credits swapped, then posted and cross-linked to <b x-text="currentEntry()?.no"></b>.</p>
+            <div class="jr-warn">
+                <p>A mirroring journal is created with debits and credits swapped, then posted and cross-linked to <b x-text="currentEntry()?.no"></b>.</p>
+            </div>
+
+            {{-- A4.1: mirrored-line preview -- every debit becomes a credit and vice versa --}}
+            <div class="jr-mirr" x-show="mirrorLines().length" x-cloak>
+                <div class="jr-mirr-h">Reversal preview (lines mirrored)</div>
+                <template x-for="(l, i) in mirrorLines()" :key="'mir-' + i">
+                    <div class="jr-mline">
+                        <span class="jr-mirr-side" :class="l.side === 'DR' ? 'dr' : 'cr'" x-text="l.side"></span>
+                        <span class="jr-mirr-code" x-text="l.code"></span>
+                        <span class="jr-mirr-name" x-text="l.name"></span>
+                        <span class="jr-mirr-amt" x-text="fmt(l.amount)"></span>
+                    </div>
+                </template>
+            </div>
+
             <form id="jr-reverse-form" method="POST" :action="currentEntry() ? currentEntry().urls.reverse : ''">
                 @csrf
                 @foreach($preserved as $key => $value)
@@ -199,12 +215,12 @@
                         <input type="date" name="reversal_date" class="jr-in" x-model="rv.date" required>
                     </div>
                     <div>
-                        <label class="jr-lbl">Reference</label>
-                        <input type="text" name="reference" class="jr-in" maxlength="60" x-model="rv.reference">
+                        <label class="jr-lbl">New reference</label>
+                        <input type="text" name="reference" class="jr-in jr-in-mono" maxlength="60" x-model="rv.reference" readonly>
                     </div>
                 </div>
-                <label class="jr-lbl">Reason <span class="jr-req">*</span></label>
-                <textarea name="memo" class="jr-in" rows="3" maxlength="1000" required x-model="rv.memo" placeholder="Reason for the reversal (kept in the audit trail)"></textarea>
+                <label class="jr-lbl">Description <span class="jr-req">*</span></label>
+                <input type="text" name="memo" class="jr-in" maxlength="1000" required x-model="rv.memo" placeholder="Reason for the reversal (kept in the audit trail)">
                 <div class="jr-radios">
                     <label><input type="radio" name="post_mode" value="immediate" x-model="rv.post_mode"> Post immediately</label>
                     <label><input type="radio" name="post_mode" value="draft" x-model="rv.post_mode"> Save as draft</label>

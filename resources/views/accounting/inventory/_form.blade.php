@@ -52,26 +52,26 @@
             </div>
             <div class="inv-form-group">
                 <label class="inv-form-label">{{ __('Item Code / SKU') }} <span style="color:var(--red-2)">*</span></label>
-                <div style="display:flex;gap:8px">
+                <div class="input-group inv-sku-group" role="group" aria-label="{{ __('Item Code / SKU') }}">
                     <input type="text" name="sku" id="inv-sku" value="{{ old('sku', $product?->sku) }}"
                            class="inv-input" placeholder="{{ __('e.g. SKU-0001') }}" style="flex:1"
                            {{ $isEdit && $hasTransactions ? 'readonly style="flex:1;background:rgba(17,69,75,.04)"' : '' }} required>
-                    <button type="button" class="inv-btn-sm inv-btn-ghost" style="width:44px;padding:0;justify-content:center" title="{{ __('Generate SKU') }}" onclick="invGenSKU()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg>
+                    <button type="button" class="icon-btn" title="{{ __('Generate SKU') }}" aria-label="{{ __('Generate SKU') }}" onclick="invGenSKU()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     </button>
                 </div>
                 @error('sku') <div class="inv-form-err">{{ $message }}</div> @enderror
             </div>
             <div class="inv-form-group">
                 <label class="inv-form-label">{{ __('Barcode / QR') }}</label>
-                <div style="display:flex;gap:8px">
+                <div class="input-group inv-barcode-group" role="group" aria-label="{{ __('Barcode / QR') }}">
                     <input type="text" name="barcode" id="inv-barcode" value="{{ old('barcode', $product?->barcode) }}"
                            class="inv-input" placeholder="{{ __('Scan or generate') }}" style="flex:1">
-                    <button type="button" class="inv-btn-sm inv-btn-ghost" style="width:44px;padding:0;justify-content:center" title="{{ __('Scan with camera') }}" onclick="invOpenScanner()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <button type="button" class="icon-btn" title="{{ __('Scan QR / barcode') }}" aria-label="{{ __('Scan QR / barcode') }}" onclick="invOpenScanner()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     </button>
-                    <button type="button" class="inv-btn-sm inv-btn-ghost" style="width:44px;padding:0;justify-content:center" title="{{ __('Generate barcode') }}" onclick="invGenBar()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg>
+                    <button type="button" class="icon-btn" title="{{ __('Generate barcode') }}" aria-label="{{ __('Generate barcode') }}" onclick="invGenBar()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     </button>
                 </div>
                 <div class="inv-form-hint">{{ __('Scan with camera or USB scanner · EAN/UPC/QR supported') }}</div>

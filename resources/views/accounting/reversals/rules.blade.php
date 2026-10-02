@@ -114,7 +114,7 @@
                                                     {{ $rule->active ? __('Deactivate') : __('Activate') }}
                                                 </button>
                                             </form>
-                                            <form method="POST" action="{{ route('accounting.reversals.rules.delete', $rule->id) }}" style="display:inline" data-fb-confirm="return confirm('Delete this rule?')">
+                                            <form method="POST" action="{{ route('accounting.reversals.rules.delete', $rule->id) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Delete this rule?', { type: 'danger' })">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="rv-btn rv-btn--danger-o rv-btn--xs">{{ __('Delete') }}</button>

@@ -1,0 +1,799 @@
+ACCOUNTING DASHBOARD (HOME) — FINAL REDESIGN — FULL IMPLEMENTATION SPEC (SELF-CONTAINED)
+(AUTHORITATIVE MOCKUP HTML EMBEDDED IN APPENDIX A — do NOT read or depend on any external file.)
+
+SCOPE: Rebuild the main accounting Dashboard exactly as APPENDIX A: hero band + floating
+KPI strip, equal-height widget rows (chart/cash · aging/bills · actions/tasks), Recent
+Activity with detail modals, Upcoming Bills & Taxes with detail modals, and three
+clickable KPI cards. Read-only data consumer: every widget reads LIVE ledger/module
+data; every action drills into EXISTING pages/handlers.
+
+HARD GUARD: do NOT modify controllers' business logic, postings, calculations,
+validation, permissions or payloads. Frontend + read-only query wiring only.
+NO NEW PACKAGES. NO hardcoded sample data (zero-state = designed empty/stub visuals).
+NO hard-coded currency: code/symbol/decimals from system setting, applied everywhere.
+System live-search overlay must render above ALL dashboard content (z ≥ 9999).
+No new navigation chrome (no menus/breadcrumbs added).
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate dashboard route/view, existing period-preset mechanism, export handler,
+    task list source, activity/audit feed source, and each widget's current query.
+0.2 Record real routes for: unpaid invoices list, unpaid bills list, bank accounts,
+    AR aging, bills index, taxation pages, journal view, payment/receipt view,
+    bill view, task page, activity log — used in §4/§8/§10/§11.
+0.3 Record system currency setting + date format setting for §14 checks.
+
+==================== 1 · TOKENS / GLOBAL RULES ====================
+--deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32; --deep-row1:#11454b;
+--sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0; --steel:#46708C;
+--ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+--border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+--amber:#d97706; --amber-2:#b45309; --red:#dc2626; --red-2:#b91c1c; --green:#15803d;
+Shadows: card 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16),
+inset 0 1px 0 #fff · lift +2nd stop alpha .22 · hero 0 24px 60px -24px rgba(8,40,44,.55),
+inset 0 1px 0 rgba(255,255,255,.14). Font Inter; tabular-nums on ALL figures.
+R1 · ZERO BLUR: modal scrims = solid tint rgba(11,42,45,.26); NO backdrop-filter anywhere.
+R2 · NO green/teal block backgrounds on the "Cash & Bank" KPI card or the "Total cash"
+     panel — both are LIGHT (white / mist gradient) per APPENDIX A.
+R3 · NO sparklines/line graphs inside KPI cards.
+R4 · NO DR/CR account chips on Recent Activity LIST rows (ledger lines live in the modal only).
+R5 · prefers-reduced-motion disables all animation/transition.
+
+==================== 2 · PAGE LAYOUT ====================
+2.1 Canvas: layered radial teal/mint glows over linear-gradient(#eef4f4,#e7efee);
+    wrap max-width 1440px, padding 26px 26px 70px.
+2.2 Hero band: radius 22px, deep-teal 3-stop gradient + two radial sheens + masked
+    46px grid texture; padding 26px 28px 62px; hero shadow.
+2.3 KPI strip: 6-col grid, gap 14px, margin-top -44px (cards float over hero edge),
+    z-index 2; staggered rise entrance 50ms steps.
+2.4 Widget rows: three `.row` grids (1.55fr 1fr, gap 18px, align-items:stretch) so each
+    pair is EQUAL HEIGHT: [Revenue vs Expenses | Cash Position], [Receivables Aging |
+    Upcoming Bills & Taxes], [Quick Actions | My Tasks]; Recent Activity full-width below.
+2.5 Cards: white, radius 18px, hairline border, card shadow, flex column; head strip
+    (gradient #fdfeff→#f8fbfa, hairline bottom) with 7px teal square bullet + 13.5px/800
+    title and right teal link (arrow slides on hover). Body region flexes to fill height:
+    chart plot flex:1 · cash panel flex:1 with note margin-top:auto · aging rows centred
+    with total pinned · bills list flex with footer pinned (margin:auto 4px 0) ·
+    quick-actions grid-auto-rows:1fr · tasks empty state centred.
+2.6 Responsive: ≤1200px KPI 3-col + rows single column; ≤760px KPI 2-col, actions 2-col;
+    ≤480px 1-col, chart gap 8px, modal ledger hides code column.
+
+==================== 3 · HERO CONTENT ====================
+3.1 Eye chip: live pulsing mint dot + current weekday/date (system date format).
+3.2 Greeting: "Good morning/afternoon/evening, {first name}." from auth user + time of day.
+3.3 Sub line + kicker: kicker shows selected period range ("Oct 1 – Oct 2") in mint +
+    static descriptor; range recomputes on preset change.
+3.4 Controls: frosted segmented control [This Month | This Quarter | Year to Date]
+    (active = white pill, deep-teal text) wired to the EXISTING period filter so ALL
+    widgets refetch; Export button (frosted ghost) → existing export/PDF handler.
+
+==================== 4 · KPI STRIP (six cards) ====================
+Card anatomy: micro-uppercase label + delta chip right; 23px/900 value; 10.5px note.
+Delta chips: up/down good = green tint · neutral = grey tint · warn = amber tint.
+1 Total Revenue — period income total (ledger) · note "Total income for {period}".
+2 Total Expenses — period expense total · note as mocked.
+3 Net Profit — revenue−expenses · chip "margin n%".
+4 CLICKABLE Outstanding Inv. — unpaid AR total · chip "n unpaid" · note "n unpaid · n overdue"
+   → route: invoices list filtered status=unpaid.
+5 CLICKABLE Bills Payable — unpaid AP total · chip "n overdue" (amber when >0) ·
+   note "n open · n due this week" → route: bills list filtered status=unpaid.
+6 CLICKABLE Cash & Bank — sum of bank+cash account balances · chip "n accounts" →
+   route: bank accounts index. LIGHT card (R2), no sparkline (R3).
+Clickable cards = <a>: hover lifts + teal border + 24px gradient arrow badge fades in
+bottom-right; focus-visible ring; title attribute describes destination.
+
+==================== 5 · REVENUE VS EXPENSES ====================
+5.1 Grouped bars for the last 6 calendar months (month labels below): revenue bar teal
+    gradient (rounded crown, inner sheen, contact shadow), expense bar amber gradient.
+5.2 Hairline gridlines at 25% steps behind bars; bar heights proportional to max month.
+5.3 Hover: brightness lift + dark tooltip chip above bar with currency-formatted value.
+5.4 Head right: legend chips (Revenue teal / Expenses amber) + "Last 6 months" chip.
+5.5 Footer strip (hairline top): Money in / Money out / Net (green when positive).
+5.6 Zero months render 4% stub bars; fully-empty period keeps stubs + $0.00 tooltips.
+
+==================== 6 · CASH POSITION ====================
+6.1 LIGHT mist panel (R2): radius 16px, gradient #fbfdfc→#f1f7f5, hairline border,
+    inner white highlight; label micro-uppercase; 26px/900 total; sub "n accounts ·
+    updated moments ago".
+6.2 Composition bar 8px: segments proportional to account balances — teal gradient /
+    mint / steel on rgba(17,69,75,.08) track.
+6.3 Account rows: white micro-cards (hairline border, hover slide+tint): 30px teal-tint
+    icon tile (bank/cash glyph), name 12px/700 ellipsis, type chip (BANK/CASH) micro
+    grey pill, balance 12.5px/800 tabular.
+6.4 Note row pinned bottom: amber dot + "n outstanding cheque(s) awaiting clearance"
+    (hidden when zero).
+6.5 Head link "Banking →" = bank accounts index.
+
+==================== 7 · RECEIVABLES AGING ====================
+7.1 Buckets Current / 1–30 / 31–60 / 60+ from AR open balances; each row: label 58px,
+    8px track with semantic gradient fill (teal / mint-teal / amber / red) proportional
+    to total, right value tabular.
+7.2 Total receivables row pinned bottom (hairline top, 15px/900).
+7.3 Head link "View AR Aging →" = existing aging report route.
+
+==================== 8 · UPCOMING BILLS & TAXES ====================
+8.1 Source: unpaid vendor bills (due or overdue) + upcoming statutory tax deadlines,
+    merged and sorted by due date; show top items; each ROW IS A BUTTON opening the
+    detail modal (§10.2) — hover: teal border, lift, name tints teal, chevron slides in.
+8.2 Row: 34px teal-tint icon tile (doc for bills / percent for taxes), name 12.5px/700 +
+    mono 10px ref line; right: due chip (Overdue = red tint "Overdue"; due≤14d = amber
+    "Due {date}") + amount 13px/800.
+8.3 Footer pinned: "Total overdue" + red 900 value (hidden/zero-state when none).
+8.4 Head link "View all →" = bills index.
+
+==================== 9 · QUICK ACTIONS + MY TASKS ====================
+9.1 Quick Actions: 3×2 grid tiles (icon tile + label + "+"): New Invoice (PRIMARY deep-
+    teal gradient, mint icon, glow) / New Bill / Record Payment / New Journal /
+    New Customer / Reconcile — each wired to its EXISTING create route; hover lift+tint.
+9.2 My Tasks: lists the user's open tasks due (title + due chip + click → task modal/page
+    per existing behaviour) or the designed empty state (teal halo check, "You're all
+    caught up", sub, "+ Add a task" ghost → existing task create). Head link "Open tasks".
+
+==================== 10 · SHARED MODAL SHELL + THE TWO MODALS ====================
+10.1 Shell (both modals): scrim rgba(11,42,45,.26) NO blur (R1); card 540px, radius 20px,
+     white-glass border, layered shadow, slideUp .3s; head = deep-teal gradient band
+     (white 32px icon tile + 15px/800 title + mono 11px ref sub + frosted amount pill +
+     30px glass close rotating 90° on hover); body 18px 22px; foot #f8fafa hairline top
+     with [Close ghost] … [Open full page → teal gradient anchor].
+     Close via ✕, Close, scrim click, Esc. Focus returns to invoking row.
+10.2 ACTIVITY MODAL rows: Date & time · Module · Recorded by · [Payee|Payer — ONLY when
+     the activity is a payment; label flips by direction] · Status chip (Posted/Cleared
+     green). Then "Accounts & Amounts" ledger mini-datasheet (mist panel; rows: DR teal
+     chip / CR amber chip + mono code + account name + tabular amount; dashed separators)
+     for journal-backed activities. Then DESCRIPTION panel (label "Description", never
+     "Memo"). Open full page → source document route (journal/payment/receipt).
+10.3 BILL/TAX MODAL rows built per record: Vendor bill → Vendor · Issue date · Due date
+     (+ inline "Overdue by n days" red chip) · Terms · Linked PO · Status chip (Unpaid
+     red). Statutory → Authority · Period · Due date (+ amber "Due in n days") ·
+     Payment via · Status chip (Not filed amber). Then DESCRIPTION panel.
+     Open full page → bill view / taxation page route.
+
+==================== 11 · RECENT ACTIVITY LIST ====================
+11.1 Source: audit/activity feed (journals posted, payments out, receipts in, bills,
+     payroll runs…) newest first; show top 3–6; head link "View all →" = activity log.
+11.2 Row = button: 32px semantic icon tile (teal journal / amber payment-out / green
+     receipt-in), title 12.5px/600 with bold action + counterparty name for payments +
+     teal 700 reference; timestamp sub-line 10.5px; right signed amount (out red /
+     in green) tabular; hover: row tint, ref underline, chevron slide-in.
+     NO DR/CR chips in the list (R4). Click → activity modal (§10.2).
+
+==================== 12 · BEHAVIOUR ====================
+12.1 Period preset change refetches hero kicker range + KPIs + chart + aging + bills
+     (tasks/activity stay live-global).
+12.2 All money formatted via system currency setting; dates via system format.
+12.3 Every link/CTA resolves to a real route (§0.2); no dead hrefs.
+12.4 Entrance stagger + bar grow animations per APPENDIX A; disabled under R5.
+
+==================== 13 · VERIFY ====================
+13.1 Pixel parity pass vs APPENDIX A at 1440/1280/1024/768/480 (hero overlap, equal row
+     heights, panel gradients, chips, bars, modals).
+13.2 R1–R5 greps: zero backdrop-filter; zero sparkline SVGs in KPI cards; zero green
+     block on Cash & Bank/Total cash; zero DR/CR chips in activity rows; label reads
+     "Description" in both modals.
+13.3 Click-through: 3 KPI cards, chart tooltips, cash link, aging link, bill rows →
+     modal → Open full page, activity rows → modal → Open full page, quick actions,
+     tasks, period presets, export — all reach correct destinations with live data.
+13.4 Currency symbol/code matches system setting on every figure; empty company shows
+     designed zero states (stub bars, $0.00, empty-state tasks) without errors.
+13.5 No console/build errors; no layout shift; Esc/scrim close both modals.
+REPORT: files touched; widget→query/endpoint map; clickable-element→route table;
+currency/format source; parity screenshots (desktop + mobile, both modals open);
+confirmation R1–R5 + guards held; NO SECTION SKIPPED.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — v8 · Clean activity rows + Bill details modal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32; --deep-row1:#11454b;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0; --steel:#46708C;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --amber:#d97706; --amber-2:#b45309; --red:#dc2626; --red-2:#b91c1c; --green:#15803d;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --sh-lift: 0 2px 4px rgba(10,42,46,.06), 0 20px 44px -18px rgba(10,42,46,.22), inset 0 1px 0 #fff;
+    --sh-hero: 0 24px 60px -24px rgba(8,40,44,.55), inset 0 1px 0 rgba(255,255,255,.14);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background:
+      radial-gradient(1000px 420px at 8% -10%, rgba(18,143,142,.10), transparent 60%),
+      radial-gradient(800px 380px at 96% 4%, rgba(127,209,192,.10), transparent 62%),
+      linear-gradient(180deg, #eef4f4 0%, #e7efee 100%);
+    min-height: 100vh; color: var(--ink); -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 10px; }
+
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 26px 26px 70px; }
+
+  /* ============ HERO ============ */
+  .hero { position: relative; border-radius: 22px; padding: 26px 28px 62px; background: radial-gradient(640px 240px at 12% -30%, rgba(255,255,255,.11), transparent 60%), radial-gradient(520px 260px at 88% 130%, rgba(127,209,192,.16), transparent 62%), linear-gradient(120deg, var(--deep-1) 0%, var(--deep-2) 52%, var(--deep-3) 100%); box-shadow: var(--sh-hero); overflow: hidden; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .hero::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px); background-size: 46px 46px; mask-image: radial-gradient(70% 90% at 30% 0%, #000 0%, transparent 75%); -webkit-mask-image: radial-gradient(70% 90% at 30% 0%, #000 0%, transparent 75%); }
+  .hero > * { position: relative; }
+  .h-eye { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.18); color: var(--mint); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 12px; }
+  .h-eye i { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 8px rgba(127,209,192,.9); animation: pulse 2.4s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  .hero h1 { font-size: 27px; font-weight: 900; letter-spacing: -0.025em; color: #fff; }
+  .hero .h-sub { margin-top: 6px; font-size: 13px; font-weight: 500; color: rgba(226,244,244,.72); }
+  .hero .h-kick { margin-top: 12px; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(226,244,244,.45); }
+  .hero .h-kick b { color: var(--mint); font-weight: 800; }
+  .h-ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .seg { display: inline-flex; gap: 3px; padding: 4px; border-radius: 12px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.16); box-shadow: inset 0 1px 0 rgba(255,255,255,.10); }
+  .seg button { padding: 8px 15px; border-radius: 9px; border: none; background: transparent; color: rgba(226,244,244,.80); font-size: 12px; font-weight: 700; transition: all .16s ease; }
+  .seg button:hover { color: #fff; background: rgba(255,255,255,.08); }
+  .seg button.on { background: #fff; color: var(--deep-2); box-shadow: 0 3px 10px -3px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.9); }
+  .h-export { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 11px; border: 1px solid rgba(255,255,255,.20); background: rgba(255,255,255,.08); color: #fff; font-size: 12.5px; font-weight: 700; transition: all .16s ease; }
+  .h-export:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+  .h-export svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  /* ============ KPI STRIP ============ */
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: -44px; position: relative; z-index: 2; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 15px; box-shadow: var(--sh-card); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0ms); display: block; position: relative; }
+  .kpi:hover { transform: translateY(-3px); box-shadow: var(--sh-lift); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .kpi-link { cursor: pointer; }
+  .kpi-link:hover { border-color: rgba(18,143,142,.40); }
+  .kpi-link .go { position: absolute; right: 12px; bottom: 12px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 4px 10px -4px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.25); opacity: 0; transform: translateX(-6px); transition: all .18s ease; }
+  .kpi-link:hover .go, .kpi-link:focus-visible .go { opacity: 1; transform: none; }
+  .kpi-link .go svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .k-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .k-l { font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .k-v { margin-top: 9px; font-size: 23px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .k-n { margin-top: 4px; font-size: 10.5px; font-weight: 600; color: var(--faint); }
+  .dchip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 800; white-space: nowrap; }
+  .dchip svg { width: 9px; height: 9px; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .dchip.up   { background: rgba(21,128,61,.10); color: var(--green); }
+  .dchip.down { background: rgba(21,128,61,.10); color: var(--green); }
+  .dchip.flat { background: rgba(17,69,75,.07); color: var(--muted); }
+  .dchip.warn { background: rgba(217,119,6,.12); color: var(--amber-2); }
+
+  /* ============ ROWS / CARDS ============ */
+  .row { display: grid; grid-template-columns: 1.55fr 1fr; gap: 18px; margin-top: 18px; align-items: stretch; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; display: flex; flex-direction: column; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0ms); }
+  .c-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); flex: none; }
+  .c-title { display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
+  .c-title i { width: 7px; height: 7px; border-radius: 2px; background: linear-gradient(135deg, var(--sec-2), var(--sec)); box-shadow: 0 0 8px rgba(18,143,142,.45); }
+  .c-link { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--sec); transition: all .15s; }
+  .c-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .c-link svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; transition: transform .15s; }
+  .c-link:hover svg { transform: translateX(2px); }
+  .legend { display: flex; align-items: center; gap: 12px; }
+  .lg { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: var(--muted); }
+  .lg i { width: 9px; height: 9px; border-radius: 3px; }
+  .lg.rev i { background: linear-gradient(180deg, var(--sec-2), var(--sec)); }
+  .lg.exp i { background: linear-gradient(180deg, #e8a33c, var(--amber)); }
+  .lg-chip { font-size: 10px; font-weight: 800; color: var(--faint); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+
+  /* chart */
+  .plot { position: relative; padding: 22px 18px 14px; flex: 1; display: flex; flex-direction: column; }
+  .plot::before { content: ''; position: absolute; left: 18px; right: 18px; top: 22px; bottom: 40px; background-image: linear-gradient(var(--hair) 1px, transparent 1px); background-size: 100% 25%; pointer-events: none; }
+  .cols { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; flex: 1; min-height: 232px; }
+  .colM { display: flex; flex-direction: column; align-items: center; gap: 9px; height: 100%; }
+  .bars { display: flex; gap: 5px; align-items: flex-end; width: 100%; max-width: 62px; flex: 1; }
+  .bar { flex: 1; border-radius: 7px 7px 3px 3px; position: relative; transform-origin: bottom; animation: grow .7s cubic-bezier(.2,.8,.2,1) both; transition: filter .15s; }
+  @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .bar:hover { filter: brightness(1.08); }
+  .bar.rev { background: linear-gradient(180deg, var(--sec-2), var(--sec) 65%, #0c7a79); box-shadow: 0 8px 16px -8px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.28); }
+  .bar.exp { background: linear-gradient(180deg, #e8a33c, var(--amber) 65%, var(--amber-2)); box-shadow: 0 8px 16px -8px rgba(217,119,6,.5), inset 0 1px 0 rgba(255,255,255,.28); }
+  .bar::after { content: attr(data-v); position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%) translateY(3px); background: var(--deep-2); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 7px; white-space: nowrap; box-shadow: 0 6px 14px -6px rgba(8,40,44,.6); opacity: 0; visibility: hidden; transition: all .15s ease; pointer-events: none; z-index: 5; }
+  .bar:hover::after { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+  .m-lbl { font-size: 10.5px; font-weight: 700; color: var(--faint); }
+  .chart-foot { display: flex; gap: 22px; padding: 4px 18px 16px; border-top: 1px solid var(--hair); margin-top: 4px; flex: none; }
+  .cf { display: flex; flex-direction: column; gap: 2px; padding-top: 10px; }
+  .cf .l { font-size: 9.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
+  .cf .v { font-size: 14px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .cf .v.pos { color: var(--green); }
+
+  /* cash */
+  .cash { margin: 14px; border-radius: 16px; padding: 16px; background: linear-gradient(180deg, #fbfdfc 0%, #f1f7f5 100%); border: 1px solid var(--line); box-shadow: inset 0 1px 0 #fff; color: var(--ink); flex: 1; display: flex; flex-direction: column; }
+  .cash .cl { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .cash .cv { margin-top: 5px; font-size: 26px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .cash .cs { margin-top: 2px; font-size: 10.5px; font-weight: 600; color: var(--faint); }
+  .mix { display: flex; height: 8px; border-radius: 999px; overflow: hidden; margin: 14px 0 12px; background: rgba(17,69,75,.08); }
+  .mix i { display: block; height: 100%; }
+  .mix i:nth-child(1) { background: linear-gradient(90deg, var(--sec-2), var(--sec)); }
+  .mix i:nth-child(2) { background: var(--mint); }
+  .mix i:nth-child(3) { background: var(--steel); }
+  .acc-list { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+  .acc { display: flex; align-items: center; gap: 10px; padding: 10px 11px; border-radius: 12px; background: #fff; border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(10,42,46,.04); transition: all .15s ease; }
+  .acc:hover { border-color: rgba(18,143,142,.30); transform: translateX(2px); box-shadow: 0 6px 16px -8px rgba(10,42,46,.16); }
+  .acc .aic { width: 30px; height: 30px; min-width: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.20); color: var(--sec); }
+  .acc .aic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .acc .an { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .acc .at { font-size: 8.5px; font-weight: 800; letter-spacing: .10em; padding: 3px 7px; border-radius: 999px; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.14); color: var(--muted); }
+  .acc .av { font-size: 12.5px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .cash .note { margin-top: auto; padding-top: 12px; font-size: 10.5px; font-weight: 600; color: var(--faint); display: flex; align-items: center; gap: 6px; }
+  .cash .note i { width: 5px; height: 5px; border-radius: 50%; background: #e8a33c; box-shadow: 0 0 6px rgba(232,163,60,.8); }
+
+  /* aging */
+  .age { padding: 14px 18px 6px; display: flex; flex-direction: column; gap: 13px; flex: 1; justify-content: center; }
+  .age-row { display: grid; grid-template-columns: 58px 1fr 92px; align-items: center; gap: 12px; }
+  .age-row .l { font-size: 11.5px; font-weight: 700; color: var(--sub); }
+  .track { height: 8px; border-radius: 999px; background: rgba(17,69,75,.06); overflow: hidden; }
+  .track i { display: block; height: 100%; border-radius: 999px; }
+  .track i.t1 { background: linear-gradient(90deg, var(--sec-2), var(--sec)); }
+  .track i.t2 { background: linear-gradient(90deg, #5cc4b1, var(--sec-2)); }
+  .track i.t3 { background: linear-gradient(90deg, #e8a33c, var(--amber)); }
+  .track i.t4 { background: linear-gradient(90deg, #ef4444, var(--red)); }
+  .age-row .v { text-align: right; font-size: 12.5px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .age-total { display: flex; justify-content: space-between; align-items: center; margin: 6px 18px 0; padding: 12px 0 15px; border-top: 1px solid var(--line); flex: none; }
+  .age-total .l { font-size: 10px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); }
+  .age-total .v { font-size: 15px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* bills */
+  .bills { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .bill { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px; border-radius: 13px; border: 1px solid var(--line); background: #fdfeff; text-align: left; transition: all .16s ease; }
+  .bill:hover { border-color: rgba(18,143,142,.3); box-shadow: 0 8px 20px -10px rgba(10,42,46,.18); transform: translateY(-1px); }
+  .bill:hover .bn { color: var(--sec); }
+  .bill:hover .act-go { opacity: 1; transform: none; }
+  .bill .bic { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.20); color: var(--sec); }
+  .bill .bic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .bill .bm { flex: 1; min-width: 0; }
+  .bill .bn { font-size: 12.5px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .15s; }
+  .bill .br { font-size: 10px; font-weight: 600; color: var(--faint); margin-top: 2px; font-family: ui-monospace, Menlo, monospace; }
+  .bill .bd { text-align: right; }
+  .due { display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .due.over { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.22); }
+  .due.soon { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.25); }
+  .bill .bv { display: block; margin-top: 4px; font-size: 13px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .bills-foot { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px 14px; border-top: 1px solid var(--hair); margin: auto 4px 0; flex: none; }
+  .bills-foot .l { font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
+  .bills-foot .v { font-size: 13.5px; font-weight: 900; color: var(--red-2); font-variant-numeric: tabular-nums; }
+
+  /* quick actions */
+  .qa { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 10px; padding: 16px 18px 18px; flex: 1; align-content: stretch; }
+  .qa-t { display: flex; align-items: center; gap: 10px; padding: 12px 13px; border-radius: 14px; border: 1px solid var(--line); background: #fdfeff; font-size: 12.5px; font-weight: 700; color: var(--sub); transition: all .16s ease; text-align: left; }
+  .qa-t:hover { border-color: rgba(18,143,142,.35); color: var(--ink); transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(10,42,46,.22); }
+  .qa-t .ic { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.18); color: var(--sec); transition: all .16s ease; }
+  .qa-t:hover .ic { background: rgba(18,143,142,.14); }
+  .qa-t .ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .qa-t .plus { margin-left: auto; color: #c3d4d4; font-weight: 800; transition: color .15s; }
+  .qa-t:hover .plus { color: var(--sec); }
+  .qa-t.primary { background: linear-gradient(135deg, var(--deep-1), var(--deep-2) 60%, var(--deep-3)); border-color: transparent; color: #fff; box-shadow: 0 12px 26px -12px rgba(8,40,44,.6), inset 0 1px 0 rgba(255,255,255,.14); }
+  .qa-t.primary .ic { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.18); color: var(--mint); }
+  .qa-t.primary .plus { color: rgba(226,244,244,.6); }
+  .qa-t.primary:hover { transform: translateY(-2px); box-shadow: 0 16px 32px -12px rgba(8,40,44,.7), inset 0 1px 0 rgba(255,255,255,.14); }
+
+  /* tasks empty */
+  .tasks-empty { padding: 34px 20px; text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .tasks-empty .halo { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.20); color: var(--sec); }
+  .tasks-empty .halo svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tasks-empty .t { font-size: 13.5px; font-weight: 800; color: var(--sub); }
+  .tasks-empty .s { font-size: 11.5px; color: var(--faint); margin-top: 4px; }
+  .tasks-empty .btn-ghost { margin-top: 14px; display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--border); background: #fff; color: var(--sub); font-size: 12px; font-weight: 700; transition: all .15s; }
+  .tasks-empty .btn-ghost:hover { border-color: rgba(18,143,142,.4); color: var(--sec); }
+
+  /* activity rows */
+  .act-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 13px 18px; border: none; background: transparent; text-align: left; transition: background .15s; }
+  .act-row + .act-row { border-top: 1px solid var(--hair); }
+  .act-row:hover { background: rgba(18,143,142,.04); }
+  .act-row:hover .act-t .ref { text-decoration: underline; text-underline-offset: 3px; }
+  .act-row:hover .act-go { opacity: 1; transform: none; }
+  .act-ic { width: 32px; height: 32px; min-width: 32px; border-radius: 10px; display: grid; place-items: center; }
+  .act-ic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .act-ic.teal  { background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.20); color: var(--sec); }
+  .act-ic.green { background: rgba(21,128,61,.09); border: 1px solid rgba(21,128,61,.20); color: var(--green); }
+  .act-ic.amber { background: rgba(217,119,6,.10); border: 1px solid rgba(217,119,6,.22); color: var(--amber-2); }
+  .act-m { flex: 1; min-width: 0; }
+  .act-t { font-size: 12.5px; font-weight: 600; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .act-t b { color: var(--ink); font-weight: 700; }
+  .act-t .ref { color: var(--sec); font-weight: 700; }
+  .act-t .pty { color: var(--muted); font-weight: 700; }
+  .act-time { font-size: 10.5px; color: var(--faint); font-weight: 600; margin-top: 2px; }
+  .act-v { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .act-v.out { color: var(--red-2); }
+  .act-v.in  { color: var(--green); }
+  .act-go { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--faint); opacity: 0; transform: translateX(-4px); transition: all .15s ease; }
+  .act-go svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  /* modal shell */
+  .scrim { position: fixed; inset: 0; background: rgba(11, 42, 45, 0.26); display: none; place-items: center; padding: 24px; z-index: 140; }
+  .scrim.on { display: grid; animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+  .modal { width: min(540px, 100%); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 20px 40px -16px rgba(10,42,46,.30), 0 40px 80px -24px rgba(10,42,46,.24), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: radial-gradient(620px 220px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.10); }
+  .m-ic { width: 32px; height: 32px; min-width: 32px; border-radius: 9px; background: #fff; display: grid; place-items: center; color: var(--deep-2); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .m-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-head-left { flex: 1; min-width: 0; }
+  .m-title { display: block; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .m-sub { display: block; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.60); margin-top: 2px; font-family: ui-monospace, Menlo, monospace; }
+  .m-pill { flex: none; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); color: #fff; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .m-close { width: 30px; height: 30px; min-width: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+  .m-body { padding: 18px 22px; overflow-y: auto; }
+  .mrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--hair); }
+  .mrow:last-of-type { border-bottom: none; }
+  .mrow .l { font-size: 10px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); }
+  .mrow .v { font-size: 12.5px; font-weight: 700; color: var(--ink); text-align: right; display: inline-flex; align-items: center; gap: 8px; }
+  .stchip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; }
+  .stchip.ok { background: rgba(21,128,61,.10); color: var(--green); }
+  .stchip.ok i { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+  .stchip.bad { background: rgba(220,38,38,.09); color: var(--red-2); }
+  .stchip.bad i { width: 5px; height: 5px; border-radius: 50%; background: var(--red-2); }
+  .stchip.wait { background: rgba(217,119,6,.10); color: var(--amber-2); }
+  .stchip.wait i { width: 5px; height: 5px; border-radius: 50%; background: var(--amber-2); }
+
+  .m-lines { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #f8fafb; border: 1px solid var(--line); }
+  .m-lines-h { font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+  .m-line { display: grid; grid-template-columns: 34px 56px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; font-size: 12px; font-weight: 600; }
+  .m-line + .m-line { border-top: 1px dashed var(--line); }
+  .m-line .side { font-size: 9px; font-weight: 800; letter-spacing: .05em; padding: 3px 6px; border-radius: 5px; text-align: center; }
+  .m-line .side.dr { background: rgba(18,143,142,.12); color: var(--sec); }
+  .m-line .side.cr { background: rgba(217,119,6,.12); color: var(--amber-2); }
+  .m-line .code { font-family: ui-monospace, Menlo, monospace; color: var(--sub); font-weight: 700; }
+  .m-line .name { color: var(--ink); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-line .amt { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .m-memo { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #f8fafb; border: 1px solid var(--line); font-size: 12px; font-weight: 500; color: var(--sub); line-height: 1.6; }
+  .m-memo .ml2 { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 5px; }
+
+  .m-foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--hair); background: #f8fafa; }
+  .m-foot .spacer { flex: 1; }
+  .btn { height: 38px; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 8px; border: 1px solid transparent; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-ghost { background: rgba(255,255,255,.85); border-color: var(--border); color: #374151; box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .btn-ghost:hover { background: #fff; border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 4px 10px -4px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.2); }
+  .btn-primary:hover { box-shadow: 0 7px 16px -5px rgba(18,143,142,.65), inset 0 1px 0 rgba(255,255,255,.2); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); background: var(--deep-2); color: #eaffff; font-size: 12px; font-weight: 700; padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(127,209,192,.3); box-shadow: 0 14px 30px -12px rgba(6,32,35,.7); opacity: 0; visibility: hidden; transition: all .25s ease; z-index: 300; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast.on { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1200px) { .kpis { grid-template-columns: repeat(3, 1fr); } .row { grid-template-columns: 1fr; } }
+  @media (max-width: 760px)  { .kpis { grid-template-columns: repeat(2, 1fr); } .qa { grid-template-columns: repeat(2, 1fr); } .hero { padding-bottom: 70px; } }
+  @media (max-width: 480px)  { .kpis { grid-template-columns: 1fr; } .qa { grid-template-columns: 1fr; } .cols { gap: 8px; } .m-line { grid-template-columns: 34px 1fr auto; } .m-line .code { display: none; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <span class="h-eye"><i></i>Friday, 02 October 2026</span>
+      <h1>Good morning, Elvis.</h1>
+      <p class="h-sub">Here's your cash, receivables and performance at a glance.</p>
+      <p class="h-kick"><b>Oct 1 – Oct 2</b> &nbsp;·&nbsp; how money came in, went out, and stands right now</p>
+    </div>
+    <div class="h-ctl">
+      <div class="seg" role="tablist" aria-label="Period">
+        <button class="on">This Month</button>
+        <button>This Quarter</button>
+        <button>Year to Date</button>
+      </div>
+      <button class="h-export"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+    </div>
+  </section>
+
+  <!-- KPI STRIP -->
+  <section class="kpis">
+    <div class="kpi" style="--d:60ms"><div class="k-top"><span class="k-l">Total Revenue</span><span class="dchip up"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>0%</span></div><div class="k-v">$0.00</div><div class="k-n">Total income for Oct</div></div>
+    <div class="kpi" style="--d:110ms"><div class="k-top"><span class="k-l">Total Expenses</span><span class="dchip down"><svg viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>0%</span></div><div class="k-v">$0.00</div><div class="k-n">Total expenses for Oct</div></div>
+    <div class="kpi" style="--d:160ms"><div class="k-top"><span class="k-l">Net Profit</span><span class="dchip flat">margin 0%</span></div><div class="k-v">$0.00</div><div class="k-n">Net profit for Oct</div></div>
+    <a class="kpi kpi-link" style="--d:210ms" href="/sales/invoices?status=unpaid" title="View outstanding invoices"><div class="k-top"><span class="k-l">Outstanding Inv.</span><span class="dchip flat">0 unpaid</span></div><div class="k-v">$0.00</div><div class="k-n">0 unpaid · 0 overdue</div><span class="go"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span></a>
+    <a class="kpi kpi-link" style="--d:260ms" href="/purchasing/bills?status=unpaid" title="View bills payable"><div class="k-top"><span class="k-l">Bills Payable</span><span class="dchip warn">1 overdue</span></div><div class="k-v">$65,000.00</div><div class="k-n">1 open · 0 due this week</div><span class="go"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span></a>
+    <a class="kpi kpi-link" style="--d:310ms" href="/banking/accounts" title="View bank & cash accounts"><div class="k-top"><span class="k-l">Cash &amp; Bank</span><span class="dchip flat">3 accounts</span></div><div class="k-v">$1,710,000.00</div><div class="k-n">Available across all accounts</div><span class="go"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></span></a>
+  </section>
+
+  <!-- ROW 1 -->
+  <div class="row">
+    <section class="card" style="--d:120ms">
+      <div class="c-head"><span class="c-title"><i></i>Revenue vs Expenses</span><div class="legend"><span class="lg rev"><i></i>Revenue</span><span class="lg exp"><i></i>Expenses</span><span class="lg-chip">Last 6 months</span></div></div>
+      <div class="plot"><div class="cols">
+        <div class="colM"><div class="bars"><span class="bar rev" style="height:4%" data-v="$0.00"></span><span class="bar exp" style="height:4%" data-v="$0.00"></span></div><span class="m-lbl">May</span></div>
+        <div class="colM"><div class="bars"><span class="bar rev" style="height:4%" data-v="$0.00"></span><span class="bar exp" style="height:4%" data-v="$0.00"></span></div><span class="m-lbl">Jun</span></div>
+        <div class="colM"><div class="bars"><span class="bar rev" style="height:4%" data-v="$0.00"></span><span class="bar exp" style="height:4%" data-v="$0.00"></span></div><span class="m-lbl">Jul</span></div>
+        <div class="colM"><div class="bars"><span class="bar rev" style="height:86%" data-v="$25,000.00"></span><span class="bar exp" style="height:22%" data-v="$6,400.00"></span></div><span class="m-lbl">Aug</span></div>
+        <div class="colM"><div class="bars"><span class="bar rev" style="height:4%" data-v="$0.00"></span><span class="bar exp" style="height:4%" data-v="$0.00"></span></div><span class="m-lbl">Sep</span></div>
+        <div class="colM"><div class="bars"><span class="bar rev" style="height:4%" data-v="$0.00"></span><span class="bar exp" style="height:4%" data-v="$0.00"></span></div><span class="m-lbl">Oct</span></div>
+      </div></div>
+      <div class="chart-foot"><div class="cf"><span class="l">Money in</span><span class="v">$25,000.00</span></div><div class="cf"><span class="l">Money out</span><span class="v">$6,400.00</span></div><div class="cf"><span class="l">Net</span><span class="v pos">+$18,600.00</span></div></div>
+    </section>
+    <section class="card" style="--d:160ms">
+      <div class="c-head"><span class="c-title"><i></i>Cash Position</span><a class="c-link" href="/banking/accounts">Banking <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>
+      <div class="cash">
+        <span class="cl">Total cash</span><div class="cv">$1,710,000.00</div><div class="cs">3 accounts · updated moments ago</div>
+        <div class="mix" aria-hidden="true"><i style="width:85.4%"></i><i style="width:8.8%"></i><i style="width:5.8%"></i></div>
+        <div class="acc-list">
+          <div class="acc"><span class="aic"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg></span><span class="an">Cash and Cash Equivalents</span><span class="at">BANK</span><span class="av">$1,460,000.00</span></div>
+          <div class="acc"><span class="aic"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11"/></svg></span><span class="an">Standard Bank – Savings</span><span class="at">BANK</span><span class="av">$150,000.00</span></div>
+          <div class="acc"><span class="aic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span><span class="an">Petty Cash</span><span class="at">CASH</span><span class="av">$100,000.00</span></div>
+        </div>
+        <div class="note"><i></i>1 outstanding cheque awaiting clearance</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ROW 2 -->
+  <div class="row">
+    <section class="card" style="--d:200ms">
+      <div class="c-head"><span class="c-title"><i></i>Receivables Aging</span><a class="c-link" href="/sales/receivables/aging">View AR Aging <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>
+      <div class="age">
+        <div class="age-row"><span class="l">Current</span><span class="track"><i class="t1" style="width:0%"></i></span><span class="v">$0.00</span></div>
+        <div class="age-row"><span class="l">1–30</span><span class="track"><i class="t2" style="width:0%"></i></span><span class="v">$0.00</span></div>
+        <div class="age-row"><span class="l">31–60</span><span class="track"><i class="t3" style="width:0%"></i></span><span class="v">$0.00</span></div>
+        <div class="age-row"><span class="l">60+</span><span class="track"><i class="t4" style="width:0%"></i></span><span class="v">$0.00</span></div>
+      </div>
+      <div class="age-total"><span class="l">Total receivables</span><span class="v">$0.00</span></div>
+    </section>
+
+    <section class="card" style="--d:240ms">
+      <div class="c-head"><span class="c-title"><i></i>Upcoming Bills &amp; Taxes</span><a class="c-link" href="/purchasing/bills">View all <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>
+      <div class="bills">
+        <button type="button" class="bill" data-bill="0" title="View details">
+          <span class="bic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span>
+          <span class="bm"><span class="bn">National Supplies Co</span><span class="br">BILL-2026-0001</span></span>
+          <span class="bd"><span class="due over">Overdue</span><span class="bv">$65,000.00</span></span>
+          <span class="act-go"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+        </button>
+        <button type="button" class="bill" data-bill="1" title="View details">
+          <span class="bic"><svg viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></span>
+          <span class="bm"><span class="bn">PAYE — September</span><span class="br">STATUTORY · SARS</span></span>
+          <span class="bd"><span class="due soon">Due 10 Oct</span><span class="bv">$0.00</span></span>
+          <span class="act-go"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+        </button>
+      </div>
+      <div class="bills-foot"><span class="l">Total overdue</span><span class="v">$65,000.00</span></div>
+    </section>
+  </div>
+
+  <!-- ROW 3 -->
+  <div class="row">
+    <section class="card" style="--d:280ms">
+      <div class="c-head"><span class="c-title"><i></i>Quick Actions</span></div>
+      <div class="qa">
+        <button class="qa-t primary"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/></svg></span>New Invoice<span class="plus">+</span></button>
+        <button class="qa-t"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span>New Bill<span class="plus">+</span></button>
+        <button class="qa-t"><span class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span>Record Payment<span class="plus">+</span></button>
+        <button class="qa-t"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>New Journal<span class="plus">+</span></button>
+        <button class="qa-t"><span class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>New Customer<span class="plus">+</span></button>
+        <button class="qa-t"><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>Reconcile<span class="plus">+</span></button>
+      </div>
+    </section>
+    <section class="card" style="--d:320ms">
+      <div class="c-head"><span class="c-title"><i></i>My Tasks</span><a class="c-link" href="/tasks">Open tasks <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>
+      <div class="tasks-empty">
+        <div class="halo"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div>
+        <div class="t">You're all caught up</div><div class="s">No tasks due right now.</div>
+        <button class="btn-ghost">+ Add a task</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- RECENT ACTIVITY -->
+  <section class="card" style="--d:360ms; margin-top:18px;">
+    <div class="c-head"><span class="c-title"><i></i>Recent Activity</span><a class="c-link" href="/activity">View all <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>
+
+    <button type="button" class="act-row" data-act="0">
+      <span class="act-ic teal"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>
+      <span class="act-m">
+        <span class="act-t"><b>Journal posted</b> — <span class="ref">SAL-SR-2026-0006</span></span>
+        <span class="act-time">Aug 30 · Payroll run</span>
+      </span>
+      <span class="act-v out">−$25,000.00</span>
+      <span class="act-go"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+    </button>
+
+    <button type="button" class="act-row" data-act="1">
+      <span class="act-ic amber"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span>
+      <span class="act-m">
+        <span class="act-t"><b>Payment posted</b> — <span class="pty">National Supplies Co</span> · <span class="ref">CHQ-000001</span></span>
+        <span class="act-time">Aug 29 · Cheque clearance</span>
+      </span>
+      <span class="act-v out">−$65,000.00</span>
+      <span class="act-go"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+    </button>
+
+    <button type="button" class="act-row" data-act="2">
+      <span class="act-ic green"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></span>
+      <span class="act-m">
+        <span class="act-t"><b>Payment received</b> — <span class="pty">Acme Corporation</span> · <span class="ref">INV-2026-0001</span></span>
+        <span class="act-time">Aug 28 · Bank transfer</span>
+      </span>
+      <span class="act-v in">+$12,500.00</span>
+      <span class="act-go"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+    </button>
+  </section>
+</div>
+
+<!-- ACTIVITY DETAIL MODAL -->
+<div class="scrim" id="actScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="amTitle">
+    <div class="m-head">
+      <div class="m-ic" id="amIcon"></div>
+      <div class="m-head-left">
+        <span class="m-title" id="amTitle">Journal posted</span>
+        <span class="m-sub" id="amRef">SAL-SR-2026-0006</span>
+      </div>
+      <span class="m-pill" id="amAmt">−$25,000.00</span>
+      <button class="m-close" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-body">
+      <div class="mrow"><span class="l">Date &amp; time</span><span class="v" id="amDate">Aug 30, 2026 · 09:12</span></div>
+      <div class="mrow"><span class="l">Module</span><span class="v" id="amModule">Payroll</span></div>
+      <div class="mrow"><span class="l">Recorded by</span><span class="v" id="amBy">Elvis Seyama</span></div>
+      <div class="mrow" id="amPartyRow" style="display:none"><span class="l" id="amPartyLabel">Payee</span><span class="v" id="amParty">—</span></div>
+      <div class="mrow"><span class="l">Status</span><span class="v"><span class="stchip ok" id="amStatus"><i></i>Posted</span></span></div>
+      <div id="amLines"></div>
+      <div class="m-memo"><span class="ml2">Description</span><span id="amMemo">—</span></div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" data-close>Close</button>
+      <span class="spacer"></span>
+      <a class="btn btn-primary" id="amOpen" href="#">Open full page<svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+    </div>
+  </div>
+</div>
+
+<!-- BILL / TAX DETAIL MODAL -->
+<div class="scrim" id="billScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bmTitle">
+    <div class="m-head">
+      <div class="m-ic" id="bmIcon"></div>
+      <div class="m-head-left">
+        <span class="m-title" id="bmTitle">Vendor Bill</span>
+        <span class="m-sub" id="bmRef">BILL-2026-0001</span>
+      </div>
+      <span class="m-pill" id="bmAmt">$65,000.00</span>
+      <button class="m-close" data-bclose aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-body" id="bmBody"></div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" data-bclose>Close</button>
+      <span class="spacer"></span>
+      <a class="btn btn-primary" id="bmOpen" href="#">Open full page<svg viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  var toastEl = document.getElementById('toast'), toastT;
+  function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 2600); }
+
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () { b.closest('.seg').querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); }); b.classList.add('on'); });
+  });
+
+  document.querySelectorAll('.kpi-link').forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); toast('Redirect → ' + a.getAttribute('href')); });
+  });
+
+  var SVGS = {
+    book: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+    doc:  '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
+    card: '<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
+    tax:  '<svg viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>'
+  };
+
+  /* ---------- ACTIVITY ---------- */
+  var ACT = [
+    { type:'Journal posted', ref:'SAL-SR-2026-0006', icon:SVGS.book, date:'Aug 30, 2026 · 09:12', module:'Payroll', by:'Elvis Seyama', status:'Posted', amt:'−$25,000.00',
+      memo:'Monthly salary run posted to the general ledger — salaries & wages expense contra bank.',
+      href:'/accounting/journals/SAL-SR-2026-0006',
+      lines:[{side:'DR', code:'5100', name:'Salaries & Wages Expense', amt:'$25,000.00'}, {side:'CR', code:'1010', name:'Standard Bank – Current', amt:'$25,000.00'}] },
+    { type:'Payment posted', ref:'CHQ-000001', icon:SVGS.doc, date:'Aug 29, 2026 · 15:47', module:'Purchasing', by:'Elvis Seyama', status:'Posted', amt:'−$65,000.00',
+      memo:'Cheque 000001 issued to National Supplies Co in settlement of BILL-2026-0001.',
+      href:'/purchasing/payments/CHQ-000001',
+      payment:{ dir:'out', party:'National Supplies Co' },
+      lines:[{side:'DR', code:'2000', name:'Accounts Payable', amt:'$65,000.00'}, {side:'CR', code:'1010', name:'Standard Bank – Current', amt:'$65,000.00'}] },
+    { type:'Payment received', ref:'INV-2026-0001', icon:SVGS.card, date:'Aug 28, 2026 · 11:05', module:'Sales', by:'System · POS', status:'Cleared', amt:'+$12,500.00',
+      memo:'Customer payment allocated in full to invoice INV-2026-0001 (Acme Corporation).',
+      href:'/sales/receipts/RCPT-000121',
+      payment:{ dir:'in', party:'Acme Corporation' },
+      lines:[{side:'DR', code:'1010', name:'Standard Bank – Current', amt:'$12,500.00'}, {side:'CR', code:'1100', name:'Accounts Receivable', amt:'$12,500.00'}] }
+  ];
+
+  var actScrim = document.getElementById('actScrim');
+  function openAct(i) {
+    var a = ACT[i];
+    document.getElementById('amIcon').innerHTML = a.icon;
+    document.getElementById('amTitle').textContent = a.type;
+    document.getElementById('amRef').textContent = a.ref;
+    document.getElementById('amAmt').textContent = a.amt;
+    document.getElementById('amDate').textContent = a.date;
+    document.getElementById('amModule').textContent = a.module;
+    document.getElementById('amBy').textContent = a.by;
+    document.getElementById('amStatus').innerHTML = '<i></i>' + a.status;
+    document.getElementById('amMemo').textContent = a.memo;
+
+    var partyRow = document.getElementById('amPartyRow');
+    if (a.payment) {
+      partyRow.style.display = '';
+      document.getElementById('amPartyLabel').textContent = a.payment.dir === 'in' ? 'Payer' : 'Payee';
+      document.getElementById('amParty').textContent = a.payment.party;
+    } else {
+      partyRow.style.display = 'none';
+    }
+
+    var linesHtml = '';
+    if (a.lines && a.lines.length) {
+      linesHtml = '<div class="m-lines"><div class="m-lines-h">Accounts &amp; Amounts</div>';
+      a.lines.forEach(function (l) {
+        var cls = l.side === 'DR' ? 'dr' : 'cr';
+        linesHtml += '<div class="m-line"><span class="side ' + cls + '">' + l.side + '</span><span class="code">' + l.code + '</span><span class="name">' + l.name + '</span><span class="amt">' + l.amt + '</span></div>';
+      });
+      linesHtml += '</div>';
+    }
+    document.getElementById('amLines').innerHTML = linesHtml;
+    document.getElementById('amOpen').setAttribute('href', a.href);
+    actScrim.classList.add('on');
+  }
+  function closeAct() { actScrim.classList.remove('on'); }
+
+  /* ---------- BILLS & TAXES ---------- */
+  var BILLS = [
+    { type:'Vendor Bill', ref:'BILL-2026-0001', icon:SVGS.doc, amt:'$65,000.00',
+      href:'/purchasing/bills/BILL-2026-0001',
+      rows:[
+        { l:'Vendor',       v:'National Supplies Co' },
+        { l:'Issue date',   v:'Aug 15, 2026' },
+        { l:'Due date',     v:'Sep 14, 2026 &nbsp;<span class="due over">Overdue by 18 days</span>' },
+        { l:'Terms',        v:'Net 30' },
+        { l:'Linked PO',    v:'PO-2026-0014' },
+        { l:'Status',       v:'<span class="stchip bad"><i></i>Unpaid</span>' }
+      ],
+      desc:'Supply of packaging materials and stock items for Q3 production. Partial delivery received Aug 20; balance expected Oct 05.' },
+    { type:'Statutory Tax', ref:'TAX-PAYE-2026-09', icon:SVGS.tax, amt:'$0.00',
+      href:'/taxation/paye/2026-09',
+      rows:[
+        { l:'Authority',    v:'SARS' },
+        { l:'Period',       v:'September 2026' },
+        { l:'Due date',     v:'Oct 10, 2026 &nbsp;<span class="due soon">Due in 8 days</span>' },
+        { l:'Payment via',  v:'eFiling debit' },
+        { l:'Status',       v:'<span class="stchip wait"><i></i>Not filed</span>' }
+      ],
+      desc:'Monthly PAYE withholding declaration for the September 2026 payroll run. Amount finalises once the payroll journal is posted.' }
+  ];
+
+  var billScrim = document.getElementById('billScrim');
+  function openBill(i) {
+    var b = BILLS[i];
+    document.getElementById('bmIcon').innerHTML = b.icon;
+    document.getElementById('bmTitle').textContent = b.type;
+    document.getElementById('bmRef').textContent = b.ref;
+    document.getElementById('bmAmt').textContent = b.amt;
+    var html = '';
+    b.rows.forEach(function (r) {
+      html += '<div class="mrow"><span class="l">' + r.l + '</span><span class="v">' + r.v + '</span></div>';
+    });
+    if (b.desc) html += '<div class="m-memo"><span class="ml2">Description</span><span>' + b.desc + '</span></div>';
+    document.getElementById('bmBody').innerHTML = html;
+    document.getElementById('bmOpen').setAttribute('href', b.href);
+    billScrim.classList.add('on');
+  }
+  function closeBill() { billScrim.classList.remove('on'); }
+
+  /* ---------- wiring ---------- */
+  document.querySelectorAll('.act-row').forEach(function (r) { r.addEventListener('click', function () { openAct(+r.dataset.act); }); });
+  document.querySelectorAll('.bill').forEach(function (r) { r.addEventListener('click', function () { openBill(+r.dataset.bill); }); });
+
+  document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', closeAct); });
+  document.querySelectorAll('[data-bclose]').forEach(function (b) { b.addEventListener('click', closeBill); });
+  actScrim.addEventListener('click', function (e) { if (e.target === actScrim) closeAct(); });
+  billScrim.addEventListener('click', function (e) { if (e.target === billScrim) closeBill(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeAct(); closeBill(); } });
+
+  document.getElementById('amOpen').addEventListener('click', function (e) { e.preventDefault(); closeAct(); toast('Navigate → ' + this.getAttribute('href')); });
+  document.getElementById('bmOpen').addEventListener('click', function (e) { e.preventDefault(); closeBill(); toast('Navigate → ' + this.getAttribute('href')); });
+</script>
+
+</body>
+</html>
+```

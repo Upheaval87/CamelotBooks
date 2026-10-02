@@ -412,13 +412,117 @@ class JournalRegisterTest extends TestCase
     {
         $draft = $this->draftEntry();
 
-        // Signed in as the poster (not the creator) — edit/delete must show as
-        // creator-only, and the tooltip names the creator.
+        // Signed in as the poster (not the creator) - the draft row still names
+        // the creator so it is obvious who owns it.
         $response = $this->actingAs($this->poster)
             ->get(route('accounting.journal-entries.index'));
 
         $response->assertOk();
-        $response->assertSee('Only the creator', false);
+        $response->assertSee('creator ' . $draft->createdBy?->name, false);
         $response->assertSee($this->user->name);
+    }
+
+    /**
+     * A4.2 / R5: the register Actions column is view + print ONLY. Every
+     * lifecycle action lives in the journal modal footer.
+     */
+    public function test_actions_column_is_view_and_print_only(): void
+    {
+        $draft = $this->draftEntry();
+        $posted = $this->postedEntry();
+
+        $response = $this->get(route('accounting.journal-entries.index'));
+        $response->assertOk();
+        $html = $response->getContent();
+
+        // View + Print survive, and print is wired to the standalone preview.
+        $this->assertStringContainsString('title="Open journal"', $html);
+        $this->assertStringContainsString('title="Print voucher"', $html);
+
+        // Draft row: view only, no print, no lifecycle buttons.
+        $draftRow = $this->rowFor($html, $draft->journal_number);
+        $this->assertStringContainsString('title="Open journal"', $draftRow);
+        $this->assertStringNotContainsString('title="Print voucher"', $draftRow);
+
+        // Posted row: view + print.
+        $postedRow = $this->rowFor($html, $posted->journal_number);
+        $this->assertStringContainsString('title="Open journal"', $postedRow);
+        $this->assertStringContainsString('title="Print voucher"', $postedRow);
+
+        // No row may carry a lifecycle action - those live in the modal
+        // footer only. (The handlers themselves still exist for the modal.)
+        foreach (['openDelete(', 'openReopen(', 'openReverse(', 'openReversal(', 'openReversal'] as $gone) {
+            $this->assertStringNotContainsString($gone, $postedRow, "Row still exposes {$gone}");
+            $this->assertStringNotContainsString($gone, $draftRow, "Row still exposes {$gone}");
+        }
+
+        // The register hands the standalone voucher preview URL to the client.
+        $this->assertStringContainsString(
+            $this->encodedJson(route('accounting.journal-entries.print', $posted->id)),
+            $html,
+        );
+        $this->assertStringContainsString($this->encodedJson('print'), $html);
+    }
+
+    /** A4.1: the reversal modal mirrors every line (debit becomes credit). */
+    public function test_reversal_modal_renders_mirrored_preview(): void
+    {
+        $posted = $this->postedEntry(['memo' => 'Mirror me']);
+
+        $response = $this->get(route('accounting.journal-entries.index'));
+        $response->assertOk();
+        $html = $response->getContent();
+
+        $this->assertStringContainsString('Reversal preview (lines mirrored)', $html);
+        $this->assertStringContainsString('mirrorLines()', $html);
+        // The readonly mono reference field.
+        $this->assertStringContainsString('New reference', $html);
+        $this->assertStringContainsString('jr-in-mono', $html);
+
+        // The mirror swaps the side of every line that carries an amount: a debit
+        // line must reappear as a credit and vice versa.
+        $html = $this->get(route('accounting.journal-entries.index'))->getContent();
+
+        foreach ($posted->lines as $line) {
+            $this->assertStringContainsString(
+                $this->encodedJson($line->account->code),
+                $html,
+                'Mirrored preview is missing an account code',
+            );
+        }
+
+        // The payload must carry both sides so mirrorLines() can swap them.
+        $this->assertStringContainsString($this->encodedJson('dr'), $html);
+        $this->assertStringContainsString($this->encodedJson('cr'), $html);
+    }
+
+    /** Pull the single <tr> whose row carries the given journal number. */
+    private function rowFor(string $html, string $journalNumber): string
+    {
+        $this->assertStringContainsString($journalNumber, $html);
+
+        $start = strpos($html, '>' . $journalNumber . '<');
+        $this->assertNotFalse($start, 'Journal number not found in register');
+
+        $rowStart = strrpos(substr($html, 0, $start), '<tr');
+        $rowEnd = strpos($html, '</tr>', $start);
+
+        return substr($html, $rowStart, $rowEnd - $rowStart);
+    }
+
+    /**
+     * Encode a scalar the way Js::from() does, so it can be matched inside the
+     * rendered HTML.
+     *
+     * The register payload is rendered as JSON.parse('<json>'), so a value has
+     * to be encoded TWICE: the inner encode turns "/" into "\/", the outer one
+     * escapes that backslash again and hex-escapes the quotes. Asserting on
+     * raw substrings is otherwise impossible - every "/" arrives as "\\\/".
+     */
+    private function encodedJson($value): string
+    {
+        $flags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT;
+
+        return substr(json_encode(json_encode($value, $flags), $flags), 1, -1);
     }
 }

@@ -8,13 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('users', 'pos_cashier_pin')) return;
+
         Schema::table('users', function (Blueprint $table) {
-            $table->string('pos_cashier_pin', 10)->nullable()->after('email');
+            $table->string('pos_cashier_pin', 255)->nullable()->after('email');
         });
     }
 
     public function down(): void
     {
+        if (!Schema::hasColumn('users', 'pos_cashier_pin')) return;
+
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('pos_cashier_pin');
         });

@@ -91,7 +91,7 @@
 
             <div class="pos-m-ret-actions">
                 @if($r->isVoidable())
-                    <form method="POST" action="{{ route('pos.returnables.void', $r->id) }}" style="display:inline" onsubmit="return confirm('Void BRR-{{ $r->brr_number }}? This cannot be undone.')">
+                    <form method="POST" action="{{ route('pos.returnables.void', $r->id) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Void BRR-{{ $r->brr_number }}? This cannot be undone.', { type: 'danger' })">
                         @csrf
                         <button type="submit" class="pos-m-ret-act pos-m-ret-act--void">Void</button>
                     </form>

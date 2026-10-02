@@ -6,7 +6,7 @@
             </nav>
             <div style="display:flex;gap:10px">
                 @if($fiscalYear->isOpen())
-                <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}" onsubmit="return confirm('Lock all periods in {{ $fiscalYear->label }}?')">
+                <form method="POST" action="{{ route('accounting.fiscal-years.close', $fiscalYear) }}" onsubmit="return fbConfirmSubmit(event, 'Lock all periods in {{ $fiscalYear->label }}?', { type: 'action' })">
                     @csrf
                     <button type="submit" class="ac-btn ac-btn-ghost ac-btn-sm">Lock Fiscal Year</button>
                 </form>
@@ -50,7 +50,7 @@
                             <td class="ac-numr">{{ $period->journal_entries_count ?? 0 }}</td>
                             <td class="ac-row-act">
                                 @if($period->isOpen())
-                                <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" onsubmit="return confirm('Lock this period?')" style="display:inline">
+                                <form method="POST" action="{{ route('accounting.periods.lock', $period) }}" onsubmit="return fbConfirmSubmit(event, 'Lock this period?', { type: 'action' })" style="display:inline">
                                     @csrf
                                     <button type="submit" class="ac-ibtn" title="Lock">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>

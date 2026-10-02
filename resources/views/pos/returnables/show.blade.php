@@ -9,7 +9,7 @@
                 <div style="display:flex;gap:8px">
                     <a href="{{ route('pos.returnables.print', $returnable->id) }}" class="pos-btn pos-btn-ghost" target="_blank">Print</a>
                     @if($returnable->isVoidable())
-                        <form method="POST" action="{{ route('pos.returnables.void', $returnable->id) }}" style="display:inline" onsubmit="return confirm('Void this BRR receipt? The journal entry will be reversed.')">
+                        <form method="POST" action="{{ route('pos.returnables.void', $returnable->id) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Void this BRR receipt? The journal entry will be reversed.', { type: 'danger' })">
                             @csrf
                             <button type="submit" class="pos-btn pos-btn-danger">Void Receipt</button>
                         </form>

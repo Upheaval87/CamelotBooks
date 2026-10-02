@@ -156,13 +156,14 @@ class DatabaseSeeder extends Seeder
 
             $startDate = now()->create($periodYear, $month)->startOfMonth();
             $endDate = $startDate->copy()->endOfMonth();
+            $isCurrentOrFuture = $endDate->greaterThanOrEqualTo(now()->startOfDay());
 
             AccountingPeriod::create([
                 'company_id' => $company->id,
                 'label' => $startDate->format('F Y'),
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate->toDateString(),
-                'status' => $i === 0 ? 'open' : 'locked',
+                'status' => $isCurrentOrFuture ? 'open' : 'locked',
             ]);
         }
     }

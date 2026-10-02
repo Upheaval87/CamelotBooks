@@ -174,25 +174,13 @@
                                 <td class="num">{{ format_number($entry->total_debit) }}</td>
                                 <td><span class="jr-pill {{ $pillClass }}">● {{ $pillLabel }}</span></td>
                                 <td>
+                                    {{-- R5 / A4.2: Actions column is view + print ONLY.
+                                         Every lifecycle action (finalize, post, reopen,
+                                         delete, reverse) lives in the journal modal footer. --}}
                                     <div class="jr-rowact">
                                         <button type="button" class="jr-ib" title="Open journal" @click="open({{ $entry->id }}, 'view')">👁</button>
-
-                                        @if($entry->status === 'draft' && $can['finalize'])
-                                            <button type="button" class="jr-ib"
-                                                    @if($isMine) title="Open & edit (creator)" @click="open({{ $entry->id }}, 'edit')"
-                                                    @else disabled title="Only the creator ({{ $creatorName }}) can edit" @endif>✎</button>
-                                            <button type="button" class="jr-ib del"
-                                                    @if($isMine && $can['delete']) title="Delete" @click="openDelete({{ $entry->id }})"
-                                                    @else disabled title="Only the creator ({{ $creatorName }}) can delete" @endif>🗑</button>
-                                        @elseif(in_array($entry->status, ['pending_approval', 'approved'], true) && $can['finalize'])
-                                            <button type="button" class="jr-ib" title="Reopen" @click="openReopen({{ $entry->id }})">⤺</button>
-                                        @elseif($entry->status === 'posted')
-                                            @if($can['reverse'])
-                                                <button type="button" class="jr-ib rev" title="Reverse" x-show="viewed[{{ $entry->id }}]" @click="openReverse({{ $entry->id }})">⟲</button>
-                                            @endif
-                                            <button type="button" class="jr-ib" title="Print" @click="printEntry({{ $entry->id }})">🖨</button>
-                                        @elseif($entry->status === 'reversed')
-                                            <button type="button" class="jr-ib" title="Open reversal" @click="openReversal({{ $entry->id }})">⟲</button>
+                                        @if(in_array($entry->status, ['posted', 'reversed'], true))
+                                            <button type="button" class="jr-ib" title="Print voucher" @click="printEntry({{ $entry->id }})">🖨</button>
                                         @endif
                                     </div>
                                 </td>

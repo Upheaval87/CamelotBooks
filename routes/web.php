@@ -295,6 +295,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('journal-entries', [JournalEntryController::class, 'store'])->name('journal-entries.store');
             Route::patch('journal-entries/{journalEntry}', [JournalEntryController::class, 'update'])->name('journal-entries.update');
             Route::get('journal-entries/{journalEntry}', [JournalEntryController::class, 'show'])->name('journal-entries.show');
+            // Print voucher: standalone A4 preview page (opened in a new tab from the
+            // detail toolbar) and its real server-rendered PDF download. Both are
+            // read-only views of the same payload — no posting/reversal side effects.
+            Route::get('journal-entries/{journalEntry}/print', [JournalEntryController::class, 'printVoucher'])->name('journal-entries.print')->middleware('permission:journal-entries.view');
+            Route::get('journal-entries/{journalEntry}/print/pdf', [JournalEntryController::class, 'downloadVoucherPdf'])->name('journal-entries.print-pdf')->middleware('permission:journal-entries.view');
             Route::post('journal-entries/{journalEntry}/submit-for-approval', [JournalEntryController::class, 'submitForApproval'])->name('journal-entries.submit-for-approval')->middleware(['permission:journal-entries.edit', 'sod:journalEntry']);
             Route::post('journal-entries/{journalEntry}/approve', [JournalEntryController::class, 'approve'])->name('journal-entries.approve')->middleware(['permission:journal-entries.approve', 'sod:journalEntry']);
             Route::post('journal-entries/{journalEntry}/reject', [JournalEntryController::class, 'reject'])->name('journal-entries.reject')->middleware(['permission:journal-entries.approve', 'sod:journalEntry']);

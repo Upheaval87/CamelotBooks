@@ -4,7 +4,7 @@
     <button type="button"
             class="fav-star-trigger"
             :class="{ 'active': store.dropdownOpen }"
-            @click="store.toggleDropdown()"
+            @click.stop="store.toggleDropdown()"
             title="{{ __('Favourites') }}"
             aria-haspopup="true"
             :aria-expanded="store.dropdownOpen ? 'true' : 'false'">
@@ -16,89 +16,95 @@
     </button>
 
     <div x-show="store.dropdownOpen"
-         x-transition:enter="transition ease-out duration-100"
-         x-transition:enter-start="opacity-0 scale-95 -translate-y-0.5"
-         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-75"
-         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-         x-transition:leave-end="opacity-0 scale-95 -translate-y-0.5"
          @click.outside="store.dropdownOpen = false"
-         class="fav-star-dropdown"
+         class="favpop"
          x-cloak>
 
-        {{-- Favourites grid --}}
-        <template x-if="!store.pickerOpen">
-            <div>
-                <div class="fav-star-dropdown-head">
-                    <span>{{ __('Favourites') }}</span>
-                    <div class="fav-star-dropdown-actions">
-                        <button type="button" class="fav-pin-toggle" :class="{ 'pinned': store.pinned }" @click="store.setPinned(!store.pinned)">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 17v5M9 2h6l1 7 3 3v2H5v-2l3-3z"/>
-                            </svg>
-                            <span x-text="store.pinned ? '{{ __('Unpin from sidebar') }}' : '{{ __('Pin to sidebar') }}'"></span>
-                        </button>
-                        <button type="button" class="fav-manage-link" @click="store.openPicker()">{{ __('Add') }}</button>
-                    </div>
-                </div>
-                <p class="fav-star-dropdown-sub" x-text="store.pinHint"></p>
+        {{-- Head --}}
+        <div class="favpop-head">
+            <span class="favpop-ic">
+                <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+            </span>
+            <span class="favpop-title">{{ __('Favourite pages') }}</span>
+            <span class="favpop-pill" x-text="store.pinCount + ' {{ __('pinned') }}'"></span>
+            <button type="button" class="favpop-close" @click="store.dropdownOpen = false" title="{{ __('Close') }}" aria-label="{{ __('Close') }}">
+                <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
 
-                <div class="fav-star-grid" x-show="store.visibleItems.length">
-                    <template x-for="item in store.visibleItems" :key="item.page_key">
-                        <div class="fav-star-tile"
-                             :class="{ 'current': item.page_key === store.currentKey }">
-                            <button type="button" class="fav-star-tile-main" @click="store.go(item)" @click.right.prevent="store.remove(item.page_key)">
-                                <span class="fav-star-tile-ic" x-html="store.icon(item.icon)"></span>
-                                <span class="fav-star-tile-lbl" x-text="item.label"></span>
-                            </button>
-                            <button type="button" class="fav-star-tile-remove" :title="'{{ __('Remove') }}: ' + item.label" @click.stop="store.remove(item.page_key)">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M18 6L6 18M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </template>
-                </div>
-
-                <div class="fav-star-empty" x-show="!store.visibleItems.length">
-                    <p>{{ __('No favourites yet.') }}</p>
-                    <p class="fav-star-empty-sub">{{ __('Star a page from its header, or pick one below.') }}</p>
-                </div>
+        {{-- Controls: rail master switch + pin current page --}}
+        <div class="favpop-controls">
+            <div class="favpop-switch"
+                 role="switch"
+                 tabindex="0"
+                 :aria-checked="store.pinned ? 'true' : 'false'"
+                 @click="store.setPinned(!store.pinned)"
+                 @keydown.enter.prevent="store.setPinned(!store.pinned)"
+                 @keydown.space.prevent="store.setPinned(!store.pinned)">
+                <span class="favpop-sw" :class="{ 'on': store.pinned }"></span>
+                <span style="display:flex;flex-direction:column;line-height:1.15">
+                    <span class="lbl">{{ __('Show rail on desktop') }}</span>
+                    <span class="sub">{{ __('Pin favourites to the left edge') }}</span>
+                </span>
             </div>
-        </template>
+            <button type="button" class="favpop-btn-mini"
+                    x-show="store.currentKey" x-cloak
+                    @click="store.toggle(store.currentKey, store.currentLabel, store.currentIcon, store.currentUrl)">
+                <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+                <span x-text="store.isFav(store.currentKey) ? '{{ __('Unpin this page') }}' : '{{ __('Pin this page') }}'"></span>
+            </button>
+        </div>
 
-        {{-- Page picker --}}
-        <template x-if="store.pickerOpen">
-            <div>
-                <div class="fav-star-dropdown-head">
-                    <span>{{ __('Add a favourite') }}</span>
-                    <div class="fav-star-dropdown-actions">
-                        <button type="button" class="fav-manage-link" @click="store.pickerOpen = false">{{ __('Back') }}</button>
-                    </div>
-                </div>
-                <input type="search"
-                       class="fav-picker-search"
-                       placeholder="{{ __('Search pages…') }}"
-                       x-model="store.pickerQuery">
-                <div class="fav-picker-list" x-show="store.filteredPages.length">
-                    <template x-for="page in store.filteredPages" :key="page.page_key">
-                        <button type="button"
-                                class="fav-picker-item"
-                                :class="{ 'added': store.isFav(page.page_key) }"
-                                @click="store.pick(page)">
-                            <span class="fav-picker-ic" x-html="store.icon(page.icon)"></span>
-                            <span class="fav-picker-lbl" x-text="page.label"></span>
-                            <svg class="fav-picker-check" x-show="store.isFav(page.page_key)" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" x-cloak>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            <svg class="fav-picker-plus" x-show="!store.isFav(page.page_key)" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"/>
-                            </svg>
-                        </button>
-                    </template>
-                </div>
-                <p class="fav-star-empty" x-show="!store.filteredPages.length">{{ __('No pages match.') }}</p>
+        {{-- Body --}}
+        <div class="favpop-body">
+            <p class="favpop-hint">{{ __('Star any page to keep it one click away. Pinned pages appear on the left rail while you work.') }}</p>
+
+            <div class="favpop-search">
+                <svg fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>
+                <input type="search" placeholder="{{ __('Filter pages…') }}" x-model="store.filter" aria-label="{{ __('Filter pages') }}">
             </div>
-        </template>
+
+            <div class="favpop-sec">
+                <span class="t">{{ __('Pinned to your rail') }}</span>
+                <span class="c" x-text="store.pinCount"></span>
+            </div>
+            <div class="favpop-grid">
+                <template x-for="item in store.pinnedItems" :key="item.page_key">
+                    <button type="button" class="favpop-tile pinned"
+                            :title="item.page_key === 'my-tasks' ? '{{ __('Always pinned') }}' : '{{ __('Unpin') }}'"
+                            @click="item.page_key === 'my-tasks' ? store.go(item) : store.remove(item.page_key)">
+                        <span class="favpop-tic" x-html="store.icon(item.icon)"></span>
+                        <span class="favpop-tl" x-text="item.label"></span>
+                        <span class="favpop-badge chk" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></span>
+                        <span class="favpop-badge rm" x-show="item.page_key !== 'my-tasks'" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 6L6 18M6 6l12 12"/></svg></span>
+                    </button>
+                </template>
+            </div>
+
+            <div class="favpop-sec muted">
+                <span class="t">{{ __('Available to pin') }}</span>
+                <span class="c" x-text="store.availCount"></span>
+            </div>
+            <div class="favpop-grid">
+                <template x-for="page in store.availableItems" :key="page.page_key">
+                    <button type="button" class="favpop-tile"
+                            @click="store.add({ page_key: page.page_key, label: page.label, icon: page.icon, url: page.url })">
+                        <span class="favpop-tic" x-html="store.icon(page.icon)"></span>
+                        <span class="favpop-tl" x-text="page.label"></span>
+                        <span class="favpop-badge add" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg></span>
+                    </button>
+                </template>
+            </div>
+            <p class="favpop-empty" x-show="store.pagesLoaded && !store.availCount" x-cloak>{{ __('No more pages to pin.') }}</p>
+        </div>
+
+        {{-- Foot --}}
+        <div class="favpop-foot">
+            <button type="button" class="favpop-foot-link" @click="store.unpinAllWithConfirm()">
+                <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/></svg>
+                {{ __('Unpin all from sidebar') }}
+            </button>
+            <button type="button" class="favpop-done" @click="store.dropdownOpen = false">{{ __('Done') }}</button>
+        </div>
     </div>
 </div>

@@ -23,7 +23,7 @@
                 @if($status['draft'] === 0 && $status['finalized'] > 0)
                     <form method="POST" action="{{ route('accounting.payroll.distribution.finalize', $run) }}" style="display:inline">
                         @csrf
-                        <button type="submit" class="pd-btn pd-btn-sec pd-btn-sm" onclick="return confirm('Finalize all payslips? They cannot be edited after this.')">Finalize All</button>
+                        <button type="submit" class="pd-btn pd-btn-sec pd-btn-sm" onclick="return fbConfirmButton(event, 'Finalize all payslips? They cannot be edited after this.', { type: 'action' })">Finalize All</button>
                     </form>
                 @endif
                 @if($status['finalized'] > 0)

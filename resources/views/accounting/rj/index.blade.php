@@ -83,7 +83,7 @@
                                                         <form method="POST" action="{{ route('accounting.rj.toggle', $t) }}" style="display:inline">@csrf@method('PATCH')<button type="submit" class="more-item">🔄 Renew</button></form>
                                                     @endif
                                                     @if($t->runs()->where('is_test', false)->count() === 0)
-                                                        <form method="POST" action="{{ route('accounting.rj.destroy', $t) }}" style="display:inline">@csrf@method('DELETE')<button type="submit" class="more-item danger" onclick="return confirm('Delete this recurring journal?')">🗑 Delete</button></form>
+                                                        <form method="POST" action="{{ route('accounting.rj.destroy', $t) }}" style="display:inline">@csrf@method('DELETE')<button type="submit" class="more-item danger" onclick="return fbConfirmButton(event, 'Delete this recurring journal?', { type: 'danger' })">🗑 Delete</button></form>
                                                     @endif
                                                 </div>
                                             </div>

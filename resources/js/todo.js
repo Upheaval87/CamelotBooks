@@ -237,4 +237,60 @@ document.addEventListener('alpine:init', () => {
             }
         },
     }));
+
+    // My Tasks board: tab switch + client-side search & chip filtering.
+    // Rows carry data-status / data-title / data-overdue / data-bucket /
+    // data-granularity so filtering never touches the server.
+    Alpine.data('todoBoard', () => ({
+        tab: 'active',
+        q: '',
+        chip: 'all',
+
+        matchChip(el) {
+            switch (this.chip) {
+                case 'overdue':
+                    return el.dataset.overdue === '1';
+                case 'today':
+                    return el.dataset.bucket === 'today';
+                case 'week':
+                    return el.dataset.granularity === 'week';
+                case 'none':
+                    return el.dataset.bucket === 'no_deadline';
+                case 'all':
+                default:
+                    return true;
+            }
+        },
+
+        matchesRow(el) {
+            if (!el || !el.dataset) return true;
+            const status = el.dataset.status || 'active';
+            if (status !== this.tab) return false;
+
+            const q = this.q.trim().toLowerCase();
+            if (q && !(el.dataset.title || '').includes(q)) return false;
+
+            if (this.tab === 'active' && !this.matchChip(el)) return false;
+
+            return true;
+        },
+
+        sectionHas(section) {
+            if (!section) return true;
+            const rows = section.querySelectorAll('[data-task][data-status="active"]');
+            for (const row of rows) {
+                if (this.matchesRow(row)) return true;
+            }
+            return false;
+        },
+
+        anyMatch(status) {
+            const root = this.$root || document;
+            const rows = root.querySelectorAll('[data-task][data-status="' + status + '"]');
+            for (const row of rows) {
+                if (this.matchesRow(row)) return true;
+            }
+            return false;
+        },
+    }));
 });

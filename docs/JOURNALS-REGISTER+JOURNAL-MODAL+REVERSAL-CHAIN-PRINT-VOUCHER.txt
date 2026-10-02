@@ -1,0 +1,806 @@
+JOURNALS REGISTER + JOURNAL MODAL + REVERSAL CHAIN + PRINT VOUCHER — FULL IMPLEMENTATION SPEC
+(SELF-CONTAINED — authoritative mockup HTML embedded in APPENDIX A. Do NOT read external files.)
+
+SCOPE:
+(A) Rebuild the Journals register (gl.journals.index) exactly as APPENDIX A: page head,
+    filter bar, status tabs with live counts, register table, per-row actions.
+(B) Rebuild the journal view/edit modal (content-fit width), the reversal form modal and
+    the stacked confirmation box, wired to the EXISTING lifecycle endpoints.
+(C) Rebuild the print preview + A4 journal voucher (screen overlay + print/PDF/email
+    parity) exactly as APPENDIX A's sheet markup.
+
+HARD GUARD — do NOT modify posting/calculation/permission logic, schemas, routes or
+payloads. Frontend + wiring to existing endpoints only (finalize, post, reopen, delete,
+reverse, print/PDF/email). NO NEW PACKAGES. NO backdrop-filter/blur anywhere.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate: journals index route/controller/view, journal model + status enum
+    (unfinalized/unposted/posted/reversed), line model, creator field, reversal
+    endpoint + state-machine guards (only Posted reversible; period-lock rules),
+    finalize/post/reopen/delete endpoints + permissions, print/PDF/email endpoints,
+    audit feed source, currency + date-format system settings.
+0.2 Record existing ids/data-attributes/CSRF/Livewire/Alpine hooks on this page.
+0.3 Record company profile fields used by the voucher header (legal name, address, TIN).
+
+==================== 1 · TOKENS + ABSOLUTE RULES ====================
+--deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32; --sec:#128F8E; --sec-2:#149897;
+--mint:#7FD1C0; --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+--border:#dceaea; --line:#e2ecec; --hair:#EEF3F1; --green:#15803d; --red:#dc2626;
+--red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+Print family: --p-accent:#0E7473; --p-band:#F0F5F5; --p-ink:#13292C; --p-sub:#3E5658;
+--p-muted:#5F7476; --p-faint:#8AA3A2; --p-line:#DCE7E5; --p-hair:#E7EFED; mono stack for
+all refs/codes/audit lines. Font Inter; tabular-nums on every figure.
+R1 · ZERO BLUR: all scrims solid tints (modal rgba(11,42,45,.26); confirm .45).
+R2 · NO actor prefixes: every Created/Posted attribution (table footer meta, activity
+     timeline, voucher meta grid, signatures, footer audit line) renders TIMESTAMP ONLY —
+     never "System ·", never "(System)", no avatar tiles.
+R3 · Voucher blank ruled lines carry NO line numbers; only real lines are numbered.
+R4 · Label is "Description" everywhere (reversal form field, modal panels) — never "Memo".
+R5 · NO reverse icon in the register Actions column; Reverse exists ONLY inside the
+     journal modal footer. NO "Open reversal" button anywhere; reversed journals show the
+     offsetting reference as PLAIN mono text inside the footer note.
+R6 · Currency code/symbol/decimals from system setting; amount-in-words generated
+     server-side; never hardcode K/$/MWK in code.
+R7 · Status pills: Posted teal · Unposted·Finalized amber · Unfinalized grey ·
+     Reversed red · Balanced green · Unbalanced red.
+
+==================== 2 · REGISTER PAGE ====================
+2.1 Head: 26px/900 title + sub line; right cluster = signed-in avatar chip, ghost Export
+    (existing export endpoint), gradient "+ New Journal" (existing create route).
+2.2 Filter card: mode segmented [Date range | Period]; From/To date inputs with
+    server-validated From ≤ To (invalid → red field + message, no apply); Type + Branch
+    selects; search (№, memo, reference); Apply gradient + Clear ghost. Filters are
+    SERVER-SIDE (query params), reflected in URL for shareability.
+2.3 Tabs: All / Unfinalized / Unposted·Finalized / Posted / Reversed with LIVE counts;
+    active = teal gradient pill with frosted count; counts recomputed per filter set.
+2.4 Table card: mist-teal thead (Journal № / Date / Type / Description / Source / Lines /
+    Total(cur) / Status / Actions); rows: mono teal journal № (opens modal), description
+    + mono sub-reference, mono source, centred line count, right tabular total, status
+    pill, actions.
+2.5 ACTIONS COLUMN (strict): [view eye] always · [print] only when status posted or
+    reversed-and-printable per existing rules · NOTHING else. No reverse icon (R5),
+    no edit/delete/reopen icons on rows.
+2.6 Footer strip: "Showing X of Y journals" + note "Finalize, Post & Reverse live inside
+    the journal modal only". Empty filter result = designed empty state card.
+2.7 Rows server-rendered (Blade loop); zero-JS visibility (no client-side row building).
+
+==================== 3 · JOURNAL MODAL ====================
+3.1 Shell: scrim tint-only (R1) z-90; card width min(920px, calc(100vw − 48px)),
+    max-height calc(100vh − 48px), radius 20px, white-glass border, layered shadow;
+    deep-teal head band: white icon tile + "Journal" + mono ref chip + status pill
+    (frosted semantic tint) + rotating glass close.
+3.2 Meta strip tight under head: chips = type · date · branch · Source: mono · Ref: mono ·
+    Creator: name · n lines · Total {cur} value.
+3.3 Body: description line 13.5/600; lines table (Account 32% = teal mono code chip +
+    name · Description · Cost centre · Debit · Credit right tabular); empty cells muted
+    em-dash; totals row = 3px double rule + mint band + 14px/900 values + Balanced chip
+    (Unbalanced red if ever mismatched).
+3.4 STATUS-AWARE FOOTER (notes + actions):
+    · unfinalized: note "Draft — review all lines, then finalize (creator only).";
+      creator: [Delete draft danger-outline] [✎ Check & Edit primary]; non-creator:
+      note "Only the creator (name) can edit."
+    · EDIT MODE (creator only): lines' description/debit/credit become inputs; totals +
+      Balanced chip recompute live; footer [Cancel edit ghost] [✓ Save for Authorisation /
+      Posting (Finalize) primary, DISABLED while unbalanced].
+    · unposted: note "Finalized — awaiting posting. Lines are locked.";
+      [⤺ Reopen as draft warn] [▶ Post to ledger primary].
+    · posted: note "Posted to the ledger — immutable. Use Reverse to correct it.";
+      [Print ghost → §5] [Reverse danger-outline → §4].
+    · reversed: note "Reversed — this entry is void. Offsetting journal: {ref}" (plain
+      mono ref, NO button — R5).
+3.5 CONFIRM GATING: Finalize, Post, Reopen (reason input REQUIRED), Delete all raise the
+    stacked confirmation box (§4.3) before POSTing to their endpoints; on success refresh
+    row status/pill/actions + tab counts + toast.
+3.6 Close: ✕, Cancel, scrim click, Esc; focus returns to invoking row control.
+
+==================== 4 · REVERSAL CHAIN ====================
+4.1 Reversal modal (z-120, width min(640px, …)): deep-teal head (rotate-ccw tile +
+    "Reverse journal" + mono ref); amber warning panel; "Reversal preview (lines
+    mirrored)" panel listing every line with DR↔CR swapped (DR teal / CR amber chips +
+    mono code + name + tabular amount); fields: Reversal date (default today, must fall
+    in open period — server-validated), New reference readonly mono (server preview,
+    REV-/RJ- per existing scheme), Description REQUIRED (client + server), mode segmented
+    [Post immediately | Save as draft].
+4.2 Footer: note + [Cancel ghost → back to journal modal] [Confirm reversal solid red].
+4.3 Confirm box (z-140, darker scrim, 460px): danger icon + "Confirm reversal of {ref}?" +
+    body stating new ref, mirroring, cross-linking; [Cancel] [⟲ Confirm reversal red].
+    Only this box's confirm POSTs to the reversal endpoint (CSRF); on success: original
+    status → Reversed, reversal journal created (posted or draft per mode), both
+    cross-linked, audit entry written; UI refresh: row pill/actions, reversed footer note
+    gains offsetting ref text, reversal journal appears in register, toast.
+4.4 Permissions/locks honoured server-side: non-posted journals, locked periods, missing
+    permission → endpoint error surfaced as toast; modal never bypasses.
+
+==================== 5 · PRINT PREVIEW + VOUCHER ====================
+5.1 Preview overlay z-200 (fixed, grey gradient, own scroll): sticky toolbar =
+    [Back ghost] title + mono ref chip · "A4 · Portrait · Ctrl+P prints voucher only" ·
+    [Email ghost → existing email endpoint w/ PDF] [Download PDF ghost → PDF endpoint]
+    [Print gradient → window.print()].
+5.2 Sheet 794×1123 screen / A4 print: 5px teal top accent; rotated status watermark
+    (POSTED/REVERSED, 4.5% opacity); header band #F0F5F5: brand block (mark tile + legal
+    name + address/TIN from company profile) left, doc block right (small-caps "Journal
+    Voucher", mono 19px ref, outlined status stamp, "Printed {now}"); 4×2 meta grid
+    (date · period · type · source mono · branch · currency · Created {ts} · Posted {ts}
+    — timestamps only, R2); lines table with solid #0E7473 thead, numbered real lines,
+    TWO unnumbered blank ruled rows (R3), totals on 3px double ink rule + band,
+    amount-in-words row + floating "✓ DEBITS = CREDITS"; narration panel; 3-col signature
+    block (Prepared/Authorised/Posted — timestamps only under prepared/posted, R2);
+    footer pinned to sheet bottom (flex column + margin-top:auto): mono audit line
+    "AUDIT · created {ts} · posted {ts}" (R2) + legal note + "PAGE {n} OF {m}".
+5.3 PRINT CSS: @page A4 10mm; when preview open, print hides app + modals + toolbar,
+    flattens overlay, sheet width auto + min-height 277mm so §5.2 footer prints at the
+    TRUE page bottom; print-color-adjust exact; multi-page journals repeat thead and
+    header/footer per page in the PDF engine.
+5.4 Ctrl/Cmd+P while preview open prints voucher-only; server PDF + email attachment
+    render the IDENTICAL layout (same tokens, watermark, stamp, footer pagination).
+
+==================== 6 · STACKING / A11Y / RESPONSIVE ====================
+6.1 z-map: journal modal 90 < reversal 120 < confirm 140 < print preview 200 < toast 300.
+6.2 Esc closes top-most only; focus-visible rings 2px teal; aria-modal + labelled heads;
+    reduced-motion disables all animation; type="button" on non-submit controls.
+6.3 ≤900px modals full-bleed (100vw − 24px); filter wrap; table horizontal-scrolls with
+    sticky first column if needed; voucher unaffected (print).
+
+==================== 7 · CONSTRAINTS ====================
+7.1 Pixel parity with APPENDIX A (gradients, radii, shadows, chips, pills, table rules).
+    If this text conflicts with APPENDIX A, APPENDIX A wins.
+7.2 Server-render all rows/modals/vouchers (Blade); client JS only for: modal open/close,
+    edit-mode balance recompute, confirm-box orchestration, print button. No row building
+    from JS arrays; page must remain readable with JS disabled (progressive enhancement).
+7.3 Keep existing ids/names/data-attributes, CSRF tokens, Livewire/Alpine hooks.
+7.4 R1–R7 enforced; greps in review: zero "backdrop-filter", zero "System ·" in created/
+    posted contexts, zero "Memo" labels, zero reverse icons in row actions.
+
+==================== 8 · VERIFY + REPORT ====================
+8.1 Register: filters (incl. From>To rejection), tabs + counts, search, empty states;
+    actions column shows ONLY view (+print where allowed) for every status.
+8.2 Modal: opens per status with correct footer; edit mode blocks finalize while
+    unbalanced; finalize/post/reopen(reason)/delete all confirm-gated and hit real
+    endpoints; row + counts refresh; toasts.
+8.3 Reversal: mirrored preview matches lines; description required; confirm box stacks
+    above; endpoint creates cross-linked reversal; original flips to Reversed with
+    plain-text offsetting ref; draft mode leaves reversal unposted.
+8.4 Print: preview opens from row print + modal Print; Ctrl+P outputs voucher only with
+    footer at page bottom, watermark/stamp correct, words line matches total; PDF/email
+    parity; multi-page header/footer repeat.
+8.5 Permissions matrix re-tested per role (viewer/accountant/admin); period-lock errors
+    surface as toasts, never silent.
+8.6 No console/build errors; reduced-motion + 1440/1280/1024/768/480 passes.
+REPORT: files touched; endpoint map (finalize/post/reopen/delete/reverse/print/pdf/email);
+permission matrix; currency/words generators used; R1–R7 grep proofs; sample voucher PDF;
+confirmation NO SECTION SKIPPED.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journals — actions column without reverse icon</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --green:#15803d; --red:#dc2626; --red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --p-accent:#0E7473; --p-band:#F0F5F5;
+    --p-ink:#13292C; --p-sub:#3E5658; --p-muted:#5F7476; --p-faint:#8AA3A2;
+    --p-line:#DCE7E5; --p-hair:#E7EFED;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(900px 380px at 8% -10%, rgba(18,143,142,.09), transparent 60%), linear-gradient(180deg, #eef4f4 0%, #e7efee 100%); min-height: 100vh; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  button, input, select { font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 26px 26px 80px; }
+
+  .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .phead h1 { font-size: 26px; font-weight: 900; letter-spacing: -0.025em; }
+  .phead .sub { margin-top: 5px; font-size: 13px; color: var(--muted); }
+  .pacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .me { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; color: var(--muted); padding: 7px 12px 7px 7px; border-radius: 999px; background: #fff; border: 1px solid var(--line); }
+  .me .av { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; font-size: 9px; font-weight: 800; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .16s ease; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .btn-ghost { background: #fff; border-color: var(--border); color: var(--sub); }
+  .btn-ghost:hover { border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-cta { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-sm { height: 34px; padding: 0 13px; font-size: 12.5px; border-radius: 10px; }
+  .btn-primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; }
+  .btn-warn { background: #fff; border-color: rgba(217,119,6,.4); color: var(--amber-2); }
+  .btn-danger-o { background: #fff; border-color: rgba(220,38,38,.35); color: var(--red); }
+  .btn-danger-o:hover { background: #fef2f2; border-color: rgba(220,38,38,.55); }
+  .btn-danger { background: var(--red); color: #fff; box-shadow: 0 4px 12px -5px rgba(220,38,38,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-danger:hover { background: var(--red-2); }
+
+  .filters { background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--sh-card); padding: 14px 16px; display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .fgroup { display: flex; flex-direction: column; gap: 6px; }
+  .fgroup.grow { flex: 1; min-width: 200px; }
+  .fl { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .mode { display: inline-flex; gap: 3px; padding: 4px; border-radius: 11px; background: #f1f5f6; border: 1px solid var(--line); }
+  .mode button { padding: 7px 14px; border-radius: 8px; border: none; background: transparent; font-size: 12px; font-weight: 700; color: var(--muted); cursor: pointer; }
+  .mode button.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; }
+  .in, .sel { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafb; font-size: 12.5px; font-weight: 600; color: var(--ink); outline: none; }
+  .sel { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%); background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .searchwrap { position: relative; flex: 1; min-width: 200px; }
+  .searchwrap svg { position: absolute; left: 11px; top: 11px; width: 15px; height: 15px; stroke: var(--faint); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+  .searchwrap .in { width: 100%; padding-left: 34px; }
+
+  /* CSS-only tabs */
+  .reg > input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .tabs label { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--sub); cursor: pointer; transition: all .16s ease; }
+  .tabs label:hover { border-color: rgba(18,143,142,.35); color: var(--sec); }
+  .tabs .tc { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--muted); }
+  #tb-all:checked ~ .tabs label[for="tb-all"],
+  #tb-unf:checked ~ .tabs label[for="tb-unf"],
+  #tb-unp:checked ~ .tabs label[for="tb-unp"],
+  #tb-pos:checked ~ .tabs label[for="tb-pos"],
+  #tb-rev:checked ~ .tabs label[for="tb-rev"] { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6); }
+  #tb-all:checked ~ .tabs label[for="tb-all"] .tc,
+  #tb-unf:checked ~ .tabs label[for="tb-unf"] .tc,
+  #tb-unp:checked ~ .tabs label[for="tb-unp"] .tc,
+  #tb-pos:checked ~ .tabs label[for="tb-pos"] .tc,
+  #tb-rev:checked ~ .tabs label[for="tb-rev"] .tc { background: rgba(255,255,255,.2); color: #fff; }
+  #tb-unf:checked ~ .tcard .jrow:not(.st-unfinalized),
+  #tb-unp:checked ~ .tcard .jrow:not(.st-unposted),
+  #tb-pos:checked ~ .tcard .jrow:not(.st-posted),
+  #tb-rev:checked ~ .tcard .jrow:not(.st-reversed) { display: none; }
+
+  .tcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 11px 16px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(18,143,142,.18); font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; white-space: nowrap; }
+  thead th.r { text-align: right; } thead th.c { text-align: center; }
+  tbody td { padding: 12px 16px; border-top: 1px solid var(--hair); vertical-align: middle; font-size: 12.5px; color: var(--sub); }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(18,143,142,.035); }
+  .jno { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--sec); }
+  .jno:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .dmain { font-weight: 600; color: var(--ink); }
+  .dref { display: block; font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--faint); margin-top: 2px; }
+  .src { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .c { text-align: center; } .r { text-align: right; }
+  .tot { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.posted { background: rgba(18,143,142,.10); color: var(--sec); border: 1px solid rgba(18,143,142,.30); }
+  .pill.draft  { background: rgba(17,69,75,.07); color: var(--muted); border: 1px solid rgba(17,69,75,.18); }
+  .pill.pend   { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.28); }
+  .pill.rev    { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.26); }
+  .ib { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; transition: all .15s; vertical-align: middle; }
+  .ib + .ib, a.ib + a.ib, .ib + a.ib, a.ib + .ib { margin-left: 6px; }
+  .ib svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ib:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.06); transform: translateY(-1px); }
+  .tfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--hair); background: #fbfdfc; font-size: 11.5px; font-weight: 600; color: var(--faint); flex-wrap: wrap; }
+
+  /* :target overlays */
+  .jmodal { position: fixed; inset: 0; z-index: 90; background: rgba(11,42,45,.26); display: none; place-items: center; padding: 24px; }
+  .jmodal:target { display: grid; animation: fadeIn .2s ease; }
+  .jmodal.revz { z-index: 120; }
+  .jmodal.cfz { z-index: 140; background: rgba(11,42,45,.45); }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
+  .mbox { width: min(920px, calc(100vw - 48px)); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 24px 60px -20px rgba(10,42,46,.35), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .mbox.narrow { width: min(640px, calc(100vw - 48px)); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 15px 22px; background: radial-gradient(700px 200px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); flex: none; }
+  .m-ic { width: 32px; height: 32px; min-width: 32px; border-radius: 9px; background: #fff; display: grid; place-items: center; color: var(--deep-2); }
+  .m-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-title { font-size: 15px; font-weight: 800; color: #fff; }
+  .m-ref { font-family: var(--mono); font-size: 12px; font-weight: 800; color: #eaffff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); padding: 4px 10px; border-radius: 8px; }
+  .m-pill.posted { background: rgba(127,209,192,.16); color: var(--mint); border: 1px solid rgba(127,209,192,.4); }
+  .m-pill.draft  { background: rgba(255,255,255,.10); color: rgba(226,244,244,.8); border: 1px solid rgba(255,255,255,.22); }
+  .m-pill.pend   { background: rgba(232,163,60,.16); color: #fbd0a0; border: 1px solid rgba(232,163,60,.4); }
+  .m-pill.rev    { background: rgba(239,68,68,.16); color: #fca5a5; border: 1px solid rgba(239,68,68,.4); }
+  .m-close { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .m-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding: 10px 22px; border-bottom: 1px solid var(--hair); background: #fbfdfc; flex: none; }
+  .mchip { font-size: 10.5px; font-weight: 800; color: var(--muted); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
+  .mchip.mono { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.07); border-color: rgba(18,143,142,.22); }
+  .mchip.b { color: var(--ink); }
+  .m-body { padding: 14px 22px 18px; overflow: auto; flex: 1; }
+  .m-memo { font-size: 13.5px; font-weight: 600; color: var(--ink); margin: 2px 0 12px; }
+  .mtable thead th { padding: 9px 14px; }
+  .mtable tbody td { padding: 11px 14px; font-size: 12.5px; }
+  .acode { display: inline-flex; padding: 3px 8px; border-radius: 7px; background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.22); color: var(--sec); font-family: var(--mono); font-size: 11.5px; font-weight: 800; margin-right: 9px; vertical-align: middle; }
+  .aname { font-weight: 600; color: var(--ink); }
+  .dash { color: #cfdedb; font-weight: 700; }
+  .mtable tr.totals td { border-top: 3px double #cfe0dd; background: linear-gradient(180deg, #fbfdfc, #f5faf8); padding: 12px 14px; }
+  .mtable tr.totals .num { font-size: 14px; font-weight: 900; color: var(--ink); }
+  .bal-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(21,128,61,.10); border: 1px solid rgba(21,128,61,.25); color: var(--green); font-size: 11px; font-weight: 800; }
+  .bal-chip svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 13px 22px; border-top: 1px solid var(--hair); background: #f8fafa; flex: none; }
+  .mnote { font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--hair); border-radius: 9px; padding: 8px 12px; margin-right: auto; }
+  .mnote b { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+
+  /* reversal form bits */
+  .warn-panel { display: flex; gap: 11px; padding: 12px 14px; border-radius: 12px; background: rgba(217,119,6,.07); border: 1px solid rgba(217,119,6,.22); margin-bottom: 14px; }
+  .warn-panel svg { width: 16px; height: 16px; min-width: 16px; stroke: var(--amber-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; margin-top: 1px; }
+  .warn-panel p { font-size: 12px; font-weight: 600; color: var(--amber-2); line-height: 1.55; }
+  .mirr { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
+  .mirr .mh { padding: 9px 13px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); }
+  .mline { display: grid; grid-template-columns: 34px 56px 1fr auto; gap: 10px; align-items: center; padding: 9px 13px; font-size: 12px; font-weight: 600; }
+  .mline + .mline { border-top: 1px dashed var(--line); }
+  .mline .side { font-size: 9px; font-weight: 800; letter-spacing: .05em; padding: 3px 6px; border-radius: 5px; text-align: center; }
+  .mline .side.dr { background: rgba(18,143,142,.12); color: var(--sec); }
+  .mline .side.cr { background: rgba(217,119,6,.12); color: var(--amber-2); }
+  .mline .code { font-family: var(--mono); color: var(--sub); font-weight: 700; }
+  .mline .name { color: var(--ink); font-weight: 600; }
+  .mline .amt { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .f-grid .full { grid-column: 1 / -1; }
+  .fld label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .fld .in { width: 100%; }
+  .fld .in[readonly] { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.22); }
+  .pseg { display: inline-flex; background: #f1f5f6; border: 1px solid var(--line); border-radius: 11px; padding: 4px; gap: 4px; position: relative; }
+  .pseg input { position: absolute; opacity: 0; pointer-events: none; }
+  .pseg label { padding: 7px 14px; border-radius: 8px; font-size: 11.5px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all .18s; }
+  .pseg input:checked + label { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(10,42,46,.10); }
+
+  /* confirm box */
+  .cbox { width: min(460px, 100%); background: #fff; border-radius: 18px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 24px 60px -20px rgba(8,40,44,.55); overflow: hidden; animation: slideUp .25s cubic-bezier(.2,.8,.2,1); }
+  .cb-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; background: linear-gradient(180deg, #fdfeff, #f6fbf9); border-bottom: 1px solid var(--hair); }
+  .cb-ic { width: 30px; height: 30px; min-width: 30px; border-radius: 9px; display: grid; place-items: center; }
+  .cb-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .cb-ic.danger { background: rgba(220,38,38,.1); color: var(--red); }
+  .cb-head b { font-size: 14px; font-weight: 800; color: var(--ink); flex: 1; }
+  .cb-x { border: none; background: none; color: var(--faint); cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; }
+  .cb-x:hover { background: var(--hair); color: var(--ink); }
+  .cb-x svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .cb-body { padding: 16px 18px; font-size: 12.5px; font-weight: 500; color: var(--sub); line-height: 1.65; }
+  .cb-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--hair); background: #f8fafa; }
+
+  /* print sheets */
+  .pview { position: fixed; inset: 0; z-index: 200; display: none; overflow-y: auto; background: linear-gradient(180deg, #e6edec 0%, #dde6e5 100%); }
+  .pview:target { display: block; animation: fadeIn .2s ease; }
+  .toolbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 12px 22px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--p-line); }
+  .tb-back { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); }
+  .tb-back:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); }
+  .tb-back svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-title { font-size: 13px; font-weight: 800; color: var(--p-ink); }
+  .tb-title span { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-accent); background: rgba(14,116,115,.08); border: 1px solid rgba(14,116,115,.22); padding: 3px 8px; border-radius: 7px; margin-left: 8px; }
+  .tb-spacer { flex: 1; }
+  .tb-note { font-size: 10.5px; font-weight: 700; color: var(--p-faint); letter-spacing: .06em; text-transform: uppercase; }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; }
+  .tb-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-btn.primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; }
+  .sheet-wrap { display: flex; justify-content: center; padding: 34px 20px 60px; }
+  .sheet { position: relative; width: 794px; min-height: 1123px; background: #fff; border: 1px solid var(--p-line); box-shadow: 0 2px 6px rgba(10,42,46,.08), 0 30px 70px -30px rgba(10,42,46,.45); overflow: hidden; display: flex; flex-direction: column; }
+  .sheet::before { content: ''; display: block; height: 5px; flex: none; background: linear-gradient(90deg, var(--p-accent) 0%, var(--sec-2) 55%, #7FD1C0 100%); }
+  .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+  .wm span { transform: rotate(-24deg); font-size: 108px; font-weight: 900; letter-spacing: .18em; color: rgba(14,116,115,.045); text-transform: uppercase; }
+  .sheet-body { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+  .v-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px 46px 20px; background: linear-gradient(180deg, var(--p-band) 0%, #f7fbfa 100%); border-bottom: 1px solid var(--p-line); }
+  .brand { display: flex; gap: 13px; }
+  .brand .mark { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(150deg, var(--p-accent) 0%, #0a5453 100%); color: #fff; font-size: 17px; font-weight: 900; display: grid; place-items: center; }
+  .brand .bn { font-size: 15.5px; font-weight: 900; color: var(--p-ink); }
+  .brand .bl { font-size: 10px; font-weight: 600; color: var(--p-muted); line-height: 1.55; margin-top: 3px; }
+  .docblock { text-align: right; }
+  .docblock .dt { font-size: 9.5px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--p-accent); }
+  .docblock .dn { font-family: var(--mono); font-size: 19px; font-weight: 800; color: var(--p-ink); margin-top: 4px; }
+  .docblock .dst { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; padding: 4px 11px; border-radius: 999px; background: rgba(14,116,115,.10); border: 1px solid rgba(14,116,115,.35); color: var(--p-accent); font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .docblock .dst i { width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); }
+  .docblock .dp { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 6px; }
+  .meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--p-line); }
+  .meta .cell { padding: 11px 16px; border-left: 1px solid var(--p-hair); }
+  .meta .cell:first-child { border-left: none; }
+  .meta .cell:nth-child(n+5) { border-top: 1px solid var(--p-hair); }
+  .meta .l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); }
+  .meta .v { font-size: 11.5px; font-weight: 700; color: var(--p-ink); margin-top: 3px; }
+  .meta .v.mono { font-family: var(--mono); font-size: 11px; color: var(--p-accent); }
+  .vlines { padding: 22px 46px 0; }
+  .vlines .lt { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--p-muted); margin-bottom: 9px; }
+  .sheet thead th { background: var(--p-accent); color: #fff; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 8px 12px; text-align: left; box-shadow: none; }
+  .sheet thead th.r { text-align: right; }
+  .sheet thead th:first-child { border-radius: 6px 0 0 6px; }
+  .sheet thead th:last-child { border-radius: 0 6px 6px 0; }
+  .sheet tbody td { padding: 10px 12px; border-bottom: 1px solid var(--p-hair); border-top: none; font-size: 11.5px; color: var(--p-sub); vertical-align: top; }
+  .sheet tbody td.no { width: 34px; color: var(--p-faint); font-weight: 700; }
+  .sheet tbody td.acct .code { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-ink); }
+  .sheet tbody td.acct .aname { display: block; font-size: 10.5px; font-weight: 600; color: var(--p-muted); margin-top: 2px; }
+  .sheet tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
+  .sheet tbody td .dash { color: #c6d6d4; font-weight: 600; }
+  .sheet tr.blank td { height: 30px; }
+  .sheet tr.totals td { border-bottom: none; border-top: 3px double var(--p-ink); padding: 10px 12px; background: var(--p-band); }
+  .sheet tr.totals .tl { font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--p-ink); }
+  .sheet tr.totals td.num { font-size: 12.5px; font-weight: 900; }
+  .sheet tr.words td { padding: 9px 12px; border-bottom: 1px solid var(--p-line); background: #fbfdfc; }
+  .words-l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); margin-right: 8px; }
+  .words-v { font-size: 11px; font-weight: 700; color: var(--p-sub); font-style: italic; }
+  .balnote { float: right; font-size: 9.5px; font-weight: 800; color: var(--p-accent); letter-spacing: .06em; }
+  .narr { margin: 18px 46px 0; border: 1px solid var(--p-line); border-radius: 6px; overflow: hidden; }
+  .narr .nh { padding: 7px 12px; background: var(--p-band); border-bottom: 1px solid var(--p-hair); font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .narr .nb { padding: 11px 12px; font-size: 11.5px; font-weight: 500; color: var(--p-sub); line-height: 1.65; }
+  .sigs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; margin: 34px 46px 40px; }
+  .sig { text-align: center; }
+  .sig .rule { border-bottom: 1px solid var(--p-ink); height: 34px; }
+  .sig .sl { margin-top: 7px; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .sig .sn { margin-top: 3px; font-size: 10.5px; font-weight: 700; color: var(--p-ink); }
+  .sig .sd { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 1px; }
+  .v-foot { margin-top: auto; padding: 12px 46px; border-top: 1px solid var(--p-line); background: #fbfdfc; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none; position: relative; z-index: 1; }
+  .v-foot .fa { font-family: var(--mono); font-size: 8.5px; font-weight: 600; color: var(--p-faint); }
+  .v-foot .fb { font-size: 8.5px; font-weight: 600; color: var(--p-faint); text-align: center; flex: 1; }
+  .v-foot .fc { font-size: 9px; font-weight: 800; color: var(--p-muted); letter-spacing: .08em; white-space: nowrap; }
+
+  @media (max-width: 900px) { .mbox, .mbox.narrow { width: calc(100vw - 24px); } .f-grid { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  @page { size: A4; margin: 10mm; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; }
+    .pview { display: none !important; }
+    .pview:target { display: block !important; position: static; overflow: visible; background: #fff; }
+    body:has(.pview:target) #appView,
+    body:has(.pview:target) .jmodal,
+    body:has(.pview:target) .toolbar { display: none !important; }
+    body:has(.pview:target) .sheet-wrap { padding: 0; display: block; }
+    body:has(.pview:target) .sheet { width: auto; min-height: 277mm; border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="appView">
+  <div class="wrap">
+    <div class="phead">
+      <div>
+        <h1>Journals</h1>
+        <div class="sub">Open a journal to review every line — finalize, post, reopen and reverse are confirm-gated.</div>
+      </div>
+      <div class="pacts">
+        <span class="me"><span class="av">ES</span>Signed in as Elvis Seyama</span>
+        <button class="btn btn-ghost"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+        <button class="btn btn-cta"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Journal</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="fgroup"><span class="fl">Mode</span><div class="mode"><button class="on">Date range</button><button>Period</button></div></div>
+      <div class="fgroup"><span class="fl">From</span><input class="in" type="date" value="2026-08-01"></div>
+      <div class="fgroup"><span class="fl">To</span><input class="in" type="date" value="2026-08-31"></div>
+      <div class="fgroup"><span class="fl">Type</span><select class="sel"><option>All types</option><option>Payments</option><option>General</option><option>Adjustment</option></select></div>
+      <div class="fgroup"><span class="fl">Branch</span><select class="sel"><option>All branches</option><option>Head Office</option></select></div>
+      <div class="fgroup grow"><span class="fl">Search</span>
+        <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" type="text" placeholder="№, memo or reference…"></div>
+      </div>
+      <button class="btn btn-cta btn-sm" style="height:38px">Apply</button>
+      <button class="btn btn-ghost btn-sm" style="height:38px">Clear</button>
+    </div>
+
+    <div class="reg">
+      <input type="radio" name="tab" id="tb-all" checked>
+      <input type="radio" name="tab" id="tb-unf">
+      <input type="radio" name="tab" id="tb-unp">
+      <input type="radio" name="tab" id="tb-pos">
+      <input type="radio" name="tab" id="tb-rev">
+
+      <div class="tabs">
+        <label for="tb-all">All <span class="tc">6</span></label>
+        <label for="tb-unf">Unfinalized <span class="tc">1</span></label>
+        <label for="tb-unp">Unposted · Finalized <span class="tc">1</span></label>
+        <label for="tb-pos">Posted <span class="tc">3</span></label>
+        <label for="tb-rev">Reversed <span class="tc">1</span></label>
+      </div>
+
+      <div class="tcard">
+        <table>
+          <thead><tr><th>Journal №</th><th>Date</th><th>Type</th><th>Description</th><th>Source</th><th class="c">Lines</th><th class="r">Total (MK)</th><th>Status</th><th class="r">Actions</th></tr></thead>
+          <tbody>
+            <!-- ACTIONS: view + print only — no reverse icon in the column -->
+            <tr class="jrow st-posted">
+              <td><a class="jno" href="#j-0019">JE-2026-0019</a></td><td style="white-space:nowrap">30 Aug 2026</td><td>Payments</td>
+              <td><span class="dmain">Walk-in payment - awaiting deposit</span><span class="dref">SAL-SR-2026-0006</span></td>
+              <td><span class="src">sales_receipt</span></td><td class="c">2</td><td class="r tot">25,000.00</td>
+              <td><span class="pill posted"><i></i>Posted</span></td>
+              <td class="r" style="white-space:nowrap">
+                <a class="ib" href="#j-0019" title="Open journal"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+                <a class="ib" href="#p-0019" title="Print voucher"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></a>
+              </td>
+            </tr>
+            <tr class="jrow st-posted">
+              <td><a class="jno" href="#j-0018">JE-2026-0018</a></td><td style="white-space:nowrap">29 Aug 2026</td><td>Payments</td>
+              <td><span class="dmain">Walk-in payment - awaiting deposit</span><span class="dref">SAL-SR-2026-0005</span></td>
+              <td><span class="src">sales_receipt</span></td><td class="c">2</td><td class="r tot">52,000.00</td>
+              <td><span class="pill posted"><i></i>Posted</span></td>
+              <td class="r" style="white-space:nowrap">
+                <a class="ib" href="#j-0018" title="Open journal"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+                <a class="ib" href="#p-0018" title="Print voucher"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></a>
+              </td>
+            </tr>
+            <tr class="jrow st-unposted">
+              <td><a class="jno" href="#j-0021">JE-2026-0021</a></td><td style="white-space:nowrap">31 Aug 2026</td><td>Adjustment</td>
+              <td><span class="dmain">Depreciation — August 2026</span><span class="dref">MAN-00022</span></td>
+              <td><span class="src">manual</span></td><td class="c">2</td><td class="r tot">45,000.00</td>
+              <td><span class="pill pend"><i></i>Unposted · Finalized</span></td>
+              <td class="r" style="white-space:nowrap">
+                <a class="ib" href="#j-0021" title="Open journal"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+              </td>
+            </tr>
+            <tr class="jrow st-unfinalized">
+              <td><a class="jno" href="#j-0020">JE-2026-0020</a></td><td style="white-space:nowrap">30 Aug 2026</td><td>General</td>
+              <td><span class="dmain">Accrual — external audit fees Q3</span><span class="dref">MAN-00021</span></td>
+              <td><span class="src">manual</span></td><td class="c">2</td><td class="r tot">18,000.00</td>
+              <td><span class="pill draft"><i></i>Unfinalized</span></td>
+              <td class="r" style="white-space:nowrap">
+                <a class="ib" href="#j-0020" title="Open journal"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+              </td>
+            </tr>
+            <tr class="jrow st-posted">
+              <td><a class="jno" href="#j-0022">JE-2026-0022</a></td><td style="white-space:nowrap">26 Aug 2026</td><td>General</td>
+              <td><span class="dmain">Reversal of JE-2026-0012</span><span class="dref">REV-2026-0012</span></td>
+              <td><span class="src">manual</span></td><td class="c">2</td><td class="r tot">100,000.00</td>
+              <td><span class="pill posted"><i></i>Posted</span></td>
+              <td class="r" style="white-space:nowrap">
+                <a class="ib" href="#j-0022" title="Open journal"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+                <a class="ib" href="#p-0022" title="Print voucher"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></a>
+              </td>
+            </tr>
+            <tr class="jrow st-reversed">
+              <td><a class="jno" href="#j-0012">JE-2026-0012</a></td><td style="white-space:nowrap">25 Aug 2026</td><td>Payments</td>
+              <td><span class="dmain">Establish petty cash fund - Petty Cash</span><span class="dref">PC-0001</span></td>
+              <td><span class="src">petty_cash_establish</span></td><td class="c">2</td><td class="r tot">100,000.00</td>
+              <td><span class="pill rev"><i></i>Reversed</span></td>
+              <td class="r" style="white-space:nowrap">
+                <a class="ib" href="#j-0012" title="Open journal"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tfoot"><span>Showing 6 journals</span><span>Finalize, Post &amp; Reverse live inside the journal modal only</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ JOURNAL MODALS ============ -->
+  <div class="jmodal" id="j-0019"><div class="mbox">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Journal</span><span class="m-ref">JE-2026-0019</span><span class="pill m-pill posted"><i></i>Posted</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-meta"><span class="mchip b">Payments</span><span class="mchip">30 Aug 2026</span><span class="mchip">Head Office</span><span class="mchip mono">Source: sales_receipt</span><span class="mchip mono">Ref: SAL-SR-2026-0006</span><span class="mchip">2 lines</span><span class="mchip b">Total MK 25,000.00</span></div>
+    <div class="m-body">
+      <div class="m-memo">Walk-in payment - awaiting deposit</div>
+      <table class="mtable"><thead><tr><th style="width:32%">Account</th><th>Description</th><th style="width:12%">Cost centre</th><th class="r" style="width:13%">Debit</th><th class="r" style="width:13%">Credit</th></tr></thead>
+        <tbody>
+          <tr><td><span class="acode">1050</span><span class="aname">Undeposited Funds</span></td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td class="r tot">25,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+          <tr><td><span class="acode">4000</span><span class="aname">Sales Revenue</span></td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td class="r tot"><span class="dash">—</span></td><td class="r tot">25,000.00</td></tr>
+          <tr class="totals"><td><b>Totals</b></td><td></td><td></td><td class="r num">25,000.00</td><td class="r num">25,000.00</td></tr>
+          <tr><td colspan="5" style="padding:10px 14px;border-top:1px solid var(--hair);background:#fbfdfc;text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td></tr>
+        </tbody></table>
+    </div>
+    <div class="m-foot"><span class="mnote">Posted to the ledger — immutable. Use Reverse to correct it.</span><a class="btn btn-ghost btn-sm" href="#p-0019"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</a><a class="btn btn-danger-o btn-sm" href="#r-0019"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Reverse</a></div>
+  </div></div>
+
+  <div class="jmodal" id="j-0018"><div class="mbox">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Journal</span><span class="m-ref">JE-2026-0018</span><span class="pill m-pill posted"><i></i>Posted</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-meta"><span class="mchip b">Payments</span><span class="mchip">29 Aug 2026</span><span class="mchip">Head Office</span><span class="mchip mono">Source: sales_receipt</span><span class="mchip mono">Ref: SAL-SR-2026-0005</span><span class="mchip">2 lines</span><span class="mchip b">Total MK 52,000.00</span></div>
+    <div class="m-body">
+      <div class="m-memo">Walk-in payment - awaiting deposit</div>
+      <table class="mtable"><thead><tr><th style="width:32%">Account</th><th>Description</th><th style="width:12%">Cost centre</th><th class="r" style="width:13%">Debit</th><th class="r" style="width:13%">Credit</th></tr></thead>
+        <tbody>
+          <tr><td><span class="acode">1050</span><span class="aname">Undeposited Funds</span></td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td class="r tot">52,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+          <tr><td><span class="acode">4000</span><span class="aname">Sales Revenue</span></td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td class="r tot"><span class="dash">—</span></td><td class="r tot">52,000.00</td></tr>
+          <tr class="totals"><td><b>Totals</b></td><td></td><td></td><td class="r num">52,000.00</td><td class="r num">52,000.00</td></tr>
+          <tr><td colspan="5" style="padding:10px 14px;border-top:1px solid var(--hair);background:#fbfdfc;text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td></tr>
+        </tbody></table>
+    </div>
+    <div class="m-foot"><span class="mnote">Posted to the ledger — immutable. Use Reverse to correct it.</span><a class="btn btn-ghost btn-sm" href="#p-0018"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</a><a class="btn btn-danger-o btn-sm" href="#r-0018"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Reverse</a></div>
+  </div></div>
+
+  <div class="jmodal" id="j-0021"><div class="mbox">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Journal</span><span class="m-ref">JE-2026-0021</span><span class="pill m-pill pend"><i></i>Unposted · Finalized</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-meta"><span class="mchip b">Adjustment</span><span class="mchip">31 Aug 2026</span><span class="mchip">Head Office</span><span class="mchip mono">Source: manual</span><span class="mchip mono">Ref: MAN-00022</span><span class="mchip">2 lines</span><span class="mchip b">Total MK 45,000.00</span></div>
+    <div class="m-body">
+      <div class="m-memo">Depreciation — August 2026</div>
+      <table class="mtable"><thead><tr><th style="width:32%">Account</th><th>Description</th><th style="width:12%">Cost centre</th><th class="r" style="width:13%">Debit</th><th class="r" style="width:13%">Credit</th></tr></thead>
+        <tbody>
+          <tr><td><span class="acode">6050</span><span class="aname">Amortisation Expense</span></td><td>Aug depreciation</td><td><span class="dash">—</span></td><td class="r tot">45,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+          <tr><td><span class="acode">1400</span><span class="aname">Prepayments</span></td><td>Aug depreciation</td><td><span class="dash">—</span></td><td class="r tot"><span class="dash">—</span></td><td class="r tot">45,000.00</td></tr>
+          <tr class="totals"><td><b>Totals</b></td><td></td><td></td><td class="r num">45,000.00</td><td class="r num">45,000.00</td></tr>
+          <tr><td colspan="5" style="padding:10px 14px;border-top:1px solid var(--hair);background:#fbfdfc;text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td></tr>
+        </tbody></table>
+    </div>
+    <div class="m-foot"><span class="mnote">Finalized — awaiting posting. Lines are locked.</span><button class="btn btn-warn btn-sm" title="Confirm-gated in the live app">⤺ Reopen as draft</button><button class="btn btn-primary btn-sm" title="Confirm-gated in the live app">▶ Post to ledger</button></div>
+  </div></div>
+
+  <div class="jmodal" id="j-0020"><div class="mbox">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Journal</span><span class="m-ref">JE-2026-0020</span><span class="pill m-pill draft"><i></i>Unfinalized</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-meta"><span class="mchip b">General</span><span class="mchip">30 Aug 2026</span><span class="mchip">Head Office</span><span class="mchip mono">Source: manual</span><span class="mchip mono">Ref: MAN-00021</span><span class="mchip">2 lines</span><span class="mchip b">Total MK 18,000.00</span></div>
+    <div class="m-body">
+      <div class="m-memo">Accrual — external audit fees Q3</div>
+      <table class="mtable"><thead><tr><th style="width:32%">Account</th><th>Description</th><th style="width:12%">Cost centre</th><th class="r" style="width:13%">Debit</th><th class="r" style="width:13%">Credit</th></tr></thead>
+        <tbody>
+          <tr><td><span class="acode">6100</span><span class="aname">Professional Fees</span></td><td>Q3 audit accrual</td><td><span class="dash">—</span></td><td class="r tot">18,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+          <tr><td><span class="acode">2100</span><span class="aname">Accrued Expenses</span></td><td>Q3 audit accrual</td><td><span class="dash">—</span></td><td class="r tot"><span class="dash">—</span></td><td class="r tot">18,000.00</td></tr>
+          <tr class="totals"><td><b>Totals</b></td><td></td><td></td><td class="r num">18,000.00</td><td class="r num">18,000.00</td></tr>
+          <tr><td colspan="5" style="padding:10px 14px;border-top:1px solid var(--hair);background:#fbfdfc;text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td></tr>
+        </tbody></table>
+    </div>
+    <div class="m-foot"><span class="mnote">Draft — review all lines, then finalize (creator only).</span><button class="btn btn-danger-o btn-sm" title="Confirm-gated in the live app">Delete draft</button><button class="btn btn-primary btn-sm" title="Opens edit mode in the live app">✎ Check &amp; Edit</button></div>
+  </div></div>
+
+  <div class="jmodal" id="j-0022"><div class="mbox">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Journal</span><span class="m-ref">JE-2026-0022</span><span class="pill m-pill posted"><i></i>Posted</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-meta"><span class="mchip b">General</span><span class="mchip">26 Aug 2026</span><span class="mchip">Head Office</span><span class="mchip mono">Source: manual</span><span class="mchip mono">Ref: REV-2026-0012</span><span class="mchip">2 lines</span><span class="mchip b">Total MK 100,000.00</span></div>
+    <div class="m-body">
+      <div class="m-memo">Reversal of JE-2026-0012</div>
+      <table class="mtable"><thead><tr><th style="width:32%">Account</th><th>Description</th><th style="width:12%">Cost centre</th><th class="r" style="width:13%">Debit</th><th class="r" style="width:13%">Credit</th></tr></thead>
+        <tbody>
+          <tr><td><span class="acode">1010</span><span class="aname">Standard Bank – Current</span></td><td>reversal</td><td><span class="dash">—</span></td><td class="r tot">100,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+          <tr><td><span class="acode">1050</span><span class="aname">Petty Cash</span></td><td>reversal</td><td><span class="dash">—</span></td><td class="r tot"><span class="dash">—</span></td><td class="r tot">100,000.00</td></tr>
+          <tr class="totals"><td><b>Totals</b></td><td></td><td></td><td class="r num">100,000.00</td><td class="r num">100,000.00</td></tr>
+          <tr><td colspan="5" style="padding:10px 14px;border-top:1px solid var(--hair);background:#fbfdfc;text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td></tr>
+        </tbody></table>
+    </div>
+    <div class="m-foot"><span class="mnote">Posted to the ledger — immutable. Use Reverse to correct it.</span><a class="btn btn-ghost btn-sm" href="#p-0022"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</a><a class="btn btn-danger-o btn-sm" href="#r-0022"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Reverse</a></div>
+  </div></div>
+
+  <!-- REVERSED journal: footer carries ONLY the void notice + plain-text cross-reference -->
+  <div class="jmodal" id="j-0012"><div class="mbox">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Journal</span><span class="m-ref">JE-2026-0012</span><span class="pill m-pill rev"><i></i>Reversed</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-meta"><span class="mchip b">Payments</span><span class="mchip">25 Aug 2026</span><span class="mchip">Head Office</span><span class="mchip mono">Source: petty_cash_establish</span><span class="mchip mono">Ref: PC-0001</span><span class="mchip">2 lines</span><span class="mchip b">Total MK 100,000.00</span></div>
+    <div class="m-body">
+      <div class="m-memo">Establish petty cash fund - Petty Cash</div>
+      <table class="mtable"><thead><tr><th style="width:32%">Account</th><th>Description</th><th style="width:12%">Cost centre</th><th class="r" style="width:13%">Debit</th><th class="r" style="width:13%">Credit</th></tr></thead>
+        <tbody>
+          <tr><td><span class="acode">1050</span><span class="aname">Petty Cash</span></td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td class="r tot">100,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+          <tr><td><span class="acode">1010</span><span class="aname">Standard Bank – Current</span></td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td class="r tot"><span class="dash">—</span></td><td class="r tot">100,000.00</td></tr>
+          <tr class="totals"><td><b>Totals</b></td><td></td><td></td><td class="r num">100,000.00</td><td class="r num">100,000.00</td></tr>
+          <tr><td colspan="5" style="padding:10px 14px;border-top:1px solid var(--hair);background:#fbfdfc;text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td></tr>
+        </tbody></table>
+    </div>
+    <div class="m-foot"><span class="mnote">Reversed — this entry is void. Offsetting journal: <b>JE-2026-0022</b></span></div>
+  </div></div>
+
+  <!-- ============ REVERSAL MODALS ============ -->
+  <div class="jmodal revz" id="r-0019"><div class="mbox narrow">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg></span><span class="m-title">Reverse journal</span><span class="m-ref">JE-2026-0019</span><a class="m-close" href="#j-0019" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-body">
+      <div class="warn-panel"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><p>Reversal creates a NEW journal mirroring every debit and credit. The original is marked <b>Reversed</b> and both are cross-linked.</p></div>
+      <div class="mirr"><div class="mh">Reversal preview (lines mirrored)</div>
+        <div class="mline"><span class="side cr">CR</span><span class="code">1050</span><span class="name">Undeposited Funds</span><span class="amt">25,000.00</span></div>
+        <div class="mline"><span class="side dr">DR</span><span class="code">4000</span><span class="name">Sales Revenue</span><span class="amt">25,000.00</span></div>
+      </div>
+      <div class="f-grid">
+        <div class="fld"><label>Reversal date</label><input class="in" type="date" value="2026-10-02"></div>
+        <div class="fld"><label>New reference</label><input class="in" type="text" value="REV-2026-0019" readonly></div>
+        <div class="fld full"><label>Description</label><input class="in" type="text" placeholder="Reason for reversal…"></div>
+        <div class="fld full"><label>Mode</label>
+          <div class="pseg"><input type="radio" name="rm19" id="rm19a" checked><label for="rm19a">Post immediately</label><input type="radio" name="rm19" id="rm19b"><label for="rm19b">Save as draft</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="m-foot"><span class="mnote">Reversal date must fall in an open period.</span><a class="btn btn-ghost btn-sm" href="#j-0019">Cancel</a><a class="btn btn-danger btn-sm" href="#cf-0019"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Confirm reversal</a></div>
+  </div></div>
+
+  <div class="jmodal revz" id="r-0018"><div class="mbox narrow">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg></span><span class="m-title">Reverse journal</span><span class="m-ref">JE-2026-0018</span><a class="m-close" href="#j-0018" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-body">
+      <div class="warn-panel"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><p>Reversal creates a NEW journal mirroring every debit and credit. The original is marked <b>Reversed</b> and both are cross-linked.</p></div>
+      <div class="mirr"><div class="mh">Reversal preview (lines mirrored)</div>
+        <div class="mline"><span class="side cr">CR</span><span class="code">1050</span><span class="name">Undeposited Funds</span><span class="amt">52,000.00</span></div>
+        <div class="mline"><span class="side dr">DR</span><span class="code">4000</span><span class="name">Sales Revenue</span><span class="amt">52,000.00</span></div>
+      </div>
+      <div class="f-grid">
+        <div class="fld"><label>Reversal date</label><input class="in" type="date" value="2026-10-02"></div>
+        <div class="fld"><label>New reference</label><input class="in" type="text" value="REV-2026-0018" readonly></div>
+        <div class="fld full"><label>Description</label><input class="in" type="text" placeholder="Reason for reversal…"></div>
+        <div class="fld full"><label>Mode</label>
+          <div class="pseg"><input type="radio" name="rm18" id="rm18a" checked><label for="rm18a">Post immediately</label><input type="radio" name="rm18" id="rm18b"><label for="rm18b">Save as draft</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="m-foot"><span class="mnote">Reversal date must fall in an open period.</span><a class="btn btn-ghost btn-sm" href="#j-0018">Cancel</a><a class="btn btn-danger btn-sm" href="#cf-0018"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Confirm reversal</a></div>
+  </div></div>
+
+  <div class="jmodal revz" id="r-0022"><div class="mbox narrow">
+    <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg></span><span class="m-title">Reverse journal</span><span class="m-ref">JE-2026-0022</span><a class="m-close" href="#j-0022" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="m-body">
+      <div class="warn-panel"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><p>Reversal creates a NEW journal mirroring every debit and credit. The original is marked <b>Reversed</b> and both are cross-linked.</p></div>
+      <div class="mirr"><div class="mh">Reversal preview (lines mirrored)</div>
+        <div class="mline"><span class="side cr">CR</span><span class="code">1010</span><span class="name">Standard Bank – Current</span><span class="amt">100,000.00</span></div>
+        <div class="mline"><span class="side dr">DR</span><span class="code">1050</span><span class="name">Petty Cash</span><span class="amt">100,000.00</span></div>
+      </div>
+      <div class="f-grid">
+        <div class="fld"><label>Reversal date</label><input class="in" type="date" value="2026-10-02"></div>
+        <div class="fld"><label>New reference</label><input class="in" type="text" value="REV-2026-0022" readonly></div>
+        <div class="fld full"><label>Description</label><input class="in" type="text" placeholder="Reason for reversal…"></div>
+        <div class="fld full"><label>Mode</label>
+          <div class="pseg"><input type="radio" name="rm22" id="rm22a" checked><label for="rm22a">Post immediately</label><input type="radio" name="rm22" id="rm22b"><label for="rm22b">Save as draft</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="m-foot"><span class="mnote">Reversal date must fall in an open period.</span><a class="btn btn-ghost btn-sm" href="#j-0022">Cancel</a><a class="btn btn-danger btn-sm" href="#cf-0022"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Confirm reversal</a></div>
+  </div></div>
+
+  <!-- ============ CONFIRM BOXES ============ -->
+  <div class="jmodal cfz" id="cf-0019"><div class="cbox">
+    <div class="cb-head"><span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><b>Confirm reversal of JE-2026-0019?</b><a class="cb-x" href="#r-0019" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="cb-body">Creates <b>REV-2026-0019</b> mirroring every debit and credit, marks the original <b>Reversed</b> and cross-links both.</div>
+    <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#r-0019">Cancel</a><button class="btn btn-danger btn-sm" title="POSTs to the reversal endpoint in the live app">⟲ Confirm reversal</button></div>
+  </div></div>
+
+  <div class="jmodal cfz" id="cf-0018"><div class="cbox">
+    <div class="cb-head"><span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><b>Confirm reversal of JE-2026-0018?</b><a class="cb-x" href="#r-0018" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="cb-body">Creates <b>REV-2026-0018</b> mirroring every debit and credit, marks the original <b>Reversed</b> and cross-links both.</div>
+    <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#r-0018">Cancel</a><button class="btn btn-danger btn-sm" title="POSTs to the reversal endpoint in the live app">⟲ Confirm reversal</button></div>
+  </div></div>
+
+  <div class="jmodal cfz" id="cf-0022"><div class="cbox">
+    <div class="cb-head"><span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><b>Confirm reversal of JE-2026-0022?</b><a class="cb-x" href="#r-0022" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+    <div class="cb-body">Creates <b>REV-2026-0022</b> mirroring every debit and credit, marks the original <b>Reversed</b> and cross-links both.</div>
+    <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#r-0022">Cancel</a><button class="btn btn-danger btn-sm" title="POSTs to the reversal endpoint in the live app">⟲ Confirm reversal</button></div>
+  </div></div>
+
+  <!-- ============ PRINT SHEETS ============ -->
+  <div class="pview" id="p-0019"><div class="toolbar"><a class="tb-back" href="#j-0019"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</a><span class="tb-title">Print preview <span>JE-2026-0019</span></span><span class="tb-spacer"></span><span class="tb-note">A4 · Portrait · Ctrl+P prints voucher only</span><button class="tb-btn primary tb-print"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button></div>
+    <div class="sheet-wrap"><div class="sheet"><div class="wm"><span>Posted</span></div><div class="sheet-body">
+      <header class="v-head"><div class="brand"><div class="mark">A</div><div><div class="bn">ACME CORPORATION LTD</div><div class="bl">Head Office · P.O. Box 30456, Lilongwe<br>TIN 00412883 · Registered in Malawi</div></div></div>
+        <div class="docblock"><div class="dt">Journal Voucher</div><div class="dn">JE-2026-0019</div><span class="dst"><i></i>Posted</span><div class="dp">Printed 02 Oct 2026</div></div></header>
+      <div class="meta"><div class="cell"><div class="l">Journal date</div><div class="v">30 Aug 2026</div></div><div class="cell"><div class="l">Period</div><div class="v">Aug 2026</div></div><div class="cell"><div class="l">Type</div><div class="v">Payments Journal</div></div><div class="cell"><div class="l">Source</div><div class="v mono">sales_receipt</div></div><div class="cell"><div class="l">Branch</div><div class="v">Head Office</div></div><div class="cell"><div class="l">Currency</div><div class="v">MWK (K)</div></div><div class="cell"><div class="l">Created</div><div class="v">31 Aug 2026 11:42</div></div><div class="cell"><div class="l">Posted</div><div class="v">31 Aug 2026 11:42</div></div></div>
+      <div class="vlines"><div class="lt">Journal lines</div><table><thead><tr><th style="width:34px">#</th><th>Account</th><th>Memo</th><th class="r">Debit (K)</th><th class="r">Credit (K)</th></tr></thead><tbody>
+        <tr><td class="no">1</td><td class="acct"><span class="code">1050</span><span class="aname">Undeposited Funds</span></td><td><span class="dash">—</span></td><td class="num">25,000.00</td><td class="num"><span class="dash">—</span></td></tr>
+        <tr><td class="no">2</td><td class="acct"><span class="code">4000</span><span class="aname">Sales Revenue</span></td><td><span class="dash">—</span></td><td class="num"><span class="dash">—</span></td><td class="num">25,000.00</td></tr>
+        <tr class="blank"><td class="no"></td><td></td><td></td><td></td><td></td></tr><tr class="blank"><td class="no"></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="totals"><td></td><td class="tl">Totals</td><td></td><td class="num">25,000.00</td><td class="num">25,000.00</td></tr>
+        <tr class="words"><td colspan="5"><span class="words-l">Amount in words</span><span class="words-v">Malawi Kwacha Twenty-Five Thousand only</span><span class="balnote">✓ DEBITS = CREDITS</span></td></tr>
+      </tbody></table></div>
+      <div class="narr"><div class="nh">Narration / Description</div><div class="nb">Walk-in payment - awaiting deposit</div></div>
+      <div class="sigs"><div class="sig"><div class="rule"></div><div class="sl">Prepared by</div><div class="sn">31 Aug 2026 11:42</div></div><div class="sig"><div class="rule"></div><div class="sl">Authorised by</div><div class="sn">&nbsp;</div><div class="sd">Name · Date</div></div><div class="sig"><div class="rule"></div><div class="sl">Posted by</div><div class="sn">31 Aug 2026 11:42</div></div></div>
+    </div><div class="v-foot"><span class="fa">AUDIT · created 31 Aug 2026 11:42 · posted 31 Aug 2026 11:42</span><span class="fb">Computer-generated journal voucher — valid without signature while status is POSTED</span><span class="fc">PAGE 1 OF 1</span></div></div></div>
+  </div>
+
+  <div class="pview" id="p-0018"><div class="toolbar"><a class="tb-back" href="#j-0018"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</a><span class="tb-title">Print preview <span>JE-2026-0018</span></span><span class="tb-spacer"></span><span class="tb-note">A4 · Portrait · Ctrl+P prints voucher only</span><button class="tb-btn primary tb-print"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button></div>
+    <div class="sheet-wrap"><div class="sheet"><div class="wm"><span>Posted</span></div><div class="sheet-body">
+      <header class="v-head"><div class="brand"><div class="mark">A</div><div><div class="bn">ACME CORPORATION LTD</div><div class="bl">Head Office · P.O. Box 30456, Lilongwe<br>TIN 00412883 · Registered in Malawi</div></div></div>
+        <div class="docblock"><div class="dt">Journal Voucher</div><div class="dn">JE-2026-0018</div><span class="dst"><i></i>Posted</span><div class="dp">Printed 02 Oct 2026</div></div></header>
+      <div class="meta"><div class="cell"><div class="l">Journal date</div><div class="v">29 Aug 2026</div></div><div class="cell"><div class="l">Period</div><div class="v">Aug 2026</div></div><div class="cell"><div class="l">Type</div><div class="v">Payments Journal</div></div><div class="cell"><div class="l">Source</div><div class="v mono">sales_receipt</div></div><div class="cell"><div class="l">Branch</div><div class="v">Head Office</div></div><div class="cell"><div class="l">Currency</div><div class="v">MWK (K)</div></div><div class="cell"><div class="l">Created</div><div class="v">31 Aug 2026 11:42</div></div><div class="cell"><div class="l">Posted</div><div class="v">31 Aug 2026 11:42</div></div></div>
+      <div class="vlines"><div class="lt">Journal lines</div><table><thead><tr><th style="width:34px">#</th><th>Account</th><th>Memo</th><th class="r">Debit (K)</th><th class="r">Credit (K)</th></tr></thead><tbody>
+        <tr><td class="no">1</td><td class="acct"><span class="code">1050</span><span class="aname">Undeposited Funds</span></td><td><span class="dash">—</span></td><td class="num">52,000.00</td><td class="num"><span class="dash">—</span></td></tr>
+        <tr><td class="no">2</td><td class="acct"><span class="code">4000</span><span class="aname">Sales Revenue</span></td><td><span class="dash">—</span></td><td class="num"><span class="dash">—</span></td><td class="num">52,000.00</td></tr>
+        <tr class="blank"><td class="no"></td><td></td><td></td><td></td><td></td></tr><tr class="blank"><td class="no"></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="totals"><td></td><td class="tl">Totals</td><td></td><td class="num">52,000.00</td><td class="num">52,000.00</td></tr>
+        <tr class="words"><td colspan="5"><span class="words-l">Amount in words</span><span class="words-v">Malawi Kwacha Fifty-Two Thousand only</span><span class="balnote">✓ DEBITS = CREDITS</span></td></tr>
+      </tbody></table></div>
+      <div class="narr"><div class="nh">Narration / Description</div><div class="nb">Walk-in payment - awaiting deposit</div></div>
+      <div class="sigs"><div class="sig"><div class="rule"></div><div class="sl">Prepared by</div><div class="sn">31 Aug 2026 11:42</div></div><div class="sig"><div class="rule"></div><div class="sl">Authorised by</div><div class="sn">&nbsp;</div><div class="sd">Name · Date</div></div><div class="sig"><div class="rule"></div><div class="sl">Posted by</div><div class="sn">31 Aug 2026 11:42</div></div></div>
+    </div><div class="v-foot"><span class="fa">AUDIT · created 31 Aug 2026 11:42 · posted 31 Aug 2026 11:42</span><span class="fb">Computer-generated journal voucher — valid without signature while status is POSTED</span><span class="fc">PAGE 1 OF 1</span></div></div></div>
+  </div>
+
+  <div class="pview" id="p-0022"><div class="toolbar"><a class="tb-back" href="#j-0022"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</a><span class="tb-title">Print preview <span>JE-2026-0022</span></span><span class="tb-spacer"></span><span class="tb-note">A4 · Portrait · Ctrl+P prints voucher only</span><button class="tb-btn primary tb-print"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button></div>
+    <div class="sheet-wrap"><div class="sheet"><div class="wm"><span>Posted</span></div><div class="sheet-body">
+      <header class="v-head"><div class="brand"><div class="mark">A</div><div><div class="bn">ACME CORPORATION LTD</div><div class="bl">Head Office · P.O. Box 30456, Lilongwe<br>TIN 00412883 · Registered in Malawi</div></div></div>
+        <div class="docblock"><div class="dt">Journal Voucher</div><div class="dn">JE-2026-0022</div><span class="dst"><i></i>Posted</span><div class="dp">Printed 02 Oct 2026</div></div></header>
+      <div class="meta"><div class="cell"><div class="l">Journal date</div><div class="v">26 Aug 2026</div></div><div class="cell"><div class="l">Period</div><div class="v">Aug 2026</div></div><div class="cell"><div class="l">Type</div><div class="v">General Journal</div></div><div class="cell"><div class="l">Source</div><div class="v mono">manual</div></div><div class="cell"><div class="l">Branch</div><div class="v">Head Office</div></div><div class="cell"><div class="l">Currency</div><div class="v">MWK (K)</div></div><div class="cell"><div class="l">Created</div><div class="v">26 Aug 2026 08:55</div></div><div class="cell"><div class="l">Posted</div><div class="v">26 Aug 2026 08:56</div></div></div>
+      <div class="vlines"><div class="lt">Journal lines</div><table><thead><tr><th style="width:34px">#</th><th>Account</th><th>Memo</th><th class="r">Debit (K)</th><th class="r">Credit (K)</th></tr></thead><tbody>
+        <tr><td class="no">1</td><td class="acct"><span class="code">1010</span><span class="aname">Standard Bank – Current</span></td><td>reversal</td><td class="num">100,000.00</td><td class="num"><span class="dash">—</span></td></tr>
+        <tr><td class="no">2</td><td class="acct"><span class="code">1050</span><span class="aname">Petty Cash</span></td><td>reversal</td><td class="num"><span class="dash">—</span></td><td class="num">100,000.00</td></tr>
+        <tr class="blank"><td class="no"></td><td></td><td></td><td></td><td></td></tr><tr class="blank"><td class="no"></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="totals"><td></td><td class="tl">Totals</td><td></td><td class="num">100,000.00</td><td class="num">100,000.00</td></tr>
+        <tr class="words"><td colspan="5"><span class="words-l">Amount in words</span><span class="words-v">Malawi Kwacha One Hundred Thousand only</span><span class="balnote">✓ DEBITS = CREDITS</span></td></tr>
+      </tbody></table></div>
+      <div class="narr"><div class="nh">Narration / Description</div><div class="nb">Reversal of JE-2026-0012</div></div>
+      <div class="sigs"><div class="sig"><div class="rule"></div><div class="sl">Prepared by</div><div class="sn">26 Aug 2026 08:55</div></div><div class="sig"><div class="rule"></div><div class="sl">Authorised by</div><div class="sn">&nbsp;</div><div class="sd">Name · Date</div></div><div class="sig"><div class="rule"></div><div class="sl">Posted by</div><div class="sn">26 Aug 2026 08:56</div></div></div>
+    </div><div class="v-foot"><span class="fa">AUDIT · created 26 Aug 2026 08:55 · posted 26 Aug 2026 08:56</span><span class="fb">Computer-generated journal voucher — valid without signature while status is POSTED</span><span class="fc">PAGE 1 OF 1</span></div></div></div>
+  </div>
+</div>
+
+<!-- OPTIONAL enhancement only — page works without JS -->
+<script>
+  try {
+    document.addEventListener('click', function (e) {
+      var p = e.target.closest('.tb-print');
+      if (p) { e.preventDefault(); window.print(); }
+    });
+  } catch (err) {}
+</script>
+
+</body>
+</html>
+```

@@ -166,6 +166,24 @@ document.addEventListener('alpine:init', () => {
             this.reverseOpen = true;
         },
 
+        // A4.1: the mirrored preview. A debit line reappears as a credit and a
+        // credit line as a debit - that is the entire reversal, so show it
+        // verbatim rather than describing it in prose.
+        mirrorLines() {
+            const entry = this.currentEntry();
+
+            if (!entry || !Array.isArray(entry.lines)) {
+                return [];
+            }
+
+            return entry.lines.map((line) => ({
+                side: line.dr != null ? 'CR' : 'DR',
+                code: line.a,
+                name: line.n,
+                amount: line.dr != null ? line.dr : line.cr,
+            }));
+        },
+
         openReversal(id) {
             const entry = this.get(id);
 
@@ -183,8 +201,24 @@ document.addEventListener('alpine:init', () => {
         },
 
         printEntry(id) {
-            this.open(id, 'view');
-            this.$nextTick(() => window.print());
+            const entry = this.get(id);
+
+            if (!entry || !entry.urls || !entry.urls.print) {
+                return;
+            }
+
+            // A4.4: the Print action opens the standalone voucher preview page,
+            // exactly like Ctrl+P on the journal detail screen. It is never
+            // window.print() from the register, which would print the whole app.
+            const win = window.open(entry.urls.print, '_blank');
+
+            if (!win) {
+                window.CB?.toast(
+                    'warning',
+                    'Print tab blocked',
+                    'Allow pop-ups for this site to open the voucher preview.',
+                );
+            }
         },
 
         askConfirm(cfg) {

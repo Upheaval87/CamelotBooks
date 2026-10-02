@@ -29,7 +29,7 @@
             <form method="POST" action="{{ route('accounting.payroll.distribution.bulk-send', $run) }}">
                 @csrf
                 <div class="pd-actions">
-                    <button type="submit" class="pd-btn pd-btn-cta" onclick="return confirm('Send payslips to all {{ $payslips->count() }} employees?')">
+                    <button type="submit" class="pd-btn pd-btn-cta" onclick="return fbConfirmButton(event, 'Send payslips to all {{ $payslips->count() }} employees?', { type: 'action' })">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         Send All {{ $payslips->count() }} Payslips
                     </button>

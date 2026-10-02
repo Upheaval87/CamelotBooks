@@ -31,14 +31,14 @@
                             </div>
                         </div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
-                            <form method="POST" action="{{ route('accounting.rj.approve-run', $run) }}" style="display:inline" onsubmit="return window.CB && window.CB.confirm({type:'action',title:'Approve Journal Entry',message:'Post this journal entry to the general ledger?',confirmLabel:'Approve &amp; Post'}) || confirm('Approve this journal entry?')">
+                            <form method="POST" action="{{ route('accounting.rj.approve-run', $run) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Post this journal entry to the general ledger?', { type: 'action', confirmLabel: 'Approve &amp; Post' })">
                                 @csrf
                                 <button type="submit" class="btn btn-sec btn-sm">✓ Approve</button>
                             </form>
                             <form method="POST" action="{{ route('accounting.rj.reject-run', $run) }}" style="display:inline">
                                 @csrf
                                 <input type="hidden" name="reason" id="reject-reason-{{ $run->id }}" value="">
-                                <button type="button" class="btn btn-danger-o btn-sm" onclick="var r=prompt('Rejection reason (required):');if(r===null||r.trim()===''){return false;}document.getElementById('reject-reason-{{ $run->id }}').value=r;this.form.submit();">✗ Reject</button>
+                                <button type="button" class="btn btn-danger-o btn-sm" onclick="var b=this;CB.prompt({title:'Rejection reason (required):',label:'Reason',confirmLabel:'Reject'}).then(function(r){if(r===null||String(r).trim()==='')return;b.form.querySelector('[name=reason]').value=r;b.form.submit();})">✗ Reject</button>
                             </form>
                             <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('comment-{{ $run->id }}').focus()">💬 Comment</button>
                         </div>

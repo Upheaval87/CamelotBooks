@@ -1,0 +1,345 @@
+/* ============================================================================
+   JOURNAL VOUCHER — standalone print page + PDF companion
+   resources/views/accounting/journal-entries/print.blade.php
+
+   Deliberately its OWN Vite entry (vite.config.js) instead of riding along in
+   app.css. The print page must ship the sheet and nothing else: app.css carries
+   seven unrelated `@media print` blocks (report modules, fs-* wrappers, the
+   sales-receipt thermal sheet) that would otherwise leak into the voucher print
+   and blank or reflow the sheet. This file is the single source of truth for the
+   voucher sheet and is loaded by the print page alone.
+
+   The `.glj-sheet*` class names are UNCHANGED from the in-page preview that this
+   page replaced, so the sheet markup is byte-identical — only the surrounding
+   chrome (`.jv-*`) is new. Tokens mirror app.css `.glj { --p-* }` exactly.
+   ============================================================================ */
+
+.jv {
+    /* print family (mirrors app.css `.glj` print tokens) */
+    --p-accent: #0e7473;
+    --p-band: #f0f5f5;
+    --p-ink: #13292c;
+    --p-sub: #3e5658;
+    --p-muted: #5f7476;
+    --p-faint: #8aa3a2;
+    --p-line: #dce7e5;
+    --p-hair: #e7efed;
+    --sec: #128f8e;
+    --sec-2: #149897;
+    --red-2: #b91c1c;
+    --amber: #d97706;
+    --amber-2: #b45309;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+    --jv-tbar-h: 56px;
+}
+
+.jv-page {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #e6edec 0%, #dde6e5 100%);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* -- screen-only toolbar (never printed) --------------------------------- */
+.jv-tbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: var(--jv-tbar-h);
+    padding: 10px 22px;
+    background: rgba(255, 255, 255, .95);
+    border-bottom: 1px solid var(--p-line);
+    box-shadow: 0 6px 18px -12px rgba(10, 42, 46, .25);
+    flex-wrap: wrap;
+}
+.jv-back,
+.jv-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 15px;
+    border-radius: 10px;
+    border: 1px solid var(--p-line);
+    background: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--p-sub);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all .15s;
+}
+.jv-back:hover,
+.jv-btn:hover {
+    border-color: rgba(14, 116, 115, .4);
+    color: var(--p-accent);
+    transform: translateY(-1px);
+}
+.jv-back svg,
+.jv-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+.jv-btn.primary {
+    background: linear-gradient(180deg, var(--sec-2), var(--sec));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 5px 12px -5px rgba(18, 143, 142, .6), inset 0 1px 0 rgba(255, 255, 255, .25);
+}
+.jv-btn.primary:hover {
+    color: #fff;
+    box-shadow: 0 8px 16px -6px rgba(18, 143, 142, .7), inset 0 1px 0 rgba(255, 255, 255, .25);
+}
+.jv-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--p-ink);
+}
+.jv-title .chip {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--p-accent);
+    background: rgba(14, 116, 115, .08);
+    border: 1px solid rgba(14, 116, 115, .22);
+    padding: 3px 8px;
+    border-radius: 7px;
+}
+.jv-spacer { flex: 1; }
+.jv-note {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--p-faint);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+/* -- the sheet itself (class names unchanged from the old in-page preview) - */
+.glj-sheetwrap { display: flex; justify-content: center; padding: 34px 20px 60px; }
+
+.glj-sheet {
+    position: relative;
+    width: 794px;
+    min-height: 1123px;
+    background: #fff;
+    border: 1px solid var(--p-line);
+    box-shadow: 0 2px 6px rgba(10, 42, 46, .08), 0 30px 70px -30px rgba(10, 42, 46, .45);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.glj-sheet::before {
+    content: '';
+    display: block;
+    height: 5px;
+    flex: none;
+    background: linear-gradient(90deg, var(--p-accent) 0%, var(--sec-2) 55%, #7fd1c0 100%);
+}
+.glj-wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+.glj-wm span {
+    transform: rotate(-24deg);
+    font-size: 108px;
+    font-weight: 900;
+    letter-spacing: .18em;
+    color: rgba(14, 116, 115, .045);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.glj-sheetbody { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+
+.glj-vhead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 26px 46px 20px;
+    background: linear-gradient(180deg, var(--p-band) 0%, #f7fbfa 100%);
+    border-bottom: 1px solid var(--p-line);
+}
+.glj-brand { display: flex; gap: 13px; }
+.glj-brand .mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(150deg, var(--p-accent) 0%, #0a5453 100%);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: -.02em;
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+}
+.glj-brand .bn { font-size: 15.5px; font-weight: 900; letter-spacing: -.015em; color: var(--p-ink); }
+.glj-brand .bl { font-size: 10px; font-weight: 600; color: var(--p-muted); line-height: 1.55; margin-top: 3px; }
+.glj-docblock { text-align: right; }
+.glj-docblock .dt { font-size: 9.5px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--p-accent); }
+.glj-docblock .dn { font-family: var(--mono); font-size: 19px; font-weight: 800; color: var(--p-ink); letter-spacing: -.01em; margin-top: 4px; }
+.glj-dstamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 7px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(14, 116, 115, .10);
+    border: 1px solid rgba(14, 116, 115, .35);
+    color: var(--p-accent);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+.glj-dstamp i { width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); }
+/* Reversed stamp flips to amber so the printed sheet matches live status */
+.glj-dstamp.rev { background: rgba(217, 119, 6, .10); border-color: rgba(217, 119, 6, .38); color: var(--amber-2); }
+.glj-dstamp.rev i { background: var(--amber); }
+.glj-docblock .dp { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 6px; }
+
+.glj-meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--p-line); }
+.glj-meta .cell { padding: 11px 16px; border-left: 1px solid var(--p-hair); }
+.glj-meta .cell:first-child { border-left: none; }
+.glj-meta .cell:nth-child(n+5) { border-top: 1px solid var(--p-hair); }
+.glj-meta .l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); }
+.glj-meta .v { font-size: 11.5px; font-weight: 700; color: var(--p-ink); margin-top: 3px; }
+.glj-meta .v.mono { font-family: var(--mono); font-size: 11px; color: var(--p-accent); }
+
+.glj-lines { padding: 22px 46px 0; }
+.glj-lines .lt { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--p-muted); margin-bottom: 9px; }
+.glj-sheet table { width: 100%; border-collapse: collapse; }
+.glj-sheet thead th {
+    background: var(--p-accent);
+    color: #fff;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    text-align: left;
+}
+.glj-sheet thead th.r { text-align: right; }
+.glj-sheet thead th:first-child { border-radius: 6px 0 0 6px; }
+.glj-sheet thead th:last-child { border-radius: 0 6px 6px 0; }
+.glj-sheet tbody td { padding: 10px 12px; border-bottom: 1px solid var(--p-hair); font-size: 11.5px; color: var(--p-sub); vertical-align: top; }
+.glj-sheet tbody td.no { width: 34px; color: var(--p-faint); font-weight: 700; font-variant-numeric: tabular-nums; }
+.glj-sheet tbody td.acct .code { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-ink); }
+.glj-sheet tbody td.acct .aname { display: block; font-size: 10.5px; font-weight: 600; color: var(--p-muted); margin-top: 2px; }
+.glj-sheet tbody td.dcell { color: var(--p-sub); }
+.glj-sheet tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
+.glj-sheet tbody td .dash { color: #c6d6d4; font-weight: 600; }
+/* R4: blank ruled rows carry NO line number */
+.glj-sheet tr.blank td { height: 30px; color: #d5e2e0; }
+.glj-sheet tr.totals td { border-bottom: none; border-top: 3px double var(--p-ink); padding: 10px 12px; background: var(--p-band); }
+.glj-sheet tr.totals .tl { font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--p-ink); }
+.glj-sheet tr.totals td.num { font-size: 12.5px; font-weight: 900; }
+.glj-sheet tr.words td { padding: 9px 12px; border-bottom: 1px solid var(--p-line); background: #fbfdfc; }
+.glj-words-l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); margin-right: 8px; }
+.glj-words-v { font-size: 11px; font-weight: 700; color: var(--p-sub); font-style: italic; }
+.glj-balnote { float: right; font-size: 9.5px; font-weight: 800; color: var(--p-accent); letter-spacing: .06em; }
+.glj-balnote.bad { color: var(--red-2); }
+
+.glj-narr { margin: 18px 46px 0; border: 1px solid var(--p-line); border-radius: 6px; overflow: hidden; }
+.glj-narr .nh {
+    padding: 7px 12px;
+    background: var(--p-band);
+    border-bottom: 1px solid var(--p-hair);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--p-muted);
+}
+.glj-narr .nb { padding: 11px 12px; font-size: 11.5px; font-weight: 500; color: var(--p-sub); line-height: 1.65; }
+
+.glj-sigs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; margin: 34px 46px 40px; }
+.glj-sig { text-align: center; }
+.glj-sig .rule { border-bottom: 1px solid var(--p-ink); height: 34px; position: relative; }
+.glj-sig .sl { margin-top: 7px; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+.glj-sig .sn { margin-top: 3px; font-size: 10.5px; font-weight: 700; color: var(--p-ink); }
+.glj-sig .sd { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 1px; }
+
+.glj-vfoot {
+    margin-top: auto;
+    padding: 12px 46px;
+    border-top: 1px solid var(--p-line);
+    background: #fbfdfc;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex: none;
+    position: relative;
+    z-index: 1;
+}
+.glj-vfoot .fa { font-family: var(--mono); font-size: 8.5px; font-weight: 600; color: var(--p-faint); }
+.glj-vfoot .fb { font-size: 8.5px; font-weight: 600; color: var(--p-faint); text-align: center; flex: 1; }
+.glj-vfoot .fc { font-size: 9px; font-weight: 800; color: var(--p-muted); letter-spacing: .08em; white-space: nowrap; }
+
+/* -- focus + motion ------------------------------------------------------- */
+.jv :focus-visible,
+.glj-sheet :focus-visible {
+    outline: 2px solid rgba(18, 143, 142, .55);
+    outline-offset: 2px;
+    border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .jv *, .jv *::before, .jv *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* -- responsive: screen only, the printed sheet is never scaled ---------- */
+@media (max-width: 880px) {
+    .glj-sheet { width: 100%; min-height: 0; }
+    .glj-sheetwrap { padding: 14px 10px 40px; }
+    .glj-vhead { padding: 18px 20px 14px; gap: 14px; }
+    .glj-meta { grid-template-columns: repeat(2, 1fr); }
+    .glj-meta .cell:nth-child(odd) { border-left: none; }
+    .glj-meta .cell:nth-child(n+3) { border-top: 1px solid var(--p-hair); }
+    .glj-lines { padding: 16px 20px 0; }
+    .glj-narr { margin: 14px 20px 0; }
+    .glj-sigs { grid-template-columns: 1fr; gap: 22px; margin: 24px 20px 28px; }
+    .glj-vfoot { padding: 10px 20px; flex-wrap: wrap; }
+    .jv-tbar { padding: 10px 14px; gap: 8px; }
+    .jv-spacer { display: none; }
+    .jv-note { display: none; }
+}
+
+/* -- 6.1 print pipeline -----------------------------------------------------
+   The sheet keeps min-height 277mm (A4 minus 10mm margins) so the footer prints
+   at the TRUE bottom of the page and the thead band repeats on every page.
+   Only the toolbar is removed; nothing else on the page exists to hide. */
+@page { size: A4 portrait; margin: 10mm; }
+
+@media print {
+    html, body {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .jv-page { background: #fff !important; min-height: 0 !important; }
+    .jv-tbar { display: none !important; }
+    .glj-sheetwrap { padding: 0 !important; display: block !important; }
+    .glj-sheet {
+        width: auto !important;
+        min-height: 277mm;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .glj-sheet thead { display: table-header-group; }
+    .glj-sheet tr { break-inside: avoid; }
+}

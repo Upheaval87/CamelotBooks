@@ -99,7 +99,7 @@
                                                         <a href="{{ route('pos.returnables.show', $ret->id) }}" class="pos-btn pos-btn-xs pos-btn-ghost">View</a>
                                                         <a href="{{ route('pos.returnables.print', $ret->id) }}" class="pos-btn pos-btn-xs pos-btn-ghost">Print</a>
                                                         @if($ret->isVoidable())
-                                                            <form method="POST" action="{{ route('pos.returnables.void', $ret->id) }}" style="display:inline" onsubmit="return confirm('Void this BRR receipt? The journal entry will be reversed.')">
+                                                            <form method="POST" action="{{ route('pos.returnables.void', $ret->id) }}" style="display:inline" onsubmit="return fbConfirmSubmit(event, 'Void this BRR receipt? The journal entry will be reversed.', { type: 'danger' })">
                                                                 @csrf
                                                                 <button type="submit" class="pos-btn pos-btn-xs pos-btn-danger">Void</button>
                                                             </form>

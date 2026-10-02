@@ -334,6 +334,7 @@ class JournalEntryController extends Controller
                 'reopen' => route('accounting.journal-entries.reopen', $entry->id),
                 'destroy' => route('accounting.journal-entries.destroy', $entry->id),
                 'reverse' => route('accounting.journal-entries.reverse', $entry->id),
+                'print' => route('accounting.journal-entries.print', $entry->id),
             ],
             'lines' => $entry->lines->map(fn ($line) => [
                 'account_id' => $line->account_id,
@@ -546,13 +547,230 @@ class JournalEntryController extends Controller
             ? (Currency::where('code', $baseCurrency)->first()?->symbol ?: '$')
             : SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$');
 
+        /* ── presentation data for the journal detail screen + print voucher ──────
+         * Strictly additive read-only view data. Nothing here touches posting,
+         * calculation or permission logic: every value is resolved from the journal
+         * record itself or from the company/system settings the rest of the app
+         * already reads, so money and dates stay setting-driven (spec R6/§8.1). */
+        $company = Company::find($companyId);
+        $currencyRow = $baseCurrency ? Currency::where('code', $baseCurrency)->first() : null;
+        $decimals = (int) SystemSetting::getValue('currency', 'decimal_places', $companyId, 2);
+        $dateFormat = (string) SystemSetting::getValue('regional', 'date_format', $companyId, 'Y-m-d');
+        $currencyCode = (string) ($currencyRow?->code ?: ($baseCurrency ?: ''));
+
+        $typeLabel = JournalTypeClassifier::label(
+            $journalEntry->source_module,
+            (bool) $journalEntry->is_adjusting_entry,
+        );
+        if ($typeLabel === JournalTypeClassifier::GENERAL) {
+            $typeLabel = 'General Journal';
+        }
+
+        $totalDebit = (float) $journalEntry->total_debit;
+
+        /* Read-only peek at the number the reversal engine will mint on save.
+         *
+         * `peekNextNumber()` is tried first and does NOT consume the sequence.
+         * JournalEntryPostingEngine::generateJournalNumber() has a documented
+         * fallback for companies with no `journal_entry` sequence row (which is
+         * the common case here — see TenantDefaultsSeeder), deriving
+         * "JE-{year}-{n}" from the highest existing number. Mirroring that
+         * fallback keeps the modal's "Next reversal ref" honest instead of
+         * falling back to a placeholder word. Read-only in both branches. */
+        $nextReversalRef = app(\App\Services\Admin\NumberingSequenceService::class)
+            ->peekNextNumber($companyId, 'journal_entry');
+
+        if ($nextReversalRef === null) {
+            $prefix = 'JE-' . date('Y') . '-';
+            $lastNumber = JournalEntry::where('company_id', $companyId)
+                ->where('journal_number', 'like', $prefix . '%')
+                ->orderByDesc('journal_number')
+                ->value('journal_number');
+
+            $nextReversalRef = $prefix . str_pad(
+                $lastNumber ? ((int) substr($lastNumber, strlen($prefix)) + 1) : 1,
+                4,
+                '0',
+                STR_PAD_LEFT,
+            );
+        }
+
         return view('accounting.journal-entries.show', compact(
             'journalEntry',
             'pendingReversal',
             'appliedReversal',
             'period',
             'cs',
+            'company',
+            'currencyRow',
+            'currencyCode',
+            'decimals',
+            'dateFormat',
+            'typeLabel',
+            'totalDebit',
+            'nextReversalRef',
         ));
+    }
+
+    /* ==================================================================
+       PRINT VOUCHER — standalone page + real PDF download.
+
+       The voucher used to be an in-page overlay on the detail screen with a
+       "Save as PDF" button that merely called window.print(). Three changes,
+       all read-only and additive:
+
+         printVoucher()        GET  .../print       -> the A4 sheet on its own
+                                                       page, opened in a new tab.
+                                                       This page IS the preview.
+         downloadVoucherPdf()  GET  .../print/pdf   -> a server-rendered DomPDF
+                                                       file as an attachment.
+
+       Both read from voucherPayload(), the single payload shared with the PDF
+       template, so the on-screen preview and the downloaded file can never
+       disagree about totals, dates or the amount in words. Neither method can
+       write: no posting, no reversal, no ledger effect.
+       ================================================================== */
+
+    /** Shared, presentation-only payload for the sheet, the preview page and the PDF. */
+    private function voucherPayload(JournalEntry $journalEntry): array
+    {
+        $companyId = (int) session('current_company_id');
+
+        /* The voucher is company data. Model binding has historically resolved
+           on the default (central) connection, so re-check the tenant scope here
+           rather than trusting the bound instance — a forged id must never print
+           another company's ledger. */
+        abort_unless(
+            (int) $journalEntry->company_id === $companyId,
+            404,
+        );
+
+        $journalEntry->loadMissing(['lines.account', 'branch']);
+
+        $company = Company::find($companyId);
+        $baseCurrency = $company?->base_currency;
+        $currencyRow = $baseCurrency ? Currency::where('code', $baseCurrency)->first() : null;
+
+        $cs = $currencyRow?->symbol ?: ($baseCurrency
+            ? SystemSetting::getValue('currency', 'currency_symbol', $companyId, '$')
+            : '$');
+
+        $decimals = (int) SystemSetting::getValue('currency', 'decimal_places', $companyId, 2);
+        $dateFormat = (string) SystemSetting::getValue('regional', 'date_format', $companyId, 'Y-m-d');
+        $currencyCode = (string) ($currencyRow?->code ?: ($baseCurrency ?: ''));
+
+        $statusLabel = match ($journalEntry->status) {
+            'draft' => 'Draft',
+            'pending_approval' => 'Pending Approval',
+            'approved' => 'Approved',
+            'posted' => 'Posted',
+            'reversed' => 'Reversed',
+            default => ucfirst(str_replace('_', ' ', (string) $journalEntry->status)),
+        };
+
+        /* Same classifier the detail screen and the journal register use, so the
+           printed type can never disagree with the register's Type column. */
+        $typeLabel = JournalTypeClassifier::label(
+            $journalEntry->source_module,
+            (bool) $journalEntry->is_adjusting_entry,
+        );
+        if ($typeLabel === JournalTypeClassifier::GENERAL) {
+            $typeLabel = 'General Journal';
+        }
+
+        $period = AccountingPeriod::where('company_id', $companyId)
+            ->where('start_date', '<=', $journalEntry->date)
+            ->where('end_date', '>=', $journalEntry->date)
+            ->first();
+
+        $totalDebit = (float) $journalEntry->total_debit;
+        $totalCredit = (float) $journalEntry->total_credit;
+        $variance = abs($totalDebit - $totalCredit);
+
+        return [
+            'journalEntry' => $journalEntry,
+            'company' => $company,
+            'currencyRow' => $currencyRow,
+            'currencyCode' => $currencyCode,
+            'cs' => $cs,
+            'decimals' => $decimals,
+            'dateFormat' => $dateFormat,
+            'typeLabel' => $typeLabel,
+            'statusLabel' => $statusLabel,
+            'isReversed' => $journalEntry->isReversed(),
+            'periodLabel' => $period?->label,
+            'sourceLabel' => $journalEntry->source_module
+                ? ucwords(str_replace('_', ' ', (string) $journalEntry->source_module))
+                : 'Manual entry',
+
+            /* R6: money and dates are always rendered through company settings. */
+            'fmtMoney' => fn ($value) => format_number((float) $value, $decimals),
+            'fmtDate' => fn ($value) => $value
+                ? \Illuminate\Support\Carbon::parse($value)->format($dateFormat)
+                : '—',
+
+            'totalDebit' => $totalDebit,
+            'totalCredit' => $totalCredit,
+            'variance' => $variance,
+            'isBalanced' => $variance < 0.01,
+
+            /* Server-rendered so the printed sheet can never disagree with the
+               numeric totals (R7). */
+            'amountWords' => amount_to_words(
+                $totalDebit,
+                $currencyRow?->name ?: ($currencyCode ?: ''),
+            ),
+
+            /* Company letterhead for the printed voucher. */
+            'companyName' => $company?->legal_name ?: ($company?->name ?: ''),
+            'addressBits' => array_values(array_filter([
+                $company?->address,
+                $company?->city,
+                $company?->state,
+                $company?->country,
+                $company?->postal_code,
+            ])),
+            'taxId' => $company?->tax_id,
+            'companyPhone' => $company?->phone,
+
+            /* R3: printed attributions are bare timestamps, never actor names. */
+            'printedStamp' => now()->format('d M Y · H:i'),
+        ];
+    }
+
+    /** Filename shared by the toolbar download link and the PDF response. */
+    private function voucherPdfFilename(JournalEntry $journalEntry): string
+    {
+        $slug = preg_replace('/[^A-Za-z0-9._-]+/', '-', (string) $journalEntry->journal_number);
+
+        return trim((string) $slug, '-') . '-journal-voucher.pdf';
+    }
+
+    /** GET .../print — the standalone A4 preview, opened in a new tab. */
+    public function printVoucher(JournalEntry $journalEntry)
+    {
+        $this->requirePermission('journal-entries.view');
+
+        $payload = $this->voucherPayload($journalEntry);
+        $payload['pdfFilename'] = $this->voucherPdfFilename($journalEntry);
+
+        return view('accounting.journal-entries.print', $payload);
+    }
+
+    /** GET .../print/pdf — a real application/pdf attachment (not window.print()). */
+    public function downloadVoucherPdf(JournalEntry $journalEntry)
+    {
+        $this->requirePermission('journal-entries.view');
+
+        $payload = $this->voucherPayload($journalEntry);
+        $filename = $this->voucherPdfFilename($journalEntry);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('accounting.journal-entries.pdf', $payload)
+            ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('isHtml5ParserEnabled', true);
+
+        return $pdf->download($filename);
     }
 
     public function submitForApproval(JournalEntry $journalEntry)

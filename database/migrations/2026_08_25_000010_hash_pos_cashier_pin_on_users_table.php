@@ -1,13 +1,21 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('users', 'pos_cashier_pin')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('pos_cashier_pin', 255)->nullable()->change();
+            });
+        }
+
         $users = DB::table('users')
             ->whereNotNull('pos_cashier_pin')
             ->where('pos_cashier_pin', '!=', '')
