@@ -92,11 +92,6 @@
         </div>
 
         <div class="m-body" x-show="revTx">
-            <div class="warn-panel">
-                <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
-                <span>{{ __('A reversal mirrors this entry with debits and credits swapped. Posting is permanent and audited.') }}</span>
-            </div>
-
             <div class="mirr">
                 <div class="mh">{{ __('Mirrored impact') }}</div>
                 <template x-for="(line, i) in (revTx ? revTx.lines : [])" :key="i">
@@ -125,7 +120,7 @@
                     </label>
                     <label class="fld full">
                         <span>{{ __('Reason') }} <em>*</em></span>
-                        <textarea name="reason" class="in" rows="3" minlength="10" maxlength="1000" x-model="revForm.reason" required placeholder="{{ __('Why is this entry being reversed? (min 10 characters)') }}"></textarea>
+                        <textarea name="reason" class="in" rows="3" minlength="3" maxlength="1000" x-model="revForm.reason" required></textarea>
                     </label>
                 </div>
 
@@ -150,10 +145,9 @@
         </div>
 
         <div class="m-foot">
-            <span class="mnote">{{ __('An audit trail records this action.') }}</span>
             <div class="m-act">
                 <button type="button" class="btn btn-ghost btn-sm" @click="open.reverse = false">{{ __('Cancel') }}</button>
-                <button type="submit" form="tc-reverse-form" class="btn btn-danger btn-sm"
+                <button type="button" class="btn btn-danger btn-sm" @click="askReverse()"
                         x-text="revForm.mode === 'immediate' ? '{{ __('Confirm reversal') }}' : (revForm.mode === 'draft' ? '{{ __('Save draft') }}' : '{{ __('Submit for authorization') }}')"></button>
             </div>
         </div>

@@ -19117,11 +19117,11 @@ textarea.jr-in { height: auto; padding: 9px 11px; resize: vertical }
 .tc .jmodal.revz { z-index: 120; }
 .tc .jmodal.confirm { z-index: 140; background: rgba(10, 42, 46, .55); }
 .tc .mbox {
-    width: min(920px, 100%); background: #fff; border-radius: 18px;
+    width: min(920px, 100%); background: #fff; border-radius: 20px;
     box-shadow: 0 24px 70px -24px rgba(6, 30, 32, .55);
     border: 1px solid rgba(10, 42, 46, .08);
     max-height: calc(100vh - 48px); display: flex; flex-direction: column;
-    animation: tcPop .16s ease;
+    overflow: hidden; animation: tcPop .16s ease;
 }
 .tc .mbox.narrow { width: min(640px, 100%); }
 .tc .cbox {

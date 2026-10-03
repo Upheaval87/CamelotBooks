@@ -232,14 +232,14 @@ class TransactionControlsTest extends TestCase
         ]);
     }
 
-    public function test_reverse_requires_a_substantive_reason(): void
+    public function test_reverse_requires_a_reason(): void
     {
         $entry = $this->postedEntry();
 
         $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
             'mode' => 'immediate',
             'reversal_date' => '2026-08-15',
-            'reason' => 'short',
+            'reason' => 'no',
         ])->assertSessionHasErrors('reason');
 
         $this->assertSame(JournalEntry::STATUS_POSTED, $entry->fresh()->status);

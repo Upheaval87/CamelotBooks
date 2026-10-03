@@ -97,6 +97,37 @@ document.addEventListener('alpine:init', () => {
             this.open.reverse = true;
         },
 
+        askReverse() {
+            const tx = this.revTx;
+            if (!tx) return;
+            const form = document.getElementById('tc-reverse-form');
+            if (form && !form.reportValidity()) return;
+            const ref = tx.ref || 'this entry';
+            let label;
+            let body;
+            let tone;
+            if (this.revForm.mode === 'draft') {
+                label = 'Save draft';
+                tone = 'primary';
+                body = 'Save a draft reversal of ' + ref + '? It will not be posted until approved.';
+            } else if (this.revForm.mode === 'authorization') {
+                label = 'Submit for authorization';
+                tone = 'primary';
+                body = 'Submit the reversal of ' + ref + ' for authorization?';
+            } else {
+                label = 'Confirm reversal';
+                tone = 'danger';
+                body = 'Post the reversal of ' + ref + '? Posting is permanent and audited.';
+            }
+            this.askConfirm({
+                title: label,
+                body: body,
+                label: label,
+                tone: tone,
+                formId: 'tc-reverse-form',
+            });
+        },
+
         openAuth(row) {
             if (!row) return;
             this.authReq = row;

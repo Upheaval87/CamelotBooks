@@ -166,7 +166,7 @@ class TransactionControlsController extends Controller
         $validated = $request->validate([
             'mode' => 'required|in:immediate,authorization,draft',
             'reversal_date' => 'required|date',
-            'reason' => 'required|string|min:10|max:1000',
+            'reason' => 'required|string|min:3|max:1000',
             'reference' => 'nullable|string|max:60',
         ]);
 

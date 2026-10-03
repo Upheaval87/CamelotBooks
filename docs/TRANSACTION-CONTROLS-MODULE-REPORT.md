@@ -139,3 +139,37 @@ validation or persistence changed.
 - Build: `vite build` → `app-Chzd1GdG.css` / `app-jsJ4VUAS.js` (TC_ICONS/iconFor/authComment
   and the `.tc`-scoped mockup classes + dark `.m-head` / light `.cb-head` gradients
   confirmed present in the bundles).
+
+## §7 follow-up (round 2)
+
+Owner-requested refinements applied to the Capture Reversal modal. Presentation + one
+validation bound only; no model/core-business-logic changes.
+
+- **Modal radii** — `.tc .mbox` corner radius `18px → 20px` and `overflow: hidden` added so the
+  dark `.m-head` band is clipped to the rounded top-left/top-right corners (mockup parity).
+  `app.css` ~L19119. Live-probe: `border-radius: 20px`, `overflow: hidden`.
+- **Copy removed** in the reversal modal:
+  - the `.warn-panel` ("A reversal mirrors this entry with debits and credits swapped. Posting
+    is permanent and audited."),
+  - the reason textarea `placeholder` ("…why is this entry being reversed"),
+  - the footer `.mnote` ("An audit trail records this action.").
+  Live-probe: reversal body innerText no longer contains any of the three strings;
+  `hasWarnPanel:false`, `hasPlaceholder:false`, `hasMnote:false`.
+- **Reason min-length 10 → 3** — client `minlength="3"` (`_modals.blade.php`) and server
+  `min:3` (`TransactionControlsController.php:169`). Test renamed
+  `test_reverse_requires_a_substantive_reason` → `test_reverse_requires_a_reason`, now posts a
+  2-char reason ("no") to trigger the failure.
+- **Confirm-first on "Confirm reversal"** — the modal's gold/danger action is now
+  `type="button" @click="askReverse()"` (was `type="submit" form="tc-reverse-form"`).
+  `askReverse()` (`transaction-controls.js`) runs `form.reportValidity()` (so an empty/short
+  reason is blocked by the browser) and then calls the shared `askConfirm({…, formId:
+  'tc-reverse-form'})`; `confirmYes()` still submits the real form. Live-probe (reason filled
+  with a valid value): clicking "Confirm reversal" opens `.tc .confirm` — visible, title
+  "Confirm reversal", body "Post the reversal of JE-2026-0011? Posting is permanent and
+  audited.", OK button `btn btn-sm btn-danger`; `navigated:false`.
+- **Verification** — `npm run build` → `app-DzZPT43-.css` (951.93 kB, `.mbox` radius/overflow
+  confirmed), `app-Bqi5W52B.js`; `view:clear`/`view:cache` clean; `TransactionControlsTest`
+  **16 passed / 42 assertions**. Live headless probe `cb-probe/tc-fix-probe.mjs` exercises the
+  full open → fill reason → confirm path on JE-2026-0011.
+- Out of scope: `resources/views/accounting/reversals/create.blade.php` (separate legacy
+  reversals form) still has a `minlength="10"` textarea — left untouched.
