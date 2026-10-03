@@ -169,7 +169,7 @@
                 <div class="jr-mf-acts" x-show="mode === 'view'">
                     @if($isPosted)
                         @if($canReverse)
-                            <button type="button" class="jr-btn jr-btn-g" @click="openPrint({{ $id }})">🖨 Print</button>
+                            <a class="jr-btn jr-btn-g" target="_blank" rel="noopener" href="{{ route('accounting.journal-entries.print', $id) }}">🖨 Print</a>
                             <button type="button" class="jr-btn jr-btn-danger" @click="openReverse({{ $id }})">⟲ Reverse</button>
                         @endif
                     @elseif($isUnposted)

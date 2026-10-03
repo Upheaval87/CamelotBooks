@@ -84,16 +84,9 @@ class JournalEntryController extends Controller
 
         $cs = $this->currencySymbol($companyId);
 
-        /* R6 + §5.1 — one voucher sheet per printable row, rendered on the
-           server. The shared settings context is resolved once and handed to
-           every row so the page issues no extra per-row setting queries. */
+        /* R6 — the currency/decimals context is resolved once and reused by the
+           register header and the row totals. */
         $voucherContext = $this->voucherContext($companyId);
-        $vouchers = [];
-        foreach ($journalEntries as $entry) {
-            if (in_array($entry->status, [JournalEntry::STATUS_POSTED, JournalEntry::STATUS_REVERSED], true)) {
-                $vouchers[$entry->id] = $this->voucherPayloadFor($entry, $voucherContext);
-            }
-        }
 
         $can = [
             'finalize' => (bool) $user?->can('journal-entries.edit'),
@@ -117,7 +110,6 @@ class JournalEntryController extends Controller
             'defaultAccount',
             'cs',
             'can',
-            'vouchers',
             'currencyCode',
             'decimals',
             'dateError'

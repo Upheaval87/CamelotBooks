@@ -20,13 +20,6 @@
         'reversed' => ['label' => 'Reversed', 'count' => $stats['reversed']],
     ];
 
-    /* §2.1 — the signed-in chip carries an initials avatar. */
-    $meName = (string) (auth()->user()?->name ?? '—');
-    $meInitials = strtoupper(
-        mb_substr($meName, 0, 1)
-        . (str_contains($meName, ' ') ? mb_substr((string) strrchr($meName, ' '), 1, 1) : '')
-    );
-
     /* R5 / §2.5 — a reversed journal is opened, never printed from the row. */
     $printableStatuses = ['posted'];
 
@@ -39,14 +32,6 @@
 @endphp
 
 <x-app-layout>
-    {{--
-        The in-page voucher overlays reuse the standalone print sheet's stylesheet.
-        layouts/app.blade.php renders @stack('styles') BEFORE {{ $slot }}, so a
-        @push('styles') from this child view would arrive too late; the link is
-        emitted here instead (the register is the only page that needs it).
-    --}}
-    @vite('resources/css/journal-voucher.css')
-
     <div class="jr-wrap"
          x-data="journalRegister({{ Js::from($jrConfig) }})"
          @keydown.escape.window="closeTop()">
@@ -54,10 +39,8 @@
         <div class="jr-phead">
             <div>
                 <h1>Journals</h1>
-                <div class="sub">Open a journal to review every line — finalize, post, reopen and reverse are confirm-gated.</div>
             </div>
             <div class="jr-acts">
-                <span class="jr-me"><i class="jr-meava">{{ $meInitials }}</i> Signed in as {{ $meName }}</span>
                 <a href="{{ route('accounting.journal-entries.export', request()->query()) }}" class="jr-btn jr-btn-g">⤓ Export</a>
                 <a href="{{ route('accounting.journal-entries.create') }}" class="jr-btn jr-btn-p">＋ New Journal</a>
             </div>
@@ -204,7 +187,7 @@
                                     <div class="jr-rowact">
                                         <button type="button" class="jr-ib" title="Open journal" @click="open({{ $entry->id }}, 'view')">👁</button>
                                         @if(in_array($entry->status, $printableStatuses, true))
-                                            <button type="button" class="jr-ib" title="Print voucher" @click="openPrint({{ $entry->id }})">🖨</button>
+                                            <a class="jr-ib" title="Print voucher" target="_blank" rel="noopener" href="{{ route('accounting.journal-entries.print', $entry->id) }}">🖨</a>
                                         @endif
                                     </div>
                                 </td>
@@ -226,7 +209,6 @@
             {{-- §2.6 --}}
             <div class="jr-tfoot">
                 <span>Showing {{ $journalEntries->firstItem() ?? 0 }}–{{ $journalEntries->lastItem() ?? 0 }} of {{ $journalEntries->total() }} journals</span>
-                <span class="jr-tnote">Finalize, Post &amp; Reverse live inside the journal modal only</span>
             </div>
         </div>
 
@@ -236,10 +218,6 @@
             'preserved' => $preserved,
             'decimals' => $decimals,
             'cs' => $cs,
-        ])
-
-        @include('accounting.journal-entries._jr-print-overlays', [
-            'vouchers' => $vouchers,
         ])
 
         <div class="jr-toast" :class="{ on: toastOpen }" x-text="toastMsg" role="status" aria-live="polite"></div>

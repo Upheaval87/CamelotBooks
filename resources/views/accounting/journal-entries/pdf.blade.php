@@ -43,14 +43,6 @@
   /* top accent rule (replaces .glj-sheet::before) */
   .accent { height: 4px; background-color: #0e7473; }
 
-  /* watermark: first in flow so the content tables print over it. DomPDF has
-     no z-index stack, so ordering is the layering mechanism. */
-  .wm {
-    position: absolute; top: 470px; left: 0; width: 100%;
-    text-align: center; font-size: 96px; font-weight: 900;
-    letter-spacing: 12px; color: #eef4f4;
-  }
-
   /* header */
   .head { background-color: #f0f5f5; border-bottom: 1px solid #dce7e5; padding: 10mm 6mm 6mm; }
   .head td { vertical-align: top; }
@@ -141,7 +133,6 @@
 </head>
 <body>
 <div class="accent"></div>
-<div class="wm">{{ strtoupper($statusLabel) }}</div>
 
 <table class="head" width="100%" cellpadding="0" cellspacing="0">
     <tr>

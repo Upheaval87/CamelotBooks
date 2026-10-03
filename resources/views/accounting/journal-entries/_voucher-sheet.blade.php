@@ -15,9 +15,6 @@
       $amountWords
 --}}
 <div id="glj-sheet" class="glj-sheet">
-    {{-- A§4.3 / A§5.1: rotated status watermark on EVERY voucher --}}
-    <div class="glj-wm" aria-hidden="true"><span>{{ strtoupper($statusLabel) }}</span></div>
-
     {{-- 5.1 voucher header: company letterhead + document block --}}
     <div class="glj-vhead">
         <div class="glj-brand">

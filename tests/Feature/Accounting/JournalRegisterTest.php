@@ -163,8 +163,6 @@ class JournalRegisterTest extends TestCase
         $response->assertSee('Unposted · Finalized');
         $response->assertSee('New Journal');
         $response->assertSee('All types');
-        // The in-page voucher overlays pull in the standalone print stylesheet.
-        $response->assertSee('journal-voucher', false);
     }
 
     public function test_status_tab_filters_entries(): void
@@ -448,10 +446,16 @@ class JournalRegisterTest extends TestCase
         $this->assertStringContainsString('title="Open journal"', $draftRow);
         $this->assertStringNotContainsString('title="Print voucher"', $draftRow);
 
-        // Posted row: view + print.
+        // Posted row: view + print, and print opens the standalone voucher in a
+        // new tab (no in-page overlay).
         $postedRow = $this->rowFor($html, $posted->journal_number);
         $this->assertStringContainsString('title="Open journal"', $postedRow);
         $this->assertStringContainsString('title="Print voucher"', $postedRow);
+        $this->assertStringContainsString('target="_blank"', $postedRow);
+        $this->assertStringContainsString(
+            route('accounting.journal-entries.print', $posted->id),
+            $postedRow,
+        );
 
         // No row may carry a lifecycle action - those live in the modal
         // footer only. (The handlers themselves still exist for the modal.)
@@ -460,12 +464,11 @@ class JournalRegisterTest extends TestCase
             $this->assertStringNotContainsString($gone, $draftRow, "Row still exposes {$gone}");
         }
 
-        // The register hands the standalone voucher preview URL to the client.
+        // The standalone voucher preview is reachable from the register.
         $this->assertStringContainsString(
-            $this->encodedJson(route('accounting.journal-entries.print', $posted->id)),
+            route('accounting.journal-entries.print', $posted->id),
             $html,
         );
-        $this->assertStringContainsString($this->encodedJson('print'), $html);
     }
 
     /** A4.1: the reversal modal mirrors every line (debit becomes credit). */

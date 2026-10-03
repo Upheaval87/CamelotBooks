@@ -26,7 +26,6 @@ document.addEventListener('alpine:init', () => {
         reverseId: null,
         deleteId: null,
         reopenId: null,
-        printId: null,
 
         cf: { open: false, title: '', msg: '', label: 'Confirm', cls: 'jr-btn-p', form: '' },
 
@@ -131,18 +130,6 @@ document.addEventListener('alpine:init', () => {
 
         closeReverse() {
             this.reverseId = null;
-        },
-
-        openPrint(id) {
-            this.printId = id;
-        },
-
-        closePrint() {
-            this.printId = null;
-        },
-
-        doPrint() {
-            window.print();
         },
 
         askConfirm(cfg) {
@@ -284,7 +271,6 @@ document.addEventListener('alpine:init', () => {
 
         closeTop() {
             if (this.cf.open) { this.cf.open = false; return; }
-            if (this.printId !== null) { this.printId = null; return; }
             if (this.deleteId !== null) { this.deleteId = null; return; }
             if (this.reopenId !== null) { this.reopenId = null; return; }
             if (this.reverseId !== null) { this.reverseId = null; return; }

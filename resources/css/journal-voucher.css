@@ -147,16 +147,6 @@
     flex: none;
     background: linear-gradient(90deg, var(--p-accent) 0%, var(--sec-2) 55%, #7fd1c0 100%);
 }
-.glj-wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
-.glj-wm span {
-    transform: rotate(-24deg);
-    font-size: 108px;
-    font-weight: 900;
-    letter-spacing: .18em;
-    color: rgba(14, 116, 115, .045);
-    text-transform: uppercase;
-    white-space: nowrap;
-}
 .glj-sheetbody { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
 
 .glj-vhead {

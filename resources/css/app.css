@@ -15376,14 +15376,6 @@ textarea.jr-in { height: auto; padding: 9px 11px; resize: vertical }
     .jr-mbox-f { flex-direction: column; align-items: flex-start }
 }
 
-@media print {
-    body * { visibility: hidden !important }
-    .jr-print.on { position: absolute !important; inset: 0 !important; display: block !important; background: #fff !important; padding: 0 !important; overflow: visible !important }
-    .jr-print.on, .jr-print.on * { visibility: visible !important }
-    .jr-print.on .jr-print-tbar { display: none !important }
-    .jr-print.on .jr-print-sheet { max-width: none !important; margin: 0 !important }
-}
-
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    DIALOG SYSTEM v2 — APPENDIX A shared shell
@@ -18824,25 +18816,6 @@ textarea.jr-in { height: auto; padding: 9px 11px; resize: vertical }
 }
 .jr-tnote { color: var(--jr-faint); }
 
-.jr-print {
-    position: fixed; inset: 0; display: none; z-index: 200;
-    background: rgba(11, 42, 45, .36); overflow: auto; padding: 24px 18px;
-}
-.jr-print.on { display: block; }
-.jr-print-tbar {
-    position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px;
-    max-width: 794px; margin: 0 auto 12px; padding: 10px 14px;
-    background: #fff; border: 1px solid var(--border, #DCEAEA); border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(12, 53, 57, .12);
-}
-.jr-print-t {
-    flex: 1; font-size: 13px; font-weight: 700; color: var(--jr-ink);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.jr-print-sheet { max-width: 794px; margin: 0 auto; }
-
 @media (max-width: 900px) {
     .jr-mbox--journal { width: 100%; max-height: calc(100vh - 24px); }
-    .jr-print { padding: 14px 8px; }
-    .jr-print-tbar { border-radius: 10px; }
 }
