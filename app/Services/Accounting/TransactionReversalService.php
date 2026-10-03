@@ -117,6 +117,15 @@ class TransactionReversalService
 
             $this->logHistory($request, 'approved', $userId, $comments);
 
+            // Multi-level chains only execute once every authorizer has signed off.
+            $remaining = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+                ->where('status', 'pending')
+                ->count();
+
+            if ($remaining > 0) {
+                return $request->fresh();
+            }
+
             $request->update([
                 'status' => TransactionReversalRequest::STATUS_APPROVED,
                 'approved_by' => $userId,
@@ -135,6 +144,15 @@ class TransactionReversalService
             $request = TransactionReversalRequest::findOrFail($requestId);
 
             $this->authorizeUser($request, $userId);
+
+            // Clear the rest of the chain so the rejected request leaves every queue.
+            ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+                ->where('status', 'pending')
+                ->update([
+                    'status' => 'rejected',
+                    'approved_by' => $userId,
+                    'approved_date' => now(),
+                ]);
 
             $request->update([
                 'status' => TransactionReversalRequest::STATUS_REJECTED,
@@ -255,6 +273,18 @@ class TransactionReversalService
         }
         if (!$je->isPosted()) {
             abort(422, 'Only posted journal entries can be reversed.');
+        }
+
+        $hasOpenRequest = TransactionReversalRequest::where('company_id', $companyId)
+            ->where('journal_entry_id', $je->id)
+            ->whereIn('status', [
+                TransactionReversalRequest::STATUS_PENDING,
+                TransactionReversalRequest::STATUS_APPROVED,
+            ])
+            ->exists();
+
+        if ($hasOpenRequest) {
+            abort(422, 'A reversal for this transaction is already awaiting authorization.');
         }
 
         $period = AccountingPeriod::where('company_id', $companyId)

@@ -59,9 +59,8 @@
         </span>
 
         <div class="fgroup grow searchwrap">
-            <span class="fl">{{ __('Search') }}</span>
             <svg viewBox="0 0 24 24" fill="none"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/></svg>
-            <input type="text" name="q" class="in" placeholder="{{ __('Search reference or description…') }}" value="{{ $filters['q'] ?? '' }}">
+            <input type="text" name="q" class="in" aria-label="{{ __('Search') }}" placeholder="{{ __('Search reference or description…') }}" value="{{ $filters['q'] ?? '' }}">
         </div>
 
         <label class="fgroup">
@@ -119,6 +118,8 @@
                             <td>
                                 @if ($entry->isReversed())
                                     <span class="pill rev"><i></i>{{ __('Reversed') }}</span>
+                                @elseif (isset($awaitingAuthIds[$entry->id]))
+                                    <span class="pill fin"><i></i>{{ __('Awaiting authorization') }}</span>
                                 @else
                                     <span class="pill posted"><i></i>{{ __('Posted') }}</span>
                                 @endif

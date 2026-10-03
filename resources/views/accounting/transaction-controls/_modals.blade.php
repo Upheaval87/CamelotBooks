@@ -9,8 +9,8 @@
                 <div class="m-title" id="tc-view-title" x-text="viewTx ? (viewTx.typeLabel || '{{ __('Journal Entry') }}') : ''">{{ __('Journal Entry') }}</div>
             </div>
             <span class="m-ref" x-text="viewTx ? viewTx.ref : ''"></span>
-            <span class="pill m-pill" :class="viewTx && viewTx.status === 'reversed' ? 'rev' : 'posted'">
-                <i></i><span x-text="viewTx && viewTx.status === 'reversed' ? '{{ __('Reversed') }}' : '{{ __('Posted') }}'"></span>
+            <span class="pill m-pill" :class="viewTx && viewTx.status === 'reversed' ? 'rev' : (viewTx && viewTx.awaitingAuthorization ? 'fin' : 'posted')">
+                <i></i><span x-text="viewTx && viewTx.status === 'reversed' ? '{{ __('Reversed') }}' : (viewTx && viewTx.awaitingAuthorization ? '{{ __('Awaiting authorization') }}' : '{{ __('Posted') }}')"></span>
             </span>
             <button type="button" class="m-close" @click="open.view = false" aria-label="{{ __('Close') }}">
                 <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -65,6 +65,7 @@
 
         <div class="m-foot">
             <span class="mnote" x-show="viewTx && viewTx.status === 'reversed'">{{ __('This entry has a posted reversal against it.') }}</span>
+            <span class="mnote" x-show="viewTx && viewTx.awaitingAuthorization">{{ __('A reversal is awaiting authorization.') }}</span>
             <div class="m-act">
                 <button type="button" class="btn btn-ghost btn-sm" @click="open.view = false">{{ __('Close') }}</button>
                 @can('transaction-reversals.request')
@@ -124,31 +125,14 @@
                     </label>
                 </div>
 
-                <div class="fld" style="margin-top:14px">
-                    <span>{{ __('Submission mode') }}</span>
-                    <div class="pseg">
-                        <label class="pseg-opt">
-                            <input type="radio" name="mode" value="immediate" x-model="revForm.mode">
-                            <span><i></i>{{ __('Post immediately') }}</span>
-                        </label>
-                        <label class="pseg-opt">
-                            <input type="radio" name="mode" value="authorization" x-model="revForm.mode">
-                            <span><i></i>{{ __('Submit for authorization') }}</span>
-                        </label>
-                        <label class="pseg-opt">
-                            <input type="radio" name="mode" value="draft" x-model="revForm.mode">
-                            <span><i></i>{{ __('Save as draft') }}</span>
-                        </label>
-                    </div>
-                </div>
+                <p class="mnote" style="margin-top:14px">{{ __('This reversal will be submitted for authorization. It posts to the ledger only after approval.') }}</p>
             </form>
         </div>
 
         <div class="m-foot">
             <div class="m-act">
                 <button type="button" class="btn btn-ghost btn-sm" @click="open.reverse = false">{{ __('Cancel') }}</button>
-                <button type="button" class="btn btn-danger btn-sm" @click="askReverse()"
-                        x-text="revForm.mode === 'immediate' ? '{{ __('Confirm reversal') }}' : (revForm.mode === 'draft' ? '{{ __('Save draft') }}' : '{{ __('Submit for authorization') }}')"></button>
+                <button type="button" class="btn btn-cta btn-sm" @click="askReverse()">{{ __('Submit for authorization') }}</button>
             </div>
         </div>
     </div>

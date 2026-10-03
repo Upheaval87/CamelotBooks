@@ -104,6 +104,7 @@
     x-on:keydown.tab.prevent="focusNext()"
     x-on:keydown.shift.tab.prevent="focusPrev()"
     x-show="show"
+    x-cloak
     class="dlg-scrim dlg-scrim--alpine"
     x-on:click.self="show = false"
 >

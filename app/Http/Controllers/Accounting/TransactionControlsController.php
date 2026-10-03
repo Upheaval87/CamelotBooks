@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\JournalEntry;
 use App\Models\ReversalAuthorizationRequest;
+use App\Models\TransactionReversalRequest;
 use App\Policies\TransactionControlPolicy;
 use App\Services\Accounting\JournalPostingEngine;
 use App\Services\Accounting\JournalReversalService;
@@ -26,9 +27,10 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
  */
 class TransactionControlsController extends Controller
 {
+    private array $awaitingAuthIds = [];
+
     public function __construct(
         private TransactionReversalService $reversalService,
-        private JournalReversalService $journalReversalService,
         private JournalPostingEngine $postingEngine,
         private TransactionControlPolicy $policy,
     ) {}
@@ -103,6 +105,16 @@ class TransactionControlsController extends Controller
             'authorization' => $authQueue->count(),
         ];
 
+        $this->awaitingAuthIds = TransactionReversalRequest::forCompany($companyId)
+            ->whereIn('status', [
+                TransactionReversalRequest::STATUS_PENDING,
+                TransactionReversalRequest::STATUS_APPROVED,
+            ])
+            ->whereNotNull('journal_entry_id')
+            ->pluck('journal_entry_id')
+            ->mapWithKeys(fn ($id) => [(int) $id => true])
+            ->all();
+
         $typeOptions = JournalEntry::forCompany($companyId)
             ->whereIn('status', ['posted', 'reversed'])
             ->whereNotNull('source_module')
@@ -149,10 +161,12 @@ class TransactionControlsController extends Controller
             ],
         ];
 
+        $awaitingAuthIds = $this->awaitingAuthIds;
+
         return view('accounting.transaction-controls.index', compact(
             'tab', 'counts', 'from', 'to', 'loaded', 'dateError', 'filters',
             'transactions', 'unposted', 'authQueue', 'authDecided',
-            'typeOptions', 'workspaceConfig'
+            'typeOptions', 'workspaceConfig', 'awaitingAuthIds'
         ));
     }
 
@@ -164,7 +178,6 @@ class TransactionControlsController extends Controller
         $userId = (int) Auth::id();
 
         $validated = $request->validate([
-            'mode' => 'required|in:immediate,authorization,draft',
             'reversal_date' => 'required|date',
             'reason' => 'required|string|min:3|max:1000',
             'reference' => 'nullable|string|max:60',
@@ -175,36 +188,18 @@ class TransactionControlsController extends Controller
         abort_unless($this->policy->captureReversal($request->user()), 403);
 
         try {
-            switch ($validated['mode']) {
-                case 'immediate':
-                    $this->journalReversalService->createAndPost($entry, $userId, [
-                        'reversal_date' => $validated['reversal_date'],
-                        'reference' => $validated['reference'] ?? null,
-                        'memo' => $validated['reason'],
-                    ]);
-                    $message = 'Reversal posted — ' . $entry->journal_number . ' has been reversed.';
-                    break;
+            $this->reversalService->requestReversal($companyId, $entry->id, $userId, [
+                'reversal_date' => $validated['reversal_date'],
+                'reason' => $validated['reason'],
+                'reversal_method' => 'full',
+            ]);
 
-                case 'draft':
-                    $this->journalReversalService->createDraft($entry, $userId, [
-                        'reversal_date' => $validated['reversal_date'],
-                        'reference' => $validated['reference'] ?? null,
-                        'memo' => $validated['reason'],
-                    ]);
-                    $message = 'Reversal saved as a draft. It appears under Unposted Transactions.';
-                    break;
-
-                default:
-                    $this->reversalService->requestReversal($companyId, $entry->id, $userId, [
-                        'reversal_date' => $validated['reversal_date'],
-                        'reason' => $validated['reason'],
-                        'reversal_method' => 'full',
-                    ]);
-                    $message = 'Reversal submitted for authorization.';
-                    break;
-            }
-
-            return $this->workspaceRedirect($request, 'reversal', 'success', $message);
+            return $this->workspaceRedirect(
+                $request,
+                'reversal',
+                'success',
+                'Reversal submitted for authorization — it will post once approved.'
+            );
         } catch (\InvalidArgumentException|HttpExceptionInterface $e) {
             return $this->workspaceRedirect($request, 'reversal', 'error', $e->getMessage());
         }
@@ -269,12 +264,16 @@ class TransactionControlsController extends Controller
         ]);
 
         try {
-            $this->reversalService->approve($auth->reversal_request_id, $userId, $validated['comments'] ?? null);
+            $approved = $this->reversalService->approve($auth->reversal_request_id, $userId, $validated['comments'] ?? null);
         } catch (\InvalidArgumentException|HttpExceptionInterface $e) {
             return $this->workspaceRedirect($request, 'authorization', 'error', $e->getMessage());
         }
 
-        return $this->workspaceRedirect($request, 'authorization', 'success', 'Reversal authorized and posted to the ledger.');
+        $message = $approved && $approved->status === TransactionReversalRequest::STATUS_REVERSED
+            ? 'Reversal authorized and posted to the ledger.'
+            : 'Reversal authorized — awaiting the remaining authorization.';
+
+        return $this->workspaceRedirect($request, 'authorization', 'success', $message);
     }
 
     public function reject(Request $request, int $id)
@@ -324,6 +323,8 @@ class TransactionControlsController extends Controller
 
     private function entryPayload(JournalEntry $entry): array
     {
+        $awaiting = isset($this->awaitingAuthIds[$entry->id]);
+
         return [
             'id' => $entry->id,
             'ref' => $entry->journal_number,
@@ -339,7 +340,8 @@ class TransactionControlsController extends Controller
             'postedBy' => optional($entry->createdBy)->name,
             'creator' => optional($entry->createdBy)->name,
             'createdBy' => $entry->created_by,
-            'reversible' => $entry->isPosted(),
+            'awaitingAuthorization' => $awaiting,
+            'reversible' => $entry->isPosted() && !$awaiting,
             'lines' => $entry->lines->map(fn ($line) => [
                 'code' => optional($line->account)->code,
                 'name' => optional($line->account)->name,

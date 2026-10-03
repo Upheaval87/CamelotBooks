@@ -23,7 +23,6 @@ document.addEventListener('alpine:init', () => {
         authComment: '',
 
         revForm: {
-            mode: 'immediate',
             reversal_date: '',
             reference: '',
             reason: '',
@@ -89,7 +88,6 @@ document.addEventListener('alpine:init', () => {
             if (!tx) return;
             this.revTx = tx;
             this.revForm = {
-                mode: 'immediate',
                 reversal_date: this.today,
                 reference: '',
                 reason: '',
@@ -103,27 +101,11 @@ document.addEventListener('alpine:init', () => {
             const form = document.getElementById('tc-reverse-form');
             if (form && !form.reportValidity()) return;
             const ref = tx.ref || 'this entry';
-            let label;
-            let body;
-            let tone;
-            if (this.revForm.mode === 'draft') {
-                label = 'Save draft';
-                tone = 'primary';
-                body = 'Save a draft reversal of ' + ref + '? It will not be posted until approved.';
-            } else if (this.revForm.mode === 'authorization') {
-                label = 'Submit for authorization';
-                tone = 'primary';
-                body = 'Submit the reversal of ' + ref + ' for authorization?';
-            } else {
-                label = 'Confirm reversal';
-                tone = 'danger';
-                body = 'Post the reversal of ' + ref + '? Posting is permanent and audited.';
-            }
             this.askConfirm({
-                title: label,
-                body: body,
-                label: label,
-                tone: tone,
+                title: 'Submit for authorization',
+                body: 'Submit the reversal of ' + ref + ' for authorization? It will post to the ledger only after approval.',
+                label: 'Submit for authorization',
+                tone: 'primary',
                 formId: 'tc-reverse-form',
             });
         },
@@ -177,9 +159,9 @@ document.addEventListener('alpine:init', () => {
             const r = this.authReq;
             if (!r) return;
             this.askConfirm({
-                title: 'Approve & post',
-                body: 'Authorize the reversal of ' + (r.ref || 'this request') + ' and post it to the ledger?',
-                label: 'Approve & post',
+                title: 'Authorize reversal',
+                body: 'Authorize the reversal of ' + (r.ref || 'this request') + '? It posts to the ledger once fully authorized.',
+                label: 'Authorize',
                 tone: 'primary',
                 formId: 'tc-approve-form',
                 note: true,

@@ -173,3 +173,94 @@ validation bound only; no model/core-business-logic changes.
   full open → fill reason → confirm path on JE-2026-0011.
 - Out of scope: `resources/views/accounting/reversals/create.blade.php` (separate legacy
   reversals form) still has a `minlength="10"` textarea — left untouched.
+
+## §8 follow-up (round 3) — empty modal flashing on page load
+
+**Symptom:** on every page load (incl. `accounting/transaction-controls`) an empty modal
+flashes for a frame and then disappears.
+
+**Root cause (NOT the `.tc` modals):** the two global `<x-modal>` instances rendered
+unconditionally by the layout — "My Tasks" and "Task detail" (`layouts/app.blade.php`
+L126/L151) — come from the shared `resources/views/components/modal.blade.php` shell. That
+shell's root element is `.dlg-scrim`, which the base CSS declares `display: flex`, and the
+component had **no `x-cloak`**. So the scrim was visible from first paint until Alpine ran
+(`x-show="show"`, `show=false`) and set `display:none` — an empty modal flashing on every
+page. The `.tc .jmodal` modals already carry `x-cloak`; they were never the flashers.
+
+**Evidence:** with JS blocked, the shared probe (`cb-probe/tc-flash.mjs`) measured `.dlg-scrim`
+→ `{ cloak: false, display: flex }` (visible). The earlier flash probes only sampled
+`.tc .jmodal`, which is why the flash was initially not reproduced (flashCount 0).
+
+**Fix:** added `x-cloak` to the shared `<x-modal>` root (`resources/views/components/modal.blade.php`
+L107). `[x-cloak] { display: none !important }` (`app.css` L5, unlayered → beats
+`.dlg-scrim{display:flex}`), and Alpine removes the attribute + applies `x-show` on init.
+This is the single global fix — every `<x-modal>` call site (incl. TC's page) is covered; no
+`.tc` markup change was needed.
+
+**Verification:**
+- JS-blocked (`cb-probe/tc-flash.mjs`): `.dlg-scrim` → `{ cloak: true, display: none }` (x2).
+  No flash before Alpine runs.
+- JS-enabled (`cb-probe/tc-globalmodal-probe.mjs`): before open `display:none`; clicking the
+  topbar My Tasks trigger → `display:flex`, title "My Tasks", card visible; Escape → `none`.
+  The modal still opens/closes correctly.
+- `view:clear` + `view:cache` clean (Blade-only change; no asset rebuild required).
+- `TransactionControlsTest` **16 passed / 42 assertions**.
+
+## §9 follow-up (round 4) — authorization-only reversal lifecycle + search field
+
+**Ask A — search field rendering.** The reversal pane's search control rendered a visible
+"Search" label ABOVE the input, pushing the field out of alignment with the sibling Type
+filter. Fixed in `_pane-reversal.blade.php`: removed the `<span class="fl">Search</span>`
+inside `.searchwrap` (icon + input only) and moved the accessible name onto the input as
+`aria-label="{{ __('Search') }}"`. No CSS change was needed — `.tc .searchwrap` already
+positions the icon with `top:50%` + `translateY(-50%)`.
+
+**Ask B — capture must be authorized before it becomes final.** Previously the capture modal
+offered a Submission-mode choice (`immediate` / `draft` / `authorization`); `immediate`
+posted the mirror at once and `draft` created a draft reversal — both bypassed authorization.
+The lifecycle is now authorization-only:
+
+- **Capture** always calls `TransactionReversalService::requestReversal()` and creates a
+  `pending_authorization` `TransactionReversalRequest` with its approval chain. The original
+  JE stays **POSTED**; no reversal JE is written. Controller `reverse()` dropped the `mode`
+  validation + switch (legacy `mode` input is ignored). Flash: "Reversal submitted for
+  authorization — it will post once approved."
+- **`guardReversal()`** now aborts `422` ("A reversal for this transaction is already awaiting
+  authorization.") when an OPEN request (`pending_authorization` or `approved`) already exists
+  for the entry — one open capture per transaction.
+- **Approve** runs the multi-level gate: after the authorizer's row is marked approved, if any
+  `pending` authorization rows remain the request is returned **unexecuted** (still awaiting
+  the remaining authorizers). Only the FINAL approval sets `approved` + executes the reversal
+  (original → REVERSED, mirror JE posted). The controller flash is dynamic on the outcome.
+- **Reject** marks the caller's row approved, then **clears every remaining `pending` row to
+  `rejected`**, and sets the request `rejected`. The JE is untouched (stays POSTED) and is
+  immediately capturable again.
+
+**Result-state mapping (per the ask):** capture → *Awaiting authorization*; approve →
+*Reversed*; reject → the entry returns to its prior state (POSTED), re-capturable.
+
+**View/JS:**
+- `_modals.blade.php`: removed the Submission-mode `pseg` block, replaced with a plain
+  "This reversal will be submitted for authorization…" note; capture footer button is now
+  `btn-cta` "Submit for authorization"; the view modal shows an "Awaiting authorization"
+  status pill and a `m-foot` note when `viewTx.awaitingAuthorization`.
+- `_pane-reversal.blade.php`: the reversal pane status cell adds
+  `@elseif (isset($awaitingAuthIds[$entry->id]))` → `pill fin` "Awaiting authorization".
+- `TransactionControlsController`: new `$awaitingAuthIds` map built in `index()`
+  (statuses PENDING + APPROVED, keyed by JE id) and passed to the view; `entryPayload()`
+  exposes `awaitingAuthorization` and sets `reversible = isPosted() && !awaiting`. The
+  controller no longer injects `JournalReversalService` (the import is kept for the static
+  `identityVerifyThreshold()`); `approve()` message is dynamic on the final status.
+- `resources/js/transaction-controls.js`: removed `revForm.mode`; `askReverse()` now confirms
+  "Submit for authorization" (body "…will post to the ledger only after approval."); the
+  approve confirm reads "Authorize reversal".
+
+**Verification:**
+- `php -l` clean on controller + service; `view:clear` + `view:cache` clean; `npm run build`
+  → `app-DzZPT43-.css` (951.93 kB) / `app-Cyna2VWI.js`.
+- `TransactionControlsTest` **19 passed / 54 assertions** (was 16/42): new/updated coverage
+  for capture-leaves-entry-posted, legacy-mode-ignored, duplicate-capture-blocked,
+  reject-clears-pending-chain-and-allows-recapture, awaiting-entry-flagged-in-list.
+- Live headless probe `cb-probe/tc-search-probe.mjs`: `.searchwrap` label `null` (no text
+  above), icon center y 323 == input center y 323, input bottom 343 == Type select bottom 343
+  (fields aligned). (The 401 on `/favourites` during the probe is the known benign probe.)

@@ -179,22 +179,25 @@ class TransactionControlsTest extends TestCase
             ->assertSee('Posted');
     }
 
-    public function test_reverse_immediate_posts_mirror_and_marks_original(): void
+    public function test_capture_creates_pending_authorization_and_leaves_entry_posted(): void
     {
         $entry = $this->postedEntry();
 
         $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
-            'mode' => 'immediate',
             'reversal_date' => '2026-08-15',
             'reason' => 'Duplicate posting identified',
             'reference' => 'REV-1',
         ])->assertRedirect();
 
-        $this->assertSame(JournalEntry::STATUS_REVERSED, $entry->fresh()->status);
-        $this->assertDatabaseHas('journal_entries', [
+        $this->assertSame(JournalEntry::STATUS_POSTED, $entry->fresh()->status);
+        $this->assertDatabaseHas('transaction_reversal_requests', [
+            'company_id' => $this->company->id,
+            'journal_entry_id' => $entry->id,
+            'status' => TransactionReversalRequest::STATUS_PENDING,
+        ]);
+        $this->assertDatabaseMissing('journal_entries', [
             'company_id' => $this->company->id,
             'source_module' => 'reversal',
-            'status' => JournalEntry::STATUS_POSTED,
         ]);
     }
 
@@ -203,7 +206,6 @@ class TransactionControlsTest extends TestCase
         $entry = $this->postedEntry();
 
         $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
-            'mode' => 'authorization',
             'reversal_date' => '2026-08-15',
             'reason' => 'Awaiting controller approval',
         ])->assertRedirect();
@@ -215,21 +217,45 @@ class TransactionControlsTest extends TestCase
         ]);
     }
 
-    public function test_reverse_draft_creates_draft_reversal(): void
+    public function test_capture_ignores_legacy_mode_and_always_requires_authorization(): void
     {
         $entry = $this->postedEntry();
 
         $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
-            'mode' => 'draft',
+            'mode' => 'immediate',
             'reversal_date' => '2026-08-15',
-            'reason' => 'Save draft reversal for review',
+            'reason' => 'Legacy mode must not bypass authorization',
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('journal_entries', [
+        $this->assertSame(JournalEntry::STATUS_POSTED, $entry->fresh()->status);
+        $this->assertDatabaseHas('transaction_reversal_requests', [
+            'company_id' => $this->company->id,
+            'journal_entry_id' => $entry->id,
+            'status' => TransactionReversalRequest::STATUS_PENDING,
+        ]);
+        $this->assertDatabaseMissing('journal_entries', [
             'company_id' => $this->company->id,
             'source_module' => 'reversal',
-            'status' => JournalEntry::STATUS_DRAFT,
         ]);
+    }
+
+    public function test_duplicate_capture_blocked_while_awaiting_authorization(): void
+    {
+        $entry = $this->postedEntry();
+
+        app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'First capture request',
+                'reversal_method' => 'full',
+            ]);
+
+        $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
+            'reversal_date' => '2026-08-16',
+            'reason' => 'Second capture must be blocked',
+        ])->assertRedirect();
+
+        $this->assertSame(1, TransactionReversalRequest::where('journal_entry_id', $entry->id)->count());
     }
 
     public function test_reverse_requires_a_reason(): void
@@ -237,7 +263,6 @@ class TransactionControlsTest extends TestCase
         $entry = $this->postedEntry();
 
         $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
-            'mode' => 'immediate',
             'reversal_date' => '2026-08-15',
             'reason' => 'no',
         ])->assertSessionHasErrors('reason');
@@ -319,6 +344,66 @@ class TransactionControlsTest extends TestCase
         $this->assertSame(TransactionReversalRequest::STATUS_REJECTED, $fresh->status);
         $this->assertSame('Not a valid business reason', $fresh->rejection_reason);
         $this->assertSame(JournalEntry::STATUS_POSTED, $entry->fresh()->status);
+    }
+
+    public function test_rejected_request_clears_pending_chain_and_allows_recapture(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Will be rejected then re-captured',
+                'reversal_method' => 'full',
+            ]);
+
+        // Simulate a multi-level chain with an extra pending authorizer.
+        ReversalAuthorizationRequest::create([
+            'company_id' => $this->company->id,
+            'reversal_request_id' => $request->id,
+            'approval_level' => 2,
+            'assigned_to' => $this->user->id,
+            'status' => 'pending',
+        ]);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('assigned_to', $this->accountant->id)
+            ->firstOrFail();
+
+        $this->actingAs($this->accountant)
+            ->post(route('accounting.transaction-controls.reject', ['id' => $auth->id]), [
+                'reason' => 'Rejected for retest',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(0, ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('status', 'pending')->count());
+        $this->assertSame(JournalEntry::STATUS_POSTED, $entry->fresh()->status);
+
+        // The entry is capturable again after rejection.
+        $this->actingAs($this->user)
+            ->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
+                'reversal_date' => '2026-08-16',
+                'reason' => 'Second attempt after rejection',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(2, TransactionReversalRequest::where('journal_entry_id', $entry->id)->count());
+    }
+
+    public function test_awaiting_authorization_entry_is_flagged_in_capture_list(): void
+    {
+        $entry = $this->postedEntry();
+
+        app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Awaiting authorization flag test',
+                'reversal_method' => 'full',
+            ]);
+
+        $this->get($this->indexUrl(['from' => '2026-08-01', 'to' => '2026-08-31']))
+            ->assertOk()
+            ->assertSee('Awaiting authorization');
     }
 
     public function test_requester_cannot_authorize_own_request(): void
