@@ -84,13 +84,22 @@ class TransactionControlsController extends Controller
             ->paginate(15, ['*'], 'unposted_page')
             ->appends($request->query());
 
+        // Self-heal: requests captured before the default authorization chain
+        // always created a row have no authorization rows, so they would never
+        // surface in this tab nor be approvable. Backfill a chain for each orphan.
+        $this->reversalService->ensureAuthorizationChains($companyId);
+
+        // Every pending authorization for the company is visible to users who
+        // can review reversals. Multi-level chains produce one row per level, so
+        // collapse to a single queue entry per request (lowest pending level wins).
         $authQueue = ReversalAuthorizationRequest::forCompany($companyId)
-            ->where('assigned_to', $user->id)
             ->where('status', 'pending')
             ->with(['request.journalEntry.lines.account', 'request.requester'])
             ->orderBy('approval_level')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->unique('reversal_request_id')
+            ->values();
 
         $authDecided = ReversalAuthorizationRequest::forCompany($companyId)
             ->whereIn('status', ['approved', 'rejected'])
@@ -372,6 +381,7 @@ class TransactionControlsController extends Controller
             'submitted' => optional($request?->request_date)->format('Y-m-d')
                 ?? optional($request?->created_at)->format('Y-m-d'),
             'status' => $auth->status,
+            'canDecide' => $requesterId !== null && (int) $requesterId !== (int) Auth::id(),
             'entry' => $entry ? $this->entryPayload($entry) : null,
         ];
     }

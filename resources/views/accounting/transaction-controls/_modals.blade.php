@@ -184,7 +184,8 @@
         </div>
 
         <div class="m-foot end">
-            <div class="m-act" style="margin-left:0">
+            <span class="mnote" x-show="authReq && !authReq.canDecide">{{ __('Separation of duties: another approver must decide this request.') }}</span>
+            <div class="m-act" style="margin-left:0" x-show="authReq && authReq.canDecide">
                 @can('transaction-reversals.reject')
                     <button type="button" class="btn btn-danger-o btn-sm" @click="askReject()">{{ __('Reject') }}</button>
                 @endcan

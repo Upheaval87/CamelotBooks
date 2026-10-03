@@ -264,3 +264,82 @@ The lifecycle is now authorization-only:
 - Live headless probe `cb-probe/tc-search-probe.mjs`: `.searchwrap` label `null` (no text
   above), icon center y 323 == input center y 323, input bottom 343 == Type select bottom 343
   (fields aligned). (The 401 on `/favourites` during the probe is the known benign probe.)
+
+## §10 follow-up (round 5) — authorization queue never populated + Reason textarea alignment
+
+**Ask 1 — a transaction stuck at "Awaiting authorization" could not be approved** because it
+never appeared in the Authorization tab (queue was empty). **Ask 2 — the Capture Reversal
+modal's Reason textarea text was glued to the top.**
+
+### Root cause (Ask 1)
+
+`createAuthorizationChain()` built one `reversal_authorization_requests` row per matched
+rule, each assigned via `resolveApprover()` to a user holding the rule's `approver_role`. On
+a tenant with **no user holding `accountant`** (or any matching rule role) the chain was
+empty — so no `pending` auth row existed and the Authorization tab, which was sourced from
+the *current user's* assigned rows (`where('assigned_to', $user->id)`), had nothing to show.
+Capture still created a `pending_authorization` `TransactionReversalRequest`, leaving the
+transaction stuck with no way to decide it. The spec (§2.5 PANE 3) asks for a **queue of
+pending requests**, not a personal inbox, so the queue-by-assignment reading was wrong.
+
+### Fixes
+
+- **Queue = all pending requests for the company** (`TransactionControlsController::index`):
+  `$authQueue` now queries every `pending` auth row (with relations), then
+  `orderBy('approval_level')->orderBy('id')->get()->unique('reversal_request_id')->values()`
+  — one row per reversal request (lowest level wins). Any permitted non-requester can decide.
+- **Decision fallback** (`TransactionReversalService::authorizeUser`): if the acting user has
+  no assigned pending row, fall back to the lowest-level `pending` row for that request (still
+  `abort_unless($auth, 403)`).
+- **Chain always has ≥1 row**: the "no rule matched" default branch now always creates exactly
+  one row via `resolveDefaultApprover()`. Both `resolveApprover()` and `resolveDefaultApprover()`
+  now take `$companyId`, **exclude the requester**, prefer a **company member** (active
+  `user_company_assignments` or legacy `company_user`), are **deterministic** (`orderBy('id')`),
+  and fall back to any other user / the requester as last resort. (Previously the fallback was
+  an unordered `value('id')` → non-deterministic; a live run picked an arbitrary user.)
+- **Separation-of-duties UX**: `authPayload()` adds `canDecide` (`requester !== current user`);
+  the Authorization modal footer hides Approve/Reject and shows
+  "Separation of duties: another approver must decide this request." when `!canDecide`. Pane 3
+  heading changed "Pending my decision" → **"Pending authorization"**; empty state →
+  "No reversal requests are awaiting authorization."
+- **Self-heal / backfill** (`TransactionReversalService::ensureAuthorizationChains($companyId)`,
+  called from `index()` before building the queue): finds `pending_authorization` requests that
+  have **zero** auth rows (`whereNotExists`) — i.e. pre-fix orphans — and builds their chain.
+  Idempotent; a legacy request with no chain becomes authorizable on the next page load.
+
+### Fix (Ask 2)
+
+`resources/css/app.css` `.tc textarea, .tc textarea.in` (specificity `0,2,1`, beats `.tc .in`
+`0,2,0`): `height: auto; min-height: 68px; padding: 10px 12px; line-height: 1.5; resize: vertical`.
+Rendered proof (headless probe, forced visible): `paddingTop 10px`, `lineHeight 19.5px`,
+`minHeight 68px`, `offsetHeight 81px`, `resize vertical`, `boxSizing border-box`.
+
+### Live findings (not code defects; flagged, not fixed)
+
+- **The live case is company 5 "Chimwemwe Trading"** (`acct_chim_356b71d2`): 26 numbering
+  sequences, **1 orphaned `pending_authorization` request (`req#1`, JE 22, requester user 1),
+  0 auth rows**. The backfill creates exactly 1 row (assigned to a company member ≠ requester),
+  which makes the request decidable. Company 5 has **no reversal authorization rules**, so the
+  default single-row chain path is used.
+- **Company 5's member (user 4, `chimwemwe@camelotbooks.test`) has NO Spatie roles** —
+  `user_company_assignments.role = company_admin` is not synced to `model_has_roles`, so
+  `transaction-reversals.view` is denied. A super admin in support mode (Gate::before) can still
+  reach the page. Permissions binding to tenant users is a known later-phase item.
+- **Numbering-sequence drift**: Acme/Beta/Camelot-Ideas tenant DBs are missing the
+  `transaction_reversal` sequence (it *is* in `NumberingSequence::defaultSequences()`), so
+  capturing a reversal there throws `RuntimeException: No active numbering sequence found for
+  document type: transaction_reversal` (`NumberingSequenceService.php:44`). Needs a guarded
+  repair migration / re-seed — awaiting a decision.
+
+### Verification
+
+- `TransactionControlsTest` **22 passed / 71 assertions** (was 19/54): new tests
+  `test_authorization_queue_is_populated_without_accountant_role`,
+  `test_requester_sees_separation_of_duties_notice`,
+  `test_orphaned_pending_request_is_backfilled_on_index`.
+- `ScopedSearchRenderSmokeTest` **3 passed / 15 assertions**.
+- `php -l` clean (controller + service); `view:clear` + `view:cache` clean;
+  `npm run build` → `app-BvUtrrhC.css` (951.96 kB, `.tc textarea` rule confirmed present) /
+  `app-Cyna2VWI.js`.
+- Headless probe `tc-textarea-probe.mjs` on Acme (`probe@camelot.test`): textarea computed
+  geometry as above; only console/network error is the pre-existing `/favourites` 401.

@@ -1,6 +1,6 @@
 {{-- ── Pane 3: Authorization ── --}}
 <div class="sechead">
-    <h2>{{ __('Pending my decision') }}</h2>
+    <h2>{{ __('Pending authorization') }}</h2>
     <span class="cnt">{{ $authQueue->count() }}</span>
 </div>
 
@@ -57,7 +57,7 @@
                         <td colspan="7">
                             <div class="emptygate plain">
                                 <div class="t">{{ __('Queue clear') }}</div>
-                                <div class="s">{{ __('No reversal requests are awaiting your decision.') }}</div>
+                                <div class="s">{{ __('No reversal requests are awaiting authorization.') }}</div>
                             </div>
                         </td>
                     </tr>

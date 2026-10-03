@@ -218,6 +218,37 @@ class TransactionReversalService
         return compact('myQueue', 'totalPending', 'totalApproved', 'totalRejected');
     }
 
+    /**
+     * Backfill authorization chains for legacy pending requests that have no
+     * authorization rows (captured before the default chain always produced a
+     * row). Idempotent: requests that already have rows are left untouched.
+     */
+    public function ensureAuthorizationChains(int $companyId): void
+    {
+        $orphans = TransactionReversalRequest::forCompany($companyId)
+            ->where('status', TransactionReversalRequest::STATUS_PENDING)
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('reversal_authorization_requests')
+                    ->whereColumn(
+                        'reversal_authorization_requests.reversal_request_id',
+                        'transaction_reversal_requests.id'
+                    );
+            })
+            ->with('journalEntry')
+            ->get();
+
+        foreach ($orphans as $request) {
+            $rules = $this->matchingRules(
+                $companyId,
+                (float) ($request->journalEntry?->total_debit ?? 0),
+                $request->original_transaction_type,
+            );
+
+            $this->createAuthorizationChain($request, $rules, $companyId);
+        }
+    }
+
     public function getRulesStats(int $companyId): array
     {
         $query = ReversalAuthorizationRule::forCompany($companyId);
@@ -335,7 +366,7 @@ class TransactionReversalService
                     'company_id' => $companyId,
                     'reversal_request_id' => $request->id,
                     'approval_level' => $level,
-                    'assigned_to' => $this->resolveApprover($rule),
+                    'assigned_to' => $this->resolveApprover($rule, (int) $request->requested_by, $companyId),
                     'status' => 'pending',
                 ]);
                 $level++;
@@ -343,29 +374,64 @@ class TransactionReversalService
         }
 
         if ($level === 1) {
-            $defaultUsers = User::whereHas('roles', function ($q) {
-                $q->where('name', 'accountant');
-            })->pluck('id');
-
-            foreach ($defaultUsers as $uid) {
-                ReversalAuthorizationRequest::create([
-                    'company_id' => $companyId,
-                    'reversal_request_id' => $request->id,
-                    'approval_level' => 1,
-                    'assigned_to' => $uid,
-                    'status' => 'pending',
-                ]);
-            }
+            // No rule matched: guarantee the request is always authorizable by
+            // creating one row, preferring an accountant (never the requester)
+            // and falling back to any other company member when none exists.
+            ReversalAuthorizationRequest::create([
+                'company_id' => $companyId,
+                'reversal_request_id' => $request->id,
+                'approval_level' => 1,
+                'assigned_to' => $this->resolveDefaultApprover((int) $request->requested_by, $companyId),
+                'status' => 'pending',
+            ]);
         }
     }
 
-    private function resolveApprover(ReversalAuthorizationRule $rule): int
+    private function resolveDefaultApprover(int $requesterId, int $companyId): int
     {
-        $users = User::whereHas('roles', function ($q) use ($rule) {
-            $q->where('name', $rule->approver_role);
-        })->pluck('id');
+        return User::whereHas('roles', function ($q) {
+            $q->where('name', 'accountant');
+        })
+            ->where('id', '!=', $requesterId)
+            ->where(fn ($q) => $this->restrictToCompanyMembers($q, $companyId))
+            ->orderBy('id')
+            ->value('id')
+            ?? $this->memberApproverId($requesterId, $companyId)
+            ?? $requesterId;
+    }
 
-        return $users->first() ?? auth()->id();
+    private function resolveApprover(ReversalAuthorizationRule $rule, int $requesterId, int $companyId): int
+    {
+        return User::whereHas('roles', function ($q) use ($rule) {
+            $q->where('name', $rule->approver_role);
+        })
+            ->where('id', '!=', $requesterId)
+            ->where(fn ($q) => $this->restrictToCompanyMembers($q, $companyId))
+            ->orderBy('id')
+            ->value('id')
+            ?? $this->memberApproverId($requesterId, $companyId)
+            ?? $requesterId;
+    }
+
+    /**
+     * First (lowest-id) user with access to the company, never the requester.
+     * Falls back to any other user, then to the requester as a last resort.
+     */
+    private function memberApproverId(int $requesterId, int $companyId): ?int
+    {
+        return User::where('id', '!=', $requesterId)
+            ->where(fn ($q) => $this->restrictToCompanyMembers($q, $companyId))
+            ->orderBy('id')
+            ->value('id')
+            ?? User::where('id', '!=', $requesterId)->orderBy('id')->value('id');
+    }
+
+    private function restrictToCompanyMembers($query, int $companyId): void
+    {
+        $query->where(function ($q) use ($companyId) {
+            $q->whereHas('activeCompanyAssignments', fn ($a) => $a->where('company_id', $companyId))
+                ->orWhereHas('companies', fn ($c) => $c->whereKey($companyId));
+        });
     }
 
     private function executeReversal(TransactionReversalRequest $request, int $userId): void
@@ -413,6 +479,17 @@ class TransactionReversalService
         $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
             ->where('assigned_to', $userId)
             ->where('status', 'pending')
+            ->orderBy('approval_level')
+            ->orderBy('id')
+            ->first();
+
+        // Fall back to the next pending row so a permitted, non-requester
+        // approver can act even when the chain did not assign them directly
+        // (e.g. no accountant exists and the row went to another user).
+        $auth ??= ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('status', 'pending')
+            ->orderBy('approval_level')
+            ->orderBy('id')
             ->first();
 
         abort_unless($auth, 403, 'You are not authorized to act on this request.');

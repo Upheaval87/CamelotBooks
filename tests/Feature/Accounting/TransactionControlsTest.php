@@ -434,6 +434,104 @@ class TransactionControlsTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_authorization_queue_is_populated_without_accountant_role(): void
+    {
+        // Simulates the live tenant: no user holds the accountant role. The old
+        // default chain created ZERO rows here, so the request never reached the
+        // Authorization tab. It must now always be authorizable.
+        setPermissionsTeamId($this->company->id);
+        $this->accountant->syncRoles([]);
+
+        $reviewer = User::factory()->create();
+        $reviewer->companies()->attach($this->company->id, ['role' => 'company_admin']);
+        $reviewer->assignRole('company_admin');
+
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'No accountant exists for this tenant',
+                'reversal_method' => 'full',
+            ]);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('status', 'pending')
+            ->first();
+
+        $this->assertNotNull($auth, 'An authorization row must always be created.');
+        $this->assertNotSame(
+            $this->user->id,
+            $auth->assigned_to,
+            'The requester must never be the assigned approver.'
+        );
+
+        // A different permitted reviewer sees it in the Authorization tab...
+        $this->actingAs($reviewer)
+            ->get($this->indexUrl(['tab' => 'authorization']))
+            ->assertOk()
+            ->assertSee($request->reference_number);
+
+        // ...and can authorize it even though the row was not assigned to them.
+        $this->actingAs($reviewer)
+            ->post(route('accounting.transaction-controls.approve', ['id' => $auth->id]), [
+                'comments' => 'Approved by another reviewer',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(TransactionReversalRequest::STATUS_REVERSED, $request->fresh()->status);
+        $this->assertSame(JournalEntry::STATUS_REVERSED, $entry->fresh()->status);
+    }
+
+    public function test_requester_sees_separation_of_duties_notice(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Requester cannot decide their own request',
+                'reversal_method' => 'full',
+            ]);
+
+        $this->actingAs($this->user)
+            ->get($this->indexUrl(['tab' => 'authorization']))
+            ->assertOk()
+            ->assertSee($request->reference_number)
+            ->assertSee('Separation of duties');
+    }
+
+    public function test_orphaned_pending_request_is_backfilled_on_index(): void
+    {
+        // Simulates the live tenant: a request captured before the fix has zero
+        // authorization rows, so it never appeared in the Authorization tab.
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Legacy request with no authorization rows',
+                'reversal_method' => 'full',
+            ]);
+
+        ReversalAuthorizationRequest::where('reversal_request_id', $request->id)->delete();
+        $this->assertDatabaseCount('reversal_authorization_requests', 0);
+
+        $this->actingAs($this->accountant)
+            ->get($this->indexUrl(['tab' => 'authorization']))
+            ->assertOk()
+            ->assertSee($request->reference_number);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('status', 'pending')
+            ->first();
+        $this->assertNotNull($auth, 'The backfill must create a chain.');
+        $this->assertNotSame($this->user->id, $auth->assigned_to);
+
+        $this->actingAs($this->accountant)
+            ->post(route('accounting.transaction-controls.approve', ['id' => $auth->id]))
+            ->assertRedirect();
+
+        $this->assertSame(TransactionReversalRequest::STATUS_REVERSED, $request->fresh()->status);
+    }
+
     public function test_reopen_returns_finalized_entry_to_draft(): void
     {
         $draft = $this->draftEntry();
