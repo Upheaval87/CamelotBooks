@@ -32,8 +32,8 @@
                         <td>@include('accounting.transaction-controls._type-chip', ['module' => $req?->original_transaction_type ?: 'reversal'])</td>
                         <td>
                             <span class="who">
-                                <span class="avatar">{{ strtoupper(\Illuminate\Support\Str::substr(optional($req?->requester)->name ?? '—', 0, 1)) }}</span>
-                                {{ optional($req?->requester)->name ?? '—' }}
+                                <span class="avatar">{{ strtoupper(\Illuminate\Support\Str::substr($userNames[(int) $req?->requested_by] ?? '—', 0, 1)) }}</span>
+                                {{ $userNames[(int) $req?->requested_by] ?? '—' }}
                             </span>
                         </td>
                         <td class="r tot">{{ number_format($amt, 2) }}</td>
@@ -93,8 +93,8 @@
                             <td><span class="dmain">{{ __('Reverse') }} {{ $req?->journalEntry?->journal_number }} — {{ \Illuminate\Support\Str::limit($req?->reason, 50) }}</span></td>
                             <td>
                                 <span class="who">
-                                    <span class="avatar">{{ strtoupper(\Illuminate\Support\Str::substr(optional($req?->requester)->name ?? '—', 0, 1)) }}</span>
-                                    {{ optional($req?->requester)->name ?? '—' }}
+                                    <span class="avatar">{{ strtoupper(\Illuminate\Support\Str::substr($userNames[(int) $req?->requested_by] ?? '—', 0, 1)) }}</span>
+                                    {{ $userNames[(int) $req?->requested_by] ?? '—' }}
                                 </span>
                             </td>
                             <td class="r tot">{{ number_format($amt, 2) }}</td>
@@ -107,7 +107,7 @@
                             </td>
                             <td class="dsub">
                                 {{ optional($auth->approved_date)->format('d M Y') ?? '—' }}
-                                @if (optional($auth->approver)->name) · {{ $auth->approver->name }} @endif
+                                @if (! empty($userNames[(int) $auth->approved_by])) · {{ $userNames[(int) $auth->approved_by] }} @endif
                             </td>
                         </tr>
                     @empty

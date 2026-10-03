@@ -149,9 +149,12 @@ class TransactionControlsTest extends TestCase
         $this->get($this->indexUrl())
             ->assertOk()
             ->assertSee('Transaction Controls')
-            ->assertSee('Capture Reversal')
+            ->assertSee('Transactions List')
+            ->assertDontSee('Capture Reversal')
             ->assertSee('Unposted Transactions')
             ->assertSee('Authorization')
+            ->assertSee('Reversals Processed')
+            ->assertSee('You cannot approve a reversal you initiated')
             ->assertSee('transactionControls(', false);
     }
 
@@ -176,7 +179,39 @@ class TransactionControlsTest extends TestCase
         $this->get($this->indexUrl(['from' => '2026-08-01', 'to' => '2026-08-31']))
             ->assertOk()
             ->assertSee($entry->journal_number)
-            ->assertSee('Posted');
+            ->assertSee('Posted')
+            ->assertSee($this->user->name);
+    }
+
+    public function test_reversal_pane_reads_actor_names_from_supplied_map_not_tenant_relations(): void
+    {
+        $entry = $this->postedEntry();
+        $entry->setRelation('lines', collect());
+
+        $transactions = new \Illuminate\Pagination\LengthAwarePaginator(
+            [$entry], 1, 15, 1, ['path' => $this->indexUrl()]
+        );
+
+        $html = \Illuminate\Support\Facades\Blade::render(
+            "@include('accounting.transaction-controls._pane-reversal')",
+            [
+                'loaded' => true,
+                'dateError' => null,
+                'from' => '2026-08-01',
+                'to' => '2026-08-31',
+                'filters' => [],
+                'typeOptions' => [],
+                'awaitingAuthIds' => [],
+                'transactions' => $transactions,
+                'userNames' => [$this->user->id => 'Central Mapped Name'],
+            ]
+        );
+
+        // The map value is rendered even though the createdBy relation (which,
+        // in production, resolves on the tenant connection where "users" has no
+        // name column) would otherwise supply a different value.
+        $this->assertStringContainsString('Central Mapped Name', $html);
+        $this->assertStringNotContainsString($this->user->name, $html);
     }
 
     public function test_capture_creates_pending_authorization_and_leaves_entry_posted(): void
@@ -293,7 +328,8 @@ class TransactionControlsTest extends TestCase
         $this->actingAs($this->accountant)
             ->get($this->indexUrl(['tab' => 'authorization']))
             ->assertOk()
-            ->assertSee($request->reference_number);
+            ->assertSee($request->reference_number)
+            ->assertSee($this->user->name);
     }
 
     public function test_approve_posts_reversal(): void
@@ -499,6 +535,22 @@ class TransactionControlsTest extends TestCase
             ->assertSee('Separation of duties');
     }
 
+    public function test_requester_payload_marks_own_request(): void
+    {
+        $entry = $this->postedEntry();
+        app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Requester marks own request',
+                'reversal_method' => 'full',
+            ]);
+
+        $this->actingAs($this->user)
+            ->get($this->indexUrl(['tab' => 'authorization']))
+            ->assertOk()
+            ->assertSee('\\u0022isRequester\\u0022:true');
+    }
+
     public function test_orphaned_pending_request_is_backfilled_on_index(): void
     {
         // Simulates the live tenant: a request captured before the fix has zero
@@ -552,5 +604,94 @@ class TransactionControlsTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseMissing('journal_entries', ['id' => $draft->id]);
+    }
+
+    public function test_reversals_processed_tab_lists_executed_reversals(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Processed reversal for the register',
+                'reversal_method' => 'full',
+            ]);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('assigned_to', $this->accountant->id)
+            ->firstOrFail();
+
+        $this->actingAs($this->accountant)
+            ->post(route('accounting.transaction-controls.approve', ['id' => $auth->id]))
+            ->assertRedirect();
+
+        $reversalNumber = $request->fresh()->reversal->reversal_number;
+
+        $this->actingAs($this->user)
+            ->get($this->indexUrl(['tab' => 'reversals_processed']))
+            ->assertOk()
+            ->assertSee('Reversals Processed')
+            ->assertSee($reversalNumber)
+            ->assertSee($entry->journal_number)
+            ->assertSee($this->accountant->name);
+    }
+
+    public function test_reversals_processed_tab_is_empty_before_any_reversal(): void
+    {
+        $this->get($this->indexUrl(['tab' => 'reversals_processed']))
+            ->assertOk()
+            ->assertSee('No reversals processed yet');
+    }
+
+    public function test_capture_reversal_hides_reversal_entries(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Reversal entry must not be a capture candidate',
+                'reversal_method' => 'full',
+            ]);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('assigned_to', $this->accountant->id)
+            ->firstOrFail();
+
+        $this->actingAs($this->accountant)
+            ->post(route('accounting.transaction-controls.approve', ['id' => $auth->id]))
+            ->assertRedirect();
+
+        $reversalEntry = JournalEntry::forCompany($this->company->id)
+            ->where('source_module', 'reversal')
+            ->firstOrFail();
+
+        $this->actingAs($this->user)
+            ->get($this->indexUrl(['tab' => 'reversal', 'from' => '2026-08-01', 'to' => '2026-08-31']))
+            ->assertOk()
+            ->assertSee($entry->journal_number)
+            ->assertDontSee($reversalEntry->journal_number);
+    }
+
+    public function test_capture_type_filter_excludes_reversal_type(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Populate a reversal source module',
+                'reversal_method' => 'full',
+            ]);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('assigned_to', $this->accountant->id)
+            ->firstOrFail();
+
+        $this->actingAs($this->accountant)
+            ->post(route('accounting.transaction-controls.approve', ['id' => $auth->id]))
+            ->assertRedirect();
+
+        $this->actingAs($this->user)
+            ->get($this->indexUrl(['from' => '2026-08-01', 'to' => '2026-08-31']))
+            ->assertOk()
+            ->assertDontSee('<option value="reversal"', false);
     }
 }

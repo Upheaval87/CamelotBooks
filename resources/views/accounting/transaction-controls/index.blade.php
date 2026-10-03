@@ -26,9 +26,10 @@
                 {{-- ── Tabs ── --}}
                 <div class="mtabs" role="tablist" aria-label="{{ __('Transaction control views') }}">
                     @foreach ([
-                        'reversal' => [__('Capture Reversal'), $counts['reversal']],
+                        'reversal' => [__('Transactions List'), $counts['reversal']],
                         'unposted' => [__('Unposted Transactions'), $counts['unposted']],
                         'authorization' => [__('Authorization'), $counts['authorization']],
+                        'reversals_processed' => [__('Reversals Processed'), $counts['reversals_processed']],
                     ] as $key => [$label, $count])
                         <button type="button"
                                 role="tab"
@@ -51,6 +52,9 @@
                 </div>
                 <div id="tc-pane-authorization" class="pane" role="tabpanel" x-show="tab === 'authorization'" x-cloak>
                     @include('accounting.transaction-controls._pane-authorization')
+                </div>
+                <div id="tc-pane-reversals_processed" class="pane" role="tabpanel" x-show="tab === 'reversals_processed'" x-cloak>
+                    @include('accounting.transaction-controls._pane-reversals-processed')
                 </div>
             </div>
 

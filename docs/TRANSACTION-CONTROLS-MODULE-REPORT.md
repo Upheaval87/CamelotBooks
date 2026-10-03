@@ -343,3 +343,174 @@ Rendered proof (headless probe, forced visible): `paddingTop 10px`, `lineHeight 
   `app-Cyna2VWI.js`.
 - Headless probe `tc-textarea-probe.mjs` on Acme (`probe@camelot.test`): textarea computed
   geometry as above; only console/network error is the pre-existing `/favourites` 401.
+
+## §11 follow-up (round 6) — "Reversals Processed" tab + hide reversals from Capture Reversal
+
+Two asks: (1) add a tab next to **Authorization** named **Reversals Processed** that lists only
+transactions reversed and finalized in the system (i.e. reversals approved in the Authorization tab
+are moved here), with filters for the records; (2) make the **Capture Reversal** tab stop showing
+items whose type is **Reversal**.
+
+### Ask 1 — new "Reversals Processed" tab
+
+- **Tab key** `reversals_processed` added to the hard-coded tab list in
+  `index.blade.php` (`__('Reversals Processed')`, `$counts['reversals_processed']`), a matching
+  `x-show="tab === 'reversals_processed'"` pane div, and `resolveTab()` now accepts the key.
+- **Source of truth**: `TransactionReversalRequest` rows with `status = STATUS_REVERSED`. This is the
+  terminal state set by `TransactionReversalService::executeReversal()` the moment the (possibly
+  multi-level) authorization chain is fully approved — the exact set of "reversals that are approved
+  in the Authorization tab". Each row carries its `TransactionReversal` (reversal number, reversal
+  JE, amount, reversal date), the original `journalEntry`, `requester` and `approver`.
+- **Count**: `$counts['reversals_processed']` = all `reversed` requests for the company (unfiltered,
+  mirroring the other tab counters).
+- **Filters** (new pane `_pane-reversals-processed.blade.php`): search `q` (reversal reference,
+  original journal number, original memo), `type` (original transaction type, reuses `$typeOptions`),
+  and a `from`/`to` date range on `reversal_date`. Date bounds are applied independently and only
+  when coherent (`from <= to`); the pane is a register that always renders (no date gate). Paginated
+  on its own page name `processed_page`, preserving the query string via `appends()`.
+- **Columns**: Reversal № (links to the reversal JE), Original (links to the original JE), Type chip,
+  Reversed on, Reason/Description, Amount, Approved by, and a green "Reversed" status pill. Rows
+  with no `TransactionReversal` fall back to the request's `reference_number`.
+
+### Ask 2 — Capture Reversal no longer lists type "Reversal"
+
+- `TransactionReversalService::searchTransactions()` gained an opt-in `exclude_reversal` filter that
+  adds `(source_module IS NULL OR source_module <> 'reversal')` — NULL-guarded so manual journals
+  (null `source_module`) are still listed. `TransactionControlsController` passes
+  `exclude_reversal => true` for the Capture Reversal pane only, so the reversal register
+  (`ReversalController::create`) is unchanged.
+- `$typeOptions` now `reject()`s the `reversal` module, so the Capture Reversal Type filter no longer
+  offers a value that can never match.
+
+### Verification
+
+- `php -l` clean on controller + service + test; `view:clear` + `view:cache` clean.
+- `TransactionControlsTest` **26 passed / 86 assertions** (was 22/71). New tests:
+  `test_reversals_processed_tab_lists_executed_reversals` (approve → reversal number + original
+  reference visible on the new tab), `test_reversals_processed_tab_is_empty_before_any_reversal`
+  (empty-state copy), `test_capture_reversal_hides_reversal_entries` (the generated `source_module =
+  reversal` JE is absent from the loaded Capture Reversal list while the original still appears), and
+  `test_capture_type_filter_excludes_reversal_type` (no `value="reversal"` option).
+- No CSS/JS changes were required (the pane reuses existing `.tc` classes), so no asset rebuild.
+
+## §12 follow-up (round 7) — requester SoD notice + "Transactions List" rename
+
+Two asks: (1) in the Authorization Review modal, when the current user is the one who **captured the
+reversal** (the requester) and tries to authorize/review it, display **"You cannot approve a reversal
+you initiated"** in a notification modal; (2) rename the **Capture Reversal** tab to
+**Transactions List**.
+
+### Ask 1 — requester notification modal
+
+- `TransactionControlsController::authPayload()` now also returns
+  `isRequester` (`$requesterId !== null && (int) $requesterId === (int) Auth::id()`), alongside the
+  existing `canDecide`.
+- `resources/js/transaction-controls.js`:
+  - new state `notice: { open: false }`;
+  - `openAuth(row)` returns early for `row.isRequester` — it does NOT open the review modal and
+    instead sets `notice.open = true`;
+  - `init()` routes a requester deep-link (`?auth=<id>`, `config.authPayload.isRequester`) to the
+    same notification modal rather than the review modal;
+  - `closeAll()` (Escape) also closes the notification.
+- `_modals.blade.php` gains a self-contained notification modal (`.jmodal.confirm` > `.cbox` /
+  `.cb-head` / `.cb-body` / `.cb-foot`, reusing existing `.tc` CSS — no new styles). The headline is
+  hard-coded as `__('You cannot approve a reversal you initiated')` so it is server-renderable and
+  testable; the body explains separation of duties and a single **OK** button dismisses it. The
+  inline SoD note for the (non-requester) `!canDecide` case is retained.
+
+### Ask 2 — tab rename
+
+- `index.blade.php` tab loop label `__('Capture Reversal')` → `__('Transactions List')`. The verb
+  "Capture reversal" (view-modal action button and capture-modal title) is intentionally unchanged;
+  only the tab name changed.
+
+### Verification
+
+- `php -l` clean on controller + test; `view:clear` + `view:cache` clean.
+- `TransactionControlsTest` **27 passed / 90 assertions** (was 26/86). `test_index_renders_workspace`
+  now asserts the `Transactions List` label, the absence of the old `Capture Reversal` label, and the
+  notification copy `You cannot approve a reversal you initiated`; new
+  `test_requester_payload_marks_own_request` asserts the serialized `workspaceConfig` contains
+  `\u0022isRequester\u0022:true` for the requester's own authorization row.
+- `npm run build` → `app-CpIQPEMP.js` (JS changed: `isRequester` / `notice.open` present); CSS
+  unchanged (`app-BvUtrrhC.css`), so no style work was needed.
+
+## Round 8 - actor names ("Requested by" / "Posted by") display fix
+
+**Problem:** every actor column showed an em-dash ("-") instead of the person's name - "Posted by" on
+the Transactions List, "Created by" on the Unposted pane, "Requested by" on the Authorization pane,
+and "Approved by" on the Reversals Processed pane.
+
+### Root cause
+
+The workspace rendered names through Eloquent relations:
+`$entry->createdBy` (`JournalEntry::createdBy()`), `$req->requester`
+(`TransactionReversalRequest::requester()`) and `$auth->approver` / `$req->approver`.
+
+`Illuminate\Database\Eloquent\Concerns\HasRelationships::belongsTo()` calls
+`newRelatedInstance()`, which runs:
+
+```php
+if (! $instance->getConnectionName()) {
+    $instance->setConnection($this->connection);
+}
+```
+
+`App\Models\User` is a **central** model (it is deliberately NOT `TenantScoped`, so
+`getConnectionName()` returns `null`). A relation from a `TenantScoped` model therefore forces the
+`User` model onto the parent's **`tenant`** connection. The tenant `users` table is a bootstrap stub
+(`id`, `created_at`, `updated_at` only - see
+`database/migrations/tenant/2026_01_01_000025_create_tenant_bootstrap_tables.php`), so `->name` is
+empty and the views fell back to "-".
+
+Probes confirmed the split: while bound to company 1,
+`(new User)->getConnectionName()` is empty, `$entry->createdBy` resolves on `connection = tenant`
+with attributes `{"id":1,"created_at":...,"updated_at":...}` (no `name`), while the raw central
+`mysql` `users.name` for id 1 is `Elvis Seyama`. A standalone `User::query()` still runs on the
+default (central) connection - `TenantConnectionResolver` never flips the default.
+
+### Fix
+
+Resolve names from the **central** `users` table in the controller and hand the map to the views:
+
+- `TransactionControlsController` gained `private array $userNames = []`,
+  `primeUserNames(iterable $ids)` (one `User::query()->whereIn('id', ...)->pluck('name', 'id')`) and
+  `nameFor($id)` (lazy top-up) helpers.
+- `index()` primes the map from every actor id it will render (`created_by` on the transactions and
+  unposted lists, `requested_by` on the authorization queue/decided rows, `approved_by` on the
+  decided and processed rows) and passes `$userNames` to the view.
+- `entryPayload()` `postedBy`/`creator` and `authPayload()` `requester` now use `nameFor()` instead
+  of the relations.
+- The now-unused eager loads were removed (`createdBy`; `request.requester`; `requester`/`approver`).
+- Partials now read `$userNames[(int) $id] ?? '-'`: `_pane-reversal` ("Posted by"),
+  `_pane-unposted` ("Created by"), `_pane-authorization` ("Requested by" + decided approver),
+  `_pane-reversals-processed` ("Approved by"). The modals already read the controller payloads
+  (`viewTx.postedBy`, `authReq.requester`), so they inherit the fix.
+
+### Verification
+
+- `php -l` clean; `view:clear` + `view:cache` clean. No CSS/JS change (payload + Blade only), so no
+  asset rebuild.
+- `TransactionControlsTest` **28 passed / 95 assertions** (was 27/90). Added
+  `test_reversal_pane_reads_actor_names_from_supplied_map_not_tenant_relations` - renders the pane
+  directly with a deliberately different `userNames` map value and asserts the map value renders and
+  the relation's value does not, proving the view reads the map rather than `createdBy`. Existing
+  list tests (`test_loaded_period_lists_posted_entries`, `test_authorization_pane_lists_assigned_queue`,
+  `test_reversals_processed_tab_lists_executed_reversals`) now also assert the actor name.
+- Live headless check (company 1 / Acme, tenant `acct_acme_149593cc`): the Transactions List "POSTED
+  BY" column renders `Elvis Seyama` / `Accountant User` and the workspace payload carries
+  `"postedBy":"Elvis Seyama"`, `"creator":"Accountant User"`, etc.
+
+### Testing limitation (documented)
+
+Under the test suite's `TENANT_ROUTING_OVERRIDE=sqlite`, the tenant and central users share one
+in-memory database whose `users` table **has** `name`, so the production tenant-vs-central split does
+not reproduce and a name-based assertion would pass even before the fix. The view-level guard above
+(clashing map value) is therefore the real regression test; the production behaviour is proven by the
+live probe and the headless check.
+
+### Known related (out of scope)
+
+The same relation-on-tenant-connection issue affects other modules that display `->createdBy`
+(e.g. `accounting/bills/show`, `accounting/invoices/show`); those pages are unchanged in this round
+because the directive covered the Transaction Controls workspace only.

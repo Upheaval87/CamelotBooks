@@ -38,6 +38,13 @@ class TransactionReversalService
         if (!empty($filters['type'])) {
             $query->where('source_module', $filters['type']);
         }
+        if (!empty($filters['exclude_reversal'])) {
+            // A reversal entry can never be reversed again, so it must never be a
+            // capture candidate. Keep NULL source_module entries (manual journals).
+            $query->where(function ($q) {
+                $q->whereNull('source_module')->orWhere('source_module', '!=', 'reversal');
+            });
+        }
         if (!empty($filters['branch_id'])) {
             $query->where('branch_id', $filters['branch_id']);
         }

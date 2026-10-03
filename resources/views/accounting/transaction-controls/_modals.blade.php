@@ -197,6 +197,25 @@
     </div>
 </div>
 
+{{-- ── Notification (separation of duties) ── --}}
+<div class="jmodal confirm" x-show="notice.open" x-cloak @click.self="notice.open = false" role="dialog" aria-modal="true" aria-labelledby="tc-notice-title">
+    <div class="cbox">
+        <div class="cb-head">
+            <span class="cb-ic danger">
+                <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+            </span>
+            <h3 id="tc-notice-title">{{ __('You cannot approve a reversal you initiated') }}</h3>
+            <button type="button" class="cb-x" @click="notice.open = false" aria-label="{{ __('Close') }}">&times;</button>
+        </div>
+        <div class="cb-body">
+            <p>{{ __('Separation of duties requires that a different person authorize a reversal you captured.') }}</p>
+        </div>
+        <div class="cb-foot">
+            <button type="button" class="btn btn-cta btn-sm" @click="notice.open = false">{{ __('OK') }}</button>
+        </div>
+    </div>
+</div>
+
 {{-- ── Confirm box ── --}}
 <div class="jmodal confirm" x-show="confirm.open" x-cloak @click.self="confirm.open = false" role="dialog" aria-modal="true" aria-labelledby="tc-confirm-title">
     <div class="cbox">

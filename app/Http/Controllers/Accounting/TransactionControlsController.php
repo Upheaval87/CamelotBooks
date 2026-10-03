@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\JournalEntry;
 use App\Models\ReversalAuthorizationRequest;
 use App\Models\TransactionReversalRequest;
+use App\Models\User;
 use App\Policies\TransactionControlPolicy;
 use App\Services\Accounting\JournalPostingEngine;
 use App\Services\Accounting\JournalReversalService;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
  *  - Pane 1 "Capture Reversal"  -> posted journals + reversal capture
  *  - Pane 2 "Unposted Transactions" -> draft / pending-approval journals
  *  - Pane 3 "Authorization"     -> reversal authorization queue
+ *  - Pane 4 "Reversals Processed" -> reversals approved + executed in the ledger
  *
  * This controller is a view layer: it delegates to the existing services and
  * never duplicates ledger logic.
@@ -28,6 +30,14 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 class TransactionControlsController extends Controller
 {
     private array $awaitingAuthIds = [];
+
+    /**
+     * Central user id => name cache for this request. Populated via primeUserNames()
+     * and lazily topped up by nameFor().
+     *
+     * @var array<int, string|null>
+     */
+    private array $userNames = [];
 
     public function __construct(
         private TransactionReversalService $reversalService,
@@ -67,6 +77,7 @@ class TransactionControlsController extends Controller
                 ->searchTransactions($companyId, array_merge($filters, [
                     'date_from' => $from,
                     'date_to' => $to,
+                    'exclude_reversal' => true,
                 ]))
                 ->appends($request->query());
 
@@ -79,7 +90,7 @@ class TransactionControlsController extends Controller
 
         $unposted = JournalEntry::forCompany($companyId)
             ->whereIn('status', [JournalEntry::STATUS_DRAFT, JournalEntry::STATUS_PENDING_APPROVAL])
-            ->with(['lines.account', 'createdBy'])
+            ->with(['lines.account'])
             ->orderByDesc('id')
             ->paginate(15, ['*'], 'unposted_page')
             ->appends($request->query());
@@ -94,7 +105,7 @@ class TransactionControlsController extends Controller
         // collapse to a single queue entry per request (lowest pending level wins).
         $authQueue = ReversalAuthorizationRequest::forCompany($companyId)
             ->where('status', 'pending')
-            ->with(['request.journalEntry.lines.account', 'request.requester'])
+            ->with(['request.journalEntry.lines.account'])
             ->orderBy('approval_level')
             ->orderBy('id')
             ->get()
@@ -103,15 +114,52 @@ class TransactionControlsController extends Controller
 
         $authDecided = ReversalAuthorizationRequest::forCompany($companyId)
             ->whereIn('status', ['approved', 'rejected'])
-            ->with(['request.journalEntry', 'request.requester', 'approver'])
+            ->with(['request.journalEntry'])
             ->orderByDesc('approved_date')
             ->limit(15)
             ->get();
+
+        // Reversals Processed: reversal requests that were authorized through the
+        // Authorization tab and then executed (reversed + finalized in the ledger).
+        $processedQuery = TransactionReversalRequest::forCompany($companyId)
+            ->where('status', TransactionReversalRequest::STATUS_REVERSED)
+            ->with(['journalEntry', 'reversal']);
+
+        if ($from && (! $to || $from <= $to)) {
+            $processedQuery->where('reversal_date', '>=', $from);
+        }
+        if ($to && (! $from || $from <= $to)) {
+            $processedQuery->where('reversal_date', '<=', $to);
+        }
+        if (! empty($filters['type'])) {
+            $processedQuery->where('original_transaction_type', $filters['type']);
+        }
+        if (! empty($filters['q'])) {
+            $search = $filters['q'];
+            $processedQuery->where(function ($q) use ($search) {
+                $q->where('reference_number', 'like', "%{$search}%")
+                    ->orWhereHas('journalEntry', function ($je) use ($search) {
+                        $je->where('journal_number', 'like', "%{$search}%")
+                            ->orWhere('memo', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $processed = $processedQuery
+            ->orderByDesc('reversal_date')
+            ->orderByDesc('id')
+            ->paginate(15, ['*'], 'processed_page')
+            ->appends($request->query());
+
+        $processedCount = TransactionReversalRequest::forCompany($companyId)
+            ->where('status', TransactionReversalRequest::STATUS_REVERSED)
+            ->count();
 
         $counts = [
             'reversal' => $reversalCount,
             'unposted' => $unposted->total(),
             'authorization' => $authQueue->count(),
+            'reversals_processed' => $processedCount,
         ];
 
         $this->awaitingAuthIds = TransactionReversalRequest::forCompany($companyId)
@@ -130,13 +178,28 @@ class TransactionControlsController extends Controller
             ->distinct()
             ->orderBy('source_module')
             ->pluck('source_module')
+            ->reject(fn ($module) => $module === 'reversal')
             ->mapWithKeys(fn ($module) => [$module => $this->typeLabel($module)])
             ->all();
+
+        // Resolve every referenced user name from the CENTRAL users table in one
+        // query. User is a central model, but Eloquent forces a relation's related
+        // model onto the parent's (tenant) connection, where "users" is a stub
+        // without a name column — so createdBy/requester/approver relations cannot
+        // be trusted for display here.
+        $this->primeUserNames(collect()
+            ->merge($transactions ? $transactions->getCollection()->pluck('created_by') : [])
+            ->merge($unposted->getCollection()->pluck('created_by'))
+            ->merge($authQueue->map(fn ($a) => $a->request?->requested_by))
+            ->merge($authDecided->map(fn ($a) => $a->request?->requested_by))
+            ->merge($authDecided->pluck('approved_by'))
+            ->merge($processed->getCollection()->pluck('approved_by'))
+            ->merge($processed->getCollection()->pluck('requested_by')));
 
         $viewEntryPayload = null;
         if ($request->filled('view')) {
             $entry = JournalEntry::forCompany($companyId)
-                ->with(['lines.account', 'createdBy'])
+                ->with(['lines.account'])
                 ->find($request->integer('view'));
             $viewEntryPayload = $entry ? $this->entryPayload($entry) : null;
         }
@@ -144,7 +207,7 @@ class TransactionControlsController extends Controller
         $authPayload = null;
         if ($request->filled('auth')) {
             $auth = ReversalAuthorizationRequest::forCompany($companyId)
-                ->with(['request.journalEntry.lines.account', 'request.requester'])
+                ->with(['request.journalEntry.lines.account'])
                 ->find($request->integer('auth'));
             $authPayload = $auth ? $this->authPayload($auth) : null;
         }
@@ -171,11 +234,12 @@ class TransactionControlsController extends Controller
         ];
 
         $awaitingAuthIds = $this->awaitingAuthIds;
+        $userNames = $this->userNames;
 
         return view('accounting.transaction-controls.index', compact(
             'tab', 'counts', 'from', 'to', 'loaded', 'dateError', 'filters',
-            'transactions', 'unposted', 'authQueue', 'authDecided',
-            'typeOptions', 'workspaceConfig', 'awaitingAuthIds'
+            'transactions', 'unposted', 'authQueue', 'authDecided', 'processed',
+            'typeOptions', 'workspaceConfig', 'awaitingAuthIds', 'userNames'
         ));
     }
 
@@ -314,7 +378,7 @@ class TransactionControlsController extends Controller
     {
         $tab = (string) $request->query('tab', 'reversal');
 
-        return in_array($tab, ['reversal', 'unposted', 'authorization'], true) ? $tab : 'reversal';
+        return in_array($tab, ['reversal', 'unposted', 'authorization', 'reversals_processed'], true) ? $tab : 'reversal';
     }
 
     private function workspaceRedirect(Request $request, string $tab, string $flashType, string $message)
@@ -346,8 +410,8 @@ class TransactionControlsController extends Controller
             'amount' => (float) $entry->total_debit,
             'status' => $entry->status,
             'state' => $entry->status === JournalEntry::STATUS_DRAFT ? 'Draft' : 'Finalized',
-            'postedBy' => optional($entry->createdBy)->name,
-            'creator' => optional($entry->createdBy)->name,
+            'postedBy' => $this->nameFor($entry->created_by),
+            'creator' => $this->nameFor($entry->created_by),
             'createdBy' => $entry->created_by,
             'awaitingAuthorization' => $awaiting,
             'reversible' => $entry->isPosted() && !$awaiting,
@@ -375,15 +439,58 @@ class TransactionControlsController extends Controller
             'typeLabel' => $this->typeLabel($request?->original_transaction_type),
             'amount' => (float) ($entry?->total_debit ?? 0),
             'reason' => $request?->reason,
-            'requester' => optional($request?->requester)->name,
+            'requester' => $this->nameFor($requesterId),
             'requesterId' => $requesterId,
             'level' => $auth->approval_level,
             'submitted' => optional($request?->request_date)->format('Y-m-d')
                 ?? optional($request?->created_at)->format('Y-m-d'),
             'status' => $auth->status,
             'canDecide' => $requesterId !== null && (int) $requesterId !== (int) Auth::id(),
+            'isRequester' => $requesterId !== null && (int) $requesterId === (int) Auth::id(),
             'entry' => $entry ? $this->entryPayload($entry) : null,
         ];
+    }
+
+    /**
+     * Batch-resolve central user names for the given ids.
+     */
+    private function primeUserNames(iterable $ids): void
+    {
+        $ids = collect($ids)
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $this->userNames = User::query()
+            ->whereIn('id', $ids->all())
+            ->pluck('name', 'id')
+            ->mapWithKeys(fn ($name, $id) => [(int) $id => $name])
+            ->all();
+    }
+
+    /**
+     * Central user name for an id, resolved from the default (central) connection.
+     * Relations such as createdBy/requester/approver resolve on the tenant
+     * connection, where "users" is a stub without a name column.
+     */
+    private function nameFor($id): ?string
+    {
+        if ($id === null || $id === '') {
+            return null;
+        }
+
+        $id = (int) $id;
+
+        if (! array_key_exists($id, $this->userNames)) {
+            $this->userNames[$id] = User::query()->whereKey($id)->value('name');
+        }
+
+        return $this->userNames[$id] ?: null;
     }
 
     private function typeLabel(?string $module): string

@@ -111,8 +111,8 @@
                             <td class="r tot">{{ number_format((float) $entry->total_debit, 2) }}</td>
                             <td>
                                 <span class="who">
-                                    <span class="avatar">{{ strtoupper(\Illuminate\Support\Str::substr(optional($entry->createdBy)->name ?? '—', 0, 1)) }}</span>
-                                    {{ optional($entry->createdBy)->name ?? '—' }}
+                                    <span class="avatar">{{ strtoupper(\Illuminate\Support\Str::substr($userNames[(int) $entry->created_by] ?? '—', 0, 1)) }}</span>
+                                    {{ $userNames[(int) $entry->created_by] ?? '—' }}
                                 </span>
                             </td>
                             <td>

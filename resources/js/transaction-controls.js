@@ -30,6 +30,8 @@ document.addEventListener('alpine:init', () => {
 
         open: { view: false, reverse: false, auth: false },
 
+        notice: { open: false },
+
         confirm: {
             open: false,
             title: '',
@@ -50,8 +52,12 @@ document.addEventListener('alpine:init', () => {
                 this.open.view = true;
             }
             if (config.authPayload) {
-                this.authReq = config.authPayload;
-                this.open.auth = true;
+                if (config.authPayload.isRequester) {
+                    this.notice.open = true;
+                } else {
+                    this.authReq = config.authPayload;
+                    this.open.auth = true;
+                }
             }
         },
 
@@ -112,6 +118,12 @@ document.addEventListener('alpine:init', () => {
 
         openAuth(row) {
             if (!row) return;
+            if (row.isRequester) {
+                this.authReq = null;
+                this.open.auth = false;
+                this.notice.open = true;
+                return;
+            }
             this.authReq = row;
             this.authComment = '';
             this.open.auth = true;
@@ -224,6 +236,7 @@ document.addEventListener('alpine:init', () => {
         closeAll() {
             this.open = { view: false, reverse: false, auth: false };
             this.confirm.open = false;
+            this.notice.open = false;
         },
 
         applyPreset(ev, key) {
