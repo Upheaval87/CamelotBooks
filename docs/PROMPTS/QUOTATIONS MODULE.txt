@@ -1,0 +1,1679 @@
+QUOTATIONS MODULE (REGISTER · CREATE · VIEW · EDIT · RE-QUOTE · SUBMIT · PRINT/PDF) — FULL IMPLEMENTATION SPEC (SELF-CONTAINED)
+(AUTHORITATIVE MOCKUP HTML EMBEDDED IN APPENDIX A — do NOT read or depend on any external file.)
+
+SCOPE:
+Build the complete Quotations feature exactly as APPENDIX A defines it:
+(A) Register page: KPI strip, status filter tiles, sortable/searchable datasheet with
+    expiry chips, Views/Needs-attention/Reports rail, row-wide click-to-view.
+(B) Create Quotation page: existing vs walk-in customer capture, terms/currency/branch/
+    cost-centre, line-item editor with live totals, customer + internal notes, summary rail.
+(C) View Quotation modal: lifecycle timeline, lines, totals, status-aware footer actions.
+(D) Edit Draft modal: full in-modal editing of drafts with Save changes / Finalize & issue.
+(E) Re-quote modal: clone an EXPIRED quotation into a fresh draft or issued quote with
+    editable customer + lines; source marked superseded.
+(F) Submit choice modal: "Save & send later" (draft) vs "Finalize & print" (sent + preview).
+(G) Print preview: A4 quotation sheet with Print + Save as PDF (server PDF endpoint live).
+
+HARD GUARD — do NOT modify unrelated modules, posting engines or permission definitions.
+Frontend view-layer rebuild + the sanctioned backend contracts in §6 only. NO NEW PACKAGES.
+Live data only — every value in APPENDIX A is a sample; render from server payloads.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate quotations models/tables (or plan migration per §6.1), customers module,
+    invoice conversion endpoint, numbering sequences, tax-rate setting (16.5% in mock).
+0.2 Record system currency setting + enabled currencies; date-format setting.
+0.3 Locate existing PDF engine (dompdf/snappy) and print-css conventions from journal
+    vouchers — the quotation sheet MUST reuse the same print token family.
+0.4 Inventory current ids/hooks on the quotations screens so nothing wired breaks.
+
+==================== 1 · TOKENS + ABSOLUTE RULES ====================
+--deep-1:#17565d; --deep-2:#0c3539; --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+--teal-btn:#139594; --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+--line:#e2ecec; --hair:#EEF3F1; --green:#15803d; --red:#dc2626; --amber:#d97706;
+--steel:#46708C; print family --p-accent:#0E7473 / --p-band:#F0F5F5 / --p-line:#DCE7E5;
+Inter; mono stack for all codes/refs/emails; tabular-nums on every figure.
+R1 · ZERO BLUR: scrims are solid tints (modals rgba(11,42,45,.26); confirms .45);
+     NO backdrop-filter anywhere.
+R2 · STRICT DISMISSAL: dialogs close ONLY via labelled Close button, header ✕, or Esc.
+     Never on background click. Close handling must be event-DELEGATED (document level)
+     because modal footers are rebuilt dynamically.
+R3 · EVERY modal footer ends with a clearly visible labelled Close button
+     (.btn-close: white tile, solid border, 800-weight ink label, ✕ icon, teal hover).
+R4 · ROW-WIDE OPEN: clicking anywhere on a register row opens the View modal; clicks on
+     action icons run their own action; disabled (locked) icons swallow clicks silently.
+R5 · SEGMENTED CONTROL ("On create"): single row, never wraps; ACTIVE option = solid
+     #139594 background + white 800-weight text; INACTIVE = white tile + visible border.
+R6 · EXPIRY INTELLIGENCE: chips computed vs server today — Expired (red), ≤7 days (amber
+     "N days"), else grey "Valid"; Needs-attention rail lists open (draft+sent) quotes
+     expired or expiring ≤7 days and deep-links into their View modal.
+R7 · STATUS SEMANTICS: draft grey · sent steel · accepted green · declined red ·
+     converted teal · void grey; "expired" is NEVER a stored status (derived only).
+R8 · WALK-IN RULE: capturing an unknown customer name anywhere (create page or re-quote)
+     creates the customer record in the SAME transaction and links it; registry feeds
+     searches/datalists immediately afterwards.
+R9 · LOCK RULE: only Draft quotations are editable (modal); sent/accepted/converted/
+     declined/void show a locked edit icon with explanatory tooltip + toast.
+R10 · PRINT RULE: A4 portrait sheet; signatures = Prepared by + Customer acceptance ONLY
+     ("Authorised by" must NOT exist); DRAFT watermark on drafts; footer pinned to page
+     bottom; print CSS outputs the sheet alone (app, toolbars, scrims hidden).
+R11 · DO-NOT-REINTRODUCE (removed by product decision): "Authorised by / Name · Date"
+     signature block; attachments section; submit-modal option descriptions; "Choose how
+     to complete" sub-header; create-page subtitle; customer-lock hint paragraph;
+     quotation-info hint paragraph; re-quote registry hint paragraph; approval buttons
+     ("Save & New", old "Save", "Submit for Approval").
+R12 · prefers-reduced-motion disables all animation; focus-visible rings on all controls.
+
+==================== 2 · REGISTER PAGE (parity with APPENDIX A) ====================
+2.1 Head: h1 + sub; Export (ghost, existing export endpoint) + Create Quotation (teal CTA
+    → §3 page view).
+2.2 KPI strip (4 live tiles): Open pipeline value (draft+sent totals), Win rate
+    (accepted ÷ (accepted+declined)), Expiring ≤7 days count (amber chip when >0),
+    Converted value + invoice count.
+2.3 Toolbar: search (customer/number/reference, live), sort select (newest, oldest,
+    value high→low, expiry soonest), live count chip.
+2.4 Status tiles (Total/Draft/Sent/Accepted/Declined/Converted/Void) = filters with live
+    counts; active tile = teal gradient.
+2.5 Datasheet columns: Quotation № (mono teal + ref/status sub-label), Customer (avatar
+    initials + name), Date, Valid until (+ expiry chip R6), Total tabular right, Status
+    pill, Actions (view · edit[locked unless draft] · re-quote[expired only, amber] ·
+    contextual: send[draft] / print[sent,converted] / convert[accepted] / duplicate[declined]).
+2.6 Rail: Views (All / Open=Draft+Sent / Accepted / Converted, live badges, two-way with
+    tiles), Needs attention (R6), Reports (Quotation Register, Sales Pipeline → existing
+    report endpoints).
+2.7 Server-side pagination preserving filters/sort; designed empty + no-match states.
+
+==================== 3 · CREATE QUOTATION PAGE ====================
+3.1 Header: title only (no subtitle) + Cancel / Save Draft / Submit.
+3.2 Customer Information: Customer type select (Existing | Walk-in).
+    Existing → search input (registry datalist); on match lock contact person/email/phone/
+    terms (grey readonly). Walk-in → search hidden, Customer Name* shown, all contact
+    fields editable + teal save-note; R8 applies on save.
+    Also: Valid until* (date), Currency select (system currencies; symbol drives line
+    headers + summary grand tile).
+3.3 Quotation Information: Quotation № readonly "Auto-assigned on save"; Date* (today);
+    Reference № optional; Branch select; Cost centre select DEFAULTING to current branch
+    (branch change re-syncs it) but freely changeable; Department + Prepared by display-only.
+3.4 Line Items editor: item code / item name / description / qty / unit price (currency
+    symbol) / disc % / computed amount; duplicate + remove per line; Add Line; live
+    subtotal → tax (setting rate) → grand total; ≥1 priced line required.
+3.5 Notes: Customer notes (printed) + Internal notes (team-only) — BOTH editable.
+3.6 Summary rail: customer, contact, date, valid until, subtotal, tax, dark Grand Total
+    tile, line-count note. Quick nav rail: Quotations List / New Customer / Day Book.
+3.7 Validation (client + mirrored server): customer resolved or walk-in name; valid-until
+    required and ≥ date; lines as above. Red field state + toast per failure.
+3.8 Save Draft → status draft, return to register, toast. Submit → §7 choice modal.
+
+==================== 4 · VIEW QUOTATION MODAL (960px) ====================
+4.1 Head: icon, "Quotation", mono ref, status pill, ✕. Meta chips: customer, quoted date,
+    valid until, expiry chip, superseded-by chip (when set), total.
+4.2 Lifecycle timeline Draft→Sent→Accepted→Converted (done/teal, current pulsing,
+    declined/void = red branch at Accepted).
+4.3 Body: lines table; customer & terms rows; totals panel (subtotal/discount/tax/grand);
+    notes-to-customer block.
+4.4 Footer (status-aware) + trailing Close (R3): draft → Edit · Void · [Re-quote if
+    expired] · Send; sent → [Re-quote if expired] · Print/PDF · Void · Mark declined ·
+    Mark accepted; accepted → Print/PDF · Convert; converted → Print/PDF (+invoice ref
+    note); declined → [Re-quote] · Duplicate; void → note only.
+4.5 Send/Accept/Decline/Convert/Void all confirm-gated (stacked confirm box z140) and
+    audit-logged; Convert calls the invoice-creation endpoint and cross-links documents.
+
+==================== 5 · EDIT DRAFT MODAL (880px) ====================
+5.1 Opens from row edit icon or view-modal Edit (drafts only, R9); closes other dialogs.
+5.2 Sections: Customer (name*, email, phone) · Quotation (date, valid until*, terms) ·
+    Lines editor (description/qty/unit price prefilled at effective post-discount rate,
+    add/remove, live totals) · Notes to customer.
+5.3 Footer: note + Save changes (keeps draft) + Finalize & issue (→ sent, refresh row,
+    open §8 preview) + Close. Validation identical to §3.7. Row rebuild preserves ref,
+    recomputes expiry chip, avatar initials, search index, counts/KPIs.
+
+==================== 6 · RE-QUOTE MODAL (880px) ====================
+6.1 Entry: amber re-quote icon on expired rows (sent/draft/declined) + view-modal button.
+6.2 Head/meta: source ref, "Source expired {date}", source total, lines carried count.
+6.3 Customer section: name* / email / phone prefilled from source, ALL editable; unknown
+    name ⇒ R8 auto-create on save.
+6.4 New quotation section: new № readonly (next sequence), date = today, validity select
+    (7/14/30/45/60 days), "On create" segmented control per R5 (Save as draft |
+    Finalize & issue) on ONE row; create-button label mirrors selection.
+6.5 Lines carried from source into the editor (adjust/add/remove, live totals).
+6.6 On create: insert new quotation (draft or sent), set source.superseded_by = new ref
+    (sub-label + view-modal chip), refresh everything; finalize additionally opens §8.
+    Footer note states the supersede rule; Cancel + Create + Close.
+
+==================== 7 · SUBMIT CHOICE MODAL (660px) ====================
+7.1 Two option cards, icon + title ONLY (no descriptions): "Save & send later" →
+    persist as draft; "Finalize & print" → persist as sent + open §8 preview.
+7.2 Footer: Save-Draft reminder note + Close. Esc/✕/Close dismiss without saving.
+
+==================== 8 · PRINT PREVIEW + PDF ====================
+8.1 Overlay (z200) with sticky toolbar: Back · "Print preview {ref}" · A4 note ·
+    Save as PDF · Print (primary). Ctrl/Cmd+P inside preview prints voucher-only.
+8.2 Sheet anatomy: 5px teal accent rule; mint header band (brand block: company, address,
+    TIN | document block: small-caps QUOTATION, mono number, ISSUED/DRAFT stamp pill,
+    printed timestamp); 4×3 meta grid (customer, contact, email, phone, date, valid until,
+    currency, terms, branch, cost centre, prepared by, your-ref); teal-head lines table
+    (#/description/qty/unit/amount) with double-ruled totals row; amount-in-words strip
+    ("{Currency Name} … only" + tax-included note); two panels — Notes to customer and
+    Terms & validity bullet list (validity re-issue rule, terms+currency, VAT note,
+    availability, acceptance instruction, generation stamp); signatures Prepared by
+    (name · date) + Customer acceptance (rule + "Signature · Date"); bottom-pinned footer
+    (mono audit line, computer-generated legal line, PAGE 1 OF 1). DRAFT watermark on drafts.
+8.3 Print: @page A4 10mm; body.pv-on hides app/scrims/toasts/toolbar; sheet min-height
+    277mm so footer lands at true page bottom; exact colours forced.
+8.4 Save as PDF: live app streams server-rendered PDF (same markup/engine as journal
+    vouchers) named {QT-number}.pdf; mock may route through the print dialog with a
+    destination hint toast — implementation MUST provide the direct download endpoint.
+
+==================== 9 · SANCTIONED BACKEND CONTRACTS ====================
+9.1 Migration (nullable-safe):
+    quotations: number, ref_no NULL, customer_id NULL FK, customer_name, contact_person,
+    email, phone, terms_key, currency_code, branch, cost_centre, department, prepared_by,
+    project NULL, quote_date, valid_until, status ENUM(draft,sent,accepted,declined,
+    converted,void), subtotal, tax_total, grand_total, notes_customer, notes_internal,
+    superseded_by NULL FK(self), converted_invoice_id NULL FK, created_by, timestamps.
+    quotation_lines: quotation_id FK cascade, position, item_code, item_name, description,
+    qty decimal, unit_price decimal, disc_pct decimal, line_total decimal.
+9.2 Endpoints: GET /quotations (q,status,view,sort,page) · GET /quotations/{id} ·
+    POST /quotations {submission_mode: draft|finalize, …} · PUT /quotations/{id}
+    (409 unless draft) · POST /quotations/{id}/{send|accept|decline|void|convert|requote} ·
+    GET /quotations/{id}/print · GET /quotations/{id}/pdf · walk-in customer creation
+    inline within POST/PUT/requote transactions (R8).
+9.3 Numbering: QT-{YYYY}-{seq4} assigned on first persist (draft included); per-year
+    sequence table; requote numbers come from the same sequence.
+9.4 Status machine: draft→sent (send|finalize); sent→accepted|declined|void;
+    accepted→converted|void; draft→void; expired = derived (valid_until < today AND
+    status IN draft,sent,declined) and gates requote; superseded_by set on source at
+    requote creation; converted sets converted_invoice_id.
+9.5 Money: store decimals; line_total = qty×unit×(1−disc%); grand = subtotal+tax(setting
+    rate); words-amount rendered server-side for PDF parity.
+9.6 Audit: every transition + customer auto-create logged (user, ts, from→to, reason
+    where captured); deletes not offered — void is the remedy.
+
+==================== 10 · PERMISSIONS ====================
+quotations.view / create / edit_draft / send / accept / decline / void / convert /
+requote / print_pdf / export; report permissions reused from BI module; walk-in customer
+creation requires customers.create implicitly granted through quotations.create.
+
+==================== 11 · BEHAVIOUR / A11Y / RESPONSIVE ====================
+11.1 R2/R3 dismissal everywhere; Esc order: confirm → submit → print preview → edit →
+     re-quote → view. View→Edit/Re-quote hand-offs close the prior dialog first.
+11.2 Delegated listeners for row actions, footer actions and [data-close] so server-
+     paginated/dynamically inserted rows and rebuilt footers work without re-binding.
+11.3 ≤1180px tiles 4-col + KPIs 2-col; ≤1080px rail stacks; ≤760px all grids 1-col,
+     modals full-bleed, signatures 1-col; toasts for every mutation.
+
+==================== 12 · VERIFY ====================
+12.1 Parity pass vs APPENDIX A at 1440/1280/1024/768 for register, create page, all five
+     dialogs and the print sheet (screen + printed/PDF output).
+12.2 Round-trips: create walk-in finalize ⇒ customer row exists, quote sent, preview
+     opens, PDF downloads; edit draft ⇒ row/totals/chip update in place; requote expired
+     ⇒ new number, source superseded chip, KPIs shift; convert ⇒ invoice cross-link.
+12.3 Rule greps: no backdrop-filter; no "Authorised by"; no attachments markup; no
+     removed strings from R11; segmented control single-row at 880px and 760px; Close
+     button present in every dialog footer.
+12.4 Validation matrix (missing customer/name, valid-until < date, zero lines, locked
+     edit attempts) each blocks with red state + toast; confirm-gated mutations fire
+     exactly one audit row.
+12.5 Print: Ctrl+P from preview and from register print icon produce sheet-only output
+     with footer at page bottom; words line matches grand total.
+REPORT: files touched; migration diff; endpoint map; numbering + status-machine tables;
+sample requote & walk-in payloads; R1–R12 grep proofs; parity screenshots (register,
+create, view, edit, re-quote, submit, print sheet); NO SECTION SKIPPED.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quotations — segmented control on one row</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0; --steel:#46708C; --teal-btn:#139594;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --green:#15803d; --red:#dc2626; --red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+    --p-accent:#0E7473; --p-band:#F0F5F5;
+    --p-ink:#13292C; --p-sub:#3E5658; --p-muted:#5F7476; --p-faint:#8AA3A2;
+    --p-line:#DCE7E5; --p-hair:#E7EFED;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --sh-lift: 0 2px 4px rgba(10,42,46,.06), 0 20px 44px -18px rgba(10,42,46,.22), inset 0 1px 0 #fff;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(900px 380px at 8% -10%, rgba(18,143,142,.09), transparent 60%), linear-gradient(180deg, #eef4f4 0%, #e7efee 100%); min-height: 100vh; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  body.pv-on { overflow: hidden; }
+  button, input, select, textarea { font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 26px 26px 80px; }
+
+  #createView { display: none; }
+  body.view-create #listView { display: none; }
+  body.view-create #createView { display: block; }
+
+  .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .phead h1 { font-size: 26px; font-weight: 900; letter-spacing: -0.025em; }
+  .phead .sub { margin-top: 5px; font-size: 13px; color: var(--muted); }
+  .pacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .16s ease; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .btn-ghost { background: #fff; border-color: var(--border); color: var(--sub); box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .btn-ghost:hover { border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-cta { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-cta:hover { box-shadow: 0 8px 18px -6px rgba(18,143,142,.7), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-danger-o { background: #fff; border-color: rgba(220,38,38,.35); color: var(--red); }
+  .btn-danger-o:hover { background: #fef2f2; border-color: rgba(220,38,38,.55); }
+  .btn-danger { background: var(--red); color: #fff; box-shadow: 0 4px 12px -5px rgba(220,38,38,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-green { background: var(--green); color: #fff; box-shadow: 0 4px 12px -5px rgba(21,128,61,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-close { background: #fff; border: 1px solid var(--border); color: var(--ink); font-weight: 800; box-shadow: 0 1px 2px rgba(10,42,46,.06); }
+  .btn-close:hover { border-color: rgba(19,149,148,.5); color: var(--teal-btn); background: rgba(19,149,148,.06); }
+  .btn-sm { height: 34px; padding: 0 13px; font-size: 12.5px; border-radius: 10px; }
+  .btn-add { height: 34px; padding: 0 14px; border-radius: 10px; border: 1.5px dashed var(--border); background: #fbfdfc; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-add:hover { border-color: rgba(18,143,142,.45); color: var(--sec); background: rgba(18,143,142,.05); }
+  .btn-add svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; fill: none; }
+
+  .layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 18px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 15px 16px; box-shadow: var(--sh-card); animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0ms); transition: transform .18s ease, box-shadow .18s ease; }
+  .kpi:hover { transform: translateY(-2px); box-shadow: var(--sh-lift); }
+  .kpi .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .kpi .l { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .kpi .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.22); color: var(--sec); }
+  .kpi .ic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .kpi .v { margin-top: 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .kpi .n { margin-top: 4px; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+  .kpi .n.ok { background: rgba(21,128,61,.10); color: var(--green); }
+  .kpi .n.warn { background: rgba(217,119,6,.10); color: var(--amber-2); }
+  .kpi .n.flat { background: rgba(17,69,75,.07); color: var(--muted); }
+
+  .tcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 80ms; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .searchwrap { position: relative; flex: 1; min-width: 220px; }
+  .searchwrap svg { position: absolute; left: 12px; top: 11px; width: 15px; height: 15px; stroke: var(--faint); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+  .in, .sel { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafb; font-size: 12.5px; font-weight: 600; color: var(--ink); outline: none; transition: all .15s; }
+  .searchwrap .in { width: 100%; padding-left: 36px; }
+  .in:focus, .sel:focus, .lin:focus, textarea.in:focus { border-color: rgba(18,143,142,.45); background: #fff; box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .in.bad, .sel.bad { border-color: rgba(220,38,38,.55); background: #fef2f2; box-shadow: 0 0 0 4px rgba(220,38,38,.08); }
+  .in.ro { background: #f1f5f6; color: var(--muted); }
+  .sel { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%); background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .sel:disabled { background-color: #f1f5f6; color: var(--muted); }
+  .cnt { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.24); padding: 6px 12px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .stiles { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--hair); background: #fbfdfc; }
+  .stile { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fff; cursor: pointer; transition: all .16s ease; text-align: left; }
+  .stile .sic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; }
+  .stile .sic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .stile .sl { font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); display: block; }
+  .stile .sv { font-size: 15px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; display: block; }
+  .stile:hover { border-color: rgba(18,143,142,.35); transform: translateY(-1px); }
+  .stile.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .stile.on .sl { color: rgba(226,244,244,.8); } .stile.on .sv { color: #fff; } .stile.on .sic { background: rgba(255,255,255,.16); color: #fff; }
+  .sic.all { background: rgba(11,42,45,.08); color: var(--deep-1); }
+  .sic.dr { background: rgba(17,69,75,.08); color: var(--muted); }
+  .sic.se { background: rgba(70,112,140,.12); color: var(--steel); }
+  .sic.ac { background: rgba(21,128,61,.10); color: var(--green); }
+  .sic.de { background: rgba(220,38,38,.10); color: var(--red); }
+  .sic.co { background: rgba(18,143,142,.10); color: var(--sec); }
+  .sic.vo { background: rgba(138,163,162,.14); color: var(--faint); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 11px 16px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(18,143,142,.18); font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; white-space: nowrap; }
+  thead th.r { text-align: right; }
+  tbody td { padding: 12px 16px; border-top: 1px solid var(--hair); vertical-align: middle; font-size: 12.5px; color: var(--sub); }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(18,143,142,.035); }
+  #qBody tr.qrow { cursor: pointer; }
+  .qno { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--sec); cursor: pointer; }
+  .qno:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .qsub { display: block; font-size: 10px; font-weight: 600; color: var(--faint); margin-top: 2px; }
+  .cust { display: flex; align-items: center; gap: 10px; }
+  .av { width: 32px; height: 32px; min-width: 32px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(180deg, rgba(18,143,142,.14), rgba(18,143,142,.07)); border: 1px solid rgba(18,143,142,.26); color: var(--deep-1); font-size: 11px; font-weight: 800; }
+  .cust .nm { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  .vd { white-space: nowrap; }
+  .xc { display: inline-flex; align-items: center; gap: 4px; margin-left: 7px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; vertical-align: 1px; }
+  .xc.exp { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.24); }
+  .xc.soon { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.26); }
+  .xc.ok { background: rgba(17,69,75,.06); color: var(--muted); border: 1px solid rgba(17,69,75,.14); }
+  .tot { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.dr { background: rgba(17,69,75,.07); color: var(--muted); border: 1px solid rgba(17,69,75,.18); }
+  .pill.se { background: rgba(70,112,140,.12); color: var(--steel); border: 1px solid rgba(70,112,140,.3); }
+  .pill.ac { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .pill.de { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.26); }
+  .pill.co { background: rgba(18,143,142,.10); color: var(--sec); border: 1px solid rgba(18,143,142,.3); }
+  .pill.vo { background: rgba(138,163,162,.12); color: var(--faint); border: 1px solid rgba(138,163,162,.3); }
+  .ib { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; transition: all .15s; vertical-align: middle; }
+  .ib + .ib { margin-left: 6px; }
+  .ib svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ib:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.06); transform: translateY(-1px); }
+  .ib.reqb { border-color: rgba(217,119,6,.3); color: var(--amber-2); background: rgba(217,119,6,.05); }
+  .ib.reqb:hover { border-color: rgba(217,119,6,.5); color: var(--amber-2); background: rgba(217,119,6,.12); }
+  .ib[disabled] { opacity: .35; pointer-events: none; }
+  .tfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--hair); background: #fbfdfc; font-size: 11.5px; font-weight: 600; color: var(--faint); flex-wrap: wrap; }
+  .empty { padding: 46px 20px; text-align: center; }
+  .empty .halo { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.2); color: var(--sec); }
+  .empty .halo svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .empty .t { font-size: 14px; font-weight: 800; color: var(--sub); }
+  .empty .s { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
+  .rcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 140ms; }
+  .rcard + .rcard { margin-top: 18px; }
+  .rhead { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .rhead .ric { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .rhead .ric svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .rhead .ric.warn { background: linear-gradient(180deg, #e8a33c, var(--amber)); }
+  .rhead .rt { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .rhead .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .rbody { padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .vitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid transparent; background: transparent; font-size: 12.5px; font-weight: 700; color: var(--sub); text-align: left; cursor: pointer; transition: all .16s ease; }
+  .vitem .vic { width: 28px; height: 28px; min-width: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.12); color: var(--muted); transition: all .16s ease; }
+  .vitem .vic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .vitem .vc { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .vitem:hover { background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.18); color: var(--ink); }
+  .vitem.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .vitem.on .vic { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); color: #fff; }
+  .vitem.on .vc { background: rgba(255,255,255,.2); color: #fff; }
+  .attn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fdfeff; cursor: pointer; transition: all .16s ease; text-align: left; }
+  .attn + .attn { margin-top: 6px; }
+  .attn:hover { border-color: rgba(217,119,6,.4); transform: translateY(-1px); }
+  .attn .an { font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--ink); display: block; }
+  .attn .as { font-size: 10px; font-weight: 600; color: var(--faint); display: block; margin-top: 1px; }
+  .attn .xc { margin-left: auto; }
+  .attn-empty { font-size: 11.5px; font-weight: 600; color: var(--faint); padding: 6px 6px 4px; }
+
+  .scrim { position: fixed; inset: 0; background: rgba(11,42,45,.26); display: none; place-items: center; padding: 24px; z-index: 90; }
+  .scrim.on { display: grid; animation: fadeIn .2s ease; }
+  .scrim.cf { z-index: 140; background: rgba(11,42,45,.45); }
+  .mbox { width: min(960px, calc(100vw - 48px)); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 24px 60px -20px rgba(10,42,46,.35), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .mbox.mid { width: min(880px, calc(100vw - 48px)); }
+  .mbox.narrow { width: min(660px, calc(100vw - 48px)); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 15px 22px; background: radial-gradient(700px 200px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); flex: none; }
+  .m-ic { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; background: #fff; display: grid; place-items: center; color: var(--deep-2); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .m-ic svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-head-left { flex: 1; min-width: 0; }
+  .m-title { display: block; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .m-sub { display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; color: rgba(255,255,255,.6); margin-top: 2px; }
+  .m-close { margin-left: auto; width: 30px; height: 30px; min-width: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .m-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding: 10px 22px; border-bottom: 1px solid var(--hair); background: #fbfdfc; flex: none; }
+  .mchip { font-size: 10.5px; font-weight: 800; color: var(--muted); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
+  .mchip.mono { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.07); border-color: rgba(18,143,142,.22); }
+  .mchip.b { color: var(--ink); }
+  .mchip.warn { color: var(--amber-2); background: rgba(217,119,6,.08); border-color: rgba(217,119,6,.25); }
+  .m-body { padding: 16px 22px 18px; overflow: auto; flex: 1; }
+  .steps { display: flex; align-items: flex-start; gap: 0; margin: 2px 0 16px; }
+  .step { flex: 1; position: relative; text-align: center; padding-top: 26px; }
+  .step::before { content: ''; position: absolute; top: 9px; left: 0; right: 0; height: 2px; background: var(--line); }
+  .step:first-child::before { left: 50%; } .step:last-child::before { right: 50%; }
+  .step .dot { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid var(--line); z-index: 1; }
+  .step .lb { font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); }
+  .step.done::before { background: var(--sec); }
+  .step.done .dot { background: var(--sec); border-color: var(--sec); box-shadow: 0 0 0 3px rgba(18,143,142,.15); }
+  .step.done .lb { color: var(--sec); }
+  .step.cur .dot { background: #fff; border-color: var(--sec); box-shadow: 0 0 0 3px rgba(18,143,142,.18); animation: pulse 2.2s infinite; }
+  .step.cur .lb { color: var(--ink); }
+  .step.bad.done::before { background: var(--red); }
+  .step.bad.done .dot { background: var(--red); border-color: var(--red); }
+  .step.bad.done .lb { color: var(--red-2); }
+  .qgrid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+  .vsec { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+  .ltable { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .ltable th { padding: 8px 12px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .ltable th.r { text-align: right; }
+  .ltable td { padding: 9px 12px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .ltable td.r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .tsum { display: flex; flex-direction: column; gap: 7px; background: #f8fbfa; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .tsum .row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .tsum .row b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 800; }
+  .tsum .grand { border-top: 3px double #cfe0dd; margin-top: 4px; padding-top: 9px; display: flex; justify-content: space-between; align-items: center; }
+  .tsum .grand .l { font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
+  .tsum .grand .v { font-size: 17px; font-weight: 900; color: var(--deep-1); font-variant-numeric: tabular-nums; }
+  .mrow { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: 12.5px; }
+  .mrow:last-child { border-bottom: none; }
+  .mrow .l { color: var(--muted); font-weight: 600; }
+  .mrow .v { color: var(--ink); font-weight: 700; text-align: right; }
+  .mrow .v.mono { font-family: var(--mono); color: var(--sec); font-size: 12px; }
+  .m-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 13px 22px; border-top: 1px solid var(--hair); background: #f8fafa; flex: none; }
+  .mnote { font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--hair); border-radius: 9px; padding: 8px 12px; margin-right: auto; }
+  .mnote b { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+
+  .fsec { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; }
+  .fsec .fs-ic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .fsec .fs-ic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .fsec .fs-t { font-size: 12.5px; font-weight: 800; color: var(--ink); }
+  .fsec .fs-rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  /* high-contrast segmented control — single row, never wraps */
+  .pseg { display: inline-flex; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 5px; position: relative; flex-wrap: nowrap; box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .pseg input { position: absolute; opacity: 0; pointer-events: none; }
+  .pseg label { padding: 8px 16px; border-radius: 9px; border: 1px solid var(--border); background: #fff; font-size: 11.5px; font-weight: 800; color: var(--sub); cursor: pointer; transition: all .18s; white-space: nowrap; }
+  .pseg label:hover { border-color: rgba(19,149,148,.5); color: var(--teal-btn); }
+  .pseg input:checked + label { background: var(--teal-btn); border-color: var(--teal-btn); color: #fff; box-shadow: 0 4px 10px -4px rgba(19,149,148,.65), inset 0 1px 0 rgba(255,255,255,.2); }
+  .f-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fld label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .fld label b { color: var(--red); }
+  .fld .in, .fld .sel { width: 100%; }
+  .fld .in[readonly] { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.22); }
+  .fld .in.auto { font-family: var(--mono); color: var(--faint); background: #f1f5f6; border-color: var(--line); }
+  textarea.in { height: 74px; padding: 10px 12px; resize: vertical; font-weight: 500; width: 100%; }
+  .hint { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 10px; }
+  .savenote { font-size: 11px; font-weight: 700; color: var(--sec); background: rgba(18,143,142,.07); border: 1px solid rgba(18,143,142,.22); border-radius: 9px; padding: 8px 12px; margin-top: 10px; display: none; }
+  .savenote.on { display: block; }
+  .etable { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 10px; }
+  .etable th { padding: 8px 10px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .etable th.r { text-align: right; }
+  .etable td { padding: 7px 10px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .lin { height: 32px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafb; font-size: 12px; font-weight: 600; color: var(--ink); padding: 0 9px; width: 100%; outline: none; transition: all .15s; }
+  .lin.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .amtcell { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .xb { width: 24px; height: 24px; border-radius: 7px; border: 1px solid var(--line); background: #fff; color: var(--faint); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .xb:hover { border-color: rgba(220,38,38,.45); color: var(--red); background: rgba(220,38,38,.06); }
+  .xb.dup:hover { border-color: rgba(18,143,142,.45); color: var(--sec); background: rgba(18,143,142,.06); }
+  .xb svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .optcard { display: flex; align-items: center; gap: 12px; width: 100%; padding: 15px 14px; border-radius: 14px; border: 1px solid var(--line); background: #fdfeff; cursor: pointer; transition: all .16s ease; text-align: left; }
+  .optcard + .optcard { margin-top: 10px; }
+  .optcard:hover { border-color: rgba(18,143,142,.45); transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(10,42,46,.25); }
+  .optcard .oc-ic { width: 38px; height: 38px; min-width: 38px; border-radius: 11px; display: grid; place-items: center; background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.24); color: var(--sec); }
+  .optcard.final .oc-ic { background: rgba(21,128,61,.10); border-color: rgba(21,128,61,.26); color: var(--green); }
+  .optcard .oc-ic svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .optcard .oc-t { font-size: 13px; font-weight: 800; color: var(--ink); }
+
+  .chead { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .chead h2 { font-size: 24px; font-weight: 900; letter-spacing: -0.025em; }
+  .cacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .card2 { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); padding: 18px 20px; margin-bottom: 16px; animation: rise .45s cubic-bezier(.2,.8,.2,1) both; }
+  .card2 .fsec { margin-top: 0; }
+  .sumrow { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); font-weight: 600; padding: 7px 0; border-bottom: 1px solid var(--hair); }
+  .sumrow b { color: var(--ink); font-weight: 700; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+  .grandtile { margin-top: 12px; background: radial-gradient(240px 90px at 12% -30%, rgba(255,255,255,.10), transparent 60%), linear-gradient(135deg, var(--deep-1), var(--deep-2) 60%, var(--deep-3)); color: #fff; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 22px -12px rgba(8,40,44,.6), inset 0 1px 0 rgba(255,255,255,.12); }
+  .grandtile .l { font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: rgba(226,244,244,.75); }
+  .grandtile .v { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .sumnote { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 8px; }
+
+  .cbox { width: min(460px, 100%); background: #fff; border-radius: 18px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 24px 60px -20px rgba(8,40,44,.55); overflow: hidden; animation: slideUp .25s cubic-bezier(.2,.8,.2,1); }
+  .cb-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; background: linear-gradient(180deg, #fdfeff, #f6fbf9); border-bottom: 1px solid var(--hair); }
+  .cb-ic { width: 30px; height: 30px; min-width: 30px; border-radius: 9px; display: grid; place-items: center; }
+  .cb-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .cb-ic.primary { background: rgba(18,143,142,.1); color: var(--sec); }
+  .cb-ic.ok { background: rgba(21,128,61,.1); color: var(--green); }
+  .cb-ic.danger { background: rgba(220,38,38,.1); color: var(--red); }
+  .cb-head b { font-size: 14px; font-weight: 800; color: var(--ink); flex: 1; }
+  .cb-x { border: none; background: none; color: var(--faint); cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; }
+  .cb-x:hover { background: var(--hair); color: var(--ink); }
+  .cb-x svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .cb-body { padding: 16px 18px; font-size: 12.5px; font-weight: 500; color: var(--sub); line-height: 1.65; }
+  .cb-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--hair); background: #f8fafa; }
+
+  .pview { position: fixed; inset: 0; z-index: 200; display: none; overflow-y: auto; background: linear-gradient(180deg, #e6edec 0%, #dde6e5 100%); }
+  .pview.on { display: block; animation: fadeIn .2s ease; }
+  .ptoolbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 12px 22px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--p-line); box-shadow: 0 6px 18px -12px rgba(10,42,46,.25); flex-wrap: wrap; }
+  .tb-back { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-back:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); }
+  .tb-back svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-title { font-size: 13px; font-weight: 800; color: var(--p-ink); }
+  .tb-title span { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-accent); background: rgba(14,116,115,.08); border: 1px solid rgba(14,116,115,.22); padding: 3px 8px; border-radius: 7px; margin-left: 8px; }
+  .tb-spacer { flex: 1; }
+  .tb-note { font-size: 10.5px; font-weight: 700; color: var(--p-faint); letter-spacing: .06em; text-transform: uppercase; }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-btn:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); transform: translateY(-1px); }
+  .tb-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-btn.primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.25); }
+  .sheet-wrap { display: flex; justify-content: center; padding: 34px 20px 60px; }
+  .sheet { position: relative; width: 794px; min-height: 1123px; background: #fff; border: 1px solid var(--p-line); box-shadow: 0 2px 6px rgba(10,42,46,.08), 0 30px 70px -30px rgba(10,42,46,.45); overflow: hidden; display: flex; flex-direction: column; }
+  .sheet::before { content: ''; display: block; height: 5px; flex: none; background: linear-gradient(90deg, var(--p-accent) 0%, var(--sec-2) 55%, #7FD1C0 100%); }
+  .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+  .wm span { transform: rotate(-24deg); font-size: 108px; font-weight: 900; letter-spacing: .18em; color: rgba(14,116,115,.05); text-transform: uppercase; white-space: nowrap; }
+  .sheet-body { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+  .v-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px 46px 20px; background: linear-gradient(180deg, var(--p-band) 0%, #f7fbfa 100%); border-bottom: 1px solid var(--p-line); }
+  .brand { display: flex; gap: 13px; }
+  .brand .mark { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(150deg, var(--p-accent) 0%, #0a5453 100%); color: #fff; font-size: 17px; font-weight: 900; display: grid; place-items: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+  .brand .bn { font-size: 15.5px; font-weight: 900; letter-spacing: -0.015em; color: var(--p-ink); }
+  .brand .bl { font-size: 10px; font-weight: 600; color: var(--p-muted); line-height: 1.55; margin-top: 3px; }
+  .docblock { text-align: right; }
+  .docblock .dt { font-size: 9.5px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--p-accent); }
+  .docblock .dn { font-family: var(--mono); font-size: 19px; font-weight: 800; color: var(--p-ink); letter-spacing: -0.01em; margin-top: 4px; }
+  .docblock .dst { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; padding: 4px 11px; border-radius: 999px; background: rgba(14,116,115,.10); border: 1px solid rgba(14,116,115,.35); color: var(--p-accent); font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .docblock .dst i { width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); }
+  .docblock .dst.draftst { background: rgba(138,163,162,.14); border-color: rgba(138,163,162,.4); color: var(--p-muted); }
+  .docblock .dst.draftst i { background: var(--p-muted); }
+  .docblock .dp { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 6px; }
+  .meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--p-line); }
+  .meta .cell { padding: 10px 16px; border-left: 1px solid var(--p-hair); }
+  .meta .cell:first-child { border-left: none; }
+  .meta .cell:nth-child(n+5) { border-top: 1px solid var(--p-hair); }
+  .meta .l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); }
+  .meta .v { font-size: 11px; font-weight: 700; color: var(--p-ink); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta .v.mono { font-family: var(--mono); font-size: 10.5px; color: var(--p-accent); }
+  .vlines { padding: 20px 46px 0; }
+  .vlines .lt { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--p-muted); margin-bottom: 9px; }
+  .sheet table { width: 100%; border-collapse: collapse; }
+  .sheet thead th { background: var(--p-accent); color: #fff; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 8px 12px; text-align: left; box-shadow: none; }
+  .sheet thead th.r { text-align: right; }
+  .sheet thead th:first-child { border-radius: 6px 0 0 6px; }
+  .sheet thead th:last-child { border-radius: 0 6px 6px 0; }
+  .sheet tbody td { padding: 9px 12px; border-bottom: 1px solid var(--p-hair); border-top: none; font-size: 11px; color: var(--p-sub); vertical-align: top; }
+  .sheet tbody td.no { width: 30px; color: var(--p-faint); font-weight: 700; }
+  .sheet tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
+  .sheet tr.totals td { border-bottom: none; border-top: 3px double var(--p-ink); padding: 10px 12px; background: var(--p-band); }
+  .sheet tr.words td { padding: 9px 12px; border-bottom: 1px solid var(--p-line); background: #fbfdfc; }
+  .words-l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); margin-right: 8px; }
+  .words-v { font-size: 11px; font-weight: 700; color: var(--p-sub); font-style: italic; }
+  .balnote { float: right; font-size: 9.5px; font-weight: 800; color: var(--p-accent); letter-spacing: .06em; }
+  .qpanels { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; margin: 16px 46px 0; }
+  .narr { border: 1px solid var(--p-line); border-radius: 6px; overflow: hidden; }
+  .narr .nh { padding: 7px 12px; background: var(--p-band); border-bottom: 1px solid var(--p-hair); font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .narr .nb { padding: 10px 12px; font-size: 10.5px; font-weight: 500; color: var(--p-sub); line-height: 1.6; }
+  .tlist { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .tlist div { font-size: 9.5px; font-weight: 600; color: var(--p-sub); line-height: 1.5; padding-left: 12px; position: relative; }
+  .tlist div::before { content: ''; position: absolute; left: 0; top: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); opacity: .55; }
+  .sigs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin: 26px 46px 34px; }
+  .sig { text-align: center; }
+  .sig .rule { border-bottom: 1px solid var(--p-ink); height: 34px; }
+  .sig .sl { margin-top: 7px; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .sig .sn { margin-top: 3px; font-size: 10.5px; font-weight: 700; color: var(--p-ink); }
+  .sig .sd { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 1px; }
+  .v-foot { margin-top: auto; padding: 12px 46px; border-top: 1px solid var(--p-line); background: #fbfdfc; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none; position: relative; z-index: 1; }
+  .v-foot .fa { font-family: var(--mono); font-size: 8.5px; font-weight: 600; color: var(--p-faint); }
+  .v-foot .fb { font-size: 8.5px; font-weight: 600; color: var(--p-faint); text-align: center; flex: 1; }
+  .v-foot .fc { font-size: 9px; font-weight: 800; color: var(--p-muted); letter-spacing: .08em; white-space: nowrap; }
+
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); background: var(--deep-2); color: #eaffff; font-size: 12px; font-weight: 700; padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(127,209,192,.3); box-shadow: 0 14px 30px -12px rgba(6,32,35,.7); opacity: 0; visibility: hidden; transition: all .25s ease; z-index: 300; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast.on { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1180px) { .stiles { grid-template-columns: repeat(4, 1fr); } .kpis { grid-template-columns: repeat(2, 1fr); } .g4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 1080px) { .layout { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) { .stiles, .g4, .g3, .g2, .f-grid3, .qgrid, .qpanels { grid-template-columns: 1fr; } .mbox, .mbox.mid, .mbox.narrow { width: calc(100vw - 24px); } .sigs { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  @page { size: A4; margin: 10mm; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; }
+    body.pv-on { overflow: visible; }
+    body.pv-on .wrap, body.pv-on .scrim, body.pv-on .toast { display: none !important; }
+    body.pv-on .pview { position: static; display: block; overflow: visible; background: #fff; }
+    body.pv-on .ptoolbar { display: none !important; }
+    body.pv-on .sheet-wrap { padding: 0; display: block; }
+    body.pv-on .sheet { width: auto; min-height: 277mm; border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- ==================== LIST VIEW ==================== -->
+<div id="listView">
+  <div class="phead">
+    <div>
+      <h1>Quotations</h1>
+      <div class="sub">Track, send and convert customer quotations — drafts edit in-modal, expired quotes re-quote into fresh drafts or finalized walk-in quotes.</div>
+    </div>
+    <div class="pacts">
+      <button class="btn btn-ghost" id="btnExport"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+      <button class="btn btn-cta" id="btnNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create Quotation</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi" style="--d:40ms"><div class="top"><span class="l">Open pipeline</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 13l4-4 3 3 5-6"/></svg></span></div><div class="v" id="kOpen">$0.00</div><span class="n flat" id="kOpenN">0 open quotes</span></div>
+    <div class="kpi" style="--d:90ms"><div class="top"><span class="l">Win rate</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span></div><div class="v" id="kWin">—</div><span class="n ok" id="kWinN">accepted vs declined</span></div>
+    <div class="kpi" style="--d:140ms"><div class="top"><span class="l">Expiring ≤ 7 days</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span></div><div class="v" id="kExp">0</div><span class="n warn" id="kExpN">needs follow-up</span></div>
+    <div class="kpi" style="--d:190ms"><div class="top"><span class="l">Converted value</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg></span></div><div class="v" id="kConv">$0.00</div><span class="n ok" id="kConvN">0 invoices raised</span></div>
+  </div>
+
+  <div class="layout">
+    <main class="col">
+      <section class="tcard">
+        <div class="toolbar">
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" type="text" id="q" placeholder="Customer, number, reference…"></div>
+          <select class="sel" id="sort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="high">Value high → low</option><option value="exp">Expiry soonest</option></select>
+          <span class="cnt" id="cnt">6 quotations</span>
+        </div>
+        <div class="stiles" id="stiles">
+          <button class="stile on" data-st=""><span class="sic all"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span><span><span class="sl">Total</span><span class="sv" data-c="">0</span></span></button>
+          <button class="stile" data-st="draft"><span class="sic dr"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span><span><span class="sl">Draft</span><span class="sv" data-c="draft">0</span></span></button>
+          <button class="stile" data-st="sent"><span class="sic se"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span><span><span class="sl">Sent</span><span class="sv" data-c="sent">0</span></span></button>
+          <button class="stile" data-st="accepted"><span class="sic ac"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span><span><span class="sl">Accepted</span><span class="sv" data-c="accepted">0</span></span></button>
+          <button class="stile" data-st="declined"><span class="sic de"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span><span><span class="sl">Declined</span><span class="sv" data-c="declined">0</span></span></button>
+          <button class="stile" data-st="converted"><span class="sic co"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg></span><span><span class="sl">Converted</span><span class="sv" data-c="converted">0</span></span></button>
+          <button class="stile" data-st="void"><span class="sic vo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></svg></span><span><span class="sl">Void</span><span class="sv" data-c="void">0</span></span></button>
+        </div>
+        <table>
+          <thead><tr><th>Quotation №</th><th>Customer</th><th>Date</th><th>Valid until</th><th class="r">Total ($)</th><th>Status</th><th class="r">Actions</th></tr></thead>
+          <tbody id="qBody">
+            <tr class="qrow" data-id="q1" data-status="draft" data-total="48300" data-date="2026-10-02" data-valid="2026-10-16" data-search="chisomo phiri qt-2026-0015 q-15"><td><span class="qno" data-act="view">QT-2026-0015</span><span class="qsub">Ref Q-15 · draft</span></td><td><span class="cust"><span class="av">CP</span><span class="nm">Chisomo Phiri</span></span></td><td style="white-space:nowrap">02 Oct 2026</td><td class="vd">16 Oct 2026<span class="xc ok">Valid</span></td><td class="tot">48,300.00</td><td><span class="pill dr"><i></i>Draft</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="qrow" data-id="q2" data-status="sent" data-total="126000" data-date="2026-09-30" data-valid="2026-10-07" data-search="grace banda qt-2026-0014 q-14"><td><span class="qno" data-act="view">QT-2026-0014</span><span class="qsub">Ref Q-14 · sent</span></td><td><span class="cust"><span class="av">GB</span><span class="nm">Grace Banda</span></span></td><td style="white-space:nowrap">30 Sep 2026</td><td class="vd">07 Oct 2026<span class="xc soon">4 days</span></td><td class="tot">126,000.00</td><td><span class="pill se"><i></i>Sent</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="qrow" data-id="q3" data-status="accepted" data-total="84500" data-date="2026-09-26" data-valid="2026-10-10" data-search="mary chilumpha qt-2026-0013 q-13"><td><span class="qno" data-act="view">QT-2026-0013</span><span class="qsub">Ref Q-13 · accepted</span></td><td><span class="cust"><span class="av">MC</span><span class="nm">Mary Chilumpha</span></span></td><td style="white-space:nowrap">26 Sep 2026</td><td class="vd">10 Oct 2026<span class="xc ok">Valid</span></td><td class="tot">84,500.00</td><td><span class="pill ac"><i></i>Accepted</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="qrow" data-id="q4" data-status="converted" data-total="62750" data-date="2026-09-20" data-valid="2026-10-04" data-search="joseph kachale qt-2026-0012 q-12 inv-2026-0021"><td><span class="qno" data-act="view">QT-2026-0012</span><span class="qsub">Ref Q-12 · → INV-2026-0021</span></td><td><span class="cust"><span class="av">JK</span><span class="nm">Joseph Kachale</span></span></td><td style="white-space:nowrap">20 Sep 2026</td><td class="vd">04 Oct 2026<span class="xc ok">Valid</span></td><td class="tot">62,750.00</td><td><span class="pill co"><i></i>Converted</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="qrow" data-id="q5" data-status="declined" data-total="33200" data-date="2026-09-15" data-valid="2026-09-29" data-search="limbani nyirenda qt-2026-0011 q-11"><td><span class="qno" data-act="view">QT-2026-0011</span><span class="qsub">Ref Q-11 · declined</span></td><td><span class="cust"><span class="av">LN</span><span class="nm">Limbani Nyirenda</span></span></td><td style="white-space:nowrap">15 Sep 2026</td><td class="vd">29 Sep 2026<span class="xc exp">Expired</span></td><td class="tot">33,200.00</td><td><span class="pill de"><i></i>Declined</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="qrow" data-id="q6" data-status="sent" data-total="21400" data-date="2026-09-01" data-valid="2026-09-15" data-search="takondwa mwale qt-2026-0010 q-10"><td><span class="qno" data-act="view">QT-2026-0010</span><span class="qsub">Ref Q-10 · sent</span></td><td><span class="cust"><span class="av">TM</span><span class="nm">Takondwa Mwale</span></span></td><td style="white-space:nowrap">01 Sep 2026</td><td class="vd">15 Sep 2026<span class="xc exp">Expired</span></td><td class="tot">21,400.00</td><td><span class="pill se"><i></i>Sent</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr id="noRes" style="display:none"><td colspan="7"><div class="empty"><div class="halo"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></div><div class="t">No quotations match</div><div class="s">Adjust the search or status filter, or create a new quotation.</div></div></td></tr>
+          </tbody>
+        </table>
+        <div class="tfoot"><span id="showing">Showing 6 of 6 quotations</span><span>Click any row to open the quotation · drafts edit in-modal</span></div>
+      </section>
+    </main>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Views</span><span class="rule"></span></div>
+        <div class="rbody" id="views">
+          <button class="vitem on" data-view="all"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>All Quotations<span class="vc" data-v="all">6</span></button>
+          <button class="vitem" data-view="open"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></span>Open (Draft + Sent)<span class="vc" data-v="open">3</span></button>
+          <button class="vitem" data-view="accepted"><span class="vic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>Accepted<span class="vc" data-v="accepted">1</span></button>
+          <button class="vitem" data-view="converted"><span class="vic"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg></span>Converted<span class="vc" data-v="converted">1</span></button>
+        </div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric warn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span><span class="rt">Needs attention</span><span class="rule"></span></div>
+        <div class="rbody" id="attn"></div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Reports</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" data-rep="1"><span class="vic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span>Quotation Register</button>
+          <button class="vitem" data-rep="2"><span class="vic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>Sales Pipeline</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- ==================== CREATE QUOTATION VIEW ==================== -->
+<div id="createView">
+  <div class="chead">
+    <div>
+      <h2>Create Quotation</h2>
+    </div>
+    <div class="cacts">
+      <button class="btn btn-ghost" id="cCancel"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Cancel</button>
+      <button class="btn btn-ghost" id="cDraft"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>Save Draft</button>
+      <button class="btn btn-cta" id="cSubmit"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Submit</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="fs-t">Customer Information</span><span class="fs-rule"></span></div>
+        <div class="g3" style="margin-bottom:12px">
+          <div class="fld"><label>Customer type</label>
+            <select class="sel" id="ciMode"><option value="existing">Existing customer</option><option value="walkin">Walk-in customer</option></select>
+          </div>
+          <div class="fld"><label>Valid until <b>*</b></label><input class="in" type="date" id="ciValid"></div>
+          <div class="fld"><label>Currency</label>
+            <select class="sel" id="ciCur"><option value="K" selected>MWK · Malawian Kwacha</option><option value="$">USD · US Dollar</option><option value="R">ZAR · South African Rand</option><option value="€">EUR · Euro</option></select>
+          </div>
+        </div>
+        <div class="fld" id="ciSearchWrap" style="margin-bottom:12px">
+          <label>Customer <b>*</b></label>
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" id="ciSearch" list="custList" placeholder="Search customers… (name or code)" style="padding-left:36px"></div>
+          <datalist id="custList"></datalist>
+        </div>
+        <div class="fld" id="ciNameWrap" style="margin-bottom:12px; display:none">
+          <label>Customer name <b>*</b></label>
+          <input class="in" id="ciName" placeholder="e.g. Jane Mwale">
+        </div>
+        <div class="g4">
+          <div class="fld"><label>Contact person</label><input class="in" id="ciContact" placeholder="—"></div>
+          <div class="fld"><label>Email</label><input class="in" id="ciEmail" type="email" placeholder="name@company.com"></div>
+          <div class="fld"><label>Phone</label><input class="in" id="ciPhone" placeholder="+265 …"></div>
+          <div class="fld"><label>Payment terms</label>
+            <select class="sel" id="ciTerms"><option value="receipt">Due on receipt</option><option value="net15">Net 15</option><option value="net30" selected>Net 30</option><option value="net60">Net 60</option></select>
+          </div>
+        </div>
+        <div class="savenote" id="ciSaveNote">Walk-in captured — these details will be saved to the customer registry for future use.</div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="fs-t">Quotation Information</span><span class="fs-rule"></span></div>
+        <div class="g4" style="margin-bottom:12px">
+          <div class="fld"><label>Quotation №</label><input class="in auto" id="ciNo" readonly placeholder="Auto-assigned on save"></div>
+          <div class="fld"><label>Date <b>*</b></label><input class="in" type="date" id="ciDate"></div>
+          <div class="fld"><label>Reference №</label><input class="in" id="ciRef" placeholder="Optional"></div>
+          <div class="fld"><label>Branch</label>
+            <select class="sel" id="ciBranch"><option value="Head Office" selected>Head Office</option><option value="Branch North">Branch North</option></select>
+          </div>
+        </div>
+        <div class="g4">
+          <div class="fld"><label>Cost centre</label>
+            <select class="sel" id="ciCC">
+              <option value="CC-HO" selected>CC-HO · Head Office</option>
+              <option value="CC-BN">CC-BN · Branch North</option>
+              <option value="CC-STM">CC-STM · Stores &amp; Merchandising</option>
+              <option value="CC-LOG">CC-LOG · Logistics</option>
+              <option value="CC-ADM">CC-ADM · Administration</option>
+            </select>
+          </div>
+          <div class="fld"><label>Department</label><input class="in auto" value="Operations" readonly></div>
+          <div class="fld"><label>Prepared by</label><input class="in auto" value="Elvis Seyama" readonly></div>
+          <div class="fld"><label>Project</label><input class="in" id="ciProject" placeholder="Optional"></div>
+        </div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg></span><span class="fs-t">Line Items</span><span class="fs-rule"></span>
+          <button class="btn-add" id="ciAdd" style="margin-left:auto"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add Line</button>
+        </div>
+        <table class="etable">
+          <thead><tr><th style="width:90px">Item code</th><th style="width:22%">Item name</th><th>Description</th><th class="r" style="width:64px">Qty</th><th class="r" style="width:104px">Unit price (<span id="liSym">K</span>)</th><th class="r" style="width:64px">Disc %</th><th class="r" style="width:104px">Amount</th><th style="width:64px"></th></tr></thead>
+          <tbody id="ciLines"></tbody>
+        </table>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M16 13H8M16 17H8"/></svg></span><span class="fs-t">Notes</span><span class="fs-rule"></span></div>
+        <div class="g2">
+          <div class="fld"><label>Customer notes</label><textarea class="in" id="ciNotesC" placeholder="Printed on the quotation PDF…"></textarea></div>
+          <div class="fld"><label>Internal notes</label><textarea class="in" id="ciNotesI" placeholder="Visible to your team only…"></textarea></div>
+        </div>
+      </section>
+    </div>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Summary</span><span class="rule"></span></div>
+        <div class="rbody" style="padding:12px 14px">
+          <div class="sumrow"><span>Customer</span><b id="sumCust">—</b></div>
+          <div class="sumrow"><span>Contact</span><b id="sumContact">—</b></div>
+          <div class="sumrow"><span>Date</span><b id="sumDate">—</b></div>
+          <div class="sumrow"><span>Valid until</span><b id="sumValid">—</b></div>
+          <div class="sumrow"><span>Subtotal</span><b id="sumSub">0.00</b></div>
+          <div class="sumrow"><span>Tax (16.5%)</span><b id="sumTax">0.00</b></div>
+          <div class="grandtile"><span class="l">Grand Total</span><span class="v" id="sumGrand">K 0.00</span></div>
+          <div class="sumnote" id="sumLines">No line items yet</div>
+        </div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Quick nav</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" id="qnavList"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>Quotations List</button>
+          <button class="vitem" id="qnavCust"><span class="vic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg></span>New Customer</button>
+          <button class="vitem" id="qnavDay"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Day Book</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- ============ VIEW QUOTATION MODAL ============ -->
+<div class="scrim" id="viewScrim">
+  <div class="mbox" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Quotation</span><span class="m-sub" id="qvRef">QT-2026-0000</span></div>
+      <span class="pill" id="qvPill"></span>
+      <button class="m-close" data-close="viewScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="qvMeta"></div>
+    <div class="m-body">
+      <div class="steps" id="qvSteps"></div>
+      <div class="qgrid">
+        <div>
+          <div class="vsec">Line items</div>
+          <table class="ltable"><thead><tr><th>Description</th><th class="r">Qty</th><th class="r">Unit price</th><th class="r">Amount</th></tr></thead><tbody id="qvLines"></tbody></table>
+          <div class="vsec" style="margin-top:16px">Customer &amp; terms</div>
+          <div class="mrow"><span class="l">Customer</span><span class="v" id="qvCust">—</span></div>
+          <div class="mrow"><span class="l">Email</span><span class="v mono" id="qvEmail">—</span></div>
+          <div class="mrow"><span class="l">Validity</span><span class="v" id="qvValid">—</span></div>
+          <div class="mrow"><span class="l">Payment terms on conversion</span><span class="v" id="qvTerms">—</span></div>
+        </div>
+        <div>
+          <div class="vsec">Totals</div>
+          <div class="tsum">
+            <div class="row"><span>Subtotal</span><b id="qvSub">0.00</b></div>
+            <div class="row"><span>Discount</span><b id="qvDisc">0.00</b></div>
+            <div class="row"><span>Tax (16.5%)</span><b id="qvTax">0.00</b></div>
+            <div class="grand"><span class="l">Quotation total</span><span class="v" id="qvTotal">0.00</span></div>
+          </div>
+          <div class="vsec" style="margin-top:16px">Notes to customer</div>
+          <div style="font-size:12px;font-weight:500;color:var(--sub);line-height:1.65" id="qvNotes">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="m-foot" id="qvFoot"></div>
+  </div>
+</div>
+
+<!-- ============ EDIT DRAFT MODAL ============ -->
+<div class="scrim" id="eqScrim">
+  <div class="mbox mid" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Edit quotation</span><span class="m-sub" id="eqRef">QT-2026-0000</span></div>
+      <span class="pill dr"><i></i>Draft</span>
+      <button class="m-close" data-close="eqScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="eqMeta"></div>
+    <div class="m-body">
+      <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="fs-t">Customer</span><span class="fs-rule"></span></div>
+      <div class="f-grid3">
+        <div class="fld"><label>Customer name <b>*</b></label><input class="in" id="eqName"></div>
+        <div class="fld"><label>Email</label><input class="in" id="eqEmail" type="email"></div>
+        <div class="fld"><label>Phone</label><input class="in" id="eqPhone"></div>
+      </div>
+      <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="fs-t">Quotation</span><span class="fs-rule"></span></div>
+      <div class="f-grid3">
+        <div class="fld"><label>Date</label><input class="in" type="date" id="eqDate"></div>
+        <div class="fld"><label>Valid until <b>*</b></label><input class="in" type="date" id="eqValid"></div>
+        <div class="fld"><label>Payment terms</label>
+          <select class="sel" id="eqTerms"><option value="receipt">Due on receipt</option><option value="net15">Net 15</option><option value="net30">Net 30</option><option value="net60">Net 60</option></select>
+        </div>
+      </div>
+      <div class="vsec">Lines</div>
+      <table class="etable"><thead><tr><th>Description</th><th class="r" style="width:70px">Qty</th><th class="r" style="width:110px">Unit price</th><th class="r" style="width:110px">Amount</th><th style="width:34px"></th></tr></thead><tbody id="eqLines"></tbody></table>
+      <button class="btn-add" id="eqAdd"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add line</button>
+      <div class="tsum" style="margin-top:12px">
+        <div class="row"><span>Subtotal</span><b id="eqSub">0.00</b></div>
+        <div class="row"><span>Tax (16.5%)</span><b id="eqTax">0.00</b></div>
+        <div class="grand"><span class="l">Quotation total</span><span class="v" id="eqTotal">0.00</span></div>
+      </div>
+      <div class="fld" style="margin-top:14px"><label>Notes to customer</label><textarea class="in" id="eqNotes"></textarea></div>
+    </div>
+    <div class="m-foot">
+      <span class="mnote">Draft — save changes to keep editing later, or finalize &amp; issue now.</span>
+      <button class="btn btn-ghost btn-sm" id="eqSave"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save changes</button>
+      <button class="btn btn-cta btn-sm" id="eqFinal"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Finalize &amp; issue</button>
+      <button class="btn btn-close btn-sm" data-close="eqScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RE-QUOTE MODAL ============ -->
+<div class="scrim" id="rqScrim">
+  <div class="mbox mid" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Re-quote — new quotation from expired</span><span class="m-sub" id="rqSrcRef">QT-2026-0000</span></div>
+      <button class="m-close" data-close="rqScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="rqMeta"></div>
+    <div class="m-body">
+      <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="fs-t">Customer</span><span class="fs-rule"></span></div>
+      <div class="f-grid3">
+        <div class="fld"><label>Customer name <b>*</b></label><input class="in" id="rqName" placeholder="e.g. Jane Mwale"></div>
+        <div class="fld"><label>Email</label><input class="in" id="rqEmail" type="email" placeholder="name@company.com"></div>
+        <div class="fld"><label>Phone</label><input class="in" id="rqPhone" placeholder="+265 99 …"></div>
+      </div>
+      <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="fs-t">New quotation</span><span class="fs-rule"></span></div>
+      <div class="f-grid3">
+        <div class="fld"><label>New quotation №</label><input class="in" id="rqRef" readonly value="QT-2026-0016"></div>
+        <div class="fld"><label>Quotation date</label><input class="in" id="rqDate" type="date" value="2026-10-03"></div>
+        <div class="fld"><label>Validity</label><select class="sel" id="rqDays"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option><option value="45">45 days</option><option value="60">60 days</option></select></div>
+        <!-- full-width row: keeps both segmented options on ONE line -->
+        <div class="fld" style="grid-column:1/-1"><label>On create</label>
+          <div class="pseg" id="rqMode"><input type="radio" name="rm" id="rmDraft" checked><label for="rmDraft">Save as draft</label><input type="radio" name="rm" id="rmFinal"><label for="rmFinal">Finalize &amp; issue</label></div>
+        </div>
+      </div>
+      <div class="vsec">Lines — adjust where necessary</div>
+      <table class="etable"><thead><tr><th>Description</th><th class="r" style="width:70px">Qty</th><th class="r" style="width:110px">Unit price</th><th class="r" style="width:110px">Amount</th><th style="width:34px"></th></tr></thead><tbody id="rqLines"></tbody></table>
+      <button class="btn-add" id="rqAdd"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add line</button>
+      <div class="tsum" style="margin-top:12px">
+        <div class="row"><span>Subtotal</span><b id="rqSub">0.00</b></div>
+        <div class="row"><span>Tax (16.5%)</span><b id="rqTax">0.00</b></div>
+        <div class="grand"><span class="l">New quotation total</span><span class="v" id="rqTotal">0.00</span></div>
+      </div>
+    </div>
+    <div class="m-foot">
+      <span class="mnote" id="rqNote">Original will be marked superseded and retained for audit.</span>
+      <button class="btn btn-cta btn-sm" id="rqCreate"><svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Create draft quotation</button>
+      <button class="btn btn-close btn-sm" data-close="rqScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SUBMIT CHOICE MODAL ============ -->
+<div class="scrim" id="subScrim">
+  <div class="mbox narrow" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Submit quotation</span></div>
+      <button class="m-close" data-close="subScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-body">
+      <button class="optcard" id="subLater">
+        <span class="oc-ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>
+        <span class="oc-t">Save &amp; send later</span>
+      </button>
+      <button class="optcard final" id="subPrint">
+        <span class="oc-ic"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span>
+        <span class="oc-t">Finalize &amp; print</span>
+      </button>
+    </div>
+    <div class="m-foot">
+      <span class="mnote">You can still use <b>Save Draft</b> in the header for a quick save without submitting.</span>
+      <button class="btn btn-close btn-sm" data-close="subScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM ============ -->
+<div class="scrim cf" id="cfScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head"><span class="cb-ic" id="cbIc"></span><b id="cbTitle">Confirm</b><button class="cb-x" data-close="cfScrim" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="cb-body" id="cbMsg"></div>
+    <div class="cb-foot"><button class="btn btn-close btn-sm" data-close="cfScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button><button class="btn btn-sm" id="cbOk">Confirm</button></div>
+  </div>
+</div>
+
+<!-- ============ PRINT PREVIEW — QUOTATION SHEET ============ -->
+<div class="pview" id="printView" aria-hidden="true">
+  <div class="ptoolbar">
+    <button class="tb-back" id="pvBack"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+    <span class="tb-title">Print preview <span id="pvRef">QT-2026-0000</span></span>
+    <span class="tb-spacer"></span>
+    <span class="tb-note">A4 · Portrait · Ctrl+P also works</span>
+    <button class="tb-btn" id="pvPdf"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Save as PDF</button>
+    <button class="tb-btn primary" id="pvPrint"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>
+  </div>
+  <div class="sheet-wrap">
+    <div class="sheet" id="qSheet">
+      <div class="wm"><span id="qWm" style="display:none">Draft</span></div>
+      <div class="sheet-body">
+        <header class="v-head">
+          <div class="brand">
+            <div class="mark">A</div>
+            <div>
+              <div class="bn">ACME CORPORATION LTD</div>
+              <div class="bl">Head Office · P.O. Box 30456, Lilongwe<br>TIN 00412883 · Registered in Malawi</div>
+            </div>
+          </div>
+          <div class="docblock">
+            <div class="dt">Quotation</div>
+            <div class="dn" id="qRef">QT-2026-0000</div>
+            <span class="dst" id="qStamp"><i></i>Issued</span>
+            <div class="dp" id="qPrinted">Printed 03 Oct 2026</div>
+          </div>
+        </header>
+        <div class="meta">
+          <div class="cell"><div class="l">Customer</div><div class="v" id="qmCust">—</div></div>
+          <div class="cell"><div class="l">Contact person</div><div class="v" id="qmContact">—</div></div>
+          <div class="cell"><div class="l">Email</div><div class="v mono" id="qmEmail">—</div></div>
+          <div class="cell"><div class="l">Phone</div><div class="v" id="qmPhone">—</div></div>
+          <div class="cell"><div class="l">Quotation date</div><div class="v" id="qmDate">—</div></div>
+          <div class="cell"><div class="l">Valid until</div><div class="v" id="qmValid">—</div></div>
+          <div class="cell"><div class="l">Currency</div><div class="v" id="qmCur">—</div></div>
+          <div class="cell"><div class="l">Payment terms</div><div class="v" id="qmTerms">—</div></div>
+          <div class="cell"><div class="l">Branch</div><div class="v" id="qmBranch">—</div></div>
+          <div class="cell"><div class="l">Cost centre</div><div class="v mono" id="qmCC">—</div></div>
+          <div class="cell"><div class="l">Prepared by</div><div class="v" id="qmPrep">—</div></div>
+          <div class="cell"><div class="l">Your reference</div><div class="v" id="qmRefNo">—</div></div>
+        </div>
+        <div class="vlines">
+          <div class="lt">Quoted items</div>
+          <table>
+            <thead><tr><th style="width:30px">#</th><th>Description</th><th class="r" style="width:60px">Qty</th><th class="r" style="width:110px">Unit price</th><th class="r" style="width:110px">Amount</th></tr></thead>
+            <tbody id="qLines"></tbody>
+          </table>
+        </div>
+        <div class="qpanels">
+          <div class="narr">
+            <div class="nh">Notes to customer</div>
+            <div class="nb" id="qNotes">—</div>
+          </div>
+          <div class="narr">
+            <div class="nh">Terms &amp; validity</div>
+            <div class="tlist" id="qTermsList"></div>
+          </div>
+        </div>
+        <div class="sigs">
+          <div class="sig"><div class="rule"></div><div class="sl">Prepared by</div><div class="sn" id="qSigPrep">—</div></div>
+          <div class="sig"><div class="rule"></div><div class="sl">Customer acceptance</div><div class="sn">&nbsp;</div><div class="sd">Signature · Date</div></div>
+        </div>
+      </div>
+      <div class="v-foot">
+        <span class="fa" id="qAudit">AUDIT</span>
+        <span class="fb">Computer-generated quotation — valid with signature or system issue stamp</span>
+        <span class="fc">PAGE 1 OF 1</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var TODAY_ISO = '2026-10-03';
+  var TODAY = new Date(TODAY_ISO + 'T00:00:00');
+  function $(id) { return document.getElementById(id); }
+  var toastEl = $('toast'), toastT;
+  function toast(m) { toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 3400); }
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(s) { return Number(String(s == null ? 0 : s).replace(/,/g, '')) || 0; }
+  function dfmt(iso) { if (!iso) return '—'; var d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  function addDays(iso, d) { var x = new Date(iso + 'T00:00:00'); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); }
+  function initials(name) { return name.trim().split(/\s+/).map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase(); }
+  var ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  var TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  function w3(n) { var s = ''; if (n >= 100) { s += ONES[Math.floor(n / 100)] + ' Hundred'; n %= 100; if (n) s += ' '; } if (n >= 20) { s += TENS[Math.floor(n / 10)]; if (n % 10) s += '-' + ONES[n % 10]; } else if (n > 0) s += ONES[n]; return s; }
+  function inWords(n) { n = Math.floor(Math.abs(n)); if (!n) return 'Zero'; var out = [], sc = [[1e6, 'Million'], [1e3, 'Thousand']]; sc.forEach(function (s) { var v = Math.floor(n / s[0]); if (v) { out.push(w3(v) + ' ' + s[1]); n %= s[0]; } }); if (n) out.push(w3(n)); return out.join(' '); }
+  var CURN = { '$': 'US Dollars', 'K': 'Malawi Kwacha', 'R': 'South African Rand', '€': 'Euro' };
+
+  var PILL = { draft: ['dr', 'Draft'], sent: ['se', 'Sent'], accepted: ['ac', 'Accepted'], declined: ['de', 'Declined'], converted: ['co', 'Converted'], void: ['vo', 'Void'] };
+  var TERMS = { receipt: 'Due on receipt', net15: 'Net 15', net30: 'Net 30', net60: 'Net 60' };
+  var TKEY = {}; Object.keys(TERMS).forEach(function (k) { TKEY[TERMS[k]] = k; });
+  var SVG_VIEW = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var SVG_PEN = '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>';
+  var SVG_SEND = '<svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>';
+  var SVG_PRINT = '<svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+  var SVG_CONV = '<svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>';
+  var SVG_DUP = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+  var SVG_REQ = '<svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>';
+  var SVG_X = '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+  var CLOSE_BTN = '<button class="btn btn-close btn-sm" data-close="viewScrim">' + SVG_X + 'Close</button>';
+
+  var CUSTOMERS = [
+    { code: 'CUS-0001', name: 'Chisomo Phiri', email: 'chisomo.phiri@customer.mw', phone: '+265 992 222 118', terms: 'net15' },
+    { code: 'CUS-0002', name: 'Grace Banda', email: 'grace.banda@customer.mw', phone: '+265 991 111 001', terms: 'net30' },
+    { code: 'CUS-0003', name: 'Joseph Kachale', email: 'joseph.kachale@customer.mw', phone: '+265 996 666 214', terms: 'net30' },
+    { code: 'CUS-0004', name: 'Limbani Nyirenda', email: 'limbani.nyirenda@customer.mw', phone: '+265 993 333 097', terms: 'net30' },
+    { code: 'CUS-0005', name: 'Mary Chilumpha', email: 'mary.chilumpha@customer.mw', phone: '+265 995 555 730', terms: 'net60' },
+    { code: 'CUS-0006', name: 'Takondwa Mwale', email: 'takondwa.mwale@customer.mw', phone: '+265 994 444 852', terms: 'receipt' }
+  ];
+  var custSeq = 7;
+
+  var QD = {
+    q1: { sub: 45000, disc: 0, tax: 3300, cur: '$', lines: [['Site survey & requirements analysis', 1, '12,000.00', '12,000.00'], ['Supply & configuration of POS terminals', 3, '9,500.00', '28,500.00'], ['Installation & staff training', 1, '4,500.00', '4,500.00']], notes: 'Pricing holds for 14 days. Installation scheduled within 5 working days of acceptance.', terms: 'Net 30 on conversion', email: 'chisomo.phiri@customer.mw', cust: 'Chisomo Phiri' },
+    q2: { sub: 120000, disc: 6000, tax: 12000, cur: '$', lines: [['Annual ERP licence — 10 seats', 10, '9,800.00', '98,000.00'], ['Data migration & go-live support', 1, '22,000.00', '22,000.00'], ['Loyalty discount', 1, '-6,000.00', '-6,000.00']], notes: 'Includes 12 months support. Validity 7 days due to licence price review.', terms: '50% deposit, balance Net 30', email: 'grace.banda@customer.mw', cust: 'Grace Banda' },
+    q3: { sub: 80000, disc: 0, tax: 4500, cur: '$', lines: [['Cold-room maintenance contract (12 mo)', 1, '60,000.00', '60,000.00'], ['Compressor overhaul', 2, '10,000.00', '20,000.00']], notes: 'Accepted verbally on 30 Sep; awaiting signed copy.', terms: 'Net 60', email: 'mary.chilumpha@customer.mw', cust: 'Mary Chilumpha' },
+    q4: { sub: 60000, disc: 2500, tax: 5250, cur: '$', lines: [['Delivery van branding & fit-out', 1, '35,000.00', '35,000.00'], ['Shelving units', 10, '2,500.00', '25,000.00']], notes: 'Converted to invoice on 22 Sep 2026.', terms: 'Net 30', email: 'joseph.kachale@customer.mw', cust: 'Joseph Kachale' },
+    q5: { sub: 32000, disc: 0, tax: 1200, cur: '$', lines: [['Office refurbishment — Phase 1', 1, '32,000.00', '32,000.00']], notes: 'Declined: budget postponed to Q1 2027.', terms: 'Due on receipt', email: 'limbani.nyirenda@customer.mw', cust: 'Limbani Nyirenda' },
+    q6: { sub: 20000, disc: 0, tax: 1400, cur: '$', lines: [['Stationery & consumables bundle', 40, '500.00', '20,000.00']], notes: 'No response after two follow-ups; quote lapsed.', terms: 'Due on receipt', email: 'takondwa.mwale@customer.mw', cust: 'Takondwa Mwale' }
+  };
+
+  var state = { st: '', view: 'all', q: '', sort: 'new' };
+  var viewingId = null, cbFn = null, rqSrcId = null, eqId = null, nextNum = 16, rowSeq = 7;
+  var matchedCode = null;
+
+  function getRows() { return [].slice.call(document.querySelectorAll('#qBody tr.qrow')); }
+  function rowOf(id) { return document.querySelector('#qBody tr[data-id="' + id + '"]'); }
+  function expiry(tr) {
+    var days = Math.round((new Date(tr.dataset.valid + 'T00:00:00') - TODAY) / 86400000);
+    if (days < 0) return { cls: 'exp', label: 'Expired', days: days };
+    if (days <= 7) return { cls: 'soon', label: days === 0 ? 'Today' : days + ' day' + (days === 1 ? '' : 's'), days: days };
+    return { cls: 'ok', label: 'Valid', days: days };
+  }
+  function xchip(iso) {
+    var days = Math.round((new Date(iso + 'T00:00:00') - TODAY) / 86400000);
+    if (days < 0) return '<span class="xc exp">Expired</span>';
+    if (days <= 7) return '<span class="xc soon">' + (days === 0 ? 'Today' : days + ' day' + (days === 1 ? '' : 's')) + '</span>';
+    return '<span class="xc ok">Valid</span>';
+  }
+  function requoteEligible(tr) { var st = tr.dataset.status; return expiry(tr).days < 0 && (st === 'sent' || st === 'draft' || st === 'declined'); }
+  function closeAllScrims() { document.querySelectorAll('.scrim.on').forEach(function (s) { s.classList.remove('on'); }); cbFn = null; }
+
+  function editBtn(st) {
+    return st === 'draft' ? '<button class="ib" data-act="edit" title="Edit quotation (draft)">' + SVG_PEN + '</button>'
+      : '<button class="ib" data-act="edit" disabled title="Locked — ' + st + ' quotations can\'t be edited">' + SVG_PEN + '</button>';
+  }
+  var CTX = { draft: '<button class="ib" data-act="send" title="Send to customer">' + SVG_SEND + '</button>',
+    sent: '<button class="ib" data-act="print" title="Print / PDF">' + SVG_PRINT + '</button>',
+    accepted: '<button class="ib" data-act="convert" title="Convert to invoice">' + SVG_CONV + '</button>',
+    converted: '<button class="ib" data-act="print" title="Print / PDF">' + SVG_PRINT + '</button>',
+    declined: '<button class="ib" data-act="dup" title="Duplicate as draft">' + SVG_DUP + '</button>', void: '' };
+  function buildActions(tr) {
+    var st = tr.dataset.status;
+    var req = requoteEligible(tr) ? '<button class="ib reqb" data-act="requote" title="Re-quote — create a fresh quotation from this expired one">' + SVG_REQ + '</button>' : '';
+    tr.querySelector('td.r').innerHTML = '<button class="ib" data-act="view" title="View">' + SVG_VIEW + '</button>' + editBtn(st) + req + (CTX[st] || '');
+  }
+  function quoteRowHTML(o) {
+    return '<tr class="qrow" data-id="' + o.id + '" data-status="' + o.status + '" data-total="' + o.total + '" data-date="' + o.date + '" data-valid="' + o.valid + '" data-search="' + o.search + '">' +
+      '<td><span class="qno" data-act="view">' + o.ref + '</span><span class="qsub">' + o.sub + '</span></td>' +
+      '<td><span class="cust"><span class="av">' + initials(o.name) + '</span><span class="nm">' + o.name + '</span></span></td>' +
+      '<td style="white-space:nowrap">' + dfmt(o.date) + '</td>' +
+      '<td class="vd">' + dfmt(o.valid) + xchip(o.valid) + '</td>' +
+      '<td class="tot">' + fmt(o.total) + '</td>' +
+      '<td><span class="pill ' + PILL[o.status][0] + '"><i></i>' + PILL[o.status][1] + '</span></td>' +
+      '<td class="r" style="white-space:nowrap"></td></tr>';
+  }
+  function insertQuoteRow(o) {
+    var tmp = document.createElement('tbody');
+    tmp.innerHTML = quoteRowHTML(o);
+    var tr = tmp.firstChild;
+    $('qBody').insertBefore(tr, $('noRes'));
+    buildActions(tr);
+  }
+
+  /* ---------- list ---------- */
+  function passes(tr) {
+    if (state.st && tr.dataset.status !== state.st) return false;
+    if (state.view === 'open' && !(tr.dataset.status === 'draft' || tr.dataset.status === 'sent')) return false;
+    if (state.view === 'accepted' && tr.dataset.status !== 'accepted') return false;
+    if (state.view === 'converted' && tr.dataset.status !== 'converted') return false;
+    if (state.q && tr.dataset.search.toLowerCase().indexOf(state.q) === -1) return false;
+    return true;
+  }
+  function sortRows(list) {
+    var k = state.sort;
+    return list.sort(function (a, b) {
+      if (k === 'new') return a.dataset.date < b.dataset.date ? 1 : -1;
+      if (k === 'old') return a.dataset.date > b.dataset.date ? 1 : -1;
+      if (k === 'high') return Number(b.dataset.total) - Number(a.dataset.total);
+      if (k === 'exp') return a.dataset.valid < b.dataset.valid ? -1 : 1;
+      return 0;
+    });
+  }
+  function apply() {
+    var body = $('qBody'), vis = sortRows(getRows().filter(passes));
+    getRows().forEach(function (tr) { tr.style.display = 'none'; });
+    vis.forEach(function (tr) { body.insertBefore(tr, $('noRes')); tr.style.display = ''; });
+    $('noRes').style.display = vis.length ? 'none' : '';
+    $('cnt').textContent = vis.length + ' quotation' + (vis.length === 1 ? '' : 's');
+    $('showing').textContent = 'Showing ' + vis.length + ' of ' + getRows().length + ' quotations';
+  }
+  function refresh() {
+    var rows = getRows(), c = { draft: 0, sent: 0, accepted: 0, declined: 0, converted: 0, void: 0 };
+    var openVal = 0, convVal = 0, convN = 0, expN = 0, attn = [];
+    rows.forEach(function (tr) {
+      var st = tr.dataset.status, tot = Number(tr.dataset.total), x = expiry(tr);
+      c[st]++;
+      if (st === 'draft' || st === 'sent') { openVal += tot; if (x.days >= 0 && x.days <= 7) expN++; }
+      if (st === 'converted') { convVal += tot; convN++; }
+      if ((st === 'draft' || st === 'sent') && x.days <= 7) attn.push({ id: tr.dataset.id, ref: tr.querySelector('.qno').textContent, cust: tr.querySelector('.nm').textContent, x: x });
+    });
+    document.querySelectorAll('.sv').forEach(function (el) { el.textContent = el.dataset.c === '' ? rows.length : c[el.dataset.c]; });
+    document.querySelectorAll('.vc').forEach(function (el) { var v = el.dataset.v; el.textContent = v === 'all' ? rows.length : v === 'open' ? (c.draft + c.sent) : c[v]; });
+    $('kOpen').textContent = '$' + fmt(openVal); $('kOpenN').textContent = (c.draft + c.sent) + ' open quotes';
+    var decided = c.accepted + c.declined;
+    $('kWin').textContent = decided ? Math.round(c.accepted / decided * 100) + '%' : '—';
+    $('kWinN').textContent = c.accepted + ' won · ' + c.declined + ' lost';
+    $('kExp').textContent = expN; $('kExpN').textContent = expN ? 'needs follow-up' : 'nothing expiring'; $('kExpN').className = 'n ' + (expN ? 'warn' : 'ok');
+    $('kConv').textContent = '$' + fmt(convVal); $('kConvN').textContent = convN + ' invoice' + (convN === 1 ? '' : 's') + ' raised';
+    var box = $('attn');
+    if (!attn.length) box.innerHTML = '<div class="attn-empty">Nothing expiring or expired — pipeline healthy.</div>';
+    else box.innerHTML = attn.map(function (a) {
+      return '<button class="attn" data-open="' + a.id + '"><span><span class="an">' + a.ref + '</span><span class="as">' + a.cust + '</span></span><span class="xc ' + a.x.cls + '">' + (a.x.cls === 'exp' ? 'Expired' : a.x.label) + '</span></button>';
+    }).join('');
+    apply();
+  }
+
+  $('q').addEventListener('input', function () { state.q = this.value.trim().toLowerCase(); apply(); });
+  $('sort').addEventListener('change', function () { state.sort = this.value; apply(); });
+  document.querySelectorAll('.stile').forEach(function (b) { b.addEventListener('click', function () { state.st = b.dataset.st; document.querySelectorAll('.stile').forEach(function (x) { x.classList.toggle('on', x === b); }); apply(); }); });
+  document.querySelectorAll('#views .vitem').forEach(function (b) { b.addEventListener('click', function () { state.view = b.dataset.view; document.querySelectorAll('#views .vitem').forEach(function (x) { x.classList.toggle('on', x === b); }); apply(); }); });
+  document.querySelectorAll('[data-rep]').forEach(function (b) { b.addEventListener('click', function () { toast('📊 ' + b.textContent.trim() + ' report queued'); }); });
+  $('btnExport').addEventListener('click', function () { toast('⤓ Quotation register export queued (CSV / PDF)'); });
+  $('attn').addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openView(b.dataset.open); });
+
+  /* ---------- confirm ---------- */
+  var ICONS = { primary: SVG_SEND, ok: '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>', danger: '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>', warn: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>' };
+  function ask(o) {
+    $('cbIc').className = 'cb-ic ' + o.tone; $('cbIc').innerHTML = ICONS[o.tone] || ICONS.primary;
+    $('cbTitle').textContent = o.title; $('cbMsg').innerHTML = o.msg;
+    var ok = $('cbOk'); ok.textContent = o.okLabel || 'Confirm';
+    ok.className = 'btn btn-sm ' + (o.tone === 'danger' ? 'btn-danger' : o.tone === 'ok' ? 'btn-green' : o.tone === 'warn' ? 'btn-danger-o' : 'btn-cta');
+    cbFn = o.onOk; $('cfScrim').classList.add('on');
+  }
+  $('cbOk').addEventListener('click', function () { var f = cbFn; $('cfScrim').classList.remove('on'); cbFn = null; if (f) f(); });
+
+  /* ---------- view modal ---------- */
+  function stepsHTML(st) {
+    var seq = ['draft', 'sent', 'accepted', 'converted'];
+    var idx = { draft: 0, sent: 1, accepted: 2, converted: 3 }[st];
+    var bad = st === 'declined' || st === 'void';
+    var h = '';
+    seq.forEach(function (s, i) {
+      var cls = 'step';
+      if (!bad && i < idx) cls += ' done';
+      if (!bad && i === idx) cls += (st === 'converted' ? ' done' : ' cur');
+      h += '<div class="' + cls + '"><span class="dot"></span><span class="lb">' + PILL[s][1] + '</span></div>';
+    });
+    if (bad) h = h.replace(/<div class="step">(<span class="dot"><\/span><span class="lb">Accepted)/, '<div class="step bad done">$1');
+    return h;
+  }
+  function footHTML(id) {
+    var tr = rowOf(id), st = tr.dataset.status, req = '';
+    if (requoteEligible(tr)) req = '<button class="btn btn-cta btn-sm" data-qact="requote">' + SVG_REQ + 'Re-quote (new draft / walk-in)</button>';
+    if (st === 'draft') return '<span class="mnote">Draft — not yet visible to the customer.</span><button class="btn btn-ghost btn-sm" data-qact="edit">' + SVG_PEN + 'Edit quotation</button><button class="btn btn-danger-o btn-sm" data-qact="void">Void quotation</button>' + req + '<button class="btn btn-cta btn-sm" data-qact="send">' + SVG_SEND + 'Send to customer</button>';
+    if (st === 'sent') return '<span class="mnote">Awaiting customer response — follow up before expiry.</span>' + req + '<button class="btn btn-ghost btn-sm" data-qact="print">' + SVG_PRINT + 'Print / PDF</button><button class="btn btn-danger-o btn-sm" data-qact="void">Void</button><button class="btn btn-danger-o btn-sm" data-qact="decline">Mark declined</button><button class="btn btn-green btn-sm" data-qact="accept">Mark accepted</button>';
+    if (st === 'accepted') return '<span class="mnote">Accepted — convert to invoice to fulfil.</span><button class="btn btn-ghost btn-sm" data-qact="print">' + SVG_PRINT + 'Print / PDF</button><button class="btn btn-cta btn-sm" data-qact="convert">' + SVG_CONV + 'Convert to invoice</button>';
+    if (st === 'converted') return '<span class="mnote">Converted to <b>INV-2026-0021</b> — quotation locked.</span><button class="btn btn-ghost btn-sm" data-qact="print">' + SVG_PRINT + 'Print / PDF</button>';
+    if (st === 'declined') return '<span class="mnote">Declined by customer — re-quote or duplicate to revise.</span>' + req + '<button class="btn btn-ghost btn-sm" data-qact="dup">Duplicate as draft</button>';
+    return '<span class="mnote">Void — retained for audit only.</span>';
+  }
+  function openView(id) {
+    var tr = rowOf(id); if (!tr) return;
+    var d = QD[id], st = tr.dataset.status, x = expiry(tr);
+    viewingId = id;
+    $('qvRef').textContent = tr.querySelector('.qno').textContent;
+    var p = PILL[st]; $('qvPill').className = 'pill ' + p[0]; $('qvPill').innerHTML = '<i></i>' + p[1];
+    $('qvMeta').innerHTML = '<span class="mchip b">' + d.cust + '</span><span class="mchip">Quoted ' + dfmt(tr.dataset.date) + '</span><span class="mchip">Valid until ' + dfmt(tr.dataset.valid) + '</span><span class="mchip ' + (x.cls === 'exp' ? 'warn mono' : 'mono') + '">' + (x.cls === 'exp' ? 'Expired' : x.cls === 'soon' ? 'Expires in ' + x.label : 'Valid') + '</span>' + (d.superseded ? '<span class="mchip mono">Superseded by ' + d.superseded + '</span>' : '') + '<span class="mchip b">Total $ ' + fmt(tr.dataset.total) + '</span>';
+    $('qvSteps').innerHTML = stepsHTML(st);
+    $('qvLines').innerHTML = d.lines.map(function (l) { return '<tr><td>' + l[0] + '</td><td class="r">' + l[1] + '</td><td class="r">' + l[2] + '</td><td class="r">' + l[3] + '</td></tr>'; }).join('');
+    $('qvSub').textContent = fmt(d.sub); $('qvDisc').textContent = d.disc ? '−' + fmt(d.disc) : '0.00'; $('qvTax').textContent = fmt(d.tax); $('qvTotal').textContent = '$ ' + fmt(tr.dataset.total);
+    $('qvCust').textContent = d.cust; $('qvEmail').textContent = d.email || '—'; $('qvValid').textContent = dfmt(tr.dataset.valid); $('qvTerms').textContent = d.terms; $('qvNotes').textContent = d.notes;
+    $('qvFoot').innerHTML = footHTML(id) + CLOSE_BTN;
+    $('viewScrim').classList.add('on');
+  }
+  function setStatus(id, st) {
+    var tr = rowOf(id); if (!tr) return;
+    tr.dataset.status = st;
+    var p = PILL[st]; tr.querySelector('.pill').className = 'pill ' + p[0]; tr.querySelector('.pill').innerHTML = '<i></i>' + p[1];
+    tr.querySelector('.qsub').textContent = tr.querySelector('.qsub').textContent.split('·')[0].trim() + ' · ' + p[1].toLowerCase();
+    buildActions(tr); refresh();
+  }
+
+  /* ---------- print preview ---------- */
+  function openQuotePrint(id) {
+    var tr = rowOf(id); if (!tr) return;
+    var d = QD[id], st = tr.dataset.status;
+    var ref = tr.querySelector('.qno').textContent;
+    var cur = d.cur || '$';
+    $('pvRef').textContent = ref;
+    $('qRef').textContent = ref;
+    var draft = st === 'draft';
+    $('qWm').style.display = draft ? '' : 'none';
+    $('qStamp').className = 'dst' + (draft ? ' draftst' : '');
+    $('qStamp').innerHTML = '<i></i>' + (draft ? 'Draft' : 'Issued');
+    var now = new Date();
+    $('qPrinted').textContent = 'Printed ' + now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    $('qmCust').textContent = d.cust;
+    $('qmContact').textContent = d.contact || d.cust;
+    $('qmEmail').textContent = d.email || '—';
+    $('qmPhone').textContent = d.phone || '—';
+    $('qmDate').textContent = dfmt(tr.dataset.date);
+    $('qmValid').textContent = dfmt(tr.dataset.valid);
+    $('qmCur').textContent = cur + ' · ' + (CURN[cur] || '');
+    $('qmTerms').textContent = d.terms;
+    $('qmBranch').textContent = d.branch || 'Head Office';
+    $('qmCC').textContent = d.cc || 'CC-HO';
+    $('qmPrep').textContent = d.prepared || 'Elvis Seyama';
+    $('qmRefNo').textContent = d.refNo || '—';
+    $('qLines').innerHTML = d.lines.map(function (l, i) {
+      return '<tr><td class="no">' + (i + 1) + '</td><td>' + l[0] + '</td><td class="num">' + l[1] + '</td><td class="num">' + l[2] + '</td><td class="num">' + l[3] + '</td></tr>';
+    }).join('') +
+      '<tr class="totals"><td></td><td style="font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--p-ink)">Totals</td><td></td><td class="num" style="font-size:11px">' + fmt(d.sub) + '</td><td class="num" style="font-size:12.5px;font-weight:900">' + fmt(Number(tr.dataset.total)) + '</td></tr>' +
+      '<tr class="words"><td colspan="5"><span class="words-l">Amount in words</span><span class="words-v">' + (CURN[cur] || 'Currency') + ' ' + inWords(Math.floor(Number(tr.dataset.total))) + ' only</span><span class="balnote">TAX ' + fmt(d.tax) + ' INCLUDED</span></td></tr>';
+    $('qNotes').textContent = d.notes || '—';
+    $('qTermsList').innerHTML =
+      '<div>Valid until ' + dfmt(tr.dataset.valid) + '. After this date the quotation must be re-issued or re-quoted.</div>' +
+      '<div>Payment terms: ' + d.terms + '. All amounts in ' + (CURN[cur] || cur) + '.</div>' +
+      '<div>Prices include VAT where applicable; discounts shown per line.</div>' +
+      '<div>Goods &amp; services subject to availability at time of acceptance.</div>' +
+      '<div>Sign the acceptance block or reply with a purchase order to convert this quotation into an order.</div>' +
+      '<div>Quotation ' + ref + (d.refNo ? ' · your ref ' + d.refNo : '') + ' · generated ' + dfmt(TODAY_ISO) + '.</div>';
+    $('qSigPrep').textContent = (d.prepared || 'Elvis Seyama') + ' · ' + dfmt(tr.dataset.date);
+    $('qAudit').textContent = 'AUDIT · created ' + dfmt(tr.dataset.date) + ' · ' + (d.prepared || 'Elvis Seyama') + ' · status ' + PILL[st][1];
+    $('printView').classList.add('on');
+    $('printView').setAttribute('aria-hidden', 'false');
+    document.body.classList.add('pv-on');
+    $('printView').scrollTop = 0;
+  }
+  function closePreview() {
+    $('printView').classList.remove('on');
+    $('printView').setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('pv-on');
+  }
+  function safePrint() {
+    document.body.classList.add('pv-on'); $('printView').classList.add('on');
+    if (typeof window.print !== 'function') { toast('Print is unavailable in this environment — use Save as PDF'); return; }
+    try { window.print(); } catch (e) { toast('Print is unavailable — use Save as PDF'); }
+  }
+  $('pvBack').addEventListener('click', closePreview);
+  $('pvPrint').addEventListener('click', function () { toast('🖨 Print dialog opened — choose your printer'); safePrint(); });
+  $('pvPdf').addEventListener('click', function () { toast('🧾 Print dialog opened — set destination to “Save as PDF”'); safePrint(); });
+
+  /* ---------- edit draft modal ---------- */
+  function eqLineRow(d, q, p) {
+    return '<tr><td><input class="lin" data-f="d" value="' + String(d).replace(/"/g, '&quot;') + '" placeholder="Item description"></td><td><input class="lin num" data-f="q" type="number" min="0" step="1" value="' + q + '"></td><td><input class="lin num" data-f="p" type="number" min="0" step="0.01" value="' + p + '"></td><td class="amtcell ramt">0.00</td><td><button class="xb" type="button" title="Remove line">' + SVG_X + '</button></td></tr>';
+  }
+  function eqRecompute() {
+    var sub = 0;
+    Array.prototype.forEach.call($('eqLines').rows, function (r) {
+      var q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value);
+      var amt = q * p; sub += amt; r.querySelector('.ramt').textContent = fmt(amt);
+    });
+    var tax = sub * 0.165;
+    $('eqSub').textContent = fmt(sub); $('eqTax').textContent = fmt(tax); $('eqTotal').textContent = fmt(sub + tax);
+    return { sub: sub, tax: tax, total: sub + tax };
+  }
+  function openEdit(id) {
+    var tr = rowOf(id), d = QD[id];
+    if (!tr) return;
+    if (tr.dataset.status !== 'draft') { toast('🔒 ' + tr.querySelector('.qno').textContent + ' is ' + tr.dataset.status + ' — only drafts can be edited'); return; }
+    closeAllScrims();
+    eqId = id;
+    var ref = tr.querySelector('.qno').textContent;
+    $('eqRef').textContent = ref;
+    $('eqMeta').innerHTML = '<span class="mchip b">' + d.cust + '</span><span class="mchip">Quoted ' + dfmt(tr.dataset.date) + '</span><span class="mchip">Valid until ' + dfmt(tr.dataset.valid) + '</span><span class="mchip mono">Total ' + fmt(tr.dataset.total) + '</span>';
+    $('eqName').value = d.cust; $('eqName').classList.remove('bad');
+    $('eqEmail').value = d.email || '';
+    $('eqPhone').value = d.phone || '';
+    $('eqDate').value = tr.dataset.date;
+    $('eqValid').value = tr.dataset.valid; $('eqValid').classList.remove('bad');
+    $('eqTerms').value = TKEY[d.terms] || 'net30';
+    $('eqLines').innerHTML = d.lines.map(function (l) {
+      var q = num(l[1]); var eff = q ? Math.round(num(l[3]) / q * 100) / 100 : 0;
+      return eqLineRow(l[0], q, eff);
+    }).join('');
+    $('eqNotes').value = (d.notes && d.notes !== '—') ? d.notes : '';
+    eqRecompute();
+    $('eqScrim').classList.add('on');
+  }
+  $('eqLines').addEventListener('input', function (e) { if (e.target.classList.contains('lin')) eqRecompute(); });
+  $('eqLines').addEventListener('click', function (e) { var x = e.target.closest('.xb'); if (!x) return; if ($('eqLines').rows.length <= 1) { toast('A quotation needs at least one line'); return; } x.closest('tr').remove(); eqRecompute(); });
+  $('eqAdd').addEventListener('click', function () { $('eqLines').insertAdjacentHTML('beforeend', eqLineRow('', 1, 0)); eqRecompute(); $('eqLines').rows[$('eqLines').rows.length - 1].querySelector('[data-f="d"]').focus(); });
+  function saveEdit(finalize) {
+    var tr = rowOf(eqId), d = QD[eqId];
+    var name = $('eqName').value.trim();
+    if (!name) { $('eqName').classList.add('bad'); toast('Customer name is required'); return; }
+    $('eqName').classList.remove('bad');
+    if (!$('eqValid').value) { $('eqValid').classList.add('bad'); toast('Valid-until date is required'); return; }
+    $('eqValid').classList.remove('bad');
+    if ($('eqValid').value < $('eqDate').value) { $('eqValid').classList.add('bad'); toast('Valid-until cannot be before the quotation date'); return; }
+    $('eqValid').classList.remove('bad');
+    var lines = [], sub = 0;
+    Array.prototype.forEach.call($('eqLines').rows, function (r) {
+      var dd = r.querySelector('[data-f="d"]').value.trim(), q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value);
+      if (dd && q > 0) { lines.push([dd, q, fmt(p), fmt(q * p)]); sub += q * p; }
+    });
+    if (!lines.length) { toast('Add at least one line with a description and quantity'); return; }
+    var tax = sub * 0.165, total = sub + tax;
+    var ref = tr.querySelector('.qno').textContent;
+    var baseSub = tr.querySelector('.qsub').textContent.split('·')[0].trim();
+    d.cust = name; d.email = $('eqEmail').value.trim(); d.phone = $('eqPhone').value.trim();
+    d.terms = TERMS[$('eqTerms').value]; d.notes = $('eqNotes').value.trim() || '—';
+    d.lines = lines; d.sub = sub; d.tax = tax;
+    var st = finalize ? 'sent' : 'draft';
+    tr.outerHTML = quoteRowHTML({ id: eqId, ref: ref, sub: baseSub + ' · ' + PILL[st][1].toLowerCase(), name: name, date: $('eqDate').value, valid: $('eqValid').value, total: total, status: st, search: (name + ' ' + ref).toLowerCase() });
+    buildActions(rowOf(eqId));
+    $('eqScrim').classList.remove('on');
+    refresh();
+    if (finalize) openQuotePrint(eqId);
+    toast('✓ ' + ref + ' ' + (finalize ? 'finalized & issued — printable quotation opened' : 'updated (draft saved)'));
+  }
+  $('eqSave').addEventListener('click', function () { saveEdit(false); });
+  $('eqFinal').addEventListener('click', function () { saveEdit(true); });
+
+  /* ---------- re-quote ---------- */
+  function setRqCreateLabel() { $('rqCreate').innerHTML = SVG_REQ + ($('rmFinal').checked ? 'Finalize & create quotation' : 'Create draft quotation'); }
+  function rqRecompute() {
+    var sub = 0;
+    Array.prototype.forEach.call($('rqLines').rows, function (r) {
+      var q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value);
+      var amt = q * p; sub += amt; r.querySelector('.ramt').textContent = fmt(amt);
+    });
+    var tax = sub * 0.165;
+    $('rqSub').textContent = fmt(sub); $('rqTax').textContent = fmt(tax); $('rqTotal').textContent = '$ ' + fmt(sub + tax);
+  }
+  function openRequote(id) {
+    var tr = rowOf(id), d = QD[id]; if (!tr || !d) return;
+    closeAllScrims();
+    rqSrcId = id;
+    $('rqSrcRef').textContent = tr.querySelector('.qno').textContent;
+    $('rqMeta').innerHTML = '<span class="mchip warn">Source expired ' + dfmt(tr.dataset.valid) + '</span><span class="mchip">Source total $ ' + fmt(tr.dataset.total) + '</span><span class="mchip mono">Lines carried: ' + d.lines.length + '</span>';
+    $('rqName').value = d.cust; $('rqName').classList.remove('bad');
+    $('rqEmail').value = d.email || '';
+    var reg = CUSTOMERS.filter(function (c) { return c.name === d.cust; })[0];
+    $('rqPhone').value = reg ? reg.phone : (d.phone || '');
+    $('rqRef').value = 'QT-2026-' + String(nextNum).padStart(4, '0');
+    $('rqDate').value = TODAY_ISO; $('rqDays').value = '14'; $('rmDraft').checked = true; setRqCreateLabel();
+    $('rqLines').innerHTML = d.lines.map(function (l) { return eqLineRow(l[0], l[1], num(l[2])); }).join('');
+    $('rqNote').innerHTML = 'Original <b>' + tr.querySelector('.qno').textContent + '</b> will be marked superseded and retained for audit.';
+    rqRecompute();
+    $('rqScrim').classList.add('on');
+  }
+  $('rqMode').addEventListener('change', setRqCreateLabel);
+  $('rqLines').addEventListener('input', function (e) { if (e.target.classList.contains('lin')) rqRecompute(); });
+  $('rqLines').addEventListener('click', function (e) { var x = e.target.closest('.xb'); if (!x) return; if ($('rqLines').rows.length <= 1) { toast('A quotation needs at least one line'); return; } x.closest('tr').remove(); rqRecompute(); });
+  $('rqAdd').addEventListener('click', function () { $('rqLines').insertAdjacentHTML('beforeend', eqLineRow('', 1, 0)); rqRecompute(); $('rqLines').rows[$('rqLines').rows.length - 1].querySelector('[data-f="d"]').focus(); });
+  $('rqCreate').addEventListener('click', function () {
+    var src = rowOf(rqSrcId), sd = QD[rqSrcId];
+    var name = $('rqName').value.trim();
+    if (!name) { $('rqName').classList.add('bad'); toast('Customer name is required'); return; }
+    $('rqName').classList.remove('bad');
+    var lines = [], sub = 0;
+    Array.prototype.forEach.call($('rqLines').rows, function (r) {
+      var d = r.querySelector('[data-f="d"]').value.trim(), q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value);
+      if (d && q > 0) { lines.push([d, q, fmt(p), fmt(q * p)]); sub += q * p; }
+    });
+    if (!lines.length) { toast('Add at least one line with a description and quantity'); return; }
+    var tax = sub * 0.165, total = sub + tax;
+    var ref = $('rqRef').value, until = addDays($('rqDate').value, Number($('rqDays').value));
+    var finalize = $('rmFinal').checked;
+    var reg = CUSTOMERS.filter(function (c) { return c.name.toLowerCase() === name.toLowerCase(); })[0];
+    var newCust = false, savedCode;
+    if (reg) savedCode = reg.code;
+    else {
+      savedCode = 'CUS-' + String(custSeq++).padStart(4, '0');
+      CUSTOMERS.push({ code: savedCode, name: name, email: $('rqEmail').value.trim(), phone: $('rqPhone').value.trim(), terms: 'net30' });
+      fillCustDatalist(); newCust = true;
+    }
+    var newId = 'q' + (rowSeq++);
+    QD[newId] = { sub: sub, disc: 0, tax: tax, cur: sd.cur || '$', lines: lines, notes: (sd.notes || '') + ' Re-quoted from ' + src.querySelector('.qno').textContent + '.', terms: sd.terms, email: $('rqEmail').value.trim(), phone: $('rqPhone').value.trim(), cust: name, contact: name, branch: sd.branch || 'Head Office', cc: sd.cc || 'CC-HO', prepared: 'Elvis Seyama', refNo: '' };
+    sd.superseded = ref;
+    var st = finalize ? 'sent' : 'draft';
+    insertQuoteRow({ id: newId, ref: ref, sub: 'Re-quote of ' + src.querySelector('.qno').textContent + ' · ' + (finalize ? 'issued' : 'draft'), name: name, date: $('rqDate').value, valid: until, total: total, status: st, search: (name + ' ' + ref).toLowerCase() });
+    var ssub = src.querySelector('.qsub');
+    if (ssub.textContent.indexOf('superseded') === -1) ssub.textContent += ' · superseded by ' + ref;
+    nextNum++;
+    closeAllScrims(); refresh();
+    if (finalize) openQuotePrint(newId);
+    toast('✓ ' + ref + ' ' + (finalize ? 'finalized & issued — print preview opened' : 'created as draft') + ' for ' + name + (newCust ? ' · new customer saved (' + savedCode + ')' : ''));
+  });
+
+  /* ---------- create page ---------- */
+  var curSym = 'K';
+  function showView(v) {
+    document.body.classList.toggle('view-create', v === 'create');
+    window.scrollTo(0, 0);
+    if (v === 'create') initCreate();
+  }
+  function fillCustDatalist() { $('custList').innerHTML = CUSTOMERS.map(function (c) { return '<option value="' + c.name + '">' + c.code + '</option>'; }).join(''); }
+  function setExistingLock(lock) {
+    ['ciContact', 'ciEmail', 'ciPhone'].forEach(function (id) { var el = $(id); el.readOnly = lock; el.classList.toggle('ro', lock); });
+    $('ciTerms').disabled = lock;
+    $('ciTerms').classList.toggle('ro', lock);
+  }
+  function ciLineRow(code, name, desc, q, p, d) {
+    return '<tr><td><input class="lin" data-f="code" value="' + (code || '') + '" placeholder="Code"></td>' +
+      '<td><input class="lin" data-f="name" value="' + String(name || '').replace(/"/g, '&quot;') + '" placeholder="Search / type item…"></td>' +
+      '<td><input class="lin" data-f="desc" value="' + String(desc || '').replace(/"/g, '&quot;') + '" placeholder="Description"></td>' +
+      '<td><input class="lin num" data-f="q" type="number" min="0" step="1" value="' + (q == null ? 1 : q) + '"></td>' +
+      '<td><input class="lin num" data-f="p" type="number" min="0" step="0.01" value="' + (p || 0) + '"></td>' +
+      '<td><input class="lin num" data-f="d" type="number" min="0" max="100" step="0.5" value="' + (d || 0) + '"></td>' +
+      '<td class="amtcell ramt">0.00</td>' +
+      '<td style="white-space:nowrap"><button class="xb dup" type="button" title="Duplicate line">' + SVG_DUP + '</button> <button class="xb" type="button" title="Remove line">' + SVG_X + '</button></td></tr>';
+  }
+  function ciRecompute() {
+    var sub = 0, n = 0;
+    Array.prototype.forEach.call($('ciLines').rows, function (r) {
+      var q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value), d = num(r.querySelector('[data-f="d"]').value);
+      var amt = q * p * (1 - d / 100); sub += amt;
+      r.querySelector('.ramt').textContent = fmt(amt);
+      if (r.querySelector('[data-f="name"]').value.trim()) n++;
+    });
+    var tax = sub * 0.165;
+    $('sumSub').textContent = fmt(sub); $('sumTax').textContent = fmt(tax);
+    $('sumGrand').textContent = curSym + ' ' + fmt(sub + tax);
+    $('sumLines').textContent = n ? n + ' line item' + (n === 1 ? '' : 's') + ' · tax 16.5%' : 'No line items yet';
+    return { sub: sub, tax: tax, total: sub + tax, n: n };
+  }
+  function ciSummaryMeta() {
+    var walkin = $('ciMode').value === 'walkin';
+    $('sumCust').textContent = walkin ? ($('ciName').value.trim() || '—') : ($('ciSearch').value.trim() || '—');
+    $('sumContact').textContent = $('ciContact').value.trim() || '—';
+    $('sumDate').textContent = dfmt($('ciDate').value);
+    $('sumValid').textContent = dfmt($('ciValid').value);
+  }
+  function initCreate() {
+    if (initCreate.done) return; initCreate.done = true;
+    $('ciDate').value = TODAY_ISO;
+    $('ciValid').value = addDays(TODAY_ISO, 14);
+    $('ciLines').innerHTML = ciLineRow();
+    fillCustDatalist();
+    setExistingLock(false);
+    ciRecompute(); ciSummaryMeta();
+  }
+  $('btnNew').addEventListener('click', function () { showView('create'); });
+  $('qnavList').addEventListener('click', function () { showView('list'); });
+  $('cCancel').addEventListener('click', function () { showView('list'); });
+  $('qnavCust').addEventListener('click', function () { toast('＋ New Customer form (Customers module)'); });
+  $('qnavDay').addEventListener('click', function () { toast('📖 Day Book opened'); });
+
+  $('ciMode').addEventListener('change', function () {
+    var walkin = this.value === 'walkin';
+    $('ciSearchWrap').style.display = walkin ? 'none' : '';
+    $('ciNameWrap').style.display = walkin ? '' : 'none';
+    $('ciSaveNote').classList.toggle('on', walkin);
+    if (walkin) { setExistingLock(false); matchedCode = null; }
+    else { $('ciName').value = ''; setExistingLock(!!matchedCode); }
+    ciSummaryMeta();
+  });
+  $('ciSearch').addEventListener('input', function () {
+    var v = this.value.trim().toLowerCase(); matchedCode = null;
+    if (v) {
+      var c = CUSTOMERS.filter(function (x) { return x.name.toLowerCase().indexOf(v) > -1 || x.code.toLowerCase().indexOf(v) > -1; })[0];
+      if (c) {
+        matchedCode = c.code;
+        $('ciContact').value = c.name; $('ciEmail').value = c.email; $('ciPhone').value = c.phone; $('ciTerms').value = c.terms;
+      }
+    }
+    setExistingLock(!!matchedCode && $('ciMode').value === 'existing');
+    ciSummaryMeta();
+  });
+  ['ciName', 'ciContact'].forEach(function (id) { $(id).addEventListener('input', ciSummaryMeta); });
+  ['ciDate', 'ciValid'].forEach(function (id) { $(id).addEventListener('change', ciSummaryMeta); });
+  $('ciCur').addEventListener('change', function () { curSym = this.value; $('liSym').textContent = curSym; ciRecompute(); });
+  $('ciBranch').addEventListener('change', function () { $('ciCC').value = this.value === 'Branch North' ? 'CC-BN' : 'CC-HO'; });
+  $('ciAdd').addEventListener('click', function () { $('ciLines').insertAdjacentHTML('beforeend', ciLineRow()); ciRecompute(); });
+  $('ciLines').addEventListener('input', function (e) { if (e.target.classList.contains('lin')) ciRecompute(); });
+  $('ciLines').addEventListener('click', function (e) {
+    var x = e.target.closest('.xb'); if (!x) return;
+    var r = x.closest('tr');
+    if (x.classList.contains('dup')) { r.insertAdjacentHTML('afterend', r.outerHTML); ciRecompute(); return; }
+    if ($('ciLines').rows.length <= 1) { toast('A quotation needs at least one line'); return; }
+    r.remove(); ciRecompute();
+  });
+
+  function saveQuotation(finalize, print) {
+    var walkin = $('ciMode').value === 'walkin';
+    var name = walkin ? $('ciName').value.trim() : $('ciSearch').value.trim();
+    if (!name) { (walkin ? $('ciName') : $('ciSearch')).classList.add('bad'); toast(walkin ? 'Customer name is required' : 'Select a customer from the registry'); return false; }
+    (walkin ? $('ciName') : $('ciSearch')).classList.remove('bad');
+    if (!walkin && !matchedCode) { $('ciSearch').classList.add('bad'); toast('Pick a matching customer from the list'); return false; }
+    $('ciSearch').classList.remove('bad');
+    if (!$('ciValid').value) { $('ciValid').classList.add('bad'); toast('Valid-until date is required'); return false; }
+    $('ciValid').classList.remove('bad');
+    if ($('ciValid').value < $('ciDate').value) { $('ciValid').classList.add('bad'); toast('Valid-until cannot be before the quotation date'); return false; }
+    $('ciValid').classList.remove('bad');
+    var t = ciRecompute();
+    if (!t.n) { toast('Add at least one line item with a name and quantity'); return false; }
+    var lines = [], sub = 0;
+    Array.prototype.forEach.call($('ciLines').rows, function (r) {
+      var nm = r.querySelector('[data-f="name"]').value.trim();
+      var q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value), d = num(r.querySelector('[data-f="d"]').value);
+      if (nm && q > 0) {
+        var code = r.querySelector('[data-f="code"]').value.trim();
+        var desc = r.querySelector('[data-f="desc"]').value.trim();
+        lines.push([(code ? code + ' — ' : '') + nm + (desc ? ' (' + desc + ')' : ''), q, fmt(p), fmt(q * p * (1 - d / 100))]);
+        sub += q * p * (1 - d / 100);
+      }
+    });
+    var tax = sub * 0.165, total = sub + tax;
+    var ref = 'QT-2026-' + String(nextNum).padStart(4, '0');
+    var savedCode = '';
+    if (walkin) { savedCode = 'CUS-' + String(custSeq++).padStart(4, '0'); CUSTOMERS.push({ code: savedCode, name: name, email: $('ciEmail').value.trim(), phone: $('ciPhone').value.trim(), terms: $('ciTerms').value }); fillCustDatalist(); }
+    else savedCode = matchedCode;
+    var newId = 'q' + (rowSeq++);
+    QD[newId] = {
+      sub: sub, disc: 0, tax: tax, cur: curSym, lines: lines,
+      notes: $('ciNotesC').value.trim() || '—', terms: TERMS[$('ciTerms').value],
+      email: $('ciEmail').value.trim(), phone: $('ciPhone').value.trim(), cust: name,
+      contact: $('ciContact').value.trim() || name, internal: $('ciNotesI').value.trim(),
+      branch: $('ciBranch').value, cc: $('ciCC').value, prepared: 'Elvis Seyama', refNo: $('ciRef').value.trim(), project: $('ciProject').value.trim()
+    };
+    var st = finalize ? 'sent' : 'draft';
+    insertQuoteRow({ id: newId, ref: ref, sub: ($('ciRef').value.trim() ? 'Ref ' + $('ciRef').value.trim() : 'Ref —') + ' · ' + (finalize ? 'issued' : 'draft'), name: name, date: $('ciDate').value, valid: $('ciValid').value, total: total, status: st, search: (name + ' ' + ref).toLowerCase() });
+    nextNum++;
+    matchedCode = null;
+    $('ciSearch').value = ''; $('ciName').value = ''; $('ciContact').value = ''; $('ciEmail').value = ''; $('ciPhone').value = '';
+    $('ciTerms').value = 'net30'; $('ciRef').value = ''; $('ciProject').value = ''; $('ciNotesC').value = ''; $('ciNotesI').value = '';
+    $('ciMode').value = 'existing'; $('ciMode').dispatchEvent(new Event('change'));
+    $('ciLines').innerHTML = ciLineRow(); $('ciDate').value = TODAY_ISO; $('ciValid').value = addDays(TODAY_ISO, 14);
+    setExistingLock(false); ciRecompute(); ciSummaryMeta();
+    showView('list'); refresh();
+    if (finalize && print) openQuotePrint(newId);
+    toast('✓ ' + ref + ' ' + (finalize ? (print ? 'finalized & issued — printable quotation opened' : 'finalized & issued') : 'saved to database — send later') + ' · ' + name + (walkin ? ' · new customer saved (' + savedCode + ')' : ''));
+    return true;
+  }
+  $('cDraft').addEventListener('click', function () { saveQuotation(false, false); });
+  $('cSubmit').addEventListener('click', function () { $('subScrim').classList.add('on'); });
+  $('subLater').addEventListener('click', function () { $('subScrim').classList.remove('on'); saveQuotation(false, false); });
+  $('subPrint').addEventListener('click', function () { $('subScrim').classList.remove('on'); saveQuotation(true, true); });
+
+  /* ---------- lifecycle ---------- */
+  function act(actName, id) {
+    var tr = rowOf(id); if (!tr) return;
+    var ref = tr.querySelector('.qno').textContent;
+    if (actName === 'view') { openView(id); return; }
+    if (actName === 'requote') { openRequote(id); return; }
+    if (actName === 'edit') { openEdit(id); return; }
+    if (actName === 'print') { openQuotePrint(id); return; }
+    if (actName === 'dup') { toast('⧉ ' + ref + ' duplicated as new draft'); return; }
+    if (actName === 'send') ask({ tone: 'primary', title: 'Send ' + ref + ' to customer?', msg: 'The quotation PDF is emailed to the customer and the status moves to <b>Sent</b>. The validity clock starts today.', okLabel: 'Send now', onOk: function () { setStatus(id, 'sent'); toast('📨 ' + ref + ' sent to customer'); } });
+    if (actName === 'accept') ask({ tone: 'ok', title: 'Mark ' + ref + ' as accepted?', msg: 'Records the customer acceptance. You can then convert the quotation into a sales invoice.', okLabel: 'Mark accepted', onOk: function () { setStatus(id, 'accepted'); toast('✓ ' + ref + ' accepted'); } });
+    if (actName === 'decline') ask({ tone: 'danger', title: 'Mark ' + ref + ' as declined?', msg: 'Records the lost deal for pipeline reporting. The quotation can still be re-quoted or duplicated later.', okLabel: 'Mark declined', onOk: function () { setStatus(id, 'declined'); toast('✕ ' + ref + ' marked declined'); } });
+    if (actName === 'convert') ask({ tone: 'primary', title: 'Convert ' + ref + ' to invoice?', msg: 'Creates a sales invoice from the accepted quotation lines, locks the quotation and cross-links both documents.', okLabel: 'Convert now', onOk: function () { setStatus(id, 'converted'); toast('⇄ ' + ref + ' converted — invoice created'); } });
+    if (actName === 'void') ask({ tone: 'danger', title: 'Void ' + ref + '?', msg: 'Voids the quotation permanently. Void documents are retained for audit and excluded from pipeline metrics.', okLabel: 'Void quotation', onOk: function () { setStatus(id, 'void'); toast('⃠ ' + ref + ' voided'); } });
+  }
+  $('qBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (b) {
+      if (b.disabled) return;
+      act(b.dataset.act, b.closest('tr').dataset.id);
+      return;
+    }
+    var tr = e.target.closest('tr.qrow');
+    if (tr) act('view', tr.dataset.id);
+  });
+  $('qvFoot').addEventListener('click', function (e) { var b = e.target.closest('[data-qact]'); if (!b) return; act(b.dataset.qact, viewingId); });
+
+  /* ---------- CLOSE HANDLING (delegated) ---------- */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-close]');
+    if (!b) return;
+    var m = document.getElementById(b.getAttribute('data-close'));
+    if (m) m.classList.remove('on');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if ($('cfScrim').classList.contains('on')) $('cfScrim').classList.remove('on');
+      else if ($('subScrim').classList.contains('on')) $('subScrim').classList.remove('on');
+      else if ($('printView').classList.contains('on')) closePreview();
+      else if ($('eqScrim').classList.contains('on')) $('eqScrim').classList.remove('on');
+      else if ($('rqScrim').classList.contains('on')) $('rqScrim').classList.remove('on');
+      else if ($('viewScrim').classList.contains('on')) $('viewScrim').classList.remove('on');
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P') && $('printView').classList.contains('on')) { e.preventDefault(); safePrint(); }
+  });
+
+  getRows().forEach(buildActions);
+  refresh();
+})();
+</script>
+
+</body>
+</html>
+```

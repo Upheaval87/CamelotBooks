@@ -1,0 +1,37 @@
+locate "final-dashboard.txt" in /Docs folder and execute the prompt that is in that file in its entirety
+
+
+i want you to redesign this tasks page. it should look very premium, state-of-the-art
+
+
+give me full implementation prompt for this comprehensive quotations module. embed full html mockup code
+
+****************
+
+JOKER - BW770A1237 WOYAMBA PA 10
+
+BW770C3486 - corners
+
+***************************************
+sacco members
+time: 12pm
+date 7 oct (Wednesday)
+
+
+*************************************
+
+in reverse modal, 
+
+reason should be one line not 3. let the field fill entire row. remove the "posting" section. remove "Post immediately creates and posts the reversal in one step. A draft stays editable until you post it.", "Next reversal ref: JE-2026-0020", and "Reversing is irreversible in effect: the original entry is marked Reversed the moment the reversal is posted."
+
+make "reversal date" and "reference" readonly
+***************************
+
+
+https://cosmobet.com/en/registration
+
+
+https://footballwhispers.com/blog/todays-betting-tips/
+
+https://betwizad.com/
+

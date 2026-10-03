@@ -1,0 +1,910 @@
+CUSTOMER MANAGEMENT (REGISTER + VIEW / CREATE-EDIT / DELETE MODALS) — FULL IMPLEMENTATION SPEC (SELF-CONTAINED)
+(AUTHORITATIVE MOCKUP HTML EMBEDDED IN APPENDIX A — do NOT read or depend on any external file.)
+
+SCOPE:
+(A) Rebuild the Customers register page exactly as APPENDIX A: light page head, portfolio
+    stat tiles, integrated search/filter toolbar, mist-header datasheet, Views/Reports rail.
+(B) Implement the three dialogs: View Customer (profile + financials + activity),
+    Create/Edit Customer (two-section form: Contact Information + Terms & Accounting),
+    Delete Customer (stacked danger confirm).
+(C) Wire all persistence to existing customer/ledger endpoints; add the sanctioned backend
+    behaviours in §6 (opening-balance journal, terms/day sync, delete guards).
+
+HARD GUARD — do NOT modify unrelated modules, posting engines, permission definitions or
+existing route signatures. Frontend view-layer rebuild + the §6 backend contracts only.
+NO NEW PACKAGES. Live data only — mockup values are samples.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate customers module: model, controller, index/create/edit/delete routes, existing
+    validation rules, AR ledger linkage (customer balances, invoices, receipts).
+0.2 Record system currency setting + enabled currency list (feeds the Currency select
+    default/options) and date-format setting.
+0.3 Locate existing report endpoints for "Customer Balances" and "Sales by Customer",
+    statement print/PDF endpoint, and export (CSV/PDF) endpoint.
+0.4 Inventory current ids/data-attributes/hooks on the customers page so nothing wired breaks.
+
+==================== 1 · TOKENS + ABSOLUTE RULES ====================
+--deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32; --sec:#128F8E; --sec-2:#149897;
+--mint:#7FD1C0; --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+--border:#dceaea; --line:#e2ecec; --hair:#EEF3F1; --green:#15803d; --red:#dc2626;
+--red-2:#b91c1c; mono stack for codes/emails/refs; Inter; tabular-nums on all figures.
+R1 · ZERO BLUR: scrims are solid tints (app modals rgba(11,42,45,.26); confirm
+     rgba(11,42,45,.45)); NO backdrop-filter anywhere.
+R2 · Modal headers: deep-teal band with icon tile + title + mono sub + status pill +
+     rotating close; NO company name/eyebrow inside dialogs.
+R3 · Destructive actions (delete) ALWAYS via stacked confirm box (z 140 above app modals).
+R4 · Currency: per-customer currency code stored; symbols/labels in the form follow the
+     selected currency (Credit limit (K) etc.); defaults = system currency.
+R5 · Status semantics: Active = green pill/dot; Inactive = grey; avatar status dot mirrors.
+R6 · Terms chip label: TERMS map (Due on receipt / Net 15 / Net 30 / Net 60); custom terms
+     render as "Net {days}".
+R7 · prefers-reduced-motion disables all animation; focus-visible rings on every control.
+R8 · Empty/zero states designed (no-match table state, no-activity note, "No limit").
+
+==================== 2 · REGISTER PAGE (pixel parity with APPENDIX A) ====================
+2.1 Head: h1 26px/900 + sub; right actions Export (ghost) + Create Customer (teal gradient).
+2.2 Portfolio tiles (3): Customers / Active / Outstanding (system currency) — icon tile,
+    micro-uppercase label, 22px/900 tabular value, semantic sub-chip; hover lift; staggered rise.
+2.3 Toolbar (table card head): search (name/email, live), Status select, Terms select,
+    Filter ghost button, live count chip "N customers".
+2.4 Datasheet columns: Name (avatar initials + status dot + "Since …" sub), Email (ellipsis),
+    Phone (tabular), Terms chip (R6), Balance right tabular, Status pill, Actions
+    (view / edit / delete icon buttons; delete red-hover). Row hover teal wash; staggered
+    entrance; server-side pagination footer ("Showing a–b of N" + pager) — page size 25.
+2.5 Rail: Views card (All Customers / Active / Inactive with live count badges; active item
+    = teal gradient) two-way synced with the toolbar Status select; Reports card linking the
+    existing Customer Balances + Sales by Customer endpoints.
+2.6 Filtering contract: GET customers?q=&status=&terms=&page= — search matches name,
+    display name, email; counts recomputed server-side for tiles + view badges.
+
+==================== 3 · VIEW CUSTOMER MODAL (980px) ====================
+3.1 Head: gradient initials tile, name, mono code (CUS-####), status pill, close.
+3.2 Meta chips: terms label (R6), mono currency chip, "Since …", branch, mono email.
+3.3 Body two columns: Contact & record rows (Display name, Email mono teal, Phone,
+    Billing address, Customer since) + Terms & financial position 2×2 tiles:
+    Current balance (ledger AR balance; green when 0), Credit limit ("No limit" when 0),
+    Opening balance (value + date or "—"), Lifetime sales (invoice totals sum).
+3.4 Recent activity mini-table (mono ref, date, type, tabular amount, status pill) from
+    invoices/receipts; designed empty note when none.
+3.5 Footer: standing note + Print statement (existing statement PDF/print pipeline) +
+    Edit customer (hands off to §4 modal prefilled).
+
+==================== 4 · CREATE / EDIT MODAL (820px, two sections) ====================
+4.1 Section headers: teal icon tile + 12.5px/800 title + fading hairline rule.
+4.2 CONTACT INFORMATION grid (2-col): Name* · Display name · Email · Phone ·
+    Billing address (textarea) · Shipping address (textarea).
+4.3 TERMS & ACCOUNTING grid (3-col): Currency (select from enabled currencies, default
+    system currency) · Payment terms (select: "Select terms…", Due on receipt, Net 15,
+    Net 30, Net 60, Custom (days)) · Payment terms (days) · Credit limit · Opening
+    balance · Opening balance date; then Notes textarea full-width.
+4.4 Field sync: choosing a preset term writes its days (0/15/30/60); Custom leaves days
+    editable; changing Currency rewrites the Credit limit / Opening balance label suffixes.
+4.5 Validation (client + mirrored server): Name required; Payment terms required;
+    Custom ⇒ days > 0; Opening balance ≠ 0 ⇒ Opening balance date required (must fall in an
+    open period). Failures: red field state + toast; no submit.
+4.6 Save (create): assign next customer code, insert row at correct sort position, refresh
+    counts/filters, toast "✓ {name} created — {code}". Save (edit): update record + replace
+    row in place (avatar initials, terms chip, balance, status pill), toast "✓ {name} updated".
+4.7 Edit prefill: every field including addresses, currency, days, opening balance + date.
+
+==================== 5 · DELETE CONFIRM (stacked, z 140) ====================
+5.1 Danger-icon confirm box naming the customer + code; body states the zero-balance /
+    no-open-documents rule and audit retention.
+5.2 Server guard: refuse (409 + toast) when balance ≠ 0 or open invoices/orders exist;
+    on success remove row, refresh counts, toast. Confirm-gated per R3.
+
+==================== 6 · SANCTIONED BACKEND CONTRACTS ====================
+6.1 Schema (add missing columns via migration, nullable-safe):
+    customers: display_name, billing_address, shipping_address, currency_code,
+    payment_terms_key, payment_terms_days, credit_limit, opening_balance,
+    opening_balance_date, opening_journal_id (nullable FK), notes, status, created_at ("since").
+6.2 Opening balance journal: on create (and on edit while the customer has NO transactions),
+    opening_balance ≠ 0 posts a journal dated opening_balance_date, source
+    "customer_opening", lines: Dr Accounts Receivable (customer) / Cr Opening Balance Equity
+    (reversed when negative); store opening_journal_id; cross-link shown on the journal.
+    Editing opening balance after transactions exist is BLOCKED server-side (toast explains
+    the adjustment-journal route).
+6.3 Credit limit: stored per customer + currency; exposed to invoice creation as a
+    warning/block flag per existing settings — do not change invoice flow here.
+6.4 Audit: create/update/delete/opening-journal events logged with user + timestamp;
+    delete is a hard delete only under the §5.2 guard, else inactive-status is the remedy.
+6.5 Terms keys: receipt|net15|net30|net60|custom with days integer; due-date calculation on
+    documents uses days (preset map or custom value).
+
+==================== 7 · BEHAVIOUR / A11Y / RESPONSIVE ====================
+7.1 Esc/scrim-click close order: confirm → form → view. View→Edit hand-off preserves context.
+7.2 Row actions delegated so server-paginated/inserted rows work without re-binding.
+7.3 ≤1080px rail stacks under main, stats 1-col; ≤760px form grids 1-col, modals full-bleed.
+7.4 Toasts for every mutation; no inline alerts; no layout shift on row replace.
+
+==================== 8 · CONSTRAINTS ====================
+8.1 Keep existing ids/names/data-attributes where present; add classes only.
+8.2 No sample/hardcoded data in production views — every tile, chip, row and modal value
+    renders from server payloads; zero-states per R8.
+8.3 R1–R8 enforced by review greps (no backdrop-filter; no eyebrow in dialogs; confirm on delete).
+
+==================== 9 · VERIFY ====================
+9.1 Parity pass vs APPENDIX A at 1440/1280/1024/768 (head, tiles, toolbar, table, rail,
+    all three dialogs incl. 3-col terms grid wrapping).
+9.2 CRUD round-trip: create with custom terms + opening balance ⇒ row chip "Net 45",
+    balance tile/row show opening, opening journal exists & cross-linked; edit ⇒ row updates
+    in place; delete guarded customer ⇒ 409 toast; eligible delete ⇒ row removed + counts shift.
+9.3 Filters/search/views sync both ways; pagination preserves filter state; export + reports
+    hit existing endpoints; statement print matches the print pipeline (A4, footer at bottom).
+9.4 Validation matrix: missing name / missing terms / custom without days / opening without
+    date each block save with red state + toast.
+9.5 No console/build errors; reduced-motion + focus-visible verified.
+REPORT: files touched; migration diff; endpoint map (index/view/save/delete/statement/
+export/reports); opening-balance journal sample payload; R1–R8 grep proofs; parity screenshots
+(register + each modal); NO SECTION SKIPPED.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customers — Form modal with full field set</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --green:#15803d; --red:#dc2626; --red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --sh-lift: 0 2px 4px rgba(10,42,46,.06), 0 20px 44px -18px rgba(10,42,46,.22), inset 0 1px 0 #fff;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background:
+      radial-gradient(900px 380px at 8% -10%, rgba(18,143,142,.09), transparent 60%),
+      linear-gradient(180deg, #eef4f4 0%, #e7efee 100%);
+    min-height: 100vh; color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select, textarea { font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 26px 26px 80px; }
+
+  .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .phead h1 { font-size: 26px; font-weight: 900; letter-spacing: -0.025em; }
+  .phead .sub { margin-top: 5px; font-size: 13px; color: var(--muted); }
+  .pacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .16s ease; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .btn-ghost { background: #fff; border-color: var(--border); color: var(--sub); box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .btn-ghost:hover { border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-cta { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-cta:hover { box-shadow: 0 8px 18px -6px rgba(18,143,142,.7), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-danger { background: var(--red); color: #fff; box-shadow: 0 4px 12px -5px rgba(220,38,38,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-danger:hover { background: var(--red-2); }
+  .btn-sm { height: 34px; padding: 0 13px; font-size: 12.5px; border-radius: 10px; }
+
+  .layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 18px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--sh-card); display: flex; align-items: center; gap: 13px; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0ms); transition: transform .18s ease, box-shadow .18s ease; }
+  .stat:hover { transform: translateY(-2px); box-shadow: var(--sh-lift); }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
+  .stat .ic { width: 42px; height: 42px; min-width: 42px; border-radius: 12px; display: grid; place-items: center; background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.22); color: var(--sec); }
+  .stat .ic svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .stat .l { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .stat .v { margin-top: 3px; font-size: 22px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stat .n { margin-top: 4px; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+  .stat .n.ok { background: rgba(21,128,61,.10); color: var(--green); }
+  .stat .n.flat { background: rgba(17,69,75,.07); color: var(--muted); }
+
+  .tcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 80ms; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .searchwrap { position: relative; flex: 1; min-width: 220px; }
+  .searchwrap svg { position: absolute; left: 12px; top: 11px; width: 15px; height: 15px; stroke: var(--faint); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+  .in, .sel { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafb; font-size: 12.5px; font-weight: 600; color: var(--ink); outline: none; transition: all .15s; width: 100%; }
+  .searchwrap .in { padding-left: 36px; }
+  .in:focus, .sel:focus, textarea.in:focus { border-color: rgba(18,143,142,.45); background: #fff; box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .in.bad, .sel.bad { border-color: rgba(220,38,38,.55); background: #fef2f2; box-shadow: 0 0 0 4px rgba(220,38,38,.08); }
+  .sel { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%); background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .cnt { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.24); padding: 6px 12px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 11px 16px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(18,143,142,.18); font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; white-space: nowrap; }
+  thead th.r { text-align: right; }
+  tbody td { padding: 12px 16px; border-top: 1px solid var(--hair); vertical-align: middle; font-size: 12.5px; color: var(--sub); }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(18,143,142,.035); }
+
+  .cust { display: flex; align-items: center; gap: 11px; }
+  .av { position: relative; width: 34px; height: 34px; min-width: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(180deg, rgba(18,143,142,.14), rgba(18,143,142,.07)); border: 1px solid rgba(18,143,142,.26); color: var(--deep-1); font-size: 12px; font-weight: 800; letter-spacing: .02em; }
+  .av i { position: absolute; right: -3px; bottom: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--green); border: 2px solid #fff; }
+  .av.off { background: rgba(17,69,75,.07); border-color: rgba(17,69,75,.16); color: var(--muted); }
+  .av.off i { background: var(--faint); }
+  .cust .nm { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .cust .sn { display: block; font-size: 10px; font-weight: 600; color: var(--faint); margin-top: 1px; }
+  .em { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+  .ph { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tchip { display: inline-flex; padding: 3px 9px; border-radius: 999px; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.14); color: var(--muted); font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .bal { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.on { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .pill.off { background: rgba(17,69,75,.07); color: var(--muted); border: 1px solid rgba(17,69,75,.18); }
+  .ib { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; transition: all .15s; vertical-align: middle; }
+  .ib + .ib { margin-left: 6px; }
+  .ib svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ib:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.06); transform: translateY(-1px); }
+  .ib.del:hover { border-color: rgba(220,38,38,.45); color: var(--red); background: rgba(220,38,38,.06); }
+  .tfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--hair); background: #fbfdfc; font-size: 11.5px; font-weight: 600; color: var(--faint); flex-wrap: wrap; }
+  .empty { padding: 46px 20px; text-align: center; }
+  .empty .halo { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.2); color: var(--sec); }
+  .empty .halo svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .empty .t { font-size: 14px; font-weight: 800; color: var(--sub); }
+  .empty .s { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
+  .rcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 140ms; }
+  .rcard + .rcard { margin-top: 18px; }
+  .rhead { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .rhead .ric { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .rhead .ric svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .rhead .rt { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .rhead .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .rbody { padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .vitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid transparent; background: transparent; font-size: 12.5px; font-weight: 700; color: var(--sub); text-align: left; cursor: pointer; transition: all .16s ease; }
+  .vitem .vic { width: 28px; height: 28px; min-width: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.12); color: var(--muted); transition: all .16s ease; }
+  .vitem .vic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .vitem .vc { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .vitem:hover { background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.18); color: var(--ink); }
+  .vitem:hover .vic { background: rgba(18,143,142,.10); color: var(--sec); }
+  .vitem.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .vitem.on .vic { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); color: #fff; }
+  .vitem.on .vc { background: rgba(255,255,255,.2); color: #fff; }
+
+  /* ============ MODALS ============ */
+  .scrim { position: fixed; inset: 0; background: rgba(11,42,45,.26); display: none; place-items: center; padding: 24px; z-index: 90; }
+  .scrim.on { display: grid; animation: fadeIn .2s ease; }
+  .scrim.cf { z-index: 140; background: rgba(11,42,45,.45); }
+  .mbox { width: min(980px, calc(100vw - 48px)); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 24px 60px -20px rgba(10,42,46,.35), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .mbox.narrow { width: min(660px, calc(100vw - 48px)); }
+  .mbox.formw { width: min(820px, calc(100vw - 48px)); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 15px 22px; background: radial-gradient(700px 200px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); flex: none; }
+  .m-ic { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; background: #fff; display: grid; place-items: center; color: var(--deep-2); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .m-ic svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-ic.avini { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; font-size: 12px; font-weight: 800; letter-spacing: .02em; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+  .m-head-left { flex: 1; min-width: 0; }
+  .m-title { display: block; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .m-sub { display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; color: rgba(255,255,255,.6); margin-top: 2px; }
+  .m-pill.on { background: rgba(127,209,192,.16); color: var(--mint); border: 1px solid rgba(127,209,192,.4); }
+  .m-pill.off { background: rgba(255,255,255,.10); color: rgba(226,244,244,.75); border: 1px solid rgba(255,255,255,.22); }
+  .m-close { margin-left: auto; width: 30px; height: 30px; min-width: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .m-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding: 10px 22px; border-bottom: 1px solid var(--hair); background: #fbfdfc; flex: none; }
+  .mchip { font-size: 10.5px; font-weight: 800; color: var(--muted); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
+  .mchip.mono { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.07); border-color: rgba(18,143,142,.22); }
+  .mchip.b { color: var(--ink); }
+  .m-body { padding: 16px 22px 18px; overflow: auto; flex: 1; }
+  .vgrid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 20px; }
+  .vsec { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+  .mrow { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--hair); font-size: 12.5px; }
+  .mrow:last-child { border-bottom: none; }
+  .mrow .l { color: var(--muted); font-weight: 600; }
+  .mrow .v { color: var(--ink); font-weight: 700; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+  .mrow .v.mono { font-family: var(--mono); color: var(--sec); font-size: 12px; }
+  .fins { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fin { background: #f8fbfa; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .fin .l { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .fin .v { font-size: 15px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; margin-top: 3px; }
+  .fin .v.ok { color: var(--green); }
+  .mtable { width: 100%; border-collapse: collapse; margin-top: 2px; }
+  .mtable th { padding: 8px 10px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .mtable th.r { text-align: right; }
+  .mtable td { padding: 9px 10px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .mtable td.mono { font-family: var(--mono); color: var(--sec); font-weight: 700; font-size: 11.5px; }
+  .mtable td.r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); }
+  .mnote-sm { font-size: 11.5px; font-weight: 600; color: var(--faint); padding: 10px 2px 0; }
+  .m-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 13px 22px; border-top: 1px solid var(--hair); background: #f8fafa; flex: none; }
+  .mnote { font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--hair); border-radius: 9px; padding: 8px 12px; margin-right: auto; }
+
+  /* form sections */
+  .fsec { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .fsec .fs-ic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .fsec .fs-ic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .fsec .fs-t { font-size: 12.5px; font-weight: 800; color: var(--ink); }
+  .fsec .fs-rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .f-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .fld label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .fld label b { color: var(--red); }
+  textarea.in { height: 68px; padding: 10px 12px; resize: vertical; font-weight: 500; }
+
+  .cbox { width: min(460px, 100%); background: #fff; border-radius: 18px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 24px 60px -20px rgba(8,40,44,.55); overflow: hidden; animation: slideUp .25s cubic-bezier(.2,.8,.2,1); }
+  .cb-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; background: linear-gradient(180deg, #fdfeff, #f6fbf9); border-bottom: 1px solid var(--hair); }
+  .cb-ic { width: 30px; height: 30px; min-width: 30px; border-radius: 9px; display: grid; place-items: center; }
+  .cb-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .cb-ic.danger { background: rgba(220,38,38,.1); color: var(--red); }
+  .cb-head b { font-size: 14px; font-weight: 800; color: var(--ink); flex: 1; }
+  .cb-x { border: none; background: none; color: var(--faint); cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; }
+  .cb-x:hover { background: var(--hair); color: var(--ink); }
+  .cb-x svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .cb-body { padding: 16px 18px; font-size: 12.5px; font-weight: 500; color: var(--sub); line-height: 1.65; }
+  .cb-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--hair); background: #f8fafa; }
+
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); background: var(--deep-2); color: #eaffff; font-size: 12px; font-weight: 700; padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(127,209,192,.3); box-shadow: 0 14px 30px -12px rgba(6,32,35,.7); opacity: 0; visibility: hidden; transition: all .25s ease; z-index: 300; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast.on { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1080px) { .layout { grid-template-columns: 1fr; } .stats { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) { .vgrid, .f-grid, .f-grid3 { grid-template-columns: 1fr; } .mbox, .mbox.narrow, .mbox.formw { width: calc(100vw - 24px); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="phead">
+    <div>
+      <h1>Customers</h1>
+      <div class="sub">Manage customer records, terms and balances.</div>
+    </div>
+    <div class="pacts">
+      <button class="btn btn-ghost" id="btnExport"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+      <button class="btn btn-cta" id="btnNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create Customer</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <main class="col">
+
+      <section class="stats">
+        <div class="stat" style="--d:40ms">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+          <span><span class="l">Customers</span><span class="v" id="stTotal">6</span><br><span class="n flat">All records</span></span>
+        </div>
+        <div class="stat" style="--d:90ms">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>
+          <span><span class="l">Active</span><span class="v" id="stActive">6</span><br><span class="n ok">100% of book</span></span>
+        </div>
+        <div class="stat" style="--d:140ms">
+          <span class="ic"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+          <span><span class="l">Outstanding ($)</span><span class="v">0.00</span><br><span class="n ok">All settled</span></span>
+        </div>
+      </section>
+
+      <section class="tcard">
+        <div class="toolbar">
+          <div class="searchwrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="in" type="text" id="q" placeholder="Name or email…">
+          </div>
+          <select class="sel" id="fStatus" style="width:auto">
+            <option value="">All Statuses</option><option value="active">Active</option><option value="inactive">Inactive</option>
+          </select>
+          <select class="sel" id="fTerms" style="width:auto">
+            <option value="">All Terms</option><option value="net15">Net 15</option><option value="net30">Net 30</option><option value="net60">Net 60</option><option value="receipt">Due on receipt</option>
+          </select>
+          <button class="btn btn-ghost" style="height:38px" id="btnFilter"><svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg>Filter</button>
+          <span class="cnt" id="cnt">6 customers</span>
+        </div>
+
+        <table>
+          <thead>
+            <tr><th style="width:24%">Name</th><th>Email</th><th>Phone</th><th>Terms</th><th class="r">Balance ($)</th><th>Status</th><th class="r">Actions</th></tr>
+          </thead>
+          <tbody id="custBody">
+            <tr class="crow" data-id="c1" data-status="active" data-terms="net15" data-search="chisomo phiri chisomo.phiri@customer.mw">
+              <td><span class="cust"><span class="av">CP<i></i></span><span><span class="nm">Chisomo Phiri</span><span class="sn">Since Aug 2026</span></span></span></td>
+              <td><span class="em">chisomo.phiri@customer.mw</span></td>
+              <td class="ph">+265 992 222 118</td>
+              <td><span class="tchip">Net 15</span></td>
+              <td class="bal">0.00</td>
+              <td><span class="pill on"><i></i>Active</span></td>
+              <td class="r" style="white-space:nowrap">
+                <button class="ib" data-act="view" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button class="ib" data-act="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
+                <button class="ib del" data-act="delete" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L5 6"/></svg></button>
+              </td>
+            </tr>
+            <tr class="crow" data-id="c2" data-status="active" data-terms="net30" data-search="grace banda grace.banda@customer.mw">
+              <td><span class="cust"><span class="av">GB<i></i></span><span><span class="nm">Grace Banda</span><span class="sn">Since Aug 2026</span></span></span></td>
+              <td><span class="em">grace.banda@customer.mw</span></td>
+              <td class="ph">+265 991 111 001</td>
+              <td><span class="tchip">Net 30</span></td>
+              <td class="bal">0.00</td>
+              <td><span class="pill on"><i></i>Active</span></td>
+              <td class="r" style="white-space:nowrap">
+                <button class="ib" data-act="view" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button class="ib" data-act="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
+                <button class="ib del" data-act="delete" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L5 6"/></svg></button>
+              </td>
+            </tr>
+            <tr class="crow" data-id="c3" data-status="active" data-terms="net30" data-search="joseph kachale joseph.kachale@customer.mw">
+              <td><span class="cust"><span class="av">JK<i></i></span><span><span class="nm">Joseph Kachale</span><span class="sn">Since Aug 2026</span></span></span></td>
+              <td><span class="em">joseph.kachale@customer.mw</span></td>
+              <td class="ph">+265 996 666 214</td>
+              <td><span class="tchip">Net 30</span></td>
+              <td class="bal">0.00</td>
+              <td><span class="pill on"><i></i>Active</span></td>
+              <td class="r" style="white-space:nowrap">
+                <button class="ib" data-act="view" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button class="ib" data-act="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
+                <button class="ib del" data-act="delete" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L5 6"/></svg></button>
+              </td>
+            </tr>
+            <tr class="crow" data-id="c4" data-status="active" data-terms="net30" data-search="limbani nyirenda limbani.nyirenda@customer.mw">
+              <td><span class="cust"><span class="av">LN<i></i></span><span><span class="nm">Limbani Nyirenda</span><span class="sn">Since Aug 2026</span></span></span></td>
+              <td><span class="em">limbani.nyirenda@customer.mw</span></td>
+              <td class="ph">+265 993 333 097</td>
+              <td><span class="tchip">Net 30</span></td>
+              <td class="bal">0.00</td>
+              <td><span class="pill on"><i></i>Active</span></td>
+              <td class="r" style="white-space:nowrap">
+                <button class="ib" data-act="view" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button class="ib" data-act="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
+                <button class="ib del" data-act="delete" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L5 6"/></svg></button>
+              </td>
+            </tr>
+            <tr class="crow" data-id="c5" data-status="active" data-terms="net60" data-search="mary chilumpha mary.chilumpha@customer.mw">
+              <td><span class="cust"><span class="av">MC<i></i></span><span><span class="nm">Mary Chilumpha</span><span class="sn">Since Aug 2026</span></span></span></td>
+              <td><span class="em">mary.chilumpha@customer.mw</span></td>
+              <td class="ph">+265 995 555 730</td>
+              <td><span class="tchip">Net 60</span></td>
+              <td class="bal">0.00</td>
+              <td><span class="pill on"><i></i>Active</span></td>
+              <td class="r" style="white-space:nowrap">
+                <button class="ib" data-act="view" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button class="ib" data-act="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
+                <button class="ib del" data-act="delete" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L5 6"/></svg></button>
+              </td>
+            </tr>
+            <tr class="crow" data-id="c6" data-status="active" data-terms="receipt" data-search="takondwa mwale takondwa.mwale@customer.mw">
+              <td><span class="cust"><span class="av">TM<i></i></span><span><span class="nm">Takondwa Mwale</span><span class="sn">Since Aug 2026</span></span></span></td>
+              <td><span class="em">takondwa.mwale@customer.mw</span></td>
+              <td class="ph">+265 994 444 852</td>
+              <td><span class="tchip">Due on receipt</span></td>
+              <td class="bal">0.00</td>
+              <td><span class="pill on"><i></i>Active</span></td>
+              <td class="r" style="white-space:nowrap">
+                <button class="ib" data-act="view" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button class="ib" data-act="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>
+                <button class="ib del" data-act="delete" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L5 6"/></svg></button>
+              </td>
+            </tr>
+            <tr id="noRes" style="display:none"><td colspan="7"><div class="empty"><div class="halo"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="t">No customers match</div><div class="s">Adjust the search or filters, or create a new customer.</div></div></td></tr>
+          </tbody>
+        </table>
+        <div class="tfoot"><span id="showing">Showing 6 of 6 customers</span><span>Terms &amp; balances sync from the ledger nightly</span></div>
+      </section>
+    </main>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Views</span><span class="rule"></span></div>
+        <div class="rbody" id="views">
+          <button class="vitem on" data-view="all"><span class="vic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>All Customers<span class="vc" data-c="all">6</span></button>
+          <button class="vitem" data-view="active"><span class="vic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>Active<span class="vc" data-c="active">6</span></button>
+          <button class="vitem" data-view="inactive"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>Inactive<span class="vc" data-c="inactive">0</span></button>
+        </div>
+      </section>
+
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Reports</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" data-rep="1"><span class="vic"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>Customer Balances</button>
+          <button class="vitem" data-rep="2"><span class="vic"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg></span>Sales by Customer</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- ============ VIEW CUSTOMER MODAL ============ -->
+<div class="scrim" id="viewScrim">
+  <div class="mbox" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic avini" id="vAv">CP</span>
+      <div class="m-head-left">
+        <span class="m-title" id="vName">Customer</span>
+        <span class="m-sub" id="vCode">CUS-0000</span>
+      </div>
+      <span class="pill m-pill on" id="vPill"><i></i>Active</span>
+      <button class="m-close" data-close="viewScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="vMeta"></div>
+    <div class="m-body">
+      <div class="vgrid">
+        <div>
+          <div class="vsec">Contact &amp; record</div>
+          <div class="mrow"><span class="l">Display name</span><span class="v" id="vDisplay">—</span></div>
+          <div class="mrow"><span class="l">Email</span><span class="v mono" id="vEmail">—</span></div>
+          <div class="mrow"><span class="l">Phone</span><span class="v" id="vPhone">—</span></div>
+          <div class="mrow"><span class="l">Billing address</span><span class="v" id="vBill">—</span></div>
+          <div class="mrow"><span class="l">Customer since</span><span class="v" id="vSince">—</span></div>
+        </div>
+        <div>
+          <div class="vsec">Terms &amp; financial position</div>
+          <div class="fins">
+            <div class="fin"><div class="l">Current balance</div><div class="v ok" id="vBal">0.00</div></div>
+            <div class="fin"><div class="l">Credit limit</div><div class="v" id="vLimit">0.00</div></div>
+            <div class="fin"><div class="l">Opening balance</div><div class="v" id="vOpenBal">—</div></div>
+            <div class="fin"><div class="l">Lifetime sales</div><div class="v" id="vSales">0.00</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="vsec" style="margin-top:16px">Recent activity</div>
+      <table class="mtable">
+        <thead><tr><th>Reference</th><th>Date</th><th>Type</th><th class="r">Amount</th><th>Status</th></tr></thead>
+        <tbody id="vAct"></tbody>
+      </table>
+      <div class="mnote-sm" id="vNoAct" style="display:none">No transactions yet for this customer.</div>
+    </div>
+    <div class="m-foot">
+      <span class="mnote" id="vNote">Standing: good · last statement 31 Aug 2026</span>
+      <button class="btn btn-ghost btn-sm" id="vStmt"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print statement</button>
+      <button class="btn btn-cta btn-sm" id="vEdit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>Edit customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CREATE / EDIT MODAL (full field set) ============ -->
+<div class="scrim" id="formScrim">
+  <div class="mbox formw" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg></span>
+      <div class="m-head-left">
+        <span class="m-title" id="fTitle">Create customer</span>
+        <span class="m-sub" id="fSub">New record</span>
+      </div>
+      <button class="m-close" data-close="formScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-body">
+      <!-- CONTACT -->
+      <div class="fsec">
+        <span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <span class="fs-t">Contact Information</span><span class="fs-rule"></span>
+      </div>
+      <div class="f-grid">
+        <div class="fld"><label>Name <b>*</b></label><input class="in" id="fName" placeholder="e.g. Jane Mwale"></div>
+        <div class="fld"><label>Display name</label><input class="in" id="fDisplay" placeholder="e.g. J. Mwale Trading"></div>
+        <div class="fld"><label>Email</label><input class="in" id="fEmail" type="email" placeholder="name@company.com"></div>
+        <div class="fld"><label>Phone</label><input class="in" id="fPhone" placeholder="+265 99 123 4567"></div>
+        <div class="fld"><label>Billing address</label><textarea class="in" id="fBill" placeholder="Street, city, country…"></textarea></div>
+        <div class="fld"><label>Shipping address</label><textarea class="in" id="fShip" placeholder="Street, city, country…"></textarea></div>
+      </div>
+
+      <!-- TERMS & ACCOUNTING -->
+      <div class="fsec" style="margin-top:18px">
+        <span class="fs-ic"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+        <span class="fs-t">Terms &amp; Accounting</span><span class="fs-rule"></span>
+      </div>
+      <div class="f-grid3">
+        <div class="fld"><label>Currency</label>
+          <select class="sel" id="fCur">
+            <option value="$" selected>$ · US Dollar</option>
+            <option value="K">K · Malawi Kwacha</option>
+            <option value="R">R · South African Rand</option>
+            <option value="€">€ · Euro</option>
+          </select>
+        </div>
+        <div class="fld"><label>Payment terms</label>
+          <select class="sel" id="fTerms2">
+            <option value="">Select terms…</option>
+            <option value="receipt">Due on receipt</option>
+            <option value="net15">Net 15</option>
+            <option value="net30">Net 30</option>
+            <option value="net60">Net 60</option>
+            <option value="custom">Custom (days)</option>
+          </select>
+        </div>
+        <div class="fld"><label>Payment terms (days)</label><input class="in" id="fDays" type="number" min="0" step="1" placeholder="e.g. 30"></div>
+        <div class="fld"><label id="lblLimit">Credit limit ($)</label><input class="in" id="fLimit" type="number" min="0" step="100" placeholder="0.00"></div>
+        <div class="fld"><label id="lblOpen">Opening balance ($)</label><input class="in" id="fOpen" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="fld"><label>Opening balance date</label><input class="in" id="fOpenDate" type="date"></div>
+      </div>
+      <div class="fld" style="margin-top:12px"><label>Notes</label><textarea class="in" id="fNotes" placeholder="Internal notes (audit-visible)…"></textarea></div>
+    </div>
+    <div class="m-foot">
+      <span class="mnote">* required · customer code is assigned automatically on save</span>
+      <button class="btn btn-ghost btn-sm" data-close="formScrim">Cancel</button>
+      <button class="btn btn-cta btn-sm" id="fSave"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Save customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DELETE CONFIRM ============ -->
+<div class="scrim cf" id="delScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head">
+      <span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+      <b id="delTitle">Delete customer?</b>
+      <button class="cb-x" data-close="delScrim" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="cb-body" id="delMsg"></div>
+    <div class="cb-foot">
+      <button class="btn btn-ghost btn-sm" data-close="delScrim">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="delOk">Delete permanently</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  var toastEl = $('toast'), toastT;
+  function toast(m) { toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 3200); }
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  var TERMS = { net15: 'Net 15', net30: 'Net 30', net60: 'Net 60', receipt: 'Due on receipt' };
+  function termsLabel(c) { return c.terms === 'custom' ? ('Net ' + (c.days || 0)) : (TERMS[c.terms] || '—'); }
+
+  /* ---------- data ---------- */
+  var CUST = {
+    c1: { id:'c1', code:'CUS-0001', name:'Chisomo Phiri', display:'C. Phiri Enterprises', email:'chisomo.phiri@customer.mw', phone:'+265 992 222 118', bill:'14 Area 47, Lilongwe', ship:'14 Area 47, Lilongwe', terms:'net15', days:15, cur:'$', status:'active', since:'Aug 2026', limit:50000, balance:0, opening:0, openDate:'', open:0, sales:412000,
+      act:[['INV-2026-0014','28 Aug 2026','Invoice','86,500.00','Paid'],['RCT-2026-0011','29 Aug 2026','Receipt','86,500.00','Cleared'],['INV-2026-0009','22 Aug 2026','Invoice','130,400.00','Paid']] },
+    c2: { id:'c2', code:'CUS-0002', name:'Grace Banda', display:'GB Traders', email:'grace.banda@customer.mw', phone:'+265 991 111 001', bill:'Plot 22, Kanengo, Lilongwe', ship:'Plot 22, Kanengo, Lilongwe', terms:'net30', days:30, cur:'$', status:'active', since:'Aug 2026', limit:80000, balance:0, opening:0, openDate:'', open:0, sales:268400,
+      act:[['INV-2026-0011','25 Aug 2026','Invoice','64,200.00','Paid'],['RCT-2026-0008','27 Aug 2026','Receipt','64,200.00','Cleared']] },
+    c3: { id:'c3', code:'CUS-0003', name:'Joseph Kachale', display:'', email:'joseph.kachale@customer.mw', phone:'+265 996 666 214', bill:'Chilomoni, Blantyre', ship:'', terms:'net30', days:30, cur:'$', status:'active', since:'Aug 2026', limit:60000, balance:0, opening:0, openDate:'', open:0, sales:154800,
+      act:[['INV-2026-0007','20 Aug 2026','Invoice','42,000.00','Paid']] },
+    c4: { id:'c4', code:'CUS-0004', name:'Limbani Nyirenda', display:'', email:'limbani.nyirenda@customer.mw', phone:'+265 993 333 097', bill:'Mzuzu Central', ship:'', terms:'net30', days:30, cur:'$', status:'active', since:'Aug 2026', limit:60000, balance:0, opening:0, openDate:'', open:0, sales:98600,
+      act:[['INV-2026-0005','18 Aug 2026','Invoice','31,500.00','Paid']] },
+    c5: { id:'c5', code:'CUS-0005', name:'Mary Chilumpha', display:'MC Holdings', email:'mary.chilumpha@customer.mw', phone:'+265 995 555 730', bill:'33 Namiwawa, Zomba', ship:'33 Namiwawa, Zomba', terms:'net60', days:60, cur:'$', status:'active', since:'Aug 2026', limit:120000, balance:0, opening:0, openDate:'', open:0, sales:502300,
+      act:[['INV-2026-0012','26 Aug 2026','Invoice','118,000.00','Paid'],['INV-2026-0003','15 Aug 2026','Invoice','96,400.00','Paid']] },
+    c6: { id:'c6', code:'CUS-0006', name:'Takondwa Mwale', display:'', email:'takondwa.mwale@customer.mw', phone:'+265 994 444 852', bill:'Area 25, Lilongwe', ship:'', terms:'receipt', days:0, cur:'$', status:'active', since:'Aug 2026', limit:0, balance:0, opening:0, openDate:'', open:0, sales:45200,
+      act:[['INV-2026-0002','12 Aug 2026','Invoice','18,000.00','Paid']] }
+  };
+  var seq = 7, editingId = null, deletingId = null, viewingId = null;
+
+  function initials(name) { return name.trim().split(/\s+/).map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase(); }
+
+  /* ---------- list ---------- */
+  var view = 'all';
+  function getRows() { return [].slice.call(document.querySelectorAll('#custBody tr.crow')); }
+  function apply() {
+    var q = $('q').value.trim().toLowerCase(), st = $('fStatus').value, tm = $('fTerms').value;
+    var shown = 0;
+    getRows().forEach(function (tr) {
+      var ok = true;
+      if (view !== 'all' && tr.dataset.status !== view) ok = false;
+      if (st && tr.dataset.status !== st) ok = false;
+      if (tm && tr.dataset.terms !== tm) ok = false;
+      if (q && tr.dataset.search.toLowerCase().indexOf(q) === -1) ok = false;
+      tr.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    $('noRes').style.display = shown ? 'none' : '';
+    $('cnt').textContent = shown + ' customer' + (shown === 1 ? '' : 's');
+    $('showing').textContent = 'Showing ' + shown + ' of ' + getRows().length + ' customers';
+  }
+  function counts() {
+    var rows = getRows(), c = { all: rows.length, active: 0, inactive: 0 };
+    rows.forEach(function (tr) { c[tr.dataset.status]++; });
+    document.querySelectorAll('.vc').forEach(function (el) { el.textContent = c[el.dataset.c]; });
+    $('stTotal').textContent = c.all;
+    $('stActive').textContent = c.active;
+  }
+  $('q').addEventListener('input', apply);
+  $('fStatus').addEventListener('change', function () {
+    view = this.value || 'all';
+    document.querySelectorAll('#views .vitem').forEach(function (b) { b.classList.toggle('on', b.dataset.view === view); });
+    apply();
+  });
+  $('fTerms').addEventListener('change', apply);
+  $('btnFilter').addEventListener('click', function () { apply(); toast('Filters applied'); });
+  document.querySelectorAll('#views .vitem').forEach(function (b) {
+    b.addEventListener('click', function () {
+      view = b.dataset.view;
+      document.querySelectorAll('#views .vitem').forEach(function (x) { x.classList.toggle('on', x === b); });
+      $('fStatus').value = view === 'all' ? '' : view;
+      apply();
+    });
+  });
+  document.querySelectorAll('[data-rep]').forEach(function (b) { b.addEventListener('click', function () { toast('📊 ' + b.textContent.trim() + ' report queued'); }); });
+  $('btnExport').addEventListener('click', function () { toast('⤓ Customer list export queued (CSV / PDF)'); });
+
+  /* ---------- modal helpers ---------- */
+  function open(id) { $(id).classList.add('on'); }
+  function close(id) { $(id).classList.remove('on'); }
+  document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { close(b.dataset.close); }); });
+  document.querySelectorAll('.scrim').forEach(function (s) { s.addEventListener('click', function (e) { if (e.target === s) s.classList.remove('on'); }); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if ($('delScrim').classList.contains('on')) close('delScrim');
+      else if ($('formScrim').classList.contains('on')) close('formScrim');
+      else if ($('viewScrim').classList.contains('on')) close('viewScrim');
+    }
+  });
+
+  /* ---------- view modal ---------- */
+  function openView(id) {
+    var c = CUST[id]; if (!c) return;
+    viewingId = id;
+    $('vAv').textContent = initials(c.name);
+    $('vName').textContent = c.name;
+    $('vCode').textContent = c.code;
+    var pill = $('vPill');
+    pill.className = 'pill m-pill ' + (c.status === 'active' ? 'on' : 'off');
+    pill.innerHTML = '<i></i>' + (c.status === 'active' ? 'Active' : 'Inactive');
+    $('vMeta').innerHTML =
+      '<span class="mchip b">' + termsLabel(c) + '</span>' +
+      '<span class="mchip mono">' + c.cur + ' currency</span>' +
+      '<span class="mchip">Since ' + c.since + '</span>' +
+      '<span class="mchip">Head Office</span>' +
+      '<span class="mchip mono">' + c.email + '</span>';
+    $('vDisplay').textContent = c.display || '—';
+    $('vEmail').textContent = c.email || '—';
+    $('vPhone').textContent = c.phone || '—';
+    $('vBill').textContent = c.bill || '—';
+    $('vSince').textContent = c.since;
+    $('vBal').textContent = c.cur + ' ' + fmt(c.balance);
+    $('vBal').className = 'v ' + (c.balance > 0 ? '' : 'ok');
+    $('vLimit').textContent = c.limit ? c.cur + ' ' + fmt(c.limit) : 'No limit';
+    $('vOpenBal').textContent = c.opening ? c.cur + ' ' + fmt(c.opening) + ' · ' + (c.openDate || '—') : '—';
+    $('vSales').textContent = c.cur + ' ' + fmt(c.sales);
+    var act = $('vAct');
+    if (c.act && c.act.length) {
+      act.parentElement.style.display = '';
+      $('vNoAct').style.display = 'none';
+      act.innerHTML = c.act.map(function (r) {
+        return '<tr><td class="mono">' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td class="r">' + r[3] + '</td><td><span class="pill on"><i></i>' + r[4] + '</span></td></tr>';
+      }).join('');
+    } else {
+      act.parentElement.style.display = 'none';
+      $('vNoAct').style.display = '';
+    }
+    $('vNote').textContent = c.status === 'active' ? 'Standing: good · last statement 31 Aug 2026' : 'Inactive — no new sales orders allowed';
+    open('viewScrim');
+  }
+  $('vStmt').addEventListener('click', function () { toast('🖨 Statement for ' + (CUST[viewingId] ? CUST[viewingId].name : 'customer') + ' sent to print / PDF'); });
+  $('vEdit').addEventListener('click', function () { close('viewScrim'); openForm(viewingId); });
+
+  /* ---------- create / edit modal ---------- */
+  function syncCur() {
+    var s = $('fCur').value;
+    $('lblLimit').innerHTML = 'Credit limit (' + s + ')';
+    $('lblOpen').innerHTML = 'Opening balance (' + s + ')';
+  }
+  $('fCur').addEventListener('change', syncCur);
+  $('fTerms2').addEventListener('change', function () {
+    var map = { receipt: 0, net15: 15, net30: 30, net60: 60 };
+    if (this.value in map) $('fDays').value = map[this.value];
+    this.classList.remove('bad');
+  });
+
+  function openForm(id) {
+    editingId = id || null;
+    var c = id ? CUST[id] : null;
+    $('fTitle').textContent = c ? 'Edit customer' : 'Create customer';
+    $('fSub').textContent = c ? c.code + ' · ' + c.name : 'New record';
+    $('fName').value = c ? c.name : '';
+    $('fName').classList.remove('bad');
+    $('fDisplay').value = c ? (c.display || '') : '';
+    $('fEmail').value = c ? (c.email || '') : '';
+    $('fPhone').value = c ? (c.phone || '') : '';
+    $('fBill').value = c ? (c.bill || '') : '';
+    $('fShip').value = c ? (c.ship || '') : '';
+    $('fCur').value = c ? (c.cur || '$') : '$';
+    $('fTerms2').value = c ? c.terms : '';
+    $('fTerms2').classList.remove('bad');
+    $('fDays').value = c ? (c.days != null ? c.days : '') : '';
+    $('fLimit').value = c ? (c.limit || '') : '';
+    $('fOpen').value = c ? (c.opening || '') : '';
+    $('fOpenDate').value = c ? (c.openDate || '') : '';
+    $('fNotes').value = '';
+    syncCur();
+    open('formScrim');
+  }
+  $('btnNew').addEventListener('click', function () { openForm(null); });
+
+  var ACT_BTNS =
+    '<button class="ib" data-act="view" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>' +
+    '<button class="ib" data-act="edit" title="Edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg></button>' +
+    '<button class="ib del" data-act="delete" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L5 6"/></svg></button>';
+
+  function rowHTML(c) {
+    return '<tr class="crow" data-id="' + c.id + '" data-status="' + c.status + '" data-terms="' + c.terms + '" data-search="' + (c.name + ' ' + (c.display || '') + ' ' + c.email).toLowerCase() + '">' +
+      '<td><span class="cust"><span class="av' + (c.status === 'active' ? '' : ' off') + '">' + initials(c.name) + '<i></i></span><span><span class="nm">' + c.name + '</span><span class="sn">Since ' + c.since + '</span></span></span></td>' +
+      '<td><span class="em">' + (c.email || '—') + '</span></td>' +
+      '<td class="ph">' + (c.phone || '—') + '</td>' +
+      '<td><span class="tchip">' + termsLabel(c) + '</span></td>' +
+      '<td class="bal">' + fmt(c.balance) + '</td>' +
+      '<td><span class="pill ' + (c.status === 'active' ? 'on' : 'off') + '"><i></i>' + (c.status === 'active' ? 'Active' : 'Inactive') + '</span></td>' +
+      '<td class="r" style="white-space:nowrap">' + ACT_BTNS + '</td></tr>';
+  }
+
+  $('fSave').addEventListener('click', function () {
+    var name = $('fName').value.trim();
+    if (!name) { $('fName').classList.add('bad'); toast('Customer name is required'); return; }
+    $('fName').classList.remove('bad');
+    var terms = $('fTerms2').value;
+    if (!terms) { $('fTerms2').classList.add('bad'); toast('Payment terms are required'); return; }
+    $('fTerms2').classList.remove('bad');
+    var days = Number($('fDays').value || 0);
+    if (terms === 'custom' && !(days > 0)) { $('fDays').classList.add('bad'); toast('Custom terms need a day count'); return; }
+    $('fDays').classList.remove('bad');
+    var opening = Number($('fOpen').value || 0);
+    var openDate = $('fOpenDate').value;
+    if (opening !== 0 && !openDate) { $('fOpenDate').classList.add('bad'); toast('Opening balance date is required'); return; }
+    $('fOpenDate').classList.remove('bad');
+
+    var data = {
+      name: name,
+      display: $('fDisplay').value.trim(),
+      email: $('fEmail').value.trim(),
+      phone: $('fPhone').value.trim(),
+      bill: $('fBill').value.trim(),
+      ship: $('fShip').value.trim(),
+      cur: $('fCur').value,
+      terms: terms,
+      days: terms === 'custom' ? days : ({ receipt: 0, net15: 15, net30: 30, net60: 60 })[terms],
+      limit: Number($('fLimit').value || 0),
+      opening: opening,
+      openDate: openDate
+    };
+
+    if (editingId) {
+      var c = CUST[editingId];
+      Object.assign(c, data);
+      c.balance = opening;
+      var tr = document.querySelector('#custBody tr[data-id="' + editingId + '"]');
+      if (tr) tr.outerHTML = rowHTML(c);
+      close('formScrim'); counts(); apply();
+      toast('✓ ' + c.name + ' updated');
+    } else {
+      var id = 'c' + (seq++);
+      CUST[id] = Object.assign({ id: id, code: 'CUS-000' + (Object.keys(CUST).length + 1), since: 'Oct 2026', status: 'active', balance: opening, open: 0, sales: 0, act: [] }, data);
+      var tmp = document.createElement('tbody');
+      tmp.innerHTML = rowHTML(CUST[id]);
+      $('custBody').insertBefore(tmp.firstChild, $('noRes'));
+      close('formScrim'); counts(); apply();
+      toast('✓ ' + CUST[id].name + ' created — ' + CUST[id].code);
+    }
+  });
+
+  /* ---------- delete ---------- */
+  function openDel(id) {
+    var c = CUST[id]; if (!c) return;
+    deletingId = id;
+    $('delTitle').textContent = 'Delete ' + c.name + '?';
+    $('delMsg').innerHTML = 'This permanently removes <b>' + c.code + '</b> and its contact record. Only customers with a zero balance and no open documents can be deleted; posted history is retained for audit.';
+    open('delScrim');
+  }
+  $('delOk').addEventListener('click', function () {
+    if (!deletingId) return;
+    var c = CUST[deletingId];
+    var tr = document.querySelector('#custBody tr[data-id="' + deletingId + '"]');
+    if (tr) tr.remove();
+    delete CUST[deletingId];
+    deletingId = null;
+    close('delScrim'); counts(); apply();
+    toast('🗑 ' + (c ? c.name : 'Customer') + ' deleted');
+  });
+
+  /* ---------- row delegation ---------- */
+  $('custBody').addEventListener('click', function (e) {
+    var b = e.target.closest('button.ib'); if (!b) return;
+    var id = b.closest('tr').dataset.id;
+    if (b.dataset.act === 'view') openView(id);
+    if (b.dataset.act === 'edit') openForm(id);
+    if (b.dataset.act === 'delete') openDel(id);
+  });
+
+  counts();
+  apply();
+})();
+</script>
+
+</body>
+</html>
+```

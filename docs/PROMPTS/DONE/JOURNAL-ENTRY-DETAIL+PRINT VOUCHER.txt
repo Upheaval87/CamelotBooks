@@ -1,0 +1,861 @@
+JOURNAL ENTRY DETAIL + PRINT VOUCHER — FULL IMPLEMENTATION SPEC (SELF-CONTAINED)
+(AUTHORITATIVE MOCKUP HTML EMBEDDED IN APPENDIX A — do NOT read or depend on any external file.)
+
+SCOPE:
+(A) Rebuild the journal detail page (gl.journals.view) exactly as the SCREEN portion of
+    APPENDIX A: light page head, journal lines table, Description card, Activity timeline,
+    Linked Documents rail, reversal modal.
+(B) Implement the PRINT PREVIEW overlay + A4 journal voucher exactly as the PREVIEW portion
+    of APPENDIX A, including the hardened print pipeline (§6) and PDF/email parity.
+(C) Wire the reversal modal to the EXISTING reversal engine (mirror lines, new RJ/REV ref,
+    cross-links, status flip, audit). UI only otherwise.
+
+HARD GUARD — do NOT modify posting/calculation/permission logic, schemas, routes, payloads,
+CSRF flows, Livewire/Alpine/jQuery bindings or existing handlers. FRONTEND-ONLY except the
+sanctioned calls to existing endpoints (reversal post, PDF download, email). NO NEW PACKAGES.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate gl.journals.view blade/component, journal model fields (ref, date, period, type,
+    source, status, lines[], created/posted timestamps, reversal links), existing reversal
+    endpoint + state machine guards (only Posted reversible; period-lock rules), existing
+    print/PDF/email endpoints for journals, and the activity/audit feed source.
+0.2 Record system currency + date-format settings (used everywhere money/dates render).
+0.3 Record current ids/data-attributes/hooks on this page so nothing wired breaks.
+
+==================== 1 · TOKENS + ABSOLUTE RULES ====================
+--deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32; --sec:#128F8E; --sec-2:#149897;
+--mint:#7FD1C0; --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+--border:#dceaea; --line:#e2ecec; --hair:#EEF3F1; --green:#15803d; --red:#dc2626;
+--red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+Print family: --p-accent:#0E7473; --p-band:#F0F5F5; --p-ink:#13292C; --p-sub:#3E5658;
+--p-muted:#5F7476; --p-faint:#8AA3A2; --p-line:#DCE7E5; --p-hair:#E7EFED; mono stack for
+all refs/codes/audit lines. Font Inter; tabular-nums on every figure.
+R1 · ZERO BLUR anywhere (modal + preview scrims are solid tint rgba(11,42,45,.26)).
+R2 · NO KPI/stat cards on this page (removed by design); balance assurance lives in the
+     totals row Balanced chip + the voucher integrity note only.
+R3 · NO actor prefixes: every "Created"/"Posted" attribution (screen table footer, screen
+     timeline, voucher meta grid, voucher signatures, voucher footer audit line) renders
+     TIMESTAMP ONLY — never "System ·", never "(System)", no avatar tiles.
+R4 · Voucher blank ruled lines carry NO line numbers (empty # cells); only real lines number.
+R5 · Label is "Description" everywhere — never "Memo" (modal field label included).
+R6 · Currency code/symbol/decimals from system setting; never hardcode K/$/MWK in code.
+R7 · Screen page head is LIGHT (white/mist card) — no green/teal block backgrounds.
+
+==================== 2 · SCREEN PAGE (pixel parity with APPENDIX A) ====================
+2.1 Breadcrumb: "Journals" link › current ref in mono 800.
+2.2 Page head card (light): status eye-chip (Posted = teal tint + pulsing dot; Reversed =
+    amber tint, static dot); h1 24px/900 "Journal Entry" + mono ref chip with copy button
+    (clipboard + toast); meta row: bold date · "Source" mono teal tag · bold period.
+    Actions right: Reverse (white + red outline, hover red tint; disabled when not Posted
+    or already Reversed), Print (ghost; opens preview §4), Back (ghost).
+2.3 Journal Lines card: head chips = source ref (mono teal chip) + type chip + date chip.
+    Table: mist-gradient thead (Account / Description / Debit / Credit / Cost centre,
+    right-aligned money cols); account cell = type dot (asset teal, liability red,
+    equity deep, income green, expense amber) + mono 13px/800 code + 10.5px muted name;
+    empty cells = muted em-dash; money 13.5px/800 tabular; row hover teal wash.
+    Totals row: 3px double top rule + mint band, 14.5px/900 totals, green "✓ Balanced"
+    chip in last column (red "Unbalanced" chip + block reversal if ever unbalanced).
+    Card footer meta: "Created · {ts}  ·  Posted · {ts}" (R3), 11px muted, hairline top.
+2.4 Description card: head + 13px/500 body text (journal memo/description).
+2.5 Rail (340px): Activity card = vertical timeline (teal halo dots, gradient connector;
+    nodes Created / Posted / Reversed(amber) with TIMESTAMP ONLY sub-lines); Linked
+    Documents card = "Reverse this entry" gradient-icon tile (opens modal §3) + linked
+    docs list (reversal journal row: mono ref chip + label + Posted chip) or empty note.
+2.6 Layout: 1.55fr/340px grid, 18px gaps; ≤1080px single column.
+
+==================== 3 · REVERSAL MODAL + ENGINE WIRING ====================
+3.1 Shell per system dialog rules: tint-only scrim (R1), 560px card radius 20px, deep-teal
+    head band (white icon tile + title + mono ref sub + glass rotating close), body,
+    #f8fafa foot.
+3.2 Body: amber warning panel (offsetting journal + original retained for audit);
+    "Mirrored lines preview" panel listing every line with DR/CR SWAPPED (DR teal chip /
+    CR amber chip + mono code + name + tabular amount); fields grid: Reversal date (date
+    input, default today), New reference (readonly mono, server-generated preview),
+    Description (text; label per R5), Mode segmented [Post immediately | Save as draft].
+3.3 Foot: Cancel ghost + "Confirm reversal" SOLID RED (flat, no gradient).
+3.4 On confirm: POST to the EXISTING reversal endpoint (mirrored lines, cross-links,
+    status=Reversed on original, audit entry; honour period locks + permissions — surface
+    server errors as toasts, no client-side bypass). On success UI: eye-chip → Reversed
+    (amber), Reverse button + rail tile disabled, timeline gains Reversed node
+    ("You · just now · {new ref}" is the ONLY actor line allowed — it is the current user
+    action), Linked Documents gains the reversal journal row, success toast.
+3.5 Esc / scrim click / Cancel close; focus returns to invoker; focus-visible rings.
+
+==================== 4 · PRINT PREVIEW OVERLAY ====================
+4.1 Fixed inset-0 z-200 grey-gradient layer; body scroll locked while open (body.pv-on).
+4.2 Sticky toolbar: "Back to journal" ghost · title + mono ref chip · "A4 · Portrait ·
+    Ctrl+P works" note · Email ghost (existing email endpoint, attaches PDF) ·
+    Download PDF ghost (existing PDF endpoint) · Print = teal-gradient primary.
+4.3 Centred A4 sheet 794×1123px (screen): 5px teal top accent; rotated "POSTED/REVERSED"
+    watermark at 4.5% opacity; flex-column sheet so the footer pins to the sheet bottom
+    (screen AND print, §6.3).
+
+==================== 5 · VOUCHER SHEET ANATOMY (print family tokens) ====================
+5.1 Header band (#F0F5F5→#f7fbfa, hairline bottom): LEFT brand block (teal gradient mark
+    tile + company legal name 15.5px/900 + address/TIN lines from company profile);
+    RIGHT doc block (small-caps "Journal Voucher", mono 19px/800 ref, outlined POSTED/
+    REVERSED stamp pill, "Printed {now}" line).
+5.2 Meta grid 4×2 hairline cells: Journal date · Period · Type · Source(mono teal) ·
+    Branch · Currency(from setting) · Created {ts} · Posted {ts} (R3).
+5.3 Lines table: solid #0E7473 thead (white 8.5px caps): # / Account / Memo / Debit(cur) /
+    Credit(cur); real lines numbered; TWO blank ruled rows with EMPTY # cells (R4);
+    totals row = 3px double ink rule + #F0F5F5 band + 12.5px/900 totals; words row =
+    "Amount in words" micro-label + italic words line + floating "✓ DEBITS = CREDITS"
+    teal note (amount-in-words generated server-side from the total).
+5.4 Narration panel: hairline box, band header "Narration / Description", body text.
+5.5 Signatures 3-col: Prepared by / Authorised by / Posted by — ink rule + caps label +
+    timestamp under prepared/posted (R3); authorised left blank with "Name · Date".
+5.6 Footer (in-flow, margin-top:auto): mono audit line "AUDIT · created {ts} · posted
+    {ts}" (R3) · centred legal note "Computer-generated journal voucher — valid without
+    signature while status is POSTED" · "PAGE {n} OF {m}".
+
+==================== 6 · PRINT / PDF PIPELINE ====================
+6.1 @page { size:A4; margin:10mm }; @media print with body.pv-on scope: hide #appView,
+    toolbar, toasts; .pview static/white; .sheet width auto, border/shadow none,
+    min-height:277mm (A4 minus margins) so §5.6 footer prints at the TRUE page bottom;
+    print-color-adjust:exact on everything (thead band, stamps, rules survive).
+6.2 safePrint(): ensure pv-on classes → try window.print() → on throw/missing run
+    fallbackPrint(): clone #voucherSheet outerHTML + the page stylesheet into a new window
+    with the same print overrides and print from there; if popup blocked, toast
+    "press Ctrl+P". Ctrl/Cmd+P while preview open = preventDefault + safePrint().
+6.3 Multi-page journals: lines table paginates; thead repeats; footer (with PAGE n OF m)
+    renders at the end of the sheet flow (last page) — acceptable; PDF engine must repeat
+    header band + footer on EVERY page.
+6.4 Server PDF (Download PDF / Email attachment) renders the IDENTICAL layout (same tokens,
+    same footer/watermark/stamp logic) via the existing PDF engine; email uses existing
+    composer with the PDF attached. Status stamp reflects live status (POSTED/REVERSED).
+
+==================== 7 · BEHAVIOUR / A11Y / RESPONSIVE ====================
+7.1 Copy-ref button: clipboard write + toast; Print button opens preview + readiness toast.
+7.2 Esc order: reversal modal first, then preview. Scrim-click closes each own layer.
+7.3 focus-visible rings 2px teal; all controls type="button" except real submits;
+    prefers-reduced-motion kills animations/transitions.
+7.4 ≤1080px rail stacks under main; ≤560px modal field grid 1-col; sheet scales to viewport
+    width on screen (print unaffected).
+
+==================== 8 · CONSTRAINTS ====================
+8.1 Live data only: every value (ref, dates, lines, totals, words, statuses, timestamps,
+    company profile, currency) from the journal record + system settings; mockup values
+    are samples. Zero-state journals render stubs/empty notes, never fake numbers.
+8.2 Keep existing ids/names/data-attributes and server behaviour; add classes only.
+8.3 R1–R7 enforced in code review greps (no backdrop-filter; no "System" actor strings in
+    Created/Posted contexts; no memo label; no blank-row numbers; no stat cards).
+
+==================== 9 · VERIFY ====================
+9.1 Screen parity pass vs APPENDIX A at 1440/1280/1080/768/560 (head, table, rail, modal).
+9.2 Reversal round-trip on a test journal: modal preview mirrors lines; confirm hits the
+    real endpoint; status/cross-links/audit update; UI reflects §3.4; period-locked or
+    non-posted journals refuse with server message toast.
+9.3 Print pass: open preview → Print → PDF output shows voucher ONLY, footer at page
+    bottom, thead band + stamps + watermark present, blank rows unnumbered, timestamps
+    without actor, currency per setting; Ctrl+P path identical; fallback window path works
+    with popups allowed and degrades to toast when blocked.
+9.4 PDF/email endpoints produce layout-identical documents (multi-page header/footer repeat).
+9.5 No console/build errors; no layout shift; reduced-motion respected.
+REPORT: files touched; endpoint map (reversal/PDF/email); currency+date setting sources;
+R1–R7 grep proofs; print/PDF sample outputs; confirmation NO SECTION SKIPPED.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journal Entry JE-2026-0018 — "System" fully removed</title>
+<style id="appStyle">
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --green:#15803d; --red:#dc2626; --red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --sh-lift: 0 2px 4px rgba(10,42,46,.06), 0 20px 44px -18px rgba(10,42,46,.22), inset 0 1px 0 #fff;
+    --p-accent:#0E7473; --p-band:#F0F5F5;
+    --p-ink:#13292C; --p-sub:#3E5658; --p-muted:#5F7476; --p-faint:#8AA3A2;
+    --p-line:#DCE7E5; --p-hair:#E7EFED;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background:
+      radial-gradient(900px 380px at 10% -10%, rgba(18,143,142,.09), transparent 60%),
+      radial-gradient(700px 320px at 95% 0%, rgba(127,209,192,.09), transparent 62%),
+      linear-gradient(180deg, #eef4f4 0%, #e7efee 100%);
+    min-height: 100vh; color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  body.pv-on { overflow: hidden; }
+  button { font-family: inherit; cursor: pointer; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 10px; }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 22px 26px 80px; }
+
+  /* ================= JOURNAL PAGE ================= */
+  .crumbs { display: flex; align-items: center; gap: 7px; margin-bottom: 14px; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+  .crumbs a { color: var(--sec); transition: all .15s; }
+  .crumbs a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .crumbs svg { width: 11px; height: 11px; stroke: #c3d4d4; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .crumbs .cur { font-family: var(--mono); font-weight: 800; color: var(--ink); }
+
+  .phead {
+    background: linear-gradient(180deg, #fdfeff 0%, #f6fbf9 100%);
+    border: 1px solid var(--line); border-radius: 20px; padding: 20px 24px;
+    box-shadow: var(--sh-card);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+  }
+  .h-eye { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; background: rgba(18,143,142,.10); border: 1px solid rgba(18,143,142,.30); color: var(--sec); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 11px; transition: all .2s; }
+  .h-eye i { width: 6px; height: 6px; border-radius: 50%; background: var(--sec); box-shadow: 0 0 8px rgba(18,143,142,.7); animation: pulse 2.4s infinite; }
+  .h-eye.warn { background: rgba(217,119,6,.10); border-color: rgba(217,119,6,.32); color: var(--amber-2); }
+  .h-eye.warn i { background: var(--amber); box-shadow: 0 0 8px rgba(232,163,60,.8); animation: none; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  .phead h1 { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 24px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); }
+  .refchip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 8px 6px 12px; border-radius: 10px; background: rgba(17,69,75,.05); border: 1px solid var(--line); font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--deep-1); }
+  .refchip button { width: 22px; height: 22px; border-radius: 6px; border: none; background: rgba(18,143,142,.08); color: var(--muted); display: grid; place-items: center; transition: all .15s; }
+  .refchip button:hover { background: rgba(18,143,142,.16); color: var(--sec); }
+  .refchip button svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .h-sub { margin-top: 9px; font-size: 12.5px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .h-sub b { color: var(--ink); font-weight: 700; }
+  .h-sub .sep { width: 3px; height: 3px; border-radius: 50%; background: #c3d4d4; }
+  .h-sub .src { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.24); padding: 2px 8px; border-radius: 6px; }
+  .h-ctl { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .h-btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 15px; border-radius: 11px; border: 1px solid var(--border); background: #fff; color: var(--sub); font-size: 12.5px; font-weight: 700; box-shadow: 0 1px 2px rgba(10,42,46,.05); transition: all .16s ease; }
+  .h-btn:hover { border-color: rgba(17,69,75,.30); color: var(--ink); transform: translateY(-1px); box-shadow: 0 6px 14px -8px rgba(10,42,46,.25); }
+  .h-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .h-btn.danger { border-color: rgba(220,38,38,.35); color: var(--red); background: #fff; }
+  .h-btn.danger:hover { border-color: rgba(220,38,38,.55); background: #fef2f2; color: var(--red-2); }
+  .h-btn.dis { opacity: .45; pointer-events: none; }
+
+  .grid { display: grid; grid-template-columns: 1.55fr 340px; gap: 18px; margin-top: 18px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 18px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .c-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); flex-wrap: wrap; }
+  .c-title { display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
+  .c-title i { width: 7px; height: 7px; border-radius: 2px; background: linear-gradient(135deg, var(--sec-2), var(--sec)); box-shadow: 0 0 8px rgba(18,143,142,.45); }
+  .chips { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .chip { font-size: 10.5px; font-weight: 800; color: var(--muted); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
+  .chip.mono { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.07); border-color: rgba(18,143,142,.22); }
+
+  table { width: 100%; border-collapse: collapse; }
+  #appView thead th {
+    padding: 10px 16px;
+    background: linear-gradient(180deg, #f3f9f7, #e9f2ef);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(18,143,142,.18);
+    font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;
+    color: var(--muted); text-align: left; white-space: nowrap;
+  }
+  #appView thead th.r { text-align: right; }
+  #appView tbody td { padding: 14px 16px; border-top: 1px solid var(--hair); vertical-align: middle; }
+  #appView tbody tr:first-child td { border-top: none; }
+  #appView tbody tr { transition: background .15s; }
+  #appView tbody tr:hover { background: rgba(18,143,142,.035); }
+  .acct { display: flex; align-items: center; gap: 11px; }
+  .acct .dot { width: 9px; height: 9px; min-width: 9px; border-radius: 50%; box-shadow: 0 0 0 3px var(--halo, rgba(18,143,142,.12)); }
+  .dot.asset { background: var(--sec); --halo: rgba(18,143,142,.14); }
+  .dot.income { background: var(--green); --halo: rgba(21,128,61,.13); }
+  .acct .code { display: block; font-family: var(--mono); font-size: 13px; font-weight: 800; color: var(--ink); }
+  .acct .aname { display: block; font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 2px; }
+  .dcell { font-size: 12.5px; font-weight: 600; color: var(--sub); }
+  .dash { color: #cfdedb; font-weight: 700; }
+  .num { text-align: right; font-size: 13.5px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.totals td { border-top: 3px double #cfe0dd; background: linear-gradient(180deg, #fbfdfc, #f5faf8); padding: 14px 16px; }
+  tr.totals .tl-l { font-size: 12px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
+  tr.totals .num { font-size: 14.5px; font-weight: 900; }
+  .bal-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(21,128,61,.10); border: 1px solid rgba(21,128,61,.25); color: var(--green); font-size: 11px; font-weight: 800; box-shadow: 0 2px 8px -3px rgba(21,128,61,.35); }
+  .bal-chip svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tmeta { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; padding: 12px 18px; border-top: 1px solid var(--hair); background: #fbfdfc; font-size: 11px; font-weight: 600; color: var(--faint); }
+  .tmeta b { color: var(--sub); font-weight: 700; }
+  .tmeta .sep { width: 3px; height: 3px; border-radius: 50%; background: #cfdedb; }
+  .desc-body { padding: 16px 18px; font-size: 13px; font-weight: 500; color: var(--sub); line-height: 1.7; }
+
+  .tl { padding: 15px 18px 17px; display: flex; flex-direction: column; }
+  .tnode { position: relative; display: flex; gap: 11px; padding-bottom: 18px; }
+  .tnode:last-child { padding-bottom: 0; }
+  .tnode::before { content: ''; position: absolute; left: 5px; top: 16px; bottom: 0; width: 1px; background: linear-gradient(180deg, rgba(18,143,142,.35), var(--line)); }
+  .tnode:last-child::before { display: none; }
+  .tnode .td { width: 11px; height: 11px; min-width: 11px; border-radius: 50%; margin-top: 3px; background: var(--sec); box-shadow: 0 0 0 3px rgba(18,143,142,.15); }
+  .tnode.warn .td { background: var(--amber); box-shadow: 0 0 0 3px rgba(217,119,6,.15); }
+  .tnode .tt { font-size: 12.5px; font-weight: 800; color: var(--ink); }
+  .tnode .ts { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 2px; }
+  .lk { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+  .lk-tile { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px; border-radius: 13px; border: 1px solid var(--line); background: #fdfeff; text-align: left; transition: all .16s ease; }
+  .lk-tile:hover { border-color: rgba(18,143,142,.35); transform: translateY(-1px); box-shadow: 0 8px 20px -10px rgba(10,42,46,.2); }
+  .lk-tile .ic { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 4px 10px -4px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.25); }
+  .lk-tile .ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .lk-tile .t { font-size: 12.5px; font-weight: 800; color: var(--ink); }
+  .lk-tile .s { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 1px; }
+  .lk-tile.dis { opacity: .5; pointer-events: none; }
+  .lk-empty { font-size: 11.5px; font-weight: 600; color: var(--faint); padding: 2px 4px 4px; }
+  .docrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fbfdfc; }
+  .docrow .mono { font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.22); padding: 3px 8px; border-radius: 7px; }
+  .docrow .t { flex: 1; font-size: 11.5px; font-weight: 700; color: var(--sub); }
+  .docrow .st { font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.22); }
+
+  /* reversal modal */
+  .scrim { position: fixed; inset: 0; background: rgba(11,42,45,.26); display: none; place-items: center; padding: 24px; z-index: 140; }
+  .scrim.on { display: grid; animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+  .modal { width: min(560px, 100%); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 20px 40px -16px rgba(10,42,46,.30), 0 40px 80px -24px rgba(10,42,46,.24), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: radial-gradient(620px 220px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.10); }
+  .m-ic { width: 32px; height: 32px; min-width: 32px; border-radius: 9px; background: #fff; display: grid; place-items: center; color: var(--deep-2); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .m-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-head-left { flex: 1; min-width: 0; }
+  .m-title { display: block; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .m-sub { display: block; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.60); margin-top: 2px; font-family: var(--mono); }
+  .m-close { width: 30px; height: 30px; min-width: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .m-body { padding: 18px 22px; overflow-y: auto; }
+  .warn-panel { display: flex; gap: 11px; padding: 12px 14px; border-radius: 12px; background: rgba(217,119,6,.07); border: 1px solid rgba(217,119,6,.22); }
+  .warn-panel svg { width: 16px; height: 16px; min-width: 16px; stroke: var(--amber-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; margin-top: 1px; }
+  .warn-panel p { font-size: 12px; font-weight: 600; color: var(--amber-2); line-height: 1.55; }
+  .mirr { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .mirr .mh { padding: 9px 13px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); }
+  .mline { display: grid; grid-template-columns: 34px 52px 1fr auto; gap: 10px; align-items: center; padding: 9px 13px; font-size: 12px; font-weight: 600; }
+  .mline + .mline { border-top: 1px dashed var(--line); }
+  .mline .side { font-size: 9px; font-weight: 800; letter-spacing: .05em; padding: 3px 6px; border-radius: 5px; text-align: center; }
+  .mline .side.dr { background: rgba(18,143,142,.12); color: var(--sec); }
+  .mline .side.cr { background: rgba(217,119,6,.12); color: var(--amber-2); }
+  .mline .code { font-family: var(--mono); color: var(--sub); font-weight: 700; }
+  .mline .name { color: var(--ink); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mline .amt { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+  .f-grid .full { grid-column: 1 / -1; }
+  .fld label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .fld input { width: 100%; height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafb; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink); outline: none; transition: all .15s; }
+  .fld input:focus { border-color: rgba(18,143,142,.45); background: #fff; box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .fld input[readonly] { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.22); }
+  .pseg { display: inline-flex; background: #f1f5f6; border: 1px solid var(--line); border-radius: 11px; padding: 4px; gap: 4px; }
+  .pseg button { padding: 7px 14px; border-radius: 8px; border: none; background: transparent; font-size: 11.5px; font-weight: 700; color: var(--muted); transition: all .18s; }
+  .pseg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(10,42,46,.10); }
+  .m-foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--hair); background: #f8fafa; }
+  .m-foot .spacer { flex: 1; }
+  .btn { height: 38px; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 8px; border: 1px solid transparent; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-ghost { background: rgba(255,255,255,.85); border-color: var(--border); color: #374151; box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .btn-ghost:hover { background: #fff; border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-danger { background: var(--red); color: #fff; box-shadow: 0 4px 12px -5px rgba(220,38,38,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-danger:hover { background: var(--red-2); box-shadow: 0 7px 16px -5px rgba(220,38,38,.65); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  /* ================= PRINT PREVIEW ================= */
+  .pview { position: fixed; inset: 0; z-index: 200; display: none; overflow-y: auto; background: linear-gradient(180deg, #e6edec 0%, #dde6e5 100%); }
+  .pview.on { display: block; animation: fadeIn .2s ease; }
+
+  .toolbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 12px 22px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--p-line); box-shadow: 0 6px 18px -12px rgba(10,42,46,.25); }
+  .tb-back { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-back:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); }
+  .tb-back svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-title { font-size: 13px; font-weight: 800; color: var(--p-ink); }
+  .tb-title span { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-accent); background: rgba(14,116,115,.08); border: 1px solid rgba(14,116,115,.22); padding: 3px 8px; border-radius: 7px; margin-left: 8px; }
+  .tb-spacer { flex: 1; }
+  .tb-note { font-size: 10.5px; font-weight: 700; color: var(--p-faint); letter-spacing: .06em; text-transform: uppercase; }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-btn:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); transform: translateY(-1px); }
+  .tb-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-btn.primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.25); }
+  .tb-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 16px -6px rgba(18,143,142,.7), inset 0 1px 0 rgba(255,255,255,.25); }
+
+  .sheet-wrap { display: flex; justify-content: center; padding: 34px 20px 60px; }
+  .sheet { position: relative; width: 794px; min-height: 1123px; background: #fff; border: 1px solid var(--p-line); box-shadow: 0 2px 6px rgba(10,42,46,.08), 0 30px 70px -30px rgba(10,42,46,.45); overflow: hidden; display: flex; flex-direction: column; }
+  .sheet::before { content: ''; display: block; height: 5px; flex: none; background: linear-gradient(90deg, var(--p-accent) 0%, var(--sec-2) 55%, #7FD1C0 100%); }
+  .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+  .wm span { transform: rotate(-24deg); font-size: 108px; font-weight: 900; letter-spacing: .18em; color: rgba(14,116,115,.045); text-transform: uppercase; white-space: nowrap; }
+  .sheet-body { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+
+  .v-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px 46px 20px; background: linear-gradient(180deg, var(--p-band) 0%, #f7fbfa 100%); border-bottom: 1px solid var(--p-line); }
+  .brand { display: flex; gap: 13px; }
+  .brand .mark { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(150deg, var(--p-accent) 0%, #0a5453 100%); color: #fff; font-size: 17px; font-weight: 900; letter-spacing: -0.02em; display: grid; place-items: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+  .brand .bn { font-size: 15.5px; font-weight: 900; letter-spacing: -0.015em; color: var(--p-ink); }
+  .brand .bl { font-size: 10px; font-weight: 600; color: var(--p-muted); line-height: 1.55; margin-top: 3px; }
+  .docblock { text-align: right; }
+  .docblock .dt { font-size: 9.5px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--p-accent); }
+  .docblock .dn { font-family: var(--mono); font-size: 19px; font-weight: 800; color: var(--p-ink); letter-spacing: -0.01em; margin-top: 4px; }
+  .docblock .dst { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; padding: 4px 11px; border-radius: 999px; background: rgba(14,116,115,.10); border: 1px solid rgba(14,116,115,.35); color: var(--p-accent); font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .docblock .dst i { width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); }
+  .docblock .dp { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 6px; }
+
+  .meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--p-line); }
+  .meta .cell { padding: 11px 16px; border-left: 1px solid var(--p-hair); }
+  .meta .cell:first-child { border-left: none; }
+  .meta .cell:nth-child(n+5) { border-top: 1px solid var(--p-hair); }
+  .meta .l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); }
+  .meta .v { font-size: 11.5px; font-weight: 700; color: var(--p-ink); margin-top: 3px; }
+  .meta .v.mono { font-family: var(--mono); font-size: 11px; color: var(--p-accent); }
+
+  .lines { padding: 22px 46px 0; }
+  .lines .lt { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--p-muted); margin-bottom: 9px; }
+  .sheet thead th { background: var(--p-accent); color: #fff; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 8px 12px; text-align: left; }
+  .sheet thead th.r { text-align: right; }
+  .sheet thead th:first-child { border-radius: 6px 0 0 6px; }
+  .sheet thead th:last-child { border-radius: 0 6px 6px 0; }
+  .sheet tbody td { padding: 10px 12px; border-bottom: 1px solid var(--p-hair); font-size: 11.5px; color: var(--p-sub); vertical-align: top; }
+  .sheet tbody td.no { width: 34px; color: var(--p-faint); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sheet tbody td.acct .code { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-ink); }
+  .sheet tbody td.acct .aname { display: block; font-size: 10.5px; font-weight: 600; color: var(--p-muted); margin-top: 2px; }
+  .sheet tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
+  .sheet tbody td .dash { color: #c6d6d4; font-weight: 600; }
+  .sheet tr.blank td { height: 30px; color: #d5e2e0; }
+  .sheet tr.totals td { border-bottom: none; border-top: 3px double var(--p-ink); padding: 10px 12px; background: var(--p-band); }
+  .sheet tr.totals .tl { font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--p-ink); }
+  .sheet tr.totals td.num { font-size: 12.5px; font-weight: 900; }
+  .sheet tr.words td { padding: 9px 12px; border-bottom: 1px solid var(--p-line); background: #fbfdfc; }
+  .words-l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); margin-right: 8px; }
+  .words-v { font-size: 11px; font-weight: 700; color: var(--p-sub); font-style: italic; }
+  .balnote { float: right; font-size: 9.5px; font-weight: 800; color: var(--p-accent); letter-spacing: .06em; }
+
+  .narr { margin: 18px 46px 0; border: 1px solid var(--p-line); border-radius: 6px; overflow: hidden; }
+  .narr .nh { padding: 7px 12px; background: var(--p-band); border-bottom: 1px solid var(--p-hair); font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .narr .nb { padding: 11px 12px; font-size: 11.5px; font-weight: 500; color: var(--p-sub); line-height: 1.65; }
+
+  .sigs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; margin: 34px 46px 40px; }
+  .sig { text-align: center; }
+  .sig .rule { border-bottom: 1px solid var(--p-ink); height: 34px; position: relative; }
+  .sig .rule span { position: absolute; right: 4px; bottom: 4px; font-size: 9px; font-weight: 600; color: var(--p-faint); }
+  .sig .sl { margin-top: 7px; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .sig .sn { margin-top: 3px; font-size: 10.5px; font-weight: 700; color: var(--p-ink); }
+  .sig .sd { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 1px; }
+
+  .v-foot { margin-top: auto; padding: 12px 46px; border-top: 1px solid var(--p-line); background: #fbfdfc; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none; position: relative; z-index: 1; }
+  .v-foot .fa { font-family: var(--mono); font-size: 8.5px; font-weight: 600; color: var(--p-faint); }
+  .v-foot .fb { font-size: 8.5px; font-weight: 600; color: var(--p-faint); text-align: center; flex: 1; }
+  .v-foot .fc { font-size: 9px; font-weight: 800; color: var(--p-muted); letter-spacing: .08em; white-space: nowrap; }
+
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); background: var(--deep-2); color: #eaffff; font-size: 12px; font-weight: 700; padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(127,209,192,.3); box-shadow: 0 14px 30px -12px rgba(6,32,35,.7); opacity: 0; visibility: hidden; transition: all .25s ease; z-index: 300; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast.on { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1080px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 560px)  { .f-grid { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* ================= PRINT ================= */
+  @page { size: A4; margin: 10mm; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; }
+    body.pv-on { overflow: visible; }
+    body.pv-on #appView, body.pv-on .toast { display: none !important; }
+    body.pv-on .pview { position: static; display: block; overflow: visible; background: #fff; }
+    body.pv-on .toolbar { display: none !important; }
+    body.pv-on .sheet-wrap { padding: 0; display: block; }
+    body.pv-on .sheet { width: auto; min-height: 277mm; border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= JOURNAL ENTRY (screen) ================= -->
+<div id="appView">
+  <div class="wrap">
+
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="#">Journals</a>
+      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+      <span class="cur">JE-2026-0018</span>
+    </nav>
+
+    <section class="phead">
+      <div>
+        <span class="h-eye" id="statusEye"><i></i>Posted</span>
+        <h1>
+          Journal Entry
+          <span class="refchip">JE-2026-0018
+            <button id="copyRef" title="Copy reference" aria-label="Copy reference">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </span>
+        </h1>
+        <p class="h-sub">
+          <b>29 Aug 2026</b><span class="sep"></span>Source <span class="src">sales_receipt</span><span class="sep"></span>Period <b>Aug 2026</b>
+        </p>
+      </div>
+      <div class="h-ctl">
+        <button class="h-btn danger" id="btnReverse">
+          <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>
+          Reverse
+        </button>
+        <button class="h-btn" id="btnPrint" title="Open printable voucher">
+          <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print
+        </button>
+        <button class="h-btn" id="btnBack">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+      </div>
+    </section>
+
+    <div class="grid">
+      <main class="col">
+        <section class="card" style="--d:80ms">
+          <div class="c-head">
+            <span class="c-title"><i></i>Journal Lines</span>
+            <div class="chips">
+              <span class="chip mono">SAL-SR-2026-0005</span>
+              <span class="chip">General</span>
+              <span class="chip">29 Aug 2026</span>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Account</th><th>Description</th><th class="r">Debit</th><th class="r">Credit</th><th>Cost centre</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="acct"><span class="dot asset"></span><span><span class="code">1050</span><span class="aname">Undeposited Funds</span></span></span></td>
+                <td class="dcell"><span class="dash">—</span></td>
+                <td class="num">52,000.00</td>
+                <td class="num"><span class="dash">—</span></td>
+                <td><span class="dash">—</span></td>
+              </tr>
+              <tr>
+                <td><span class="acct"><span class="dot income"></span><span><span class="code">4000</span><span class="aname">Sales Revenue</span></span></span></td>
+                <td class="dcell"><span class="dash">—</span></td>
+                <td class="num"><span class="dash">—</span></td>
+                <td class="num">52,000.00</td>
+                <td><span class="dash">—</span></td>
+              </tr>
+              <tr class="totals">
+                <td class="tl-l">Totals</td>
+                <td></td>
+                <td class="num">52,000.00</td>
+                <td class="num">52,000.00</td>
+                <td style="text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- timestamps only — no actor prefix -->
+          <div class="tmeta">
+            <b>Created</b> · 31 Aug 2026 11:42
+            <span class="sep"></span>
+            <b>Posted</b> · 31 Aug 2026 11:42
+          </div>
+        </section>
+
+        <section class="card" style="--d:160ms">
+          <div class="c-head"><span class="c-title"><i></i>Description</span></div>
+          <div class="desc-body">Walk-in payment - awaiting deposit</div>
+        </section>
+      </main>
+
+      <aside class="col">
+        <section class="card" style="--d:120ms">
+          <div class="c-head"><span class="c-title"><i></i>Activity</span></div>
+          <div class="tl" id="tlList">
+            <div class="tnode"><span class="td"></span><span><span class="tt">Created</span><span class="ts">31 Aug 2026 11:42</span></span></div>
+            <div class="tnode"><span class="td"></span><span><span class="tt">Posted</span><span class="ts">31 Aug 2026 11:42</span></span></div>
+          </div>
+        </section>
+
+        <section class="card" style="--d:200ms">
+          <div class="c-head"><span class="c-title"><i></i>Linked Documents</span></div>
+          <div class="lk">
+            <button class="lk-tile" id="revTile">
+              <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg></span>
+              <span><span class="t">Reverse this entry</span><span class="s">Create an offsetting journal</span></span>
+            </button>
+            <div id="docList"><div class="lk-empty">No linked documents.</div></div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <!-- REVERSAL MODAL -->
+  <div class="scrim" id="revScrim">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
+      <div class="m-head">
+        <div class="m-ic"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg></div>
+        <div class="m-head-left">
+          <span class="m-title" id="rvTitle">Reverse journal entry</span>
+          <span class="m-sub">JE-2026-0018</span>
+        </div>
+        <button class="m-close" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="m-body">
+        <div class="warn-panel">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          <p>This creates an offsetting journal with mirrored debit/credit lines and marks JE-2026-0018 as <b>Reversed</b>. The original entry is retained for audit.</p>
+        </div>
+        <div class="mirr">
+          <div class="mh">Mirrored lines preview</div>
+          <div class="mline"><span class="side cr">CR</span><span class="code">1050</span><span class="name">Undeposited Funds</span><span class="amt">52,000.00</span></div>
+          <div class="mline"><span class="side dr">DR</span><span class="code">4000</span><span class="name">Sales Revenue</span><span class="amt">52,000.00</span></div>
+        </div>
+        <div class="f-grid">
+          <div class="fld"><label>Reversal date</label><input type="date" value="2026-10-02"></div>
+          <div class="fld"><label>New reference</label><input type="text" value="RJ-2026-0009" readonly></div>
+          <div class="fld full"><label>Description</label><input type="text" placeholder="Reason for reversal…"></div>
+          <div class="fld full">
+            <label>Mode</label>
+            <div class="pseg" id="modeSeg">
+              <button class="on" type="button">Post immediately</button>
+              <button type="button">Save as draft</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="m-foot">
+        <button class="btn btn-ghost" data-close>Cancel</button>
+        <span class="spacer"></span>
+        <button class="btn btn-danger" id="rvConfirm">
+          <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>
+          Confirm reversal
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PRINT PREVIEW ================= -->
+<div class="pview" id="printView" aria-hidden="true">
+  <div class="toolbar">
+    <button class="tb-back" id="pvBack">
+      <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to journal
+    </button>
+    <span class="tb-title">Print preview <span>JE-2026-0018</span></span>
+    <span class="tb-spacer"></span>
+    <span class="tb-note">A4 · Portrait · Ctrl+P works</span>
+    <button class="tb-btn" id="pvEmail">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+      Email
+    </button>
+    <button class="tb-btn" id="pvPdf">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+      Download PDF
+    </button>
+    <button class="tb-btn primary" id="pvPrint">
+      <svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print
+    </button>
+  </div>
+
+  <div class="sheet-wrap">
+    <div class="sheet" id="voucherSheet">
+      <div class="wm"><span>Posted</span></div>
+      <div class="sheet-body">
+        <header class="v-head">
+          <div class="brand">
+            <div class="mark">A</div>
+            <div>
+              <div class="bn">ACME CORPORATION LTD</div>
+              <div class="bl">Head Office · P.O. Box 30456, Lilongwe<br>TIN 00412883 · Registered in Malawi</div>
+            </div>
+          </div>
+          <div class="docblock">
+            <div class="dt">Journal Voucher</div>
+            <div class="dn">JE-2026-0018</div>
+            <span class="dst"><i></i>Posted</span>
+            <div class="dp">Printed 02 Oct 2026 · 14:05</div>
+          </div>
+        </header>
+
+        <div class="meta">
+          <div class="cell"><div class="l">Journal date</div><div class="v">29 Aug 2026</div></div>
+          <div class="cell"><div class="l">Period</div><div class="v">Aug 2026</div></div>
+          <div class="cell"><div class="l">Type</div><div class="v">General Journal</div></div>
+          <div class="cell"><div class="l">Source</div><div class="v mono">sales_receipt</div></div>
+          <div class="cell"><div class="l">Branch</div><div class="v">Head Office</div></div>
+          <div class="cell"><div class="l">Currency</div><div class="v">MWK (K)</div></div>
+          <div class="cell"><div class="l">Created</div><div class="v">31 Aug 2026 11:42</div></div>
+          <div class="cell"><div class="l">Posted</div><div class="v">31 Aug 2026 11:42</div></div>
+        </div>
+
+        <div class="lines">
+          <div class="lt">Journal lines</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:34px">#</th>
+                <th>Account</th>
+                <th>Memo</th>
+                <th class="r">Debit (K)</th>
+                <th class="r">Credit (K)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="no">1</td>
+                <td class="acct"><span class="code">1050</span><span class="aname">Undeposited Funds</span></td>
+                <td><span class="dash">—</span></td>
+                <td class="num">52,000.00</td>
+                <td class="num"><span class="dash">—</span></td>
+              </tr>
+              <tr>
+                <td class="no">2</td>
+                <td class="acct"><span class="code">4000</span><span class="aname">Sales Revenue</span></td>
+                <td><span class="dash">—</span></td>
+                <td class="num"><span class="dash">—</span></td>
+                <td class="num">52,000.00</td>
+              </tr>
+              <tr class="blank"><td class="no"></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="blank"><td class="no"></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="totals">
+                <td></td>
+                <td class="tl">Totals</td>
+                <td></td>
+                <td class="num">52,000.00</td>
+                <td class="num">52,000.00</td>
+              </tr>
+              <tr class="words">
+                <td colspan="5">
+                  <span class="words-l">Amount in words</span>
+                  <span class="words-v">Malawi Kwacha Fifty-Two Thousand only</span>
+                  <span class="balnote">✓ DEBITS = CREDITS</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="narr">
+          <div class="nh">Narration / Description</div>
+          <div class="nb">Walk-in payment - awaiting deposit</div>
+        </div>
+
+        <div class="sigs">
+          <div class="sig">
+            <div class="rule"></div>
+            <div class="sl">Prepared by</div>
+            <div class="sn">31 Aug 2026 11:42</div>
+          </div>
+          <div class="sig">
+            <div class="rule"></div>
+            <div class="sl">Authorised by</div>
+            <div class="sn">&nbsp;</div>
+            <div class="sd">Name · Date</div>
+          </div>
+          <div class="sig">
+            <div class="rule"></div>
+            <div class="sl">Posted by</div>
+            <div class="sn">31 Aug 2026 11:42</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="v-foot">
+        <span class="fa">AUDIT · created 31 Aug 2026 11:42 · posted 31 Aug 2026 11:42</span>
+        <span class="fb">Computer-generated journal voucher — valid without signature while status is POSTED</span>
+        <span class="fc">PAGE 1 OF 1</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  var toastEl = document.getElementById('toast'), toastT;
+  function toast(m) { toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 3000); }
+
+  var pview = document.getElementById('printView');
+  function openPreview() {
+    pview.classList.add('on');
+    pview.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('pv-on');
+    pview.scrollTop = 0;
+    toast('Print preview ready — use Print (or Ctrl+P) in the toolbar');
+  }
+  function closePreview() {
+    pview.classList.remove('on');
+    pview.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('pv-on');
+  }
+
+  function safePrint() {
+    document.body.classList.add('pv-on');
+    pview.classList.add('on');
+    if (typeof window.print !== 'function') { fallbackPrint(); return; }
+    var ok = true;
+    try { window.print(); } catch (e) { ok = false; }
+    if (!ok) fallbackPrint();
+  }
+
+  function fallbackPrint() {
+    var css = document.getElementById('appStyle').innerHTML;
+    var sheet = document.getElementById('voucherSheet').outerHTML;
+    var w = window.open('', '_blank');
+    if (!w) { toast('Pop-ups blocked — press Ctrl+P while the preview is open'); return; }
+    w.document.open();
+    w.document.write(
+      '<!DOCTYPE html><html><head><title>JE-2026-0018 · Journal Voucher</title>' +
+      '<style>' + css + '</style>' +
+      '<style>@page{size:A4;margin:10mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      'body{background:#fff!important;overflow:visible!important;padding:0!important}' +
+      '.toolbar,.toast{display:none!important}' +
+      '.pview{position:static!important;display:block!important;overflow:visible!important;background:#fff!important}' +
+      '.sheet-wrap{padding:0!important;display:block!important}' +
+      '.sheet{width:auto!important;min-height:277mm!important;border:none!important;box-shadow:none!important}</style>' +
+      '</head><body class="pv-on"><div class="pview on"><div class="sheet-wrap">' + sheet + '</div></div></body></html>'
+    );
+    w.document.close();
+    w.focus();
+    setTimeout(function () { try { w.print(); } catch (e) {} }, 400);
+  }
+
+  document.getElementById('btnPrint').addEventListener('click', openPreview);
+  document.getElementById('pvBack').addEventListener('click', closePreview);
+  document.getElementById('pvPrint').addEventListener('click', safePrint);
+  document.getElementById('pvEmail').addEventListener('click', function () { toast('📧 Voucher attached to email composer'); });
+  document.getElementById('pvPdf').addEventListener('click', function () { toast('⤓ PDF download started'); });
+
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+      if (pview.classList.contains('on')) { e.preventDefault(); safePrint(); }
+    }
+    if (e.key === 'Escape') {
+      if (document.getElementById('revScrim').classList.contains('on')) closeRev();
+      else if (pview.classList.contains('on')) closePreview();
+    }
+  });
+
+  document.getElementById('copyRef').addEventListener('click', function () {
+    try { navigator.clipboard.writeText('JE-2026-0018'); } catch (e) {}
+    toast('Reference JE-2026-0018 copied');
+  });
+  document.getElementById('btnBack').addEventListener('click', function () { toast('← Back to Journals list'); });
+
+  var scrim = document.getElementById('revScrim');
+  function openRev() { scrim.classList.add('on'); }
+  function closeRev() { scrim.classList.remove('on'); }
+  document.getElementById('btnReverse').addEventListener('click', openRev);
+  document.getElementById('revTile').addEventListener('click', openRev);
+  document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', closeRev); });
+  scrim.addEventListener('click', function (e) { if (e.target === scrim) closeRev(); });
+
+  document.getElementById('modeSeg').querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.getElementById('modeSeg').querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+
+  document.getElementById('rvConfirm').addEventListener('click', function () {
+    closeRev();
+    var eye = document.getElementById('statusEye');
+    eye.classList.add('warn');
+    eye.innerHTML = '<i></i>Reversed';
+    document.getElementById('btnReverse').classList.add('dis');
+    document.getElementById('revTile').classList.add('dis');
+    var node = document.createElement('div');
+    node.className = 'tnode warn';
+    node.innerHTML = '<span class="td"></span><span><span class="tt">Reversed</span><span class="ts">You · just now · RJ-2026-0009</span></span>';
+    document.getElementById('tlList').appendChild(node);
+    document.getElementById('docList').innerHTML =
+      '<div class="docrow"><span class="mono">RJ-2026-0009</span><span class="t">Reversal journal</span><span class="st">Posted</span></div>';
+    toast('Reversal journal RJ-2026-0009 created & posted');
+  });
+</script>
+
+</body>
+</html>
+```

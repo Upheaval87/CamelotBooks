@@ -1,0 +1,1780 @@
+FAVOURITES MANAGER POPOVER + MY TASKS PAGE — FULL IMPLEMENTATION SPEC (SELF-CONTAINED)
+(AUTHORITATIVE MOCKUPS EMBEDDED — APPENDIX A: MY TASKS PAGE · APPENDIX B: FAVOURITES
+MANAGER POPOVER. Do NOT read or depend on any external mockup file.)
+
+SCOPE:
+(A) Rebuild the personal TASKS page (My Tasks / To-Do index) EXACTLY as APPENDIX A.
+(B) Rebuild the header FAVOURITES MANAGER POPOVER EXACTLY as APPENDIX B and wire it to
+    the existing pinnable-rails feature (the popover manages what the rail shows).
+
+HARD GUARD — DO NOT CHANGE FUNCTIONALITY: do NOT modify controllers, models, routes,
+task schemas, validation rules, permissions, payloads, CSRF flows, AJAX/API handlers,
+Livewire/Alpine/jQuery bindings, or element ids/names/data-attributes. FRONTEND-ONLY
+except the sanctioned behaviours in §5 (per-user favourite persistence) and §4.7
+(wiring popover toggles to the existing rail preference mechanism). Add classes; never
+remove hooked selectors. NO NEW PACKAGES.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate the tasks page (route/view), task fields (title, status open/completed,
+    priority, due date, linked record relation), and EVERY existing handler:
+    quick-add (Enter + button), complete/reopen (checkbox), delete, open/edit modal,
+    filters, search, counts. Record endpoints + params (drives §6 audit).
+0.2 Locate the header Favourites button/pill, any existing favourites menu, the
+    system-wide pinnable rails feature, and the user-preference storage/endpoint
+    used by rail prefs (reused in §5).
+0.3 Locate the redesigned task modal (approved spec) — the page's "open task" action
+    must open THAT modal, unchanged.
+0.4 List current controls per surface for the before/after audit.
+
+==================== 1 · TOKENS / GLOBAL RULES ====================
+--deep-1:#11454b; --deep-2:#0c3539; --deep-3:#0a2e32;
+--sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+--ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+--border:#dceaea; --line:#e2ecec; --hair:#eef3f1;
+--red:#ef4444; --red-2:#dc2626; --red-3:#b91c1c;
+--amber:#d97706; --amber-2:#b45309; --steel:#46708C; --green:#15803d;
+Font: Inter (400–900); tabular-nums on all numerals; page canvas
+radial-gradient(900px 340px at 12% -8%, rgba(18,143,142,.10), transparent 60%),
+linear-gradient(180deg,#eef4f4,#e7f0f0). Card shadow:
+0 1px 2px rgba(10,42,46,.04), 0 12px 30px -14px rgba(10,42,46,.14);
+hover lift shadow: 0 2px 4px rgba(10,42,46,.05), 0 16px 34px -14px rgba(10,42,46,.18).
+
+ABSOLUTE RULES (system-wide, no exceptions):
+R1 · ZERO BLUR: no `backdrop-filter`/`-webkit-backdrop-filter` on ANY scrim, overlay,
+     popover or dialog. Overlays use solid tints only.
+R2 · NO company name / eyebrow line inside any dialog or popover header band.
+R3 · NO red vertical/left bars on overdue or danger rows/cards — danger is conveyed by
+     soft tint + red text/border only.
+
+==================== 2 · MY TASKS PAGE (pixel parity with APPENDIX A) ====================
+2.1 PAGE HEAD — eyebrow ("Personal workspace", 10.5px/800 uppercase, teal, 18px gradient
+    dash before); h1 30px/900 tracking -0.025em; sub row 13px/500 muted with live values:
+    weekday+date · "<n> open" · "<n> needs attention" (red when overdue > 0), separated
+    by 3px dot separators. Right: "Filters" ghost button (40px, radius 11px) +
+    "New Task" teal-gradient CTA (plus icon) that FOCUSES the command-bar input.
+2.2 STAT STRIP — 4 cards (grid 4×1, gap 14px; 2×1 ≤1024px; 1×1 ≤640px): Open tasks /
+    Overdue / Due today / Done this week. Card: #fff, radius 16px, border --line, padding
+    16px 18px, row [42px tinted icon tile][value 24px/900 + label 10.5px/800 uppercase
+    --faint]; 3px semantic left accent bar via ::after (teal/red/amber/green); hover
+    translateY(-2px) + lift shadow. Values LIVE from data (overdue card red when > 0).
+2.3 COMMAND BAR (quick add) — #fff card radius 16px padding 8px, row: teal plus halo
+    (40px) · borderless input 14.5px (placeholder "Add a task… press Enter to capture
+    it") · kbd chip "⏎ Enter" (10.5px/700, #f1f5f6, 2px bottom border) · 1px divider ·
+    "Date" / "Priority" / "Link" ghost buttons (40px, icon+label; Date opens the EXISTING
+    datepicker; Priority cycles/opens existing priority control; Link opens the SYSTEM
+    search overlay — live results above everything, z per §7) · gradient "Add" button.
+    focus-within: border rgba(18,143,142,.45) + ring 0 0 0 4px rgba(18,143,142,.09).
+    Enter key = Add (preserve existing handler + payload).
+2.4 TOOLBAR — segmented tabs (track #f1f5f6, border --line, radius 12px, padding 4px;
+    tab 12.5px/700; active = #fff pill + shadow; count pills 10px/800: active teal tint,
+    inactive --line/--faint) for Active / Completed; right-aligned search cluster
+    (240px, 38px, magnifier icon, focus ring) filtering titles live (client-side or
+    existing search param — keep behaviour).
+2.5 FILTER CHIPS — All / Overdue / Today / This week / No deadline; pill 11.5px/700;
+    active = teal gradient + white + small teal shadow; filtering shows/hides matching
+    tasks AND hides empty sections.
+2.6 SECTIONS + TASK CARDS — section head: label 11.5px/800 uppercase (Overdue = --red-3)
+    + count pill + flex-fill hairline. Cards: #fff, radius 14px, border --line, padding
+    14px 16px, row [custom checkbox][main][actions]; hover translateY(-1px) + teal
+    border + lift shadow; entrance animation fade+6px. OVERDUE variant: bg
+    rgba(239,68,68,.035) + border rgba(239,68,68,.18) — NO left bar (R3). Completed
+    rows: opacity .68 + strikethrough title.
+    · Checkbox 22px radius 7px, border 1.5px #bfd6d5; hover teal border + 3px teal halo;
+      checked = solid --sec + white tick scale-in. Real <input type="checkbox"> kept
+      (name/id intact) so existing complete/reopen handlers fire unchanged.
+    · Meta chips 10.5px/800 pills: due (overdue red tint w/ clock icon · "No deadline"
+      neutral), priority (High red / Medium amber / Low steel), linked-record chip
+      (teal tint + border + chain icon, clickable → existing record route).
+    · Actions: 32px ghost icon buttons — open (external-link icon → opens the approved
+      task modal) + delete (trash; hover red tint). Delete MUST route through the
+      system confirmation dialog (z 140), then the existing delete handler.
+2.7 COMPLETED TAB — list completed tasks (strikethrough style) or the designed empty
+    state: dashed 1.5px --border card radius 16px, 52px teal halo + check icon,
+    14px/800 title, 12px --faint sub.
+2.8 RIGHT RAIL (320px, sticky top 20px; stacks under 1024px):
+    · PROGRESS CARD — deep-teal gradient band (radial sheen + linear #11454b→#0c3539→
+      #0a2e32), radius 18px, inset top highlight: header row "Weekly progress" + mint
+      percent; body: 88px SVG donut (track rgba(255,255,255,.16), bar --mint, round cap,
+      animated stroke-dashoffset) with centred % value; right meta "n of m tasks done
+      this week" + helper line; footer 3 frosted chips (Open / Overdue / Done) with
+      uppercase micro-labels. Ring value = done/(done+open) live.
+    · LINKED RECORDS CARD — white card; head "Linked records" + "View all" teal link;
+      rows: 32px teal-tint icon tile + name 12.5px/700 + type line 10.5px --faint +
+      chevron that tealises on hover; rows link to existing record routes.
+    · ACTIVITY CARD — timeline: 11px semantic dots (red/teal/green/grey) with 3px halo
+      rings + connecting hairline; text 12px/600 with bold record names; time 10.5px
+      --faint. Source: task events (created / linked / completed / overdue-flagged).
+2.9 BEHAVIOUR PARITY — quick-add (Enter + button), checkbox complete/reopen, delete,
+    tab counts, section counts, stat values, filter chips, search: identical payloads
+    and endpoints before/after. New task animates in; deleted task fades/slides out.
+2.10 RESPONSIVE — ≤1024px rail stacks below main + stats 2-up; ≤640px stats 1-up, head
+    stacks, search full-width, command bar wraps.
+
+==================== 3 · FAVOURITES MANAGER POPOVER (pixel parity with APPENDIX B) ====================
+NOTE: APPENDIX B includes demo scene chrome (app bar + page-hint rows) for context ONLY.
+Build the POPOVER COMPONENT + its trigger wiring; do not rebuild the scene.
+3.1 TRIGGER — the existing header Favourites pill/button opens the popover anchored
+    below it (right-aligned), with the rotated-square arrow touching the band.
+    aria-haspopup/aria-expanded maintained; outside click + Esc close; focus returns
+    to trigger.
+3.2 SHELL — width 430px (full-width inset ≤520px, arrow hidden), radius 20px, border
+    1px rgba(255,255,255,.85), shadow 0 2px 4px rgba(10,42,46,.06), 0 24px 48px -16px
+    rgba(10,42,46,.28), 0 48px 96px -32px rgba(10,42,46,.22); entrance popIn .22s
+    (translateY(-8px) scale(.97), origin top right). NO BLUR (R1).
+3.3 HEAD BAND — deep-teal gradient (radial sheen + linear #11454b→#0c3539→#0a2e32) +
+    inset top highlight: 30px white star tile (deep-teal glyph) · title 14.5px/800 #fff ·
+    live frosted pill "<n> pinned" · 28px white-glass close (rotate 90° hover).
+    No company/eyebrow line (R2).
+3.4 CONTROLS STRIP (#f8fafa, hairline bottom) — LEFT: master switch "Rail on desktop"
+    (38×22 track; on = teal gradient; knob 18px white, cubic-bezier slide) with 12px/700
+    label + 10.5px --faint sub "Show favourites as a sidebar rail"; this switch MAPS TO
+    the existing global rail pin toggle (§4.7). RIGHT: "Add this page" ghost mini-button
+    (32px, plus icon) → pins the CURRENT route if pinnable.
+3.5 BODY (padding 14/16, max-height 396px, overflow-y auto, custom slim scrollbar:
+    8px thumb rgba(18,143,142,.25) with 2px #fff border, hover .45):
+    · Hint line 11.5px --faint: "Pinned items appear in your rail and are saved to your
+      account across devices."
+    · Filter cluster 34px radius 10px (magnifier + borderless input "Filter modules…",
+      teal focus ring) filtering BOTH grids live.
+    · Section rows: "Pinned to your rail" + teal count pill / "Available to pin" +
+      muted count pill, each with flex-fill hairline.
+    · TILE GRIDS (3 columns, gap 8px): tile = column [44px icon tile][11.5px/700 label],
+      radius 14px, padding 14/8/12, staggered entrance (25ms steps).
+      PINNED: bg rgba(18,143,142,.06) + border rgba(18,143,142,.25); icon tile = teal
+      gradient + white glyph + teal shadow; 18px teal CHECK badge top-right; on hover
+      the check swaps (scale/fade) to a RED × badge = remove.
+      UNPINNED: quiet (transparent bg, white icon tile, --sub glyph); on hover a teal
+      + badge scales in = add; icon tile tints teal.
+      Click toggles pin state; grids re-render; ALL counts update live (head pill,
+      section pills, header trigger count).
+    · Empty filter result: centred 11.5px --faint message.
+3.6 FOOTER (#f8fafa, hairline top) — LEFT: "Unpin all from sidebar" teal text link with
+    pin icon (clears all pins after system confirm dialog); RIGHT: gradient "Done" CTA
+    (34px) closing the popover.
+3.7 ICONS — inline 2px-stroke SVGs exactly as APPENDIX B (truck, document, bank, book,
+    gauge, box, users, trend, card, percent, note, cog, star, pin, plus, check, ×,
+    magnifier). No emoji, no icon fonts.
+
+==================== 4 · RAIL INTEGRATION ====================
+4.1 The pinned set IS the rail content on desktop pages: the existing pinnable-rails
+    feature renders exactly the pinned favourites (order = pin order); adding/removing
+    in the popover updates every rail immediately (next paint) without reload.
+4.2 Rail visual/behaviour spec stays EXACTLY as already implemented (slim entry, teal
+    Expand, pinned full rail, X-to-close) — this prompt only changes WHAT it lists.
+4.3 Header trigger count = pinned count, live.
+4.4 "Add this page" pins the current route key; if already pinned, the button reads
+    "Remove this page" and unpins.
+4.5 Unpinned-but-open pages keep working; rails simply omit them.
+4.6 If the rail feature is hidden on a page by registry rule, the popover still works
+    (preference saved; rail renders where allowed).
+4.7 Master switch writes the SAME preference flag the existing global rail pin toggle
+    uses (one source of truth; both UIs stay in sync).
+
+==================== 5 · PERSISTENCE (favours + rail prefs) ====================
+5.1 Shape (per user): {"rail_visible":bool,"pinned":["<routeKey>",…]} — extend the
+    EXISTING rail-preference record; do not create a parallel store.
+5.2 Load before first paint (server-injected or pre-paint fetch); write-through
+    debounced 300ms on every toggle; optimistic UI with rollback on failure + toast.
+5.3 localStorage fallback ONLY if the preference endpoint is unavailable; retry sync.
+5.4 Consistent across logins/devices for the same user.
+
+==================== 6 · CONSTRAINTS ====================
+6.1 Keep every existing id/name/data-attribute, CSRF token, Livewire wire: model,
+    Alpine x-data/x-on, jQuery selector hook on both surfaces.
+6.2 The page's "open task" button opens the APPROVED redesigned task modal — do not
+    rebuild or restyle that modal here.
+6.3 Delete/Unpin-all confirmations use the system confirmation dialog design (solid
+    semantic confirm button), z-index 140.
+6.4 Link/search actions use the SYSTEM search overlay; live results render above
+    everything (z 200).
+6.5 Respect prefers-reduced-motion (disable popIn/tileIn/ring animation).
+6.6 Focus-visible rings 2px rgba(18,143,142,.55) offset 2px on all interactive elements.
+
+==================== 7 · Z-INDEX MAP ====================
+Page sticky heads 40 · nav 60 · favourites popover 120 · app dialog scrim+card 90 ·
+confirmation dialogs 140 · global search overlay 200 · toasts 220.
+(Popover sits above sticky heads/rails; a modal scrim covers the header so no clash.)
+
+==================== 8 · VERIFY ====================
+8.1 Pixel parity pass vs APPENDIX A and APPENDIX B at 1440/1280/1024/768/375 (grids,
+    radii, shadows, gradients, chip/pill colours, ring animation, scrollbar).
+8.2 Tasks: Enter-add, checkbox complete/reopen, delete (confirm → handler), tab +
+    section + stat counts, chips filter, search filter — payloads identical pre/post.
+8.3 Popover: pin/unpin toggles update grids, all counts, header pill and every rail
+    without reload; "Add this page" pins current route; master switch syncs with the
+    existing global rail toggle; state survives reload AND re-login (server pref).
+8.4 Esc/outside-click close + focus return; focus trap NOT required for popover but
+    required for any dialog it opens.
+8.5 R1/R2/R3 grep proofs: zero backdrop-filter on overlays; no company eyebrow in any
+    dialog/popover header; zero red left/vertical bars on danger rows.
+8.6 No console/build errors; no unknown Tailwind utilities; no layout shift vs current.
+REPORT: files touched; endpoint/param map (control → existing handler); preference
+shape + endpoint; rail registry notes; confirmation NO SECTION SKIPPED.
+
+==================== APPENDIX A — MY TASKS PAGE (AUTHORITATIVE MOCKUP) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Tasks — Premium Command Centre</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#11454b; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#eef3f1;
+    --red:#ef4444; --red-2:#dc2626; --red-3:#b91c1c;
+    --amber:#d97706; --amber-2:#b45309;
+    --steel:#46708C; --green:#15803d;
+    --shadow-card: 0 1px 2px rgba(10,42,46,.04), 0 12px 30px -14px rgba(10,42,46,.14);
+    --shadow-lift: 0 2px 4px rgba(10,42,46,.05), 0 16px 34px -14px rgba(10,42,46,.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background:
+      radial-gradient(900px 340px at 12% -8%, rgba(18,143,142,.10), transparent 60%),
+      linear-gradient(180deg, #eef4f4 0%, #e7f0f0 100%);
+    min-height: 100vh;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page { max-width: 1280px; margin: 0 auto; padding: 34px 28px 80px; }
+
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+
+  /* ============ PAGE HEAD ============ */
+  .page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 26px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--sec);
+    margin-bottom: 6px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 18px; height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--sec-2), var(--sec));
+  }
+
+  h1 {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+
+  .head-sub {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .head-sub b { font-weight: 700; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .head-sub .warn { color: var(--red-3); }
+  .head-sub .sep { width: 3px; height: 3px; border-radius: 50%; background: #c3d4d4; }
+
+  .head-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .16s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+
+  .btn-ghost {
+    background: rgba(255,255,255,.85);
+    border-color: var(--border);
+    color: #374151;
+    box-shadow: 0 1px 2px rgba(10,42,46,.05);
+  }
+  .btn-ghost:hover { background: #fff; border-color: rgba(17,69,75,.3); color: var(--ink); }
+
+  .btn-cta {
+    background: linear-gradient(180deg, var(--sec-2) 0%, var(--sec) 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px -4px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.2);
+  }
+  .btn-cta:hover { box-shadow: 0 8px 18px -6px rgba(18,143,142,.65), inset 0 1px 0 rgba(255,255,255,.2); }
+
+  .btn svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+
+  /* ============ STAT STRIP ============ */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .stat {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow-card);
+    transition: all .18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--tint, var(--sec));
+    opacity: .85;
+  }
+
+  .stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); border-color: var(--border); }
+
+  .stat .tile {
+    width: 42px; height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: var(--tint-bg, rgba(18,143,142,.10));
+    color: var(--tint, var(--sec));
+  }
+
+  .stat .tile svg { width: 19px; height: 19px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .stat .n {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .stat .l {
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--faint);
+    margin-top: 2px;
+  }
+
+  .stat.s-open   { --tint: var(--sec);     --tint-bg: rgba(18,143,142,.10); }
+  .stat.s-over   { --tint: var(--red-2);   --tint-bg: rgba(220,38,38,.09); }
+  .stat.s-today  { --tint: var(--amber-2); --tint-bg: rgba(217,119,6,.10); }
+  .stat.s-done   { --tint: var(--green);   --tint-bg: rgba(21,128,61,.10); }
+
+  /* ============ COMMAND BAR (quick add) ============ */
+  .command {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 8px;
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 22px;
+    transition: all .2s ease;
+  }
+
+  .command:focus-within {
+    border-color: rgba(18,143,142,.45);
+    box-shadow: 0 0 0 4px rgba(18,143,142,.09), var(--shadow-card);
+  }
+
+  .cmd-plus {
+    width: 40px; min-width: 40px;
+    display: grid; place-items: center;
+    color: var(--sec);
+  }
+  .cmd-plus svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+
+  .command input[type="text"] {
+    flex: 1;
+    border: none; outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 500;
+    color: var(--ink);
+    min-width: 0;
+    padding: 10px 0;
+  }
+  .command input::placeholder { color: var(--faint); font-weight: 400; }
+
+  kbd {
+    align-self: center;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+    background: #f1f5f6;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    padding: 3px 7px;
+    white-space: nowrap;
+  }
+
+  .cmd-div { width: 1px; background: var(--line); margin: 6px 2px; }
+
+  .cmd-btn {
+    height: 40px;
+    min-width: 40px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .cmd-btn:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.04); }
+  .cmd-btn svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .cmd-add {
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(180deg, var(--sec-2), var(--sec));
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 10px -4px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.2);
+    transition: all .15s;
+  }
+  .cmd-add:hover { transform: translateY(-1px); box-shadow: 0 7px 16px -5px rgba(18,143,142,.65), inset 0 1px 0 rgba(255,255,255,.2); }
+
+  /* ============ CONTENT GRID ============ */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ---- Toolbar ---- */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .tabs {
+    display: inline-flex;
+    background: #f1f5f6;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(10,42,46,.10); }
+
+  .tab-count {
+    font-size: 10px; font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(18,143,142,.12);
+    color: var(--sec);
+    font-variant-numeric: tabular-nums;
+  }
+  .tab:not(.active) .tab-count { background: var(--line); color: var(--faint); }
+
+  .search {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0 12px;
+    height: 38px;
+    width: 240px;
+    transition: all .15s;
+  }
+  .search:focus-within { border-color: rgba(18,143,142,.45); box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .search svg { width: 14px; height: 14px; stroke: var(--faint); stroke-width: 2.5; stroke-linecap: round; fill: none; }
+  .search input { border: none; outline: none; background: none; font-family: inherit; font-size: 13px; color: var(--ink); width: 100%; }
+  .search input::placeholder { color: var(--faint); }
+
+  /* ---- Filter chips ---- */
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  .fchip {
+    padding: 6px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.7);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--sub);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .fchip:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: #fff; }
+  .fchip.on {
+    background: linear-gradient(180deg, var(--sec-2), var(--sec));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 3px 8px -3px rgba(18,143,142,.5);
+  }
+
+  /* ---- Sections ---- */
+  .section { margin-bottom: 24px; }
+
+  .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .section-head::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+  .section-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: var(--muted);
+  }
+  .section-title.overdue { color: var(--red-3); }
+
+  .section-count {
+    font-size: 10px; font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--line);
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .section-count.overdue { background: rgba(239,68,68,.10); color: var(--red-3); }
+
+  /* ---- Task cards ---- */
+  .task-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(10,42,46,.03);
+    transition: all .18s ease;
+    animation: taskIn .25s ease;
+  }
+
+  @keyframes taskIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .task:hover {
+    border-color: rgba(18, 143, 142, 0.30);
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-1px);
+  }
+
+  .task.overdue { background: rgba(239,68,68,.035); border-color: rgba(239,68,68,.18); }
+  .task.overdue:hover { border-color: rgba(239,68,68,.32); }
+
+  .task.done { opacity: .68; }
+  .task.done .t-title { text-decoration: line-through; color: var(--faint); }
+
+  .tcheck { position: relative; display: block; cursor: pointer; flex: none; }
+  .tcheck input { position: absolute; opacity: 0; pointer-events: none; }
+
+  .tcheck .box {
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    border: 1.5px solid #bfd6d5;
+    background: #fff;
+    display: grid; place-items: center;
+    transition: all .15s;
+  }
+  .tcheck .box svg {
+    width: 13px; height: 13px;
+    stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none;
+    opacity: 0; transform: scale(.5);
+    transition: all .15s;
+  }
+  .tcheck:hover .box { border-color: var(--sec); box-shadow: 0 0 0 3px rgba(18,143,142,.10); }
+  .tcheck input:checked + .box { background: var(--sec); border-color: var(--sec); }
+  .tcheck input:checked + .box svg { opacity: 1; transform: scale(1); }
+
+  .t-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+
+  .t-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .task.overdue .t-title { font-weight: 700; }
+
+  .t-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+  .mchip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .mchip svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+
+  .mchip.overdue { background: rgba(185,28,28,.09); color: var(--red-3); }
+  .mchip.none    { background: rgba(17,69,75,.06); color: var(--muted); }
+  .mchip.high    { background: rgba(220,38,38,.09); color: var(--red-3); }
+  .mchip.med     { background: rgba(217,119,6,.10); color: var(--amber-2); }
+  .mchip.link {
+    background: rgba(18,143,142,.09);
+    border: 1px solid rgba(18,143,142,.22);
+    color: var(--deep-2);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .mchip.link:hover { background: rgba(18,143,142,.16); border-color: rgba(18,143,142,.4); }
+
+  .t-actions { display: flex; gap: 6px; flex: none; }
+
+  .t-btn {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: #c3d4d4;
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .task:hover .t-btn { color: var(--faint); }
+  .t-btn:hover { background: rgba(18,143,142,.08); color: var(--sec); }
+  .t-btn.del:hover { background: rgba(239,68,68,.09); color: var(--red-2); }
+  .t-btn svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  /* ---- Empty state ---- */
+  .empty {
+    border: 1.5px dashed var(--border);
+    border-radius: 16px;
+    background: rgba(255,255,255,.6);
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .empty .halo {
+    width: 52px; height: 52px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(18,143,142,.08);
+    border: 1px solid rgba(18,143,142,.18);
+    color: var(--sec);
+  }
+  .empty .halo svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .empty .t { font-size: 14px; font-weight: 800; color: var(--sub); }
+  .empty .s { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
+  /* ============ RAIL ============ */
+  .rail-col { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 20px; }
+
+  .progress-card {
+    border-radius: 18px;
+    padding: 20px;
+    background:
+      radial-gradient(340px 160px at 15% -20%, rgba(255,255,255,.10), transparent 60%),
+      linear-gradient(180deg, var(--deep-1) 0%, var(--deep-2) 55%, var(--deep-3) 100%);
+    color: #fff;
+    box-shadow: 0 16px 34px -16px rgba(10,42,46,.5), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+
+  .progress-card .pc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .progress-card .pc-title { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+
+  .pc-body { display: flex; align-items: center; gap: 18px; }
+
+  .ring { position: relative; width: 88px; height: 88px; min-width: 88px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .track { stroke: rgba(255,255,255,.16); }
+  .ring .bar { stroke: var(--mint); stroke-linecap: round; transition: stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1); }
+  .ring .val {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-size: 19px; font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pc-meta .big { font-size: 15px; font-weight: 800; line-height: 1.3; }
+  .pc-meta .small { font-size: 11.5px; color: rgba(255,255,255,.62); margin-top: 3px; }
+
+  .pc-chips { display: flex; gap: 8px; margin-top: 16px; }
+  .pc-chip {
+    flex: 1;
+    text-align: center;
+    padding: 8px 6px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.16);
+    font-size: 11px; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .pc-chip span { display: block; font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,.6); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+  .rail-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .rail-card .rc-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--hair);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .rc-title { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .rc-link { font-size: 11px; font-weight: 700; color: var(--sec); text-decoration: none; }
+  .rc-link:hover { text-decoration: underline; }
+
+  .rec-row {
+    display: flex; align-items: center; gap: 11px;
+    padding: 12px 16px;
+    transition: background .15s;
+    cursor: pointer;
+  }
+  .rec-row + .rec-row { border-top: 1px solid var(--hair); }
+  .rec-row:hover { background: rgba(18,143,142,.04); }
+
+  .rec-ic {
+    width: 32px; height: 32px; min-width: 32px;
+    border-radius: 9px;
+    display: grid; place-items: center;
+    background: rgba(18,143,142,.09);
+    color: var(--sec);
+  }
+  .rec-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .rec-main { flex: 1; min-width: 0; }
+  .rec-name { font-size: 12.5px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec-type { font-size: 10.5px; color: var(--faint); font-weight: 600; margin-top: 1px; }
+
+  .rec-go { color: #c3d4d4; }
+  .rec-row:hover .rec-go { color: var(--sec); }
+  .rec-go svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  /* Activity timeline */
+  .act { padding: 14px 16px 16px; display: flex; flex-direction: column; }
+  .act-item { display: flex; gap: 11px; position: relative; padding-bottom: 16px; }
+  .act-item:last-child { padding-bottom: 0; }
+  .act-item::before {
+    content: '';
+    position: absolute;
+    left: 5px; top: 16px; bottom: 0;
+    width: 1px;
+    background: var(--line);
+  }
+  .act-item:last-child::before { display: none; }
+  .act-dot {
+    width: 11px; height: 11px; min-width: 11px;
+    border-radius: 50%;
+    margin-top: 3px;
+    background: var(--dot, var(--sec));
+    box-shadow: 0 0 0 3px var(--dot-ring, rgba(18,143,142,.14));
+  }
+  .act-item.red   { --dot: var(--red-2);   --dot-ring: rgba(220,38,38,.12); }
+  .act-item.green { --dot: var(--green);   --dot-ring: rgba(21,128,61,.12); }
+  .act-item.grey  { --dot: #9fb4b4;        --dot-ring: rgba(159,180,180,.16); }
+  .act-text { font-size: 12px; font-weight: 600; color: var(--sub); line-height: 1.45; }
+  .act-text b { color: var(--ink); font-weight: 700; }
+  .act-time { font-size: 10.5px; color: var(--faint); font-weight: 600; margin-top: 2px; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 1024px) {
+    .grid { grid-template-columns: 1fr; }
+    .rail-col { position: static; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: 1fr; }
+    .page-head { flex-direction: column; align-items: flex-start; }
+    .search { width: 100%; margin-left: 0; }
+    .command { flex-wrap: wrap; }
+    .command input[type="text"] { min-width: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ============ PAGE HEAD ============ -->
+  <header class="page-head">
+    <div>
+      <span class="eyebrow">Personal workspace</span>
+      <h1>My Tasks</h1>
+      <p class="head-sub">
+        <b>Friday, 02 October 2026</b>
+        <span class="sep"></span>
+        <b>3 open</b>
+        <span class="sep"></span>
+        <b class="warn">1 needs attention</b>
+      </p>
+    </div>
+    <div class="head-actions">
+      <button class="btn btn-ghost">
+        <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        Filters
+      </button>
+      <button class="btn btn-cta" onclick="document.getElementById('quickAdd').focus()">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New Task
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ STAT STRIP ============ -->
+  <section class="stats">
+    <div class="stat s-open">
+      <div class="tile"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+      <div><div class="n" id="statOpen">3</div><div class="l">Open tasks</div></div>
+    </div>
+    <div class="stat s-over">
+      <div class="tile"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+      <div><div class="n" id="statOver">1</div><div class="l">Overdue</div></div>
+    </div>
+    <div class="stat s-today">
+      <div class="tile"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+      <div><div class="n">0</div><div class="l">Due today</div></div>
+    </div>
+    <div class="stat s-done">
+      <div class="tile"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div>
+      <div><div class="n">2</div><div class="l">Done this week</div></div>
+    </div>
+  </section>
+
+  <!-- ============ COMMAND BAR ============ -->
+  <section class="command">
+    <span class="cmd-plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+    <input type="text" id="quickAdd" placeholder="Add a task… press Enter to capture it">
+    <kbd>⏎ Enter</kbd>
+    <span class="cmd-div"></span>
+    <button class="cmd-btn" title="Set deadline">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Date
+    </button>
+    <button class="cmd-btn" title="Set priority">
+      <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>
+      Priority
+    </button>
+    <button class="cmd-btn" title="Link a record">
+      <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      Link
+    </button>
+    <button class="cmd-add" id="addBtn">Add</button>
+  </section>
+
+  <!-- ============ CONTENT GRID ============ -->
+  <div class="grid">
+
+    <!-- ---- MAIN COLUMN ---- -->
+    <main>
+      <div class="toolbar">
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="active">Active <span class="tab-count" id="cntActive">3</span></button>
+          <button class="tab" data-tab="done">Completed <span class="tab-count" id="cntDone">0</span></button>
+        </div>
+        <label class="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="searchBox" placeholder="Search tasks…">
+        </label>
+      </div>
+
+      <div class="chips" id="chips">
+        <button class="fchip on" data-f="all">All</button>
+        <button class="fchip" data-f="overdue">Overdue</button>
+        <button class="fchip" data-f="today">Today</button>
+        <button class="fchip" data-f="week">This week</button>
+        <button class="fchip" data-f="none">No deadline</button>
+      </div>
+
+      <!-- ACTIVE VIEW -->
+      <div id="viewActive">
+        <div class="section" data-sec="overdue">
+          <div class="section-head">
+            <span class="section-title overdue">Overdue</span>
+            <span class="section-count overdue">1</span>
+          </div>
+          <div class="task-list">
+            <div class="task overdue" data-tags="overdue high">
+              <label class="tcheck"><input type="checkbox"><span class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></label>
+              <div class="t-main">
+                <span class="t-title">Run payrolls</span>
+                <div class="t-meta">
+                  <span class="mchip overdue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Overdue · yesterday</span>
+                  <span class="mchip high">High</span>
+                  <span class="mchip link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>INV-2026-0001</span>
+                </div>
+              </div>
+              <div class="t-actions">
+                <button class="t-btn" title="Open task"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg></button>
+                <button class="t-btn del" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" data-sec="none">
+          <div class="section-head">
+            <span class="section-title">No Deadline</span>
+            <span class="section-count">2</span>
+          </div>
+          <div class="task-list">
+            <div class="task" data-tags="none med">
+              <label class="tcheck"><input type="checkbox"><span class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></label>
+              <div class="t-main">
+                <span class="t-title">Linked task E2E 1785829784369</span>
+                <div class="t-meta">
+                  <span class="mchip none">No deadline</span>
+                  <span class="mchip med">Medium</span>
+                </div>
+              </div>
+              <div class="t-actions">
+                <button class="t-btn" title="Open task"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg></button>
+                <button class="t-btn del" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
+              </div>
+            </div>
+            <div class="task" data-tags="none low">
+              <label class="tcheck"><input type="checkbox"><span class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></label>
+              <div class="t-main">
+                <span class="t-title">GS link save test 1785830414837</span>
+                <div class="t-meta">
+                  <span class="mchip none">No deadline</span>
+                  <span class="mchip low" style="background:rgba(70,112,140,.10);color:#46708C;">Low</span>
+                  <span class="mchip link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>A4 Notebook</span>
+                </div>
+              </div>
+              <div class="t-actions">
+                <button class="t-btn" title="Open task"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg></button>
+                <button class="t-btn del" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPLETED VIEW -->
+      <div id="viewDone" style="display:none;">
+        <div class="empty">
+          <div class="halo"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div>
+          <div class="t">Nothing completed yet</div>
+          <div class="s">Tick a task off and it will land here with a timestamp.</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ---- RAIL ---- -->
+    <aside class="rail-col">
+
+      <div class="progress-card">
+        <div class="pc-head">
+          <span class="pc-title">Weekly progress</span>
+          <span class="pc-title" style="color:var(--mint);">40%</span>
+        </div>
+        <div class="pc-body">
+          <div class="ring">
+            <svg width="88" height="88" viewBox="0 0 88 88">
+              <circle class="track" cx="44" cy="44" r="36" fill="none" stroke-width="8"/>
+              <circle class="bar" cx="44" cy="44" r="36" fill="none" stroke-width="8"
+                      stroke-dasharray="226.2" stroke-dashoffset="135.7"/>
+            </svg>
+            <span class="val">40%</span>
+          </div>
+          <div class="pc-meta">
+            <div class="big">2 of 5 tasks<br>done this week</div>
+            <div class="small">Keep the streak going — one overdue item left.</div>
+          </div>
+        </div>
+        <div class="pc-chips">
+          <div class="pc-chip">3<span>Open</span></div>
+          <div class="pc-chip">1<span>Overdue</span></div>
+          <div class="pc-chip">2<span>Done</span></div>
+        </div>
+      </div>
+
+      <div class="rail-card">
+        <div class="rc-head">
+          <span class="rc-title">Linked records</span>
+          <a class="rc-link" href="#">View all</a>
+        </div>
+        <div class="rec-row">
+          <div class="rec-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
+          <div class="rec-main">
+            <div class="rec-name">INV-2026-0001</div>
+            <div class="rec-type">Invoice · Run payrolls</div>
+          </div>
+          <span class="rec-go"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="rec-row">
+          <div class="rec-ic"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg></div>
+          <div class="rec-main">
+            <div class="rec-name">A4 Notebook</div>
+            <div class="rec-type">Inventory item · GS link save test</div>
+          </div>
+          <span class="rec-go"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+      </div>
+
+      <div class="rail-card">
+        <div class="rc-head">
+          <span class="rc-title">Activity</span>
+        </div>
+        <div class="act">
+          <div class="act-item red">
+            <span class="act-dot"></span>
+            <div>
+              <div class="act-text"><b>Run payrolls</b> flagged overdue</div>
+              <div class="act-time">Today · 08:00</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <span class="act-dot"></span>
+            <div>
+              <div class="act-text">Task linked to <b>INV-2026-0001</b></div>
+              <div class="act-time">Yesterday · 16:42</div>
+            </div>
+          </div>
+          <div class="act-item green">
+            <span class="act-dot"></span>
+            <div>
+              <div class="act-text">Completed <b>Submit VAT return</b></div>
+              <div class="act-time">Yesterday · 09:15</div>
+            </div>
+          </div>
+          <div class="act-item grey">
+            <span class="act-dot"></span>
+            <div>
+              <div class="act-text">Created <b>GS link save test</b></div>
+              <div class="act-time">Wed · 14:03</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<script>
+  // Tabs
+  document.querySelectorAll('#tabs .tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('viewActive').style.display = t.dataset.tab === 'active' ? '' : 'none';
+      document.getElementById('viewDone').style.display  = t.dataset.tab === 'done'  ? '' : 'none';
+    });
+  });
+
+  // Filter chips
+  document.querySelectorAll('#chips .fchip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('#chips .fchip').forEach(x => x.classList.remove('on'));
+      c.classList.add('on');
+      const f = c.dataset.f;
+      document.querySelectorAll('#viewActive .task').forEach(task => {
+        task.style.display = (f === 'all' || task.dataset.tags.includes(f)) ? '' : 'none';
+      });
+      document.querySelectorAll('#viewActive .section').forEach(sec => {
+        const visible = [...sec.querySelectorAll('.task')].some(t => t.style.display !== 'none');
+        sec.style.display = visible ? '' : 'none';
+      });
+    });
+  });
+
+  // Search
+  document.getElementById('searchBox').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('#viewActive .task').forEach(t => {
+      t.style.display = t.querySelector('.t-title').textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  // Complete toggle
+  document.addEventListener('change', e => {
+    if (!e.target.matches('.tcheck input')) return;
+    const task = e.target.closest('.task');
+    task.classList.toggle('done', e.target.checked);
+  });
+
+  // Quick add
+  function addTask() {
+    const input = document.getElementById('quickAdd');
+    const v = input.value.trim();
+    if (!v) { input.focus(); return; }
+    const list = document.querySelector('#viewActive .section[data-sec="none"] .task-list');
+    const el = document.createElement('div');
+    el.className = 'task';
+    el.dataset.tags = 'none';
+    el.innerHTML =
+      '<label class="tcheck"><input type="checkbox"><span class="box"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></label>' +
+      '<div class="t-main"><span class="t-title"></span><div class="t-meta"><span class="mchip none">No deadline</span></div></div>' +
+      '<div class="t-actions"><button class="t-btn del" title="Delete"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button></div>';
+    el.querySelector('.t-title').textContent = v;
+    list.appendChild(el);
+    input.value = '';
+    input.focus();
+    const c = document.querySelector('#viewActive .section[data-sec="none"] .section-count');
+    c.textContent = +c.textContent + 1;
+    document.getElementById('statOpen').textContent = +document.getElementById('statOpen').textContent + 1;
+    document.getElementById('cntActive').textContent = +document.getElementById('cntActive').textContent + 1;
+  }
+  document.getElementById('addBtn').addEventListener('click', addTask);
+  document.getElementById('quickAdd').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+
+  // Delete
+  document.addEventListener('click', e => {
+    const del = e.target.closest('.t-btn.del');
+    if (!del) return;
+    const task = del.closest('.task');
+    task.style.transition = 'all .2s';
+    task.style.opacity = '0';
+    task.style.transform = 'translateX(12px)';
+    setTimeout(() => task.remove(), 200);
+  });
+</script>
+
+</body>
+</html>
+```
+
+==================== APPENDIX B — FAVOURITES MANAGER POPOVER (AUTHORITATIVE MOCKUP) ====================
+(Scene chrome = context only; build the popover component + trigger wiring.)
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Favourites Manager — Premium Popover</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#11454b; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#eef3f1;
+    --red-2:#dc2626;
+    --shadow-pop: 0 2px 4px rgba(10,42,46,.06), 0 24px 48px -16px rgba(10,42,46,.28), 0 48px 96px -32px rgba(10,42,46,.22);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(180deg, #eef4f4 0%, #e7f0f0 100%);
+    min-height: 100vh;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+
+  /* ============ SCENE (app bar + page hint) ============ */
+  .appbar {
+    background:
+      radial-gradient(700px 200px at 15% -40%, rgba(255,255,255,.08), transparent 60%),
+      linear-gradient(180deg, var(--deep-1) 0%, var(--deep-2) 60%, var(--deep-3) 100%);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 6px 18px -8px rgba(10,42,46,.4);
+    position: relative;
+    z-index: 5;
+  }
+
+  .abar-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .abar-pill:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.3); }
+  .abar-pill svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .abar-pill .cnt {
+    font-size: 10px; font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(127,209,192,.22);
+    color: var(--mint);
+    font-variant-numeric: tabular-nums;
+  }
+  .abar-pill.hot { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.36); }
+
+  .pagehint { padding: 28px 24px; max-width: 1100px; margin: 0 auto; }
+  .ph-row {
+    height: 46px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.55);
+    border: 1px solid var(--line);
+    margin-bottom: 8px;
+  }
+  .ph-row.tint { background: rgba(239,68,68,.05); border-color: rgba(239,68,68,.14); }
+
+  /* ============ POPOVER ============ */
+  .pop-anchor { position: relative; max-width: 1100px; margin: 0 auto; }
+
+  .pop {
+    position: absolute;
+    top: -64px;
+    right: 60px;
+    width: 430px;
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.85);
+    box-shadow: var(--shadow-pop);
+    overflow: hidden;
+    z-index: 50;
+    animation: popIn .22s cubic-bezier(.2,.8,.2,1);
+    transform-origin: top right;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @keyframes popIn { from { opacity: 0; transform: translateY(-8px) scale(.97); } to { opacity: 1; transform: none; } }
+
+  /* arrow */
+  .pop::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 96px;
+    width: 12px; height: 12px;
+    background: var(--deep-2);
+    transform: rotate(45deg);
+    border-radius: 3px;
+  }
+
+  /* ---- head band ---- */
+  .pop-head {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 14px 16px;
+    background:
+      radial-gradient(420px 160px at 12% -30%, rgba(255,255,255,.09), transparent 60%),
+      linear-gradient(180deg, var(--deep-1) 0%, var(--deep-2) 55%, var(--deep-3) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+  }
+
+  .pop-ic {
+    width: 30px; height: 30px; min-width: 30px;
+    border-radius: 8px;
+    background: #fff;
+    display: grid; place-items: center;
+    color: var(--deep-2);
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  }
+  .pop-ic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .pop-title { font-size: 14.5px; font-weight: 800; color: #fff; letter-spacing: -0.01em; flex: 1; }
+
+  .pop-pill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.22);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pop-close {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.85);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .pop-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .pop-close svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+  /* ---- controls row ---- */
+  .pop-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--hair);
+    background: #f8fafa;
+  }
+
+  .switch-row { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .switch-row .lbl { font-size: 12px; font-weight: 700; color: var(--sub); }
+  .switch-row .sub { font-size: 10.5px; color: var(--faint); font-weight: 600; }
+
+  .sw {
+    width: 38px; height: 22px; min-width: 38px;
+    border-radius: 999px;
+    background: #cbd5e1;
+    position: relative;
+    transition: background .2s;
+  }
+  .sw::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    top: 2px; left: 2px;
+    transition: transform .2s cubic-bezier(.2,.8,.2,1);
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .sw.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); }
+  .sw.on::after { transform: translateX(16px); }
+
+  .btn-mini {
+    height: 32px;
+    padding: 0 13px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--sub);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-mini:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.04); }
+  .btn-mini svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+
+  /* ---- body ---- */
+  .pop-body {
+    padding: 14px 16px 16px;
+    max-height: 396px;
+    overflow-y: auto;
+  }
+
+  .pop-body::-webkit-scrollbar { width: 8px; }
+  .pop-body::-webkit-scrollbar-track { background: transparent; }
+  .pop-body::-webkit-scrollbar-thumb { background: rgba(18,143,142,.25); border-radius: 99px; border: 2px solid #fff; }
+  .pop-body::-webkit-scrollbar-thumb:hover { background: rgba(18,143,142,.45); }
+
+  .pop-hint { font-size: 11.5px; color: var(--faint); font-weight: 500; margin-bottom: 12px; line-height: 1.5; }
+
+  .pop-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 11px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #f8fafb;
+    margin-bottom: 14px;
+    transition: all .15s;
+  }
+  .pop-search:focus-within { border-color: rgba(18,143,142,.45); background: #fff; box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .pop-search svg { width: 13px; height: 13px; stroke: var(--faint); stroke-width: 2.5; stroke-linecap: round; fill: none; }
+  .pop-search input { border: none; outline: none; background: none; font-family: inherit; font-size: 12.5px; color: var(--ink); width: 100%; }
+  .pop-search input::placeholder { color: var(--faint); }
+
+  .sec-row { display: flex; align-items: center; gap: 9px; margin: 4px 0 10px; }
+  .sec-row::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .sec-row .t { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+  .sec-row .c {
+    font-size: 9.5px; font-weight: 800;
+    padding: 2px 7px; border-radius: 999px;
+    background: rgba(18,143,142,.10); color: var(--sec);
+    font-variant-numeric: tabular-nums;
+  }
+  .sec-row.muted .c { background: var(--line); color: var(--faint); }
+
+  /* ---- tile grid ---- */
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+
+  .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 8px 12px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition: all .18s ease;
+    font-family: inherit;
+    animation: tileIn .25s ease both;
+  }
+
+  @keyframes tileIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .tile:hover { transform: translateY(-2px); background: #fff; border-color: var(--border); box-shadow: 0 8px 18px -8px rgba(10,42,46,.16); }
+
+  .tile .tic {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    display: grid; place-items: center;
+    color: var(--sub);
+    transition: all .18s;
+    box-shadow: 0 1px 2px rgba(10,42,46,.04);
+  }
+  .tile .tic svg { width: 19px; height: 19px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .tile .tl {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #374151;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  /* pinned state */
+  .tile.pinned { background: rgba(18,143,142,.06); border-color: rgba(18,143,142,.25); }
+  .tile.pinned .tic { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 4px 10px -4px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.2); }
+  .tile.pinned .tl { color: var(--deep-2); }
+
+  /* badges */
+  .badge {
+    position: absolute;
+    top: 7px; right: 7px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    transition: all .15s;
+  }
+  .badge svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .badge.chk { background: var(--sec); box-shadow: 0 2px 6px -1px rgba(18,143,142,.5); }
+  .badge.rm  { background: var(--red-2); opacity: 0; transform: scale(.6); box-shadow: 0 2px 6px -1px rgba(220,38,38,.5); }
+  .badge.add { background: var(--sec); opacity: 0; transform: scale(.6); box-shadow: 0 2px 6px -1px rgba(18,143,142,.5); }
+
+  .tile.pinned .badge.add { display: none; }
+  .tile:not(.pinned) .badge.chk, .tile:not(.pinned) .badge.rm { display: none; }
+
+  .tile.pinned:hover .badge.chk { opacity: 0; transform: scale(.6); }
+  .tile.pinned:hover .badge.rm { opacity: 1; transform: scale(1); }
+  .tile:not(.pinned):hover .badge.add { opacity: 1; transform: scale(1); }
+  .tile:not(.pinned):hover .tic { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.05); }
+
+  .empty-msg { font-size: 11.5px; color: var(--faint); text-align: center; padding: 10px 0 4px; }
+
+  /* ---- footer ---- */
+  .pop-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--hair);
+    background: #f8fafa;
+  }
+
+  .foot-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--sec);
+    cursor: pointer;
+    padding: 0;
+  }
+  .foot-link:hover { text-decoration: underline; }
+  .foot-link svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+  .btn-done {
+    height: 34px;
+    padding: 0 18px;
+    border-radius: 9px;
+    border: none;
+    background: linear-gradient(180deg, var(--sec-2), var(--sec));
+    color: #fff;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 10px -4px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.2);
+    transition: all .15s;
+  }
+  .btn-done:hover { transform: translateY(-1px); box-shadow: 0 7px 16px -5px rgba(18,143,142,.65), inset 0 1px 0 rgba(255,255,255,.2); }
+
+  @media (max-width: 520px) {
+    .pop { right: 12px; left: 12px; width: auto; }
+    .pop::before { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- APP BAR -->
+<div class="appbar">
+  <button class="abar-pill">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    My Tasks <span class="cnt">3</span>
+  </button>
+  <button class="abar-pill hot" id="openPop">
+    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    Favourites <span class="cnt" id="barCount">6</span>
+  </button>
+</div>
+
+<!-- PAGE HINT -->
+<div class="pagehint">
+  <div class="ph-row"></div>
+  <div class="ph-row tint"></div>
+  <div class="ph-row"></div>
+</div>
+
+<!-- POPOVER -->
+<div class="pop-anchor">
+  <div class="pop" id="pop" role="dialog" aria-label="Favourites manager">
+
+    <div class="pop-head">
+      <div class="pop-ic">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <span class="pop-title">Favourites</span>
+      <span class="pop-pill" id="headCount">6 pinned</span>
+      <button class="pop-close" id="closePop" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="pop-controls">
+      <label class="switch-row" id="railSwitch">
+        <span class="sw on"></span>
+        <span>
+          <span class="lbl">Rail on desktop</span><br>
+          <span class="sub">Show favourites as a sidebar rail</span>
+        </span>
+      </label>
+      <button class="btn-mini" id="addCurrent">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Add this page
+      </button>
+    </div>
+
+    <div class="pop-body">
+      <div class="pop-hint">Pinned items appear in your rail and are saved to your account across devices.</div>
+
+      <label class="pop-search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="filterBox" placeholder="Filter modules…">
+      </label>
+
+      <div class="sec-row"><span class="t">Pinned to your rail</span><span class="c" id="pinCount">6</span></div>
+      <div class="grid3" id="gridPinned"></div>
+
+      <div class="sec-row muted"><span class="t">Available to pin</span><span class="c" id="availCount">6</span></div>
+      <div class="grid3" id="gridAvail"></div>
+      <div class="empty-msg" id="emptyMsg" style="display:none;">No modules match your filter.</div>
+    </div>
+
+    <div class="pop-foot">
+      <button class="foot-link" id="unpinAll">
+        <svg viewBox="0 0 24 24"><path d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 002-2 2 2 0 00-2-2H8a2 2 0 00-2 2 2 2 0 002 2h1z"/></svg>
+        Unpin all from sidebar
+      </button>
+      <button class="btn-done" id="doneBtn">Done</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const ICONS = {
+    truck:'<rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5a2 2 0 01-2 2h-1"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+    doc:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/>',
+    bank:'<path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>',
+    book:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
+    gauge:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    box:'<path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/>',
+    users:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>',
+    trend:'<path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/>',
+    card:'<rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/>',
+    percent:'<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+    note:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
+    cog:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>'
+  };
+
+  let items = [
+    { id:'vendors',  label:'Vendors',           icon:'truck',   pinned:true  },
+    { id:'invoices', label:'Invoices',          icon:'doc',     pinned:true  },
+    { id:'cash',     label:'Cash Position',     icon:'bank',    pinned:true  },
+    { id:'coa',      label:'Chart of Accounts', icon:'book',    pinned:true  },
+    { id:'dash',     label:'Dashboard',         icon:'gauge',   pinned:true  },
+    { id:'products', label:'Products',          icon:'box',     pinned:true  },
+    { id:'cust',     label:'Customers',         icon:'users',   pinned:false },
+    { id:'reports',  label:'Reports',           icon:'trend',   pinned:false },
+    { id:'pos',      label:'POS',               icon:'card',    pinned:false },
+    { id:'tax',      label:'Taxation',          icon:'percent', pinned:false },
+    { id:'payroll',  label:'Payroll',           icon:'note',    pinned:false },
+    { id:'system',   label:'System',            icon:'cog',     pinned:false }
+  ];
+
+  const gp = document.getElementById('gridPinned');
+  const ga = document.getElementById('gridAvail');
+
+  function tileHTML(it, i) {
+    return '<button class="tile ' + (it.pinned ? 'pinned' : '') + '" data-id="' + it.id + '" style="animation-delay:' + (i * 25) + 'ms">' +
+      '<span class="badge chk"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>' +
+      '<span class="badge rm"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span>' +
+      '<span class="badge add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>' +
+      '<span class="tic"><svg viewBox="0 0 24 24">' + ICONS[it.icon] + '</svg></span>' +
+      '<span class="tl">' + it.label + '</span>' +
+    '</button>';
+  }
+
+  function render() {
+    const q = document.getElementById('filterBox').value.toLowerCase();
+    const pinned  = items.filter(i => i.pinned  && i.label.toLowerCase().includes(q));
+    const avail   = items.filter(i => !i.pinned && i.label.toLowerCase().includes(q));
+
+    gp.innerHTML = pinned.map(tileHTML).join('');
+    ga.innerHTML = avail.map(tileHTML).join('');
+
+    const totalPinned = items.filter(i => i.pinned).length;
+    document.getElementById('pinCount').textContent   = totalPinned;
+    document.getElementById('availCount').textContent = items.length - totalPinned;
+    document.getElementById('headCount').textContent  = totalPinned + ' pinned';
+    document.getElementById('barCount').textContent   = totalPinned;
+    document.getElementById('emptyMsg').style.display = (pinned.length + avail.length === 0) ? '' : 'none';
+  }
+
+  // toggle pin
+  document.querySelectorAll('.grid3').forEach(g => {
+    g.addEventListener('click', e => {
+      const t = e.target.closest('.tile');
+      if (!t) return;
+      const it = items.find(i => i.id === t.dataset.id);
+      it.pinned = !it.pinned;
+      render();
+    });
+  });
+
+  document.getElementById('filterBox').addEventListener('input', render);
+
+  document.getElementById('unpinAll').addEventListener('click', () => {
+    items.forEach(i => i.pinned = false);
+    render();
+  });
+
+  document.getElementById('addCurrent').addEventListener('click', () => {
+    const it = items.find(i => i.id === 'reports');
+    if (it && !it.pinned) { it.pinned = true; render(); }
+  });
+
+  document.getElementById('railSwitch').addEventListener('click', function () {
+    this.querySelector('.sw').classList.toggle('on');
+  });
+
+  const pop = document.getElementById('pop');
+  document.getElementById('closePop').addEventListener('click', () => pop.style.display = 'none');
+  document.getElementById('doneBtn').addEventListener('click', () => pop.style.display = 'none');
+  document.getElementById('openPop').addEventListener('click', () => pop.style.display = 'flex');
+
+  render();
+</script>
+
+</body>
+</html>
+```

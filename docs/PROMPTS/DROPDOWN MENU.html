@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module Nav — Hover-to-Open (no footer)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1; --bg:#eef4f4;
+    --sh-bar: 0 6px 18px -12px rgba(10,42,46,.22), inset 0 1px 0 #fff;
+    --sh-drop: 0 24px 48px -16px rgba(8,40,44,.50), 0 48px 96px -32px rgba(8,40,44,.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(180deg, #f2f7f7 0%, #e9f1f0 100%);
+    min-height: 100vh; color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 10px; }
+
+  .row1 { height: 14px; background: linear-gradient(180deg, var(--deep-2), var(--deep-3)); }
+
+  /* ============ ROW-2 BAR ============ */
+  .row2 {
+    position: sticky; top: 0; z-index: 60;
+    background: linear-gradient(180deg, #ffffff 0%, #f5fbfa 100%);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--sh-bar);
+  }
+  .nav { max-width: 1440px; margin: 0 auto; padding: 7px 18px; display: flex; align-items: center; gap: 3px; }
+  .nav .spacer { flex: 1; }
+  .vsep { width: 1px; height: 22px; background: var(--line); margin: 0 6px; }
+
+  /* ---- wrapper ---- */
+  .mi { position: relative; display: inline-flex; }
+
+  /* invisible bridge: covers the 12px gap so hover state persists while moving cursor */
+  .mi::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    height: 14px;
+    display: none;
+  }
+  .mi:hover::after, .mi:focus-within::after { display: block; }
+
+  /* ---- trigger ---- */
+  .mi-btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    height: 40px; padding: 0 13px 0 9px;
+    border: none; border-radius: 12px; background: transparent;
+    color: var(--sub); font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em;
+    cursor: pointer; transition: all .16s ease;
+  }
+  .mi-btn .tic {
+    width: 28px; height: 28px; border-radius: 9px;
+    display: grid; place-items: center;
+    background: rgba(17,69,75,.05); border: 1px solid rgba(17,69,75,.10);
+    color: var(--deep-1); transition: all .16s ease;
+  }
+  .mi-btn .tic svg, .mi-btn .nc { stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .mi-btn .tic svg { width: 15px; height: 15px; }
+  .mi-btn .nc { width: 10px; height: 10px; stroke-width: 2.4; opacity: .5; transition: transform .18s ease, opacity .16s; }
+
+  .mi-btn:hover { background: rgba(18,143,142,.07); color: var(--deep-1); transform: translateY(-1px); }
+  .mi-btn:hover .tic { background: rgba(18,143,142,.10); border-color: rgba(18,143,142,.22); color: var(--sec); }
+  .mi-btn:hover .nc { opacity: .85; }
+
+  /* open state — driven by :hover / :focus-within */
+  .mi:hover .mi-btn,
+  .mi:focus-within .mi-btn {
+    background: linear-gradient(180deg, var(--sec-2) 0%, var(--sec) 100%);
+    color: #fff;
+    box-shadow: 0 6px 14px -6px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .mi:hover .mi-btn .tic,
+  .mi:focus-within .mi-btn .tic { background: rgba(255,255,255,.16); border-color: transparent; color: #fff; }
+  .mi:hover .mi-btn .nc,
+  .mi:focus-within .mi-btn .nc { opacity: .9; transform: rotate(180deg); }
+
+  /* overflow */
+  .ovf {
+    width: 36px; height: 36px; border-radius: 10px;
+    border: 1px solid var(--border); background: #fff; color: var(--muted);
+    display: grid; place-items: center; cursor: pointer; transition: all .15s;
+  }
+  .ovf:hover { border-color: rgba(18,143,142,.35); color: var(--sec); background: rgba(18,143,142,.05); }
+  .ovf svg { width: 15px; height: 15px; fill: currentColor; }
+
+  /* ============ DROPDOWN ============ */
+  .drop {
+    position: absolute; top: calc(100% + 12px); left: 0; min-width: 276px;
+    padding: 8px; border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.14);
+    background:
+      radial-gradient(340px 150px at 12% -18%, rgba(255,255,255,.10), transparent 60%),
+      linear-gradient(180deg, var(--deep-1) 0%, var(--deep-2) 55%, var(--deep-3) 100%);
+    box-shadow: var(--sh-drop), inset 0 1px 0 rgba(255,255,255,.12);
+    z-index: 70;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(.98);
+    pointer-events: none;
+    transition:
+      opacity .18s ease,
+      transform .18s cubic-bezier(.2,.8,.2,1),
+      visibility 0s linear .2s;
+  }
+  .mi:hover .drop,
+  .mi:focus-within .drop {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+    transition:
+      opacity .18s ease,
+      transform .18s cubic-bezier(.2,.8,.2,1),
+      visibility 0s linear 0s;
+  }
+  .drop::before {
+    content: ''; position: absolute; top: -6px; left: 22px; width: 12px; height: 12px;
+    background: var(--deep-1); transform: rotate(45deg); border-radius: 3px;
+    border-left: 1px solid rgba(255,255,255,.14); border-top: 1px solid rgba(255,255,255,.14);
+  }
+
+  /* panel head */
+  .dp-head { display: flex; align-items: center; gap: 10px; padding: 8px 8px 10px; }
+  .dp-head .bic {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.16);
+    color: var(--mint); box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .dp-head .bic svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .dp-head .t { font-size: 13.5px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .dp-head .s { font-size: 10.5px; font-weight: 600; color: rgba(226,244,244,.55); margin-top: 1px; }
+  .dp-div { height: 1px; background: rgba(255,255,255,.10); margin: 2px 6px 6px; }
+
+  .dp-g { padding: 9px 10px 5px; font-size: 9.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(226,244,244,.42); }
+
+  .di {
+    position: relative;
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 8px 9px; border: none; border-radius: 11px; background: transparent;
+    color: rgba(226,244,244,.88); font-size: 13px; font-weight: 600; text-align: left;
+    cursor: pointer; transition: all .15s ease;
+    animation: diIn .24s ease both;
+  }
+  .mi:hover .di, .mi:focus-within .di { animation-play-state: running; }
+
+  @keyframes diIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  .di:nth-child(2)  { animation-delay: 20ms; }
+  .di:nth-child(3)  { animation-delay: 40ms; }
+  .di:nth-child(4)  { animation-delay: 60ms; }
+  .di:nth-child(5)  { animation-delay: 80ms; }
+  .di:nth-child(6)  { animation-delay: 100ms; }
+  .di:nth-child(7)  { animation-delay: 120ms; }
+  .di:nth-child(8)  { animation-delay: 140ms; }
+  .di:nth-child(9)  { animation-delay: 160ms; }
+  .di:nth-child(10) { animation-delay: 180ms; }
+
+  .di .dic {
+    width: 26px; height: 26px; min-width: 26px; border-radius: 8px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10);
+    color: rgba(226,244,244,.75); transition: all .15s ease;
+  }
+  .di .dic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .di .lb { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .di .ct {
+    font-size: 9.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px;
+    background: rgba(180,83,9,.28); border: 1px solid rgba(251,191,138,.30); color: #fbd0a0;
+    font-variant-numeric: tabular-nums;
+  }
+  .di::before {
+    content: ''; position: absolute; left: 3px; top: 8px; bottom: 8px; width: 3px;
+    border-radius: 99px; background: var(--mint); opacity: 0; transition: opacity .15s;
+  }
+  .di:hover { background: rgba(255,255,255,.08); color: #fff; transform: translateX(2px); }
+  .di:hover .dic { background: rgba(127,209,192,.16); border-color: rgba(127,209,192,.30); color: var(--mint); }
+  .di:hover::before { opacity: 1; }
+
+  .di.cur {
+    background: linear-gradient(90deg, rgba(18,143,142,.38), rgba(18,143,142,.10));
+    box-shadow: inset 0 0 0 1px rgba(127,209,192,.32);
+    color: #fff;
+  }
+  .di.cur .dic { background: rgba(127,209,192,.20); border-color: transparent; color: var(--mint); }
+  .di.cur::before { opacity: 1; }
+  .di:focus-visible { outline: 2px solid rgba(127,209,192,.6); outline-offset: -2px; }
+
+  /* page hint rows */
+  .pagehint { max-width: 1440px; margin: 0 auto; padding: 26px 18px; }
+  .ph { height: 44px; border-radius: 12px; background: rgba(255,255,255,.6); border: 1px solid var(--line); margin-bottom: 10px; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="row1"></div>
+
+<header class="row2">
+  <nav class="nav" aria-label="Modules">
+
+    <!-- INVENTORY -->
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg></span>
+        Inventory
+        <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+
+      <div class="drop" role="menu" aria-label="Inventory">
+        <div class="dp-head">
+          <span class="bic"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg></span>
+          <span><span class="t">Inventory</span><br><span class="s">Stock control &amp; catalogue</span></span>
+        </div>
+        <div class="dp-div"></div>
+
+        <div class="dp-g">Overview</div>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><path d="M5 19a9 9 0 1114 0"/><path d="M12 13l4-4"/></svg></span>
+          <span class="lb">Dashboard</span>
+        </button>
+
+        <div class="dp-g">Catalogue</div>
+        <button type="button" class="di cur" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg></span>
+          <span class="lb">Items</span>
+        </button>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.83z"/><circle cx="7" cy="7" r="1.5"/></svg></span>
+          <span class="lb">Categories</span>
+        </button>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><path d="M12 2l10 6-10 6L2 8z"/><path d="M2 14l10 6 10-6"/></svg></span>
+          <span class="lb">Assemblies</span>
+        </button>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="8" rx="2"/><path d="M6 8v3M10 8v3M14 8v3M18 8v3"/></svg></span>
+          <span class="lb">UOM &amp; Landed Costs</span>
+        </button>
+
+        <div class="dp-g">Movements</div>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg></span>
+          <span class="lb">Transfers</span>
+        </button>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 8h6M17 16h6"/></svg></span>
+          <span class="lb">Adjustments</span>
+        </button>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><path d="M9 13l2 2 4-4"/></svg></span>
+          <span class="lb">Stock Count</span>
+        </button>
+
+        <div class="dp-g">Control</div>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></span>
+          <span class="lb">Valuation</span>
+        </button>
+        <button type="button" class="di" role="menuitem">
+          <span class="dic"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+          <span class="lb">Low Stock</span>
+          <span class="ct">2</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- other modules (same structure, no dropdowns for brevity) -->
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></span>
+        Banking <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>
+        Accounting <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></span>
+        Assets <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+        Payroll <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <span class="vsep"></span>
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span>
+        Reports <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span>
+        Taxation <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg></span>
+        POS <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="mi">
+      <button type="button" class="mi-btn" aria-haspopup="true">
+        <span class="tic"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></span>
+        Analytics <svg class="nc" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <span class="spacer"></span>
+    <button type="button" class="ovf" aria-label="More modules"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+  </nav>
+</header>
+
+<div class="pagehint">
+  <div class="ph"></div><div class="ph"></div><div class="ph"></div>
+</div>
+
+</body>
+</html>
