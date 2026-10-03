@@ -224,8 +224,10 @@ class TransactionControlsController extends Controller
             'authPayload' => $authPayload,
             'currencySymbol' => $this->currencySymbol($companyId),
             'threshold' => JournalReversalService::identityVerifyThreshold(),
+            'canPost' => $request->user()->can('journal-entries.post'),
             'urls' => [
                 'reverse' => route('accounting.transaction-controls.reverse', ['id' => '__ID__']),
+                'post' => route('accounting.transaction-controls.post', ['id' => '__ID__']),
                 'reopen' => route('accounting.transaction-controls.reopen', ['id' => '__ID__']),
                 'destroy' => route('accounting.transaction-controls.destroy', ['id' => '__ID__']),
                 'approve' => route('accounting.transaction-controls.approve', ['id' => '__ID__']),
@@ -320,6 +322,26 @@ class TransactionControlsController extends Controller
         return $this->workspaceRedirect($request, 'unposted', 'success', 'Draft transaction deleted.');
     }
 
+    public function post(Request $request, int $id)
+    {
+        $this->requirePermission($request, 'journal-entries.post');
+
+        $companyId = (int) session('current_company_id');
+        $userId = (int) Auth::id();
+
+        $entry = JournalEntry::forCompany($companyId)->findOrFail($id);
+
+        abort_unless($this->policy->postUnposted($request->user(), $entry), 403);
+
+        try {
+            $this->postingEngine->postFinalized($entry->id, $userId);
+        } catch (\InvalidArgumentException|HttpExceptionInterface $e) {
+            return $this->workspaceRedirect($request, 'unposted', 'error', $e->getMessage());
+        }
+
+        return $this->workspaceRedirect($request, 'unposted', 'success', 'Transaction posted to the ledger.');
+    }
+
     public function approve(Request $request, int $id)
     {
         $this->requirePermission($request, 'transaction-reversals.approve');
@@ -409,12 +431,13 @@ class TransactionControlsController extends Controller
             'sub' => $entry->reference,
             'amount' => (float) $entry->total_debit,
             'status' => $entry->status,
-            'state' => $entry->status === JournalEntry::STATUS_DRAFT ? 'Draft' : 'Finalized',
+            'state' => $entry->status === JournalEntry::STATUS_DRAFT ? 'Draft' : 'Unposted',
             'postedBy' => $this->nameFor($entry->created_by),
             'creator' => $this->nameFor($entry->created_by),
             'createdBy' => $entry->created_by,
             'awaitingAuthorization' => $awaiting,
             'reversible' => $entry->isPosted() && !$awaiting,
+            'postable' => $entry->status === JournalEntry::STATUS_PENDING_APPROVAL,
             'lines' => $entry->lines->map(fn ($line) => [
                 'code' => optional($line->account)->code,
                 'name' => optional($line->account)->name,

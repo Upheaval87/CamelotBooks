@@ -514,3 +514,118 @@ live probe and the headless check.
 The same relation-on-tenant-connection issue affects other modules that display `->createdBy`
 (e.g. `accounting/bills/show`, `accounting/invoices/show`); those pages are unchanged in this round
 because the directive covered the Transaction Controls workspace only.
+
+## Round 9 - "Select period" modal for the Transactions List
+
+### Ask
+
+On `accounting/transaction-controls`, add a button that opens a modal allowing the user to choose a
+period — **From**, **To**, and **Quick ranges** (Today, Last 7 days, This month, Last 30 days) — with a
+**Load transactions** action. Selecting a new period and pressing **Load transactions** must refresh
+the transaction list for that period. The modal must adopt the module's existing modal design and
+expose **only** a "Close" button and a close (×) icon.
+
+### Implementation
+
+- **Trigger** — a `Change period` button was added to the page header (`index.blade.php`), shown when
+  a period is already loaded (`@if ($loaded)`). It is grouped with the existing "Reversal register"
+  link inside a new `.header-actions` container.
+- **Modal** — appended to `_modals.blade.php` as a `.jmodal` + `.mbox.narrow` using the module's
+  standard chrome: navy-gradient `.m-head` with a `.m-ic` calendar tile, `.m-title` and `.m-close` (×)
+  icon, a `.m-body` holding the form, and a `.m-foot.end` whose only action is the **Close** button.
+  The body form (`#tc-period-form`, `data-tc-period-form`) is a `GET` to
+  `accounting.transaction-controls.index` with a hidden `tab=reversal` and required `from` / `to`
+  date inputs (defaulting to the current month start / today), the four quick-range chips, and the
+  **Load transactions** submit button.
+- **Quick ranges** — the modal presets call the new `setRange($event, key)` Alpine helper, which only
+  fills the From/To inputs (and marks the active chip) **without** submitting, so the user confirms
+  with **Load transactions**. The pre-existing gate presets keep their `applyPreset()` auto-submit
+  behaviour.
+- **State** — `open.period` was added to the Alpine `open` object and `periodPreset` tracks the active
+  chip; `closeAll()` (bound to `Esc`) now also closes the period modal.
+- **CSS** — `.tc .header-actions` (flex row) and `.tc .preset.on` (active teal chip) added to the
+  module block in `app.css`.
+
+### Verification
+
+- `view:clear` / `view:cache` clean; `npm run build` → `app-CszjYda4.js` + `app-CQ05CNsZ.css`
+  (`setRange` and `.preset.on` / `.header-actions` present in the bundles).
+- `TransactionControlsTest`: **30 passed / 110 assertions** (28 → 30). New tests:
+  `test_change_period_button_opens_period_modal` (button, modal form/markup, all four preset
+  `setRange` bindings, "Load transactions", single "Close" footer action) and
+  `test_period_modal_button_absent_before_a_period_is_loaded` (button hidden until a period is
+  loaded; gate still renders).
+- Headless Chrome (company 1, `probe@camelot.test`): button present → modal opens and is visible
+  ("Select period"); body shows the 4 presets + "Load transactions"; footer shows only "Close";
+  clicking **Last 7 days** fills `from=2026-09-27` / `to=2026-10-03` (active chip set) without
+  navigating; **Load transactions** reloads with `?tab=reversal&from=2026-09-27&to=2026-10-03`; the
+  **Close** button hides the modal without navigating. No JS errors (only the pre-existing benign
+  `/favourites` 401).
+
+### Out of scope
+
+Server-side date resolution, filtering and the reversal workflow are unchanged — the modal simply
+performs the same `GET` reload the gate already used.
+
+## Round 10 - Unposted cleanup, Post action, and sample data
+
+### Asks
+
+1. Remove the intro hint text from the **Reversals Processed** pane and the **Unposted Transactions**
+   pane.
+2. The **Unposted Transactions** tab must list both `draft` and unposted (`pending_approval`) journals
+   and label them correctly (the finalized/unposted state was shown as "Finalized").
+3. Give an unposted (`pending_approval`) row a **Post** action — an icon in the row and a button in
+   its view modal — that posts the entry to the ledger.
+4. Create sample transactions: a `draft`, an `unposted`, and another entry visible in the
+   **Reversals Processed** tab.
+
+### Implementation
+
+- **Hint removals** — deleted the `.rowhead` hint block from `_pane-reversals-processed.blade.php`
+  and the `<p class="hint">` from `_pane-unposted.blade.php` (the pane's "New Journal" button was
+  kept and moved to `margin-left:auto` via a new `.sp` class so it stays right-aligned).
+- **Labels** — the unposted sub-copy `Finalized — awaiting post` → **`Unposted — awaiting posting`**,
+  the row state pill `Finalized` → **`Unposted`**, and the empty-state copy `Draft and finalized
+  journals will appear here.` → `Draft and unposted journals will appear here.`.
+- **Post action**
+  - `TransactionControlPolicy::postUnposted()` — allows posting when the entry is
+    `STATUS_PENDING_APPROVAL` and the user can `journal-entries.post`.
+  - `TransactionControlsController::post()` — `requirePermission('journal-entries.post')`, `findOrFail`,
+    policy check, then `JournalPostingEngine::postFinalized($entry->id, $userId)` inside a try/catch
+    (`InvalidArgumentException` / `HttpExceptionInterface`); redirects back to the Unposted tab with a
+    success/error flash. Wired to `POST .../post` (route `accounting.transaction-controls.post`, `{id}`
+    `[0-9]+`, no SOD — posting is not a maker-checker step here).
+  - `entryPayload()` gained `'postable' => $entry->status === STATUS_PENDING_APPROVAL` and the
+    view-modal state string changed from `Finalized` to **`Unposted`**.
+  - `workspaceConfig` gained `'canPost'` and `'urls.post'`; JS gained `canPost` and `askPost(id)`
+    (opens the shared confirm box → `#tc-post-form`).
+  - `_pane-unposted.blade.php` — a green `.ib.okb` **Post** icon on unposted rows (between View and
+    Reopen). `_modals.blade.php` — the view modal's footer now shows the clipboard note "Lines are
+    locked. Posting writes this entry to the ledger." and a **Post** button when `postable && canPost`,
+    plus a hidden `#tc-post-form`.
+  - `app.css` — `.tc .ib.okb` (+ `:hover`) teal/green action styling.
+
+### Sample data
+
+Seeded on the live company 1 (Acme / `acct_acme_149593cc`) via a one-off script:
+
+- draft `JE-2026-0013` — "Sample — office supplies accrual (draft)";
+- unposted `JE-2026-0014` — "Sample — service revenue on account (unposted)" (`postAsDraft` → `finalize`);
+- `TransactionReversalRequest` `TRR-SAMPLE-001` (status `reversed`, original `JE-2026-0011`) plus its
+  `TransactionReversal` (`TRV-SAMPLE-001`), so the **Reversals Processed** tab is populated.
+
+### Verification
+
+- `php -l` clean on controller/policy/route/test; `view:cache` clean.
+- `TransactionControlsTest` **34 passed / 126 assertions** (was 30/110). New tests:
+  `test_unposted_pane_uses_unposted_label_and_shows_post_action`,
+  `test_unposted_pane_hides_finalized_hint_text`, `test_reversals_processed_pane_hides_intro_hint_text`,
+  and `test_post_action_moves_unposted_entry_to_ledger`.
+- `npm run build` → `app-gDEQCANr.js` + `app-0rloEM8a.css` (`.tc .ib.okb` present in the bundle).
+- Live headless (company 1, `probe@camelot.test`): Unposted tab shows "Unposted — awaiting posting",
+  both samples, 3 Post icons + 3 Reopen icons, and neither removed hint (old `Finalized — awaiting post`
+  / finalized-hint absent); the view modal for `JE-2026-0014` renders the `Unposted` pill, the "Lines
+  are locked…" note and a **visible Post button**; the Reversals Processed tab shows `TRR-SAMPLE-001`
+  with original `JE-2026-0011` and no removed hint. Only console noise is the pre-existing benign
+  `/favourites` 401.

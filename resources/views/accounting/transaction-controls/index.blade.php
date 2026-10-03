@@ -17,10 +17,18 @@
                         </span>
                         <h1>{{ __('Transaction Controls') }}</h1>
                     </div>
-                    <a class="btn btn-ghost btn-sm" href="{{ route('accounting.reversals.index') }}">
-                        <svg viewBox="0 0 24 24"><path d="M8 7h12m0 0-4-4m4 4-4 4M16 17H4m0 0 4 4m-4-4 4-4"/></svg>
-                        {{ __('Reversal register') }}
-                    </a>
+                    <div class="header-actions">
+                        @if ($loaded)
+                            <button type="button" class="btn btn-ghost btn-sm" @click="open.period = true">
+                                <svg viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/></svg>
+                                {{ __('Change period') }}
+                            </button>
+                        @endif
+                        <a class="btn btn-ghost btn-sm" href="{{ route('accounting.reversals.index') }}">
+                            <svg viewBox="0 0 24 24"><path d="M8 7h12m0 0-4-4m4 4-4 4M16 17H4m0 0 4 4m-4-4 4-4"/></svg>
+                            {{ __('Reversal register') }}
+                        </a>
+                    </div>
                 </header>
 
                 {{-- ── Tabs ── --}}

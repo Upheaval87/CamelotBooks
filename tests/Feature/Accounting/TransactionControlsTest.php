@@ -183,6 +183,34 @@ class TransactionControlsTest extends TestCase
             ->assertSee($this->user->name);
     }
 
+    public function test_change_period_button_opens_period_modal(): void
+    {
+        $this->postedEntry();
+
+        $this->get($this->indexUrl(['from' => '2026-08-01', 'to' => '2026-08-31']))
+            ->assertOk()
+            ->assertSee('Change period')
+            ->assertSee('open.period = true', false)
+            ->assertSee('data-tc-period-form', false)
+            ->assertSee('id="tc-period-title"', false)
+            ->assertSee('Quick ranges')
+            ->assertSee('Load transactions')
+            ->assertSee("setRange(\$event, 'today')", false)
+            ->assertSee("setRange(\$event, '7d')", false)
+            ->assertSee("setRange(\$event, 'month')", false)
+            ->assertSee("setRange(\$event, '30d')", false)
+            // Footer exposes only a Close action (plus the header close icon).
+            ->assertSee('Close</button>', false);
+    }
+
+    public function test_period_modal_button_absent_before_a_period_is_loaded(): void
+    {
+        $this->get($this->indexUrl())
+            ->assertOk()
+            ->assertDontSee('Change period')
+            ->assertSee('Load posted & saved transactions');
+    }
+
     public function test_reversal_pane_reads_actor_names_from_supplied_map_not_tenant_relations(): void
     {
         $entry = $this->postedEntry();
@@ -313,6 +341,50 @@ class TransactionControlsTest extends TestCase
             ->assertOk()
             ->assertSee($draft->journal_number)
             ->assertSee('Draft');
+    }
+
+    public function test_unposted_pane_uses_unposted_label_and_shows_post_action(): void
+    {
+        $draft = $this->draftEntry();
+        app(JournalPostingEngine::class)->finalize($draft->id, $this->user->id);
+
+        $this->get($this->indexUrl(['tab' => 'unposted']))
+            ->assertOk()
+            ->assertSee($draft->journal_number)
+            ->assertSee('Unposted — awaiting posting')
+            ->assertSee('Unposted')
+            ->assertDontSee('Finalized')
+            ->assertSee('askPost(' . $draft->id . ')', false)
+            ->assertSee('class="ib okb"', false);
+    }
+
+    public function test_unposted_pane_hides_finalized_hint_text(): void
+    {
+        $this->get($this->indexUrl(['tab' => 'unposted']))
+            ->assertOk()
+            ->assertDontSee('Draft and finalized journals awaiting posting')
+            ->assertSee('Draft and unposted journals will appear here.');
+    }
+
+    public function test_reversals_processed_pane_hides_intro_hint_text(): void
+    {
+        $this->get($this->indexUrl(['tab' => 'reversals_processed']))
+            ->assertOk()
+            ->assertDontSee('Reversals authorized in the Authorization tab and posted to the ledger')
+            ->assertSee('No reversals processed yet');
+    }
+
+    public function test_post_action_moves_unposted_entry_to_ledger(): void
+    {
+        $draft = $this->draftEntry();
+        app(JournalPostingEngine::class)->finalize($draft->id, $this->user->id);
+
+        $this->assertSame(JournalEntry::STATUS_PENDING_APPROVAL, $draft->fresh()->status);
+
+        $this->post(route('accounting.transaction-controls.post', ['id' => $draft->id]))
+            ->assertRedirect();
+
+        $this->assertSame(JournalEntry::STATUS_POSTED, $draft->fresh()->status);
     }
 
     public function test_authorization_pane_lists_assigned_queue(): void

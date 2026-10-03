@@ -1,8 +1,4 @@
 {{-- ── Pane 4: Reversals Processed ── --}}
-<div class="rowhead">
-    <p class="hint">{{ __('Reversals authorized in the Authorization tab and posted to the ledger. These transactions are reversed and finalized — no further action is required.') }}</p>
-</div>
-
 @if ($dateError)
     <div class="gerr" role="alert">{{ $dateError }}</div>
 @endif

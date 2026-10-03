@@ -18876,6 +18876,7 @@ textarea.jr-in { height: auto; padding: 9px 11px; resize: vertical }
 }
 .tc .header-icon svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .tc .page-header h1 { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--tc-ink); margin: 0; }
+.tc .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 /* ===== BUTTONS ===== */
 .tc .btn {
@@ -18955,6 +18956,7 @@ textarea.jr-in { height: auto; padding: 9px 11px; resize: vertical }
     font-size: 12px; font-weight: 600; cursor: pointer; transition: all .14s ease;
 }
 .tc .preset:hover { border-color: var(--tc-sec); color: var(--tc-sec); background: rgba(18, 143, 142, .05); }
+.tc .preset.on { border-color: var(--tc-sec); color: #EAFFFF; background: linear-gradient(180deg, var(--tc-sec2), var(--tc-sec)); }
 .tc .loaded-chip {
     display: inline-flex; align-items: center; gap: 7px; margin-top: 16px;
     padding: 7px 12px; border-radius: 999px;
@@ -19073,6 +19075,8 @@ textarea.jr-in { height: auto; padding: 9px 11px; resize: vertical }
 .tc .ib:hover { border-color: var(--tc-sec); color: var(--tc-sec); background: rgba(18, 143, 142, .05); }
 .tc .ib svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .tc .ib.warnb:hover { border-color: var(--tc-amber); color: var(--tc-amber2); background: rgba(217, 119, 6, .06); }
+.tc .ib.okb { border-color: rgba(21, 128, 61, .28); color: var(--tc-green); }
+.tc .ib.okb:hover { border-color: var(--tc-green); color: var(--tc-green); background: rgba(21, 128, 61, .08); }
 .tc .ib.delb:hover { border-color: var(--tc-red); color: var(--tc-red2); background: rgba(220, 38, 38, .06); }
 .tc .actcell { display: flex; gap: 6px; justify-content: flex-end; }
 

@@ -9,8 +9,8 @@
                 <div class="m-title" id="tc-view-title" x-text="viewTx ? (viewTx.typeLabel || '{{ __('Journal Entry') }}') : ''">{{ __('Journal Entry') }}</div>
             </div>
             <span class="m-ref" x-text="viewTx ? viewTx.ref : ''"></span>
-            <span class="pill m-pill" :class="viewTx && viewTx.status === 'reversed' ? 'rev' : (viewTx && viewTx.awaitingAuthorization ? 'fin' : 'posted')">
-                <i></i><span x-text="viewTx && viewTx.status === 'reversed' ? '{{ __('Reversed') }}' : (viewTx && viewTx.awaitingAuthorization ? '{{ __('Awaiting authorization') }}' : '{{ __('Posted') }}')"></span>
+            <span class="pill m-pill" :class="viewTx && viewTx.status === 'reversed' ? 'rev' : (viewTx && (viewTx.awaitingAuthorization || viewTx.postable) ? 'fin' : (viewTx && viewTx.status === 'draft' ? 'draft' : 'posted'))">
+                <i></i><span x-text="viewTx && viewTx.status === 'reversed' ? '{{ __('Reversed') }}' : (viewTx && viewTx.awaitingAuthorization ? '{{ __('Awaiting authorization') }}' : (viewTx && viewTx.postable ? '{{ __('Unposted') }}' : (viewTx && viewTx.status === 'draft' ? '{{ __('Draft') }}' : '{{ __('Posted') }}')))"></span>
             </span>
             <button type="button" class="m-close" @click="open.view = false" aria-label="{{ __('Close') }}">
                 <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -66,8 +66,12 @@
         <div class="m-foot">
             <span class="mnote" x-show="viewTx && viewTx.status === 'reversed'">{{ __('This entry has a posted reversal against it.') }}</span>
             <span class="mnote" x-show="viewTx && viewTx.awaitingAuthorization">{{ __('A reversal is awaiting authorization.') }}</span>
+            <span class="mnote" x-show="viewTx && viewTx.postable">{{ __('Lines are locked. Posting writes this entry to the ledger.') }}</span>
             <div class="m-act">
                 <button type="button" class="btn btn-ghost btn-sm" @click="open.view = false">{{ __('Close') }}</button>
+                @can('journal-entries.post')
+                    <button type="button" class="btn btn-primary btn-sm" x-show="viewTx && viewTx.postable && canPost" @click="askPost(viewTx.id)">{{ __('Post') }}</button>
+                @endcan
                 @can('transaction-reversals.request')
                     <button type="button" class="btn btn-danger-o btn-sm" x-show="viewTx && viewTx.reversible" @click="open.view = false; openReverse(viewTx)">{{ __('Capture reversal') }}</button>
                 @endcan
@@ -241,6 +245,61 @@
     </div>
 </div>
 
+{{-- ── Select period ── --}}
+<div class="jmodal" x-show="open.period" x-cloak @click.self="open.period = false" role="dialog" aria-modal="true" aria-labelledby="tc-period-title">
+    <div class="mbox narrow">
+        <div class="m-head">
+            <span class="m-ic">
+                <svg viewBox="0 0 24 24"><path d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/></svg>
+            </span>
+            <div>
+                <div class="m-title" id="tc-period-title">{{ __('Select period') }}</div>
+            </div>
+            <button type="button" class="m-close" @click="open.period = false" aria-label="{{ __('Close') }}">
+                <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="m-body">
+            <form method="GET" action="{{ route('accounting.transaction-controls.index') }}" id="tc-period-form" data-tc-period-form>
+                <input type="hidden" name="tab" value="reversal">
+
+                <div class="f-grid">
+                    <label class="fld">
+                        <span>{{ __('From') }} <em>*</em></span>
+                        <input type="date" name="from" class="in" value="{{ $from ?? now()->startOfMonth()->format('Y-m-d') }}" required>
+                    </label>
+                    <label class="fld">
+                        <span>{{ __('To') }} <em>*</em></span>
+                        <input type="date" name="to" class="in" value="{{ $to ?? now()->format('Y-m-d') }}" required>
+                    </label>
+                </div>
+
+                <div class="presets">
+                    <span>{{ __('Quick ranges') }}</span>
+                    <button type="button" class="preset" :class="periodPreset === 'today' ? 'on' : ''" @click="setRange($event, 'today')">{{ __('Today') }}</button>
+                    <button type="button" class="preset" :class="periodPreset === '7d' ? 'on' : ''" @click="setRange($event, '7d')">{{ __('Last 7 days') }}</button>
+                    <button type="button" class="preset" :class="periodPreset === 'month' ? 'on' : ''" @click="setRange($event, 'month')">{{ __('This month') }}</button>
+                    <button type="button" class="preset" :class="periodPreset === '30d' ? 'on' : ''" @click="setRange($event, '30d')">{{ __('Last 30 days') }}</button>
+                </div>
+
+                <div style="margin-top:18px">
+                    <button type="submit" class="btn btn-cta">
+                        <svg viewBox="0 0 24 24"><path d="m21 21-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/></svg>
+                        {{ __('Load transactions') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="m-foot end">
+            <div class="m-act">
+                <button type="button" class="btn btn-ghost btn-sm" @click="open.period = false">{{ __('Close') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ── Hidden action forms ── --}}
 <form id="tc-delete-form" method="POST" :action="unpTx ? urls.destroy.replace('__ID__', unpTx.id) : ''" class="hiddenform">
     @csrf
@@ -254,6 +313,12 @@
     <input type="hidden" name="from" value="{{ $from }}">
     <input type="hidden" name="to" value="{{ $to }}">
     <input type="hidden" name="reason" value="">
+</form>
+
+<form id="tc-post-form" method="POST" :action="unpTx ? urls.post.replace('__ID__', unpTx.id) : ''" class="hiddenform">
+    @csrf
+    <input type="hidden" name="from" value="{{ $from }}">
+    <input type="hidden" name="to" value="{{ $to }}">
 </form>
 
 <form id="tc-approve-form" method="POST" :action="authReq ? urls.approve.replace('__ID__', authReq.id) : ''" class="hiddenform">

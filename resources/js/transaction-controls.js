@@ -13,6 +13,7 @@ document.addEventListener('alpine:init', () => {
         unposted: config.unposted || [],
         authRows: config.authRows || [],
         urls: config.urls || {},
+        canPost: config.canPost || false,
         currencySymbol: config.currencySymbol || '$',
         today: new Date().toISOString().slice(0, 10),
 
@@ -28,7 +29,9 @@ document.addEventListener('alpine:init', () => {
             reason: '',
         },
 
-        open: { view: false, reverse: false, auth: false },
+        open: { view: false, reverse: false, auth: false, period: false },
+
+        periodPreset: '',
 
         notice: { open: false },
 
@@ -167,6 +170,19 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        askPost(id) {
+            const tx = this.unpostedById(id);
+            if (!tx) return;
+            this.unpTx = tx;
+            this.askConfirm({
+                title: 'Post transaction',
+                body: 'Post ' + tx.ref + ' to the ledger? This cannot be undone.',
+                label: 'Post to ledger',
+                tone: 'primary',
+                formId: 'tc-post-form',
+            });
+        },
+
         askApprove() {
             const r = this.authReq;
             if (!r) return;
@@ -234,9 +250,41 @@ document.addEventListener('alpine:init', () => {
         },
 
         closeAll() {
-            this.open = { view: false, reverse: false, auth: false };
+            this.open = { view: false, reverse: false, auth: false, period: false };
             this.confirm.open = false;
             this.notice.open = false;
+        },
+
+        setRange(ev, key) {
+            const form = ev.currentTarget.closest('form')
+                || document.querySelector('[data-tc-period-form]');
+            if (!form) return;
+            const from = form.querySelector('input[name="from"]');
+            const to = form.querySelector('input[name="to"]');
+            const d = new Date();
+            const iso = (x) => x.toISOString().slice(0, 10);
+            let f;
+            let t;
+            if (key === 'today') {
+                f = t = iso(d);
+            } else if (key === '7d') {
+                const s = new Date(d);
+                s.setDate(d.getDate() - 6);
+                f = iso(s);
+                t = iso(d);
+            } else if (key === '30d') {
+                const s = new Date(d);
+                s.setDate(d.getDate() - 29);
+                f = iso(s);
+                t = iso(d);
+            } else {
+                const s = new Date(d.getFullYear(), d.getMonth(), 1);
+                f = iso(s);
+                t = iso(d);
+            }
+            if (from) from.value = f;
+            if (to) to.value = t;
+            this.periodPreset = key;
         },
 
         applyPreset(ev, key) {

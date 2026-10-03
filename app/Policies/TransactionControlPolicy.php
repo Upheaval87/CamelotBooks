@@ -50,6 +50,15 @@ class TransactionControlPolicy
     }
 
     /**
+     * May the user post a finalized (unposted) transaction to the ledger?
+     */
+    public function postUnposted(User $user, JournalEntry $entry): bool
+    {
+        return $entry->status === JournalEntry::STATUS_PENDING_APPROVAL
+            && $user->can('journal-entries.post');
+    }
+
+    /**
      * May the user act on the authorization queue (approve / reject)?
      */
     public function authorizeRequests(User $user): bool

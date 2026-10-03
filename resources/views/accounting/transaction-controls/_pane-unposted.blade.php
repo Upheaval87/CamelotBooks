@@ -1,6 +1,5 @@
 {{-- ── Pane 2: Unposted Transactions ── --}}
 <div class="rowhead">
-    <p class="hint">{{ __('Draft and finalized journals awaiting posting. Reopen a finalized entry to edit it, or delete a draft you own.') }}</p>
     @can('journal-entries.create')
         <a class="btn btn-ghost btn-sm sp" href="{{ route('accounting.journal-entries.create') }}">
             <svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
@@ -34,7 +33,7 @@
                             <span class="dmain">{{ \Illuminate\Support\Str::limit($entry->memo ?: __('No description'), 60) }}</span>
                             <span class="dsub">
                                 @if ($entry->status === \App\Models\JournalEntry::STATUS_PENDING_APPROVAL)
-                                    {{ __('Finalized — awaiting post') }}
+                                    {{ __('Unposted — awaiting posting') }}
                                 @else
                                     {{ __('Draft — never posted') }}
                                 @endif
@@ -49,7 +48,7 @@
                         </td>
                         <td>
                             @if ($entry->status === \App\Models\JournalEntry::STATUS_PENDING_APPROVAL)
-                                <span class="pill fin"><i></i>{{ __('Finalized') }}</span>
+                                <span class="pill fin"><i></i>{{ __('Unposted') }}</span>
                             @else
                                 <span class="pill draft"><i></i>{{ __('Draft') }}</span>
                             @endif
@@ -60,6 +59,11 @@
                                     <svg viewBox="0 0 24 24"><path d="M2.04 12.32a1 1 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5s8.58 3.01 9.96 7.18a1 1 0 0 1 0 .64C20.58 16.49 16.64 19.5 12 19.5s-8.58-3.01-9.96-7.18Z"/><circle cx="12" cy="12" r="3"/></svg>
                                 </button>
                                 @if ($entry->status === \App\Models\JournalEntry::STATUS_PENDING_APPROVAL)
+                                    @can('journal-entries.post')
+                                        <button type="button" class="ib okb" title="{{ __('Post') }}" @click="askPost({{ $entry->id }})">
+                                            <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                                        </button>
+                                    @endcan
                                     @can('journal-entries.edit')
                                         <button type="button" class="ib warnb" title="{{ __('Reopen') }}" @click="askReopen({{ $entry->id }})">
                                             <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9M3 3v6h6"/></svg>
@@ -78,7 +82,7 @@
                         <td colspan="8">
                             <div class="emptygate plain">
                                 <div class="t">{{ __('Nothing is awaiting posting') }}</div>
-                                <div class="s">{{ __('Draft and finalized journals will appear here.') }}</div>
+                                <div class="s">{{ __('Draft and unposted journals will appear here.') }}</div>
                             </div>
                         </td>
                     </tr>
