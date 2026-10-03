@@ -42,6 +42,7 @@
         ['label' => __('Exchange Rates'),      'route' => 'accounting.exchange-rates.index'],
         ['label' => __('Account Classification'),'route' => 'accounting.account-classification.index'],
         ['label' => __('Transaction Reversals'), 'route' => 'accounting.reversals.index'],
+        ['label' => __('Transaction Controls'), 'route' => 'accounting.transaction-controls.index'],
     ];
 
     if ($feat('budgets')) {

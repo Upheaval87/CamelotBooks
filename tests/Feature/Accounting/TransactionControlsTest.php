@@ -1,0 +1,373 @@
+<?php
+
+namespace Tests\Feature\Accounting;
+
+use App\Models\Account;
+use App\Models\AccountingPeriod;
+use App\Models\Company;
+use App\Models\CostCenter;
+use App\Models\JournalEntry;
+use App\Models\ReversalAuthorizationRequest;
+use App\Models\TransactionReversalRequest;
+use App\Models\User;
+use App\Services\Accounting\JournalPostingEngine;
+use App\Services\Admin\NumberingSequenceService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class TransactionControlsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected Company $company;
+
+    protected User $user;
+
+    protected User $accountant;
+
+    protected Account $debitAccount;
+
+    protected Account $creditAccount;
+
+    protected CostCenter $costCenter;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = User::factory()->create();
+        $this->company = Company::create([
+            'name' => 'Controls Test Co',
+            'company_code' => 'CTRLTEST',
+            'base_currency' => 'USD',
+            'is_active' => true,
+        ]);
+        $this->user->companies()->attach($this->company->id, ['role' => 'company_admin']);
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
+        setPermissionsTeamId($this->company->id);
+        $this->user->assignRole('company_admin');
+        session(['current_company_id' => $this->company->id]);
+        $this->actingAs($this->user);
+
+        // Second user: authorized accountant used for the maker/checker path.
+        $this->accountant = User::factory()->create();
+        $this->accountant->companies()->attach($this->company->id, ['role' => 'accountant']);
+        $this->accountant->assignRole('accountant');
+
+        $this->debitAccount = Account::create([
+            'company_id' => $this->company->id,
+            'code' => '1000',
+            'name' => 'Cash',
+            'type' => 'asset',
+            'sub_type' => 'current_asset',
+            'is_active' => true,
+        ]);
+
+        $this->creditAccount = Account::create([
+            'company_id' => $this->company->id,
+            'code' => '4000',
+            'name' => 'Revenue',
+            'type' => 'income',
+            'sub_type' => 'operating_income',
+            'is_active' => true,
+        ]);
+
+        $this->costCenter = CostCenter::create([
+            'company_id' => $this->company->id,
+            'code' => 'CC-01',
+            'name' => 'Operations',
+            'is_active' => true,
+        ]);
+
+        AccountingPeriod::create([
+            'company_id' => $this->company->id,
+            'label' => '2026-08',
+            'start_date' => '2026-08-01',
+            'end_date' => '2026-08-31',
+            'status' => 'open',
+        ]);
+
+        app(NumberingSequenceService::class)->seedDefaults($this->company->id);
+    }
+
+    protected function postedEntry(): JournalEntry
+    {
+        return app(JournalPostingEngine::class)->post([
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'date' => '2026-08-10',
+            'memo' => 'Original posted entry',
+            'branch_id' => null,
+            'is_adjusting_entry' => false,
+            'lines' => [
+                [
+                    'account_id' => $this->debitAccount->id,
+                    'debit' => 750,
+                    'credit' => 0,
+                    'cost_center_id' => $this->costCenter->id,
+                    'memo' => 'Dr leg',
+                ],
+                [
+                    'account_id' => $this->creditAccount->id,
+                    'debit' => 0,
+                    'credit' => 750,
+                ],
+            ],
+        ]);
+    }
+
+    protected function draftEntry(): JournalEntry
+    {
+        return app(JournalPostingEngine::class)->postAsDraft([
+            'company_id' => $this->company->id,
+            'created_by' => $this->user->id,
+            'date' => '2026-08-12',
+            'memo' => 'Draft entry',
+            'branch_id' => null,
+            'is_adjusting_entry' => false,
+            'lines' => [
+                ['account_id' => $this->debitAccount->id, 'debit' => 100, 'credit' => 0],
+                ['account_id' => $this->creditAccount->id, 'debit' => 0, 'credit' => 100],
+            ],
+        ]);
+    }
+
+    protected function indexUrl(array $params = []): string
+    {
+        return route('accounting.transaction-controls.index', $params);
+    }
+
+    public function test_guest_is_redirected_to_login(): void
+    {
+        auth()->logout();
+
+        $this->get($this->indexUrl())->assertRedirect(route('login'));
+    }
+
+    public function test_index_renders_workspace(): void
+    {
+        $this->get($this->indexUrl())
+            ->assertOk()
+            ->assertSee('Transaction Controls')
+            ->assertSee('Capture Reversal')
+            ->assertSee('Unposted Transactions')
+            ->assertSee('Authorization')
+            ->assertSee('transactionControls(', false);
+    }
+
+    public function test_date_gate_requires_both_dates(): void
+    {
+        $this->get($this->indexUrl(['tab' => 'reversal', 'from' => '2026-08-01']))
+            ->assertOk()
+            ->assertSee('Select both a From and a To date');
+    }
+
+    public function test_from_after_to_shows_error(): void
+    {
+        $this->get($this->indexUrl(['from' => '2026-08-10', 'to' => '2026-08-01']))
+            ->assertOk()
+            ->assertSee('must be on or before');
+    }
+
+    public function test_loaded_period_lists_posted_entries(): void
+    {
+        $entry = $this->postedEntry();
+
+        $this->get($this->indexUrl(['from' => '2026-08-01', 'to' => '2026-08-31']))
+            ->assertOk()
+            ->assertSee($entry->journal_number)
+            ->assertSee('Posted');
+    }
+
+    public function test_reverse_immediate_posts_mirror_and_marks_original(): void
+    {
+        $entry = $this->postedEntry();
+
+        $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
+            'mode' => 'immediate',
+            'reversal_date' => '2026-08-15',
+            'reason' => 'Duplicate posting identified',
+            'reference' => 'REV-1',
+        ])->assertRedirect();
+
+        $this->assertSame(JournalEntry::STATUS_REVERSED, $entry->fresh()->status);
+        $this->assertDatabaseHas('journal_entries', [
+            'company_id' => $this->company->id,
+            'source_module' => 'reversal',
+            'status' => JournalEntry::STATUS_POSTED,
+        ]);
+    }
+
+    public function test_reverse_authorization_creates_pending_request(): void
+    {
+        $entry = $this->postedEntry();
+
+        $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
+            'mode' => 'authorization',
+            'reversal_date' => '2026-08-15',
+            'reason' => 'Awaiting controller approval',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('transaction_reversal_requests', [
+            'company_id' => $this->company->id,
+            'journal_entry_id' => $entry->id,
+            'status' => TransactionReversalRequest::STATUS_PENDING,
+        ]);
+    }
+
+    public function test_reverse_draft_creates_draft_reversal(): void
+    {
+        $entry = $this->postedEntry();
+
+        $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
+            'mode' => 'draft',
+            'reversal_date' => '2026-08-15',
+            'reason' => 'Save draft reversal for review',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('journal_entries', [
+            'company_id' => $this->company->id,
+            'source_module' => 'reversal',
+            'status' => JournalEntry::STATUS_DRAFT,
+        ]);
+    }
+
+    public function test_reverse_requires_a_substantive_reason(): void
+    {
+        $entry = $this->postedEntry();
+
+        $this->post(route('accounting.transaction-controls.reverse', ['id' => $entry->id]), [
+            'mode' => 'immediate',
+            'reversal_date' => '2026-08-15',
+            'reason' => 'short',
+        ])->assertSessionHasErrors('reason');
+
+        $this->assertSame(JournalEntry::STATUS_POSTED, $entry->fresh()->status);
+    }
+
+    public function test_unposted_pane_lists_draft_entries(): void
+    {
+        $draft = $this->draftEntry();
+
+        $this->get($this->indexUrl(['tab' => 'unposted']))
+            ->assertOk()
+            ->assertSee($draft->journal_number)
+            ->assertSee('Draft');
+    }
+
+    public function test_authorization_pane_lists_assigned_queue(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Please authorize this reversal',
+                'reversal_method' => 'full',
+            ]);
+
+        $this->actingAs($this->accountant)
+            ->get($this->indexUrl(['tab' => 'authorization']))
+            ->assertOk()
+            ->assertSee($request->reference_number);
+    }
+
+    public function test_approve_posts_reversal(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Approve and post this reversal',
+                'reversal_method' => 'full',
+            ]);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('assigned_to', $this->accountant->id)
+            ->firstOrFail();
+
+        $this->actingAs($this->accountant)
+            ->post(route('accounting.transaction-controls.approve', ['id' => $auth->id]), [
+                'comments' => 'Approved',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(TransactionReversalRequest::STATUS_REVERSED, $request->fresh()->status);
+        $this->assertSame(JournalEntry::STATUS_REVERSED, $entry->fresh()->status);
+    }
+
+    public function test_reject_records_reason(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Request that will be declined',
+                'reversal_method' => 'full',
+            ]);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('assigned_to', $this->accountant->id)
+            ->firstOrFail();
+
+        $this->actingAs($this->accountant)
+            ->post(route('accounting.transaction-controls.reject', ['id' => $auth->id]), [
+                'reason' => 'Not a valid business reason',
+            ])
+            ->assertRedirect();
+
+        $fresh = $request->fresh();
+        $this->assertSame(TransactionReversalRequest::STATUS_REJECTED, $fresh->status);
+        $this->assertSame('Not a valid business reason', $fresh->rejection_reason);
+        $this->assertSame(JournalEntry::STATUS_POSTED, $entry->fresh()->status);
+    }
+
+    public function test_requester_cannot_authorize_own_request(): void
+    {
+        $entry = $this->postedEntry();
+        $request = app(\App\Services\Accounting\TransactionReversalService::class)
+            ->requestReversal($this->company->id, $entry->id, $this->user->id, [
+                'reversal_date' => '2026-08-15',
+                'reason' => 'Maker cannot approve this',
+                'reversal_method' => 'full',
+            ]);
+
+        $auth = ReversalAuthorizationRequest::where('reversal_request_id', $request->id)
+            ->where('assigned_to', $this->user->id)
+            ->first();
+
+        if (! $auth) {
+            $auth = ReversalAuthorizationRequest::create([
+                'company_id' => $this->company->id,
+                'reversal_request_id' => $request->id,
+                'approval_level' => 99,
+                'assigned_to' => $this->user->id,
+                'status' => 'pending',
+            ]);
+        }
+
+        $this->post(route('accounting.transaction-controls.approve', ['id' => $auth->id]))
+            ->assertForbidden();
+    }
+
+    public function test_reopen_returns_finalized_entry_to_draft(): void
+    {
+        $draft = $this->draftEntry();
+        app(JournalPostingEngine::class)->finalize($draft->id, $this->user->id);
+
+        $this->post(route('accounting.transaction-controls.reopen', ['id' => $draft->id]), [
+            'reason' => 'Correction needed',
+        ])->assertRedirect();
+
+        $this->assertSame(JournalEntry::STATUS_DRAFT, $draft->fresh()->status);
+    }
+
+    public function test_destroy_deletes_a_draft(): void
+    {
+        $draft = $this->draftEntry();
+
+        $this->delete(route('accounting.transaction-controls.destroy', ['id' => $draft->id]))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('journal_entries', ['id' => $draft->id]);
+    }
+}

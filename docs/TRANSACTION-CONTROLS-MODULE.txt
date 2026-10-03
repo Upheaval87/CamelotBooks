@@ -1,0 +1,921 @@
+TRANSACTION CONTROLS MODULE (REVERSALS · UNPOSTED · AUTHORIZATION) — FULL IMPLEMENTATION SPEC
+(AUTHORITATIVE MOCKUP HTML EMBEDDED IN APPENDIX A — do NOT read or depend on any external file.)
+
+SCOPE:
+Build a unified "Transaction Controls" workspace with three distinct operational panes:
+1. Capture Reversal: Date-gated search of posted/saved transactions, detail view, and reversal capture workflow.
+2. Unposted Transactions: Management of Draft/Finalized items (Reopen for edit or Delete).
+3. Authorization: Approval queue for pending high-risk actions (Reversals, Reposts, Limit Overrides).
+
+HARD GUARD — FRONTEND-ONLY VIEW LAYER: 
+Do NOT modify existing Eloquent models, core business logic, or validation rules unless explicitly adding new columns/tables defined below. 
+You are building the Blade/Livewire/Alpine view layer and wiring it to controllers/routes. NO NEW PACKAGES.
+
+==================== 0 · DISCOVERY & ARCHITECTURE ====================
+0.1 Locate existing `Journal`, `Deposit`, `Transfer` models and their status enums/constants.
+0.2 Identify existing `User` model and permission structure (e.g., Spatie Permission or Gate policies).
+0.3 Determine if an existing `AuditLog` service exists; if not, plan for standard Laravel logging.
+
+==================== 1 · DESIGN TOKENS & ABSOLUTE RULES ====================
+Tokens: Deep teal (#11454b, #0c3539), Sec (#128F8E, #149897), Mint (#7FD1C0).
+R1 · ZERO BLUR: NO `backdrop-filter` on any scrim/modal. Use solid rgba tints.
+R2 · CLEAN HEADER: The main page header is LIGHT (white/transparent bg), minimal typography, NO dark hero blocks, NO stat cards in the header.
+R3 · TAB NAMING: The third tab MUST be labeled "Authorization" (singular).
+R4 · DATE GATING: The Reversal list CANNOT load without a valid From/To date range. Validation: From <= To.
+R5 · ACTION PLACEMENT: Lifecycle actions (Reverse, Reopen, Delete, Approve) exist ONLY inside modals, never as direct icons in the list rows (except View).
+R6 · AUDIT TRAIL: All state changes (Reversed, Deleted, Authorized) must record User ID, Timestamp, and Reason/Comment.
+
+==================== 2 · PAGE STRUCTURE ====================
+2.1 HEADER: Simple `<h1>Transaction Controls</h1>` with a small icon tile. No subtitles, no stats.
+2.2 NAVIGATION: Radio-button styled tabs for [Capture Reversal] | [Unposted Transactions] | [Authorization].
+2.3 PANE 1: CAPTURE REVERSAL
+     - Load Gate: Card with From/To dates, Presets (Today, Last 7d, Month), and "Load transactions" button.
+     - Filters: Appears only after loading. Type, User, State, Search.
+     - Datasheet: Paginated table of posted/reversed transactions. Columns: Ref, Type, Date, Desc, Amount, Posted By, Status, Action (View Only).
+     - Empty State: Shown before initial load ("No period selected").
+2.4 PANE 2: UNPOSTED TRANSACTIONS
+     - List: Table of Draft/Finalized items. Columns: Ref, Type, Saved Date, Desc, Amount, Created By, State, Actions (View, Reopen/Delete).
+     - Logic: Reopen converts Finalized -> Draft. Delete removes Draft permanently.
+2.5 PANE 3: AUTHORIZATION
+     - Queue: Table of Pending requests. Columns: Request Ref, Target, Type, Requester, Amount, Submitted, Waiting Time, Action (Review).
+     - History: "Recently decided" section showing Approved/Rejected items.
+
+==================== 3 · WORKFLOW DETAILS ====================
+3.1 REVERSAL WORKFLOW:
+     - User clicks View on a Posted transaction.
+     - Modal shows lines + footer button "Reverse this transaction".
+     - Clicking Reverse opens "Capture Reversal" modal: Warning panel, Mirrored Preview, Date Input, Auto-ref, Mandatory Reason, Submission Mode (Post Immediately / Submit for Auth / Save Draft).
+     - Confirm Box: Stacked danger confirm.
+     - Backend: Creates new Journal/Trans linked via `reversal_of_id`. Original marked `status=reversed`.
+3.2 UNPOSTED WORKFLOW:
+     - Reopen: Confirm box asks for reason. Updates status to Draft. Redirects user to source module edit screen (or stays in modal context if full-stack).
+     - Delete: Danger confirm. Soft-delete or Hard-delete based on config. Audit logged.
+3.3 AUTHORIZATION WORKFLOW:
+     - Review Modal: Shows target details, impact preview, mandatory comment field for rejection.
+     - Decision: Approve (Green) or Reject (Red). Both trigger stacked confirm boxes.
+     - Backend: Updates `authorization_requests` status. If approved, executes the underlying action (e.g., posts the reversal journal).
+
+==================== 4 · DATABASE SCHEMA ADDITIONS ====================
+Table: `transactions_reversals` (or reuse journals with flags)
+- `id`: bigint PK
+- `original_transaction_type`: string (journal/deposit/transfer)
+- `original_transaction_id`: bigint
+- `reversal_transaction_id`: bigint (nullable until created)
+- `reason`: text (required)
+- `created_by`: fk users.id
+- `approved_by`: fk users.id (nullable)
+- `status`: enum(pending, approved, rejected, executed)
+- `timestamps`
+
+Table: `authorization_requests`
+- `id`: bigint PK
+- `request_type`: string (reversal, repost, limit_override)
+- `target_entity_type`: string
+- `target_entity_id`: bigint
+- `requested_by`: fk users.id
+- `authorized_by`: fk users.id (nullable)
+- `amount`: decimal(15,2)
+- `comment`: text (mandatory for reject)
+- `status`: enum(pending, approved, rejected)
+- `expires_at`: timestamp (optional SLA)
+- `timestamps`
+
+==================== 5 · SECURITY & PERMISSIONS ====================
+- Policy: `TransactionControlPolicy`
+- `viewReversals`: Requires 'finance.view' + 'audit.log.access'
+- `captureReversal`: Requires 'finance.reverse'
+- `manageUnposted`: Requires 'finance.create' OR owner check
+- `authorizeRequests`: Requires 'finance.authorize' + Dual Control check (Requester != Authorizer)
+
+==================== 6 · VERIFY & REPORT ====================
+6.1 Visual parity pass against APPENDIX A at 1440px, 1024px, 768px.
+6.2 Confirm R1-R6 rules via grep/code inspection.
+6.3 Test Date Validation: Ensure From > To blocks loading and shows error toast.
+6.4 Test Tab Naming: Verify "Authorization" label.
+REPORT: Files touched, DB migrations, Route definitions, Controller methods, and Policy classes.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transaction Controls — Clean Header</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --green:#15803d; --red:#dc2626; --red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309; --steel:#46708C;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(900px 380px at 8% -10%, rgba(18,143,142,.09), transparent 60%), linear-gradient(180deg, #eef4f4 0%, #e7efee 100%); min-height: 100vh; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  button, input, select { font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 26px 26px 90px; }
+
+  /* ============ CLEAN LIGHT HEADER ============ */
+  .page-header {
+    position: relative;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: rgba(18,143,142,.08);
+    border: 1px solid rgba(18,143,142,.15);
+    display: grid; place-items: center;
+    color: var(--sec);
+  }
+  .header-icon svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .page-header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .16s ease; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .btn-ghost { background: #fff; border-color: var(--border); color: var(--sub); }
+  .btn-ghost:hover { border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-cta { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-sm { height: 34px; padding: 0 13px; font-size: 12.5px; border-radius: 10px; }
+  .btn-primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; }
+  .btn-warn { background: #fff; border-color: rgba(217,119,6,.4); color: var(--amber-2); }
+  .btn-warn:hover { background: rgba(217,119,6,.06); }
+  .btn-danger-o { background: #fff; border-color: rgba(220,38,38,.35); color: var(--red); }
+  .btn-danger-o:hover { background: #fef2f2; border-color: rgba(220,38,38,.55); }
+  .btn-danger { background: var(--red); color: #fff; box-shadow: 0 4px 12px -5px rgba(220,38,38,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-danger:hover { background: var(--red-2); }
+  .btn-green { background: var(--green); color: #fff; box-shadow: 0 4px 12px -5px rgba(21,128,61,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+
+  .in, .sel { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafb; font-size: 12.5px; font-weight: 600; color: var(--ink); outline: none; transition: all .15s; }
+  .in:focus, .sel:focus { border-color: rgba(18,143,142,.45); background: #fff; box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .in.bad { border-color: rgba(220,38,38,.55); background: #fef2f2; box-shadow: 0 0 0 4px rgba(220,38,38,.08); }
+  .sel { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%); background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
+
+  /* module tabs */
+  .modwrap > input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+  .mtabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .mtabs label { display: inline-flex; align-items: center; gap: 9px; padding: 10px 18px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font-size: 12.5px; font-weight: 800; color: var(--sub); cursor: pointer; transition: all .16s ease; box-shadow: 0 1px 2px rgba(10,42,46,.04); }
+  .mtabs label:hover { border-color: rgba(18,143,142,.35); color: var(--sec); }
+  .mtabs label svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .mtabs .tc { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--muted); }
+  #tab-rev:checked ~ .mtabs label[for="tab-rev"],
+  #tab-unp:checked ~ .mtabs label[for="tab-unp"],
+  #tab-auth:checked ~ .mtabs label[for="tab-auth"] { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  #tab-rev:checked ~ .mtabs label[for="tab-rev"] .tc,
+  #tab-unp:checked ~ .mtabs label[for="tab-unp"] .tc,
+  #tab-auth:checked ~ .mtabs label[for="tab-auth"] .tc { background: rgba(255,255,255,.2); color: #fff; }
+  .pane { display: none; }
+  #tab-rev:checked ~ #pane-rev, #tab-unp:checked ~ #pane-unp, #tab-auth:checked ~ #pane-auth { display: block; }
+
+  /* gate + load */
+  #loadchk { position: absolute; opacity: 0; pointer-events: none; }
+  .gate { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); padding: 18px 20px; margin-bottom: 16px; }
+  .gate .gt { display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 800; }
+  .gate .gt i { width: 7px; height: 7px; border-radius: 2px; background: linear-gradient(135deg, var(--sec-2), var(--sec)); box-shadow: 0 0 8px rgba(18,143,142,.45); }
+  .gate .gs { margin-top: 4px; font-size: 11.5px; font-weight: 600; color: var(--faint); }
+  .gate .grow { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+  .fgroup { display: flex; flex-direction: column; gap: 6px; }
+  .fl { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .presets { display: flex; gap: 6px; }
+  .presets button { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font-size: 11.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
+  .presets button:hover { border-color: rgba(18,143,142,.4); color: var(--sec); }
+  .loaded-chip { display: none; align-items: center; gap: 7px; padding: 8px 13px; border-radius: 999px; background: rgba(21,128,61,.09); border: 1px solid rgba(21,128,61,.25); color: var(--green); font-size: 11px; font-weight: 800; }
+  .loaded-chip i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  #loadchk:checked ~ .gate .loaded-chip { display: inline-flex; }
+  #loadchk:checked ~ .gate .gs { display: none; }
+
+  .emptygate { border: 1.5px dashed var(--border); border-radius: 16px; background: rgba(255,255,255,.6); padding: 40px 20px; text-align: center; }
+  .emptygate .halo { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.2); color: var(--sec); }
+  .emptygate .halo svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .emptygate .t { font-size: 14px; font-weight: 800; color: var(--sub); }
+  .emptygate .s { font-size: 12px; color: var(--faint); margin-top: 4px; }
+  #loadchk:checked ~ .emptygate { display: none; }
+
+  .filtersrow { display: none; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--sh-card); padding: 12px 16px; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .txlist { display: none; }
+  #loadchk:checked ~ .filtersrow { display: flex; }
+  #loadchk:checked ~ .txlist { display: block; }
+  .fgroup.grow { flex: 1; min-width: 180px; }
+  .searchwrap { position: relative; }
+  .searchwrap svg { position: absolute; left: 11px; top: 11px; width: 15px; height: 15px; stroke: var(--faint); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+  .searchwrap .in { width: 100%; padding-left: 34px; }
+
+  /* datasheet */
+  .tcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 11px 16px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(18,143,142,.18); font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; white-space: nowrap; }
+  thead th.r { text-align: right; } thead th.c { text-align: center; }
+  tbody td { padding: 12px 16px; border-top: 1px solid var(--hair); vertical-align: middle; font-size: 12.5px; color: var(--sub); }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(18,143,142,.035); }
+  .ref { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--sec); }
+  .dmain { font-weight: 600; color: var(--ink); }
+  .dsub { display: block; font-size: 10px; font-weight: 600; color: var(--faint); margin-top: 2px; }
+  .c { text-align: center; } .r { text-align: right; }
+  .tot { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.posted { background: rgba(18,143,142,.10); color: var(--sec); border: 1px solid rgba(18,143,142,.30); }
+  .pill.rev { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.26); }
+  .pill.draft { background: rgba(17,69,75,.07); color: var(--muted); border: 1px solid rgba(17,69,75,.18); }
+  .pill.fin { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.28); }
+  .pill.ok { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .ty { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .ty svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ty.j { background: rgba(18,143,142,.09); color: var(--sec); border: 1px solid rgba(18,143,142,.24); }
+  .ty.d { background: rgba(21,128,61,.09); color: var(--green); border: 1px solid rgba(21,128,61,.22); }
+  .ty.t { background: rgba(70,112,140,.10); color: var(--steel); border: 1px solid rgba(70,112,140,.26); }
+  .ty.p { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.25); }
+  .age { font-size: 10px; font-weight: 800; color: var(--amber-2); background: rgba(217,119,6,.10); border: 1px solid rgba(217,119,6,.25); padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .ib { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; transition: all .15s; vertical-align: middle; }
+  .ib + .ib, a.ib + a.ib, .ib + a.ib, a.ib + .ib { margin-left: 6px; }
+  .ib svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ib:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.06); transform: translateY(-1px); }
+  .ib.warnb:hover { border-color: rgba(217,119,6,.45); color: var(--amber-2); background: rgba(217,119,6,.08); }
+  .ib.delb:hover { border-color: rgba(220,38,38,.45); color: var(--red); background: rgba(220,38,38,.06); }
+  .tfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--hair); background: #fbfdfc; font-size: 11.5px; font-weight: 600; color: var(--faint); flex-wrap: wrap; }
+  .pager { display: inline-flex; align-items: center; gap: 5px; }
+  .pager button { min-width: 30px; height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font-size: 11.5px; font-weight: 800; color: var(--muted); cursor: pointer; }
+  .pager button.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; }
+  .pager button[disabled] { opacity: .4; pointer-events: none; }
+
+  /* modals / confirms */
+  .jmodal { position: fixed; inset: 0; z-index: 90; background: rgba(11,42,45,.26); display: none; place-items: center; padding: 24px; }
+  .jmodal:target { display: grid; animation: fadeIn .2s ease; }
+  .jmodal.revz { z-index: 120; }
+  .jmodal.cfz { z-index: 140; background: rgba(11,42,45,.45); }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
+  .mbox { width: min(920px, calc(100vw - 48px)); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 24px 60px -20px rgba(10,42,46,.35), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .mbox.narrow { width: min(640px, calc(100vw - 48px)); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 15px 22px; background: radial-gradient(700px 200px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); flex: none; }
+  .m-ic { width: 32px; height: 32px; min-width: 32px; border-radius: 9px; background: #fff; display: grid; place-items: center; color: var(--deep-2); }
+  .m-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-title { font-size: 15px; font-weight: 800; color: #fff; }
+  .m-ref { font-family: var(--mono); font-size: 12px; font-weight: 800; color: #eaffff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); padding: 4px 10px; border-radius: 8px; }
+  .m-pill.posted { background: rgba(127,209,192,.16); color: var(--mint); border: 1px solid rgba(127,209,192,.4); }
+  .m-pill.rev { background: rgba(239,68,68,.16); color: #fca5a5; border: 1px solid rgba(239,68,68,.4); }
+  .m-pill.fin { background: rgba(232,163,60,.16); color: #fbd0a0; border: 1px solid rgba(232,163,60,.4); }
+  .m-pill.draft { background: rgba(255,255,255,.10); color: rgba(226,244,244,.8); border: 1px solid rgba(255,255,255,.22); }
+  .m-close { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .m-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding: 10px 22px; border-bottom: 1px solid var(--hair); background: #fbfdfc; flex: none; }
+  .mchip { font-size: 10.5px; font-weight: 800; color: var(--muted); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
+  .mchip.mono { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.07); border-color: rgba(18,143,142,.22); }
+  .mchip.b { color: var(--ink); }
+  .m-body { padding: 14px 22px 18px; overflow: auto; flex: 1; }
+  .m-memo { font-size: 13.5px; font-weight: 600; color: var(--ink); margin: 2px 0 12px; }
+  .mtable thead th { padding: 9px 14px; }
+  .mtable tbody td { padding: 11px 14px; font-size: 12.5px; }
+  .acode { display: inline-flex; padding: 3px 8px; border-radius: 7px; background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.22); color: var(--sec); font-family: var(--mono); font-size: 11.5px; font-weight: 800; margin-right: 9px; vertical-align: middle; }
+  .aname { font-weight: 600; color: var(--ink); }
+  .dash { color: #cfdedb; font-weight: 700; }
+  .mtable tr.totals td { border-top: 3px double #cfe0dd; background: linear-gradient(180deg, #fbfdfc, #f5faf8); padding: 12px 14px; }
+  .mtable tr.totals .num { font-size: 14px; font-weight: 900; color: var(--ink); }
+  .bal-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(21,128,61,.10); border: 1px solid rgba(21,128,61,.25); color: var(--green); font-size: 11px; font-weight: 800; }
+  .bal-chip svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 13px 22px; border-top: 1px solid var(--hair); background: #f8fafa; flex: none; }
+  .m-foot.end { justify-content: flex-end; }
+  .mnote { font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--hair); border-radius: 9px; padding: 8px 12px; margin-right: auto; }
+  .mnote b { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+
+  .warn-panel { display: flex; gap: 11px; padding: 12px 14px; border-radius: 12px; background: rgba(217,119,6,.07); border: 1px solid rgba(217,119,6,.22); margin-bottom: 14px; }
+  .warn-panel svg { width: 16px; height: 16px; min-width: 16px; stroke: var(--amber-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; margin-top: 1px; }
+  .warn-panel p { font-size: 12px; font-weight: 600; color: var(--amber-2); line-height: 1.55; }
+  .mirr { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
+  .mirr .mh { padding: 9px 13px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); }
+  .mline { display: grid; grid-template-columns: 34px 56px 1fr auto; gap: 10px; align-items: center; padding: 9px 13px; font-size: 12px; font-weight: 600; }
+  .mline + .mline { border-top: 1px dashed var(--line); }
+  .mline .side { font-size: 9px; font-weight: 800; letter-spacing: .05em; padding: 3px 6px; border-radius: 5px; text-align: center; }
+  .mline .side.dr { background: rgba(18,143,142,.12); color: var(--sec); }
+  .mline .side.cr { background: rgba(217,119,6,.12); color: var(--amber-2); }
+  .mline .code { font-family: var(--mono); color: var(--sub); font-weight: 700; }
+  .mline .name { color: var(--ink); font-weight: 600; }
+  .mline .amt { font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .f-grid .full { grid-column: 1 / -1; }
+  .fld label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .fld .in { width: 100%; }
+  .fld .in[readonly] { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.22); }
+  .pseg { display: inline-flex; background: #f1f5f6; border: 1px solid var(--line); border-radius: 11px; padding: 4px; gap: 4px; position: relative; flex-wrap: wrap; }
+  .pseg input { position: absolute; opacity: 0; pointer-events: none; }
+  .pseg label { padding: 7px 13px; border-radius: 8px; font-size: 11.5px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all .18s; }
+  .pseg input:checked + label { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(10,42,46,.10); }
+
+  .cbox { width: min(460px, 100%); background: #fff; border-radius: 18px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 24px 60px -20px rgba(8,40,44,.55); overflow: hidden; animation: slideUp .25s cubic-bezier(.2,.8,.2,1); }
+  .cb-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; background: linear-gradient(180deg, #fdfeff, #f6fbf9); border-bottom: 1px solid var(--hair); }
+  .cb-ic { width: 30px; height: 30px; min-width: 30px; border-radius: 9px; display: grid; place-items: center; }
+  .cb-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .cb-ic.primary { background: rgba(18,143,142,.1); color: var(--sec); }
+  .cb-ic.warn { background: rgba(217,119,6,.1); color: var(--amber-2); }
+  .cb-ic.danger { background: rgba(220,38,38,.1); color: var(--red); }
+  .cb-ic.ok { background: rgba(21,128,61,.1); color: var(--green); }
+  .cb-head b { font-size: 14px; font-weight: 800; color: var(--ink); flex: 1; }
+  .cb-x { border: none; background: none; color: var(--faint); cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; }
+  .cb-x:hover { background: var(--hair); color: var(--ink); }
+  .cb-x svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .cb-body { padding: 16px 18px; font-size: 12.5px; font-weight: 500; color: var(--sub); line-height: 1.65; }
+  .cb-body .in { width: 100%; margin-top: 10px; }
+  .cb-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--hair); background: #f8fafa; }
+
+  .hist { margin-top: 16px; }
+  .hist .ht { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); background: var(--deep-2); color: #eaffff; font-size: 12px; font-weight: 700; padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(127,209,192,.3); box-shadow: 0 14px 30px -12px rgba(6,32,35,.7); opacity: 0; visibility: hidden; transition: all .25s ease; z-index: 300; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast.on { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 900px) { .mbox, .mbox.narrow { width: calc(100vw - 24px); } .f-grid { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="page-header">
+    <div class="header-title-row">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+      </div>
+      <h1>Transaction Controls</h1>
+    </div>
+  </header>
+
+  <div class="modwrap">
+    <input type="radio" name="mtab" id="tab-rev" checked>
+    <input type="radio" name="mtab" id="tab-unp">
+    <input type="radio" name="mtab" id="tab-auth">
+
+    <div class="mtabs">
+      <label for="tab-rev"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Capture Reversal <span class="tc" id="tcRev">3</span></label>
+      <label for="tab-unp"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 016 6v4"/></svg>Unposted Transactions <span class="tc" id="tcUnp">2</span></label>
+      <label for="tab-auth"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>Authorization <span class="tc" id="tcAuth">2</span></label>
+    </div>
+
+    <!-- ============ PANE 1 · CAPTURE REVERSAL ============ -->
+    <section class="pane" id="pane-rev">
+      <input type="checkbox" id="loadchk">
+
+      <div class="gate">
+        <div class="gt"><i></i>Load posted &amp; saved transactions</div>
+        <div class="gs">A date or date range is required before any transaction list is loaded — “From” may not be later than “To”.</div>
+        <div class="grow">
+          <div class="fgroup"><span class="fl">From</span><input class="in" type="date" id="gFrom" value="2026-08-01"></div>
+          <div class="fgroup"><span class="fl">To</span><input class="in" type="date" id="gTo" value="2026-08-31"></div>
+          <div class="fgroup"><span class="fl">Presets</span>
+            <div class="presets"><button type="button" data-p="today">Today</button><button type="button" data-p="7d">Last 7 days</button><button type="button" data-p="month">This month</button></div>
+          </div>
+          <label class="btn btn-cta" for="loadchk" id="loadBtn" style="cursor:pointer"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Load transactions</label>
+          <span class="loaded-chip" id="loadChip"><i></i>Loaded</span>
+        </div>
+      </div>
+
+      <div class="emptygate">
+        <div class="halo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+        <div class="t">No period selected</div>
+        <div class="s">Choose a date or range above and load transactions to begin.</div>
+      </div>
+
+      <div class="filtersrow">
+        <div class="fgroup"><span class="fl">Type</span>
+          <select class="sel" id="fType"><option value="">All types</option><option value="journal">Journals</option><option value="deposit">Deposits</option><option value="transfer">Transfers</option></select>
+        </div>
+        <div class="fgroup"><span class="fl">User</span>
+          <select class="sel" id="fUser"><option value="">All users</option><option value="seyama">Elvis Seyama</option><option value="okonkwo">M. Okonkwo</option><option value="system">System</option></select>
+        </div>
+        <div class="fgroup"><span class="fl">State</span>
+          <select class="sel" id="fState"><option value="">Posted &amp; reversed</option><option value="posted">Posted only</option><option value="reversed">Reversed only</option></select>
+        </div>
+        <div class="fgroup grow"><span class="fl">Search</span>
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" type="text" id="fQ" placeholder="Reference, party or memo…"></div>
+        </div>
+        <button class="btn btn-cta btn-sm" style="height:38px" id="fApply">Apply</button>
+        <button class="btn btn-ghost btn-sm" style="height:38px" id="fClear">Clear</button>
+      </div>
+
+      <div class="txlist">
+        <div class="tcard">
+          <table>
+            <thead><tr><th>Reference</th><th>Type</th><th>Date</th><th>Description / Party</th><th class="r">Amount (MK)</th><th>Posted by</th><th>Status</th><th class="r">Actions</th></tr></thead>
+            <tbody id="txBody">
+              <tr class="jrow" data-ref="JE-2026-0018" data-type="journal" data-user="system" data-state="posted" data-iso="2026-08-29">
+                <td><span class="ref">JE-2026-0018</span></td>
+                <td><span class="ty j"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Journal</span></td>
+                <td style="white-space:nowrap">29 Aug 2026</td>
+                <td><span class="dmain">Walk-in payment - awaiting deposit</span><span class="dsub">SAL-SR-2026-0005</span></td>
+                <td class="r tot">52,000.00</td><td>System</td>
+                <td><span class="pill posted"><i></i>Posted</span></td>
+                <td class="r" style="white-space:nowrap"><a class="ib" href="#v1" title="View transaction"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a></td>
+              </tr>
+              <tr class="jrow" data-ref="DEP-2026-0042" data-type="deposit" data-user="okonkwo" data-state="posted" data-iso="2026-08-28">
+                <td><span class="ref">DEP-2026-0042</span></td>
+                <td><span class="ty d"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>Deposit</span></td>
+                <td style="white-space:nowrap">28 Aug 2026</td>
+                <td><span class="dmain">Acme Corporation — invoice settlement</span><span class="dsub">Banked · Standard Bank</span></td>
+                <td class="r tot">12,500.00</td><td>M. Okonkwo</td>
+                <td><span class="pill posted"><i></i>Posted</span></td>
+                <td class="r" style="white-space:nowrap"><a class="ib" href="#v2" title="View transaction"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a></td>
+              </tr>
+              <tr class="jrow" data-ref="TRF-2026-0007" data-type="transfer" data-user="system" data-state="reversed" data-iso="2026-08-26">
+                <td><span class="ref">TRF-2026-0007</span></td>
+                <td><span class="ty t"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>Transfer</span></td>
+                <td style="white-space:nowrap">26 Aug 2026</td>
+                <td><span class="dmain">Head Office → Branch North float</span><span class="dsub">Reversed by RV-2026-0009</span></td>
+                <td class="r tot">300,000.00</td><td>System</td>
+                <td><span class="pill rev"><i></i>Reversed</span></td>
+                <td class="r" style="white-space:nowrap"><a class="ib" href="#v3" title="View transaction"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a></td>
+              </tr>
+              <tr id="noRes" style="display:none"><td colspan="8"><div class="emptygate" style="border:none;background:none"><div class="t">No transactions match</div><div class="s">Adjust the filters or load a different period.</div></div></td></tr>
+            </tbody>
+          </table>
+          <div class="tfoot">
+            <span id="showingTx">Showing 0 of 0 transactions</span>
+            <span class="pager" id="pager"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PANE 2 · UNPOSTED ============ -->
+    <section class="pane" id="pane-unp">
+      <div class="tcard">
+        <table>
+          <thead><tr><th>Reference</th><th>Type</th><th>Saved</th><th>Description</th><th class="r">Amount (MK)</th><th>Created by</th><th>State</th><th class="r">Actions</th></tr></thead>
+          <tbody id="unpBody">
+            <tr class="jrow" data-ref="JE-2026-0021" data-state="finalized">
+              <td><span class="ref">JE-2026-0021</span></td>
+              <td><span class="ty j"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Adjustment</span></td>
+              <td style="white-space:nowrap">31 Aug 2026</td>
+              <td><span class="dmain">Depreciation — August 2026</span><span class="dsub">Finalized, awaiting post</span></td>
+              <td class="r tot">45,000.00</td><td>Elvis Seyama</td>
+              <td><span class="pill fin"><i></i>Finalized</span></td>
+              <td class="r" style="white-space:nowrap">
+                <a class="ib" href="#u1" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+                <a class="ib warnb" href="#cf-reopen" data-act="reopen" title="Reopen for editing"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 016 6v4"/></svg></a>
+              </td>
+            </tr>
+            <tr class="jrow" data-ref="JE-2026-0020" data-state="draft">
+              <td><span class="ref">JE-2026-0020</span></td>
+              <td><span class="ty j"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Journal</span></td>
+              <td style="white-space:nowrap">30 Aug 2026</td>
+              <td><span class="dmain">Accrual — external audit fees Q3</span><span class="dsub">Draft — never posted</span></td>
+              <td class="r tot">18,000.00</td><td>Elvis Seyama</td>
+              <td><span class="pill draft"><i></i>Draft</span></td>
+              <td class="r" style="white-space:nowrap">
+                <a class="ib" href="#u2" title="View"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></a>
+                <a class="ib delb" href="#cf-delete" data-act="delete" title="Delete permanently"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ PANE 3 · AUTHORIZATION ============ -->
+    <section class="pane" id="pane-auth">
+      <div class="tcard">
+        <table>
+          <thead><tr><th>Request</th><th>Type</th><th>Requested by</th><th class="r">Amount (MK)</th><th>Submitted</th><th>Waiting</th><th class="r">Action</th></tr></thead>
+          <tbody id="authQueue">
+            <tr class="jrow" data-ref="AUTH-0031" data-desc="Reversal of JE-2026-0018" data-by="Elvis Seyama" data-amt="52,000.00">
+              <td><span class="ref">AUTH-0031</span><span class="dsub">Reverse JE-2026-0018</span></td>
+              <td><span class="ty j"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Reversal</span></td>
+              <td>Elvis Seyama</td><td class="r tot">52,000.00</td>
+              <td style="white-space:nowrap">02 Oct 2026 09:14</td><td><span class="age">2h</span></td>
+              <td class="r"><a class="btn btn-primary btn-sm" href="#a1">Review</a></td>
+            </tr>
+            <tr class="jrow" data-ref="AUTH-0030" data-desc="Repost JE-2026-0021 after reopen" data-by="Elvis Seyama" data-amt="45,000.00">
+              <td><span class="ref">AUTH-0030</span><span class="dsub">Repost JE-2026-0021 after reopen</span></td>
+              <td><span class="ty p"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 016 6v4"/></svg>Repost</span></td>
+              <td>Elvis Seyama</td><td class="r tot">45,000.00</td>
+              <td style="white-space:nowrap">01 Oct 2026 16:40</td><td><span class="age">1d</span></td>
+              <td class="r"><a class="btn btn-primary btn-sm" href="#a2">Review</a></td>
+            </tr>
+            <tr id="authEmpty" style="display:none"><td colspan="7"><div class="emptygate" style="border:none;background:none"><div class="t">Queue clear</div><div class="s">No pending authorizations right now.</div></div></td></tr>
+          </tbody>
+        </table>
+        <div class="tfoot"><span id="authNote">2 pending authorizations</span></div>
+      </div>
+
+      <div class="hist">
+        <div class="ht">Recently decided</div>
+        <div class="tcard">
+          <table>
+            <tbody id="authHist">
+              <tr><td><span class="ref">AUTH-0028</span></td><td>Reversal of JE-2026-0016</td><td>M. Okonkwo</td><td class="r tot">65,000.00</td><td><span class="pill ok"><i></i>Approved</span></td><td style="white-space:nowrap">30 Aug 2026 · by ES</td></tr>
+              <tr><td><span class="ref">AUTH-0027</span></td><td>Payment limit override</td><td>M. Okonkwo</td><td class="r tot">120,000.00</td><td><span class="pill rev"><i></i>Rejected</span></td><td style="white-space:nowrap">29 Aug 2026 · by ES</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ============ VIEW MODALS ============ -->
+<div class="jmodal" id="v1"><div class="mbox">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Journal</span><span class="m-ref">JE-2026-0018</span><span class="pill m-pill posted"><i></i>Posted</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-meta"><span class="mchip b">Payments</span><span class="mchip">29 Aug 2026</span><span class="mchip mono">Source: sales_receipt</span><span class="mchip mono">Ref: SAL-SR-2026-0005</span><span class="mchip b">Total MK 52,000.00</span></div>
+  <div class="m-body">
+    <div class="m-memo">Walk-in payment - awaiting deposit</div>
+    <table class="mtable"><thead><tr><th style="width:34%">Account</th><th>Description</th><th class="r" style="width:15%">Debit</th><th class="r" style="width:15%">Credit</th></tr></thead>
+      <tbody>
+        <tr><td><span class="acode">1050</span><span class="aname">Undeposited Funds</span></td><td><span class="dash">—</span></td><td class="r tot">52,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+        <tr><td><span class="acode">4000</span><span class="aname">Sales Revenue</span></td><td><span class="dash">—</span></td><td class="r tot"><span class="dash">—</span></td><td class="r tot">52,000.00</td></tr>
+        <tr class="totals"><td><b>Totals</b></td><td></td><td class="r num">52,000.00</td><td class="r num">52,000.00</td></tr>
+        <tr><td colspan="4" style="padding:10px 14px;border-top:1px solid var(--hair);background:#fbfdfc;text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td></tr>
+      </tbody></table>
+  </div>
+  <div class="m-foot"><span class="mnote">Posted to the ledger — immutable. Capture a reversal to correct it.</span><a class="btn btn-danger-o btn-sm" href="#rv1"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Reverse this transaction</a></div>
+</div></div>
+
+<div class="jmodal" id="v2"><div class="mbox">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg></span><span class="m-title">Deposit</span><span class="m-ref">DEP-2026-0042</span><span class="pill m-pill posted"><i></i>Posted</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-meta"><span class="mchip b">Bank deposit</span><span class="mchip">28 Aug 2026</span><span class="mchip mono">Account: 1010 · Standard Bank</span><span class="mchip b">MK 12,500.00</span></div>
+  <div class="m-body">
+    <div class="m-memo">Acme Corporation — settlement of INV-2026-0001</div>
+    <table class="mtable"><thead><tr><th style="width:34%">Account</th><th>Description</th><th class="r" style="width:15%">Debit</th><th class="r" style="width:15%">Credit</th></tr></thead>
+      <tbody>
+        <tr><td><span class="acode">1010</span><span class="aname">Standard Bank – Current</span></td><td>Banked receipt</td><td class="r tot">12,500.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+        <tr><td><span class="acode">1100</span><span class="aname">Accounts Receivable</span></td><td>INV-2026-0001</td><td class="r tot"><span class="dash">—</span></td><td class="r tot">12,500.00</td></tr>
+        <tr class="totals"><td><b>Totals</b></td><td></td><td class="r num">12,500.00</td><td class="r num">12,500.00</td></tr>
+        <tr><td colspan="4" style="padding:10px 14px;border-top:1px solid var(--hair);background:#fbfdfc;text-align:right"><span class="bal-chip"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Balanced</span></td></tr>
+      </tbody></table>
+  </div>
+  <div class="m-foot"><span class="mnote">Posted to the ledger — immutable. Capture a reversal to correct it.</span><a class="btn btn-danger-o btn-sm" href="#rv2"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Reverse this transaction</a></div>
+</div></div>
+
+<div class="jmodal" id="v3"><div class="mbox">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg></span><span class="m-title">Transfer</span><span class="m-ref">TRF-2026-0007</span><span class="pill m-pill rev"><i></i>Reversed</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-meta"><span class="mchip b">Inter-branch transfer</span><span class="mchip">26 Aug 2026</span><span class="mchip mono">From: Head Office</span><span class="mchip mono">To: Branch North</span><span class="mchip b">MK 300,000.00</span></div>
+  <div class="m-body">
+    <div class="m-memo">Head Office → Branch North float</div>
+    <table class="mtable"><thead><tr><th style="width:34%">Account</th><th>Description</th><th class="r" style="width:15%">Debit</th><th class="r" style="width:15%">Credit</th></tr></thead>
+      <tbody>
+        <tr><td><span class="acode">1090</span><span class="aname">Branch Cash – North</span></td><td>Float transfer</td><td class="r tot">300,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+        <tr><td><span class="acode">1010</span><span class="aname">Standard Bank – Current</span></td><td>Float transfer</td><td class="r tot"><span class="dash">—</span></td><td class="r tot">300,000.00</td></tr>
+        <tr class="totals"><td><b>Totals</b></td><td></td><td class="r num">300,000.00</td><td class="r num">300,000.00</td></tr>
+      </tbody></table>
+  </div>
+  <div class="m-foot"><span class="mnote">Reversed — this entry is void. Offsetting reversal: <b>RV-2026-0009</b></span></div>
+</div></div>
+
+<!-- ============ REVERSAL CAPTURE ============ -->
+<div class="jmodal revz" id="rv1"><div class="mbox narrow">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg></span><span class="m-title">Capture reversal</span><span class="m-ref">JE-2026-0018</span><a class="m-close" href="#v1" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-body">
+    <div class="warn-panel"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><p>A NEW transaction mirroring every debit and credit will be created. The original is marked <b>Reversed</b> and both are cross-linked.</p></div>
+    <div class="mirr"><div class="mh">Mirrored impact preview</div>
+      <div class="mline"><span class="side cr">CR</span><span class="code">1050</span><span class="name">Undeposited Funds</span><span class="amt">52,000.00</span></div>
+      <div class="mline"><span class="side dr">DR</span><span class="code">4000</span><span class="name">Sales Revenue</span><span class="amt">52,000.00</span></div>
+    </div>
+    <div class="f-grid">
+      <div class="fld"><label>Reversal date</label><input class="in" type="date" value="2026-10-02"></div>
+      <div class="fld"><label>New reference</label><input class="in" type="text" value="RV-2026-0010" readonly></div>
+      <div class="fld full"><label>Reason (required, audit-visible)</label><input class="in" type="text" id="rv1Reason" placeholder="Why is this transaction being reversed?"></div>
+      <div class="fld full"><label>Submission mode</label>
+        <div class="pseg"><input type="radio" name="rm1" id="rm1a" checked><label for="rm1a">Post immediately</label><input type="radio" name="rm1" id="rm1b"><label for="rm1b">Submit for authorization</label><input type="radio" name="rm1" id="rm1c"><label for="rm1c">Save as draft</label></div>
+      </div>
+    </div>
+  </div>
+  <div class="m-foot"><span class="mnote">Reversal date must fall in an open period.</span><a class="btn btn-ghost btn-sm" href="#v1">Cancel</a><a class="btn btn-danger btn-sm" href="#cf-rv1"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Confirm reversal</a></div>
+</div></div>
+
+<div class="jmodal revz" id="rv2"><div class="mbox narrow">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg></span><span class="m-title">Capture reversal</span><span class="m-ref">DEP-2026-0042</span><a class="m-close" href="#v2" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-body">
+    <div class="warn-panel"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><p>A NEW transaction mirroring every debit and credit will be created. The original is marked <b>Reversed</b> and both are cross-linked.</p></div>
+    <div class="mirr"><div class="mh">Mirrored impact preview</div>
+      <div class="mline"><span class="side cr">CR</span><span class="code">1010</span><span class="name">Standard Bank – Current</span><span class="amt">12,500.00</span></div>
+      <div class="mline"><span class="side dr">DR</span><span class="code">1100</span><span class="name">Accounts Receivable</span><span class="amt">12,500.00</span></div>
+    </div>
+    <div class="f-grid">
+      <div class="fld"><label>Reversal date</label><input class="in" type="date" value="2026-10-02"></div>
+      <div class="fld"><label>New reference</label><input class="in" type="text" value="RV-2026-0011" readonly></div>
+      <div class="fld full"><label>Reason (required, audit-visible)</label><input class="in" type="text" id="rv2Reason" placeholder="Why is this transaction being reversed?"></div>
+      <div class="fld full"><label>Submission mode</label>
+        <div class="pseg"><input type="radio" name="rm2" id="rm2a" checked><label for="rm2a">Post immediately</label><input type="radio" name="rm2" id="rm2b"><label for="rm2b">Submit for authorization</label><input type="radio" name="rm2" id="rm2c"><label for="rm2c">Save as draft</label></div>
+      </div>
+    </div>
+  </div>
+  <div class="m-foot"><span class="mnote">Reversal date must fall in an open period.</span><a class="btn btn-ghost btn-sm" href="#v2">Cancel</a><a class="btn btn-danger btn-sm" href="#cf-rv2"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Confirm reversal</a></div>
+</div></div>
+
+<div class="jmodal cfz" id="cf-rv1"><div class="cbox">
+  <div class="cb-head"><span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><b>Confirm reversal of JE-2026-0018?</b><a class="cb-x" href="#rv1" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="cb-body">Creates <b>RV-2026-0010</b> mirroring every debit and credit, marks the original <b>Reversed</b> and cross-links both.</div>
+  <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#rv1">Cancel</a><button class="btn btn-danger btn-sm" id="cbRv1">⟲ Confirm reversal</button></div>
+</div></div>
+
+<div class="jmodal cfz" id="cf-rv2"><div class="cbox">
+  <div class="cb-head"><span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><b>Confirm reversal of DEP-2026-0042?</b><a class="cb-x" href="#rv2" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="cb-body">Creates <b>RV-2026-0011</b> mirroring every debit and credit, marks the original <b>Reversed</b> and cross-links both.</div>
+  <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#rv2">Cancel</a><button class="btn btn-danger btn-sm" id="cbRv2">⟲ Confirm reversal</button></div>
+</div></div>
+
+<!-- ============ UNPOSTED MODALS ============ -->
+<div class="jmodal" id="u1"><div class="mbox">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Unposted journal</span><span class="m-ref">JE-2026-0021</span><span class="pill m-pill fin"><i></i>Finalized</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-meta"><span class="mchip b">Adjustment</span><span class="mchip">31 Aug 2026</span><span class="mchip b">MK 45,000.00</span></div>
+  <div class="m-body">
+    <div class="m-memo">Depreciation — August 2026</div>
+    <table class="mtable"><thead><tr><th style="width:34%">Account</th><th>Description</th><th class="r" style="width:15%">Debit</th><th class="r" style="width:15%">Credit</th></tr></thead>
+      <tbody>
+        <tr><td><span class="acode">6050</span><span class="aname">Amortisation Expense</span></td><td>Aug depreciation</td><td class="r tot">45,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+        <tr><td><span class="acode">1400</span><span class="aname">Prepayments</span></td><td>Aug depreciation</td><td class="r tot"><span class="dash">—</span></td><td class="r tot">45,000.00</td></tr>
+        <tr class="totals"><td><b>Totals</b></td><td></td><td class="r num">45,000.00</td><td class="r num">45,000.00</td></tr>
+      </tbody></table>
+  </div>
+  <div class="m-foot"><span class="mnote">Finalized but not posted — reopen to edit, or post from the source module.</span><a class="btn btn-warn btn-sm" href="#cf-reopen" data-act="reopen" data-target="JE-2026-0021">⤺ Reopen for editing</a></div>
+</div></div>
+
+<div class="jmodal" id="u2"><div class="mbox">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span><span class="m-title">Unposted journal</span><span class="m-ref">JE-2026-0020</span><span class="pill m-pill draft"><i></i>Draft</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-meta"><span class="mchip b">General</span><span class="mchip">30 Aug 2026</span><span class="mchip b">MK 18,000.00</span></div>
+  <div class="m-body">
+    <div class="m-memo">Accrual — external audit fees Q3</div>
+    <table class="mtable"><thead><tr><th style="width:34%">Account</th><th>Description</th><th class="r" style="width:15%">Debit</th><th class="r" style="width:15%">Credit</th></tr></thead>
+      <tbody>
+        <tr><td><span class="acode">6100</span><span class="aname">Professional Fees</span></td><td>Q3 audit accrual</td><td class="r tot">18,000.00</td><td class="r tot"><span class="dash">—</span></td></tr>
+        <tr><td><span class="acode">2100</span><span class="aname">Accrued Expenses</span></td><td>Q3 audit accrual</td><td class="r tot"><span class="dash">—</span></td><td class="r tot">18,000.00</td></tr>
+        <tr class="totals"><td><b>Totals</b></td><td></td><td class="r num">18,000.00</td><td class="r num">18,000.00</td></tr>
+      </tbody></table>
+  </div>
+  <div class="m-foot"><span class="mnote">Draft — never posted, no ledger impact. Safe to delete.</span><a class="btn btn-danger-o btn-sm" href="#cf-delete" data-act="delete" data-target="JE-2026-0020">Delete draft</a></div>
+</div></div>
+
+<div class="jmodal cfz" id="cf-reopen"><div class="cbox">
+  <div class="cb-head"><span class="cb-ic warn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span><b>Reopen this transaction for editing?</b><a class="cb-x" href="#" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="cb-body">It returns to <b>Draft</b> in its source module where the creator can edit and repost. Nothing is posted or deleted by this action.<input class="in" id="reopenReason" placeholder="Reason (audit-visible)"></div>
+  <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#">Cancel</a><button class="btn btn-warn btn-sm" id="cbReopen">⤺ Reopen</button></div>
+</div></div>
+
+<div class="jmodal cfz" id="cf-delete"><div class="cbox">
+  <div class="cb-head"><span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><b>Delete this unposted transaction?</b><a class="cb-x" href="#" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="cb-body">The draft and all of its lines are removed <b>permanently</b>. Only never-posted transactions can be deleted; posted history is corrected by reversal instead.</div>
+  <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#">Cancel</a><button class="btn btn-danger btn-sm" id="cbDelete">Delete permanently</button></div>
+</div></div>
+
+<!-- ============ AUTHORIZATION MODALS ============ -->
+<div class="jmodal" id="a1"><div class="mbox narrow">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="m-title">Authorization request</span><span class="m-ref">AUTH-0031</span><span class="pill m-pill fin"><i></i>Pending</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-meta"><span class="mchip b">Reversal</span><span class="mchip mono">Target: JE-2026-0018</span><span class="mchip">Requested by Elvis Seyama</span><span class="mchip">02 Oct 2026 09:14</span><span class="mchip b">MK 52,000.00</span></div>
+  <div class="m-body">
+    <div class="m-memo">Reason: duplicate walk-in receipt captured twice at POS close.</div>
+    <div class="mirr"><div class="mh">Impact if authorised — RV-2026-0010</div>
+      <div class="mline"><span class="side cr">CR</span><span class="code">1050</span><span class="name">Undeposited Funds</span><span class="amt">52,000.00</span></div>
+      <div class="mline"><span class="side dr">DR</span><span class="code">4000</span><span class="name">Sales Revenue</span><span class="amt">52,000.00</span></div>
+    </div>
+    <div class="fld"><label>Decision comment (required to reject)</label><input class="in" type="text" id="a1Comment" placeholder="Optional for approve, mandatory for reject…"></div>
+  </div>
+  <div class="m-foot end"><a class="btn btn-danger-o btn-sm" href="#cf-rj1">Reject</a><a class="btn btn-green btn-sm" href="#cf-ap1"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Authorize</a></div>
+</div></div>
+
+<div class="jmodal" id="a2"><div class="mbox narrow">
+  <div class="m-head"><span class="m-ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span><span class="m-title">Authorization request</span><span class="m-ref">AUTH-0030</span><span class="pill m-pill fin"><i></i>Pending</span><a class="m-close" href="#" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="m-meta"><span class="mchip b">Repost</span><span class="mchip mono">Target: JE-2026-0021</span><span class="mchip">Requested by Elvis Seyama</span><span class="mchip">01 Oct 2026 16:40</span><span class="mchip b">MK 45,000.00</span></div>
+  <div class="m-body">
+    <div class="m-memo">Reason: depreciation schedule corrected after asset register update; repost required.</div>
+    <div class="mirr"><div class="mh">Lines to be posted if authorised</div>
+      <div class="mline"><span class="side dr">DR</span><span class="code">6050</span><span class="name">Amortisation Expense</span><span class="amt">45,000.00</span></div>
+      <div class="mline"><span class="side cr">CR</span><span class="code">1400</span><span class="name">Prepayments</span><span class="amt">45,000.00</span></div>
+    </div>
+    <div class="fld"><label>Decision comment (required to reject)</label><input class="in" type="text" id="a2Comment" placeholder="Optional for approve, mandatory for reject…"></div>
+  </div>
+  <div class="m-foot end"><a class="btn btn-danger-o btn-sm" href="#cf-rj2">Reject</a><a class="btn btn-green btn-sm" href="#cf-ap2"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Authorize</a></div>
+</div></div>
+
+<div class="jmodal cfz" id="cf-ap1"><div class="cbox">
+  <div class="cb-head"><span class="cb-ic ok"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><b>Authorise AUTH-0031?</b><a class="cb-x" href="#a1" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="cb-body">Posts reversal <b>RV-2026-0010</b> and marks <b>JE-2026-0018</b> as Reversed. Your user stamp and timestamp are recorded.</div>
+  <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#a1">Cancel</a><button class="btn btn-green btn-sm" id="cbAp1">✓ Authorise</button></div>
+</div></div>
+
+<div class="jmodal cfz" id="cf-rj1"><div class="cbox">
+  <div class="cb-head"><span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><b>Reject AUTH-0031?</b><a class="cb-x" href="#a1" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="cb-body">The reversal request returns to the requester as <b>Rejected</b>. A comment is mandatory.<input class="in" id="rj1c" placeholder="Rejection reason (required)"></div>
+  <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#a1">Cancel</a><button class="btn btn-danger btn-sm" id="cbRj1">Reject request</button></div>
+</div></div>
+
+<div class="jmodal cfz" id="cf-ap2"><div class="cbox">
+  <div class="cb-head"><span class="cb-ic ok"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><b>Authorise AUTH-0030?</b><a class="cb-x" href="#a2" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="cb-body">Posts reopened journal <b>JE-2026-0021</b> to the ledger for period Aug 2026.</div>
+  <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#a2">Cancel</a><button class="btn btn-green btn-sm" id="cbAp2">✓ Authorise</button></div>
+</div></div>
+
+<div class="jmodal cfz" id="cf-rj2"><div class="cbox">
+  <div class="cb-head"><span class="cb-ic danger"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><b>Reject AUTH-0030?</b><a class="cb-x" href="#a2" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></a></div>
+  <div class="cb-body">The repost request returns to the requester as <b>Rejected</b>; JE-2026-0021 stays unposted. A comment is mandatory.<input class="in" id="rj2c" placeholder="Rejection reason (required)"></div>
+  <div class="cb-foot"><a class="btn btn-ghost btn-sm" href="#a2">Cancel</a><button class="btn btn-danger btn-sm" id="cbRj2">Reject request</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  var toastEl = $('toast'), toastT;
+  function toast(m) { toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 3200); }
+
+  /* ---------- counters ---------- */
+  var rows = [].slice.call(document.querySelectorAll('#txBody tr.jrow'));
+  function syncHero() {
+    var unp = document.querySelectorAll('#unpBody tr.jrow').length;
+    var auth = document.querySelectorAll('#authQueue tr.jrow').length;
+    $('tcRev').textContent = rows.length;
+    $('tcUnp').textContent = unp;
+    $('tcAuth').textContent = auth;
+  }
+
+  /* ---------- reversals list: load gate + validation + filters + pagination ---------- */
+  var loaded = false, page = 1, PAGESIZE = 2;
+
+  function currentFilters() {
+    return { type: $('fType').value, user: $('fUser').value, state: $('fState').value, q: $('fQ').value.trim().toLowerCase(), from: $('gFrom').value, to: $('gTo').value };
+  }
+  function match(tr, f) {
+    var d = tr.dataset;
+    if (f.type && d.type !== f.type) return false;
+    if (f.user && d.user !== f.user) return false;
+    if (f.state && d.state !== f.state) return false;
+    if (loaded && f.from && d.iso < f.from) return false;
+    if (loaded && f.to && d.iso > f.to) return false;
+    if (f.q && tr.textContent.toLowerCase().indexOf(f.q) === -1) return false;
+    return true;
+  }
+  function renderPager(pages) {
+    var p = $('pager'); p.innerHTML = '';
+    function btn(t, dis, on, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = t; if (dis) b.disabled = true; if (on) b.className = 'on'; b.addEventListener('click', fn); p.appendChild(b); }
+    btn('‹', page === 1, false, function () { page--; apply(); });
+    for (var i = 1; i <= pages; i++) { (function (i) { btn(String(i), false, i === page, function () { page = i; apply(); }); })(i); }
+    btn('›', page === pages, false, function () { page++; apply(); });
+  }
+  function apply() {
+    var f = currentFilters();
+    var vis = rows.filter(function (tr) { return tr.dataset.ref && match(tr, f); });
+    var pages = Math.max(1, Math.ceil(vis.length / PAGESIZE));
+    if (page > pages) page = pages;
+    rows.forEach(function (tr) { tr.style.display = 'none'; });
+    vis.forEach(function (tr, i) { tr.style.display = (i >= (page - 1) * PAGESIZE && i < page * PAGESIZE) ? '' : 'none'; });
+    $('noRes').style.display = vis.length ? 'none' : '';
+    var a = vis.length ? ((page - 1) * PAGESIZE + 1) : 0, b = Math.min(page * PAGESIZE, vis.length);
+    $('showingTx').textContent = 'Showing ' + a + '–' + b + ' of ' + vis.length + ' transactions';
+    if (loaded) $('loadChip').innerHTML = '<i></i>Loaded ' + f.from + ' → ' + f.to + ' · page ' + page + ' of ' + pages;
+    renderPager(pages);
+  }
+
+  $('loadBtn').addEventListener('click', function (e) {
+    e.preventDefault();
+    var f = $('gFrom').value, t = $('gTo').value;
+    if (f && t && f > t) { $('gTo').classList.add('bad'); toast('“From” date cannot be greater than “To” date'); return; }
+    $('gTo').classList.remove('bad');
+    loaded = true; $('loadchk').checked = true;
+    page = 1; apply(); toast('Transactions loaded for ' + f + ' → ' + t);
+  });
+  ['gFrom', 'gTo'].forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      if ($('gFrom').value && $('gTo').value && $('gFrom').value > $('gTo').value) { $('gTo').classList.add('bad'); }
+      else { $('gTo').classList.remove('bad'); if (loaded) { page = 1; apply(); } }
+    });
+  });
+  document.querySelectorAll('.presets button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var p = b.dataset.p;
+      if (p === 'today') { $('gFrom').value = '2026-10-02'; $('gTo').value = '2026-10-02'; }
+      if (p === '7d') { $('gFrom').value = '2026-09-26'; $('gTo').value = '2026-10-02'; }
+      if (p === 'month') { $('gFrom').value = '2026-10-01'; $('gTo').value = '2026-10-31'; }
+      $('gTo').classList.remove('bad');
+      if (loaded) { page = 1; apply(); }
+      toast('Preset applied — ' + $('gFrom').value + ' → ' + $('gTo').value);
+    });
+  });
+  $('fApply').addEventListener('click', function () { page = 1; apply(); toast('Filters applied'); });
+  $('fClear').addEventListener('click', function () { $('fType').value = ''; $('fUser').value = ''; $('fState').value = ''; $('fQ').value = ''; page = 1; apply(); toast('Filters cleared'); });
+  $('fQ').addEventListener('input', function () { if (loaded) { page = 1; apply(); } });
+  ['fType', 'fUser', 'fState'].forEach(function (id) { $(id).addEventListener('change', function () { if (loaded) { page = 1; apply(); } }); });
+
+  /* ---------- unposted: reopen / delete ---------- */
+  var delTarget = null, reopenTarget = null;
+  var DEL_SVG = '<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>';
+  function markTarget(e) {
+    var a = e.target.closest('a[data-act]'); if (!a) return;
+    var ref = a.dataset.target || a.closest('tr').dataset.ref;
+    if (a.dataset.act === 'delete') delTarget = ref;
+    if (a.dataset.act === 'reopen') reopenTarget = ref;
+  }
+  document.addEventListener('click', markTarget);
+  function updUnp() { syncHero(); }
+  $('cbDelete').addEventListener('click', function () {
+    if (!delTarget) { toast('Select a transaction first'); return; }
+    var tr = document.querySelector('#unpBody tr[data-ref="' + delTarget + '"]');
+    if (tr) tr.remove();
+    var ref = delTarget; delTarget = null;
+    updUnp(); location.hash = '#'; toast('🗑 ' + ref + ' deleted permanently');
+  });
+  $('cbReopen').addEventListener('click', function () {
+    if (!reopenTarget) { toast('Select a transaction first'); return; }
+    var tr = document.querySelector('#unpBody tr[data-ref="' + reopenTarget + '"]');
+    if (tr) {
+      tr.dataset.state = 'draft';
+      var pill = tr.querySelector('.pill'); pill.className = 'pill draft'; pill.innerHTML = '<i></i>Draft';
+      tr.querySelector('.dsub').textContent = 'Reopened — editable in source module';
+      var warn = tr.querySelector('a[data-act="reopen"]'); if (warn) warn.remove();
+      if (!tr.querySelector('a[data-act="delete"]')) {
+        var d = document.createElement('a'); d.className = 'ib delb'; d.href = '#cf-delete'; d.setAttribute('data-act', 'delete'); d.title = 'Delete permanently'; d.innerHTML = DEL_SVG;
+        tr.querySelector('td.r').appendChild(d);
+      }
+    }
+    var ref = reopenTarget; reopenTarget = null;
+    updUnp(); location.hash = '#'; toast('⤺ ' + ref + ' reopened for editing — now Draft');
+  });
+
+  /* ---------- authorizations ---------- */
+  function updAuth() {
+    var n = document.querySelectorAll('#authQueue tr.jrow').length;
+    $('authEmpty').style.display = n ? 'none' : '';
+    $('authNote').textContent = n + ' pending authorization' + (n === 1 ? '' : 's');
+    syncHero();
+  }
+  function decide(ref, ok, commentInput) {
+    if (commentInput && !ok && !commentInput.value.trim()) { commentInput.classList.add('bad'); toast('Rejection comment is required'); return false; }
+    if (commentInput) commentInput.classList.remove('bad');
+    var row = document.querySelector('#authQueue tr[data-ref="' + ref + '"]');
+    if (row) {
+      var h = $('authHist'), tr = document.createElement('tr');
+      tr.innerHTML = '<td><span class="ref">' + ref + '</span></td><td>' + row.dataset.desc + '</td><td>' + row.dataset.by + '</td><td class="r tot">' + row.dataset.amt + '</td><td><span class="pill ' + (ok ? 'ok' : 'rev') + '"><i></i>' + (ok ? 'Approved' : 'Rejected') + '</span></td><td style="white-space:nowrap">02 Oct 2026 · by ES</td>';
+      h.insertBefore(tr, h.firstChild);
+      row.remove();
+    }
+    updAuth(); location.hash = '#';
+    toast(ok ? '✓ ' + ref + ' authorised' : '✕ ' + ref + ' rejected');
+    return true;
+  }
+  $('cbAp1').addEventListener('click', function () { decide('AUTH-0031', true); });
+  $('cbRj1').addEventListener('click', function () { decide('AUTH-0031', false, $('a1Comment')); });
+  $('cbAp2').addEventListener('click', function () { decide('AUTH-0030', true); });
+  $('cbRj2').addEventListener('click', function () { decide('AUTH-0030', false, $('a2Comment')); });
+
+  /* ---------- reversal confirms honour submission mode ---------- */
+  var authSeq = 32;
+  function addAuthRow(ref, rv, amt) {
+    var q = $('authQueue'), tr = document.createElement('tr');
+    tr.className = 'jrow';
+    var aref = 'AUTH-00' + (authSeq++);
+    tr.dataset.ref = aref; tr.dataset.desc = 'Reversal of ' + ref; tr.dataset.by = 'Elvis Seyama'; tr.dataset.amt = amt;
+    tr.innerHTML = '<td><span class="ref">' + aref + '</span><span class="dsub">Reverse ' + ref + ' (' + rv + ')</span></td>' +
+      '<td><span class="ty j"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-15-6.7L3 13"/></svg>Reversal</span></td>' +
+      '<td>Elvis Seyama</td><td class="r tot">' + amt + '</td><td style="white-space:nowrap">02 Oct 2026</td><td><span class="age">now</span></td>' +
+      '<td class="r"><span class="pill fin"><i></i>Awaiting authoriser</span></td>';
+    q.insertBefore(tr, $('authEmpty'));
+    updAuth();
+  }
+  function addUnpostedRow(rv, ref, amt) {
+    var tb = $('unpBody'), tr = document.createElement('tr');
+    tr.className = 'jrow'; tr.dataset.ref = rv; tr.dataset.state = 'draft';
+    tr.innerHTML = '<td><span class="ref">' + rv + '</span></td><td><span class="ty j"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Journal</span></td><td style="white-space:nowrap">02 Oct 2026</td><td><span class="dmain">Reversal of ' + ref + '</span><span class="dsub">Draft — awaiting post</span></td><td class="r tot">' + amt + '</td><td>Elvis Seyama</td><td><span class="pill draft"><i></i>Draft</span></td><td class="r" style="white-space:nowrap"><a class="ib delb" href="#cf-delete" data-act="delete" title="Delete permanently">' + DEL_SVG + '</a></td>';
+    tb.appendChild(tr);
+    updUnp();
+  }
+  function doReverse(ref, rv, amt, modeId, reasonInput) {
+    if (reasonInput && !reasonInput.value.trim()) { reasonInput.classList.add('bad'); toast('Reason is required for reversal'); return; }
+    if (reasonInput) reasonInput.classList.remove('bad');
+    if (modeId.slice(-1) === 'b') { addAuthRow(ref, rv, amt); location.hash = '#'; toast('🛡 ' + rv + ' submitted for authorization'); return; }
+    if (modeId.slice(-1) === 'c') { addUnpostedRow(rv, ref, amt); location.hash = '#'; toast('📄 ' + rv + ' saved as draft (unposted)'); return; }
+    var tr = document.querySelector('#txBody tr[data-ref="' + ref + '"]');
+    if (tr) {
+      tr.dataset.state = 'reversed';
+      var pill = tr.querySelector('.pill'); pill.className = 'pill rev'; pill.innerHTML = '<i></i>Reversed';
+      tr.querySelector('.dsub').textContent = 'Reversed by ' + rv;
+    }
+    location.hash = '#'; apply(); toast('⟲ ' + rv + ' posted — ' + ref + ' marked Reversed');
+  }
+  $('cbRv1').addEventListener('click', function () { doReverse('JE-2026-0018', 'RV-2026-0010', '52,000.00', document.querySelector('input[name="rm1"]:checked').id, $('rv1Reason')); });
+  $('cbRv2').addEventListener('click', function () { doReverse('DEP-2026-0042', 'RV-2026-0011', '12,500.00', document.querySelector('input[name="rm2"]:checked').id, $('rv2Reason')); });
+
+  apply();
+  syncHero();
+})();
+</script>
+
+</body>
+</html>

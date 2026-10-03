@@ -951,6 +951,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('audit', [\App\Http\Controllers\Accounting\ReversalController::class, 'audit'])->name('audit');
             });
 
+            // ── Transaction Controls (unified reversal / unposted / authorization workspace) ──
+            Route::prefix('transaction-controls')->name('transaction-controls.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Accounting\TransactionControlsController::class, 'index'])->name('index');
+                Route::post('{id}/reverse', [\App\Http\Controllers\Accounting\TransactionControlsController::class, 'reverse'])->name('reverse')->where('id', '[0-9]+');
+                Route::post('{id}/reopen', [\App\Http\Controllers\Accounting\TransactionControlsController::class, 'reopen'])->name('reopen')->where('id', '[0-9]+');
+                Route::delete('{id}', [\App\Http\Controllers\Accounting\TransactionControlsController::class, 'destroy'])->name('destroy')->where('id', '[0-9]+');
+                Route::post('authorization/{id}/approve', [\App\Http\Controllers\Accounting\TransactionControlsController::class, 'approve'])->name('approve')->where('id', '[0-9]+');
+                Route::post('authorization/{id}/reject', [\App\Http\Controllers\Accounting\TransactionControlsController::class, 'reject'])->name('reject')->where('id', '[0-9]+');
+            });
+
             // ── Inventory Centre ──
             Route::middleware('feature:inventory')->prefix('inventory')->name('inventory.')->group(function () {
                 Route::get('/', [InventoryCentreController::class, 'dashboard'])->name('dashboard');
