@@ -86,7 +86,7 @@ class NumberingSequence extends Model
             ['document_type' => 'pos_sale', 'prefix' => 'POS-', 'padding_width' => 5, 'reset_policy' => 'never'],
             ['document_type' => 'pos_return', 'prefix' => 'RTN-', 'padding_width' => 5, 'reset_policy' => 'never'],
             ['document_type' => 'pos_settlement', 'prefix' => 'STL-', 'padding_width' => 5, 'reset_policy' => 'never'],
-            ['document_type' => 'quotation', 'prefix' => 'QTN-', 'padding_width' => 4, 'reset_policy' => 'annually'],
+            ['document_type' => 'quotation', 'prefix' => 'QT-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'sales_order', 'prefix' => 'SO-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'sales_receipt', 'prefix' => 'SR-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'billing_quotation', 'prefix' => 'BQ-', 'padding_width' => 4, 'reset_policy' => 'annually'],

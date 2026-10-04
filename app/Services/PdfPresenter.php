@@ -410,7 +410,7 @@ class PdfPresenter
             'grandLabel'=>'Grand Total','grand'=>$grand,'words'=>self::words($grand),
             'notes'=>[ ['label'=>'Notes','body'=>self::g($d,'customer_notes','')],
                        ['label'=>'Terms','body'=>['Payment due per stated terms.','Quotation № must be referenced on acceptance.'],'list'=>true] ],
-            'sigs'=>[ ['name'=>self::g($d,'preparer.name'),'role'=>'Prepared by'], ['name'=>'','role'=>'Authorised signature'] ],
+            'sigs'=>[ ['name'=>self::g($d,'preparer.name'),'role'=>'Prepared by'], ['name'=>'','role'=>'Customer acceptance'] ],
         ];
     }
 

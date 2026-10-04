@@ -13,10 +13,14 @@ class QuotationLine extends Model
 
     protected $fillable = [
         'quotation_id',
+        'position',
         'product_id',
+        'item_code',
+        'item_name',
         'description',
         'quantity',
         'unit_price',
+        'disc_pct',
         'discount',
         'tax_rate',
         'amount',
@@ -27,8 +31,10 @@ class QuotationLine extends Model
     ];
 
     protected $casts = [
+        'position' => 'integer',
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
+        'disc_pct' => 'decimal:3',
         'discount' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'amount' => 'decimal:2',

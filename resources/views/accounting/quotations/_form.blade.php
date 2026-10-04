@@ -13,6 +13,14 @@
     $oldCustomerId = old('customer_id', $quotation?->customer_id ?? ($selectedCustomerId ?? ''));
     $selectedCustomer = $customers->firstWhere('id', (int) $oldCustomerId);
 
+    $initialMode = old('customer_type', ($quotation && ! $quotation->customer_id && $quotation->customer_name) ? 'walkin' : 'existing');
+    $termsRaw = strtolower((string) old('terms_key', $quotation?->terms_key ?? $selectedCustomer?->payment_terms ?? 'net30'));
+    $termsMap = ['net-30' => 'net30', 'net-15' => 'net15', 'net-60' => 'net60', 'net-7' => 'net7', 'due-on-receipt' => 'receipt', 'receipt' => 'receipt'];
+    $selectedTerms = $termsMap[$termsRaw] ?? 'net30';
+    $selContact = old('contact_person', $quotation?->contact_person ?? $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '');
+    $selEmail = old('email', $quotation?->email ?? $selectedCustomer?->email ?? '');
+    $selPhone = old('phone', $quotation?->phone ?? $selectedCustomer?->phone ?? '');
+
     $currencyCodes = $currencies->pluck('code')->all();
     $defaultCurrency = in_array('MWK', $currencyCodes) ? 'MWK' : ($currencies->first()?->code ?? 'USD');
     $selectedCurrency = old('currency', $quotation?->currency ?? $defaultCurrency);
@@ -97,15 +105,12 @@
                     </button>
                 </div>
             @else
-                <button type="submit" name="action" value="save_and_new" form="quotation-form" class="q2-btn q2-btn--ghost">{{ __('Save & New') }}</button>
-                <div class="q2-seg">
-                    <button type="submit" name="action" value="save_draft" form="quotation-form" class="q2-btn q2-btn--ghost">{{ __('Save Draft') }}</button>
-                    <button type="submit" name="action" value="save" form="quotation-form" class="q2-btn q2-btn--sec">{{ $submitLabel }}</button>
-                    <button type="submit" name="action" value="submit_for_approval" form="quotation-form" class="q2-btn q2-btn--cta">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        {{ __('Submit for Approval') }}
-                    </button>
-                </div>
+                <button type="submit" name="submission_mode" value="draft" form="quotation-form" class="q2-btn q2-btn--sec">{{ __('Save Draft') }}</button>
+                <button type="button" id="quot-submit-btn" class="q2-btn q2-btn--cta" disabled
+                        title="{{ __('Requires customer name, contact person and at least one complete line (code, name, description, qty, unit price)') }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    {{ __('Submit') }}
+                </button>
             @endif
         </div>
     </div>
@@ -115,6 +120,7 @@
         @if ($formMethod === 'PUT')
             @method('PUT')
         @endif
+        <input type="hidden" name="submission_mode" id="quot-submission-mode" value="" />
 
         <x-input-error :messages="$errors->get('error')" class="mb-4" />
 
@@ -128,19 +134,12 @@
                         <h2 class="q2-sec-title">{{ __('Customer Information') }}</h2>
                     </div>
                     <div class="q2-g4 mt-5">
-                        <div class="q2-field" style="grid-column: span 2">
-                            <label for="customer_id" class="q2-label">{{ __('Customer') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
-                            <x-scoped-search-field
-                                name="customer_id"
-                                entity="customer"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
-                                :value="old('customer_id', $oldCustomerId)"
-                                :label="old('customer_name', $selectedCustomer?->name ?? '')"
-                                placeholder="{{ __('Search customers…') }}"
-                                on-select="quotCustomerSelected"
-                                required
-                            />
-                            <x-input-error :messages="$errors->get('customer_id')" />
+                        <div class="q2-field">
+                            <label for="customer_type" class="q2-label">{{ __('Customer type') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                            <select id="ci-mode" name="customer_type" class="q2-select">
+                                <option value="existing" @selected($initialMode === 'existing')>{{ __('Existing customer') }}</option>
+                                <option value="walkin" @selected($initialMode === 'walkin')>{{ __('Walk-in customer') }}</option>
+                            </select>
                         </div>
                         <div class="q2-field">
                             <label for="valid_until" class="q2-label">{{ __('Valid Until') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
@@ -157,24 +156,58 @@
                                 @endforelse
                             </select>
                         </div>
+                    </div>
+
+                    <div class="q2-field mt-4" id="ci-search-wrap">
+                        <label for="customer_id" class="q2-label">{{ __('Customer') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                        <x-scoped-search-field
+                            name="customer_id"
+                            entity="customer"
+                            search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
+                            :value="old('customer_id', $oldCustomerId)"
+                            :label="old('customer_name', $selectedCustomer?->name ?? '')"
+                            placeholder="{{ __('Search customers…') }}"
+                            on-select="quotCustomerSelected"
+                            required
+                        />
+                        <x-input-error :messages="$errors->get('customer_id')" />
+                    </div>
+
+                    <div class="q2-field mt-4" id="ci-name-wrap" style="display:none">
+                        <label for="ci-name" class="q2-label">{{ __('Customer name') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                        <input id="ci-name" name="customer_name" type="text" class="q2-input" value="{{ old('customer_name', $quotation?->customer_name ?? '') }}" placeholder="{{ __('e.g. Jane Mwale') }}" />
+                        <x-input-error :messages="$errors->get('customer_name')" />
+                    </div>
+
+                    <div class="q2-g4 mt-4">
                         <div class="q2-field">
-                            <label class="q2-label">{{ __('Contact Person') }}</label>
-                            <input type="text" class="q2-input" id="quot-contact" value="{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '' }}" readonly />
+                            <label for="quot-contact" class="q2-label">{{ __('Contact Person') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                            <input type="text" class="q2-input" id="quot-contact" name="contact_person" value="{{ $selContact }}" />
+                            <x-input-error :messages="$errors->get('contact_person')" />
                         </div>
                         <div class="q2-field">
-                            <label class="q2-label">{{ __('Email') }}</label>
-                            <input type="email" class="q2-input" id="quot-email" value="{{ $selectedCustomer?->email ?? '' }}" readonly />
+                            <label for="quot-email" class="q2-label">{{ __('Email') }}</label>
+                            <input type="email" class="q2-input" id="quot-email" name="email" value="{{ $selEmail }}" />
+                            <x-input-error :messages="$errors->get('email')" />
                         </div>
                         <div class="q2-field">
-                            <label class="q2-label">{{ __('Phone') }}</label>
-                            <input type="text" class="q2-input" id="quot-phone" value="{{ $selectedCustomer?->phone ?? '' }}" readonly />
+                            <label for="quot-phone" class="q2-label">{{ __('Phone') }}</label>
+                            <input type="text" class="q2-input" id="quot-phone" name="phone" value="{{ $selPhone }}" />
+                            <x-input-error :messages="$errors->get('phone')" />
                         </div>
                         <div class="q2-field">
-                            <label class="q2-label">{{ __('Payment Terms') }}</label>
-                            <input type="text" class="q2-input" id="quot-terms" value="{{ $selectedCustomer?->payment_terms ?? '' }}" readonly />
+                            <label for="quot-terms" class="q2-label">{{ __('Payment Terms') }}</label>
+                            <select id="quot-terms" name="terms_key" class="q2-select">
+                                <option value="receipt" @selected($selectedTerms === 'receipt')>{{ __('Due on receipt') }}</option>
+                                <option value="net7" @selected($selectedTerms === 'net7')>{{ __('Net 7') }}</option>
+                                <option value="net15" @selected($selectedTerms === 'net15')>{{ __('Net 15') }}</option>
+                                <option value="net30" @selected($selectedTerms === 'net30')>{{ __('Net 30') }}</option>
+                                <option value="net60" @selected($selectedTerms === 'net60')>{{ __('Net 60') }}</option>
+                            </select>
                         </div>
                     </div>
-                    <p class="q2-hint mt-4">{{ __('Contact details shown are from the customer record.') }}</p>
+                    <p class="q2-savenote" id="ci-save-note" style="display:none">{{ __('Walk-in captured — these details will be saved to the customer registry for future use.') }}</p>
+                    <p class="q2-hint mt-4">{{ __('Contact details are captured with the quotation and saved to the customer registry for walk-in customers.') }}</p>
                 </section>
 
                 {{-- (b) quotation info --}}
@@ -277,53 +310,10 @@
                             <x-input-error :messages="$errors->get('memo')" />
                         </div>
                         <div class="q2-field">
-                            <label class="q2-label">{{ __('Internal Notes') }}</label>
-                            <textarea class="q2-input" style="height:auto;min-height:6rem;padding:.75rem .875rem;resize:vertical" placeholder="{{ __('Visible to your team only…') }}" readonly></textarea>
+                            <label for="notes_internal" class="q2-label">{{ __('Internal Notes') }}</label>
+                            <textarea id="notes_internal" name="notes_internal" class="q2-input" style="height:auto;min-height:6rem;padding:.75rem .875rem;resize:vertical" placeholder="{{ __('Visible to your team only…') }}">{{ old('notes_internal', $quotation?->notes_internal ?? '') }}</textarea>
                         </div>
                     </div>
-                </section>
-
-                {{-- (e) attachments --}}
-                <section class="q2-sec" id="attachments">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Attachments') }}</h2>
-                    </div>
-
-                    @if(!empty($quotationAttachments))
-                        <ul id="quot-existing-files" class="q2-li-wrap">
-                            @foreach($quotationAttachments as $attachment)
-                                <li data-attachment-id="{{ $attachment->id }}" class="q2-li">
-                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                    <span class="q2-li-name">{{ $attachment->name }}</span>
-                                    <span class="q2-li-size">{{ format_bytes($attachment->file_size) }}</span>
-                                    <button type="button" class="q2-li-rm" title="{{ __('Remove') }}" aria-label="{{ __('Remove') }}" onclick="quotRemoveExistingFile(this)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                    </button>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
-
-                    <label class="q2-drop mt-4" id="quot-dropzone" for="quot-files">
-                        <span class="flex items-center justify-center gap-2 text-[0.929rem]">
-                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span>{{ __('Drag & drop files here, or') }} <b style="font-weight:700;color:var(--sec,#128F8E)">{{ __('browse') }}</b></span>
-                        </span>
-                        <span class="mt-1.5 flex items-center justify-center gap-1.5">
-                            <span class="q2-fchip">PDF</span>
-                            <span class="q2-fchip">IMG</span>
-                            <span class="q2-fchip">XLSX</span>
-                            <span class="q2-fchip">DOCX</span>
-                        </span>
-                    </label>
-
-                    <input type="file" id="quot-files" name="files[]" multiple
-                           accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.xls,.xlsx,.doc,.docx,.txt,.csv" class="hidden" />
-
-                    <ul id="quot-new-files" class="bill-file-list"></ul>
-
-                    <x-input-error :messages="$errors->get('files')" class="mt-2" />
                 </section>
             </div>
 
@@ -341,6 +331,7 @@
                         <div class="q2-srow" id="r-disc" style="display:none"><span>{{ __('Discount') }}</span><span class="q2-sval" id="v-disc">0.00</span></div>
                         <div class="q2-srow" id="r-tax" style="display:none"><span>{{ __('Tax') }}</span><span class="q2-sval" id="v-tax">0.00</span></div>
                         <div class="q2-srow gt"><span>{{ __('Grand Total') }}</span><span class="q2-sval" id="v-gt">{{ $cs }}0.00</span></div>
+                        <div class="q2-sumnote" id="v-complete"></div>
                         <div id="p-lines"></div>
                         <p id="p-foot" class="q2-rail-memo" hidden></p>
                     </div>
@@ -367,10 +358,6 @@
                                 <span>{{ __('Email') }}</span>
                             </form>
                         @endif
-                        <a href="#attachments" class="q2-vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span>{{ __('Attach File') }}</span>
-                        </a>
                         <a href="{{ $cancelRoute }}" class="q2-vitem">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             <span>{{ __('Back') }}</span>
@@ -400,6 +387,42 @@
         @method('DELETE')
     </form>
     @endif
+
+    {{-- §3.7 / §4.3 submit-choice modal --}}
+    <div class="q2-scrim" id="quot-submit-scrim" hidden>
+        <div class="q2-mbox q2-mbox--narrow" role="dialog" aria-modal="true" aria-labelledby="quot-submit-title">
+            <div class="q2-mhead">
+                <span class="q2-mic">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="q2-mtitle" id="quot-submit-title">{{ __('Submit quotation') }}</span>
+                <button type="button" class="q2-mclose" aria-label="{{ __('Close') }}" onclick="quotCloseSubmit()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 18 18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <div class="q2-mbody">
+                <div class="q2-optcards">
+                    <button type="button" class="q2-optcard" onclick="quotSubmitChoice('finalize_later')">
+                        <span class="q2-ocic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <span class="q2-oct">{{ __('Save & send later') }}</span>
+                    </button>
+                    <button type="button" class="q2-optcard q2-optcard--final" onclick="quotSubmitChoice('finalize_print')">
+                        <span class="q2-ocic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <span class="q2-oct">{{ __('Finalize & print') }}</span>
+                    </button>
+                    <button type="button" class="q2-optcard q2-optcard--send q2-hintable q2-hint-right" id="quot-send-card" onclick="quotSubmitChoice('finalize_send')">
+                        <span class="q2-ocic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm18 3-10 7L2 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <span class="q2-oct">{{ __('Finalize & send to customer') }}</span>
+                        <span class="q2-tip">{{ __('Provide customer email to activate this button') }}</span>
+                    </button>
+                </div>
+            </div>
+            <div class="q2-mfoot">
+                <span class="q2-mnote">{{ __('Use Save Draft in the header for a quick save without submitting.') }}</span>
+                <button type="button" class="q2-btn q2-btn--ghost" onclick="quotCloseSubmit()">{{ __('Close') }}</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -423,6 +446,7 @@
     }
 
     let lineIndex = 0;
+    let quotCompleteCount = 0;
 
     function quotLineRow(data) {
         const d = data || {};
@@ -464,6 +488,7 @@
                 </td>
                 <td class="py-2 px-1.5 border-b border-line align-middle">
                     <span class="bill-amt bill-line-total q-amt">0.00</span>
+                    <span class="q2-lineok" hidden aria-hidden="true">✓</span>
                 </td>
                 <td class="py-2 px-1.5 border-b border-line align-middle">
                     <div class="flex gap-1 justify-end">
@@ -528,11 +553,15 @@
         let tax = 0;
         const lines = [];
 
+        let complete = 0;
         document.querySelectorAll('#quot-lines-body tr.quot-row').forEach(row => {
             const qty = parse(row.querySelector('.bill-qty').value);
             const price = parse(row.querySelector('.bill-price').value);
             const pct = parse(row.querySelector('.bill-disc-pct').value);
             const rate = parse(row.querySelector('.quot-tax-rate').value);
+            const sku = (row.querySelector('.bill-sku').value || '').trim();
+            const name = ((row.querySelector('.scoped-search-field input') || { value: '' }).value || '').trim();
+            const desc = ((row.querySelector('[name*="[description]"]') || { value: '' }).value || '').trim();
 
             const gross = qty * price;
             const flat = gross > 0 ? Math.round(gross * pct) / 100 : 0;
@@ -542,19 +571,25 @@
             const lineTax = amount * rate / 100;
             row.querySelector('.bill-line-total').textContent = fmt(amount + lineTax);
 
+            const ok = !!(sku && name && desc && qty > 0 && price > 0 && amount > 0);
+            const okEl = row.querySelector('.q2-lineok');
+            if (okEl) okEl.hidden = !ok;
+            if (ok) complete++;
+
             subtotal += gross;
             discount += flat;
             tax += lineTax;
 
             if (gross || amount) {
                 lines.push({
-                    c: row.querySelector('.bill-sku').value || '',
-                    n: (row.querySelector('.scoped-search-field input') || { value: '' }).value || '',
+                    c: sku,
+                    n: name,
                     q: qty,
                     a: amount,
                 });
             }
         });
+        quotCompleteCount = complete;
 
         const grand = subtotal - discount + tax;
 
@@ -571,6 +606,8 @@
         holder.innerHTML = lines.map(l =>
             `<div class="quot-p-line"><span class="quot-p-code">${esc(l.c) || '—'}</span><span class="quot-p-name">${esc(l.n) || 'Untitled'}</span><span class="quot-p-qty">×${l.q}</span><span class="quot-p-amt">${fmt(l.a)}</span></div>`
         ).join('') || '<div class="quot-p-line"><span class="quot-p-name" style="color:#94a3b8">No line items yet</span></div>';
+
+        quotEvaluateSubmit();
     }
 
     function quotSync() {
@@ -582,15 +619,30 @@
         quotUpdateTotals();
     }
 
+    function quotTermsKey(raw) {
+        const v = String(raw || '').toLowerCase().replace(/\s+/g, '');
+        if (v.includes('receipt') || v.includes('immediate')) return 'receipt';
+        if (v.includes('net7') || v.includes('7')) return 'net7';
+        if (v.includes('net15') || v.includes('15')) return 'net15';
+        if (v.includes('net60') || v.includes('60')) return 'net60';
+        if (v.includes('net30') || v.includes('30')) return 'net30';
+        return '';
+    }
+
     function quotCustomerSelected(id, item) {
         if (item) {
             document.getElementById('quot-contact').value = item.display_name || item.label || '';
             document.getElementById('quot-email').value = item.email || '';
             document.getElementById('quot-phone').value = item.phone || '';
-            document.getElementById('quot-terms').value = item.payment_terms || '';
+            const terms = document.getElementById('quot-terms');
+            if (terms) {
+                const key = quotTermsKey(item.payment_terms);
+                if (key) terms.value = key;
+            }
             quotCustomerName = item.label || '';
         }
         quotSync();
+        quotEvaluateSubmit();
     }
 
     document.getElementById('quot-add-line').addEventListener('click', () => quotAddLine());
@@ -640,92 +692,118 @@
     (QUOT_LINES.length ? QUOT_LINES : [{}]).forEach(d => quotAddLine(d));
     quotSync();
 
-    /* ── attachments ─────────────────────────────────────────── */
-    let quotNewFiles = [];
+    /* ── customer mode: existing vs walk-in (R8) ────────────── */
+    function quotSetMode(mode) {
+        const walkin = mode === 'walkin';
+        const searchWrap = document.getElementById('ci-search-wrap');
+        const nameWrap = document.getElementById('ci-name-wrap');
+        const saveNote = document.getElementById('ci-save-note');
+        const searchInput = searchWrap ? searchWrap.querySelector('input[type="hidden"]') : null;
+        const nameInput = document.getElementById('ci-name');
 
-    function quotFmtSize(b) {
-        if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MB';
-        if (b >= 1024) return (b / 1024).toFixed(1) + ' KB';
-        return b + ' B';
-    }
+        if (searchWrap) searchWrap.style.display = walkin ? 'none' : '';
+        if (nameWrap) nameWrap.style.display = walkin ? '' : 'none';
+        if (saveNote) saveNote.style.display = walkin ? '' : 'none';
+        if (searchInput) searchInput.disabled = walkin;
+        if (nameInput) nameInput.disabled = !walkin;
 
-    function quotRenderNewFiles() {
-        const list = document.getElementById('quot-new-files');
-        if (!list) return;
-        list.innerHTML = '';
-        quotNewFiles.forEach((f, i) => {
-            const li = document.createElement('li');
-            li.dataset.i = i;
-            li.className = 'flex items-center gap-3 px-4 py-2.5 text-[0.929rem]';
-            li.innerHTML = `
-                <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                <span class="flex-1 min-w-0 truncate text-gray-800">${esc(f.name)}</span>
-                <span class="shrink-0 text-[0.786rem] text-slate-400">${quotFmtSize(f.size)}</span>
-                <button type="button" class="bill-ibtn bill-ibtn--del q-ibtn q-ibtn--del" title="Remove" aria-label="Remove" onclick="quotRemoveNewFile(this)">🗑</button>
-            `;
-            list.appendChild(li);
+        ['quot-contact', 'quot-email', 'quot-phone', 'quot-terms'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (walkin) {
+                el.classList.remove('q2-ro');
+                el.removeAttribute('readonly');
+                el.style.pointerEvents = '';
+            } else if (el.tagName === 'SELECT') {
+                el.classList.add('q2-ro');
+                el.style.pointerEvents = 'none';
+            } else {
+                el.classList.add('q2-ro');
+                el.setAttribute('readonly', 'readonly');
+            }
         });
+        quotEvaluateSubmit();
     }
 
-    function quotSyncFileInput() {
-        const input = document.getElementById('quot-files');
-        if (!input) return;
-        const dt = new DataTransfer();
-        quotNewFiles.forEach(f => dt.items.add(f));
-        input.files = dt.files;
+    function quotEmailValid() {
+        const el = document.getElementById('quot-email');
+        const v = ((el && el.value) || '').trim();
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
     }
 
-    function quotAddFiles(fileList) {
-        Array.from(fileList || []).forEach(f => quotNewFiles.push(f));
-        quotRenderNewFiles();
-        quotSyncFileInput();
-    }
+    function quotEvaluateSubmit() {
+        const modeEl = document.getElementById('ci-mode');
+        const mode = modeEl ? modeEl.value : 'existing';
+        const nameInput = document.getElementById('ci-name');
+        const searchInput = document.querySelector('#ci-search-wrap input[type="hidden"]');
+        const customerOk = mode === 'walkin'
+            ? !!(nameInput && nameInput.value.trim())
+            : !!(searchInput && searchInput.value);
+        const contactOk = !!((document.getElementById('quot-contact') || {}).value || '').trim();
 
-    function quotRemoveNewFile(btn) {
-        const li = btn.closest('li[data-i]');
-        if (!li) return;
-        quotNewFiles.splice(parseInt(li.dataset.i, 10), 1);
-        quotRenderNewFiles();
-        quotSyncFileInput();
-    }
+        const btn = document.getElementById('quot-submit-btn');
+        if (btn) btn.disabled = !(customerOk && contactOk && quotCompleteCount >= 1);
 
-    function quotRemoveExistingFile(btn) {
-        const li = btn.closest('li[data-attachment-id]');
-        if (!li) return;
-        const id = li.dataset.attachmentId;
-        let holder = document.getElementById('quot-delete-documents');
-        if (!holder) {
-            holder = document.createElement('div');
-            holder.id = 'quot-delete-documents';
-            document.getElementById('quotation-form').appendChild(holder);
+        const sendCard = document.getElementById('quot-send-card');
+        if (sendCard) {
+            const ok = quotEmailValid();
+            sendCard.classList.toggle('is-gated', !ok);
+            sendCard.setAttribute('aria-disabled', ok ? 'false' : 'true');
         }
-        const hidden = document.createElement('input');
-        hidden.type = 'hidden';
-        hidden.name = 'delete_documents[]';
-        hidden.value = id;
-        holder.appendChild(hidden);
-        li.remove();
+
+        const note = document.getElementById('v-complete');
+        if (note) {
+            note.textContent = quotCompleteCount >= 1
+                ? `${quotCompleteCount} complete line${quotCompleteCount === 1 ? '' : 's'}`
+                : 'Add at least one complete line to submit';
+        }
     }
 
-    function quotWireDropzone() {
-        const dz = document.getElementById('quot-dropzone');
-        const input = document.getElementById('quot-files');
-        if (!dz || !input) return;
-
-        input.addEventListener('change', () => quotAddFiles(input.files));
-
-        ['dragover', 'dragenter'].forEach(ev => dz.addEventListener(ev, e => {
-            e.preventDefault();
-            dz.classList.add('bill-drop--drag');
-        }));
-        ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
-            e.preventDefault();
-            dz.classList.remove('bill-drop--drag');
-        }));
-        dz.addEventListener('drop', e => {
-            if (e.dataTransfer && e.dataTransfer.files.length) quotAddFiles(e.dataTransfer.files);
-        });
+    /* ── submit-choice modal (R1/R2/R3/R11) ─────────────────── */
+    function quotOpenSubmit() {
+        const btn = document.getElementById('quot-submit-btn');
+        if (btn && btn.disabled) return;
+        const scrim = document.getElementById('quot-submit-scrim');
+        if (scrim) { scrim.hidden = false; scrim.classList.add('is-open'); }
+        document.body.classList.add('q2-modal-open');
+        const first = scrim && scrim.querySelector('.q2-optcard');
+        if (first) first.focus();
     }
 
-    quotWireDropzone();
+    function quotCloseSubmit() {
+        const scrim = document.getElementById('quot-submit-scrim');
+        if (scrim) { scrim.classList.remove('is-open'); scrim.hidden = true; }
+        document.body.classList.remove('q2-modal-open');
+    }
+
+    function quotSubmitChoice(mode) {
+        if (mode === 'finalize_send' && !quotEmailValid()) {
+            if (window.CB && CB.toast) {
+                CB.toast('warning', @json(__('Email required')), @json(__('Provide customer email to activate this button.')));
+            }
+            return;
+        }
+        const hidden = document.getElementById('quot-submission-mode');
+        if (hidden) hidden.value = mode;
+        quotCloseSubmit();
+        document.getElementById('quotation-form').submit();
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            const scrim = document.getElementById('quot-submit-scrim');
+            if (scrim && !scrim.hidden) quotCloseSubmit();
+        }
+    });
+
+    const quotModeSel = document.getElementById('ci-mode');
+    if (quotModeSel) quotModeSel.addEventListener('change', () => quotSetMode(quotModeSel.value));
+    const quotSubmitBtn = document.getElementById('quot-submit-btn');
+    if (quotSubmitBtn) quotSubmitBtn.addEventListener('click', quotOpenSubmit);
+    ['quot-contact', 'quot-email', 'quot-phone', 'ci-name'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', quotEvaluateSubmit);
+    });
+
+    quotSetMode(quotModeSel ? quotModeSel.value : 'existing');
 </script>

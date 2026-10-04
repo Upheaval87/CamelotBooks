@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Attachment;
+use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\CostCenter;
 use App\Models\Currency;
@@ -22,12 +23,13 @@ class QuotationController extends Controller
     {
         $companyId = session('current_company_id');
         $sort = $request->input('sort', 'date-desc');
+        $activeView = $request->input('view', '');
 
         $quotations = $this->baseQuery($request);
         foreach ($this->orderByFor($sort) as $column => $direction) {
             $quotations->orderBy($column, $direction);
         }
-        $quotations = $quotations->paginate(20);
+        $quotations = $quotations->paginate(20)->withQueryString();
 
         $stats = Quotation::forCompany($companyId)
             ->selectRaw('status, COUNT(*) as total, COALESCE(SUM(total), 0) as amount')
@@ -36,7 +38,200 @@ class QuotationController extends Controller
             ->keyBy('status');
         $statsTotal = Quotation::forCompany($companyId)->count();
 
-        return view('accounting.quotations.index', compact('quotations', 'stats', 'statsTotal', 'sort'));
+        $kpis = $this->registerKpis($companyId);
+        $needsAttention = $this->needsAttention($companyId);
+        $emailFailures = $this->emailFailures($companyId);
+
+        $defaultIncomeAccountId = Account::where('company_id', $companyId)
+            ->where('type', 'revenue')->where('is_active', true)->orderBy('code')->value('id');
+
+        $currencyNames = Currency::query()->pluck('name', 'code')->all();
+        $company = \App\Models\Company::find($companyId);
+
+        $viewPayload = [];
+        $failedIds = $emailFailures->pluck('id')->map(fn ($id) => (int) $id)->all();
+        foreach ($quotations as $quotation) {
+            $viewPayload[$quotation->id] = $this->viewPayload($quotation, $currencyNames, $failedIds);
+        }
+
+        return view('accounting.quotations.index', compact(
+            'quotations', 'stats', 'statsTotal', 'sort', 'activeView', 'kpis', 'needsAttention', 'emailFailures', 'viewPayload', 'defaultIncomeAccountId', 'company'
+        ));
+    }
+
+    /**
+     * §4.1 View modal payload — meta chips, lifecycle steps, lines, totals,
+     * notes, status-aware footer actions and their URLs.
+     */
+    private function viewPayload(Quotation $quotation, array $currencyNames = [], array $failedIds = []): array
+    {
+        $termsLabels = [
+            'receipt' => __('Due on receipt'),
+            'net7' => __('Net 7'),
+            'net15' => __('Net 15'),
+            'net30' => __('Net 30'),
+            'net60' => __('Net 60'),
+        ];
+
+        $discount = (float) $quotation->lines->sum('discount');
+
+        $lines = $quotation->lines->map(function ($line) {
+            return [
+                'desc' => $line->description ?: ($line->item_name ?: ($line->item_code ?: '—')),
+                'qty' => (float) $line->quantity,
+                'unit' => (float) $line->unit_price,
+                'disc' => (float) $line->disc_pct,
+                'tax' => (float) $line->tax_rate,
+                'account' => $line->income_account_id,
+                'amount' => (float) $line->amount,
+            ];
+        })->values()->all();
+
+        $user = auth()->user();
+        $isCreator = (int) $quotation->created_by === (int) ($user?->id);
+
+        return [
+            'id' => $quotation->id,
+            'number' => $quotation->quotation_number,
+            'status' => $quotation->status,
+            'customer_id' => $quotation->customer_id,
+            'customer' => $quotation->customer->name ?? $quotation->customer_name ?? '—',
+            'contact' => $quotation->contact_person ?: ($quotation->customer->display_name ?? ''),
+            'email' => $quotation->email ?: ($quotation->customer->email ?? ''),
+            'phone' => $quotation->phone ?: ($quotation->customer->phone ?? ''),
+            'date' => optional($quotation->quotation_date)->format('Y-m-d'),
+            'valid' => optional($quotation->valid_until)->format('Y-m-d'),
+            'reference' => $quotation->reference,
+            'currency' => $quotation->currency,
+            'terms_key' => $quotation->terms_key,
+            'terms' => $termsLabels[$quotation->terms_key] ?? ($quotation->terms_key ?: __('Due on receipt')),
+            'currency_name' => $currencyNames[$quotation->currency] ?? '',
+            'branch' => $quotation->branch->name ?? ($quotation->branch_id ? '' : __('Head Office')),
+            'cc' => $quotation->costCenter->name ?? '',
+            'prepared' => $quotation->createdByUser->name ?? '',
+            'ref_no' => $quotation->reference,
+            'notes' => $quotation->memo,
+            'internal' => $quotation->notes_internal,
+            'sub' => (float) $quotation->amount,
+            'disc' => $discount,
+            'tax' => (float) $quotation->tax_total,
+            'total' => (float) $quotation->total,
+            'words' => amount_to_words((float) $quotation->total, $currencyNames[$quotation->currency] ?? $quotation->currency),
+            'superseded' => $quotation->supersededBy?->quotation_number,
+            'emailed' => (bool) $quotation->emailed_at,
+            'emailed_to' => $quotation->emailed_to,
+            'email_failed' => in_array((int) $quotation->id, $failedIds, true),
+            'expired' => $quotation->expiryState() === 'expired',
+            'days' => $quotation->daysUntilExpiry(),
+            'lines' => $lines,
+            'urls' => [
+                'edit' => route('accounting.quotations.edit', $quotation),
+                'show' => route('accounting.quotations.show', $quotation),
+                'print' => route('accounting.quotations.print', $quotation),
+                'pdf' => route('accounting.quotations.pdf', $quotation),
+                'void' => route('accounting.quotations.void', $quotation),
+                'accept' => route('accounting.quotations.accept', $quotation),
+                'decline' => route('accounting.quotations.decline', $quotation),
+                'convert' => route('accounting.quotations.convert-to-invoice', $quotation),
+                'requote' => route('accounting.quotations.requote', $quotation),
+                'duplicate' => route('accounting.quotations.requote', $quotation),
+                'email' => route('accounting.quotations.email', $quotation),
+            ],
+            'can' => [
+                'edit' => $isCreator && $quotation->isDraft() && (bool) ($user?->can('quotations.edit')),
+                'void' => !$isCreator && in_array($quotation->status, [Quotation::STATUS_DRAFT, Quotation::STATUS_SENT], true) && (bool) ($user?->can('quotations.void')),
+                'accept' => !$isCreator && $quotation->status === Quotation::STATUS_SENT && (bool) ($user?->can('quotations.approve')),
+                'decline' => !$isCreator && $quotation->status === Quotation::STATUS_SENT && (bool) ($user?->can('quotations.approve')),
+                'convert' => !$isCreator && $quotation->status === Quotation::STATUS_ACCEPTED && (bool) ($user?->can('quotations.convert')),
+                'requote' => $quotation->isRequotable() && (bool) ($user?->can('quotations.create')),
+                'email' => !in_array($quotation->status, [Quotation::STATUS_DRAFT, Quotation::STATUS_VOID], true) && (bool) ($user?->can('quotations.view')),
+            ],
+        ];
+    }
+
+    /**
+     * §2.1 KPI tiles — open pipeline value, win rate, expiring ≤7d, converted value.
+     */
+    private function registerKpis(int $companyId): array
+    {
+        $openRows = Quotation::forCompany($companyId)
+            ->whereIn('status', [Quotation::STATUS_DRAFT, Quotation::STATUS_SENT])
+            ->get(['id', 'total', 'valid_until', 'status']);
+
+        $accepted = Quotation::forCompany($companyId)->where('status', Quotation::STATUS_ACCEPTED)->count();
+        $declined = Quotation::forCompany($companyId)->where('status', Quotation::STATUS_DECLINED)->count();
+        $decided = $accepted + $declined;
+
+        $expiring = $openRows->filter(function ($q) {
+            $state = $q->expiryState();
+            return $state === 'expired' || $state === 'soon';
+        })->count();
+
+        $convertedValue = (float) Quotation::forCompany($companyId)->where('status', Quotation::STATUS_CONVERTED)->sum('total');
+        $convertedCount = Quotation::forCompany($companyId)->where('status', Quotation::STATUS_CONVERTED)->count();
+
+        return [
+            'open_pipeline' => (float) $openRows->sum('total'),
+            'open_count' => $openRows->count(),
+            'win_rate' => $decided > 0 ? round(100 * $accepted / $decided, 1) : null,
+            'accepted' => $accepted,
+            'declined' => $declined,
+            'expiring' => $expiring,
+            'converted_value' => $convertedValue,
+            'converted_count' => $convertedCount,
+        ];
+    }
+
+    /**
+     * §R6 Needs-attention rail — OPEN quotes already expired or expiring ≤7 days.
+     */
+    private function needsAttention(int $companyId): \Illuminate\Support\Collection
+    {
+        return Quotation::forCompany($companyId)
+            ->with('customer')
+            ->whereIn('status', [Quotation::STATUS_DRAFT, Quotation::STATUS_SENT])
+            ->whereNotNull('valid_until')
+            ->orderBy('valid_until')
+            ->get()
+            ->filter(function ($q) {
+                $state = $q->expiryState();
+                return $state === 'expired' || $state === 'soon';
+            })
+            ->take(8)
+            ->values();
+    }
+
+    /**
+     * §6.3 — quotations whose most recent email attempt ended in failure.
+     *
+     * A failed dispatch is derived from the audit trail rather than new columns:
+     * only quotations whose latest `emailed`/`email_failed` audit is a failure
+     * are surfaced, so a later successful retry clears the flag automatically.
+     */
+    private function emailFailures(int $companyId): \Illuminate\Support\Collection
+    {
+        $failedIds = AuditLog::query()
+            ->where('company_id', $companyId)
+            ->where('auditable_type', Quotation::class)
+            ->whereIn('action', ['email_failed', 'emailed'])
+            ->orderByDesc('id')
+            ->get(['auditable_id', 'action'])
+            ->groupBy('auditable_id')
+            ->filter(fn ($rows) => $rows->first()->action === 'email_failed')
+            ->keys();
+
+        if ($failedIds->isEmpty()) {
+            return collect();
+        }
+
+        return Quotation::forCompany($companyId)
+            ->with('customer')
+            ->whereIn('id', $failedIds->all())
+            // R15 — a draft is never emailed, and R7 — void is terminal, so
+            // neither can carry an actionable delivery failure.
+            ->whereNotIn('status', [Quotation::STATUS_DRAFT, Quotation::STATUS_VOID])
+            ->orderByDesc('id')
+            ->get();
     }
 
     /**
@@ -46,11 +241,12 @@ class QuotationController extends Controller
     private function baseQuery(Request $request)
     {
         $companyId = session('current_company_id');
+        $status = $request->status ?: $request->view;
 
         return Quotation::forCompany($companyId)
-            ->with(['customer', 'createdByUser', 'postedByUser'])
-            ->when($request->status === 'open', fn($q) => $q->whereIn('status', [Quotation::STATUS_DRAFT, Quotation::STATUS_SENT]))
-            ->when($request->status && $request->status !== 'open', fn($q, $s) => $q->where('status', $s))
+            ->with(['customer', 'createdByUser', 'postedByUser', 'lines', 'supersededBy', 'branch', 'costCenter'])
+            ->when($status === 'open', fn($q) => $q->whereIn('status', [Quotation::STATUS_DRAFT, Quotation::STATUS_SENT]))
+            ->when($status && $status !== 'open', fn($q, $s) => $q->where('status', $s))
             ->when($request->customer_id, fn($q, $id) => $q->where('customer_id', $id))
             ->when($request->search, fn($q, $s) => $q->where(function ($q2) use ($s) {
                 $q2->where('quotation_number', 'like', "%{$s}%")
@@ -65,6 +261,7 @@ class QuotationController extends Controller
             'date-asc' => ['quotation_date' => 'asc', 'id' => 'asc'],
             'amount-desc' => ['total' => 'desc', 'quotation_date' => 'desc'],
             'amount-asc' => ['total' => 'asc', 'quotation_date' => 'asc'],
+            'expiry-asc' => ['valid_until' => 'asc', 'id' => 'asc'],
             'status' => ['status' => 'asc', 'quotation_date' => 'desc'],
             default => ['quotation_date' => 'desc', 'id' => 'desc'],
         };
@@ -117,14 +314,25 @@ class QuotationController extends Controller
         $companyId = session('current_company_id');
 
         $request->validate([
-            'customer_id' => 'required|exists:customers,id',
+            'customer_id' => 'nullable|exists:customers,id',
+            'customer_name' => 'required_without:customer_id|nullable|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'terms_key' => 'nullable|string|max:40',
+            'department' => 'nullable|string|max:120',
+            'prepared_by' => 'nullable|string|max:120',
+            'project' => 'nullable|string|max:120',
             'quotation_date' => 'required|date',
             'valid_until' => 'nullable|date|after:quotation_date',
             'currency' => 'nullable|string|max:10',
+            'notes_internal' => 'nullable|string|max:5000',
             'lines' => 'required|array|min:1',
             'lines.*.description' => 'required|string|max:500',
             'lines.*.quantity' => 'required|numeric|min:0.01',
             'lines.*.unit_price' => 'required|numeric|min:0',
+            'lines.*.disc_pct' => 'nullable|numeric|min:0|max:100',
+            'lines.*.discount' => 'nullable|numeric|min:0',
             'lines.*.income_account_id' => 'required|exists:accounts,id',
             'files' => 'nullable|array|max:10',
             'files.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,webp,xls,xlsx,doc,docx,txt,csv|max:10240',
@@ -132,37 +340,23 @@ class QuotationController extends Controller
             'delete_documents.*' => 'integer',
         ]);
 
+        $companyId = session('current_company_id');
+        $isWalkin = !$request->filled('customer_id') && $request->filled('customer_name');
         $quotationService = app(QuotationService::class);
-        $quotation = $quotationService->create([
-            'company_id' => $companyId,
-            'branch_id' => $request->branch_id,
-            'cost_center_id' => $request->cost_center_id,
-            'customer_id' => $request->customer_id,
-            'quotation_date' => $request->quotation_date,
-            'valid_until' => $request->valid_until,
-            'reference' => $request->reference,
-            'memo' => $request->memo,
-            'currency' => $request->currency,
-            'lines' => $request->lines,
-        ], auth()->id());
+        $quotation = $quotationService->create($this->payloadFromRequest($request, $companyId), auth()->id());
 
         $this->handleAttachments($request, $quotation);
-
-        if ($request->input('action') === 'save_and_new') {
-            return redirect()->route('accounting.quotations.create')
-                ->with('success', "Quotation {$quotation->quotation_number} saved. You can add another.");
-        }
 
         if ($request->input('action') === 'save_and_email') {
             return $this->redirectAfterEmail($quotation, 'created');
         }
 
-        $submitted = $this->handlePostSaveAction($request, $quotation);
+        if ($redirect = $this->applySubmissionMode($request, $quotation, $isWalkin)) {
+            return $redirect;
+        }
 
         return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', $submitted
-                ? "Quotation {$quotation->quotation_number} created and submitted for approval."
-                : "Quotation {$quotation->quotation_number} created.");
+            ->with('success', "Quotation {$quotation->quotation_number} created.");
     }
 
     public function destroy(Quotation $quotation)
@@ -217,19 +411,34 @@ class QuotationController extends Controller
     public function update(Request $request, Quotation $quotation)
     {
         if (!$quotation->isDraft()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Only draft quotations can be updated.'], 409);
+            }
+
             return redirect()->route('accounting.quotations.show', $quotation)
                 ->with('error', 'Only draft quotations can be updated.');
         }
 
         $request->validate([
-            'customer_id' => 'required|exists:customers,id',
+            'customer_id' => 'nullable|exists:customers,id',
+            'customer_name' => 'required_without:customer_id|nullable|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'terms_key' => 'nullable|string|max:40',
+            'department' => 'nullable|string|max:120',
+            'prepared_by' => 'nullable|string|max:120',
+            'project' => 'nullable|string|max:120',
             'quotation_date' => 'required|date',
             'valid_until' => 'nullable|date|after:quotation_date',
             'currency' => 'nullable|string|max:10',
+            'notes_internal' => 'nullable|string|max:5000',
             'lines' => 'required|array|min:1',
             'lines.*.description' => 'required|string|max:500',
             'lines.*.quantity' => 'required|numeric|min:0.01',
             'lines.*.unit_price' => 'required|numeric|min:0',
+            'lines.*.disc_pct' => 'nullable|numeric|min:0|max:100',
+            'lines.*.discount' => 'nullable|numeric|min:0',
             'lines.*.income_account_id' => 'required|exists:accounts,id',
             'files' => 'nullable|array|max:10',
             'files.*' => 'file|mimes:pdf,jpg,jpeg,png,gif,webp,xls,xlsx,doc,docx,txt,csv|max:10240',
@@ -238,17 +447,7 @@ class QuotationController extends Controller
         ]);
 
         $quotationService = app(QuotationService::class);
-        $quotation = $quotationService->update($quotation, [
-            'branch_id' => $request->branch_id,
-            'cost_center_id' => $request->cost_center_id,
-            'customer_id' => $request->customer_id,
-            'quotation_date' => $request->quotation_date,
-            'valid_until' => $request->valid_until,
-            'reference' => $request->reference,
-            'memo' => $request->memo,
-            'currency' => $request->currency,
-            'lines' => $request->lines,
-        ]);
+        $quotation = $quotationService->update($quotation, $this->payloadFromRequest($request, $quotation->company_id));
 
         $this->handleAttachments($request, $quotation);
 
@@ -256,12 +455,121 @@ class QuotationController extends Controller
             return $this->redirectAfterEmail($quotation, 'updated');
         }
 
-        $submitted = $this->handlePostSaveAction($request, $quotation);
+        if ($redirect = $this->applySubmissionMode($request, $quotation)) {
+            return $redirect;
+        }
 
         return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', $submitted
-                ? "Quotation {$quotation->quotation_number} updated and submitted for approval."
-                : "Quotation {$quotation->quotation_number} updated.");
+            ->with('success', "Quotation {$quotation->quotation_number} updated.");
+    }
+
+    /**
+     * Build the QuotationService payload from a request (§7.2 field set).
+     */
+    private function payloadFromRequest(Request $request, int $companyId): array
+    {
+        return [
+            'company_id' => $companyId,
+            'branch_id' => $request->branch_id,
+            'cost_center_id' => $request->cost_center_id,
+            'customer_id' => $request->customer_id,
+            'customer_name' => $request->customer_name,
+            'contact_person' => $request->contact_person,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'terms_key' => $request->terms_key,
+            'department' => $request->department,
+            'prepared_by' => $request->prepared_by,
+            'project' => $request->project,
+            'quotation_date' => $request->quotation_date,
+            'valid_until' => $request->valid_until,
+            'reference' => $request->reference,
+            'memo' => $request->memo,
+            'notes_internal' => $request->notes_internal,
+            'currency' => $request->currency,
+            'lines' => $request->lines,
+        ];
+    }
+
+    /**
+     * Apply the §7.2 submission mode
+     * (draft | finalize_later | finalize_print | finalize_send).
+     * Returns a redirect for draft/finalize modes, or null to continue with
+     * the default post-save redirect.
+     */
+    private function applySubmissionMode(Request $request, Quotation $quotation, bool $isWalkin = false): ?\Illuminate\Http\RedirectResponse
+    {
+        $mode = $request->input('submission_mode');
+
+        if ($mode === 'draft') {
+            return redirect()->route('accounting.quotations.show', $quotation)
+                ->with('success', "Quotation {$quotation->quotation_number} saved as draft.");
+        }
+
+        if (!in_array($mode, ['finalize_later', 'finalize_print', 'finalize_send'], true)) {
+            return null;
+        }
+
+        // R12 — "Save & send later" saves a draft (nothing issued yet) and shows
+        // the green success confirmation dialog instead of a toast.
+        if ($mode === 'finalize_later') {
+            return $this->successRedirect($quotation, __('Quotation saved'), false, false, null, $isWalkin);
+        }
+
+        $recipient = $quotation->customer?->email ?: $quotation->email;
+
+        // R11 — the email regex is enforced server-side on every send mode.
+        if ($mode === 'finalize_send' && !$this->emailIsValid($recipient)) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['email' => __('Provide customer email to activate this button')]);
+        }
+
+        app(QuotationService::class)->send($quotation);
+
+        if ($mode === 'finalize_send') {
+            $emailed = $this->emailQuotation($quotation);
+
+            if (!$emailed) {
+                return redirect()->route('accounting.quotations.show', $quotation)
+                    ->with('warning', "Quotation {$quotation->quotation_number} finalized, but the customer has no email on file.");
+            }
+
+            return $this->successRedirect($quotation, __('Quotation finalized & sent'), true, true, $recipient, $isWalkin);
+        }
+
+        // finalize_print — finalized + print preview available from the dialog.
+        return $this->successRedirect($quotation, __('Quotation finalized'), true, false, null, $isWalkin);
+    }
+
+    /**
+     * R12 — flash the green success confirmation dialog payload and land on the
+     * quotation show page (View / Open print preview actions).
+     */
+    private function successRedirect(Quotation $quotation, string $title, bool $print, bool $send, ?string $email, bool $walkin = false): \Illuminate\Http\RedirectResponse
+    {
+        return redirect()->route('accounting.quotations.show', $quotation)
+            ->with('quotation_success', [
+                'title' => $title,
+                'ref' => $quotation->quotation_number,
+                'name' => $quotation->customer?->name ?? $quotation->customer_name,
+                'total' => format_money($quotation->total),
+                'status' => $quotation->status,
+                'print' => $print,
+                'send' => $send,
+                'email' => $email,
+                'walkin' => $walkin,
+                'view_url' => route('accounting.quotations.show', $quotation),
+                'print_url' => route('accounting.quotations.print', $quotation),
+            ]);
+    }
+
+    /**
+     * R11 — the send gate shared by client + server (name@domain.tld).
+     */
+    private function emailIsValid(?string $email): bool
+    {
+        return (bool) preg_match('/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/', (string) $email);
     }
 
     /**
@@ -277,20 +585,6 @@ class QuotationController extends Controller
 
         return redirect()->route('accounting.quotations.show', $quotation)
             ->with('success', "Quotation {$quotation->quotation_number} {$verb} and emailed to {$quotation->customer->email}.");
-    }
-
-    /**
-     * Handle the optional post-save action button (Submit for Approval).
-     */
-    private function handlePostSaveAction(Request $request, Quotation $quotation): bool
-    {
-        if ($request->input('action') !== 'submit_for_approval') {
-            return false;
-        }
-
-        app(QuotationService::class)->send($quotation);
-
-        return true;
     }
 
     /**
@@ -394,40 +688,164 @@ class QuotationController extends Controller
             ->with('success', "Quotation {$quotation->quotation_number} voided.");
     }
 
-    public function email(Quotation $quotation)
+    public function email(Request $request, Quotation $quotation)
     {
-        if (!$this->emailQuotation($quotation)) {
-            return redirect()->route('accounting.quotations.show', $quotation)
-                ->with('error', "Quotation {$quotation->quotation_number} could not be emailed — the customer has no email address on file.");
+        $target = $request->input('return_to') === 'register'
+            ? route('accounting.quotations.index')
+            : route('accounting.quotations.show', $quotation);
+
+        // R15 · DRAFTS NEVER SEND. Drafts issue through Edit → Finalize & issue,
+        // so a direct POST must not put an unissued draft in a customer's inbox.
+        if ($quotation->status === Quotation::STATUS_DRAFT) {
+            return redirect()->to($target)
+                ->with('error', "Quotation {$quotation->quotation_number} is still a draft — finalize it from Edit before emailing.");
         }
 
-        return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', "Quotation {$quotation->quotation_number} emailed to {$quotation->customer->email}.");
+        $sent = $this->emailQuotation($quotation);
+
+        // Whitelisted return targets only — the rail retries on the register,
+        // the show/edit pages keep their existing destination.
+        if (!$sent) {
+            return redirect()->to($target)
+                ->with('error', "Quotation {$quotation->quotation_number} could not be emailed — the customer has no valid email address on file.");
+        }
+
+        return redirect()->to($target)
+            ->with('success', "Quotation {$quotation->quotation_number} emailed to {$quotation->emailed_to}.");
     }
 
     /**
-     * Queue the quotation email. Returns false when the customer record has
-     * no email address so callers can flash a meaningful warning.
+     * Queue the quotation email (PDF attached, company standard template).
+     *
+     * §R11 — a malformed recipient is never queued, exactly like an empty one,
+     * so callers can flash the same "no email on file" warning.
      */
     private function emailQuotation(Quotation $quotation): bool
     {
         $quotation->load(['lines.product', 'customer']);
 
-        $email = $quotation->customer?->email;
+        $email = $quotation->customer?->email ?: $quotation->email;
 
-        if (!$email) {
+        if (!$this->emailIsValid($email)) {
             return false;
         }
 
-        $quotationMail = app(\App\Mail\QuotationMail::class, ['quotation' => $quotation]);
-        \Illuminate\Support\Facades\Mail::to($email)->queue($quotationMail);
+        \Illuminate\Support\Facades\Mail::to($email)->queue(
+            app(\App\Mail\QuotationMail::class, ['quotation' => $quotation])
+        );
+
+        app(QuotationService::class)->recordEmailed($quotation, $email);
 
         return true;
     }
 
-    public function print(Quotation $quotation)
+    /**
+     * §R7 — clone an expired quotation into a new record. Cloned values are
+     * editable; the source row is stamped with superseded_by.
+     */
+    public function requote(Request $request, Quotation $quotation)
+    {
+        $this->requirePermission($request, 'quotations.create');
+        abort_unless((int) $quotation->company_id === (int) session('current_company_id'), 403);
+
+        $request->validate([
+            'customer_id' => 'nullable|exists:customers,id',
+            'customer_name' => 'nullable|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'quotation_date' => 'nullable|date',
+            'valid_until' => 'nullable|date',
+            'validity_days' => 'nullable|integer|in:7,14,30,45,60',
+            'reference' => 'nullable|string|max:100',
+            'memo' => 'nullable|string|max:5000',
+            'currency' => 'nullable|string|max:10',
+            'mode' => 'nullable|in:draft,finalize',
+            'send' => 'nullable|boolean',
+            'finalize' => 'nullable|in:create,send',
+            'lines' => 'nullable|array|min:1',
+            'lines.*.description' => 'required_with:lines|string|max:500',
+            'lines.*.quantity' => 'required_with:lines|numeric|min:0.01',
+            'lines.*.unit_price' => 'required_with:lines|numeric|min:0',
+            'lines.*.disc_pct' => 'nullable|numeric|min:0|max:100',
+            'lines.*.tax_rate' => 'nullable|numeric|min:0',
+            'lines.*.income_account_id' => 'required_with:lines|exists:accounts,id',
+        ]);
+
+        $date = $request->input('quotation_date') ?: now()->toDateString();
+        $validUntil = $request->input('valid_until');
+        if ($request->filled('validity_days')) {
+            $validUntil = \Illuminate\Support\Carbon::parse($date)->addDays((int) $request->input('validity_days'))->toDateString();
+        }
+
+        $mode = $request->input('mode', $request->input('finalize') === 'send' ? 'finalize' : 'draft');
+        $send = $request->boolean('send') || $request->input('finalize') === 'send';
+
+        // R11 — enforce the email regex server-side before any send/finalize.
+        if ($send && !$this->emailIsValid($request->input('email') ?: $quotation->customer?->email)) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['email' => __('Provide customer email to activate this button')]);
+        }
+
+        $sourceName = trim((string) ($quotation->customer?->name ?? $quotation->customer_name ?? ''));
+        $isWalkin = $request->filled('customer_name') && (
+            !$request->filled('customer_id')
+            || trim((string) $request->customer_name) !== $sourceName
+        );
+
+        $new = app(QuotationService::class)->requote($quotation, [
+            'customer_id' => $request->customer_id,
+            'customer_name' => $request->customer_name,
+            'contact_person' => $request->contact_person,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'is_walkin' => $isWalkin,
+            'quotation_date' => $date,
+            'valid_until' => $validUntil,
+            'reference' => $request->reference,
+            'memo' => $request->memo,
+            'currency' => $request->currency,
+            'lines' => $request->input('lines'),
+            'status' => $mode === 'finalize' ? Quotation::STATUS_SENT : Quotation::STATUS_DRAFT,
+        ], auth()->id());
+
+        if ($send) {
+            $emailed = $this->emailQuotation($new);
+
+            if (!$emailed) {
+                return redirect()->route('accounting.quotations.show', $new)
+                    ->with('warning', "Quotation {$new->quotation_number} created, but the customer has no email on file.");
+            }
+
+            return $this->successRedirect($new, __('Quotation finalized & sent'), true, true, $new->customer?->email ?: $new->email, $isWalkin);
+        }
+
+        if ($mode === 'finalize') {
+            return $this->successRedirect($new, __('Quotation finalized'), true, false, null, $isWalkin);
+        }
+
+        return redirect()->route('accounting.quotations.show', $new)
+            ->with('success', "Quotation {$new->quotation_number} created from {$quotation->quotation_number}.");
+    }
+
+    /**
+     * §G — server-rendered PDF download reusing the shared pdf.document view.
+     */
+    public function pdf(Quotation $quotation)
     {
         $quotation->load(['lines.product', 'customer', 'branch', 'costCenter', 'createdByUser']);
+        $payload = \App\Services\PdfPresenter::payload('quotation', $quotation);
+        $payload['pdfMode'] = true;
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.document', $payload)
+            ->setPaper('a4')
+            ->download('quotation-' . $quotation->quotation_number . '.pdf');
+    }
+
+    public function print(Quotation $quotation)
+    {
+        $quotation->load(['lines.product', 'customer', 'branch', 'costCenter', 'createdByUser', 'company']);
         return view('accounting.quotations.print', compact('quotation'));
     }
 }

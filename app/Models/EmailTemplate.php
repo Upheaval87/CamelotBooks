@@ -36,8 +36,9 @@ class EmailTemplate extends Model
             'approval_requested' => 'Approval Requested',
             'low_stock_alert' => 'Low Stock Alert',
             'overdue_reminder' => 'Overdue Invoice/Bill Reminder',
-            'recurring_generated' => 'Recurring Invoice/Bill Generated',
+'recurring_generated' => 'Recurring Invoice/Bill Generated',
             'payslip_sent' => 'Payslip Sent',
+            'quotation_sent' => 'Quotation Sent',
         ];
     }
 
@@ -68,9 +69,13 @@ class EmailTemplate extends Model
                 'subject' => 'Recurring {{document_type}} Generated: {{document_number}}',
                 'body' => "A recurring {{document_type}} has been automatically generated:\n\nNumber: {{document_number}}\nAmount: {{amount}}\n\nThis was generated from template: {{template_name}}\n\n{{company_name}}",
             ],
-            'payslip_sent' => [
+'payslip_sent' => [
                 'subject' => 'Your Payslip - {{period}}',
                 'body' => "Dear {{employee_name}},\n\nPlease find attached your payslip for {{period}}.\n\nThe PDF is password-protected. Your password was provided to you separately.\n\nIf you have any questions, please contact the payroll department.\n\nRegards,\n{{company_name}}",
+            ],
+            'quotation_sent' => [
+                'subject' => 'Quotation {{quotation_number}} from {{company_name}}',
+                'body' => "Dear {{customer_name}},\n\nThank you for your interest. Please find attached quotation {{quotation_number}}.\n\nQuotation date: {{quotation_date}}\nValid until: {{valid_until}}\nTotal: {{total_amount}}\n\nThis quotation is valid until the date stated above. Contact us with any questions.\n\nRegards,\n{{company_name}}",
             ],
         ];
     }

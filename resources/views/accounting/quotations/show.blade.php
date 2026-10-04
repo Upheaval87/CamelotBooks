@@ -29,17 +29,10 @@
                     <p class="q2-sub">{{ $quotation->customer->name ?? __('No customer') }} · {{ __('quoted') }} {{ $quotation->quotation_date?->format('M d, Y') ?? '—' }} · {{ __('valid until') }} {{ $quotation->valid_until?->format('M d, Y') ?? '—' }}</p>
                 </div>
                 <div class="q2-head-actions">
+                    {{-- R15 · DRAFTS NEVER SEND — no send action in the draft footer.
+                         Drafts issue via Edit → Finalize & issue. --}}
                     @if($quotation->status === 'draft')
                         <a href="{{ route('accounting.quotations.edit', $quotation) }}" class="q2-btn q2-btn--sec">{{ __('Edit') }}</a>
-                        @if($quotation->customer && $quotation->customer->email)
-                            <form method="POST" action="{{ route('accounting.quotations.email', $quotation) }}" class="inline">
-                                @csrf
-                                <button type="submit" class="q2-btn q2-btn--ghost">{{ __('Email to Customer') }}</button>
-                            </form>
-                        @endif
-                        @can('quotations.send')
-                            <form method="POST" action="{{ route('accounting.quotations.send', $quotation) }}" class="inline">@csrf<button type="submit" class="q2-btn q2-btn--cta">{{ __('Mark as Sent') }}</button></form>
-                        @endcan
                     @endif
                     @if(in_array($quotation->status, ['sent', 'accepted']))
                         @can('quotations.convert')
@@ -315,4 +308,6 @@
             });
         });
     </script>
+
+    @include('accounting.quotations._success')
 </x-app-layout>

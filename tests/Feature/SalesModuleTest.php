@@ -68,7 +68,7 @@ class SalesModuleTest extends TestCase
             \App\Models\NumberingSequence::create([
                 'company_id' => $this->company->id,
                 'document_type' => $dt,
-                'prefix' => $dt === 'quotation' ? 'QTN-' : 'SR-',
+                'prefix' => $dt === 'quotation' ? 'QT-' : 'SR-',
                 'padding_width' => 4,
                 'next_number' => 1,
                 'reset_policy' => 'annually',
@@ -161,7 +161,7 @@ class SalesModuleTest extends TestCase
 
         $this->assertNotNull($quotation);
         $this->assertEquals('draft', $quotation->status);
-        $this->assertStringStartsWith('QTN-', $quotation->quotation_number);
+        $this->assertStringStartsWith('QT-', $quotation->quotation_number);
         $this->assertEquals(200, $quotation->amount);
         $this->assertEquals(35, $quotation->tax_total);
         $this->assertEquals(235, $quotation->total);

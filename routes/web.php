@@ -447,7 +447,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('quotations/{quotation}/convert-to-receipt', [QuotationController::class, 'convertToSalesReceipt'])->name('quotations.convert-to-receipt')->middleware(['permission:quotations.convert', 'sod:quotation']);
             Route::post('quotations/{quotation}/void', [QuotationController::class, 'void'])->name('quotations.void')->middleware(['permission:quotations.void', 'sod:quotation']);
             Route::get('quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print');
+            Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'pdf'])->name('quotations.pdf');
             Route::post('quotations/{quotation}/email', [QuotationController::class, 'email'])->name('quotations.email');
+            Route::post('quotations/{quotation}/requote', [QuotationController::class, 'requote'])->name('quotations.requote')->middleware('permission:quotations.create');
 
             // ── Sales Orders ──
             Route::get('sales-orders', [SalesOrderController::class, 'index'])->name('sales-orders.index');

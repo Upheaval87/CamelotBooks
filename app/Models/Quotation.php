@@ -18,6 +18,16 @@ class Quotation extends Model
         'branch_id',
         'cost_center_id',
         'customer_id',
+        'customer_name',
+        'contact_person',
+        'email',
+        'phone',
+        'terms_key',
+        'department',
+        'prepared_by',
+        'project',
+        'notes_internal',
+        'superseded_by',
         'quotation_number',
         'quotation_date',
         'valid_until',
@@ -34,6 +44,8 @@ class Quotation extends Model
         'created_by',
         'posted_by',
         'posted_at',
+        'emailed_at',
+        'emailed_to',
         'voided_by',
         'voided_at',
         'void_reason',
@@ -46,6 +58,7 @@ class Quotation extends Model
         'tax_total' => 'decimal:2',
         'total' => 'decimal:2',
         'posted_at' => 'datetime',
+        'emailed_at' => 'datetime',
         'voided_at' => 'datetime',
     ];
 
@@ -134,5 +147,63 @@ class Quotation extends Model
     public function scopeDraft($query)
     {
         return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    /**
+     * The quotation that supersedes (re-quoted) this one. §R7 — set on the
+     * SOURCE row when a re-quote is created.
+     */
+    public function supersededBy(): BelongsTo
+    {
+        return $this->belongsTo(Quotation::class, 'superseded_by');
+    }
+
+    /**
+     * Derived (never stored) expiry state versus the given server date.
+     * §R6 — Expired (red) · ≤7 days (amber) · else Valid (grey).
+     */
+    public function expiryState(?\DateTimeInterface $today = null): string
+    {
+        if (!$this->valid_until) {
+            return 'none';
+        }
+
+        $today = $today ? \Illuminate\Support\Carbon::instance($today) : now();
+        $today = $today->copy()->startOfDay();
+        $valid = $this->valid_until->copy()->startOfDay();
+
+        if ($valid->lt($today)) {
+            return 'expired';
+        }
+        if ($valid->diffInDays($today) <= 7) {
+            return 'soon';
+        }
+
+        return 'valid';
+    }
+
+    public function daysUntilExpiry(?\DateTimeInterface $today = null): ?int
+    {
+        if (!$this->valid_until) {
+            return null;
+        }
+
+        $today = $today ? \Illuminate\Support\Carbon::instance($today) : now();
+
+        return (int) $today->copy()->startOfDay()->diffInDays($this->valid_until->copy()->startOfDay(), false);
+    }
+
+    public function isExpired(?\DateTimeInterface $today = null): bool
+    {
+        return $this->expiryState($today) === 'expired';
+    }
+
+    /**
+     * Re-quote gate (§R7): expired AND status ∈ {sent, draft, declined}.
+     */
+    public function isRequotable(?\DateTimeInterface $today = null): bool
+    {
+        return $this->isExpired($today)
+            && in_array($this->status, [self::STATUS_SENT, self::STATUS_DRAFT, self::STATUS_DECLINED], true);
     }
 }
