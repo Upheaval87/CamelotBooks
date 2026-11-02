@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="suite pb-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
 
             @php
                 $locked = $reconciliation->isLocked();
@@ -125,7 +125,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="li-wrap" style="margin-top:0;border-radius:0;border:none">
+                            <div class="li-wrap" style="margin-top:0;border-radius:0;border:none;max-height:420px;overflow-y:auto;">
                                 <table style="min-width:640px">
                                     <thead>
                                         <tr>
@@ -172,7 +172,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="li-wrap" style="margin-top:0;border-radius:0;border:none">
+                            <div class="li-wrap" style="margin-top:0;border-radius:0;border:none;max-height:420px;overflow-y:auto;">
                                 <table style="min-width:760px">
                                     <thead>
                                         <tr>
