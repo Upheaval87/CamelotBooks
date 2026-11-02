@@ -12,6 +12,8 @@ use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Quotation;
+use App\Models\QuotationEmailJob;
+use App\Services\Accounting\QuotationEmailDispatchService;
 use App\Services\Accounting\QuotationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -52,6 +54,28 @@ class QuotationController extends Controller
         $failedIds = $emailFailures->pluck('id')->map(fn ($id) => (int) $id)->all();
         foreach ($quotations as $quotation) {
             $viewPayload[$quotation->id] = $this->viewPayload($quotation, $currencyNames, $failedIds);
+        }
+
+        /* R6 · Needs-attention + email-failure rail items deep-link INTO the View
+           modal, so their payload must exist even when the quotation is not on the
+           current page of results. */
+        $railIds = $needsAttention->pluck('id')
+            ->merge($emailFailures->pluck('id'))
+            ->map(fn ($id) => (int) $id)
+            ->diff(array_map('intval', array_keys($viewPayload)))
+            ->unique()
+            ->values();
+        if ($railIds->isNotEmpty()) {
+            $railRows = Quotation::forCompany($companyId)
+                ->with(['customer', 'createdByUser', 'lines', 'supersededBy', 'branch', 'costCenter'])
+                ->whereIn('id', $railIds)
+                ->get()
+                ->keyBy('id');
+            foreach ($railIds as $rid) {
+                if (isset($railRows[$rid]) && !isset($viewPayload[$rid])) {
+                    $viewPayload[$rid] = $this->viewPayload($railRows[$rid], $currencyNames, $failedIds);
+                }
+            }
         }
 
         return view('accounting.quotations.index', compact(
@@ -118,9 +142,15 @@ class QuotationController extends Controller
             'total' => (float) $quotation->total,
             'words' => amount_to_words((float) $quotation->total, $currencyNames[$quotation->currency] ?? $quotation->currency),
             'superseded' => $quotation->supersededBy?->quotation_number,
-            'emailed' => (bool) $quotation->emailed_at,
+            // §2.1 — the dispatch columns are authoritative; the audit-derived
+            // flag stays as the fallback for rows written before they existed.
+            'emailed' => $quotation->hasEmailed(),
             'emailed_to' => $quotation->emailed_to,
-            'email_failed' => in_array((int) $quotation->id, $failedIds, true),
+            'emailed_at' => optional($quotation->emailed_at)->format('Y-m-d H:i:s'),
+            'email_status' => $quotation->email_status,
+            'fail_reason' => $quotation->fail_reason,
+            'email_failed' => $quotation->emailFailed() || in_array((int) $quotation->id, $failedIds, true),
+            'email_ready' => $this->emailIsValid($quotation->email ?: ($quotation->customer->email ?? null)),
             'expired' => $quotation->expiryState() === 'expired',
             'days' => $quotation->daysUntilExpiry(),
             'lines' => $lines,
@@ -136,15 +166,22 @@ class QuotationController extends Controller
                 'requote' => route('accounting.quotations.requote', $quotation),
                 'duplicate' => route('accounting.quotations.requote', $quotation),
                 'email' => route('accounting.quotations.email', $quotation),
+                'email_retry' => route('accounting.quotations.email-retry', $quotation),
             ],
             'can' => [
                 'edit' => $isCreator && $quotation->isDraft() && (bool) ($user?->can('quotations.edit')),
                 'void' => !$isCreator && in_array($quotation->status, [Quotation::STATUS_DRAFT, Quotation::STATUS_SENT], true) && (bool) ($user?->can('quotations.void')),
                 'accept' => !$isCreator && $quotation->status === Quotation::STATUS_SENT && (bool) ($user?->can('quotations.approve')),
                 'decline' => !$isCreator && $quotation->status === Quotation::STATUS_SENT && (bool) ($user?->can('quotations.approve')),
-                'convert' => !$isCreator && $quotation->status === Quotation::STATUS_ACCEPTED && (bool) ($user?->can('quotations.convert')),
+                // Maker-checker is enforced where it matters: accept/decline carry
+                // sod:quotation, so the creator can never approve their own quote.
+                // Fulfilment of an ALREADY-ACCEPTED quote is not an approval step,
+                // so it is available to the creator too (it was hidden for them).
+                'convert' => $quotation->status === Quotation::STATUS_ACCEPTED && (bool) ($user?->can('quotations.convert')),
                 'requote' => $quotation->isRequotable() && (bool) ($user?->can('quotations.create')),
-                'email' => !in_array($quotation->status, [Quotation::STATUS_DRAFT, Quotation::STATUS_VOID], true) && (bool) ($user?->can('quotations.view')),
+                // §2.4 — send and retry are both gated on quotations.send_email.
+                'email' => !in_array($quotation->status, [Quotation::STATUS_DRAFT, Quotation::STATUS_VOID], true) && (bool) ($user?->can('quotations.send_email')),
+                'email_retry' => $quotation->emailFailed() && !in_array($quotation->status, [Quotation::STATUS_DRAFT, Quotation::STATUS_VOID], true) && (bool) ($user?->can('quotations.send_email')),
             ],
         ];
     }
@@ -202,12 +239,14 @@ class QuotationController extends Controller
     }
 
     /**
-     * §6.3 — quotations whose most recent email attempt ended in failure.
-     *
-     * A failed dispatch is derived from the audit trail rather than new columns:
-     * only quotations whose latest `emailed`/`email_failed` audit is a failure
-     * are surfaced, so a later successful retry clears the flag automatically.
-     */
+ * §6.3 — quotations whose most recent email attempt ended in failure.
+ *
+ * A failed dispatch is derived from the audit trail rather than new columns:
+ * only quotations whose latest `emailed`/`email_failed` audit is a failure
+ * are surfaced, so a later successful retry clears the flag automatically.
+ * Rows stamped by the §2.1 `email_status` column are unioned in so the rail and
+ * the register chip can never disagree about what failed.
+ */
     private function emailFailures(int $companyId): \Illuminate\Support\Collection
     {
         $failedIds = AuditLog::query()
@@ -218,7 +257,15 @@ class QuotationController extends Controller
             ->get(['auditable_id', 'action'])
             ->groupBy('auditable_id')
             ->filter(fn ($rows) => $rows->first()->action === 'email_failed')
-            ->keys();
+            ->keys()
+            ->merge(
+                Quotation::forCompany($companyId)
+                    ->where('email_status', 'failed')
+                    ->pluck('id')
+            )
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
 
         if ($failedIds->isEmpty()) {
             return collect();
@@ -246,17 +293,46 @@ class QuotationController extends Controller
         return Quotation::forCompany($companyId)
             ->with(['customer', 'createdByUser', 'postedByUser', 'lines', 'supersededBy', 'branch', 'costCenter'])
             ->when($status === 'open', fn($q) => $q->whereIn('status', [Quotation::STATUS_DRAFT, Quotation::STATUS_SENT]))
-            ->when($status && $status !== 'open', fn($q, $s) => $q->where('status', $s))
+            // Capture $status in the closure: Builder::when() hands the callback the
+            // CONDITION (true), not this variable, so using the second argument
+            // silently produced `where status = 1` and every status filter matched
+            // nothing.
+            ->when($status && $status !== 'open', fn($q) => $q->where('status', $status))
             ->when($request->customer_id, fn($q, $id) => $q->where('customer_id', $id))
+            // §3.1 — the "Email failed" chip is searchable, along with the
+            // address a dispatch was recorded against, so the register can be
+            // filtered straight down to delivery problems.
             ->when($request->search, fn($q, $s) => $q->where(function ($q2) use ($s) {
+                $term = mb_strtolower(trim($s));
+
                 $q2->where('quotation_number', 'like', "%{$s}%")
                     ->orWhere('reference', 'like', "%{$s}%")
+                    ->orWhere('emailed_to', 'like', "%{$s}%")
                     ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$s}%"));
+
+                foreach (['email failed', 'failed', 'not sent', 'not emailed'] as $needle) {
+                    if (str_contains($term, $needle)) {
+                        $q2->orWhere('email_status', 'failed');
+                    }
+
+                    if (str_contains($term, $needle) && str_contains($needle, 'not')) {
+                        $q2->orWhereNull('email_status');
+                    }
+                }
+
+                foreach (['emailed', 'sent', 'delivered'] as $needle) {
+                    if (str_contains($term, $needle)) {
+                        $q2->orWhere('email_status', 'sent');
+                    }
+                }
             }));
     }
 
     private function orderByFor(string $sort): array
     {
+        /* R5 · four sorts only: newest, oldest, value high→low, expiry soonest.
+           The extra `amount-asc` / `status` keys stay as harmless fallbacks so an
+           old bookmarked query string still resolves instead of 500-ing. */
         return match ($sort) {
             'date-asc' => ['quotation_date' => 'asc', 'id' => 'asc'],
             'amount-desc' => ['total' => 'desc', 'quotation_date' => 'desc'],
@@ -625,39 +701,72 @@ class QuotationController extends Controller
         }
     }
 
+    /**
+     * A stale page or a direct POST can reach a transition the current status no
+     * longer allows. The service already refuses with a precise message — surface
+     * it as a flash back on the quotation instead of a 500.
+     */
+    private function attempt(Quotation $quotation, callable $operation, callable $onSuccess)
+    {
+        try {
+            return $onSuccess($operation($quotation));
+        } catch (\InvalidArgumentException $e) {
+            return redirect()
+                ->route('accounting.quotations.show', $quotation)
+                ->with('error', $e->getMessage());
+        }
+    }
+
     public function send(Quotation $quotation)
     {
+        $this->requirePermission('quotations.edit');
         $quotationService = app(QuotationService::class);
-        $quotationService->send($quotation);
-        return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', "Quotation {$quotation->quotation_number} marked as sent.");
+
+        return $this->attempt(
+            $quotation,
+            fn ($q) => $quotationService->send($q),
+            fn ($q) => redirect()->route('accounting.quotations.show', $q)
+                ->with('success', "Quotation {$q->quotation_number} marked as sent.")
+        );
     }
 
     public function accept(Quotation $quotation)
     {
         $this->requirePermission('quotations.approve');
         $quotationService = app(QuotationService::class);
-        $quotationService->accept($quotation);
-        return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', "Quotation {$quotation->quotation_number} accepted.");
+
+        return $this->attempt(
+            $quotation,
+            fn ($q) => $quotationService->accept($q),
+            fn ($q) => redirect()->route('accounting.quotations.show', $q)
+                ->with('success', "Quotation {$q->quotation_number} accepted.")
+        );
     }
 
     public function decline(Quotation $quotation)
     {
         $this->requirePermission('quotations.approve');
         $quotationService = app(QuotationService::class);
-        $quotationService->decline($quotation);
-        return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', "Quotation {$quotation->quotation_number} declined.");
+
+        return $this->attempt(
+            $quotation,
+            fn ($q) => $quotationService->decline($q),
+            fn ($q) => redirect()->route('accounting.quotations.show', $q)
+                ->with('success', "Quotation {$q->quotation_number} declined.")
+        );
     }
 
     public function convertToInvoice(Quotation $quotation)
     {
         $this->requirePermission('quotations.convert');
         $quotationService = app(QuotationService::class);
-        $invoice = $quotationService->convertToInvoice($quotation, auth()->id());
-        return redirect()->route('accounting.invoices.show', $invoice)
-            ->with('success', "Invoice {$invoice->invoice_number} created from Quotation {$quotation->quotation_number}.");
+
+        return $this->attempt(
+            $quotation,
+            fn ($q) => $quotationService->convertToInvoice($q, auth()->id()),
+            fn ($invoice) => redirect()->route('accounting.invoices.show', $invoice)
+                ->with('success', "Invoice {$invoice->invoice_number} created from Quotation {$quotation->quotation_number}.")
+        );
     }
 
     public function convertToSalesReceipt(Quotation $quotation, Request $request)
@@ -670,12 +779,13 @@ class QuotationController extends Controller
         ]);
 
         $quotationService = app(QuotationService::class);
-        $receipt = $quotationService->convertToSalesReceipt($quotation, [
-            'payments' => $request->payments,
-        ], auth()->id());
 
-        return redirect()->route('accounting.sales-receipts.show', $receipt)
-            ->with('success', "Sales Receipt {$receipt->receipt_number} created from Quotation {$quotation->quotation_number}.");
+        return $this->attempt(
+            $quotation,
+            fn ($q) => $quotationService->convertToSalesReceipt($q, ['payments' => $request->payments], auth()->id()),
+            fn ($receipt) => redirect()->route('accounting.sales-receipts.show', $receipt)
+                ->with('success', "Sales Receipt {$receipt->receipt_number} created from Quotation {$quotation->quotation_number}.")
+        );
     }
 
     public function void(Quotation $quotation, Request $request)
@@ -683,13 +793,31 @@ class QuotationController extends Controller
         $this->requirePermission($request, 'quotations.void');
         $request->validate(['void_reason' => 'required|string']);
         $quotationService = app(QuotationService::class);
-        $quotationService->void($quotation, $request->void_reason, auth()->id());
-        return redirect()->route('accounting.quotations.show', $quotation)
-            ->with('success', "Quotation {$quotation->quotation_number} voided.");
+
+        return $this->attempt(
+            $quotation,
+            fn ($q) => $quotationService->void($q, $request->void_reason, auth()->id()),
+            fn ($q) => redirect()->route('accounting.quotations.show', $q)
+                ->with('success', "Quotation {$q->quotation_number} voided.")
+        );
     }
 
+    /**
+     * §2.3 — EMAIL DISPATCH entry point.
+     *
+     * JSON callers get the dispatch subsystem: recipient validated, job row
+     * created, pipeline queued, `202 { job_id }` back so the progress modal can
+     * poll real stage events. Legacy form posts (the needs-attention rail, saved
+     * links) keep the exact redirect behaviour they have always had.
+     */
     public function email(Request $request, Quotation $quotation)
     {
+        $this->requirePermission($request, 'quotations.send_email');
+
+        if ($request->expectsJson()) {
+            return $this->dispatchEmail($request, $quotation, false);
+        }
+
         $target = $request->input('return_to') === 'register'
             ? route('accounting.quotations.index')
             : route('accounting.quotations.show', $quotation);
@@ -699,6 +827,13 @@ class QuotationController extends Controller
         if ($quotation->status === Quotation::STATUS_DRAFT) {
             return redirect()->to($target)
                 ->with('error', "Quotation {$quotation->quotation_number} is still a draft — finalize it from Edit before emailing.");
+        }
+
+        // A voided quotation is withdrawn — it must never reach a customer, and
+        // the register only withholds the action, so the route has to refuse too.
+        if ($quotation->status === Quotation::STATUS_VOID) {
+            return redirect()->to($target)
+                ->with('error', "Quotation {$quotation->quotation_number} is void and cannot be emailed.");
         }
 
         $sent = $this->emailQuotation($quotation);
@@ -712,6 +847,126 @@ class QuotationController extends Controller
 
         return redirect()->to($target)
             ->with('success', "Quotation {$quotation->quotation_number} emailed to {$quotation->emailed_to}.");
+    }
+
+    /**
+     * §2.3 / §4.5 — retry a failed dispatch. Identical to a send except the
+     * attempt counter carries over, so the job row shows the retry lineage.
+     */
+    public function retryEmail(Request $request, Quotation $quotation)
+    {
+        $this->requirePermission($request, 'quotations.send_email');
+
+        return $this->dispatchEmail($request, $quotation, true);
+    }
+
+    /**
+     * §2.3 — queue the four-stage pipeline and answer with the job contract the
+     * modal/dock polls. Every refusal is a 422 carrying a copy-ready reason so
+     * the client can surface it without guessing.
+     */
+    private function dispatchEmail(Request $request, Quotation $quotation, bool $isRetry)
+    {
+        abort_unless((int) $quotation->company_id === (int) session('current_company_id'), 403);
+
+        $quotation->loadMissing(['customer']);
+
+        if ($quotation->status === Quotation::STATUS_DRAFT) {
+            return response()->json([
+                'message' => "Quotation {$quotation->quotation_number} is still a draft — finalize it from Edit before emailing.",
+                'error' => 'draft',
+            ], 422);
+        }
+
+        if ($quotation->status === Quotation::STATUS_VOID) {
+            return response()->json([
+                'message' => "Quotation {$quotation->quotation_number} is void and cannot be emailed.",
+                'error' => 'void',
+            ], 422);
+        }
+
+        $recipient = trim((string) ($request->input('email')
+            ?: ($quotation->customer?->email ?: $quotation->email)));
+
+        // §2.3 — a malformed recipient is refused exactly like a missing one.
+        if (!$this->emailIsValid($recipient)) {
+            return response()->json([
+                'message' => "Quotation {$quotation->quotation_number} could not be emailed — the customer has no valid email address on file.",
+                'error' => 'no_recipient',
+            ], 422);
+        }
+
+        $job = app(QuotationEmailDispatchService::class)->start($quotation, $recipient, auth()->id(), $isRetry);
+
+        return response()->json($this->emailJobPayload($job, $quotation), 202);
+    }
+
+    /**
+     * §2.3 — the stage/succeeded/failed endpoint the progress modal polls.
+     *
+     * The job is resolved inside the controller (not through implicit route
+     * binding) so the lookup runs on the tenant connection the request bound.
+     */
+    public function emailJobStatus(Request $request, $emailJob)
+    {
+        return response()->json($this->emailJobPayload($this->findEmailJob($request, $emailJob)));
+    }
+
+    /** §4.4 — mid-send cancel. The quotation is deliberately left untouched. */
+    public function cancelEmailJob(Request $request, $emailJob)
+    {
+        $job = $this->findEmailJob($request, $emailJob);
+
+        return response()->json($this->emailJobPayload(app(QuotationEmailDispatchService::class)->cancel($job)));
+    }
+
+    private function findEmailJob(Request $request, $emailJob): QuotationEmailJob
+    {
+        $this->requirePermission($request, 'quotations.send_email');
+
+        $job = QuotationEmailJob::find((int) $emailJob);
+
+        abort_if(!$job, 404);
+        abort_unless((int) $job->company_id === (int) session('current_company_id'), 403);
+
+        return $job->fresh();
+    }
+
+    /**
+     * The client contract (§2.2): everything the modal and the dock render is
+     * derived here, so the UI never has to interpret raw job columns.
+     */
+    private function emailJobPayload(QuotationEmailJob $job, ?Quotation $quotation = null): array
+    {
+        $quotation ??= $job->quotable;
+        $status = $job->clientStatus();
+
+        return [
+            'job_id' => $job->id,
+            'status' => $status,
+            'stage' => $job->stage,
+            'stage_label' => $job->stageLabel(),
+            'percent' => $job->percent(),
+            'recipient' => $job->recipient,
+            'attempts' => $job->attempts,
+            'error_code' => $job->error_code,
+            'error_message' => $job->error_message,
+            'started_at' => optional($job->created_at)->toIso8601String(),
+            'finished_at' => optional($job->updated_at)->toIso8601String(),
+            'status_url' => route('accounting.email-jobs.show', $job->id),
+            'cancel_url' => route('accounting.email-jobs.cancel', $job->id),
+            'quotation' => $quotation ? [
+                'id' => $quotation->id,
+                'number' => $quotation->quotation_number,
+                'customer' => $quotation->customer?->name ?: $quotation->customer_name,
+                'email_status' => $quotation->email_status,
+                'fail_reason' => $quotation->fail_reason,
+                'emailed' => $quotation->hasEmailed(),
+                'emailed_to' => $quotation->emailed_to,
+                'emailed_at' => optional($quotation->emailed_at)->format('Y-m-d H:i:s'),
+                'show_url' => route('accounting.quotations.show', $quotation),
+            ] : null,
+        ];
     }
 
     /**

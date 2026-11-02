@@ -192,6 +192,73 @@ class InvoiceServiceTest extends TestCase
         $this->assertEquals(100.00, (float) $taxLine->credit);
     }
 
+    public function test_posting_taxed_invoice_falls_back_to_seeded_tax_account_when_mapping_missing(): void
+    {
+        \App\Models\DefaultAccountMapping::where('company_id', $this->company->id)
+            ->where('mapping_key', 'tax_payable')
+            ->delete();
+
+        $invoice = $this->service->create($this->makeInvoiceData([
+            'lines' => [
+                [
+                    'description' => 'Consulting services',
+                    'quantity' => 1,
+                    'unit_price' => 1000,
+                    'tax_rate' => 10,
+                    'income_account_id' => $this->incomeAccount->id,
+                ],
+            ],
+        ]), $this->userId);
+
+        $invoice = $this->service->post($invoice, $this->userId);
+
+        $this->assertEquals(Invoice::STATUS_SENT, $invoice->status);
+
+        $lines = JournalEntry::findOrFail($invoice->journal_entry_id)->lines()->get();
+
+        $this->assertCount(3, $lines);
+        $taxLine = $lines->firstWhere('account_id', $this->taxPayableAccount->id);
+        $this->assertNotNull($taxLine);
+        $this->assertEquals(100.00, (float) $taxLine->credit);
+    }
+
+    public function test_posting_tax_free_invoice_does_not_require_tax_mapping(): void
+    {
+        \App\Models\DefaultAccountMapping::where('company_id', $this->company->id)
+            ->where('mapping_key', 'tax_payable')
+            ->delete();
+
+        $invoice = $this->service->create($this->makeInvoiceData(), $this->userId);
+        $invoice = $this->service->post($invoice, $this->userId);
+
+        $this->assertEquals(Invoice::STATUS_SENT, $invoice->status);
+    }
+
+    public function test_posting_taxed_invoice_throws_clear_error_when_no_tax_account_exists(): void
+    {
+        \App\Models\DefaultAccountMapping::where('company_id', $this->company->id)
+            ->where('mapping_key', 'tax_payable')
+            ->delete();
+        $this->taxPayableAccount->delete();
+
+        $invoice = $this->service->create($this->makeInvoiceData([
+            'lines' => [
+                [
+                    'description' => 'Consulting services',
+                    'quantity' => 1,
+                    'unit_price' => 1000,
+                    'tax_rate' => 10,
+                    'income_account_id' => $this->incomeAccount->id,
+                ],
+            ],
+        ]), $this->userId);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Account for mapping 'tax_payable' (fallback code 2300) not found");
+
+        $this->service->post($invoice, $this->userId);
+    }
+
     public function test_void_invoice_reverses_je_and_restores_ar(): void
     {
         $invoice = $this->service->create($this->makeInvoiceData(), $this->userId);

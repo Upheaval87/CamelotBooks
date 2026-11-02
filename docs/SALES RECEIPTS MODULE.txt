@@ -1,0 +1,2175 @@
+SALES RECEIPTS MODULE (CASHBOOK REGISTER · CREATE/EDIT · INVOICE ALLOCATION · RECEIPT WORKSPACE · BACKGROUND EMAIL DISPATCH · A4 OFFICIAL RECEIPT) — FULL IMPLEMENTATION SPEC (SELF-CONTAINED)
+(AUTHORITATIVE MOCKUP HTML EMBEDDED IN APPENDIX A — do NOT read, fetch or depend on any external file.)
+
+==================== MANDATE — READ FIRST, OBEY ABSOLUTELY ====================
+M1 · APPENDIX A is the single source of truth. Reproduce EVERY page, card, KPI tile,
+     status tile, table column, chip, pill, rail card, modal, tab, footer button,
+     confirmation box, toast, dock notification, print sheet, animation, breakpoint
+     and empty state EXACTLY as the mockup entails — same structure, same copy strings,
+     same icons, same colours, same ordering, same disabled/gated behaviour.
+M2 · DO NOT SKIP ANYTHING. No element may be omitted, merged, simplified, restyled or
+     "improved". No section of this spec may be left unimplemented. If a behaviour is
+     demonstrated in APPENDIX A's script (filters, gating, allocation math, email
+     pipeline stages, minimize/dock, manual-close rules, print fallback), it must exist
+     in the shipped feature with identical semantics.
+M3 · All names, amounts, dates, receipt/invoice numbers and email addresses in
+     APPENDIX A are SAMPLE DATA only — replace with live data through the §7 contracts;
+     never hard-code them. Keep the exact UI patterns that render them.
+M4 · Work surface = existing Laravel/Blade (or project framework) + vanilla JS/CSS
+     conventions already in the codebase. NO NEW PACKAGES. Do not modify unrelated
+     modules beyond the sanctioned integration points in §7.
+M5 · Before reporting done, execute the §10 verification: element-by-element parity
+     matrix against APPENDIX A + rule greps R1–R24 + round-trip scripts. Any mismatch =
+     unfinished work. State "NO SECTION SKIPPED" only when the matrix is 100% green.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate/plan: customers registry, invoices module (open balances + payment posting
+    hooks), quotations & sales-order modules (conversion sources), mailer/queue driver,
+    PDF renderer, sequence tables, audit log, cashbook/GL posting conventions.
+0.2 Record server "today" source (KPIs, aging, period presets compute server-side),
+    system currency, enabled payment methods dictionary, bank-account master for the
+    receipt sheet's Verification panel.
+0.3 Inventory existing receipts screens/routes/permissions so nothing wired breaks;
+    list every id/class hook in APPENDIX A that must survive in the rebuild.
+
+==================== 1 · TOKENS + ABSOLUTE RULES ====================
+Tokens: --deep-1:#17565d; --deep-2:#0c3539; --sec:#128F8E; --sec-2:#149897; --steel:#46708C;
+--ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7; --line:#e2ecec; --hair:#EEF3F1;
+--green:#15803d; --red:#dc2626; --amber:#d97706; print family --p-accent:#0E7473 /
+--p-band:#F0F5F5 / --p-line:#DCE7E5; Inter; mono stack for codes/refs/emails;
+tabular-nums on every figure; card shadows + rise/slideUp/fadeIn keyframes per mockup.
+R1 · ZERO BLUR anywhere: scrims are solid tints (modals rgba(11,42,45,.26);
+     confirm/dispatch rgba(11,42,45,.45)); no backdrop-filter in the module.
+R2 · STRICT DISMISSAL: dialogs close ONLY via labelled Close button, header ✕, or Esc;
+     never on background click; one delegated document listener for [data-close].
+R3 · EVERY modal/confirm footer ENDS with a clearly visible labelled Close button
+     (.btn-close: white tile, solid border, 800-weight ink label, ✕ icon, teal hover);
+     footers without a note use an invisible .mspacer to keep actions right-aligned.
+R4 · REGISTER ACTIONS COLUMN = VIEW ICON ONLY. Edit / Print / Send / Re-send / Post /
+     Void live exclusively in the receipt workspace footer (status-aware). Row-wide
+     click opens the workspace.
+R5 · RECEIPT № COLUMN SHOWS THE NUMBER ONLY (mono, teal) — no sub-labels; lineage lives
+     in meta chips, Overview row, print meta cell and data-search index.
+R6 · STATUS MACHINE: draft → posted (post); posted → void (void releases allocations +
+     reverses cashbook); void is audit-retained, no actions beyond Print; "On account"
+     is NEVER stored — derived (posted AND amount > Σallocations). Overdue-style flags
+     here = email failed (stored email_status) and on-account (derived).
+R7 · KPI STRIP (4 tiles): Received · 30 days (posted sum + count), On account value
+     (+ receipts-to-allocate warn chip), Posted receipts count (+ lifetime value),
+     Average receipt (lifetime ÷ posted). Live-recomputed on every mutation.
+R8 · STATUS TILES Total/Draft/Posted/On account/Voided act as filters with live counts;
+     Views rail (All/Drafts/Posted/On account/Voided) composes with tiles; sort
+     (newest, oldest, amount high, amount low); live search over customer, receipt №,
+     source ref and allocated invoice refs; server-side pagination.
+R9 · PERIOD FILTER: toolbar "Period" button toggles a hidden-by-default bar: presets
+     All time/Today/This month/Last month/Last 30 days/Custom + From/To receipt-date
+     inputs (locked unless Custom), Clear, live range chip; button glows teal while bar
+     open or filter active; from>to rejected with red field state + toast; composes with
+     tiles/views/search.
+R10 · ON-ACCOUNT RAIL CARD: posted receipts with unallocated>0, oldest first, two-row
+     items (ref + On-account chip / customer + amount) deep-linking to the workspace;
+     "View all →" switches the register to the On-account tile filter with a toast.
+R11 · CREATE/EDIT GATING: Post disabled until customer resolved (registry match) or
+     walk-in name + amount>0 + receipt date + all REQUIRED method details present and
+     Σallocations ≤ amount; Save Draft needs customer + amount only; sticky Summary rail
+     shows live "Post check" row (green "Ready ✓" / amber "Missing: …") mirrored in the
+     Post button title; rail is sticky (top 22px, internal slim scrollbar) and static
+     ≤1080px.
+R12 · WALK-IN PAYER: unknown name creates the customer in the SAME DB transaction,
+     feeds registry search/datalist immediately, toast cites new code; existing-mode
+     match locks contact/email/phone (grey readonly) until unmatched.
+R13 · "FROM DOCUMENT" CONVERTER (header action on create/edit page): picker modal with
+     live search + type filter chips (All / Invoices / Quotations / Sales orders) over
+     uninvoiced/open source docs; card shows ref mono + type badge + customer + prefilled
+     amount + doc total + date; USE prefills payer (registry or walk-in), source ref,
+     date, notes and — Invoice: amount = open balance AND the matching allocation leg;
+     Quotation/Sales order: 30% deposit held on account; everything stays editable;
+     footer note states the prefill rule verbatim.
+R14 · ALLOCATION EDITOR: lists the selected customer's open invoices (ref mono, balance,
+     capped allocate input), Auto-allocate oldest-first button, live "On account
+     (unallocated) after posting" row (amber while >0, green at 0), empty states for
+     no-customer and no-open-invoices; horizontally scrollable wrapper on mobile.
+R15 · METHOD-AWARE DETAILS (schema-driven, re-rendered on method change):
+     Bank transfer = bank select + payer account name + transaction reference;
+     Mobile money = provider select + phone* + account name + transaction reference;
+     Cash = received-by teller + drawer/till; Card = type select + last-4 + name on card
+     + issuing bank; Cheque = drawn-on bank* + cheque number* + cheque date.
+     (* = required; missing required fields block Post with a toast listing them.)
+R16 · WORKSPACE MODAL: dark header (icon, "Sales Receipt" + mono ref, frosted customer
+     chip, status pill, ✕); meta chip strip WITHOUT repeating the customer name
+     (Received date, method, From source, N invoices, On account warn, Email failed bad
+     or Emailed mono, Total); four mini-tiles (Amount received hero / Allocated green /
+     On account warn / Invoices touched); tabs Overview + Allocations; Overview rows =
+     payer, contact/phone, email mono, date, source mono, collected-by, method chip row,
+     every captured method-detail row, email-dispatch row (red "Failed — reason" or
+     "Sent date"), void-reason row when voided, notes; Allocations tab = invoice/amount
+     table + on-account + total rows with empty state; status-aware footer per R6 +
+     trailing Close.
+R17 · CONFIRMATIONS (exact copy): Post-from-workspace msg "Enters the receipt into the
+     cashbook, updates allocated invoice balances and issues the official receipt to the
+     customer file."; Post-from-create msg LEADS WITH "Review the receipt before posting
+     — posting enters the cashbook and updates allocated invoice balances." then the
+     itemised box (payer, date, method, source, amount green, each allocation leg mono,
+     on-account amber/plain); draft workspace footer NOTE "Draft — post to enter the
+     cashbook and update invoice balances."; void msg warns reversal + allocation release.
+R18 · SEND CONFIRMATION COPY EXACT: "Sends the official receipt PDF to the customer and
+     records the dispatch." (title "Email {ref} to {email}?", ok "Send now"); blocked
+     with toast when email missing/invalid (regex mirrored server-side).
+R19 · EMAIL DISPATCH MODAL (standalone scrim dialog — nothing behind it): pulsing-ring
+     envelope medallion, title, mono "{ref} → {email}", shine progress bar + live %,
+     status line, FOUR stages exactly: "Preparing PDF document", "Uploading to mail
+     server", "Delivering to recipient mailbox", "Recording email dispatch audit"
+     (spinner → green check; red ✕ on the failing stage). NO raw SMTP/protocol
+     transcript anywhere. The send runs as a BACKGROUND JOB; the modal NEVER auto-closes:
+     on success it freezes green ("Receipt delivered", accept-domain subline, success
+     footer), on failure red ("Delivery failed", SMTP reason subline, failed footer with
+     Try again + Close); mid-send Close/✕/Esc = cancel (timers cleared, receipt
+     untouched, cancel toast). Try again re-runs the pipeline. On completion the receipt
+     record updates immediately (email_status, emailed_to/at or fail_reason) and the
+     register chips refresh behind the modal.
+R20 · MINIMIZE + DOCK: header minimize (–) button (hidden once complete) hides the modal
+     while the job continues; a fixed bottom-right DOCK notification appears: dark header
+     (spinner icon, "Sending receipt…", mono ref → email, expand button), body mini
+     progress bar + % + live status, actions Cancel / Open. Open restores the modal at
+     its live state. Background completion flips the dock to a result card — green
+     "Receipt delivered" (View receipt + Dismiss) or red "Delivery failed" (Try again +
+     Dismiss) — plus a reinforcing toast; dismissing never mutates the receipt.
+R21 · FAILED-EMAIL SURFACING: receipts with email_status=failed show red "Email failed"
+     chip in the register status cell, red meta chip + red Overview row (with reason) in
+     the workspace, and the footer Send button becomes teal "Re-send email" which enters
+     the R19 pipeline directly (no pre-confirm). Server mailer errors map to this state.
+R22 · PRINT/PDF: every print entry builds a standalone A4 "Official Receipt" in a NEW TAB
+     (sticky toolbar: title+ref chip, Save as PDF, Print, Close tab; @page A4 10mm;
+     toolbar hidden in print): mint top band, VAT/registry brand block, doc block with
+     mono number + status stamp (Posted teal / Draft grey + rotated DRAFT watermark /
+     Voided red + red VOID watermark) + printed timestamp, 4×3 meta grid incl. Source
+     document, "Application of funds" table (invoice allocations mono + on-account row),
+     double-ruled Total received, amount-in-words row with right flag (ALLOCATED K… /
+     ON ACCOUNT / VOID — NO VALUE), Notes panel (+void reason) and Verification panel
+     (reference check, method + reference, collector + date, on-account ownership note,
+     queries line), bottom-pinned audit footer + PAGE 1 OF 1. Popup blocked → in-app
+     overlay fallback + toast (overlay print CSS included).
+R23 · RESPONSIVE PARITY: breakpoints 1180/1080/760/560/400 per mockup — datasheet
+     sticky-first-column + 720px scroll width ≤760, compact modal paddings, wrapping
+     footers (note full-row, buttons stretch), 2-col tiles/status grids, full-width dock,
+     stacked picker cards with full-width Use buttons, single-column forms ≤760.
+R24 · DO-NOT-REINTRODUCE: SMTP transcript console; auto-closing dispatch modal; success
+     confirmation box after closing a delivered dispatch; a "Pick" button beside the
+     source field (header From-document is the only converter entry); split tender in
+     receipts; blur backgrounds; background-click dismissal; opacity-dimmed gated
+     controls; customer name repeated in modal meta strips.
+
+==================== 2 · REGISTER PAGE (parity with APPENDIX A §listView) ====================
+2.1 Header: title + subline, Export (queued toast), Create Sales Receipt (cta).
+2.2 KPI strip R7; datasheet columns: Receipt № / Customer (avatar+name) / Date /
+    Method chip / Allocated (green when >0, dim 0, "+K on a/c" amber chip when posted
+    unallocated) / Total / Status pill (+ On account / Email failed chips) / view icon.
+2.3 Empty state row; footer showing-count + hint; tiles/toolbar/period bar per R8–R9.
+2.4 Rail: Views card, On-account card (R10), Reports card (Daily Summary / Cashbook /
+    Method Mix → queued toasts).
+
+==================== 3 · CREATE / EDIT PAGE (parity §createView) ====================
+3.1 Header actions: Cancel / From document (R13) / Save Draft / Post Receipt (gated R11).
+3.2 Cards: Received From (type select, date*, № readonly auto, source input; registry
+    search + datalist OR walk-in name; contact/email/phone; walk-in save-note),
+    Payment (amount* big right-aligned, method select, collected-by; method details grid
+    R15), Allocate to invoices (R14), Notes.
+3.3 Sticky rail: Summary (customer, source, date, method, allocated, on-account amber,
+    POST CHECK gate row, dark Receipt Total tile, complete-state note) + Quick nav
+    (All Receipts / Invoices / Cashbook toasts).
+3.4 Edit mode: draft-only (posted/void blocked with lock toast); prefills every field
+    incl. method details and saved allocations; saving updates the row in place.
+3.5 Post flow: validate → confirm (R17 copy + itemised box) → commit → success box
+    (ref, payer, amount, method, source line, allocation line, on-account line) with
+    View + Print actions; Draft flow: commit + toast (walk-in code cited).
+
+==================== 4 · RECEIPT WORKSPACE MODAL (parity §viewScrim) ====================
+4.1 Structure/copy per R16; tabs switch without reload; footers per status:
+    draft → note(R17) + Edit + Print/PDF + Void + Post; posted → on-account/fully-
+    allocated note + Print + (Re-send email IF failed ELSE Send to customer);
+    voided → audit note + Print; + trailing Close always.
+4.2 Post/Void/Send/Re-send actions per R6/R17/R18/R19/R21; workspace closes before the
+    dispatch modal opens (dispatch is standalone, R19).
+
+==================== 5 · EMAIL DISPATCH SUBSYSTEM (R19–R21) ====================
+5.1 Client drives UI from job events: stage(started|uploading|delivering|auditing),
+    succeeded, failed(reason). Mock timing per APPENDIX A (≈0.9s/1.9s/2.9s/4.1s/4.9s).
+5.2 Progress paint = single source (bar %, status line) shared by modal AND dock.
+5.3 Completion states freeze (green/red), footers swap (success: Close; failed:
+    Try again + Close), minimize hidden; manual close only; close-after-success is
+    SILENT (no extra modal), close-after-failed leaves one reason toast.
+5.4 Cancel semantics: mid-send close/✕/Esc/dock-Cancel aborts job, no receipt mutation.
+5.5 Dock lifecycle per R20 incl. result card actions (View receipt / Try again /
+    Dismiss) and toast reinforcement; dock hidden from print media.
+
+==================== 6 · PRINT SUBSYSTEM (R22) ====================
+6.1 New-tab document builder (self-contained CSS string, toolbar scripts) + in-app
+    overlay fallback; both render identical sheet markup.
+6.2 Sheet content sources: receipt record, allocations, on-account remainder, method
+    details reference (txref/cheque №), collector, source ref, email audit stamp.
+
+==================== 7 · SANCTIONED BACKEND CONTRACTS ====================
+7.1 Migrations (nullable-safe, no deletes):
+    receipts: number unique, customer_id NULL FK, payer_name, contact_person, email,
+    phone, receipt_date, status ENUM(draft,posted,void), method ENUM(bank_transfer,
+    mobile_money,cash,card,cheque), method_label, details JSON NULL, amount dec(14,2),
+    collected_by, source_type ENUM(invoice,quotation,sales_order) NULL, source_ref NULL,
+    notes TEXT NULL, email_status ENUM('sent','failed') NULL, emailed_to NULL,
+    emailed_at NULL, fail_reason NULL, void_reason NULL, created_by, timestamps.
+    receipt_allocations: receipt_id FK cascade, invoice_id FK, amount dec(14,2),
+    UNIQUE(receipt_id, invoice_id); insert-only on post; released on void.
+    sequences: RC-{YYYY}-{seq4} assigned on first persist (draft included).
+    customers: unchanged (walk-in inserts reuse invoices-module pattern).
+7.2 Endpoints: GET /receipts (q,status,view,onacc,period_from,period_to,sort,page) ·
+    GET /receipts/on-account · GET /receipts/{id} · POST /receipts {mode:draft|post,…} ·
+    PUT /receipts/{id} (409 unless draft) · POST /receipts/{id}/post ·
+    POST /receipts/{id}/void (409 when posted allocations already reversed twice) ·
+    POST /receipts/{id}/email (queues job; 422 invalid email) ·
+    POST /receipts/{id}/email/retry · GET /receipts/email-jobs/{job} (stage/status/reason)
+    or SSE stream · GET /receipts/{id}/print?format=html|pdf ·
+    GET /reports/receipts/daily-summary | cashbook | method-mix · POST /receipts/export.
+    Posting applies allocations to invoice balances in ONE transaction (invoices module
+    hook); voiding reverses them; on-account remainder posts to a customer-advance
+    ledger view consumed by the invoices module's allocation editor.
+7.3 Email job: renders PDF attachment → SMTP submit → MX transfer → acceptance/audit;
+    emits the four stage events of R19; failures store SMTP code+reason in fail_reason
+    and email_status='failed'; successes store emailed_to/at + 'sent'. Audit log rows
+    for post, void, allocate, email-sent, email-failed, conversion-from-document.
+7.4 Source-doc feeds for the picker: open invoices (sent/partial with balance>0),
+    accepted/sent quotations not fully invoiced, confirmed sales orders — each exposing
+    ref, customer, amount (balance or total), label, date; conversion writes source_type
+    + source_ref on the receipt (quotation/order conversions flag the source doc as
+    deposit-received where the module supports it).
+
+==================== 8 · PERMISSIONS ====================
+receipts.view / create / edit_draft / post / void / send_email / print_pdf / export;
+receipts.on_account (rail + tile); reports.cashbook; customers.create implied through
+receipts.create for walk-in capture; source-doc picker requires invoices.view +
+quotations.view + sales_orders.view respectively per tab.
+
+==================== 9 · BEHAVIOUR / A11Y / MOTION ====================
+9.1 R2/R3 dismissal everywhere; Esc order: dispatch modal → confirm → success → print
+    overlay → doc picker → workspace. Delegated listeners for rows, footers, tabs, dock,
+    [data-close], [data-mp], [data-dk].
+9.2 aria-modal dialogs, labelled icon buttons, focus-visible rings, reduced-motion kill
+    switch, tabular numerals, mono for all codes/refs/emails.
+9.3 Toasts for every mutation not covered by confirm/success/dispatch states; queued
+    toasts for exports/reports/nav stubs exactly as mockup strings.
+
+==================== 10 · VERIFY (MANDATORY, REPORTED) ====================
+10.1 PARITY MATRIX: enumerate every surface in APPENDIX A (register toolbar/period bar/
+     tiles/datasheet/footer, rail cards ×3, create cards ×4 + rail ×2, workspace modal
+     (header/meta/tiles/tabs/footers per status), doc picker (search/chips/cards/foot
+     note), confirm + success boxes, dispatch modal (header minimize/close, body stages/
+     bar/status, footers ×3), dock (sending + result ×2), print tab + overlay, toasts)
+     and mark implemented with screenshot refs. 100% required.
+10.2 COPY GREPS: the four stage labels; "Review the receipt before posting — posting
+     enters the cashbook and updates allocated invoice balances."; "Draft — post to
+     enter the cashbook and update invoice balances."; "Sends the official receipt PDF
+     to the customer and records the dispatch."; "Running in background if minimized —
+     you can keep working."; dock titles "Receipt delivered"/"Delivery failed"; footer
+     notes per status — all present verbatim.
+10.3 NEGATIVE GREPS: no "mp-tx"/transcript markup; no backdrop-filter; no auto-close
+     timer on dispatch completion; no success-box call in dispatch close path; no
+     crPickQ-style button; no split method in receipts.
+10.4 ROUND-TRIPS: walk-in post (customer created + success box); invoice conversion
+     (balance + allocation prefilled, gate green); quotation conversion (30% on
+     account); auto-allocate cap math; post confirm → row flip → KPI/tile/rail counts;
+     void releases allocations; send happy path with MINIMIZE mid-flight (dock live →
+     delivered card → View receipt); Vera-seed failure path (red state → Try again →
+     success); Mary failed receipt → Re-send → delivered; print tab + popup-blocked
+     overlay; period/tile/view/search compositions; mobile 390px sweep of every surface.
+REPORT: files touched; migration diff; endpoint + job-event + audit map; parity matrix;
+copy/negative grep proofs; round-trip scripts + screenshots (register, create w/ gate,
+workspace tabs, dispatch sending/minimized/dock-result/failed, print tab, 390px set);
+deviations = NONE. NO SECTION SKIPPED.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Receipts — four-stage dispatch, silent success close</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0; --steel:#46708C; --teal-btn:#139594;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --green:#15803d; --red:#dc2626; --red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+    --p-accent:#0E7473; --p-band:#F0F5F5;
+    --p-ink:#13292C; --p-sub:#3E5658; --p-muted:#5F7476; --p-faint:#8AA3A2;
+    --p-line:#DCE7E5; --p-hair:#E7EFED;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --sh-lift: 0 2px 4px rgba(10,42,46,.06), 0 20px 44px -18px rgba(10,42,46,.22), inset 0 1px 0 #fff;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(900px 380px at 8% -10%, rgba(18,143,142,.09), transparent 60%), linear-gradient(180deg, #eef4f4 0%, #e7efee 100%); min-height: 100vh; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  body.pv-on { overflow: hidden; }
+  button, input, select, textarea { font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 26px 26px 80px; }
+
+  #createView { display: none; }
+  body.view-create #listView { display: none; }
+  body.view-create #createView { display: block; }
+
+  .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .phead h1 { font-size: 26px; font-weight: 900; letter-spacing: -0.025em; }
+  .phead .sub { margin-top: 5px; font-size: 13px; color: var(--muted); }
+  .pacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .16s ease; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .btn[disabled] { opacity: .45; pointer-events: none; box-shadow: none; }
+  .btn-ghost { background: #fff; border-color: var(--border); color: var(--sub); box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .btn-ghost:hover { border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-cta { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-cta:hover { box-shadow: 0 8px 18px -6px rgba(18,143,142,.7), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-danger-o { background: #fff; border-color: rgba(220,38,38,.35); color: var(--red); }
+  .btn-danger-o:hover { background: #fef2f2; border-color: rgba(220,38,38,.55); }
+  .btn-danger { background: var(--red); color: #fff; box-shadow: 0 4px 12px -5px rgba(220,38,38,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-green { background: var(--green); color: #fff; box-shadow: 0 4px 12px -5px rgba(21,128,61,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-close { background: #fff; border: 1px solid var(--border); color: var(--ink); font-weight: 800; box-shadow: 0 1px 2px rgba(10,42,46,.06); }
+  .btn-close:hover { border-color: rgba(19,149,148,.5); color: var(--teal-btn); background: rgba(19,149,148,.06); }
+  .btn-sm { height: 34px; padding: 0 13px; font-size: 12.5px; border-radius: 10px; }
+  .btn-xs { height: 28px; padding: 0 10px; font-size: 11px; border-radius: 8px; }
+  .btn.period-on { border-color: rgba(18,143,142,.5); color: var(--sec); background: rgba(18,143,142,.08); }
+  .btn-add { height: 34px; padding: 0 14px; border-radius: 10px; border: 1.5px dashed var(--border); background: #fbfdfc; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-add:hover { border-color: rgba(18,143,142,.45); color: var(--sec); background: rgba(18,143,142,.05); }
+  .btn-add svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; fill: none; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+  .layout > * { min-width: 0; }
+  .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  aside { min-width: 0; }
+  #createView aside { position: sticky; top: 22px; max-height: calc(100vh - 44px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-bottom: 4px; }
+  #createView aside::-webkit-scrollbar { width: 6px; }
+  #createView aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  @keyframes mpping { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.9); opacity: 0; } }
+  @keyframes mpspin { to { transform: rotate(360deg); } }
+  @keyframes mpshine { from { left: -46px; } to { left: 100%; } }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 15px 16px; box-shadow: var(--sh-card); animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0ms); transition: transform .18s ease, box-shadow .18s ease; min-width: 0; }
+  .kpi:hover { transform: translateY(-2px); box-shadow: var(--sh-lift); }
+  .kpi .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .kpi .l { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .kpi .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.22); color: var(--sec); }
+  .kpi .ic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .kpi .v { margin-top: 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .kpi .n { margin-top: 4px; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+  .kpi .n.ok { background: rgba(21,128,61,.10); color: var(--green); }
+  .kpi .n.warn { background: rgba(217,119,6,.10); color: var(--amber-2); }
+  .kpi .n.bad { background: rgba(220,38,38,.09); color: var(--red-2); }
+  .kpi .n.flat { background: rgba(17,69,75,.07); color: var(--muted); }
+
+  .tcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 80ms; min-width: 0; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .searchwrap { position: relative; flex: 1; min-width: 180px; }
+  .searchwrap svg { position: absolute; left: 12px; top: 11px; width: 15px; height: 15px; stroke: var(--faint); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+  .in, .sel { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafb; font-size: 12.5px; font-weight: 600; color: var(--ink); outline: none; transition: all .15s; }
+  .searchwrap .in { width: 100%; padding-left: 36px; }
+  .in:focus, .sel:focus, .lin:focus, textarea.in:focus { border-color: rgba(18,143,142,.45); background: #fff; box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .in.bad, .sel.bad { border-color: rgba(220,38,38,.55); background: #fef2f2; box-shadow: 0 0 0 4px rgba(220,38,38,.08); }
+  .in.ro { background: #f1f5f6; color: var(--muted); }
+  .sel { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%); background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .cnt { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.24); padding: 6px 12px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .pbar { display: flex; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #f4fbf9, #fdfeff); flex-wrap: wrap; align-items: flex-end; }
+  .pbar .fld label { margin-bottom: 4px; }
+  .pbar .cnt { margin-bottom: 8px; }
+  .pbar .btn { margin-bottom: 2px; }
+
+  .stiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--hair); background: #fbfdfc; }
+  .stile { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fff; cursor: pointer; transition: all .16s ease; text-align: left; min-width: 0; }
+  .stile .sic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; }
+  .stile .sic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .stile .sl { font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); display: block; }
+  .stile .sv { font-size: 15px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; display: block; }
+  .stile:hover { border-color: rgba(18,143,142,.35); transform: translateY(-1px); }
+  .stile.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .stile.on .sl { color: rgba(226,244,244,.8); } .stile.on .sv { color: #fff; } .stile.on .sic { background: rgba(255,255,255,.16); color: #fff; }
+  .sic.all { background: rgba(11,42,45,.08); color: var(--deep-1); }
+  .sic.dr { background: rgba(17,69,75,.08); color: var(--muted); }
+  .sic.po { background: rgba(21,128,61,.10); color: var(--green); }
+  .sic.oa { background: rgba(217,119,6,.10); color: var(--amber-2); }
+  .sic.vo { background: rgba(138,163,162,.14); color: var(--faint); }
+
+  .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tscroll::-webkit-scrollbar { height: 8px; }
+  .tscroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+  .tscroll table { width: 100%; border-collapse: collapse; min-width: 940px; }
+  .tscroll-sm { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tscroll-sm table { min-width: 460px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 11px 14px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(18,143,142,.18); font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; white-space: nowrap; }
+  thead th.r { text-align: right; }
+  tbody td { padding: 12px 14px; border-top: 1px solid var(--hair); vertical-align: middle; font-size: 12.5px; color: var(--sub); }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(18,143,142,.035); }
+  #rBody tr.rrow { cursor: pointer; }
+  .rno { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--sec); cursor: pointer; }
+  .rno:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .cust { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .av { width: 32px; height: 32px; min-width: 32px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(180deg, rgba(18,143,142,.14), rgba(18,143,142,.07)); border: 1px solid rgba(18,143,142,.26); color: var(--deep-1); font-size: 11px; font-weight: 800; }
+  .cust .nm { font-size: 12.5px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mth { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; border: 1px solid; }
+  .mth svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .mth.bank { color: var(--steel); background: rgba(70,112,140,.10); border-color: rgba(70,112,140,.3); }
+  .mth.mobile { color: var(--sec); background: rgba(18,143,142,.09); border-color: rgba(18,143,142,.3); }
+  .mth.cash { color: var(--green); background: rgba(21,128,61,.09); border-color: rgba(21,128,61,.28); }
+  .mth.card { color: var(--deep-1); background: rgba(23,86,93,.08); border-color: rgba(23,86,93,.28); }
+  .mth.cheque { color: var(--amber-2); background: rgba(217,119,6,.09); border-color: rgba(217,119,6,.28); }
+  .xc { display: inline-flex; align-items: center; gap: 4px; margin-left: 7px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; vertical-align: 1px; white-space: nowrap; }
+  .xc.exp { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.24); }
+  .xc.soon { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.26); }
+  .xc.ok { background: rgba(17,69,75,.06); color: var(--muted); border: 1px solid rgba(17,69,75,.14); }
+  .xc.good { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .tot { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tot.dim { color: var(--muted); font-weight: 700; }
+  .tot.alloc { color: var(--green); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.dr { background: rgba(17,69,75,.07); color: var(--muted); border: 1px solid rgba(17,69,75,.18); }
+  .pill.po { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .pill.vo { background: rgba(138,163,162,.12); color: var(--faint); border: 1px solid rgba(138,163,162,.3); }
+  .ib { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; transition: all .15s; vertical-align: middle; }
+  .ib + .ib { margin-left: 6px; }
+  .ib svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ib:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.06); transform: translateY(-1px); }
+  .tfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--hair); background: #fbfdfc; font-size: 11.5px; font-weight: 600; color: var(--faint); flex-wrap: wrap; }
+  .empty { padding: 46px 20px; text-align: center; }
+  .empty .halo { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.2); color: var(--sec); }
+  .empty .halo svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .empty .t { font-size: 14px; font-weight: 800; color: var(--sub); }
+  .empty .s { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
+  .rcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 140ms; min-width: 0; }
+  .rcard + .rcard { margin-top: 18px; }
+  .rhead { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .rhead .ric { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .rhead .ric svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .rhead .ric.warn { background: linear-gradient(180deg, #e8a33c, var(--amber)); }
+  .rhead .rt { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .rhead .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .rlink { flex: none; font-size: 10px; font-weight: 800; letter-spacing: .04em; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.25); padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .rlink:hover { background: rgba(18,143,142,.16); border-color: rgba(18,143,142,.45); }
+  .rbody { padding: 10px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .vitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid transparent; background: transparent; font-size: 12.5px; font-weight: 700; color: var(--sub); text-align: left; cursor: pointer; transition: all .16s ease; min-width: 0; }
+  .vitem .vic { width: 28px; height: 28px; min-width: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.12); color: var(--muted); transition: all .16s ease; }
+  .vitem .vic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .vitem .vc { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .vitem:hover { background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.18); color: var(--ink); }
+  .vitem.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .vitem.on .vic { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); color: #fff; }
+  .vitem.on .vc { background: rgba(255,255,255,.2); color: #fff; }
+  .attn { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fdfeff; cursor: pointer; transition: all .16s ease; text-align: left; min-width: 0; }
+  .attn + .attn { margin-top: 6px; }
+  .attn:hover { border-color: rgba(217,119,6,.4); transform: translateY(-1px); }
+  .attn .arow { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; }
+  .attn .an { font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--ink); }
+  .attn .as { font-size: 10px; font-weight: 600; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .attn .ab { font-size: 11px; font-weight: 800; color: var(--amber-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .attn .xc { margin-left: 0; }
+  .attn-empty { font-size: 11.5px; font-weight: 600; color: var(--faint); padding: 6px 6px 4px; }
+
+  .scrim { position: fixed; inset: 0; background: rgba(11,42,45,.26); display: none; place-items: center; padding: 24px; z-index: 90; }
+  .scrim.on { display: grid; animation: fadeIn .2s ease; }
+  .scrim.cf { z-index: 140; background: rgba(11,42,45,.45); }
+  .mbox { position: relative; width: min(960px, calc(100vw - 48px)); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 24px 60px -20px rgba(10,42,46,.35), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .mbox.narrow { width: min(680px, calc(100vw - 48px)); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 15px 22px; background: radial-gradient(700px 200px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); flex: none; }
+  .m-ic { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; background: #fff; display: grid; place-items: center; color: var(--deep-2); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .m-ic svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-head-left { flex: 1; min-width: 0; }
+  .m-title { display: block; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .m-sub { display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; color: rgba(255,255,255,.6); margin-top: 2px; }
+  .m-cust { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.20); color: #eaffff; font-size: 11px; font-weight: 800; max-width: 34vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: none; }
+  .m-cust svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; opacity: .85; }
+  .m-close { margin-left: auto; width: 30px; height: 30px; min-width: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .m-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding: 10px 22px; border-bottom: 1px solid var(--hair); background: #fbfdfc; flex: none; }
+  .mchip { font-size: 10.5px; font-weight: 800; color: var(--muted); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
+  .mchip.mono { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.07); border-color: rgba(18,143,142,.22); }
+  .mchip.b { color: var(--ink); }
+  .mchip.warn { color: var(--amber-2); background: rgba(217,119,6,.08); border-color: rgba(217,119,6,.25); }
+  .mchip.bad { color: var(--red-2); background: rgba(220,38,38,.08); border-color: rgba(220,38,38,.24); }
+  .m-body { padding: 16px 22px 18px; overflow: auto; flex: 1; }
+  .mtiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .mtile { background: #f8fbfa; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .mtile .l { font-size: 8.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .mtile .v { margin-top: 4px; font-size: 16px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .mtile.hero { background: radial-gradient(200px 70px at 12% -30%, rgba(255,255,255,.12), transparent 60%), linear-gradient(135deg, var(--deep-1), var(--deep-2)); border-color: transparent; }
+  .mtile.hero .l { color: rgba(226,244,244,.75); }
+  .mtile.hero .v { color: #fff; }
+  .mtile.warn { background: rgba(217,119,6,.06); border-color: rgba(217,119,6,.25); }
+  .mtile.warn .v { color: var(--amber-2); }
+  .mtile.ok .v { color: var(--green); }
+  .tabbar { display: flex; gap: 4px; border-bottom: 1px solid var(--hair); margin-bottom: 14px; overflow-x: auto; }
+  .tab { padding: 9px 14px; font-size: 12px; font-weight: 800; color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all .15s; white-space: nowrap; }
+  .tab:hover { color: var(--ink); }
+  .tab.on { color: var(--sec); border-bottom-color: var(--sec); }
+  .tabpane { display: none; }
+  .tabpane.on { display: block; animation: fadeIn .18s ease; }
+  .vsec { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+  .ltable { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .ltable th { padding: 8px 12px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .ltable th.r { text-align: right; }
+  .ltable td { padding: 9px 12px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .ltable td.r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .ltable td.mono { font-family: var(--mono); font-size: 11px; color: var(--sec); font-weight: 800; }
+  .mrow { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: 12.5px; }
+  .mrow:last-child { border-bottom: none; }
+  .mrow .l { color: var(--muted); font-weight: 600; }
+  .mrow .v { color: var(--ink); font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+  .mrow .v.mono { font-family: var(--mono); color: var(--sec); font-size: 12px; }
+  .mrow .v.bad { color: var(--red-2); }
+  .m-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 13px 22px; border-top: 1px solid var(--hair); background: #f8fafa; flex: none; }
+  .mnote { font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--hair); border-radius: 9px; padding: 8px 12px; margin-right: auto; }
+  .mnote b { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+  .mspacer { margin-right: auto; }
+  .qcard { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fdfeff; transition: all .15s; }
+  .qcard + .qcard { margin-top: 10px; }
+  .qcard:hover { border-color: rgba(18,143,142,.4); box-shadow: 0 6px 16px -10px rgba(10,42,46,.3); }
+  .qcard .qr { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--sec); }
+  .qcard .qc { font-size: 12px; font-weight: 700; color: var(--ink); margin-top: 3px; }
+  .qcard .qs { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 2px; }
+  .dty { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-left: 6px; border: 1px solid; vertical-align: 1px; }
+  .dty.inv { color: var(--sec); background: rgba(18,143,142,.08); border-color: rgba(18,143,142,.3); }
+  .dty.qt { color: var(--steel); background: rgba(70,112,140,.10); border-color: rgba(70,112,140,.3); }
+  .dty.so { color: var(--green); background: rgba(21,128,61,.08); border-color: rgba(21,128,61,.28); }
+  .fchips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .fchip { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-size: 10.5px; font-weight: 800; color: var(--muted); cursor: pointer; transition: all .15s; }
+  .fchip:hover { border-color: rgba(18,143,142,.4); color: var(--sec); }
+  .fchip.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 4px 10px -5px rgba(18,143,142,.6); }
+
+  /* ---- email dispatch progress modal ---- */
+  .mp-wrap { text-align: center; padding: 6px 2px 2px; }
+  .mp-env { position: relative; width: 66px; height: 66px; margin: 0 auto 14px; border-radius: 50%; background: radial-gradient(120px 60px at 20% -20%, rgba(255,255,255,.28), transparent 60%), linear-gradient(180deg, var(--sec-2), var(--sec)); display: grid; place-items: center; color: #fff; box-shadow: 0 10px 22px -10px rgba(18,143,142,.7), inset 0 1px 0 rgba(255,255,255,.3); }
+  .mp-env svg { width: 26px; height: 26px; stroke: currentColor; stroke-width: 2.1; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .mp-env .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(18,143,142,.35); animation: mpping 1.7s ease-out infinite; }
+  .mp-env .ring.r2 { animation-delay: .55s; }
+  .mp-title { font-size: 15px; font-weight: 900; color: var(--ink); letter-spacing: -0.01em; }
+  .mp-sub { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+  .mp-bar { position: relative; height: 8px; border-radius: 99px; background: var(--line); margin: 18px 0 8px; overflow: hidden; }
+  .mp-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 99px; background: linear-gradient(90deg, var(--sec-2), var(--sec)); transition: width .12s linear; }
+  .mp-bar .mp-shine { position: absolute; top: 0; bottom: 0; width: 46px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent); animation: mpshine 1.15s linear infinite; }
+  .mp-pctrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .mp-log { font-size: 10.5px; font-weight: 700; color: var(--muted); text-align: left; }
+  .mp-pct { font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--sec); }
+  .mp-steps { margin: 14px 0 4px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .mp-step { display: flex; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 700; color: var(--faint); transition: color .2s; }
+  .mp-step .st { width: 16px; height: 16px; min-width: 16px; border-radius: 50%; border: 2px solid var(--line); background: #fff; position: relative; }
+  .mp-step.active { color: var(--ink); }
+  .mp-step.active .st { border-color: var(--sec); border-top-color: transparent; animation: mpspin .8s linear infinite; }
+  .mp-step.done { color: var(--green); }
+  .mp-step.done .st { border-color: var(--green); background: var(--green); animation: none; }
+  .mp-step.done .st::after { content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .mp-step.fail { color: var(--red-2); }
+  .mp-step.fail .st { border-color: var(--red); background: var(--red); animation: none; }
+  .mp-step.fail .st::before, .mp-step.fail .st::after { content: ''; position: absolute; left: 5px; top: 2px; width: 2px; height: 8px; background: #fff; border-radius: 1px; }
+  .mp-step.fail .st::before { transform: rotate(45deg); }
+  .mp-step.fail .st::after { transform: rotate(-45deg); }
+  #mailScrim.done .mp-env { background: linear-gradient(180deg, #1a9a4f, var(--green)); box-shadow: 0 10px 22px -10px rgba(21,128,61,.7), inset 0 1px 0 rgba(255,255,255,.3); }
+  #mailScrim.done .mp-env .ring { animation: none; opacity: 0; }
+  #mailScrim.done .mp-bar i { background: linear-gradient(90deg, #1a9a4f, var(--green)); }
+  #mailScrim.done .mp-bar .mp-shine { display: none; }
+  #mailScrim.done .mp-pct { color: var(--green); }
+  #mailScrim.failed .mp-env { background: linear-gradient(180deg, #e05252, var(--red)); box-shadow: 0 10px 22px -10px rgba(220,38,38,.7), inset 0 1px 0 rgba(255,255,255,.3); }
+  #mailScrim.failed .mp-env .ring { animation: none; opacity: 0; }
+  #mailScrim.failed .mp-bar i { background: linear-gradient(90deg, #e05252, var(--red)); }
+  #mailScrim.failed .mp-bar .mp-shine { display: none; }
+  #mailScrim.failed .mp-pct { color: var(--red-2); }
+  #mailScrim .cbox { width: min(450px, 100%); }
+
+  /* ---- background dispatch dock notification ---- */
+  .mdock { position: fixed; right: 22px; bottom: 22px; z-index: 260; width: 302px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 2px 6px rgba(10,42,46,.08), 0 22px 48px -18px rgba(10,42,46,.35); overflow: hidden; animation: slideUp .28s cubic-bezier(.2,.8,.2,1); }
+  .mdock .dh { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: radial-gradient(300px 80px at 10% -40%, rgba(255,255,255,.10), transparent 60%), linear-gradient(180deg, #11454b, #0c3539); color: #fff; }
+  .mdock .dic { width: 28px; height: 28px; min-width: 28px; border-radius: 9px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16); display: grid; place-items: center; }
+  .mdock .dic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .mdock .dspn { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: mpspin .8s linear infinite; }
+  .mdock .dtxt { flex: 1; min-width: 0; }
+  .mdock .dt { display: block; font-size: 11px; font-weight: 800; letter-spacing: .02em; }
+  .mdock .ds { display: block; font-family: var(--mono); font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,.62); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mdock .dx { width: 24px; height: 24px; min-width: 24px; border-radius: 7px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .mdock .dx:hover { background: rgba(255,255,255,.18); color: #fff; }
+  .mdock .dx svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+  .mdock .db { padding: 10px 12px 12px; }
+  .mdock .bar { position: relative; height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .mdock .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 99px; background: linear-gradient(90deg, var(--sec-2), var(--sec)); transition: width .12s linear; }
+  .mdock .rrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 7px; }
+  .mdock .rst { font-size: 10px; font-weight: 700; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mdock .rpct { font-family: var(--mono); font-size: 10px; font-weight: 800; color: var(--sec); }
+  .mdock .acts { display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px; }
+  .mdock .res { display: flex; align-items: center; gap: 10px; padding: 11px 12px; }
+  .mdock .res .ric2 { width: 30px; height: 30px; min-width: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+  .mdock .res .ric2 svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .mdock .res .ric2.ok { background: linear-gradient(180deg, #1a9a4f, var(--green)); }
+  .mdock .res .ric2.bad { background: linear-gradient(180deg, #e05252, var(--red)); }
+  .mdock .res .rt2 { flex: 1; min-width: 0; }
+  .mdock .res .rt2 b { display: block; font-size: 11.5px; font-weight: 800; color: var(--ink); }
+  .mdock .res .rt2 span { display: block; font-size: 10px; font-weight: 600; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mdock.ok .dh { background: linear-gradient(180deg, #1a9a4f, var(--green)); }
+  .mdock.fail .dh { background: linear-gradient(180deg, #e05252, var(--red)); }
+
+  .fsec { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; flex-wrap: wrap; }
+  .fsec .fs-ic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .fsec .fs-ic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .fsec .fs-t { font-size: 12.5px; font-weight: 800; color: var(--ink); }
+  .fsec .fs-rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fld { min-width: 0; }
+  .fld label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .fld label b { color: var(--red); }
+  .fld .in, .fld .sel { width: 100%; }
+  .fld .in[readonly] { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.22); }
+  .fld .in.auto { font-family: var(--mono); color: var(--faint); background: #f1f5f6; border-color: var(--line); }
+  .fld .in.big { height: 46px; font-size: 16px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .fldrow { display: flex; gap: 8px; align-items: stretch; }
+  .fldrow .in { flex: 1; }
+  textarea.in { height: 74px; padding: 10px 12px; resize: vertical; font-weight: 500; width: 100%; }
+  .savenote { font-size: 11px; font-weight: 700; color: var(--sec); background: rgba(18,143,142,.07); border: 1px solid rgba(18,143,142,.22); border-radius: 9px; padding: 8px 12px; margin-top: 10px; display: none; }
+  .savenote.on { display: block; }
+  .etable { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 10px; }
+  .etable th { padding: 8px 10px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .etable th.r { text-align: right; }
+  .etable td { padding: 7px 10px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .lin { height: 32px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafb; font-size: 12px; font-weight: 600; color: var(--ink); padding: 0 9px; width: 100%; outline: none; transition: all .15s; }
+  .lin.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .lin:disabled { background: #f1f5f6; color: var(--faint); }
+
+  .chead { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .chead h2 { font-size: 24px; font-weight: 900; letter-spacing: -0.025em; }
+  .cacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .card2 { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); padding: 18px 20px; margin-bottom: 16px; animation: rise .45s cubic-bezier(.2,.8,.2,1) both; min-width: 0; }
+  .card2 .fsec { margin-top: 0; }
+  .sumrow { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); font-weight: 600; padding: 7px 0; border-bottom: 1px solid var(--hair); }
+  .sumrow b { color: var(--ink); font-weight: 700; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+  .sumrow b.gate-ok { color: var(--green); }
+  .sumrow b.gate-no { color: var(--amber-2); }
+  .sumrow b.warn { color: var(--amber-2); }
+  .grandtile { margin-top: 12px; background: radial-gradient(240px 90px at 12% -30%, rgba(255,255,255,.10), transparent 60%), linear-gradient(135deg, var(--deep-1), var(--deep-2) 60%, var(--deep-3)); color: #fff; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 22px -12px rgba(8,40,44,.6), inset 0 1px 0 rgba(255,255,255,.12); }
+  .grandtile .l { font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: rgba(226,244,244,.75); }
+  .grandtile .v { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .sumnote { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 8px; }
+
+  .cbox { width: min(460px, 100%); background: #fff; border-radius: 18px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 24px 60px -20px rgba(8,40,44,.55); overflow: hidden; animation: slideUp .25s cubic-bezier(.2,.8,.2,1); }
+  .cb-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; background: linear-gradient(180deg, #fdfeff, #f6fbf9); border-bottom: 1px solid var(--hair); }
+  .cb-ic { width: 30px; height: 30px; min-width: 30px; border-radius: 9px; display: grid; place-items: center; }
+  .cb-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .cb-ic.primary { background: rgba(18,143,142,.1); color: var(--sec); }
+  .cb-ic.ok { background: rgba(21,128,61,.1); color: var(--green); }
+  .cb-ic.danger { background: rgba(220,38,38,.1); color: var(--red); }
+  .cb-head b { font-size: 14px; font-weight: 800; color: var(--ink); flex: 1; }
+  .cb-x { border: none; background: none; color: var(--faint); cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; }
+  .cb-x:hover { background: var(--hair); color: var(--ink); }
+  .cb-x svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .cb-body { padding: 16px 18px; font-size: 12.5px; font-weight: 500; color: var(--sub); line-height: 1.65; }
+  .cb-body b { color: var(--ink); }
+  .cb-body .okref { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+  .cb-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; font-size: 12px; border-top: 1px solid var(--hair); background: #fff; }
+  .cb-row:first-child { border-top: none; }
+  .cb-row .l { color: var(--muted); font-weight: 600; }
+  .cb-row b { color: var(--ink); font-weight: 800; }
+  .cb-row b.mono { font-family: var(--mono); color: var(--sec); }
+  .cb-row b.green { color: var(--green); }
+  .cb-row b.warn { color: var(--amber-2); }
+  .cb-box { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .cb-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--hair); background: #f8fafa; flex-wrap: wrap; }
+
+  .pview { position: fixed; inset: 0; z-index: 200; display: none; overflow-y: auto; background: linear-gradient(180deg, #e6edec 0%, #dde6e5 100%); }
+  .pview.on { display: block; animation: fadeIn .2s ease; }
+  .ptoolbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 12px 22px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--p-line); box-shadow: 0 6px 18px -12px rgba(10,42,46,.25); flex-wrap: wrap; }
+  .tb-back { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-back:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); }
+  .tb-back svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-title { font-size: 13px; font-weight: 800; color: var(--p-ink); }
+  .tb-title span { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-accent); background: rgba(14,116,115,.08); border: 1px solid rgba(14,116,115,.22); padding: 3px 8px; border-radius: 7px; margin-left: 8px; }
+  .tb-spacer { flex: 1; }
+  .tb-note { font-size: 10.5px; font-weight: 700; color: var(--p-faint); letter-spacing: .06em; text-transform: uppercase; }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-btn:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); transform: translateY(-1px); }
+  .tb-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-btn.primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.25); }
+  .sheet-wrap { display: flex; justify-content: center; padding: 34px 20px 60px; }
+  .sheet { position: relative; width: 794px; min-height: 1123px; background: #fff; border: 1px solid var(--p-line); box-shadow: 0 2px 6px rgba(10,42,46,.08), 0 30px 70px -30px rgba(10,42,46,.45); overflow: hidden; display: flex; flex-direction: column; }
+  .sheet::before { content: ''; display: block; height: 5px; flex: none; background: linear-gradient(90deg, var(--p-accent) 0%, var(--sec-2) 55%, #7FD1C0 100%); }
+  .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+  .wm span { transform: rotate(-24deg); font-size: 100px; font-weight: 900; letter-spacing: .18em; color: rgba(14,116,115,.05); text-transform: uppercase; white-space: nowrap; }
+  .wm span.voidwm { color: rgba(220,38,38,.06); }
+  .sheet-body { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+  .v-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px 46px 20px; background: linear-gradient(180deg, var(--p-band) 0%, #f7fbfa 100%); border-bottom: 1px solid var(--p-line); }
+  .brand { display: flex; gap: 13px; }
+  .brand .mark { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(150deg, var(--p-accent) 0%, #0a5453 100%); color: #fff; font-size: 17px; font-weight: 900; display: grid; place-items: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+  .brand .bn { font-size: 15.5px; font-weight: 900; letter-spacing: -0.015em; color: var(--p-ink); }
+  .brand .bl { font-size: 10px; font-weight: 600; color: var(--p-muted); line-height: 1.55; margin-top: 3px; }
+  .docblock { text-align: right; }
+  .docblock .dt { font-size: 9.5px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--p-accent); }
+  .docblock .dn { font-family: var(--mono); font-size: 19px; font-weight: 800; color: var(--p-ink); letter-spacing: -0.01em; margin-top: 4px; }
+  .docblock .dst { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; padding: 4px 11px; border-radius: 999px; background: rgba(14,116,115,.10); border: 1px solid rgba(14,116,115,.35); color: var(--p-accent); font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .docblock .dst i { width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); }
+  .docblock .dst.draftst { background: rgba(138,163,162,.14); border-color: rgba(138,163,162,.4); color: var(--p-muted); }
+  .docblock .dst.draftst i { background: var(--p-muted); }
+  .docblock .dst.voidst { background: rgba(220,38,38,.08); border-color: rgba(220,38,38,.35); color: var(--red-2); }
+  .docblock .dst.voidst i { background: var(--red-2); }
+  .docblock .dp { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 6px; }
+  .meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--p-line); }
+  .meta .cell { padding: 10px 16px; border-left: 1px solid var(--p-hair); min-width: 0; }
+  .meta .cell:first-child { border-left: none; }
+  .meta .cell:nth-child(n+5) { border-top: 1px solid var(--p-hair); }
+  .meta .l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); }
+  .meta .v { font-size: 11px; font-weight: 700; color: var(--p-ink); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta .v.mono { font-family: var(--mono); font-size: 10.5px; color: var(--p-accent); }
+  .vlines { padding: 20px 46px 0; }
+  .vlines .lt { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--p-muted); margin-bottom: 9px; }
+  .sheet table { width: 100%; border-collapse: collapse; min-width: 0; }
+  .sheet thead th { background: var(--p-accent); color: #fff; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 8px 12px; text-align: left; box-shadow: none; }
+  .sheet thead th.r { text-align: right; }
+  .sheet thead th:first-child { border-radius: 6px 0 0 6px; }
+  .sheet thead th:last-child { border-radius: 0 6px 6px 0; }
+  .sheet tbody td { padding: 9px 12px; border-bottom: 1px solid var(--p-hair); border-top: none; font-size: 11px; color: var(--p-sub); vertical-align: top; }
+  .sheet tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
+  .sheet tbody td.mono { font-family: var(--mono); color: var(--p-accent); font-weight: 800; }
+  .sheet tr.totals td { border-bottom: none; border-top: 3px double var(--p-ink); padding: 10px 12px; background: var(--p-band); }
+  .sheet tr.words td { padding: 9px 12px; border-bottom: 1px solid var(--p-line); background: #fbfdfc; }
+  .words-l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); margin-right: 8px; }
+  .words-v { font-size: 11px; font-weight: 700; color: var(--p-sub); font-style: italic; }
+  .balnote { float: right; font-size: 9.5px; font-weight: 800; color: var(--p-accent); letter-spacing: .06em; }
+  .qpanels { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; margin: 16px 46px 0; }
+  .narr { border: 1px solid var(--p-line); border-radius: 6px; overflow: hidden; }
+  .narr .nh { padding: 7px 12px; background: var(--p-band); border-bottom: 1px solid var(--p-hair); font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .narr .nb { padding: 10px 12px; font-size: 10.5px; font-weight: 500; color: var(--p-sub); line-height: 1.6; }
+  .tlist { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .tlist div { font-size: 9.5px; font-weight: 600; color: var(--p-sub); line-height: 1.5; padding-left: 12px; position: relative; }
+  .tlist div::before { content: ''; position: absolute; left: 0; top: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); opacity: .55; }
+  .v-foot { margin-top: auto; padding: 12px 46px; border-top: 1px solid var(--p-line); background: #fbfdfc; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none; position: relative; z-index: 1; }
+  .v-foot .fa { font-family: var(--mono); font-size: 8.5px; font-weight: 600; color: var(--p-faint); }
+  .v-foot .fb { font-size: 8.5px; font-weight: 600; color: var(--p-faint); text-align: center; flex: 1; }
+  .v-foot .fc { font-size: 9px; font-weight: 800; color: var(--p-muted); letter-spacing: .08em; white-space: nowrap; }
+
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); background: var(--deep-2); color: #eaffff; font-size: 12px; font-weight: 700; padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(127,209,192,.3); box-shadow: 0 14px 30px -12px rgba(6,32,35,.7); opacity: 0; visibility: hidden; transition: all .25s ease; z-index: 300; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast.on { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1180px) { .stiles { grid-template-columns: repeat(3, 1fr); } .kpis, .mtiles { grid-template-columns: repeat(2, 1fr); } .g4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 1080px) { .layout { grid-template-columns: 1fr; } #createView aside { position: static; max-height: none; overflow: visible; } }
+  @media (max-width: 760px) {
+    .wrap { padding: 16px 12px 60px; }
+    .g4, .g3, .g2 { grid-template-columns: 1fr; }
+    .scrim { padding: 10px; }
+    .mbox, .mbox.narrow { width: calc(100vw - 20px); max-height: calc(100vh - 20px); border-radius: 16px; }
+    .m-head { padding: 12px 16px; gap: 8px; }
+    .m-title { font-size: 13.5px; }
+    .m-sub { font-size: 10px; }
+    .m-cust { max-width: 32vw; font-size: 10px; padding: 4px 9px; }
+    .m-meta { padding: 8px 16px; }
+    .m-body { padding: 12px 16px 14px; }
+    .m-foot { padding: 10px 16px; gap: 8px; }
+    .m-foot .mnote { flex: 1 1 100%; margin-right: 0; }
+    .m-foot .btn-sm { flex: 1 1 auto; justify-content: center; }
+    .tabpane { overflow-x: auto; }
+    .mtiles { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .pbar .fld { width: 100% !important; }
+    .stiles { grid-template-columns: repeat(2, 1fr); }
+    thead th, tbody td { padding: 10px 10px; }
+    .tscroll table { min-width: 720px; }
+    .tscroll th:first-child, .tscroll td:first-child { position: sticky; left: 0; z-index: 2; background: #fff; box-shadow: 1px 0 0 var(--hair); }
+    .tscroll thead th:first-child { background: #eaf3f0; }
+    .tscroll tbody tr:hover td:first-child { background: #f2faf8; }
+    .ltable th, .ltable td { padding: 7px 9px; font-size: 11px; }
+    .etable th, .etable td { padding: 6px 8px; font-size: 11px; }
+    .cbox { width: calc(100vw - 20px); }
+    .cb-body { padding: 12px 14px; font-size: 12px; }
+    .cb-foot { padding: 10px 14px; }
+    .cb-row { padding: 7px 10px; font-size: 11px; }
+    .card2 { padding: 14px 14px; }
+    .chead h2 { font-size: 20px; }
+    .phead h1 { font-size: 22px; }
+    .mdock { right: 12px; bottom: 12px; width: calc(100vw - 24px); }
+  }
+  @media (max-width: 560px) {
+    .kpis { gap: 10px; }
+    .kpi .v { font-size: 17px; }
+    .cacts { width: 100%; }
+    .cacts .btn { flex: 1 1 auto; justify-content: center; }
+    .qcard { flex-direction: column; align-items: stretch; gap: 8px; }
+    .qcard .btn { width: 100%; justify-content: center; }
+    .tfoot { font-size: 10.5px; }
+    .tb-note { display: none; }
+    #mailScrim .cb-foot .btn-sm { flex: 1 1 auto; justify-content: center; }
+  }
+  @media (max-width: 400px) {
+    .kpis, .mtiles { grid-template-columns: 1fr; }
+    .m-cust { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  @page { size: A4; margin: 10mm; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; }
+    body.pv-on { overflow: visible; }
+    body.pv-on .wrap, body.pv-on .scrim, body.pv-on .toast, body.pv-on .mdock { display: none !important; }
+    body.pv-on .pview { position: static; display: block; overflow: visible; background: #fff; }
+    body.pv-on .ptoolbar { display: none !important; }
+    body.pv-on .sheet-wrap { padding: 0; display: block; }
+    body.pv-on .sheet { width: auto; min-height: 277mm; border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- ==================== REGISTER ==================== -->
+<div id="listView">
+  <div class="phead">
+    <div>
+      <h1>Sales Receipts</h1>
+      <div class="sub">Capture customer money in, allocate it to invoices or hold it on account — with a full cashbook audit trail.</div>
+    </div>
+    <div class="pacts">
+      <button class="btn btn-ghost" id="btnExport"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+      <button class="btn btn-cta" id="btnNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create Sales Receipt</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi" style="--d:40ms"><div class="top"><span class="l">Received · 30 days</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span></div><div class="v" id="k30">K 0.00</div><span class="n ok" id="k30N">0 posted receipts</span></div>
+    <div class="kpi" style="--d:90ms"><div class="top"><span class="l">On account (unallocated)</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span></div><div class="v" id="kUn">K 0.00</div><span class="n warn" id="kUnN">0 receipts to allocate</span></div>
+    <div class="kpi" style="--d:140ms"><div class="top"><span class="l">Posted receipts</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span></div><div class="v" id="kPost">0</div><span class="n flat" id="kPostN">K 0.00 lifetime</span></div>
+    <div class="kpi" style="--d:190ms"><div class="top"><span class="l">Average receipt</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span></div><div class="v" id="kAvg">K 0.00</div><span class="n flat" id="kAvgN">per posted receipt</span></div>
+  </div>
+
+  <div class="layout">
+    <main class="col">
+      <section class="tcard">
+        <div class="toolbar">
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" type="text" id="q" placeholder="Customer, receipt №, invoice ref…"></div>
+          <select class="sel" id="sort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="high">Amount high → low</option><option value="low">Amount low → high</option></select>
+          <button class="btn btn-ghost" id="btnPeriod" title="Show / hide the date-period filter"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Period</button>
+          <span class="cnt" id="cnt">7 receipts</span>
+        </div>
+        <div class="pbar" id="periodBar" style="display:none">
+          <div class="fld" style="width:180px"><label>Period preset</label>
+            <select class="sel" id="pPreset">
+              <option value="">All time</option>
+              <option value="today">Today</option>
+              <option value="m0">This month</option>
+              <option value="m-1">Last month</option>
+              <option value="d30">Last 30 days</option>
+              <option value="custom">Custom range</option>
+            </select>
+          </div>
+          <div class="fld" style="width:160px"><label>From (receipt date)</label><input class="in" type="date" id="pFrom" disabled></div>
+          <div class="fld" style="width:160px"><label>To (receipt date)</label><input class="in" type="date" id="pTo" disabled></div>
+          <button class="btn btn-ghost btn-sm" id="pClear"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Clear</button>
+          <span class="cnt" id="pLabel">No period filter</span>
+        </div>
+        <div class="stiles" id="stiles">
+          <button class="stile on" data-st=""><span class="sic all"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span><span><span class="sl">Total</span><span class="sv" data-c="">0</span></span></button>
+          <button class="stile" data-st="draft"><span class="sic dr"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span><span><span class="sl">Draft</span><span class="sv" data-c="draft">0</span></span></button>
+          <button class="stile" data-st="posted"><span class="sic po"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span><span><span class="sl">Posted</span><span class="sv" data-c="posted">0</span></span></button>
+          <button class="stile" data-st="onacc"><span class="sic oa"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span><span><span class="sl">On account</span><span class="sv" data-c="onacc">0</span></span></button>
+          <button class="stile" data-st="void"><span class="sic vo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></svg></span><span><span class="sl">Voided</span><span class="sv" data-c="void">0</span></span></button>
+        </div>
+        <div class="tscroll">
+        <table>
+          <thead><tr><th>Receipt №</th><th>Customer</th><th>Date</th><th>Method</th><th class="r">Allocated (K)</th><th class="r">Total (K)</th><th>Status</th><th class="r">Actions</th></tr></thead>
+          <tbody id="rBody">
+            <tr class="rrow" data-id="r1" data-status="draft" data-total="20000" data-date="2026-10-03" data-search="chisomo phiri rc-2026-0096"><td><span class="rno" data-act="view">RC-2026-0096</span></td><td><span class="cust"><span class="av">CP</span><span class="nm">Chisomo Phiri</span></span></td><td style="white-space:nowrap">03 Oct 2026</td><td><span class="mth mobile"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Mobile money</span></td><td class="tot dim">0.00</td><td class="tot">20,000.00</td><td><span class="pill dr"><i></i>Draft</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="rrow" data-id="r2" data-status="posted" data-total="31745" data-date="2026-10-02" data-search="joseph kachale rc-2026-0095 inv-2026-0139"><td><span class="rno" data-act="view">RC-2026-0095</span></td><td><span class="cust"><span class="av">JK</span><span class="nm">Joseph Kachale</span></span></td><td style="white-space:nowrap">02 Oct 2026</td><td><span class="mth mobile"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Mobile money</span></td><td class="tot alloc">31,745.00</td><td class="tot">31,745.00</td><td><span class="pill po"><i></i>Posted</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="rrow" data-id="r3" data-status="posted" data-total="50000" data-date="2026-09-30" data-search="mary chilumpha rc-2026-0091 inv-2026-0140 email failed"><td><span class="rno" data-act="view">RC-2026-0091</span></td><td><span class="cust"><span class="av">MC</span><span class="nm">Mary Chilumpha</span></span></td><td style="white-space:nowrap">30 Sep 2026</td><td><span class="mth bank"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 10v11M19 10v11M12 3l9 7H3z"/></svg>Bank transfer</span></td><td class="tot alloc">50,000.00</td><td class="tot">50,000.00</td><td><span class="pill po"><i></i>Posted</span><span class="xc exp">Email failed</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="rrow" data-id="r4" data-status="posted" data-total="75000" data-date="2026-09-29" data-search="vera mtombosola rc-2026-0090"><td><span class="rno" data-act="view">RC-2026-0090</span></td><td><span class="cust"><span class="av">VM</span><span class="nm">Vera Mtombosola</span></span></td><td style="white-space:nowrap">29 Sep 2026</td><td><span class="mth bank"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 10v11M19 10v11M12 3l9 7H3z"/></svg>Bank transfer</span></td><td class="tot dim">0.00</td><td class="tot">75,000.00</td><td><span class="pill po"><i></i>Posted</span><span class="xc soon">On account</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="rrow" data-id="r5" data-status="posted" data-total="30000" data-date="2026-09-22" data-search="joseph kachale rc-2026-0084 inv-2026-0139"><td><span class="rno" data-act="view">RC-2026-0084</span></td><td><span class="cust"><span class="av">JK</span><span class="nm">Joseph Kachale</span></span></td><td style="white-space:nowrap">22 Sep 2026</td><td><span class="mth bank"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 10v11M19 10v11M12 3l9 7H3z"/></svg>Bank transfer</span></td><td class="tot alloc">30,000.00</td><td class="tot">30,000.00</td><td><span class="pill po"><i></i>Posted</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="rrow" data-id="r6" data-status="posted" data-total="10000" data-date="2026-09-05" data-search="limbani nyirenda rc-2026-0078 inv-2026-0137"><td><span class="rno" data-act="view">RC-2026-0078</span></td><td><span class="cust"><span class="av">LN</span><span class="nm">Limbani Nyirenda</span></span></td><td style="white-space:nowrap">05 Sep 2026</td><td><span class="mth cash"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>Cash</span></td><td class="tot alloc">10,000.00</td><td class="tot">10,000.00</td><td><span class="pill po"><i></i>Posted</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="rrow" data-id="r7" data-status="void" data-total="20970" data-date="2026-08-28" data-search="elvis seyama rc-2026-0074 inv-2026-0138"><td><span class="rno" data-act="view">RC-2026-0074</span></td><td><span class="cust"><span class="av">ES</span><span class="nm">Elvis Seyama</span></span></td><td style="white-space:nowrap">28 Aug 2026</td><td><span class="mth cheque"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 14h4"/></svg>Cheque</span></td><td class="tot dim">0.00</td><td class="tot">20,970.00</td><td><span class="pill vo"><i></i>Voided</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr id="noRes" style="display:none"><td colspan="8"><div class="empty"><div class="halo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></div><div class="t">No receipts match</div><div class="s">Adjust the search, period or status filter, or capture a new receipt.</div></div></td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="tfoot"><span id="showing">Showing 7 of 7 receipts</span><span>Click any row to open the receipt · allocations & method details inside</span></div>
+      </section>
+    </main>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Views</span><span class="rule"></span></div>
+        <div class="rbody" id="views">
+          <button class="vitem on" data-view="all"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>All Receipts<span class="vc" data-v="all">7</span></button>
+          <button class="vitem" data-view="draft"><span class="vic"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span>Drafts<span class="vc" data-v="draft">1</span></button>
+          <button class="vitem" data-view="posted"><span class="vic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>Posted<span class="vc" data-v="posted">5</span></button>
+          <button class="vitem" data-view="onacc"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>On account<span class="vc" data-v="onacc">1</span></button>
+          <button class="vitem" data-view="void"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></svg></span>Voided<span class="vc" data-v="void">1</span></button>
+        </div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric warn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span><span class="rt">On account</span><span class="rule"></span><button class="rlink" id="onaccAll">View all →</button></div>
+        <div class="rbody" id="onacc"></div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Reports</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" data-rep="1"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Daily Summary</button>
+          <button class="vitem" data-rep="2"><span class="vic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Cashbook</button>
+          <button class="vitem" data-rep="3"><span class="vic"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg></span>Method Mix</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- ==================== CREATE / EDIT RECEIPT ==================== -->
+<div id="createView">
+  <div class="chead">
+    <div><h2 id="cvTitle">Create Sales Receipt</h2></div>
+    <div class="cacts">
+      <button class="btn btn-ghost" id="crCancel"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Cancel</button>
+      <button class="btn btn-ghost" id="crFromDoc"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>From document</button>
+      <button class="btn btn-ghost" id="crDraft"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>Save Draft</button>
+      <button class="btn btn-cta" id="crPost" disabled title="Requires customer, amount and method details"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Post Receipt</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="fs-t">Received From</span><span class="fs-rule"></span></div>
+        <div class="g4" style="margin-bottom:12px">
+          <div class="fld"><label>Customer type</label>
+            <select class="sel" id="crMode"><option value="existing">Existing customer</option><option value="walkin">Walk-in payer</option></select>
+          </div>
+          <div class="fld"><label>Receipt date <b>*</b></label><input class="in" type="date" id="crDate"></div>
+          <div class="fld"><label>Receipt №</label><input class="in auto" id="crNo" readonly placeholder="Auto-assigned on save"></div>
+          <div class="fld"><label>Source document</label><input class="in" id="crSource" placeholder="INV-/QT-/SO-… (optional)"></div>
+        </div>
+        <div class="fld" id="crSearchWrap" style="margin-bottom:12px">
+          <label>Customer <b>*</b></label>
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" id="crSearch" list="custList" placeholder="Search customers… (name or code)" style="padding-left:36px"></div>
+          <datalist id="custList"></datalist>
+        </div>
+        <div class="fld" id="crNameWrap" style="margin-bottom:12px; display:none">
+          <label>Payer name <b>*</b></label>
+          <input class="in" id="crName" placeholder="e.g. Jane Mwale">
+        </div>
+        <div class="g3">
+          <div class="fld"><label>Contact person</label><input class="in" id="crContact" placeholder="—"></div>
+          <div class="fld"><label>Email</label><input class="in" id="crEmail" type="email" placeholder="name@company.com"></div>
+          <div class="fld"><label>Phone</label><input class="in" id="crPhone" placeholder="+265 …"></div>
+        </div>
+        <div class="savenote" id="crSaveNote">Walk-in payer captured — these details will be saved to the customer registry for future use.</div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span><span class="fs-t">Payment</span><span class="fs-rule"></span></div>
+        <div class="g3" style="margin-bottom:12px">
+          <div class="fld"><label>Amount received (K) <b>*</b></label><input class="in num big" type="number" min="0" step="0.01" id="crAmount" style="text-align:right"></div>
+          <div class="fld"><label>Method</label>
+            <select class="sel" id="crMethod">
+              <option>Bank transfer</option>
+              <option>Mobile money</option>
+              <option>Cash</option>
+              <option>Card</option>
+              <option>Cheque</option>
+            </select>
+          </div>
+          <div class="fld"><label>Collected by</label><input class="in" id="crBy" value="Elvis Seyama"></div>
+        </div>
+        <div class="vsec" id="crDetailsTitle">Method details — Bank transfer</div>
+        <div class="g2" id="crDetails"></div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span><span class="fs-t">Allocate to invoices</span><span class="fs-rule"></span>
+          <button class="btn-add" id="crAuto" type="button" style="margin-left:auto"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Auto-allocate oldest first</button>
+        </div>
+        <div id="crAllocWrap">
+          <div class="tscroll-sm">
+          <table class="etable"><thead><tr><th>Open invoice</th><th class="r" style="width:120px">Balance (K)</th><th class="r" style="width:140px">Allocate (K)</th></tr></thead><tbody id="crAllocBody"></tbody></table>
+          </div>
+          <div class="sumrow"><span>On account (unallocated) after posting</span><b id="crUnalloc" class="warn">K 0.00</b></div>
+          <div class="sumnote" id="crAllocHint">Select a customer to list their open invoices. Anything left unallocated sits on account as an advance.</div>
+        </div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M16 13H8M16 17H8"/></svg></span><span class="fs-t">Notes</span><span class="fs-rule"></span></div>
+        <div class="fld"><label>Receipt notes</label><textarea class="in" id="crNotes" placeholder="Printed on the official receipt…"></textarea></div>
+      </section>
+    </div>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Summary</span><span class="rule"></span></div>
+        <div class="rbody" style="padding:12px 14px">
+          <div class="sumrow"><span>Customer</span><b id="rsCust">—</b></div>
+          <div class="sumrow"><span>Source document</span><b id="rsSource">—</b></div>
+          <div class="sumrow"><span>Receipt date</span><b id="rsDate">—</b></div>
+          <div class="sumrow"><span>Method</span><b id="rsMethod">—</b></div>
+          <div class="sumrow"><span>Allocated</span><b id="rsAlloc">0.00</b></div>
+          <div class="sumrow"><span>On account</span><b id="rsUnalloc" class="warn">0.00</b></div>
+          <div class="sumrow"><span>Post check</span><b id="rsGate" class="gate-no">—</b></div>
+          <div class="grandtile"><span class="l">Receipt Total</span><span class="v" id="rsGrand">K 0.00</span></div>
+          <div class="sumnote" id="rsNote">Capture the amount to begin.</div>
+        </div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Quick nav</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" id="qnavList"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>All Receipts</button>
+          <button class="vitem" id="qnavInv"><span class="vic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span>Invoices</button>
+          <button class="vitem" id="qnavCash"><span class="vic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Cashbook</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- ============ VIEW RECEIPT MODAL ============ -->
+<div class="scrim" id="viewScrim">
+  <div class="mbox" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Sales Receipt</span><span class="m-sub" id="vwRef">RC-2026-0000</span></div>
+      <span class="m-cust" id="vwCustH"></span>
+      <span class="pill" id="vwPill"></span>
+      <button class="m-close" data-close="viewScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="vwMeta"></div>
+    <div class="m-body">
+      <div class="mtiles" id="vwTiles"></div>
+      <div class="tabbar" id="vwTabs">
+        <button class="tab on" data-tab="ov">Overview</button>
+        <button class="tab" data-tab="al">Allocations</button>
+      </div>
+      <div class="tabpane on" id="pane-ov">
+        <div class="mrow"><span class="l">Received from</span><span class="v" id="vwCust">—</span></div>
+        <div class="mrow"><span class="l">Contact / phone</span><span class="v" id="vwContact">—</span></div>
+        <div class="mrow"><span class="l">Email</span><span class="v mono" id="vwEmail">—</span></div>
+        <div class="mrow"><span class="l">Receipt date</span><span class="v" id="vwDate">—</span></div>
+        <div class="mrow"><span class="l">Source document</span><span class="v mono" id="vwSource">—</span></div>
+        <div class="mrow"><span class="l">Collected by</span><span class="v" id="vwBy">—</span></div>
+        <div id="vwMethodRows"></div>
+        <div class="vsec" style="margin-top:14px">Notes</div>
+        <div style="font-size:12px;font-weight:500;color:var(--sub);line-height:1.65" id="vwNotes">—</div>
+      </div>
+      <div class="tabpane" id="pane-al">
+        <table class="ltable"><thead><tr><th>Invoice №</th><th class="r">Allocated (K)</th></tr></thead><tbody id="vwAllocs"></tbody></table>
+        <div class="mrow" style="margin-top:10px"><span class="l">On account (unallocated)</span><span class="v" id="vwUnalloc">0.00</span></div>
+        <div class="mrow"><span class="l">Total received</span><span class="v" id="vwTotal">0.00</span></div>
+      </div>
+    </div>
+    <div class="m-foot" id="vwFoot"></div>
+  </div>
+</div>
+
+<!-- ============ EMAIL DISPATCH PROGRESS MODAL ============ -->
+<div class="scrim cf" id="mailScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head">
+      <span class="cb-ic primary"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7L22 7"/></svg></span>
+      <b id="mpHeadTitle">Email dispatch</b>
+      <button class="cb-x" id="mpMin" aria-label="Minimize — continue in background" title="Minimize — send in background"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button class="cb-x" data-close="mailScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="cb-body" id="mpBody"></div>
+    <div class="cb-foot" id="mpFoot"></div>
+  </div>
+</div>
+
+<!-- ============ PICK SOURCE DOCUMENT MODAL ============ -->
+<div class="scrim" id="docScrim">
+  <div class="mbox narrow" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Create from document</span><span class="m-sub">invoices · quotations · sales orders</span></div>
+      <button class="m-close" data-close="docScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-body">
+      <div class="searchwrap" style="margin-bottom:10px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" id="docSearch" placeholder="Search documents… (number, customer)" style="padding-left:36px"></div>
+      <div class="fchips" id="docFilters">
+        <button class="fchip on" data-ft="">All</button>
+        <button class="fchip" data-ft="Invoice">Invoices</button>
+        <button class="fchip" data-ft="Quotation">Quotations</button>
+        <button class="fchip" data-ft="Sales order">Sales orders</button>
+      </div>
+      <div id="docList"></div>
+    </div>
+    <div class="m-foot">
+      <span class="mnote">Invoices load the open balance + allocation · quotations & orders load a 30% deposit on account.</span>
+      <button class="btn btn-close btn-sm" data-close="docScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM / SUCCESS ============ -->
+<div class="scrim cf" id="cfScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head"><span class="cb-ic" id="cbIc"></span><b id="cbTitle">Confirm</b><button class="cb-x" data-close="cfScrim" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="cb-body" id="cbMsg"></div>
+    <div class="cb-foot"><button class="btn btn-close btn-sm" data-close="cfScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button><button class="btn btn-sm" id="cbOk">Confirm</button></div>
+  </div>
+</div>
+<div class="scrim cf" id="okScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head"><span class="cb-ic ok"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span><b id="okTitle">Success</b><button class="cb-x" data-close="okScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="cb-body" id="okBody"></div>
+    <div class="cb-foot">
+      <button class="btn btn-close btn-sm" data-close="okScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+      <button class="btn btn-ghost btn-sm" id="okView"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View receipt</button>
+      <button class="btn btn-cta btn-sm" id="okPrint" style="display:none"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print / PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ IN-APP FALLBACK PREVIEW ============ -->
+<div class="pview" id="printView" aria-hidden="true">
+  <div class="ptoolbar">
+    <button class="tb-back" id="pvBack"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+    <span class="tb-title">Print preview — Official Receipt <span id="pvRef">RC-2026-0000</span></span>
+    <span class="tb-spacer"></span>
+    <span class="tb-note">Popups blocked — in-app fallback · Ctrl+P prints</span>
+    <button class="tb-btn" id="pvPdf"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Save as PDF</button>
+    <button class="tb-btn primary" id="pvPrint"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>
+  </div>
+  <div class="sheet-wrap"><div class="sheet" id="oSheet"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var TODAY_ISO = '2026-10-03';
+  var TODAY = new Date(TODAY_ISO + 'T00:00:00');
+  var EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  function $(id) { return document.getElementById(id); }
+  var toastEl = $('toast'), toastT;
+  function toast(m) { toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 3400); }
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(s) { return Number(String(s == null ? 0 : s).replace(/,/g, '')) || 0; }
+  function dfmt(iso) { if (!iso) return '—'; var d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  function addDaysISO(iso, d) { var x = new Date(iso + 'T00:00:00'); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function localISO(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+  function initials(name) { return name.trim().split(/\s+/).map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase(); }
+  function emailOk(v) { return EMAIL_RE.test(String(v || '').trim()); }
+  var ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  var TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  function w3(n) { var s = ''; if (n >= 100) { s += ONES[Math.floor(n / 100)] + ' Hundred'; n %= 100; if (n) s += ' '; } if (n >= 20) { s += TENS[Math.floor(n / 10)]; if (n % 10) s += '-' + ONES[n % 10]; } else if (n > 0) s += ONES[n]; return s; }
+  function inWords(n) { n = Math.floor(Math.abs(n)); if (!n) return 'Zero'; var out = [], sc = [[1e6, 'Million'], [1e3, 'Thousand']]; sc.forEach(function (s) { var v = Math.floor(n / s[0]); if (v) { out.push(w3(v) + ' ' + s[1]); n %= s[0]; } }); if (n) out.push(w3(n)); return out.join(' '); }
+  var PILL = { draft: ['dr', 'Draft'], posted: ['po', 'Posted'], void: ['vo', 'Voided'] };
+  var MTHCLS = { 'Bank transfer': 'bank', 'Mobile money': 'mobile', 'Cash': 'cash', 'Card': 'card', 'Cheque': 'cheque' };
+  var MTHICON = {
+    'Bank transfer': '<svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 10v11M19 10v11M12 3l9 7H3z"/></svg>',
+    'Mobile money': '<svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+    'Cash': '<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
+    'Card': '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
+    'Cheque': '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 14h4"/></svg>'
+  };
+  function mthChip(m) { return '<span class="mth ' + (MTHCLS[m] || 'bank') + '">' + (MTHICON[m] || '') + m + '</span>'; }
+  var DTYCLS = { 'Invoice': 'inv', 'Quotation': 'qt', 'Sales order': 'so' };
+  var SVG_VIEW = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var SVG_PEN = '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>';
+  var SVG_SEND = '<svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>';
+  var SVG_PRINT = '<svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+  var SVG_POST = '<svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>';
+  var SVG_USER = '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  var SVG_MAIL = '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7L22 7"/></svg>';
+  var SVG_CHECK = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>';
+  var SVG_ALERT = '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>';
+  var SVG_EXPAND = '<svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>';
+  var SVG_X = '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+  var CLOSE_BTN = '<button class="btn btn-close btn-sm" data-close="viewScrim">' + SVG_X + 'Close</button>';
+
+  var CUSTOMERS = [
+    { code: 'CUS-0001', name: 'Chisomo Phiri', email: 'chisomo.phiri@customer.mw', phone: '+265 992 222 118' },
+    { code: 'CUS-0002', name: 'Vera Mtombosola', email: 'vera.mtombosola@customer.mw', phone: '+265 991 111 001' },
+    { code: 'CUS-0003', name: 'Joseph Kachale', email: 'joseph.kachale@customer.mw', phone: '+265 996 666 214' },
+    { code: 'CUS-0004', name: 'Limbani Nyirenda', email: 'limbani.nyirenda@customer.mw', phone: '+265 993 333 097' },
+    { code: 'CUS-0005', name: 'Mary Chilumpha', email: 'mary.chilumpha@customer.mw', phone: '+265 995 555 730' },
+    { code: 'CUS-0006', name: 'Elvis Seyama', email: 'elvis.seyama@customer.mw', phone: '+265 994 444 852' }
+  ];
+  var OPEN_INV = {
+    'Chisomo Phiri': [{ ref: 'INV-2026-0142', bal: 46600 }],
+    'Vera Mtombosola': [{ ref: 'INV-2026-0141', bal: 125820 }],
+    'Mary Chilumpha': [{ ref: 'INV-2026-0140', bal: 31550 }],
+    'Elvis Seyama': [{ ref: 'INV-2026-0138', bal: 20970 }],
+    'Limbani Nyirenda': [{ ref: 'INV-2026-0137', bal: 22620 }],
+    'Joseph Kachale': [],
+    'Jane Mwale': []
+  };
+  var SOURCE_DOCS = [
+    { type: 'Invoice', ref: 'INV-2026-0141', cust: 'Vera Mtombosola', amount: 125820, label: 'Open balance', date: '2026-10-14' },
+    { type: 'Invoice', ref: 'INV-2026-0140', cust: 'Mary Chilumpha', amount: 31550, label: 'Open balance', date: '2026-10-10' },
+    { type: 'Invoice', ref: 'INV-2026-0138', cust: 'Elvis Seyama', amount: 20970, label: 'Open balance', date: '2026-09-15' },
+    { type: 'Invoice', ref: 'INV-2026-0137', cust: 'Limbani Nyirenda', amount: 22620, label: 'Open balance', date: '2026-09-09' },
+    { type: 'Quotation', ref: 'QT-2026-0015', cust: 'Chisomo Phiri', amount: 46600, label: 'Accepted total', date: '2026-10-16' },
+    { type: 'Quotation', ref: 'QT-2026-0013', cust: 'Mary Chilumpha', amount: 98442.50, label: 'Accepted total', date: '2026-10-10' },
+    { type: 'Sales order', ref: 'SO-2026-0019', cust: 'Mary Chilumpha', amount: 84500, label: 'Order total', date: '2026-10-05' },
+    { type: 'Sales order', ref: 'SO-2026-0016', cust: 'Elvis Seyama', amount: 21400, label: 'Order total', date: '2026-09-30' }
+  ];
+  var MFIELDS = {
+    'Bank transfer': [
+      { k: 'bank', l: 'Bank', t: 'sel', opts: ['National Bank of Malawi', 'Standard Bank', 'Ecobank Malawi', 'FDH Bank'] },
+      { k: 'payer', l: 'Payer account name', t: 'in' },
+      { k: 'txref', l: 'Transaction reference', t: 'in' }
+    ],
+    'Mobile money': [
+      { k: 'provider', l: 'Service provider', t: 'sel', opts: ['Airtel Money', 'TNM Mpamba', 'Mo630 Wallet'] },
+      { k: 'phone', l: 'Phone number', t: 'in', req: true },
+      { k: 'accname', l: 'Account name', t: 'in' },
+      { k: 'txref', l: 'Transaction reference', t: 'in' }
+    ],
+    'Cash': [
+      { k: 'teller', l: 'Received by (teller)', t: 'in' },
+      { k: 'till', l: 'Cash drawer / till', t: 'in' }
+    ],
+    'Card': [
+      { k: 'card', l: 'Card type', t: 'sel', opts: ['Visa', 'Mastercard'] },
+      { k: 'last4', l: 'Card last 4 digits', t: 'in' },
+      { k: 'cardname', l: 'Name on card', t: 'in' },
+      { k: 'issbank', l: 'Issuing bank', t: 'in' }
+    ],
+    'Cheque': [
+      { k: 'bank', l: 'Drawn on bank', t: 'in', req: true },
+      { k: 'chq', l: 'Cheque number', t: 'in', req: true },
+      { k: 'chqdate', l: 'Cheque date', t: 'date' }
+    ]
+  };
+
+  var custSeq = 7, nextRC = 97, rowSeq = 8;
+  var RC = {
+    r1: { status: 'draft', cust: 'Chisomo Phiri', contact: 'Chisomo Phiri', email: 'chisomo.phiri@customer.mw', phone: '+265 992 222 118', date: '2026-10-03', method: 'Mobile money', details: { provider: 'Airtel Money', phone: '+265 992 222 118', accname: 'Chisomo Phiri', txref: 'AM-990211' }, amount: 20000, allocs: [], by: 'Elvis Seyama', source: '', notes: 'Advance for October order — allocate once invoice is posted.' },
+    r2: { status: 'posted', cust: 'Joseph Kachale', contact: 'Joseph Kachale', email: 'joseph.kachale@customer.mw', phone: '+265 996 666 214', date: '2026-10-02', method: 'Mobile money', details: { provider: 'Airtel Money', phone: '+265 996 666 214', accname: 'Joseph Kachale', txref: 'AM-771204' }, amount: 31745, allocs: [{ inv: 'INV-2026-0139', amount: 31745 }], by: 'Elvis Seyama', source: 'INV-2026-0139', notes: 'Final instalment — settles invoice in full.', emailStatus: 'sent', emailed: 'joseph.kachale@customer.mw', emailedAt: '2026-10-02' },
+    r3: { status: 'posted', cust: 'Mary Chilumpha', contact: 'Mary Chilumpha', email: 'mary.chilumpha@customer.mw', phone: '+265 995 555 730', date: '2026-09-30', method: 'Bank transfer', details: { bank: 'National Bank of Malawi', payer: 'Mary Chilumpha', txref: 'NBM-88213' }, amount: 50000, allocs: [{ inv: 'INV-2026-0140', amount: 50000 }], by: 'Elvis Seyama', source: 'INV-2026-0140', notes: 'Part settlement — balance promised by 10 Oct.', emailStatus: 'failed', failReason: 'SMTP 550 — mailbox unavailable', emailed: 'mary.chilumpha@customer.mw', emailedAt: '2026-09-30' },
+    /* demo: first dispatch attempt to Vera is rejected by the recipient mailbox (552) so the failure path can be exercised; "Try again" then succeeds */
+    r4: { status: 'posted', cust: 'Vera Mtombosola', contact: 'Vera Mtombosola', email: 'vera.mtombosola@customer.mw', phone: '+265 991 111 001', date: '2026-09-29', method: 'Bank transfer', details: { bank: 'Standard Bank', payer: 'Vera Mtombosola', txref: 'SB-51777' }, amount: 75000, allocs: [], by: 'Elvis Seyama', source: '', notes: 'On-account advance against the ERP licence renewal.', simFail: true },
+    r5: { status: 'posted', cust: 'Joseph Kachale', contact: 'Joseph Kachale', email: 'joseph.kachale@customer.mw', phone: '+265 996 666 214', date: '2026-09-22', method: 'Bank transfer', details: { bank: 'Standard Bank', payer: 'Joseph Kachale', txref: 'SB-40118' }, amount: 30000, allocs: [{ inv: 'INV-2026-0139', amount: 30000 }], by: 'Elvis Seyama', source: 'INV-2026-0139', notes: 'First instalment.' },
+    r6: { status: 'posted', cust: 'Limbani Nyirenda', contact: 'Limbani Nyirenda', email: 'limbani.nyirenda@customer.mw', phone: '+265 993 333 097', date: '2026-09-05', method: 'Cash', details: { teller: 'Elvis Seyama', till: 'Till 02 — Mzuzu' }, amount: 10000, allocs: [{ inv: 'INV-2026-0137', amount: 10000 }], by: 'Elvis Seyama', source: 'INV-2026-0137', notes: 'Cash part payment at Mzuzu office.' },
+    r7: { status: 'void', cust: 'Elvis Seyama', contact: 'Elvis Seyama', email: 'elvis.seyama@customer.mw', phone: '+265 994 444 852', date: '2026-08-28', method: 'Cheque', details: { bank: 'National Bank of Malawi', chq: '000452', chqdate: '2026-08-28' }, amount: 20970, allocs: [], by: 'Elvis Seyama', source: 'INV-2026-0138', notes: 'Cheque dishonoured — receipt voided, payment plan agreed instead.', voidReason: 'Cheque dishonoured' }
+  };
+
+  var state = { st: '', view: 'all', q: '', sort: 'new' };
+  var period = { from: null, to: null };
+  var docFilter = { type: '', term: '' };
+  var viewingId = null, okId = null, cbFn = null, editId = null, matchedCode = null;
+  var mail = { id: null, ref: '', running: false, done: false, ok: false, minimized: false, timers: [], interval: null, pct: 0, target: 0, status: '' };
+
+  function getRows() { return [].slice.call(document.querySelectorAll('#rBody tr.rrow')); }
+  function rowOf(id) { return document.querySelector('#rBody tr[data-id="' + id + '"]'); }
+  function allocOf(rc) { return rc.allocs.reduce(function (s, a) { return s + a.amount; }, 0); }
+  function unallocOf(rc) { return Number((rc.amount - allocOf(rc)).toFixed(2)); }
+  function isOnAcc(rc) { return rc.status === 'posted' && unallocOf(rc) > 0; }
+  function closeAllScrims() { document.querySelectorAll('.scrim.on').forEach(function (s) { s.classList.remove('on'); }); cbFn = null; }
+  function showSuccess(o) { okId = o.id; $('okTitle').textContent = o.title; $('okBody').innerHTML = o.body; $('okPrint').style.display = o.print ? '' : 'none'; $('okScrim').classList.add('on'); }
+  $('okView').addEventListener('click', function () { $('okScrim').classList.remove('on'); openView(okId); });
+  $('okPrint').addEventListener('click', function () { $('okScrim').classList.remove('on'); openPrintTab(okId); });
+
+  function buildActions(tr) {
+    tr.querySelector('td.r').innerHTML = '<button class="ib" data-act="view" title="Open receipt workspace">' + SVG_VIEW + '</button>';
+  }
+  function rcRowHTML(o) {
+    var rc = RC[o.id], al = allocOf(rc), un = unallocOf(rc);
+    var oa = isOnAcc(rc) ? '<span class="xc soon">On account</span>' : '';
+    var ef = rc.emailStatus === 'failed' ? '<span class="xc exp">Email failed</span>' : '';
+    return '<tr class="rrow" data-id="' + o.id + '" data-status="' + o.status + '" data-total="' + o.total + '" data-date="' + o.date + '" data-search="' + o.search + '">' +
+      '<td><span class="rno" data-act="view">' + o.ref + '</span></td>' +
+      '<td><span class="cust"><span class="av">' + initials(o.name) + '</span><span class="nm">' + o.name + '</span></span></td>' +
+      '<td style="white-space:nowrap">' + dfmt(o.date) + '</td>' +
+      '<td>' + mthChip(rc.method) + '</td>' +
+      '<td class="tot ' + (al > 0 ? 'alloc' : 'dim') + '">' + fmt(al) + (un > 0 && rc.status === 'posted' ? '<span class="xc soon">+' + fmt(un) + ' on a/c</span>' : '') + '</td>' +
+      '<td class="tot">' + fmt(o.total) + '</td>' +
+      '<td><span class="pill ' + PILL[o.status][0] + '"><i></i>' + PILL[o.status][1] + '</span>' + oa + ef + '</td>' +
+      '<td class="r" style="white-space:nowrap"></td></tr>';
+  }
+  function replaceRow(id, o) { var tr = rowOf(id); tr.outerHTML = rcRowHTML(o); buildActions(rowOf(id)); }
+  function insertRow(o) { var tmp = document.createElement('tbody'); tmp.innerHTML = rcRowHTML(o); var tr = tmp.firstChild; $('rBody').insertBefore(tr, $('noRes')); buildActions(tr); }
+  function rowPayload(id, status) {
+    var tr = rowOf(id), rc = RC[id];
+    return { id: id, ref: tr.querySelector('.rno').textContent, name: tr.querySelector('.nm').textContent, date: rc.date, total: Number(tr.dataset.total), status: status, search: tr.dataset.search };
+  }
+
+  /* ---------- register ---------- */
+  function passes(tr) {
+    var rc = RC[tr.dataset.id];
+    if (state.st === 'onacc') { if (!isOnAcc(rc)) return false; }
+    else if (state.st && tr.dataset.status !== state.st) return false;
+    if (state.view === 'draft' && tr.dataset.status !== 'draft') return false;
+    if (state.view === 'posted' && tr.dataset.status !== 'posted') return false;
+    if (state.view === 'onacc' && !isOnAcc(rc)) return false;
+    if (state.view === 'void' && tr.dataset.status !== 'void') return false;
+    if (period.from && tr.dataset.date < period.from) return false;
+    if (period.to && tr.dataset.date > period.to) return false;
+    if (state.q && tr.dataset.search.toLowerCase().indexOf(state.q) === -1) return false;
+    return true;
+  }
+  function sortRows(list) {
+    var k = state.sort;
+    return list.sort(function (a, b) {
+      if (k === 'new') return a.dataset.date < b.dataset.date ? 1 : -1;
+      if (k === 'old') return a.dataset.date > b.dataset.date ? 1 : -1;
+      if (k === 'high') return Number(b.dataset.total) - Number(a.dataset.total);
+      if (k === 'low') return Number(a.dataset.total) - Number(b.dataset.total);
+      return 0;
+    });
+  }
+  function apply() {
+    var body = $('rBody'), vis = sortRows(getRows().filter(passes));
+    getRows().forEach(function (tr) { tr.style.display = 'none'; });
+    vis.forEach(function (tr) { body.insertBefore(tr, $('noRes')); tr.style.display = ''; });
+    $('noRes').style.display = vis.length ? 'none' : '';
+    $('cnt').textContent = vis.length + ' receipt' + (vis.length === 1 ? '' : 's');
+    $('showing').textContent = 'Showing ' + vis.length + ' of ' + getRows().length + ' receipts';
+  }
+  function presetRange(v) {
+    var y = TODAY.getFullYear(), m = TODAY.getMonth();
+    if (v === 'today') return [TODAY_ISO, TODAY_ISO];
+    if (v === 'm0') return [localISO(y, m, 1), localISO(y, m + 1, 0)];
+    if (v === 'm-1') return [localISO(y, m - 1, 1), localISO(y, m, 0)];
+    if (v === 'd30') return [addDaysISO(TODAY_ISO, -29), TODAY_ISO];
+    return null;
+  }
+  function updatePeriodUI() {
+    var active = !!period.from;
+    $('btnPeriod').classList.toggle('period-on', active || $('periodBar').style.display !== 'none');
+    $('pLabel').textContent = active ? dfmt(period.from) + ' → ' + dfmt(period.to) : 'No period filter';
+  }
+  function setPeriod(from, to) { period.from = from; period.to = to; updatePeriodUI(); apply(); }
+  $('btnPeriod').addEventListener('click', function () {
+    var bar = $('periodBar');
+    bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+    updatePeriodUI();
+  });
+  $('pPreset').addEventListener('change', function () {
+    var v = this.value;
+    if (v === 'custom') { $('pFrom').disabled = false; $('pTo').disabled = false; setPeriod($('pFrom').value || null, $('pTo').value || null); return; }
+    $('pFrom').disabled = true; $('pTo').disabled = true;
+    var r = presetRange(v);
+    if (!r) { $('pFrom').value = ''; $('pTo').value = ''; setPeriod(null, null); return; }
+    $('pFrom').value = r[0]; $('pTo').value = r[1];
+    setPeriod(r[0], r[1]);
+  });
+  ['pFrom', 'pTo'].forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      var f = $('pFrom').value, t = $('pTo').value;
+      if (f && t && f > t) { this.classList.add('bad'); toast('Period "from" must be on/before "to"'); return; }
+      $('pFrom').classList.remove('bad'); $('pTo').classList.remove('bad');
+      setPeriod(f || null, t || null);
+    });
+  });
+  $('pClear').addEventListener('click', function () {
+    $('pPreset').value = ''; $('pFrom').value = ''; $('pTo').value = '';
+    $('pFrom').disabled = true; $('pTo').disabled = true;
+    setPeriod(null, null);
+  });
+
+  function refresh() {
+    var rows = getRows(), c = { draft: 0, posted: 0, void: 0 }, onaccN = 0;
+    var d30 = 0, d30N = 0, unV = 0, lifeV = 0, postN = 0, onaccList = [];
+    var cutoff = addDaysISO(TODAY_ISO, -29);
+    rows.forEach(function (tr) {
+      var rc = RC[tr.dataset.id], st = tr.dataset.status;
+      c[st]++;
+      if (st === 'posted') {
+        postN++; lifeV += rc.amount;
+        if (tr.dataset.date >= cutoff) { d30 += rc.amount; d30N++; }
+        var un = unallocOf(rc);
+        if (un > 0) { onaccN++; unV += un; onaccList.push({ id: tr.dataset.id, ref: tr.querySelector('.rno').textContent, cust: rc.cust, un: un, date: rc.date }); }
+      }
+    });
+    document.querySelectorAll('.sv').forEach(function (el) {
+      var k = el.dataset.c;
+      el.textContent = k === '' ? rows.length : k === 'onacc' ? onaccN : c[k];
+    });
+    document.querySelectorAll('.vc').forEach(function (el) {
+      var v = el.dataset.v;
+      el.textContent = v === 'all' ? rows.length : v === 'onacc' ? onaccN : c[v];
+    });
+    $('k30').textContent = 'K ' + fmt(d30); $('k30N').textContent = d30N + ' posted receipt' + (d30N === 1 ? '' : 's') + ' · last 30 days';
+    $('kUn').textContent = 'K ' + fmt(unV); $('kUnN').textContent = onaccN + ' receipt' + (onaccN === 1 ? '' : 's') + ' to allocate';
+    $('kPost').textContent = postN; $('kPostN').textContent = 'K ' + fmt(lifeV) + ' lifetime';
+    $('kAvg').textContent = postN ? 'K ' + fmt(lifeV / postN) : 'K 0.00';
+    onaccList.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    $('onacc').innerHTML = onaccList.length ? onaccList.map(function (a) {
+      return '<button class="attn" data-open="' + a.id + '">' +
+        '<span class="arow"><span class="an">' + a.ref + '</span><span class="xc soon">On account</span></span>' +
+        '<span class="arow"><span class="as">' + a.cust + '</span><span class="ab">K ' + fmt(a.un) + '</span></span>' +
+        '</button>';
+    }).join('') : '<div class="attn-empty">Every posted receipt is fully allocated.</div>';
+    apply();
+  }
+
+  $('q').addEventListener('input', function () { state.q = this.value.trim().toLowerCase(); apply(); });
+  $('sort').addEventListener('change', function () { state.sort = this.value; apply(); });
+  document.querySelectorAll('.stile').forEach(function (b) { b.addEventListener('click', function () { state.st = b.dataset.st; document.querySelectorAll('.stile').forEach(function (x) { x.classList.toggle('on', x === b); }); apply(); }); });
+  document.querySelectorAll('#views .vitem').forEach(function (b) { b.addEventListener('click', function () { state.view = b.dataset.view; document.querySelectorAll('#views .vitem').forEach(function (x) { x.classList.toggle('on', x === b); }); apply(); }); });
+  document.querySelectorAll('[data-rep]').forEach(function (b) { b.addEventListener('click', function () { toast('📊 ' + b.textContent.trim() + ' report queued'); }); });
+  $('btnExport').addEventListener('click', function () { toast('⤓ Receipts export queued (CSV / PDF cashbook)'); });
+  $('onacc').addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openView(b.dataset.open); });
+  $('onaccAll').addEventListener('click', function () {
+    state.st = 'onacc';
+    document.querySelectorAll('.stile').forEach(function (x) { x.classList.toggle('on', x.dataset.st === 'onacc'); });
+    apply();
+    toast('Filtered to on-account (unallocated) receipts');
+  });
+
+  /* ---------- confirm ---------- */
+  var ICONS = { primary: SVG_SEND, ok: SVG_CHECK, danger: SVG_ALERT };
+  function ask(o) {
+    $('cbIc').className = 'cb-ic ' + o.tone; $('cbIc').innerHTML = ICONS[o.tone] || ICONS.primary;
+    $('cbTitle').textContent = o.title; $('cbMsg').innerHTML = o.msg;
+    var ok = $('cbOk'); ok.textContent = o.okLabel || 'Confirm';
+    ok.className = 'btn btn-sm ' + (o.tone === 'danger' ? 'btn-danger' : o.tone === 'ok' ? 'btn-green' : 'btn-cta');
+    cbFn = o.onOk; $('cfScrim').classList.add('on');
+  }
+  $('cbOk').addEventListener('click', function () { var f = cbFn; $('cfScrim').classList.remove('on'); cbFn = null; if (f) f(); });
+  function cbRow(l, v, cls) { return '<div class="cb-row"><span class="l">' + l + '</span><b class="' + (cls || '') + '">' + v + '</b></div>'; }
+
+  /* ---------- view modal ---------- */
+  function openView(id) {
+    var tr = rowOf(id); if (!tr) return;
+    var rc = RC[id], st = tr.dataset.status, al = allocOf(rc), un = unallocOf(rc);
+    viewingId = id;
+    $('vwRef').textContent = tr.querySelector('.rno').textContent;
+    $('vwCustH').innerHTML = SVG_USER + rc.cust;
+    var pl = PILL[st]; $('vwPill').className = 'pill ' + pl[0]; $('vwPill').innerHTML = '<i></i>' + pl[1];
+    $('vwMeta').innerHTML = '<span class="mchip">Received ' + dfmt(rc.date) + '</span><span class="mchip">' + rc.method + '</span>' +
+      (rc.source ? '<span class="mchip mono">From ' + rc.source + '</span>' : '') +
+      (rc.allocs.length ? '<span class="mchip mono">' + rc.allocs.length + ' invoice' + (rc.allocs.length === 1 ? '' : 's') + '</span>' : '') +
+      (un > 0 && st === 'posted' ? '<span class="mchip warn">On account K ' + fmt(un) + '</span>' : '') +
+      (rc.emailStatus === 'failed' ? '<span class="mchip bad">Email failed</span>' : rc.emailed ? '<span class="mchip mono">Emailed ' + dfmt(rc.emailedAt) + '</span>' : '') +
+      '<span class="mchip b">Total K ' + fmt(rc.amount) + '</span>';
+    $('vwTiles').innerHTML =
+      '<div class="mtile hero"><div class="l">Amount received (K)</div><div class="v">' + fmt(rc.amount) + '</div></div>' +
+      '<div class="mtile ok"><div class="l">Allocated (K)</div><div class="v">' + fmt(al) + '</div></div>' +
+      '<div class="mtile' + (un > 0 ? ' warn' : '') + '"><div class="l">On account (K)</div><div class="v">' + fmt(un) + '</div></div>' +
+      '<div class="mtile"><div class="l">Invoices touched</div><div class="v">' + rc.allocs.length + '</div></div>';
+    $('vwCust').textContent = rc.cust; $('vwContact').textContent = rc.contact + ' · ' + rc.phone; $('vwEmail').textContent = rc.email || '—';
+    $('vwDate').textContent = dfmt(rc.date); $('vwSource').textContent = rc.source || '—'; $('vwBy').textContent = rc.by;
+    var mrows = '<div class="mrow"><span class="l">Method</span><span class="v">' + mthChip(rc.method) + '</span></div>';
+    (MFIELDS[rc.method] || []).forEach(function (f) {
+      var v = rc.details && rc.details[f.k];
+      if (v) mrows += '<div class="mrow"><span class="l">' + f.l + '</span><span class="v' + (f.k === 'txref' || f.k === 'chq' ? ' mono' : '') + '">' + (f.k === 'chqdate' ? dfmt(v) : v) + '</span></div>';
+    });
+    if (rc.emailStatus === 'failed') mrows += '<div class="mrow"><span class="l">Email dispatch</span><span class="v bad">Failed — ' + (rc.failReason || 'unknown error') + '</span></div>';
+    else if (rc.emailed) mrows += '<div class="mrow"><span class="l">Email dispatch</span><span class="v">Sent ' + dfmt(rc.emailedAt) + '</span></div>';
+    if (st === 'void' && rc.voidReason) mrows += '<div class="mrow"><span class="l">Void reason</span><span class="v">' + rc.voidReason + '</span></div>';
+    $('vwMethodRows').innerHTML = mrows;
+    $('vwNotes').textContent = rc.notes || '—';
+    $('vwAllocs').innerHTML = rc.allocs.length ? rc.allocs.map(function (a) { return '<tr><td class="mono">' + a.inv + '</td><td class="r">' + fmt(a.amount) + '</td></tr>'; }).join('') : '<tr><td colspan="2" style="text-align:center;color:var(--faint);font-weight:600;padding:14px">No invoice allocations — full amount on account</td></tr>';
+    $('vwUnalloc').textContent = fmt(un); $('vwTotal').textContent = fmt(rc.amount);
+    document.querySelectorAll('#vwTabs .tab').forEach(function (t, i) { t.classList.toggle('on', i === 0); });
+    ['ov', 'al'].forEach(function (k, i) { $('pane-' + k).classList.toggle('on', i === 0); });
+    $('vwFoot').innerHTML = footHTML(id, rc, st, un) + CLOSE_BTN;
+    $('viewScrim').classList.add('on');
+  }
+  function footHTML(id, rc, st, un) {
+    var print = '<button class="btn btn-ghost btn-sm" data-vact="print">' + SVG_PRINT + 'Print / PDF</button>';
+    var send = '<button class="btn btn-ghost btn-sm" data-vact="send">' + SVG_SEND + 'Send to customer</button>';
+    var resend = '<button class="btn btn-cta btn-sm" data-vact="resend">' + SVG_SEND + 'Re-send email</button>';
+    if (st === 'draft') return '<span class="mnote">Draft — post to enter the cashbook and update invoice balances.</span><button class="btn btn-ghost btn-sm" data-vact="edit">' + SVG_PEN + 'Edit receipt</button>' + print + '<button class="btn btn-danger-o btn-sm" data-vact="void">Void</button><button class="btn btn-cta btn-sm" data-vact="post">' + SVG_POST + 'Post receipt</button>';
+    if (st === 'posted') return '<span class="mnote">' + (un > 0 ? 'On account — K <b>' + fmt(un) + '</b> awaits allocation.' : 'Fully allocated to invoices.') + '</span>' + print + (rc.emailStatus === 'failed' ? resend : send);
+    return '<span class="mnote">Voided — retained for audit; allocations released.</span>' + print;
+  }
+  $('vwTabs').addEventListener('click', function (e) {
+    var t = e.target.closest('.tab'); if (!t) return;
+    document.querySelectorAll('#vwTabs .tab').forEach(function (x) { x.classList.toggle('on', x === t); });
+    ['ov', 'al'].forEach(function (k) { $('pane-' + k).classList.toggle('on', k === t.dataset.tab); });
+  });
+
+  /* ---------- post / void ---------- */
+  function postReceipt(id) {
+    var tr = rowOf(id), rc = RC[id], ref = tr.querySelector('.rno').textContent;
+    ask({ tone: 'primary', title: 'Post ' + ref + '?', msg: 'Enters the receipt into the cashbook, updates allocated invoice balances and issues the official receipt to the customer file.', okLabel: 'Post receipt', onOk: function () {
+      rc.status = 'posted';
+      replaceRow(id, rowPayload(id, 'posted')); refresh();
+      showSuccess({ id: id, title: 'Receipt posted', body: 'Receipt <span class="okref">' + ref + '</span> for <b>' + rc.cust + '</b> (K ' + fmt(rc.amount) + ', ' + rc.method.toLowerCase() + ') is posted.' + (rc.source ? '<br>Against <span class="okref">' + rc.source + '</span>.' : '') + (rc.allocs.length ? '<br>Allocated across ' + rc.allocs.length + ' invoice' + (rc.allocs.length === 1 ? '' : 's') + '.' : '<br>Held <b>on account</b> as an advance.'), print: true });
+    } });
+  }
+  function voidReceipt(id) {
+    var tr = rowOf(id), rc = RC[id], ref = tr.querySelector('.rno').textContent;
+    ask({ tone: 'danger', title: 'Void ' + ref + '?', msg: 'Voids the receipt, reverses its cashbook entry and releases any invoice allocations. Void receipts are retained for audit.', okLabel: 'Void receipt', onOk: function () {
+      rc.status = 'void'; rc.voidReason = rc.voidReason || 'Voided by user';
+      replaceRow(id, rowPayload(id, 'void')); refresh();
+      toast('⃠ ' + ref + ' voided — allocations released');
+    } });
+  }
+
+  /* ---------- email dispatch: 4-stage background pipeline, manual close, minimize + dock ---------- */
+  function sendReceipt(id) {
+    var tr = rowOf(id), rc = RC[id], ref = tr.querySelector('.rno').textContent;
+    if (!emailOk(rc.email)) { toast('Provide a valid customer email to send'); return; }
+    ask({ tone: 'primary', title: 'Email ' + ref + ' to ' + rc.email + '?', msg: 'Sends the official receipt PDF to the customer and records the dispatch.', okLabel: 'Send now', onOk: function () {
+      startMailProgress(id);
+    } });
+  }
+  function mpInner(email, ref) {
+    return '<div class="mp-wrap">' +
+      '<div class="mp-env"><span class="ring r1"></span><span class="ring r2"></span>' + SVG_MAIL + '</div>' +
+      '<div class="mp-title" id="mpTitle">Sending official receipt</div>' +
+      '<div class="mp-sub" id="mpSub">' + ref + ' → ' + email + '</div>' +
+      '<div class="mp-bar"><i id="mpFill"></i><span class="mp-shine"></span></div>' +
+      '<div class="mp-pctrow"><span class="mp-log" id="mpLog">Preparing PDF document…</span><span class="mp-pct" id="mpPct">0%</span></div>' +
+      '<div class="mp-steps">' +
+      '<div class="mp-step"><span class="st"></span><span class="lb">Preparing PDF document</span></div>' +
+      '<div class="mp-step"><span class="st"></span><span class="lb">Uploading to mail server</span></div>' +
+      '<div class="mp-step"><span class="st"></span><span class="lb">Delivering to recipient mailbox</span></div>' +
+      '<div class="mp-step"><span class="st"></span><span class="lb">Recording email dispatch audit</span></div>' +
+      '</div></div>';
+  }
+  function setMpFoot(mode) {
+    var f = $('mpFoot');
+    if (mode === 'sending') f.innerHTML = '<span class="mnote">Running in background if minimized — you can keep working.</span><button class="btn btn-close btn-sm" data-mp="cancel">' + SVG_X + 'Cancel &amp; close</button>';
+    else if (mode === 'success') f.innerHTML = '<span class="mnote">Delivered & recorded on the receipt.</span><button class="btn btn-cta btn-sm" data-mp="close">Close</button>';
+    else f.innerHTML = '<span class="mnote">Delivery failed — the receipt is unchanged.</span><button class="btn btn-cta btn-sm" data-mp="retry">' + SVG_SEND + 'Try again</button><button class="btn btn-close btn-sm" data-mp="close">Close</button>';
+  }
+  function mailClear() {
+    mail.timers.forEach(function (t) { clearTimeout(t); });
+    mail.timers = [];
+    if (mail.interval) { clearInterval(mail.interval); mail.interval = null; }
+  }
+  function startMailProgress(id) {
+    var rc = RC[id];
+    if (!emailOk(rc.email)) { toast('Provide a valid customer email to send'); return; }
+    mailClear();
+    removeDock();
+    mail.id = id; mail.running = true; mail.done = false; mail.ok = false; mail.minimized = false;
+    mail.pct = 0; mail.target = 0; mail.status = 'Preparing PDF document…';
+    var tr = rowOf(id);
+    mail.ref = tr ? tr.querySelector('.rno').textContent : '';
+    $('viewScrim').classList.remove('on');
+    $('mpHeadTitle').textContent = 'Email dispatch · ' + mail.ref;
+    $('mpBody').innerHTML = mpInner(rc.email, mail.ref);
+    $('mpMin').style.display = '';
+    setMpFoot('sending');
+    $('mailScrim').classList.remove('done', 'failed');
+    $('mailScrim').classList.add('on');
+    runPipeline(rc);
+  }
+  function paintProgress() {
+    var scrim = $('mailScrim');
+    var fill = scrim.querySelector('#mpFill'), pctEl = scrim.querySelector('#mpPct'), logEl = scrim.querySelector('#mpLog');
+    if (fill) fill.style.width = mail.pct + '%';
+    if (pctEl) pctEl.textContent = Math.round(mail.pct) + '%';
+    if (logEl) logEl.textContent = mail.status;
+    var dock = $('mailDock');
+    if (dock && !mail.done) {
+      var df = dock.querySelector('#dkFill'), dp = dock.querySelector('#dkPct'), dst = dock.querySelector('#dkStatus');
+      if (df) df.style.width = mail.pct + '%';
+      if (dp) dp.textContent = Math.round(mail.pct) + '%';
+      if (dst) dst.textContent = mail.status;
+    }
+  }
+  function runPipeline(rc) {
+    var scrim = $('mailScrim');
+    var steps = scrim.querySelectorAll('.mp-step');
+    function act(i) { steps[i].classList.add('active'); }
+    function done(i) { steps[i].classList.remove('active'); steps[i].classList.add('done'); }
+    function fail(i) { steps[i].classList.remove('active'); steps[i].classList.add('fail'); }
+    function at(t, fn) { mail.timers.push(setTimeout(fn, t)); }
+    mail.interval = setInterval(function () {
+      if (mail.pct < mail.target) {
+        mail.pct = Math.min(mail.target, mail.pct + 1.1);
+        paintProgress();
+      }
+    }, 45);
+    var willFail = !!rc.simFail;
+    /* stage 1 · preparing pdf document */
+    mail.target = 22; act(0); mail.status = 'Preparing PDF document…'; paintProgress();
+    /* stage 2 · uploading to mail server */
+    at(1100, function () { done(0); mail.target = 48; act(1); mail.status = 'Uploading to mail server…'; paintProgress(); });
+    /* stage 3 · delivering to recipient mailbox */
+    at(2300, function () { done(1); mail.target = 78; act(2); mail.status = 'Delivering to recipient mailbox…'; paintProgress(); });
+    at(3300, function () {
+      if (willFail) { fail(2); finishMail(false, '552 5.2.2 Mailbox full — message rejected', rc); return; }
+      mail.status = 'Delivering to recipient mailbox…'; paintProgress();
+    });
+    /* stage 4 · recording email dispatch audit */
+    at(4100, function () { if (mail.done) return; done(2); mail.target = 96; act(3); mail.status = 'Recording email dispatch audit…'; paintProgress(); });
+    at(4900, function () { if (mail.done) return; done(3); mail.target = 100; finishMail(true, '', rc); });
+  }
+  function finishMail(ok, reason, rc) {
+    mailClear();
+    mail.done = true; mail.ok = ok; mail.running = true;
+    if (ok) mail.pct = 100;
+    var scrim = $('mailScrim');
+    if (ok) {
+      mail.status = 'Done — official receipt delivered.';
+      scrim.classList.add('done');
+      scrim.querySelector('#mpTitle').textContent = 'Receipt delivered';
+      scrim.querySelector('#mpSub').textContent = 'Accepted by ' + (String(rc.email).split('@')[1] || 'recipient') + ' · dispatch recorded';
+      rc.emailStatus = 'sent'; rc.failReason = ''; rc.emailed = rc.email; rc.emailedAt = TODAY_ISO;
+      delete rc.simFail;
+      setMpFoot('success');
+    } else {
+      mail.status = 'Delivery failed — ' + reason;
+      scrim.classList.add('failed');
+      scrim.querySelector('#mpTitle').textContent = 'Delivery failed';
+      scrim.querySelector('#mpSub').textContent = reason + ' · ' + rc.email;
+      rc.emailStatus = 'failed'; rc.failReason = reason;
+      setMpFoot('failed');
+    }
+    $('mpMin').style.display = 'none';
+    paintProgress();
+    replaceRow(mail.id, rowPayload(mail.id, rc.status));
+    refresh();
+    if (mail.minimized) {
+      dockResult(ok, rc, reason);
+      toast(ok ? '📨 ' + mail.ref + ' delivered to ' + rc.email : '⚠ ' + mail.ref + ' delivery failed — ' + reason);
+    }
+  }
+  function mailCancel() {
+    mailClear();
+    mail.running = false; mail.done = false; mail.minimized = false;
+    $('mailScrim').classList.remove('on', 'done', 'failed');
+    removeDock();
+    toast('✋ Email send cancelled — receipt unchanged');
+  }
+  function mailCloseAfterDone() {
+    var rc = RC[mail.id];
+    var wasOk = mail.ok;
+    mailClear();
+    mail.running = false; mail.minimized = false;
+    $('mailScrim').classList.remove('on', 'done', 'failed');
+    removeDock();
+    /* no follow-up modal on success — the dispatch dialog itself is the confirmation */
+    if (!wasOk) toast('⚠ Delivery failed — ' + (rc.failReason || 'unknown error'));
+  }
+  function mailRequestClose() { if (mail.done) mailCloseAfterDone(); else mailCancel(); }
+  function minimizeMail() {
+    if (!mail.running || mail.done) return;
+    mail.minimized = true;
+    $('mailScrim').classList.remove('on');
+    ensureDock();
+    toast('⇩ Dispatch minimized — running in background');
+  }
+  function expandMail() {
+    mail.minimized = false;
+    removeDock();
+    $('mailScrim').classList.add('on');
+  }
+  /* ---- dock notification ---- */
+  function ensureDock() {
+    if ($('mailDock')) return;
+    var d = document.createElement('div');
+    d.className = 'mdock'; d.id = 'mailDock';
+    d.innerHTML =
+      '<div class="dh"><span class="dic" id="dkIcon"><span class="dspn"></span></span>' +
+      '<span class="dtxt"><span class="dt" id="dkTitle">Sending receipt…</span><span class="ds" id="dkSub"></span></span>' +
+      '<button class="dx" data-dk="expand" title="Open dispatch window">' + SVG_EXPAND + '</button></div>' +
+      '<div class="db"><div class="bar"><i id="dkFill"></i></div>' +
+      '<div class="rrow"><span class="rst" id="dkStatus">…</span><span class="rpct" id="dkPct">0%</span></div>' +
+      '<div class="acts"><button class="btn btn-ghost btn-xs" data-dk="cancel">' + SVG_X + 'Cancel</button><button class="btn btn-cta btn-xs" data-dk="expand">' + SVG_EXPAND + 'Open</button></div></div>';
+    document.body.appendChild(d);
+    var rc = RC[mail.id];
+    d.querySelector('#dkSub').textContent = mail.ref + ' → ' + (rc ? rc.email : '');
+    paintProgress();
+  }
+  function dockResult(ok, rc, reason) {
+    var d = $('mailDock');
+    if (!d) return;
+    d.classList.remove('ok', 'fail');
+    d.classList.add(ok ? 'ok' : 'fail');
+    d.querySelector('#dkIcon').innerHTML = ok ? SVG_CHECK : SVG_ALERT;
+    d.querySelector('#dkTitle').textContent = ok ? 'Receipt delivered' : 'Delivery failed';
+    d.querySelector('#dkSub').textContent = ok ? (mail.ref + ' → ' + rc.email) : (mail.ref + ' · ' + (reason || rc.failReason || ''));
+    d.querySelector('.db').innerHTML =
+      '<div class="res"><span class="ric2 ' + (ok ? 'ok' : 'bad') + '">' + (ok ? SVG_CHECK : SVG_ALERT) + '</span>' +
+      '<span class="rt2"><b>' + (ok ? 'Email delivered in background' : 'Email could not be delivered') + '</b>' +
+      '<span>' + (ok ? 'Dispatch recorded on ' + mail.ref + ' · ' + rc.email : reason || rc.failReason || '') + '</span></span></div>' +
+      '<div class="acts" style="padding:0 12px 12px">' +
+      (ok ? '<button class="btn btn-ghost btn-xs" data-dk="view">' + SVG_VIEW + 'View receipt</button>'
+          : '<button class="btn btn-cta btn-xs" data-dk="retry">' + SVG_SEND + 'Try again</button>') +
+      '<button class="btn btn-close btn-xs" data-dk="dismiss">Dismiss</button></div>';
+  }
+  function removeDock() { var d = $('mailDock'); if (d) d.remove(); }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-dk]');
+    if (!b) return;
+    var a = b.dataset.dk;
+    if (a === 'expand') expandMail();
+    else if (a === 'cancel') mailCancel();
+    else if (a === 'dismiss') removeDock();
+    else if (a === 'view') { removeDock(); openView(mail.id); }
+    else if (a === 'retry') { var rc = RC[mail.id]; if (rc) rc.simFail = false; removeDock(); startMailProgress(mail.id); }
+  });
+  $('mpMin').addEventListener('click', minimizeMail);
+  $('mpFoot').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mp]'); if (!b) return;
+    if (b.dataset.mp === 'cancel') mailCancel();
+    else if (b.dataset.mp === 'close') mailCloseAfterDone();
+    else if (b.dataset.mp === 'retry') { var rc = RC[mail.id]; if (rc) rc.simFail = false; startMailProgress(mail.id); }
+  });
+
+  /* ---------- source document picker ---------- */
+  function renderDocList() {
+    var term = docFilter.term;
+    var avail = SOURCE_DOCS.filter(function (d) {
+      if (docFilter.type && d.type !== docFilter.type) return false;
+      if (term && (d.ref + ' ' + d.cust + ' ' + d.type).toLowerCase().indexOf(term) === -1) return false;
+      return true;
+    });
+    $('docList').innerHTML = avail.length ? avail.map(function (d) {
+      var pre = d.type === 'Invoice' ? d.amount : Number((d.amount * 0.3).toFixed(2));
+      return '<div class="qcard"><div style="min-width:0"><span class="qr">' + d.ref + '</span><span class="dty ' + (DTYCLS[d.type] || 'inv') + '">' + d.type + '</span>' +
+        '<div class="qc">' + d.cust + '</div>' +
+        '<div class="qs">K ' + fmt(pre) + ' prefilled · ' + d.label + ' K ' + fmt(d.amount) + ' · ' + dfmt(d.date) + '</div></div>' +
+        '<button class="btn btn-cta btn-sm" data-dref="' + d.ref + '">Use</button></div>';
+    }).join('') : '<div class="empty" style="padding:26px 10px"><div class="t">No documents match</div><div class="s">Clear the search or switch the type filter.</div></div>';
+  }
+  function openDocPicker() { docFilter.term = ''; $('docSearch').value = ''; renderDocList(); $('docScrim').classList.add('on'); }
+  $('docSearch').addEventListener('input', function () { docFilter.term = this.value.trim().toLowerCase(); renderDocList(); });
+  $('docFilters').addEventListener('click', function (e) {
+    var b = e.target.closest('.fchip'); if (!b) return;
+    docFilter.type = b.dataset.ft;
+    document.querySelectorAll('#docFilters .fchip').forEach(function (x) { x.classList.toggle('on', x === b); });
+    renderDocList();
+  });
+  $('crFromDoc').addEventListener('click', function () {
+    if (!document.body.classList.contains('view-create')) { editId = null; $('cvTitle').textContent = 'Create Sales Receipt'; showView('create'); }
+    openDocPicker();
+  });
+  $('docList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-dref]'); if (!b) return;
+    var d = SOURCE_DOCS.filter(function (x) { return x.ref === b.dataset.dref; })[0];
+    if (!d) return;
+    loadSourceDoc(d);
+    $('docScrim').classList.remove('on');
+  });
+  function loadSourceDoc(d) {
+    editId = null; $('cvTitle').textContent = 'Create Sales Receipt';
+    var reg = CUSTOMERS.filter(function (c) { return c.name === d.cust; })[0];
+    if (reg) {
+      $('crMode').value = 'existing'; $('crMode').dispatchEvent(new Event('change'));
+      $('crSearch').value = d.cust; matchedCode = reg.code; setLock(true);
+      $('crContact').value = d.cust; $('crEmail').value = reg.email; $('crPhone').value = reg.phone;
+    } else {
+      $('crMode').value = 'walkin'; $('crMode').dispatchEvent(new Event('change'));
+      $('crName').value = d.cust; $('crContact').value = d.cust;
+    }
+    $('crSource').value = d.ref;
+    $('crDate').value = TODAY_ISO;
+    var amt = d.type === 'Invoice' ? d.amount : Number((d.amount * 0.3).toFixed(2));
+    $('crAmount').value = amt.toFixed(2);
+    renderAllocEditor();
+    if (d.type === 'Invoice') {
+      Array.prototype.forEach.call($('crAllocBody').rows, function (r) {
+        var codeEl = r.querySelector('td span');
+        var inp = r.querySelector('[data-a="v"]');
+        if (codeEl && inp && codeEl.textContent === d.ref) inp.value = amt.toFixed(2);
+      });
+      $('crNotes').value = 'Receipt against ' + d.ref + ' — open balance settled in full.';
+    } else {
+      $('crNotes').value = 'Deposit (30%) against ' + d.ref + ' (' + d.type.toLowerCase() + ') — held on account until invoiced.';
+    }
+    updateCrSummary();
+    toast('⇄ ' + d.ref + ' loaded — ' + (d.type === 'Invoice' ? 'balance prefilled & allocated' : '30% deposit prefilled on account'));
+  }
+
+  /* ---------- print ---------- */
+  function cell(l, v, mono) { return '<div class="cell"><div class="l">' + l + '</div><div class="v' + (mono ? ' mono' : '') + '">' + v + '</div></div>'; }
+  function sheetBodyHTML(id) {
+    var tr = rowOf(id), rc = RC[id], st = rc.status, ref = tr.querySelector('.rno').textContent;
+    var al = allocOf(rc), un = unallocOf(rc);
+    var now = new Date();
+    var draft = st === 'draft', voided = st === 'void';
+    var methodRef = (rc.details && (rc.details.txref || rc.details.chq)) || '—';
+    var h = '<div class="wm"><span class="' + (voided ? 'voidwm' : '') + '" style="' + (draft || voided ? '' : 'display:none') + '">' + (voided ? 'Void' : 'Draft') + '</span></div><div class="sheet-body">';
+    h += '<header class="v-head"><div class="brand"><div class="mark">A</div><div><div class="bn">ACME CORPORATION LTD</div><div class="bl">Head Office · P.O. Box 30456, Lilongwe<br>TIN 00412883 · Registered in Malawi</div></div></div>' +
+      '<div class="docblock"><div class="dt">Official Receipt</div><div class="dn">' + ref + '</div>' +
+      '<span class="dst' + (voided ? ' voidst' : draft ? ' draftst' : '') + '"><i></i>' + PILL[st][1] + '</span>' +
+      '<div class="dp">Printed ' + now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div></div></header>';
+    h += '<div class="meta">' +
+      cell('Received from', rc.cust) + cell('Contact person', rc.contact) + cell('Email', rc.email, true) + cell('Phone', rc.phone) +
+      cell('Receipt date', dfmt(rc.date)) + cell('Method', rc.method) + cell('Method reference', methodRef, true) + cell('Collected by', rc.by) +
+      cell('Source document', rc.source || '—', true) +
+      '</div>';
+    h += '<div class="vlines"><div class="lt">Application of funds</div><table><thead><tr><th>Applied to</th><th>Type</th><th class="r" style="width:140px">Amount (K)</th></tr></thead><tbody>';
+    if (rc.allocs.length) rc.allocs.forEach(function (a) { h += '<tr><td class="mono">' + a.inv + '</td><td>Invoice allocation</td><td class="num">' + fmt(a.amount) + '</td></tr>'; });
+    if (un > 0) h += '<tr><td>On account — ' + rc.cust + (rc.source ? ' (' + rc.source + ')' : '') + '</td><td>Advance / unallocated</td><td class="num">' + fmt(un) + '</td></tr>';
+    if (!rc.allocs.length && un <= 0) h += '<tr><td colspan="3" style="text-align:center;color:var(--p-faint);font-weight:600;padding:12px">No application recorded</td></tr>';
+    h += '<tr class="totals"><td colspan="2" style="font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--p-ink)">Total received</td><td class="num" style="font-size:12.5px;font-weight:900">' + fmt(rc.amount) + '</td></tr>';
+    h += '<tr class="words"><td colspan="3"><span class="words-l">Amount in words</span><span class="words-v">Malawi Kwacha ' + inWords(Math.floor(rc.amount)) + ' only</span><span class="balnote">' + (voided ? 'VOID — NO VALUE' : al > 0 ? 'ALLOCATED K ' + fmt(al) : 'ON ACCOUNT') + '</span></td></tr>';
+    h += '</tbody></table></div>';
+    h += '<div class="qpanels"><div class="narr"><div class="nh">Notes</div><div class="nb">' + (rc.notes || '—') + (voided ? '<br><b>Void reason:</b> ' + (rc.voidReason || '—') : '') + '</div></div>' +
+      '<div class="narr"><div class="nh">Verification</div><div class="tlist">' +
+      '<div>Verify this receipt against reference ' + ref + ' before releasing goods.</div>' +
+      '<div>' + rc.method + ' · reference ' + methodRef + '.</div>' +
+      '<div>Received by ' + rc.by + ' on ' + dfmt(rc.date) + '.</div>' +
+      '<div>On-account balances remain the property of the customer until allocated.</div>' +
+      '<div>Queries: accounts@acme.mw · +265 1 774 550.</div>' +
+      '</div></div></div>';
+    h += '</div>';
+    h += '<div class="v-foot"><span class="fa">AUDIT · received ' + dfmt(rc.date) + ' · ' + rc.by + ' · status ' + PILL[st][1] + (rc.source ? ' · source ' + rc.source : '') + (rc.emailed ? ' · emailed ' + dfmt(rc.emailedAt) : '') + ' · allocations ' + rc.allocs.length + '</span>' +
+      '<span class="fb">Computer-generated receipt — valid without signature</span><span class="fc">PAGE 1 OF 1</span></div>';
+    return h;
+  }
+  var PRINT_CSS = 'body{font-family:Inter,-apple-system,sans-serif;background:linear-gradient(180deg,#e6edec,#dde6e5);margin:0;color:#13292C;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.ptoolbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;padding:12px 22px;background:rgba(255,255,255,.96);border-bottom:1px solid #DCE7E5;flex-wrap:wrap}' +
+    '.tb-title{font-size:13px;font-weight:800}.tb-title span{font-family:monospace;font-size:11.5px;font-weight:800;color:#0E7473;background:rgba(14,116,115,.08);border:1px solid rgba(14,116,115,.22);padding:3px 8px;border-radius:7px;margin-left:8px}' +
+    '.tb-spacer{flex:1}.tb-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 15px;border-radius:10px;border:1px solid #DCE7E5;background:#fff;font-size:12.5px;font-weight:700;color:#3E5658;cursor:pointer}.tb-btn.primary{background:linear-gradient(180deg,#149897,#128F8E);border-color:transparent;color:#fff}.tb-btn svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}' +
+    '.sheet-wrap{display:flex;justify-content:center;padding:34px 20px 60px}' +
+    '.sheet{position:relative;width:794px;min-height:1123px;background:#fff;border:1px solid #DCE7E5;box-shadow:0 2px 6px rgba(10,42,46,.08),0 30px 70px -30px rgba(10,42,46,.45);overflow:hidden;display:flex;flex-direction:column}' +
+    '.sheet::before{content:"";display:block;height:5px;flex:none;background:linear-gradient(90deg,#0E7473,#149897 55%,#7FD1C0)}' +
+    '.wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}.wm span{transform:rotate(-24deg);font-size:100px;font-weight:900;letter-spacing:.18em;color:rgba(14,116,115,.05);text-transform:uppercase}.wm span.voidwm{color:rgba(220,38,38,.06)}' +
+    '.sheet-body{flex:1 0 auto;display:flex;flex-direction:column;position:relative;z-index:1}' +
+    '.v-head{display:flex;justify-content:space-between;gap:24px;padding:26px 46px 20px;background:linear-gradient(180deg,#F0F5F5,#f7fbfa);border-bottom:1px solid #DCE7E5}' +
+    '.brand{display:flex;gap:13px}.brand .mark{width:42px;height:42px;border-radius:10px;background:linear-gradient(150deg,#0E7473,#0a5453);color:#fff;font-size:17px;font-weight:900;display:grid;place-items:center}' +
+    '.brand .bn{font-size:15.5px;font-weight:900}.brand .bl{font-size:10px;font-weight:600;color:#5F7476;line-height:1.55;margin-top:3px}' +
+    '.docblock{text-align:right}.docblock .dt{font-size:9.5px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#0E7473}.docblock .dn{font-family:monospace;font-size:19px;font-weight:800;margin-top:4px}' +
+    '.docblock .dst{display:inline-flex;align-items:center;gap:6px;margin-top:7px;padding:4px 11px;border-radius:999px;background:rgba(14,116,115,.10);border:1px solid rgba(14,116,115,.35);color:#0E7473;font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.docblock .dst i{width:5px;height:5px;border-radius:50%;background:#0E7473}' +
+    '.docblock .dst.draftst{background:rgba(138,163,162,.14);border-color:rgba(138,163,162,.4);color:#5F7476}.docblock .dst.draftst i{background:#5F7476}.docblock .dst.voidst{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.35);color:#b91c1c}.docblock .dst.voidst i{background:#b91c1c}' +
+    '.docblock .dp{font-size:9.5px;font-weight:600;color:#8AA3A2;margin-top:6px}' +
+    '.meta{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #DCE7E5}.meta .cell{padding:10px 16px;border-left:1px solid #E7EFED}.meta .cell:first-child{border-left:none}.meta .cell:nth-child(n+5){border-top:1px solid #E7EFED}' +
+    '.meta .l{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8AA3A2}.meta .v{font-size:11px;font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta .v.mono{font-family:monospace;font-size:10.5px;color:#0E7473}' +
+    '.vlines{padding:20px 46px 0}.vlines .lt{font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#5F7476;margin-bottom:9px}' +
+    '.sheet table{width:100%;border-collapse:collapse}.sheet thead th{background:#0E7473;color:#fff;font-size:8.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:8px 12px;text-align:left}.sheet thead th.r{text-align:right}.sheet thead th:first-child{border-radius:6px 0 0 6px}.sheet thead th:last-child{border-radius:0 6px 6px 0}' +
+    '.sheet tbody td{padding:9px 12px;border-bottom:1px solid #E7EFED;font-size:11px;color:#3E5658;vertical-align:top}.sheet tbody td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:#13292C;white-space:nowrap}.sheet tbody td.mono{font-family:monospace;color:#0E7473;font-weight:800}' +
+    '.sheet tr.totals td{border-bottom:none;border-top:3px double #13292C;padding:10px 12px;background:#F0F5F5}.sheet tr.words td{padding:9px 12px;border-bottom:1px solid #DCE7E5;background:#fbfdfc}' +
+    '.words-l{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8AA3A2;margin-right:8px}.words-v{font-size:11px;font-weight:700;color:#3E5658;font-style:italic}.balnote{float:right;font-size:9.5px;font-weight:800;color:#0E7473;letter-spacing:.06em}' +
+    '.qpanels{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;margin:16px 46px 0}.narr{border:1px solid #DCE7E5;border-radius:6px;overflow:hidden}.narr .nh{padding:7px 12px;background:#F0F5F5;border-bottom:1px solid #E7EFED;font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#5F7476}.narr .nb{padding:10px 12px;font-size:10.5px;font-weight:500;color:#3E5658;line-height:1.6}' +
+    '.tlist{padding:10px 12px;display:flex;flex-direction:column;gap:6px}.tlist div{font-size:9.5px;font-weight:600;color:#3E5658;line-height:1.5;padding-left:12px;position:relative}.tlist div::before{content:"";position:absolute;left:0;top:5px;width:5px;height:5px;border-radius:50%;background:#0E7473;opacity:.55}' +
+    '.v-foot{margin-top:auto;padding:12px 46px;border-top:1px solid #DCE7E5;background:#fbfdfc;display:flex;justify-content:space-between;gap:16px;position:relative;z-index:1}.v-foot .fa{font-family:monospace;font-size:8.5px;font-weight:600;color:#8AA3A2}.v-foot .fb{font-size:8.5px;font-weight:600;color:#8AA3A2;text-align:center;flex:1}.v-foot .fc{font-size:9px;font-weight:800;color:#5F7476;letter-spacing:.08em;white-space:nowrap}' +
+    '@page{size:A4;margin:10mm}@media print{.ptoolbar{display:none!important}body{background:#fff}.sheet-wrap{padding:0;display:block}.sheet{width:auto;min-height:277mm;border:none;box-shadow:none}}';
+  function openPrintTab(id) {
+    var tr = rowOf(id); if (!tr) return;
+    var ref = tr.querySelector('.rno').textContent;
+    var doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Official Receipt ' + ref + '</title><style>' + PRINT_CSS + '</style></head><body>' +
+      '<div class="ptoolbar"><span class="tb-title">Official Receipt <span>' + ref + '</span></span><span class="tb-spacer"></span>' +
+      '<button class="tb-btn" id="tPdf"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Save as PDF</button>' +
+      '<button class="tb-btn primary" id="tPrint"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>' +
+      '<button class="tb-btn" id="tClose">Close tab</button></div>' +
+      '<div class="sheet-wrap"><div class="sheet">' + sheetBodyHTML(id) + '</div></div>' +
+      '<scr' + 'ipt>document.getElementById("tPrint").onclick=function(){window.print()};document.getElementById("tPdf").onclick=function(){window.print()};document.getElementById("tClose").onclick=function(){window.close()};</scr' + 'ipt>' +
+      '</body></html>';
+    var w = window.open('', '_blank');
+    if (w) {
+      w.document.open(); w.document.write(doc); w.document.close();
+      toast('🧾 Official receipt ' + ref + ' opened in a new tab');
+    } else {
+      $('oSheet').innerHTML = sheetBodyHTML(id);
+      $('pvRef').textContent = ref;
+      $('printView').classList.add('on'); $('printView').setAttribute('aria-hidden', 'false');
+      document.body.classList.add('pv-on'); $('printView').scrollTop = 0;
+      toast('Popup blocked — showing in-app preview instead');
+    }
+  }
+  function closePreview() { $('printView').classList.remove('on'); $('printView').setAttribute('aria-hidden', 'true'); document.body.classList.remove('pv-on'); }
+  function safePrint() {
+    document.body.classList.add('pv-on'); $('printView').classList.add('on');
+    if (typeof window.print !== 'function') { toast('Print is unavailable in this environment — use Save as PDF'); return; }
+    try { window.print(); } catch (e) { toast('Print is unavailable — use Save as PDF'); }
+  }
+  $('pvBack').addEventListener('click', closePreview);
+  $('pvPrint').addEventListener('click', function () { toast('🖨 Print dialog opened — choose your printer'); safePrint(); });
+  $('pvPdf').addEventListener('click', function () { toast('🧾 Print dialog opened — set destination to “Save as PDF”'); safePrint(); });
+
+  /* ---------- lifecycle ---------- */
+  function act(a, id) {
+    var tr = rowOf(id); if (!tr) return;
+    var ref = tr.querySelector('.rno').textContent;
+    if (a === 'view') { openView(id); return; }
+    if (a === 'print') { openPrintTab(id); return; }
+    if (a === 'send') { sendReceipt(id); return; }
+    if (a === 'resend') { startMailProgress(id); return; }
+    if (a === 'post') { postReceipt(id); return; }
+    if (a === 'void') { voidReceipt(id); return; }
+    if (a === 'edit') {
+      if (tr.dataset.status !== 'draft') { toast('🔒 ' + ref + ' is posted — only drafts can be edited'); return; }
+      $('viewScrim').classList.remove('on');
+      openEditReceipt(id);
+      return;
+    }
+  }
+  $('rBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (b) { if (!b.disabled) act(b.dataset.act, b.closest('tr').dataset.id); return; }
+    var tr = e.target.closest('tr.rrow');
+    if (tr) act('view', tr.dataset.id);
+  });
+  $('vwFoot').addEventListener('click', function (e) { var b = e.target.closest('[data-vact]'); if (!b) return; act(b.dataset.vact, viewingId); });
+
+  /* ---------- create / edit ---------- */
+  function showView(v) { document.body.classList.toggle('view-create', v === 'create'); window.scrollTo(0, 0); if (v === 'create') initCreate(); }
+  function fillCustDatalist() { $('custList').innerHTML = CUSTOMERS.map(function (c) { return '<option value="' + c.name + '">' + c.code + '</option>'; }).join(''); }
+  function setLock(lock) { ['crContact', 'crEmail', 'crPhone'].forEach(function (id) { var el = $(id); el.readOnly = lock; el.classList.toggle('ro', lock); }); }
+  function renderCrDetails() {
+    var m = $('crMethod').value;
+    $('crDetailsTitle').textContent = 'Method details — ' + m;
+    $('crDetails').innerHTML = (MFIELDS[m] || []).map(function (f) {
+      var ctl = f.t === 'sel'
+        ? '<select class="sel" id="crd_' + f.k + '">' + f.opts.map(function (o) { return '<option>' + o + '</option>'; }).join('') + '</select>'
+        : f.t === 'date'
+          ? '<input class="in" type="date" id="crd_' + f.k + '">'
+          : '<input class="in" id="crd_' + f.k + '" placeholder="' + (f.req ? 'Required' : '—') + '">';
+      return '<div class="fld"><label>' + f.l + (f.req ? ' <b>*</b>' : '') + '</label>' + ctl + '</div>';
+    }).join('');
+    updateCrSummary();
+  }
+  function collectCrDetails() {
+    var m = $('crMethod').value, d = {};
+    (MFIELDS[m] || []).forEach(function (f) { var el = $('crd_' + f.k); d[f.k] = el ? el.value.trim() : ''; });
+    return d;
+  }
+  function crDetailsMissing() {
+    var m = $('crMethod').value, d = collectCrDetails(), miss = [];
+    (MFIELDS[m] || []).forEach(function (f) { if (f.req && !d[f.k]) miss.push(f.l.toLowerCase()); });
+    return miss;
+  }
+  function currentCustName() {
+    var walkin = $('crMode').value === 'walkin';
+    return walkin ? $('crName').value.trim() : (matchedCode ? $('crSearch').value.trim() : '');
+  }
+  function renderAllocEditor() {
+    var name = currentCustName();
+    var list = (name && OPEN_INV[name]) || [];
+    var body = $('crAllocBody');
+    if (!name) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--faint);font-weight:600;padding:12px">Pick a customer to list their open invoices</td></tr>'; }
+    else if (!list.length) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--faint);font-weight:600;padding:12px">No open invoices for ' + name + ' — the amount will sit on account</td></tr>'; }
+    else {
+      body.innerHTML = list.map(function (inv, i) {
+        return '<tr data-i="' + i + '"><td><span style="font-family:var(--mono);font-weight:800;color:var(--sec)">' + inv.ref + '</span></td><td class="r" style="font-weight:700;color:var(--ink)">' + fmt(inv.bal) + '</td><td><input class="lin num" data-a="v" type="number" min="0" max="' + inv.bal + '" step="0.01" value="0"></td></tr>';
+      }).join('');
+    }
+    updateCrSummary();
+  }
+  function allocRows() {
+    var name = currentCustName();
+    var list = (name && OPEN_INV[name]) || [];
+    var out = [];
+    Array.prototype.forEach.call($('crAllocBody').rows, function (r, i) {
+      var inp = r.querySelector('[data-a="v"]');
+      if (!inp || !list[i]) return;
+      var v = Math.max(0, Math.min(list[i].bal, num(inp.value)));
+      if (v > 0) out.push({ inv: list[i].ref, amount: v });
+    });
+    return out;
+  }
+  function autoAllocate() {
+    var name = currentCustName();
+    var list = (name && OPEN_INV[name]) || [];
+    var remaining = num($('crAmount').value);
+    Array.prototype.forEach.call($('crAllocBody').rows, function (r, i) {
+      var inp = r.querySelector('[data-a="v"]');
+      if (!inp || !list[i]) return;
+      var take = Math.min(list[i].bal, remaining);
+      inp.value = take > 0 ? take.toFixed(2) : 0;
+      remaining -= take;
+    });
+    updateCrSummary();
+    toast('⇢ Auto-allocated oldest-first — remainder stays on account');
+  }
+  function updateCrSummary() {
+    var walkin = $('crMode').value === 'walkin';
+    var name = walkin ? $('crName').value.trim() : ($('crSearch').value.trim() || '');
+    var amt = num($('crAmount').value);
+    var allocs = allocRows();
+    var al = allocs.reduce(function (s, a) { return s + a.amount; }, 0);
+    var un = Math.max(0, amt - al);
+    $('rsCust').textContent = name || '—';
+    $('rsSource').textContent = $('crSource').value.trim() || '—';
+    $('rsDate').textContent = dfmt($('crDate').value);
+    $('rsMethod').textContent = $('crMethod').value;
+    $('rsAlloc').textContent = fmt(al);
+    $('rsUnalloc').textContent = fmt(un);
+    $('rsUnalloc').className = un > 0 ? 'warn' : '';
+    $('crUnalloc').textContent = 'K ' + fmt(un);
+    $('crUnalloc').className = un > 0 ? 'warn' : 'gate-ok';
+    $('rsGrand').textContent = 'K ' + fmt(amt);
+    $('rsNote').textContent = amt > 0 ? (allocs.length ? allocs.length + ' invoice' + (allocs.length === 1 ? '' : 's') + ' allocated' + (un > 0 ? ' · K ' + fmt(un) + ' on account' : ' · fully allocated') : 'Entire amount on account (advance)') : 'Capture the amount to begin.';
+    var miss = [];
+    if (!name) miss.push(walkin ? 'payer name' : 'customer (pick from registry)');
+    if (!(amt > 0)) miss.push('amount received');
+    if (!$('crDate').value) miss.push('receipt date');
+    miss = miss.concat(crDetailsMissing());
+    var ready = miss.length === 0;
+    $('crPost').disabled = !ready;
+    $('crDraft').disabled = !(name && amt > 0);
+    var g = $('rsGate');
+    g.textContent = ready ? 'Ready ✓' : 'Missing: ' + miss.join(', ');
+    g.className = ready ? 'gate-ok' : 'gate-no';
+    $('crPost').title = ready ? 'Post this receipt to the cashbook' : 'Still required — ' + miss.join('; ');
+  }
+  function initCreate() {
+    if (initCreate.done) return; initCreate.done = true;
+    $('crDate').value = TODAY_ISO;
+    fillCustDatalist();
+    renderCrDetails();
+    renderAllocEditor();
+  }
+  $('btnNew').addEventListener('click', function () { editId = null; $('cvTitle').textContent = 'Create Sales Receipt'; showView('create'); });
+  $('qnavList').addEventListener('click', function () { showView('list'); });
+  $('qnavInv').addEventListener('click', function () { toast('⇄ Invoices module'); });
+  $('qnavCash').addEventListener('click', function () { toast('📖 Cashbook report queued'); });
+  $('crCancel').addEventListener('click', function () { showView('list'); });
+  $('crMode').addEventListener('change', function () {
+    var w = this.value === 'walkin';
+    $('crSearchWrap').style.display = w ? 'none' : '';
+    $('crNameWrap').style.display = w ? '' : 'none';
+    $('crSaveNote').classList.toggle('on', w);
+    if (w) { setLock(false); matchedCode = null; } else { $('crName').value = ''; setLock(!!matchedCode); }
+    renderAllocEditor();
+  });
+  $('crSearch').addEventListener('input', function () {
+    var v = this.value.trim().toLowerCase(); matchedCode = null;
+    if (v) {
+      var c = CUSTOMERS.filter(function (x) { return x.name.toLowerCase().indexOf(v) > -1 || x.code.toLowerCase().indexOf(v) > -1; })[0];
+      if (c) { matchedCode = c.code; $('crContact').value = c.name; $('crEmail').value = c.email; $('crPhone').value = c.phone; }
+    }
+    setLock(!!matchedCode && $('crMode').value === 'existing');
+    renderAllocEditor();
+  });
+  ['crName', 'crContact'].forEach(function (id) { $(id).addEventListener('input', function () { renderAllocEditor(); }); });
+  $('crSource').addEventListener('input', updateCrSummary);
+  $('crDate').addEventListener('change', updateCrSummary);
+  $('crAmount').addEventListener('input', updateCrSummary);
+  $('crMethod').addEventListener('change', renderCrDetails);
+  $('crAuto').addEventListener('click', autoAllocate);
+  $('crAllocBody').addEventListener('input', updateCrSummary);
+
+  function validateReceipt(post) {
+    var walkin = $('crMode').value === 'walkin';
+    var name = walkin ? $('crName').value.trim() : $('crSearch').value.trim();
+    if (!name) { (walkin ? $('crName') : $('crSearch')).classList.add('bad'); toast(walkin ? 'Payer name is required' : 'Select a customer from the registry'); return null; }
+    (walkin ? $('crName') : $('crSearch')).classList.remove('bad');
+    if (!walkin && !matchedCode) { $('crSearch').classList.add('bad'); toast('Pick a matching customer from the list'); return null; }
+    $('crSearch').classList.remove('bad');
+    var amt = num($('crAmount').value);
+    if (!(amt > 0)) { $('crAmount').classList.add('bad'); toast('Enter an amount received greater than zero'); return null; }
+    $('crAmount').classList.remove('bad');
+    if (!$('crDate').value) { $('crDate').classList.add('bad'); toast('Receipt date is required'); return null; }
+    $('crDate').classList.remove('bad');
+    var miss = crDetailsMissing();
+    if (miss.length) { toast('Complete: ' + miss.join(', ')); return null; }
+    var allocs = allocRows();
+    var al = allocs.reduce(function (s, a) { return s + a.amount; }, 0);
+    if (al > amt + 0.005) { toast('Allocations (K ' + fmt(al) + ') cannot exceed the amount received (K ' + fmt(amt) + ')'); return null; }
+    return {
+      walkin: walkin, name: name,
+      contact: $('crContact').value.trim(), email: $('crEmail').value.trim(), phone: $('crPhone').value.trim(),
+      date: $('crDate').value, method: $('crMethod').value, details: collectCrDetails(),
+      amount: amt, allocs: allocs, by: $('crBy').value.trim() || 'Elvis Seyama',
+      source: $('crSource').value.trim(), notes: $('crNotes').value.trim(), post: post
+    };
+  }
+  function commitReceipt(d) {
+    var savedCode = '';
+    if (d.walkin) { savedCode = 'CUS-' + String(custSeq++).padStart(4, '0'); CUSTOMERS.push({ code: savedCode, name: d.name, email: d.email, phone: d.phone }); fillCustDatalist(); if (!OPEN_INV[d.name]) OPEN_INV[d.name] = []; }
+    else savedCode = matchedCode;
+    var st = d.post ? 'posted' : 'draft';
+    var ref, id;
+    if (editId) {
+      id = editId; ref = rowOf(id).querySelector('.rno').textContent;
+      var rc = RC[id];
+      rc.cust = d.name; rc.contact = d.contact || d.name; rc.email = d.email; rc.phone = d.phone;
+      rc.date = d.date; rc.method = d.method; rc.details = d.details; rc.amount = d.amount; rc.allocs = d.allocs; rc.by = d.by; rc.notes = d.notes; rc.source = d.source; rc.status = st;
+      var p = rowPayload(id, st);
+      p.search = (d.name + ' ' + ref + ' ' + d.source + ' ' + d.allocs.map(function (a) { return a.inv; }).join(' ')).toLowerCase();
+      replaceRow(id, p);
+    } else {
+      ref = 'RC-2026-' + String(nextRC++).padStart(4, '0');
+      id = 'r' + (rowSeq++);
+      RC[id] = { status: st, cust: d.name, contact: d.contact || d.name, email: d.email, phone: d.phone, date: d.date, method: d.method, details: d.details, amount: d.amount, allocs: d.allocs, by: d.by, notes: d.notes, source: d.source };
+      var search = (d.name + ' ' + ref + ' ' + d.source + ' ' + d.allocs.map(function (a) { return a.inv; }).join(' ')).toLowerCase();
+      insertRow({ id: id, ref: ref, name: d.name, date: d.date, total: d.amount, status: st, search: search });
+    }
+    editId = null; matchedCode = null;
+    $('crSearch').value = ''; $('crName').value = ''; $('crContact').value = ''; $('crEmail').value = ''; $('crPhone').value = '';
+    $('crAmount').value = ''; $('crNotes').value = ''; $('crSource').value = '';
+    $('crMode').value = 'existing'; $('crMode').dispatchEvent(new Event('change'));
+    $('crDate').value = TODAY_ISO;
+    renderCrDetails(); renderAllocEditor();
+    showView('list'); refresh();
+    var un = Number((d.amount - d.allocs.reduce(function (s, a) { return s + a.amount; }, 0)).toFixed(2));
+    if (d.post) showSuccess({ id: id, title: 'Receipt posted', body: 'Receipt <span class="okref">' + ref + '</span> for <b>' + d.name + '</b> (K ' + fmt(d.amount) + ', ' + d.method.toLowerCase() + ') is posted to the cashbook.' + (d.source ? '<br>Against <span class="okref">' + d.source + '</span>.' : '') + (d.allocs.length ? '<br>Allocated across ' + d.allocs.length + ' invoice' + (d.allocs.length === 1 ? '' : 's') + '.' : '') + (un > 0 ? '<br>K ' + fmt(un) + ' held <b>on account</b>.' : ''), print: true });
+    else toast('✓ ' + ref + ' saved as draft · ' + d.name + (d.walkin ? ' · new payer saved (' + savedCode + ')' : ''));
+    return true;
+  }
+  $('crDraft').addEventListener('click', function () { var d = validateReceipt(false); if (d) commitReceipt(d); });
+  $('crPost').addEventListener('click', function () {
+    var d = validateReceipt(true);
+    if (!d) return;
+    var al = d.allocs.reduce(function (s, a) { return s + a.amount; }, 0);
+    var un = Number((d.amount - al).toFixed(2));
+    var rows = cbRow('Received from', d.name) + cbRow('Receipt date', dfmt(d.date)) + cbRow('Method', d.method) +
+      (d.source ? cbRow('Source document', d.source, 'mono') : '') +
+      cbRow('Amount received', 'K ' + fmt(d.amount), 'green');
+    d.allocs.forEach(function (a) { rows += cbRow('Allocate → ' + a.inv, 'K ' + fmt(a.amount), 'mono'); });
+    rows += cbRow('On account after posting', 'K ' + fmt(un), un > 0 ? 'warn' : '');
+    ask({
+      tone: 'primary',
+      title: 'Post receipt to the cashbook?',
+      okLabel: 'Post receipt',
+      msg: 'Review the receipt before posting — posting enters the cashbook and updates allocated invoice balances.<div class="cb-box">' + rows + '</div>',
+      onOk: function () { commitReceipt(d); }
+    });
+  });
+
+  function openEditReceipt(id) {
+    var tr = rowOf(id), rc = RC[id];
+    editId = id;
+    $('cvTitle').textContent = 'Edit Receipt — ' + tr.querySelector('.rno').textContent;
+    showView('create');
+    var reg = CUSTOMERS.filter(function (c) { return c.name === rc.cust; })[0];
+    if (reg) { $('crMode').value = 'existing'; $('crMode').dispatchEvent(new Event('change')); $('crSearch').value = rc.cust; matchedCode = reg.code; setLock(true); $('crContact').value = rc.contact; $('crEmail').value = rc.email; $('crPhone').value = rc.phone; }
+    else { $('crMode').value = 'walkin'; $('crMode').dispatchEvent(new Event('change')); $('crName').value = rc.cust; $('crContact').value = rc.contact; $('crEmail').value = rc.email; $('crPhone').value = rc.phone; }
+    $('crDate').value = rc.date; $('crAmount').value = rc.amount; $('crMethod').value = rc.method; $('crBy').value = rc.by; $('crNotes').value = rc.notes || ''; $('crSource').value = rc.source || '';
+    renderCrDetails();
+    (MFIELDS[rc.method] || []).forEach(function (f) { var el = $('crd_' + f.k); if (el && rc.details[f.k]) el.value = rc.details[f.k]; });
+    renderAllocEditor();
+    var list = OPEN_INV[rc.cust] || [];
+    Array.prototype.forEach.call($('crAllocBody').rows, function (r, i) {
+      var inp = r.querySelector('[data-a="v"]');
+      if (!inp || !list[i]) return;
+      var hit = rc.allocs.filter(function (a) { return a.inv === list[i].ref; })[0];
+      inp.value = hit ? hit.amount : 0;
+    });
+    updateCrSummary();
+  }
+
+  /* ---------- closing (delegated, strict; mail-progress aware) ---------- */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-close]');
+    if (!b) return;
+    var m = document.getElementById(b.getAttribute('data-close'));
+    if (!m) return;
+    if (m.id === 'mailScrim') { mailRequestClose(); return; }
+    m.classList.remove('on');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if ($('mailScrim').classList.contains('on')) mailRequestClose();
+      else if ($('cfScrim').classList.contains('on')) $('cfScrim').classList.remove('on');
+      else if ($('okScrim').classList.contains('on')) $('okScrim').classList.remove('on');
+      else if ($('printView').classList.contains('on')) closePreview();
+      else if ($('docScrim').classList.contains('on')) $('docScrim').classList.remove('on');
+      else if ($('viewScrim').classList.contains('on')) $('viewScrim').classList.remove('on');
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P') && $('printView').classList.contains('on')) { e.preventDefault(); safePrint(); }
+  });
+
+  getRows().forEach(buildActions);
+  updatePeriodUI();
+  refresh();
+})();
+</script>
+
+</body>
+</html>
+```

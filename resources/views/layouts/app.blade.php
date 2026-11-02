@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full"
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
       style="--font-scale: {{ Auth::user()?->font_scale ?? 1 }}">
     <head>
         <meta charset="utf-8">

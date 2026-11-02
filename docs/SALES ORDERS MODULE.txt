@@ -1,0 +1,1586 @@
+SALES ORDERS MODULE (REGISTER · CREATE/EDIT · VIEW · FULFIL · PRINT/PDF · EMAIL · INVOICE) — FULL IMPLEMENTATION SPEC (SELF-CONTAINED)
+(AUTHORITATIVE MOCKUP HTML EMBEDDED IN APPENDIX A — do NOT read or depend on any external file.)
+
+SCOPE:
+Build the complete Sales Orders feature exactly as APPENDIX A defines it:
+(A) Register: backlog KPI strip, status filter tiles, search/sort, delivery-intelligence chips,
+    per-order fulfilment progress bars, Views / Due-for-delivery / Documents rail,
+    row-wide click-to-view, status-aware row actions (number-only Order № column).
+(B) Create/Edit Sales Order page: existing vs walk-in customer, delivery scheduling,
+    warehouse/cost-centre, line editor with on-hand stock checks and completeness ✓,
+    live summary rail with "Release check" gate, Save Draft / Release Order actions.
+(C) View modal: Draft→Sent→Confirmed→Fulfilled timeline, ordered-vs-fulfilled lines,
+    delivery & lineage chips, status-aware footer (print/send/confirm/fulfil/invoice/…).
+(D) Fulfilment modal: partial deliveries with per-line remaining caps, delivery-note №,
+    received-by; completion flips order to Fulfilled + success confirmation.
+(E) Print preview: A4 Sales Order/Acknowledgement sheet AND price-free Delivery Note sheet,
+    each with Print + Save as PDF (server PDF endpoint live).
+(F) Email dispatch of the order acknowledgement to the customer (format-validated, audited).
+(G) One-click invoice conversion from fulfilled orders with cross-links + success box.
+
+HARD GUARD — do NOT modify unrelated modules (quotations, invoicing, stock masters) beyond
+the sanctioned integration points in §9. Frontend view-layer rebuild + §9 contracts only.
+NO NEW PACKAGES. Live data only — every value in APPENDIX A is a sample.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate/plan sales-order tables (§9.1), customers module, stock items + warehouses +
+    stock-movement service, invoice-creation endpoint, numbering sequences, tax-rate
+    setting (16.5% in mock), PDF engine + print-css conventions (reuse voucher print
+    token family), mailer/queue for acknowledgement emails.
+0.2 Record system currency + enabled currencies; server "today" source (delivery chips,
+    due rail and KPIs must compute server-side).
+0.3 Inventory existing ids/hooks on current sales-order screens so nothing wired breaks.
+
+==================== 1 · TOKENS + ABSOLUTE RULES ====================
+--deep-1:#17565d; --deep-2:#0c3539; --sec:#128F8E; --sec-2:#149897; --teal-btn:#139594;
+--steel:#46708C; --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+--line:#e2ecec; --hair:#EEF3F1; --green:#15803d; --red:#dc2626; --amber:#d97706;
+print family --p-accent:#0E7473 / --p-band:#F0F5F5 / --p-line:#DCE7E5; Inter; mono stack
+for codes/refs/emails; tabular-nums on every figure.
+R1 · ZERO BLUR: scrims solid tints (modals rgba(11,42,45,.26); confirm/success .45);
+     NO backdrop-filter anywhere.
+R2 · STRICT DISMISSAL: dialogs close ONLY via labelled Close button, header ✕, or Esc;
+     never background click; [data-close] handled by ONE delegated document listener
+     (footers are rebuilt dynamically).
+R3 · EVERY modal footer ends with a clearly visible labelled Close button (.btn-close:
+     white tile, solid border, 800-weight ink label, ✕ icon, teal hover). Footers without
+     a note use an invisible .mspacer to keep buttons right-aligned.
+R4 · ROW-WIDE OPEN: clicking anywhere on a register row opens the View modal; action icons
+     keep their own behaviour; locked edit icons swallow clicks silently.
+R5 · ORDER № COLUMN SHOWS THE NUMBER ONLY — no sub-labels (source/status/invoice lines are
+     NOT rendered in the grid). Lineage lives in: view-modal meta chips (From QT-…, INV-…,
+     Emailed …), fulfilled footer note, print-sheet Source meta cell + audit line, and the
+     invisible data-search index (source quote numbers remain searchable).
+R6 · REGISTER CONTROLS: status tiles (Total/Draft/Sent/Confirmed/Fulfilled/Cancelled/Void)
+     as filters with live counts; Views rail (All / Open=Draft+Sent / Confirmed /
+     Fulfilled) composes with tiles; sort (newest, oldest, value high→low, delivery
+     soonest); live search; server-side pagination preserving filters.
+R7 · DELIVERY INTELLIGENCE: chips vs server today — Overdue (red), ≤7 days (amber
+     "N days"), Scheduled (grey), Delivered (green, fulfilled only), "—" (cancelled/void).
+     Due-for-delivery rail lists OPEN (draft/sent/confirmed) orders overdue or due ≤7 days
+     with deep-links; empty state when healthy; KPI tile mirrors the count.
+R8 · STATUS MACHINE: draft→sent (release); sent→confirmed (confirm + stock allocation);
+     confirmed→fulfilled (fulfilment completes ALL line qty); partial fulfilment keeps
+     confirmed + amber Partial chip; draft|sent|confirmed→cancelled; draft|sent→void;
+     fulfilled→invoice link. "Expired/Overdue" is NEVER a stored status.
+R9 · CREATE/EDIT GATING: Release disabled until customer resolved (registry match) or
+     walk-in name typed + contact person + delivery date + ≥1 COMPLETE line, where
+     complete = item code + item name + qty>0 + unit price>0 (DESCRIPTION OPTIONAL) +
+     computed amount>0. Save Draft needs customer + ≥1 complete line. Summary rail shows a
+     live "Release check" row: green "Ready ✓" or amber "Missing: …" listing each unmet
+     condition; the Release button title mirrors it. Complete lines carry a green ✓ in the
+     Amount cell; summary note counts them.
+R10 · WALK-IN RULE: unknown customer name creates the customer record in the SAME DB
+     transaction and links it; registry immediately feeds searches/datalists; toast cites
+     the new code. Existing-mode match locks contact/email/phone/address (grey readonly).
+R11 · ON-HAND STOCK: line editor shows on-hand per item code from the stock service;
+     qty > on-hand flags the cell amber with ⚠ (back-order review) but does NOT block
+     saving; unknown/service codes show "—".
+R12 · FULFILMENT: modal lists lines with ordered/done/fulfil-now (input max = remaining,
+     disabled at 0), fulfil date, delivery-note № (auto DN-{YYYY}-{seq}), received-by.
+     Partial save → confirmed retained + Partial chip + toast with x/y qty. Complete →
+     status fulfilled, delivered_on/dn/received_by stored, SUCCESS CONFIRMATION BOX
+     (green icon; ref, customer, qty, DN №; actions Close · View order · Create invoice).
+     Stock relieved from the order warehouse on save (server-side movement rows).
+R13 · PRINT/PDF: preview overlay (z200) with sticky toolbar Back · "Print preview —
+     {doc} {ref}" · A4 note · Save as PDF · Print; Ctrl/Cmd+P prints sheet-only.
+     · Order doc: title "Sales Order" ("Order Acknowledgement" when sent); DRAFT watermark
+       on drafts; mint header band; status stamp pill; 4×3 meta grid (customer, contact,
+       email, phone, order date, delivery date, method, warehouse, terms, cost centre,
+       prepared by, source); priced lines table + double-ruled totals + amount-in-words
+       ("Malawi Kwacha … only", tax-included note); Notes + Terms panels (retention of
+       title, availability, delivery method); signatures Prepared by + Customer acceptance;
+       bottom-pinned audit footer (incl. emailed flag) + PAGE 1 OF 1.
+     · Delivery note: title "Delivery Note", DN number, "Delivered/For delivery" stamp;
+       meta incl. address, order ref, received-by, fulfilment x/y; PRICE-FREE table
+       Ordered/Delivered/Balance; Delivery instructions + Warehouse notes panels;
+       signatures Released by (warehouse) + Received by (customer).
+     Print CSS: @page A4 10mm; body.pv-on hides app/scrims/toasts/toolbar; sheet
+     min-height 277mm; exact colours. Save as PDF streams server-rendered PDF
+     ({SO|DN-number}.pdf) in the live app.
+R14 · EMAIL DISPATCH: "Send to customer" (row icon + view-footer button) available on
+     sent/confirmed/fulfilled only; blocked with toast when email missing/invalid
+     (regex ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ — mirrored server-side);
+     confirm dialog states recipient; on success queue mail job with acknowledgement PDF,
+     store emailed_to + emailed_at, surface "Emailed {date}" chip + audit flag; release
+     auto-emails when a valid email exists at release time.
+R15 · INVOICE CONVERSION: fulfilled orders expose Create invoice (footer + success box);
+     confirm-gated; raises invoice for grand total, cross-links order.invoice_id both ways,
+     row search index gains invoice number, success box cites both refs. Fulfilled footer
+     note shows the linked invoice when present.
+R16 · DO-NOT-REINTRODUCE: register Order-№ sub-labels; footer notes "Released — awaiting
+     confirmation & stock allocation." / "Confirmed — record deliveries against this
+     order." / "Cancelled — duplicate to re-enter as a new draft."; the removed
+     line-completeness hint paragraph under the lines table; mandatory description in line
+     completeness; opacity-dimmed gated controls; background-click dismissal; "Authorised
+     by" signatures; attachments.
+
+==================== 2 · REGISTER PAGE (parity with APPENDIX A) ====================
+2.1 KPI tiles: Open backlog value (draft+sent+confirmed), Fulfilment rate =
+    fulfilled ÷ (fulfilled+cancelled), Deliveries ≤7d count (amber when >0), Invoiced
+    value + invoice count (orders carrying invoice_id).
+2.2 Datasheet columns: Order № (mono teal, number only — R5), Customer (avatar+name),
+    Order date, Delivery (date + chip R7), Fulfilment (progress bar + "x/y qty"),
+    Total (K, tabular right), Status pill (+ Partial chip), Actions
+    (view · edit[locked unless draft] · contextual: release[draft] / confirm+send[sent] /
+    fulfil+send[confirmed] / invoice+send[fulfilled] / duplicate[cancelled]).
+2.3 Lifecycle actions confirm-gated (stacked confirm box z140): Release, Confirm, Cancel,
+    Void; all audit-logged with user + timestamp + from→to.
+
+==================== 3 · CREATE / EDIT PAGE ====================
+3.1 Header: title (switches to "Edit Sales Order — {ref}" in edit mode) + Cancel /
+    Save Draft / Release Order (gated per R9).
+3.2 Customer & Delivery card: type select; delivery date*; method select; registry search
+    with datalist (existing) or name field (walk-in); contact/email/phone/address
+    (locked on match, editable on walk-in); walk-in save-note.
+3.3 Order Information card: № readonly auto; order date*; reference/source (QT-… accepted
+    and stored as lineage); warehouse select; cost centre (branch-synced default allowed);
+    department + prepared-by display-only; payment terms.
+3.4 Lines card: code / item name / description(optional) / qty / unit price / on-hand
+    (R11) / computed amount + ✓ (R9) / remove; Add Line; live totals.
+3.5 Notes card: customer notes (printed) + internal notes (picking/packing).
+3.6 Summary rail: customer, contact, order date, delivery, RELEASE CHECK row (R9),
+    subtotal, tax, dark Order Total tile, complete-line note. Quick nav: Orders list /
+    Quotations / Stock items.
+3.7 Edit mode: draft only (R8 lock otherwise); prefills every field incl. lines (desc
+    parsed back out of the stored label); saving updates the row in place (number,
+    search index, chips, progress) and returns to the register with a toast.
+
+==================== 4 · VIEW MODAL (960px) ====================
+4.1 Head: box icon, "Sales Order", mono ref, status pill, ✕. Meta chips: customer,
+    ordered, delivery, "x/y qty fulfilled", From QT-…, INV-…, Emailed …, total.
+4.2 Timeline Draft→Sent→Confirmed→Fulfilled (done teal, current pulsing, cancelled/void =
+    red branch at Confirmed).
+4.3 Body: lines table (description, ordered, fulfilled + "part" chip, unit, amount);
+    customer & delivery rows (contact/phone, address, method/warehouse, terms); totals
+    panel; notes block.
+4.4 Footer per status (R3/R5/R16): draft → note + Edit + Print/PDF + Void + Release;
+    sent → [spacer] Acknowledgement + Send to customer + Cancel + Confirm;
+    confirmed → [spacer] Delivery note + Order copy + Send + Cancel + Record fulfilment;
+    fulfilled → invoice note + Delivery note + Order copy + Send + Create invoice(if none);
+    cancelled → [spacer] Duplicate; void → note only. Trailing Close always.
+
+==================== 5 · SANCTIONED BACKEND CONTRACTS ====================
+5.1 Migration (nullable-safe):
+    sales_orders: number, source_quotation_id NULL FK, customer_id NULL FK, customer_name,
+    contact_person, email, phone, delivery_address, order_date, delivery_date,
+    delivery_method, warehouse_id FK, cost_centre, department, prepared_by, terms_key,
+    status ENUM(draft,sent,confirmed,fulfilled,cancelled,void), subtotal, tax_total,
+    grand_total, notes_customer, notes_internal, delivered_on NULL, delivery_note_no NULL,
+    received_by NULL, invoice_id NULL FK, emailed_to NULL, emailed_at NULL,
+    cancel_reason NULL, created_by, timestamps.
+    sales_order_lines: order_id FK cascade, position, item_code, item_name, description
+    NULL, qty_ordered, qty_fulfilled, unit_price, line_total.
+    order_fulfilments: order_id FK, line_id FK, qty, fulfil_date, delivery_note_no,
+    received_by, created_by, timestamps (partial-delivery audit trail).
+    stock_movements integration: reservation on confirm, relief on fulfilment
+    (warehouse_id, item_code, ±qty, ref = order/DN number).
+5.2 Endpoints: GET /sales-orders (q,status,view,sort,page) · GET /sales-orders/{id} ·
+    POST /sales-orders {mode: draft|release, …} · PUT /sales-orders/{id} (409 unless
+    draft) · POST /sales-orders/{id}/{release|confirm|cancel|void} ·
+    POST /sales-orders/{id}/fulfilments {date, dn_no, received_by, lines[{line_id,qty}]} ·
+    POST /sales-orders/{id}/invoice · POST /sales-orders/{id}/send-email ·
+    GET /sales-orders/{id}/print?doc=order|delivery · GET …/pdf?doc=… .
+    Walk-in customer creation inline within POST/PUT transactions (R10).
+5.3 Numbering: SO-{YYYY}-{seq4} on first persist; DN-{YYYY}-{seq4} per fulfilment batch;
+    per-year sequence tables; invoice numbers owned by invoicing module.
+5.4 Money & tax: decimals; line_total = qty×unit; grand = subtotal+tax(setting rate);
+    words-amount rendered server-side for PDF parity; fulfilment qty ≤ remaining enforced
+    server-side; email regex enforced on send-email and release-with-email.
+5.5 Audit: every transition, fulfilment batch, email dispatch and invoice creation logged
+    (user, ts, from→to, refs). Cancel/void retain rows; no deletes.
+
+==================== 6 · PERMISSIONS ====================
+salesorders.view / create / edit_draft / release / confirm / cancel / void / fulfil /
+invoice / send_email / print_pdf / export; customers.create implicitly granted through
+salesorders.create for walk-in capture; stock relief executed under warehouse posting
+service account, not UI permissions.
+
+==================== 7 · BEHAVIOUR / A11Y / RESPONSIVE ====================
+7.1 R2/R3 dismissal everywhere; Esc order: confirm → success → print preview → fulfil →
+    view. View→Edit closes the modal first; View→Fulfil/Invoice hand-offs close prior
+    dialogs. Delegated listeners for rows, footers, [data-close].
+7.2 ≤1180px tiles 4-col + KPIs 2-col; ≤1080px rail stacks; ≤760px grids 1-col, modals
+    full-bleed, signatures 1-col; progress bars keep min-width; toasts for every mutation
+    not covered by success boxes.
+7.3 prefers-reduced-motion disables animation; focus-visible rings; aria-modal dialogs;
+    fulfil inputs expose max attributes; gated Release exposes title + rail check row.
+
+==================== 8 · VERIFY ====================
+8.1 Parity pass vs APPENDIX A at 1440/1280/1024/768 for register, create/edit page, view
+    modal, fulfil modal, success box and both print sheets (screen + printed/PDF).
+8.2 Round-trips: walk-in release ⇒ customer row + emailed stamp + sent row (number-only
+    cell); confirm ⇒ allocation movement; partial fulfil ⇒ Partial chip + progress update;
+    complete fulfil ⇒ fulfilled + DN stored + success box ⇒ create invoice ⇒ cross-links;
+    edit draft ⇒ row/chips/progress update in place; cancel/void ⇒ retained + duplicate.
+8.3 Gating matrix: Release unlocks only when name+contact+delivery+complete line;
+    description left blank still counts complete (R9); on-hand overflow shows ⚠ without
+    blocking; send-email blocked for missing/malformed address with toast.
+8.4 Rule greps: no ".osub" in register markup/CSS; none of the R16 strings present; no
+    backdrop-filter; Close button in every footer; .mspacer on note-less footers; no
+    opacity-dimmed gated controls; print outputs sheet-only with footer at page bottom;
+    words line equals grand total.
+REPORT: files touched; migration diff; endpoint + movement map; numbering/status-machine/
+audit tables; sample payloads (release, fulfil partial+complete, send-email, invoice);
+R1–R16 grep proofs; parity screenshots (register, create w/ gate row, view, fulfil,
+success box, order sheet, delivery-note sheet); NO SECTION SKIPPED.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Orders — clean Order № column</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0; --steel:#46708C; --teal-btn:#139594;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --green:#15803d; --red:#dc2626; --red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+    --p-accent:#0E7473; --p-band:#F0F5F5;
+    --p-ink:#13292C; --p-sub:#3E5658; --p-muted:#5F7476; --p-faint:#8AA3A2;
+    --p-line:#DCE7E5; --p-hair:#E7EFED;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --sh-lift: 0 2px 4px rgba(10,42,46,.06), 0 20px 44px -18px rgba(10,42,46,.22), inset 0 1px 0 #fff;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(900px 380px at 8% -10%, rgba(18,143,142,.09), transparent 60%), linear-gradient(180deg, #eef4f4 0%, #e7efee 100%); min-height: 100vh; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  body.pv-on { overflow: hidden; }
+  button, input, select, textarea { font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 26px 26px 80px; }
+
+  #createView { display: none; }
+  body.view-create #listView { display: none; }
+  body.view-create #createView { display: block; }
+
+  .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .phead h1 { font-size: 26px; font-weight: 900; letter-spacing: -0.025em; }
+  .phead .sub { margin-top: 5px; font-size: 13px; color: var(--muted); }
+  .pacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .16s ease; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .btn[disabled] { opacity: .45; pointer-events: none; box-shadow: none; }
+  .btn-ghost { background: #fff; border-color: var(--border); color: var(--sub); box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .btn-ghost:hover { border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-cta { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-cta:hover { box-shadow: 0 8px 18px -6px rgba(18,143,142,.7), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-danger-o { background: #fff; border-color: rgba(220,38,38,.35); color: var(--red); }
+  .btn-danger-o:hover { background: #fef2f2; border-color: rgba(220,38,38,.55); }
+  .btn-danger { background: var(--red); color: #fff; box-shadow: 0 4px 12px -5px rgba(220,38,38,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-green { background: var(--green); color: #fff; box-shadow: 0 4px 12px -5px rgba(21,128,61,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-close { background: #fff; border: 1px solid var(--border); color: var(--ink); font-weight: 800; box-shadow: 0 1px 2px rgba(10,42,46,.06); }
+  .btn-close:hover { border-color: rgba(19,149,148,.5); color: var(--teal-btn); background: rgba(19,149,148,.06); }
+  .btn-sm { height: 34px; padding: 0 13px; font-size: 12.5px; border-radius: 10px; }
+  .btn-add { height: 34px; padding: 0 14px; border-radius: 10px; border: 1.5px dashed var(--border); background: #fbfdfc; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-add:hover { border-color: rgba(18,143,142,.45); color: var(--sec); background: rgba(18,143,142,.05); }
+  .btn-add svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; fill: none; }
+
+  .layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 18px; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 15px 16px; box-shadow: var(--sh-card); animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0ms); transition: transform .18s ease, box-shadow .18s ease; }
+  .kpi:hover { transform: translateY(-2px); box-shadow: var(--sh-lift); }
+  .kpi .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .kpi .l { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .kpi .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.22); color: var(--sec); }
+  .kpi .ic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .kpi .v { margin-top: 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .kpi .n { margin-top: 4px; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+  .kpi .n.ok { background: rgba(21,128,61,.10); color: var(--green); }
+  .kpi .n.warn { background: rgba(217,119,6,.10); color: var(--amber-2); }
+  .kpi .n.flat { background: rgba(17,69,75,.07); color: var(--muted); }
+
+  .tcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 80ms; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .searchwrap { position: relative; flex: 1; min-width: 220px; }
+  .searchwrap svg { position: absolute; left: 12px; top: 11px; width: 15px; height: 15px; stroke: var(--faint); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+  .in, .sel { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafb; font-size: 12.5px; font-weight: 600; color: var(--ink); outline: none; transition: all .15s; }
+  .searchwrap .in { width: 100%; padding-left: 36px; }
+  .in:focus, .sel:focus, .lin:focus, textarea.in:focus { border-color: rgba(18,143,142,.45); background: #fff; box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .in.bad, .sel.bad { border-color: rgba(220,38,38,.55); background: #fef2f2; box-shadow: 0 0 0 4px rgba(220,38,38,.08); }
+  .in.ro { background: #f1f5f6; color: var(--muted); }
+  .sel { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%); background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .sel:disabled { background-color: #f1f5f6; color: var(--muted); }
+  .cnt { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.24); padding: 6px 12px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .stiles { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--hair); background: #fbfdfc; }
+  .stile { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fff; cursor: pointer; transition: all .16s ease; text-align: left; }
+  .stile .sic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; }
+  .stile .sic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .stile .sl { font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); display: block; }
+  .stile .sv { font-size: 15px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; display: block; }
+  .stile:hover { border-color: rgba(18,143,142,.35); transform: translateY(-1px); }
+  .stile.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .stile.on .sl { color: rgba(226,244,244,.8); } .stile.on .sv { color: #fff; } .stile.on .sic { background: rgba(255,255,255,.16); color: #fff; }
+  .sic.all { background: rgba(11,42,45,.08); color: var(--deep-1); }
+  .sic.dr { background: rgba(17,69,75,.08); color: var(--muted); }
+  .sic.se { background: rgba(70,112,140,.12); color: var(--steel); }
+  .sic.cf { background: rgba(18,143,142,.10); color: var(--sec); }
+  .sic.fu { background: rgba(21,128,61,.10); color: var(--green); }
+  .sic.ca { background: rgba(220,38,38,.10); color: var(--red); }
+  .sic.vo { background: rgba(138,163,162,.14); color: var(--faint); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 11px 16px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(18,143,142,.18); font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; white-space: nowrap; }
+  thead th.r { text-align: right; }
+  tbody td { padding: 12px 16px; border-top: 1px solid var(--hair); vertical-align: middle; font-size: 12.5px; color: var(--sub); }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(18,143,142,.035); }
+  #oBody tr.orow { cursor: pointer; }
+  .ono { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--sec); cursor: pointer; }
+  .ono:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .cust { display: flex; align-items: center; gap: 10px; }
+  .av { width: 32px; height: 32px; min-width: 32px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(180deg, rgba(18,143,142,.14), rgba(18,143,142,.07)); border: 1px solid rgba(18,143,142,.26); color: var(--deep-1); font-size: 11px; font-weight: 800; }
+  .cust .nm { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  .vd { white-space: nowrap; }
+  .xc { display: inline-flex; align-items: center; gap: 4px; margin-left: 7px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; vertical-align: 1px; }
+  .xc.exp { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.24); }
+  .xc.soon { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.26); }
+  .xc.ok { background: rgba(17,69,75,.06); color: var(--muted); border: 1px solid rgba(17,69,75,.14); }
+  .xc.good { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .tot { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .prog { height: 6px; width: 86px; background: var(--line); border-radius: 99px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--sec-2), var(--sec)); border-radius: 99px; transition: width .3s ease; }
+  .pful { font-size: 9.5px; font-weight: 800; color: var(--muted); margin-left: 8px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.dr { background: rgba(17,69,75,.07); color: var(--muted); border: 1px solid rgba(17,69,75,.18); }
+  .pill.se { background: rgba(70,112,140,.12); color: var(--steel); border: 1px solid rgba(70,112,140,.3); }
+  .pill.cf { background: rgba(18,143,142,.10); color: var(--sec); border: 1px solid rgba(18,143,142,.3); }
+  .pill.fu { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .pill.ca { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.26); }
+  .pill.vo { background: rgba(138,163,162,.12); color: var(--faint); border: 1px solid rgba(138,163,162,.3); }
+  .ib { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; transition: all .15s; vertical-align: middle; }
+  .ib + .ib { margin-left: 6px; }
+  .ib svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ib:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.06); transform: translateY(-1px); }
+  .ib[disabled] { opacity: .35; pointer-events: none; }
+  .tfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--hair); background: #fbfdfc; font-size: 11.5px; font-weight: 600; color: var(--faint); flex-wrap: wrap; }
+  .empty { padding: 46px 20px; text-align: center; }
+  .empty .halo { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.2); color: var(--sec); }
+  .empty .halo svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .empty .t { font-size: 14px; font-weight: 800; color: var(--sub); }
+  .empty .s { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
+  .rcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 140ms; }
+  .rcard + .rcard { margin-top: 18px; }
+  .rhead { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .rhead .ric { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .rhead .ric svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .rhead .ric.warn { background: linear-gradient(180deg, #e8a33c, var(--amber)); }
+  .rhead .rt { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .rhead .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .rbody { padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .vitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid transparent; background: transparent; font-size: 12.5px; font-weight: 700; color: var(--sub); text-align: left; cursor: pointer; transition: all .16s ease; }
+  .vitem .vic { width: 28px; height: 28px; min-width: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.12); color: var(--muted); transition: all .16s ease; }
+  .vitem .vic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .vitem .vc { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .vitem:hover { background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.18); color: var(--ink); }
+  .vitem.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .vitem.on .vic { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); color: #fff; }
+  .vitem.on .vc { background: rgba(255,255,255,.2); color: #fff; }
+  .attn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fdfeff; cursor: pointer; transition: all .16s ease; text-align: left; }
+  .attn + .attn { margin-top: 6px; }
+  .attn:hover { border-color: rgba(217,119,6,.4); transform: translateY(-1px); }
+  .attn .an { font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--ink); display: block; }
+  .attn .as { font-size: 10px; font-weight: 600; color: var(--faint); display: block; margin-top: 1px; }
+  .attn .xc { margin-left: auto; }
+  .attn-empty { font-size: 11.5px; font-weight: 600; color: var(--faint); padding: 6px 6px 4px; }
+
+  .scrim { position: fixed; inset: 0; background: rgba(11,42,45,.26); display: none; place-items: center; padding: 24px; z-index: 90; }
+  .scrim.on { display: grid; animation: fadeIn .2s ease; }
+  .scrim.cf { z-index: 140; background: rgba(11,42,45,.45); }
+  .mbox { width: min(960px, calc(100vw - 48px)); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 24px 60px -20px rgba(10,42,46,.35), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .mbox.mid { width: min(880px, calc(100vw - 48px)); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 15px 22px; background: radial-gradient(700px 200px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); flex: none; }
+  .m-ic { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; background: #fff; display: grid; place-items: center; color: var(--deep-2); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .m-ic svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-head-left { flex: 1; min-width: 0; }
+  .m-title { display: block; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .m-sub { display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; color: rgba(255,255,255,.6); margin-top: 2px; }
+  .m-close { margin-left: auto; width: 30px; height: 30px; min-width: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .m-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding: 10px 22px; border-bottom: 1px solid var(--hair); background: #fbfdfc; flex: none; }
+  .mchip { font-size: 10.5px; font-weight: 800; color: var(--muted); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
+  .mchip.mono { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.07); border-color: rgba(18,143,142,.22); }
+  .mchip.b { color: var(--ink); }
+  .mchip.warn { color: var(--amber-2); background: rgba(217,119,6,.08); border-color: rgba(217,119,6,.25); }
+  .m-body { padding: 16px 22px 18px; overflow: auto; flex: 1; }
+  .steps { display: flex; align-items: flex-start; gap: 0; margin: 2px 0 16px; }
+  .step { flex: 1; position: relative; text-align: center; padding-top: 26px; }
+  .step::before { content: ''; position: absolute; top: 9px; left: 0; right: 0; height: 2px; background: var(--line); }
+  .step:first-child::before { left: 50%; } .step:last-child::before { right: 50%; }
+  .step .dot { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid var(--line); z-index: 1; }
+  .step .lb { font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); }
+  .step.done::before { background: var(--sec); }
+  .step.done .dot { background: var(--sec); border-color: var(--sec); box-shadow: 0 0 0 3px rgba(18,143,142,.15); }
+  .step.done .lb { color: var(--sec); }
+  .step.cur .dot { background: #fff; border-color: var(--sec); box-shadow: 0 0 0 3px rgba(18,143,142,.18); animation: pulse 2.2s infinite; }
+  .step.cur .lb { color: var(--ink); }
+  .step.bad.done::before { background: var(--red); }
+  .step.bad.done .dot { background: var(--red); border-color: var(--red); }
+  .step.bad.done .lb { color: var(--red-2); }
+  .qgrid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+  .vsec { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+  .ltable { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .ltable th { padding: 8px 12px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .ltable th.r { text-align: right; }
+  .ltable td { padding: 9px 12px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .ltable td.r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .tsum { display: flex; flex-direction: column; gap: 7px; background: #f8fbfa; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .tsum .row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .tsum .row b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 800; }
+  .tsum .grand { border-top: 3px double #cfe0dd; margin-top: 4px; padding-top: 9px; display: flex; justify-content: space-between; align-items: center; }
+  .tsum .grand .l { font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
+  .tsum .grand .v { font-size: 17px; font-weight: 900; color: var(--deep-1); font-variant-numeric: tabular-nums; }
+  .mrow { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: 12.5px; }
+  .mrow:last-child { border-bottom: none; }
+  .mrow .l { color: var(--muted); font-weight: 600; }
+  .mrow .v { color: var(--ink); font-weight: 700; text-align: right; }
+  .mrow .v.mono { font-family: var(--mono); color: var(--sec); font-size: 12px; }
+  .m-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 13px 22px; border-top: 1px solid var(--hair); background: #f8fafa; flex: none; }
+  .mnote { font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--hair); border-radius: 9px; padding: 8px 12px; margin-right: auto; }
+  .mnote b { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+  .mspacer { margin-right: auto; }
+
+  .fsec { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; }
+  .fsec .fs-ic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .fsec .fs-ic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .fsec .fs-t { font-size: 12.5px; font-weight: 800; color: var(--ink); }
+  .fsec .fs-rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .f-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fld label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .fld label b { color: var(--red); }
+  .fld .in, .fld .sel { width: 100%; }
+  .fld .in[readonly] { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.22); }
+  .fld .in.auto { font-family: var(--mono); color: var(--faint); background: #f1f5f6; border-color: var(--line); }
+  textarea.in { height: 74px; padding: 10px 12px; resize: vertical; font-weight: 500; width: 100%; }
+  .savenote { font-size: 11px; font-weight: 700; color: var(--sec); background: rgba(18,143,142,.07); border: 1px solid rgba(18,143,142,.22); border-radius: 9px; padding: 8px 12px; margin-top: 10px; display: none; }
+  .savenote.on { display: block; }
+  .etable { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 10px; }
+  .etable th { padding: 8px 10px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .etable th.r { text-align: right; }
+  .etable td { padding: 7px 10px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .lin { height: 32px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafb; font-size: 12px; font-weight: 600; color: var(--ink); padding: 0 9px; width: 100%; outline: none; transition: all .15s; }
+  .lin.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .lin:disabled { background: #f1f5f6; color: var(--faint); }
+  .amtcell { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lok { color: var(--green); font-weight: 900; margin-left: 6px; }
+  .ohcell { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  .ohcell.over { color: var(--amber-2); }
+  .xb { width: 24px; height: 24px; border-radius: 7px; border: 1px solid var(--line); background: #fff; color: var(--faint); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .xb:hover { border-color: rgba(220,38,38,.45); color: var(--red); background: rgba(220,38,38,.06); }
+  .xb svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+  .chead { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .chead h2 { font-size: 24px; font-weight: 900; letter-spacing: -0.025em; }
+  .cacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .card2 { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); padding: 18px 20px; margin-bottom: 16px; animation: rise .45s cubic-bezier(.2,.8,.2,1) both; }
+  .card2 .fsec { margin-top: 0; }
+  .sumrow { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); font-weight: 600; padding: 7px 0; border-bottom: 1px solid var(--hair); }
+  .sumrow b { color: var(--ink); font-weight: 700; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+  .sumrow b.gate-ok { color: var(--green); }
+  .sumrow b.gate-no { color: var(--amber-2); }
+  .grandtile { margin-top: 12px; background: radial-gradient(240px 90px at 12% -30%, rgba(255,255,255,.10), transparent 60%), linear-gradient(135deg, var(--deep-1), var(--deep-2) 60%, var(--deep-3)); color: #fff; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 22px -12px rgba(8,40,44,.6), inset 0 1px 0 rgba(255,255,255,.12); }
+  .grandtile .l { font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: rgba(226,244,244,.75); }
+  .grandtile .v { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .sumnote { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 8px; }
+
+  .cbox { width: min(460px, 100%); background: #fff; border-radius: 18px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 24px 60px -20px rgba(8,40,44,.55); overflow: hidden; animation: slideUp .25s cubic-bezier(.2,.8,.2,1); }
+  .cb-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; background: linear-gradient(180deg, #fdfeff, #f6fbf9); border-bottom: 1px solid var(--hair); }
+  .cb-ic { width: 30px; height: 30px; min-width: 30px; border-radius: 9px; display: grid; place-items: center; }
+  .cb-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .cb-ic.primary { background: rgba(18,143,142,.1); color: var(--sec); }
+  .cb-ic.ok { background: rgba(21,128,61,.1); color: var(--green); }
+  .cb-ic.danger { background: rgba(220,38,38,.1); color: var(--red); }
+  .cb-head b { font-size: 14px; font-weight: 800; color: var(--ink); flex: 1; }
+  .cb-x { border: none; background: none; color: var(--faint); cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; }
+  .cb-x:hover { background: var(--hair); color: var(--ink); }
+  .cb-x svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .cb-body { padding: 16px 18px; font-size: 12.5px; font-weight: 500; color: var(--sub); line-height: 1.65; }
+  .cb-body b { color: var(--ink); }
+  .cb-body .okref { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+  .cb-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--hair); background: #f8fafa; }
+
+  .pview { position: fixed; inset: 0; z-index: 200; display: none; overflow-y: auto; background: linear-gradient(180deg, #e6edec 0%, #dde6e5 100%); }
+  .pview.on { display: block; animation: fadeIn .2s ease; }
+  .ptoolbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 12px 22px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--p-line); box-shadow: 0 6px 18px -12px rgba(10,42,46,.25); flex-wrap: wrap; }
+  .tb-back { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-back:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); }
+  .tb-back svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-title { font-size: 13px; font-weight: 800; color: var(--p-ink); }
+  .tb-title span { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-accent); background: rgba(14,116,115,.08); border: 1px solid rgba(14,116,115,.22); padding: 3px 8px; border-radius: 7px; margin-left: 8px; }
+  .tb-spacer { flex: 1; }
+  .tb-note { font-size: 10.5px; font-weight: 700; color: var(--p-faint); letter-spacing: .06em; text-transform: uppercase; }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-btn:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); transform: translateY(-1px); }
+  .tb-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-btn.primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.25); }
+  .sheet-wrap { display: flex; justify-content: center; padding: 34px 20px 60px; }
+  .sheet { position: relative; width: 794px; min-height: 1123px; background: #fff; border: 1px solid var(--p-line); box-shadow: 0 2px 6px rgba(10,42,46,.08), 0 30px 70px -30px rgba(10,42,46,.45); overflow: hidden; display: flex; flex-direction: column; }
+  .sheet::before { content: ''; display: block; height: 5px; flex: none; background: linear-gradient(90deg, var(--p-accent) 0%, var(--sec-2) 55%, #7FD1C0 100%); }
+  .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+  .wm span { transform: rotate(-24deg); font-size: 100px; font-weight: 900; letter-spacing: .18em; color: rgba(14,116,115,.05); text-transform: uppercase; white-space: nowrap; }
+  .sheet-body { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+  .v-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px 46px 20px; background: linear-gradient(180deg, var(--p-band) 0%, #f7fbfa 100%); border-bottom: 1px solid var(--p-line); }
+  .brand { display: flex; gap: 13px; }
+  .brand .mark { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(150deg, var(--p-accent) 0%, #0a5453 100%); color: #fff; font-size: 17px; font-weight: 900; display: grid; place-items: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+  .brand .bn { font-size: 15.5px; font-weight: 900; letter-spacing: -0.015em; color: var(--p-ink); }
+  .brand .bl { font-size: 10px; font-weight: 600; color: var(--p-muted); line-height: 1.55; margin-top: 3px; }
+  .docblock { text-align: right; }
+  .docblock .dt { font-size: 9.5px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--p-accent); }
+  .docblock .dn { font-family: var(--mono); font-size: 19px; font-weight: 800; color: var(--p-ink); letter-spacing: -0.01em; margin-top: 4px; }
+  .docblock .dst { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; padding: 4px 11px; border-radius: 999px; background: rgba(14,116,115,.10); border: 1px solid rgba(14,116,115,.35); color: var(--p-accent); font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .docblock .dst i { width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); }
+  .docblock .dst.draftst { background: rgba(138,163,162,.14); border-color: rgba(138,163,162,.4); color: var(--p-muted); }
+  .docblock .dst.draftst i { background: var(--p-muted); }
+  .docblock .dp { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 6px; }
+  .meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--p-line); }
+  .meta .cell { padding: 10px 16px; border-left: 1px solid var(--p-hair); }
+  .meta .cell:first-child { border-left: none; }
+  .meta .cell:nth-child(n+5) { border-top: 1px solid var(--p-hair); }
+  .meta .l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); }
+  .meta .v { font-size: 11px; font-weight: 700; color: var(--p-ink); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta .v.mono { font-family: var(--mono); font-size: 10.5px; color: var(--p-accent); }
+  .vlines { padding: 20px 46px 0; }
+  .vlines .lt { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--p-muted); margin-bottom: 9px; }
+  .sheet table { width: 100%; border-collapse: collapse; }
+  .sheet thead th { background: var(--p-accent); color: #fff; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 8px 12px; text-align: left; box-shadow: none; }
+  .sheet thead th.r { text-align: right; }
+  .sheet thead th:first-child { border-radius: 6px 0 0 6px; }
+  .sheet thead th:last-child { border-radius: 0 6px 6px 0; }
+  .sheet tbody td { padding: 9px 12px; border-bottom: 1px solid var(--p-hair); border-top: none; font-size: 11px; color: var(--p-sub); vertical-align: top; }
+  .sheet tbody td.no { width: 30px; color: var(--p-faint); font-weight: 700; }
+  .sheet tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
+  .sheet tr.totals td { border-bottom: none; border-top: 3px double var(--p-ink); padding: 10px 12px; background: var(--p-band); }
+  .sheet tr.words td { padding: 9px 12px; border-bottom: 1px solid var(--p-line); background: #fbfdfc; }
+  .words-l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); margin-right: 8px; }
+  .words-v { font-size: 11px; font-weight: 700; color: var(--p-sub); font-style: italic; }
+  .balnote { float: right; font-size: 9.5px; font-weight: 800; color: var(--p-accent); letter-spacing: .06em; }
+  .qpanels { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; margin: 16px 46px 0; }
+  .narr { border: 1px solid var(--p-line); border-radius: 6px; overflow: hidden; }
+  .narr .nh { padding: 7px 12px; background: var(--p-band); border-bottom: 1px solid var(--p-hair); font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .narr .nb { padding: 10px 12px; font-size: 10.5px; font-weight: 500; color: var(--p-sub); line-height: 1.6; }
+  .tlist { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .tlist div { font-size: 9.5px; font-weight: 600; color: var(--p-sub); line-height: 1.5; padding-left: 12px; position: relative; }
+  .tlist div::before { content: ''; position: absolute; left: 0; top: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); opacity: .55; }
+  .sigs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin: 26px 46px 34px; }
+  .sig { text-align: center; }
+  .sig .rule { border-bottom: 1px solid var(--p-ink); height: 34px; }
+  .sig .sl { margin-top: 7px; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .sig .sn { margin-top: 3px; font-size: 10.5px; font-weight: 700; color: var(--p-ink); }
+  .sig .sd { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 1px; }
+  .v-foot { margin-top: auto; padding: 12px 46px; border-top: 1px solid var(--p-line); background: #fbfdfc; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none; position: relative; z-index: 1; }
+  .v-foot .fa { font-family: var(--mono); font-size: 8.5px; font-weight: 600; color: var(--p-faint); }
+  .v-foot .fb { font-size: 8.5px; font-weight: 600; color: var(--p-faint); text-align: center; flex: 1; }
+  .v-foot .fc { font-size: 9px; font-weight: 800; color: var(--p-muted); letter-spacing: .08em; white-space: nowrap; }
+
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); background: var(--deep-2); color: #eaffff; font-size: 12px; font-weight: 700; padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(127,209,192,.3); box-shadow: 0 14px 30px -12px rgba(6,32,35,.7); opacity: 0; visibility: hidden; transition: all .25s ease; z-index: 300; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast.on { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1180px) { .stiles { grid-template-columns: repeat(4, 1fr); } .kpis { grid-template-columns: repeat(2, 1fr); } .g4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 1080px) { .layout { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) { .stiles, .g4, .g3, .g2, .f-grid3, .qgrid { grid-template-columns: 1fr; } .mbox, .mbox.mid { width: calc(100vw - 24px); } .sigs { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  @page { size: A4; margin: 10mm; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; }
+    body.pv-on { overflow: visible; }
+    body.pv-on .wrap, body.pv-on .scrim, body.pv-on .toast { display: none !important; }
+    body.pv-on .pview { position: static; display: block; overflow: visible; background: #fff; }
+    body.pv-on .ptoolbar { display: none !important; }
+    body.pv-on .sheet-wrap { padding: 0; display: block; }
+    body.pv-on .sheet { width: auto; min-height: 277mm; border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- ==================== LIST VIEW ==================== -->
+<div id="listView">
+  <div class="phead">
+    <div>
+      <h1>Sales Orders</h1>
+      <div class="sub">Track, confirm and fulfil customer sales orders — with delivery intelligence and document lineage.</div>
+    </div>
+    <div class="pacts">
+      <button class="btn btn-ghost" id="btnExport"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+      <button class="btn btn-cta" id="btnNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create Sales Order</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi" style="--d:40ms"><div class="top"><span class="l">Open backlog</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg></span></div><div class="v" id="kBack">K 0.00</div><span class="n flat" id="kBackN">0 open orders</span></div>
+    <div class="kpi" style="--d:90ms"><div class="top"><span class="l">Fulfilment rate</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span></div><div class="v" id="kRate">—</div><span class="n ok" id="kRateN">fulfilled vs cancelled</span></div>
+    <div class="kpi" style="--d:140ms"><div class="top"><span class="l">Deliveries ≤ 7 days</span><span class="ic"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span></div><div class="v" id="kDue">0</div><span class="n warn" id="kDueN">needs scheduling</span></div>
+    <div class="kpi" style="--d:190ms"><div class="top"><span class="l">Invoiced value</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span></div><div class="v" id="kInv">K 0.00</div><span class="n ok" id="kInvN">0 invoices raised</span></div>
+  </div>
+
+  <div class="layout">
+    <main class="col">
+      <section class="tcard">
+        <div class="toolbar">
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" type="text" id="q" placeholder="Customer, number, reference…"></div>
+          <select class="sel" id="sort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="high">Value high → low</option><option value="del">Delivery soonest</option></select>
+          <span class="cnt" id="cnt">6 orders</span>
+        </div>
+        <div class="stiles" id="stiles">
+          <button class="stile on" data-st=""><span class="sic all"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span><span><span class="sl">Total</span><span class="sv" data-c="">0</span></span></button>
+          <button class="stile" data-st="draft"><span class="sic dr"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span><span><span class="sl">Draft</span><span class="sv" data-c="draft">0</span></span></button>
+          <button class="stile" data-st="sent"><span class="sic se"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span><span><span class="sl">Sent</span><span class="sv" data-c="sent">0</span></span></button>
+          <button class="stile" data-st="confirmed"><span class="sic cf"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></span><span><span class="sl">Confirmed</span><span class="sv" data-c="confirmed">0</span></span></button>
+          <button class="stile" data-st="fulfilled"><span class="sic fu"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span><span class="sl">Fulfilled</span><span class="sv" data-c="fulfilled">0</span></span></button>
+          <button class="stile" data-st="cancelled"><span class="sic ca"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></span><span><span class="sl">Cancelled</span><span class="sv" data-c="cancelled">0</span></span></button>
+          <button class="stile" data-st="void"><span class="sic vo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></svg></span><span><span class="sl">Void</span><span class="sv" data-c="void">0</span></span></button>
+        </div>
+        <table>
+          <thead><tr><th>Order №</th><th>Customer</th><th>Order date</th><th>Delivery</th><th>Fulfilment</th><th class="r">Total (K)</th><th>Status</th><th class="r">Actions</th></tr></thead>
+          <tbody id="oBody">
+            <tr class="orow" data-id="o1" data-status="draft" data-total="48300" data-date="2026-10-02" data-delivery="2026-10-12" data-search="chisomo phiri so-2026-0021"><td><span class="ono" data-act="view">SO-2026-0021</span></td><td><span class="cust"><span class="av">CP</span><span class="nm">Chisomo Phiri</span></span></td><td style="white-space:nowrap">02 Oct 2026</td><td class="vd">12 Oct 2026<span class="xc ok">Scheduled</span></td><td><span class="prog"><i style="width:0%"></i></span><span class="pful">0/4 qty</span></td><td class="tot">48,300.00</td><td><span class="pill dr"><i></i>Draft</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="orow" data-id="o2" data-status="sent" data-total="126000" data-date="2026-09-30" data-delivery="2026-10-06" data-search="grace banda so-2026-0020 qt-2026-0014"><td><span class="ono" data-act="view">SO-2026-0020</span></td><td><span class="cust"><span class="av">GB</span><span class="nm">Grace Banda</span></span></td><td style="white-space:nowrap">30 Sep 2026</td><td class="vd">06 Oct 2026<span class="xc soon">3 days</span></td><td><span class="prog"><i style="width:0%"></i></span><span class="pful">0/13 qty</span></td><td class="tot">126,000.00</td><td><span class="pill se"><i></i>Sent</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="orow" data-id="o3" data-status="confirmed" data-total="84500" data-date="2026-09-26" data-delivery="2026-10-05" data-search="mary chilumpha so-2026-0019 qt-2026-0013"><td><span class="ono" data-act="view">SO-2026-0019</span></td><td><span class="cust"><span class="av">MC</span><span class="nm">Mary Chilumpha</span></span></td><td style="white-space:nowrap">26 Sep 2026</td><td class="vd">05 Oct 2026<span class="xc soon">2 days</span></td><td><span class="prog"><i style="width:50%"></i></span><span class="pful">2/4 qty</span></td><td class="tot">84,500.00</td><td><span class="pill cf"><i></i>Confirmed</span><span class="xc soon">Partial</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="orow" data-id="o4" data-status="fulfilled" data-total="62750" data-date="2026-09-20" data-delivery="2026-09-28" data-search="joseph kachale so-2026-0018 inv-2026-0021"><td><span class="ono" data-act="view">SO-2026-0018</span></td><td><span class="cust"><span class="av">JK</span><span class="nm">Joseph Kachale</span></span></td><td style="white-space:nowrap">20 Sep 2026</td><td class="vd">28 Sep 2026<span class="xc good">Delivered</span></td><td><span class="prog"><i style="width:100%"></i></span><span class="pful">12/12 qty</span></td><td class="tot">62,750.00</td><td><span class="pill fu"><i></i>Fulfilled</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="orow" data-id="o5" data-status="cancelled" data-total="33200" data-date="2026-09-15" data-delivery="2026-09-25" data-search="limbani nyirenda so-2026-0017"><td><span class="ono" data-act="view">SO-2026-0017</span></td><td><span class="cust"><span class="av">LN</span><span class="nm">Limbani Nyirenda</span></span></td><td style="white-space:nowrap">15 Sep 2026</td><td class="vd">25 Sep 2026<span class="xc ok">—</span></td><td><span class="prog"><i style="width:0%"></i></span><span class="pful">0/2 qty</span></td><td class="tot">33,200.00</td><td><span class="pill ca"><i></i>Cancelled</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="orow" data-id="o6" data-status="confirmed" data-total="21400" data-date="2026-09-01" data-delivery="2026-09-30" data-search="takondwa mwale so-2026-0016"><td><span class="ono" data-act="view">SO-2026-0016</span></td><td><span class="cust"><span class="av">TM</span><span class="nm">Takondwa Mwale</span></span></td><td style="white-space:nowrap">01 Sep 2026</td><td class="vd">30 Sep 2026<span class="xc exp">Overdue</span></td><td><span class="prog"><i style="width:0%"></i></span><span class="pful">0/41 qty</span></td><td class="tot">21,400.00</td><td><span class="pill cf"><i></i>Confirmed</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr id="noRes" style="display:none"><td colspan="8"><div class="empty"><div class="halo"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div><div class="t">No sales orders match</div><div class="s">Adjust the search or status filter, or create a new sales order.</div></div></td></tr>
+          </tbody>
+        </table>
+        <div class="tfoot"><span id="showing">Showing 6 of 6 orders</span><span>Click any row to open the order · fulfilment tracked per line</span></div>
+      </section>
+    </main>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Views</span><span class="rule"></span></div>
+        <div class="rbody" id="views">
+          <button class="vitem on" data-view="all"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>All Orders<span class="vc" data-v="all">6</span></button>
+          <button class="vitem" data-view="open"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></span>Open (Draft + Sent)<span class="vc" data-v="open">2</span></button>
+          <button class="vitem" data-view="confirmed"><span class="vic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span>Confirmed<span class="vc" data-v="confirmed">2</span></button>
+          <button class="vitem" data-view="fulfilled"><span class="vic"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>Fulfilled<span class="vc" data-v="fulfilled">1</span></button>
+        </div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric warn"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span><span class="rt">Due for delivery</span><span class="rule"></span></div>
+        <div class="rbody" id="due"></div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="rt">Documents</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" data-doc="inv"><span class="vic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span>Invoices</button>
+          <button class="vitem" data-doc="rec"><span class="vic"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Sales Receipts</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- ==================== CREATE / EDIT ORDER VIEW ==================== -->
+<div id="createView">
+  <div class="chead">
+    <div><h2 id="cvTitle">Create Sales Order</h2></div>
+    <div class="cacts">
+      <button class="btn btn-ghost" id="coCancel"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Cancel</button>
+      <button class="btn btn-ghost" id="coDraft"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>Save Draft</button>
+      <button class="btn btn-cta" id="coRelease" disabled title="Requires customer name, contact person, delivery date and at least one complete line"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Release Order</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="fs-t">Customer &amp; Delivery</span><span class="fs-rule"></span></div>
+        <div class="g3" style="margin-bottom:12px">
+          <div class="fld"><label>Customer type</label>
+            <select class="sel" id="coMode"><option value="existing">Existing customer</option><option value="walkin">Walk-in customer</option></select>
+          </div>
+          <div class="fld"><label>Delivery date <b>*</b></label><input class="in" type="date" id="coDelivery"></div>
+          <div class="fld"><label>Delivery method</label>
+            <select class="sel" id="coMethod"><option value="Customer pickup">Customer pickup</option><option value="Local delivery" selected>Local delivery</option><option value="Courier">Courier</option></select>
+          </div>
+        </div>
+        <div class="fld" id="coSearchWrap" style="margin-bottom:12px">
+          <label>Customer <b>*</b></label>
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" id="coSearch" list="custList" placeholder="Search customers… (name or code)" style="padding-left:36px"></div>
+          <datalist id="custList"></datalist>
+        </div>
+        <div class="fld" id="coNameWrap" style="margin-bottom:12px; display:none">
+          <label>Customer name <b>*</b></label>
+          <input class="in" id="coName" placeholder="e.g. Jane Mwale">
+        </div>
+        <div class="g4">
+          <div class="fld"><label>Contact person</label><input class="in" id="coContact" placeholder="—"></div>
+          <div class="fld"><label>Email</label><input class="in" id="coEmail" type="email" placeholder="name@company.com"></div>
+          <div class="fld"><label>Phone</label><input class="in" id="coPhone" placeholder="+265 …"></div>
+          <div class="fld"><label>Delivery address</label><input class="in" id="coAddress" placeholder="Street, city"></div>
+        </div>
+        <div class="savenote" id="coSaveNote">Walk-in captured — these details will be saved to the customer registry for future use.</div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="fs-t">Order Information</span><span class="fs-rule"></span></div>
+        <div class="g4" style="margin-bottom:12px">
+          <div class="fld"><label>Order №</label><input class="in auto" id="coNo" readonly placeholder="Auto-assigned on save"></div>
+          <div class="fld"><label>Order date <b>*</b></label><input class="in" type="date" id="coDate"></div>
+          <div class="fld"><label>Reference №</label><input class="in" id="coRef" placeholder="Optional / source quote"></div>
+          <div class="fld"><label>Warehouse</label>
+            <select class="sel" id="coWh"><option value="Main Warehouse" selected>Main Warehouse</option><option value="Branch North Store">Branch North Store</option></select>
+          </div>
+        </div>
+        <div class="g4">
+          <div class="fld"><label>Cost centre</label>
+            <select class="sel" id="coCC">
+              <option value="CC-HO" selected>CC-HO · Head Office</option>
+              <option value="CC-BN">CC-BN · Branch North</option>
+              <option value="CC-STM">CC-STM · Stores &amp; Merchandising</option>
+              <option value="CC-LOG">CC-LOG · Logistics</option>
+            </select>
+          </div>
+          <div class="fld"><label>Department</label><input class="in auto" value="Sales" readonly></div>
+          <div class="fld"><label>Prepared by</label><input class="in auto" value="Elvis Seyama" readonly></div>
+          <div class="fld"><label>Payment terms</label>
+            <select class="sel" id="coTerms"><option value="receipt">Due on receipt</option><option value="net15">Net 15</option><option value="net30" selected>Net 30</option><option value="net60">Net 60</option></select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg></span><span class="fs-t">Order Lines</span><span class="fs-rule"></span>
+          <button class="btn-add" id="coAdd" style="margin-left:auto"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add Line</button>
+        </div>
+        <table class="etable">
+          <thead><tr><th style="width:90px">Item code</th><th style="width:22%">Item name</th><th style="width:22%">Description (optional)</th><th class="r" style="width:60px">Qty</th><th class="r" style="width:100px">Unit price (K)</th><th class="r" style="width:80px">On hand</th><th class="r" style="width:110px">Amount</th><th style="width:40px"></th></tr></thead>
+          <tbody id="coLines"></tbody>
+        </table>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M16 13H8M16 17H8"/></svg></span><span class="fs-t">Notes</span><span class="fs-rule"></span></div>
+        <div class="g2">
+          <div class="fld"><label>Customer notes</label><textarea class="in" id="coNotesC" placeholder="Printed on the order acknowledgement…"></textarea></div>
+          <div class="fld"><label>Internal notes</label><textarea class="in" id="coNotesI" placeholder="Picking / packing instructions…"></textarea></div>
+        </div>
+      </section>
+    </div>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Summary</span><span class="rule"></span></div>
+        <div class="rbody" style="padding:12px 14px">
+          <div class="sumrow"><span>Customer</span><b id="soCust">—</b></div>
+          <div class="sumrow"><span>Contact</span><b id="soContact">—</b></div>
+          <div class="sumrow"><span>Order date</span><b id="soDate">—</b></div>
+          <div class="sumrow"><span>Delivery</span><b id="soDelivery">—</b></div>
+          <div class="sumrow"><span>Release check</span><b id="soGate" class="gate-no">—</b></div>
+          <div class="sumrow"><span>Subtotal</span><b id="soSub">0.00</b></div>
+          <div class="sumrow"><span>Tax (16.5%)</span><b id="soTax">0.00</b></div>
+          <div class="grandtile"><span class="l">Order Total</span><span class="v" id="soGrand">K 0.00</span></div>
+          <div class="sumnote" id="soLines">No complete lines yet</div>
+        </div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Quick nav</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" id="qnavList"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>Sales Orders List</button>
+          <button class="vitem" id="qnavQuot"><span class="vic"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span>Quotations</button>
+          <button class="vitem" id="qnavStock"><span class="vic"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></span>Stock Items</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- ============ VIEW ORDER MODAL ============ -->
+<div class="scrim" id="viewScrim">
+  <div class="mbox" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Sales Order</span><span class="m-sub" id="ovRef">SO-2026-0000</span></div>
+      <span class="pill" id="ovPill"></span>
+      <button class="m-close" data-close="viewScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="ovMeta"></div>
+    <div class="m-body">
+      <div class="steps" id="ovSteps"></div>
+      <div class="qgrid">
+        <div>
+          <div class="vsec">Order lines</div>
+          <table class="ltable"><thead><tr><th>Description</th><th class="r">Ordered</th><th class="r">Fulfilled</th><th class="r">Unit price</th><th class="r">Amount</th></tr></thead><tbody id="ovLines"></tbody></table>
+          <div class="vsec" style="margin-top:16px">Customer &amp; delivery</div>
+          <div class="mrow"><span class="l">Customer</span><span class="v" id="ovCust">—</span></div>
+          <div class="mrow"><span class="l">Contact / phone</span><span class="v" id="ovContact">—</span></div>
+          <div class="mrow"><span class="l">Delivery address</span><span class="v" id="ovAddr">—</span></div>
+          <div class="mrow"><span class="l">Method / warehouse</span><span class="v" id="ovMethod">—</span></div>
+          <div class="mrow"><span class="l">Payment terms</span><span class="v" id="ovTerms">—</span></div>
+        </div>
+        <div>
+          <div class="vsec">Totals</div>
+          <div class="tsum">
+            <div class="row"><span>Subtotal</span><b id="ovSub">0.00</b></div>
+            <div class="row"><span>Tax (16.5%)</span><b id="ovTax">0.00</b></div>
+            <div class="grand"><span class="l">Order total</span><span class="v" id="ovTotal">0.00</span></div>
+          </div>
+          <div class="vsec" style="margin-top:16px">Notes</div>
+          <div style="font-size:12px;font-weight:500;color:var(--sub);line-height:1.65" id="ovNotes">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="m-foot" id="ovFoot"></div>
+  </div>
+</div>
+
+<!-- ============ FULFIL MODAL ============ -->
+<div class="scrim" id="fulScrim">
+  <div class="mbox mid" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Record fulfilment / delivery</span><span class="m-sub" id="fuRef">SO-2026-0000</span></div>
+      <button class="m-close" data-close="fulScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="fuMeta"></div>
+    <div class="m-body">
+      <div class="f-grid3">
+        <div class="fld"><label>Delivery / fulfilment date</label><input class="in" type="date" id="fuDate"></div>
+        <div class="fld"><label>Delivery note №</label><input class="in" id="fuNote" placeholder="Auto e.g. DN-2026-0031"></div>
+        <div class="fld"><label>Received by</label><input class="in" id="fuBy" placeholder="Customer contact"></div>
+      </div>
+      <div class="vsec">Quantities to fulfil now (remaining shown as max)</div>
+      <table class="etable"><thead><tr><th>Line</th><th class="r" style="width:80px">Ordered</th><th class="r" style="width:80px">Done</th><th class="r" style="width:110px">Fulfil now</th></tr></thead><tbody id="fuLines"></tbody></table>
+      <div class="hint">Fulfil less than the remaining quantity to record a partial delivery — the order stays Confirmed with a Partial chip. Completing every line moves the order to Fulfilled.</div>
+    </div>
+    <div class="m-foot">
+      <span class="mnote">Stock is relieved from the selected warehouse on save.</span>
+      <button class="btn btn-close btn-sm" data-close="fulScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+      <button class="btn btn-cta btn-sm" id="fuSave"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Save fulfilment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM / SUCCESS ============ -->
+<div class="scrim cf" id="cfScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head"><span class="cb-ic" id="cbIc"></span><b id="cbTitle">Confirm</b><button class="cb-x" data-close="cfScrim" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="cb-body" id="cbMsg"></div>
+    <div class="cb-foot"><button class="btn btn-close btn-sm" data-close="cfScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button><button class="btn btn-sm" id="cbOk">Confirm</button></div>
+  </div>
+</div>
+<div class="scrim cf" id="okScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head"><span class="cb-ic ok"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span><b id="okTitle">Success</b><button class="cb-x" data-close="okScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="cb-body" id="okBody"></div>
+    <div class="cb-foot">
+      <button class="btn btn-close btn-sm" data-close="okScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+      <button class="btn btn-ghost btn-sm" id="okView"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View order</button>
+      <button class="btn btn-cta btn-sm" id="okInvoice" style="display:none"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Create invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PRINT PREVIEW — ORDER / DELIVERY NOTE SHEET ============ -->
+<div class="pview" id="printView" aria-hidden="true">
+  <div class="ptoolbar">
+    <button class="tb-back" id="pvBack"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+    <span class="tb-title" id="pvTitle">Print preview <span id="pvRef">SO-2026-0000</span></span>
+    <span class="tb-spacer"></span>
+    <span class="tb-note">A4 · Portrait · Ctrl+P also works</span>
+    <button class="tb-btn" id="pvPdf"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Save as PDF</button>
+    <button class="tb-btn primary" id="pvPrint"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>
+  </div>
+  <div class="sheet-wrap">
+    <div class="sheet" id="oSheet">
+      <div class="wm"><span id="pdWm" style="display:none">Draft</span></div>
+      <div class="sheet-body">
+        <header class="v-head">
+          <div class="brand">
+            <div class="mark">A</div>
+            <div>
+              <div class="bn">ACME CORPORATION LTD</div>
+              <div class="bl">Head Office · P.O. Box 30456, Lilongwe<br>TIN 00412883 · Registered in Malawi</div>
+            </div>
+          </div>
+          <div class="docblock">
+            <div class="dt" id="pdType">Sales Order</div>
+            <div class="dn" id="pdRef">SO-2026-0000</div>
+            <span class="dst" id="pdStamp"><i></i>Confirmed</span>
+            <div class="dp" id="pdPrinted">Printed 03 Oct 2026</div>
+          </div>
+        </header>
+        <div class="meta" id="pdMeta"></div>
+        <div class="vlines">
+          <div class="lt" id="pdLinesTitle">Order lines</div>
+          <table>
+            <thead id="pdHead"></thead>
+            <tbody id="pdLines"></tbody>
+          </table>
+        </div>
+        <div class="qpanels">
+          <div class="narr">
+            <div class="nh" id="pdNotesH">Notes to customer</div>
+            <div class="nb" id="pdNotes">—</div>
+          </div>
+          <div class="narr">
+            <div class="nh" id="pdTermsH">Terms</div>
+            <div class="tlist" id="pdTerms"></div>
+          </div>
+        </div>
+        <div class="sigs" id="pdSigs"></div>
+      </div>
+      <div class="v-foot">
+        <span class="fa" id="pdAudit">AUDIT</span>
+        <span class="fb">Computer-generated document — valid with signature or system issue stamp</span>
+        <span class="fc">PAGE 1 OF 1</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var TODAY_ISO = '2026-10-03';
+  var TODAY = new Date(TODAY_ISO + 'T00:00:00');
+  var EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  function $(id) { return document.getElementById(id); }
+  var toastEl = $('toast'), toastT;
+  function toast(m) { toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 3400); }
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(s) { return Number(String(s == null ? 0 : s).replace(/,/g, '')) || 0; }
+  function dfmt(iso) { if (!iso) return '—'; var d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  function addDaysISO(iso, d) { var x = new Date(iso + 'T00:00:00'); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); }
+  function initials(name) { return name.trim().split(/\s+/).map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase(); }
+  function emailOk(v) { return EMAIL_RE.test(String(v || '').trim()); }
+  var ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  var TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  function w3(n) { var s = ''; if (n >= 100) { s += ONES[Math.floor(n / 100)] + ' Hundred'; n %= 100; if (n) s += ' '; } if (n >= 20) { s += TENS[Math.floor(n / 10)]; if (n % 10) s += '-' + ONES[n % 10]; } else if (n > 0) s += ONES[n]; return s; }
+  function inWords(n) { n = Math.floor(Math.abs(n)); if (!n) return 'Zero'; var out = [], sc = [[1e6, 'Million'], [1e3, 'Thousand']]; sc.forEach(function (s) { var v = Math.floor(n / s[0]); if (v) { out.push(w3(v) + ' ' + s[1]); n %= s[0]; } }); if (n) out.push(w3(n)); return out.join(' '); }
+  var TERMS = { receipt: 'Due on receipt', net15: 'Net 15', net30: 'Net 30', net60: 'Net 60' };
+  var PILL = { draft: ['dr', 'Draft'], sent: ['se', 'Sent'], confirmed: ['cf', 'Confirmed'], fulfilled: ['fu', 'Fulfilled'], cancelled: ['ca', 'Cancelled'], void: ['vo', 'Void'] };
+  var ITEMS = { 'ITM-1001': 42, 'ITM-2003': 120, 'ITM-3005': 6, 'ITM-3010': 4, 'ITM-3011': 9, 'ITM-3020': 60, 'ITM-3030': 2, 'ITM-3040': 15 };
+  var SVG_VIEW = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var SVG_PEN = '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>';
+  var SVG_SEND = '<svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>';
+  var SVG_CHECK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>';
+  var SVG_TRUCK = '<svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-5V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+  var SVG_PRINT = '<svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+  var SVG_INV = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>';
+  var SVG_DUP = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+  var SVG_X = '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+  var CLOSE_BTN = '<button class="btn btn-close btn-sm" data-close="viewScrim">' + SVG_X + 'Close</button>';
+
+  var CUSTOMERS = [
+    { code: 'CUS-0001', name: 'Chisomo Phiri', email: 'chisomo.phiri@customer.mw', phone: '+265 992 222 118', address: '14 Area 47, Lilongwe' },
+    { code: 'CUS-0002', name: 'Grace Banda', email: 'grace.banda@customer.mw', phone: '+265 991 111 001', address: 'Plot 22, Kanengo, Lilongwe' },
+    { code: 'CUS-0003', name: 'Joseph Kachale', email: 'joseph.kachale@customer.mw', phone: '+265 996 666 214', address: 'Chilomoni, Blantyre' },
+    { code: 'CUS-0004', name: 'Limbani Nyirenda', email: 'limbani.nyirenda@customer.mw', phone: '+265 993 333 097', address: 'Mzuzu Central' },
+    { code: 'CUS-0005', name: 'Mary Chilumpha', email: 'mary.chilumpha@customer.mw', phone: '+265 995 555 730', address: '33 Namiwaza, Zomba' },
+    { code: 'CUS-0006', name: 'Takondwa Mwale', email: 'takondwa.mwale@customer.mw', phone: '+265 994 444 852', address: 'Area 25, Lilongwe' }
+  ];
+  var custSeq = 7, nextOrder = 22, nextInv = 22, nextDN = 31, rowSeq = 7;
+
+  var OD = {
+    o1: { cust: 'Chisomo Phiri', contact: 'Chisomo Phiri', email: 'chisomo.phiri@customer.mw', phone: '+265 992 222 118', address: '14 Area 47, Lilongwe', method: 'Local delivery', wh: 'Main Warehouse', cc: 'CC-HO', terms: 'Net 30', source: '', invoice: '', lines: [['ITM-1001 — POS terminal bundle', 3, 0, '9,500.00', '28,500.00'], ['ITM-2003 — ERP licence seat', 10, 0, '1,800.00', '18,000.00'], ['SVC-011 — Installation & training', 1, 0, '1,800.00', '1,800.00']], sub: 41300, tax: 6815, notes: 'Deliver before the weekend sale period.' },
+    o2: { cust: 'Grace Banda', contact: 'Grace Banda', email: 'grace.banda@customer.mw', phone: '+265 991 111 001', address: 'Plot 22, Kanengo, Lilongwe', method: 'Courier', wh: 'Main Warehouse', cc: 'CC-HO', terms: 'Net 30', source: 'QT-2026-0014', invoice: '', lines: [['ITM-2003 — ERP licence seat', 10, 0, '9,800.00', '98,000.00'], ['SVC-020 — Data migration', 1, 0, '22,000.00', '22,000.00'], ['ITM-3005 — Receipt printer', 2, 0, '3,000.00', '6,000.00']], sub: 107136, tax: 18864, notes: 'Licence keys to be emailed to IT lead on fulfilment.' },
+    o3: { cust: 'Mary Chilumpha', contact: 'Mary Chilumpha', email: 'mary.chilumpha@customer.mw', phone: '+265 995 555 730', address: '33 Namiwaza, Zomba', method: 'Local delivery', wh: 'Main Warehouse', cc: 'CC-STM', terms: 'Net 60', source: 'QT-2026-0013', invoice: '', lines: [['SVC-031 — Cold-room maintenance (12 mo)', 1, 1, '60,000.00', '60,000.00'], ['ITM-3010 — Compressor kit', 2, 1, '10,000.00', '20,000.00'], ['ITM-3011 — Sensor set', 1, 0, '4,500.00', '4,500.00']], sub: 72231, tax: 12269, notes: 'Second compressor kit on back-order — partial delivery agreed.' },
+    o4: { cust: 'Joseph Kachale', contact: 'Joseph Kachale', email: 'joseph.kachale@customer.mw', phone: '+265 996 666 214', address: 'Chilomoni, Blantyre', method: 'Local delivery', wh: 'Main Warehouse', cc: 'CC-LOG', terms: 'Net 30', source: '', invoice: 'INV-2026-0021', dn: 'DN-2026-0028', deliveredOn: '2026-09-28', receivedBy: 'Joseph Kachale', emailed: 'joseph.kachale@customer.mw', emailedAt: '2026-09-20', lines: [['SVC-041 — Van branding & fit-out', 1, 1, '35,000.00', '35,000.00'], ['ITM-3020 — Shelving unit', 10, 10, '2,500.00', '25,000.00'], ['SVC-042 — Post-fit inspection', 1, 1, '2,750.00', '2,750.00']], sub: 53632, tax: 9118, notes: 'Delivered and signed 28 Sep; invoice raised same day.' },
+    o5: { cust: 'Limbani Nyirenda', contact: 'Limbani Nyirenda', email: 'limbani.nyirenda@customer.mw', phone: '+265 993 333 097', address: 'Mzuzu Central', method: 'Customer pickup', wh: 'Branch North Store', cc: 'CC-BN', terms: 'Due on receipt', source: '', invoice: '', lines: [['SVC-051 — Office refurb phase 1', 1, 0, '32,000.00', '32,000.00'], ['ITM-3030 — Hardware kit', 1, 0, '1,200.00', '1,200.00']], sub: 28498, tax: 4702, notes: 'Cancelled at customer request — budget postponed.' },
+    o6: { cust: 'Takondwa Mwale', contact: 'Takondwa Mwale', email: 'takondwa.mwale@customer.mw', phone: '+265 994 444 852', address: 'Area 25, Lilongwe', method: 'Local delivery', wh: 'Main Warehouse', cc: 'CC-HO', terms: 'Due on receipt', source: '', invoice: '', lines: [['ITM-3040 — Stationery bundle', 40, 0, '500.00', '20,000.00'], ['SVC-061 — Delivery handling', 1, 0, '1,400.00', '1,400.00']], sub: 18369, tax: 3031, notes: 'Overdue — customer requested urgent reschedule.' }
+  };
+
+  var state = { st: '', view: 'all', q: '', sort: 'new' };
+  var viewingId = null, fulId = null, okId = null, cbFn = null, editId = null, matchedCode = null, lineCount = 0;
+
+  function getRows() { return [].slice.call(document.querySelectorAll('#oBody tr.orow')); }
+  function rowOf(id) { return document.querySelector('#oBody tr[data-id="' + id + '"]'); }
+  function delDays(tr) { return Math.round((new Date(tr.dataset.delivery + 'T00:00:00') - TODAY) / 86400000); }
+  function dchip(status, delivery) {
+    if (status === 'fulfilled') return '<span class="xc good">Delivered</span>';
+    if (status === 'cancelled' || status === 'void') return '<span class="xc ok">—</span>';
+    var d = Math.round((new Date(delivery + 'T00:00:00') - TODAY) / 86400000);
+    if (d < 0) return '<span class="xc exp">Overdue</span>';
+    if (d <= 7) return '<span class="xc soon">' + (d === 0 ? 'Today' : d + ' day' + (d === 1 ? '' : 's')) + '</span>';
+    return '<span class="xc ok">Scheduled</span>';
+  }
+  function progOf(o) { var ord = 0, done = 0; o.lines.forEach(function (l) { ord += l[1]; done += l[2]; }); return { ord: ord, done: done, pct: ord ? Math.round(done / ord * 100) : 0 }; }
+  function partialOf(o) { var p = progOf(o); return p.done > 0 && p.done < p.ord; }
+  function closeAllScrims() { document.querySelectorAll('.scrim.on').forEach(function (s) { s.classList.remove('on'); }); cbFn = null; }
+
+  function showSuccess(o) { okId = o.id; $('okTitle').textContent = o.title; $('okBody').innerHTML = o.body; $('okInvoice').style.display = o.invoice ? '' : 'none'; $('okScrim').classList.add('on'); }
+  $('okView').addEventListener('click', function () { $('okScrim').classList.remove('on'); openView(okId); });
+  $('okInvoice').addEventListener('click', function () { $('okScrim').classList.remove('on'); createInvoice(okId); });
+
+  function editBtn(st) {
+    return st === 'draft' ? '<button class="ib" data-act="edit" title="Edit order (draft)">' + SVG_PEN + '</button>'
+      : '<button class="ib" data-act="edit" disabled title="Locked — ' + st + ' orders can\'t be edited">' + SVG_PEN + '</button>';
+  }
+  var SEND_IB = '<button class="ib" data-act="send" title="Send to customer email">' + SVG_SEND + '</button>';
+  var CTX = {
+    draft: '<button class="ib" data-act="release" title="Release order">' + SVG_SEND + '</button>',
+    sent: '<button class="ib" data-act="confirm" title="Confirm order">' + SVG_CHECK + '</button>' + SEND_IB,
+    confirmed: '<button class="ib" data-act="fulfil" title="Record fulfilment / delivery">' + SVG_TRUCK + '</button>' + SEND_IB,
+    fulfilled: '<button class="ib" data-act="invoice" title="Create / view invoice">' + SVG_INV + '</button>' + SEND_IB,
+    cancelled: '<button class="ib" data-act="dup" title="Duplicate as draft">' + SVG_DUP + '</button>',
+    void: ''
+  };
+  function buildActions(tr) {
+    tr.querySelector('td.r').innerHTML = '<button class="ib" data-act="view" title="View">' + SVG_VIEW + '</button>' + editBtn(tr.dataset.status) + (CTX[tr.dataset.status] || '');
+  }
+  /* Order № cell = number only (no sub-label) */
+  function orderRowHTML(o) {
+    var d = OD[o.id], p = progOf(d);
+    var part = partialOf(d) ? '<span class="xc soon">Partial</span>' : '';
+    return '<tr class="orow" data-id="' + o.id + '" data-status="' + o.status + '" data-total="' + o.total + '" data-date="' + o.date + '" data-delivery="' + o.delivery + '" data-search="' + o.search + '">' +
+      '<td><span class="ono" data-act="view">' + o.ref + '</span></td>' +
+      '<td><span class="cust"><span class="av">' + initials(o.name) + '</span><span class="nm">' + o.name + '</span></span></td>' +
+      '<td style="white-space:nowrap">' + dfmt(o.date) + '</td>' +
+      '<td class="vd">' + dfmt(o.delivery) + dchip(o.status, o.delivery) + '</td>' +
+      '<td><span class="prog"><i style="width:' + p.pct + '%"></i></span><span class="pful">' + p.done + '/' + p.ord + ' qty</span></td>' +
+      '<td class="tot">' + fmt(o.total) + '</td>' +
+      '<td><span class="pill ' + PILL[o.status][0] + '"><i></i>' + PILL[o.status][1] + '</span>' + part + '</td>' +
+      '<td class="r" style="white-space:nowrap"></td></tr>';
+  }
+  function replaceRow(id, o) { var tr = rowOf(id); tr.outerHTML = orderRowHTML(o); buildActions(rowOf(id)); }
+  function insertRow(o) { var tmp = document.createElement('tbody'); tmp.innerHTML = orderRowHTML(o); var tr = tmp.firstChild; $('oBody').insertBefore(tr, $('noRes')); buildActions(tr); }
+  function rowPayload(id, status) {
+    var tr = rowOf(id);
+    return { id: id, ref: tr.querySelector('.ono').textContent, name: tr.querySelector('.nm').textContent, date: tr.dataset.date, delivery: tr.dataset.delivery, total: Number(tr.dataset.total), status: status, search: tr.dataset.search };
+  }
+
+  /* ---------- list ---------- */
+  function passes(tr) {
+    if (state.st && tr.dataset.status !== state.st) return false;
+    if (state.view === 'open' && !(tr.dataset.status === 'draft' || tr.dataset.status === 'sent')) return false;
+    if (state.view === 'confirmed' && tr.dataset.status !== 'confirmed') return false;
+    if (state.view === 'fulfilled' && tr.dataset.status !== 'fulfilled') return false;
+    if (state.q && tr.dataset.search.toLowerCase().indexOf(state.q) === -1) return false;
+    return true;
+  }
+  function sortRows(list) {
+    var k = state.sort;
+    return list.sort(function (a, b) {
+      if (k === 'new') return a.dataset.date < b.dataset.date ? 1 : -1;
+      if (k === 'old') return a.dataset.date > b.dataset.date ? 1 : -1;
+      if (k === 'high') return Number(b.dataset.total) - Number(a.dataset.total);
+      if (k === 'del') return a.dataset.delivery < b.dataset.delivery ? -1 : 1;
+      return 0;
+    });
+  }
+  function apply() {
+    var body = $('oBody'), vis = sortRows(getRows().filter(passes));
+    getRows().forEach(function (tr) { tr.style.display = 'none'; });
+    vis.forEach(function (tr) { body.insertBefore(tr, $('noRes')); tr.style.display = ''; });
+    $('noRes').style.display = vis.length ? 'none' : '';
+    $('cnt').textContent = vis.length + ' order' + (vis.length === 1 ? '' : 's');
+    $('showing').textContent = 'Showing ' + vis.length + ' of ' + getRows().length + ' orders';
+  }
+  function refresh() {
+    var rows = getRows(), c = { draft: 0, sent: 0, confirmed: 0, fulfilled: 0, cancelled: 0, void: 0 };
+    var back = 0, inv = 0, invN = 0, due = 0, dueList = [];
+    rows.forEach(function (tr) {
+      var st = tr.dataset.status, tot = Number(tr.dataset.total), d = delDays(tr), o = OD[tr.dataset.id];
+      c[st]++;
+      if (st === 'draft' || st === 'sent' || st === 'confirmed') { back += tot; if (d <= 7) { due++; dueList.push({ id: tr.dataset.id, ref: tr.querySelector('.ono').textContent, cust: tr.querySelector('.nm').textContent, d: d }); } }
+      if (o && o.invoice) { inv += tot; invN++; }
+    });
+    document.querySelectorAll('.sv').forEach(function (el) { el.textContent = el.dataset.c === '' ? rows.length : c[el.dataset.c]; });
+    document.querySelectorAll('.vc').forEach(function (el) { var v = el.dataset.v; el.textContent = v === 'all' ? rows.length : v === 'open' ? (c.draft + c.sent) : c[v]; });
+    $('kBack').textContent = 'K ' + fmt(back); $('kBackN').textContent = (c.draft + c.sent + c.confirmed) + ' open orders';
+    var closed = c.fulfilled + c.cancelled;
+    $('kRate').textContent = closed ? Math.round(c.fulfilled / closed * 100) + '%' : '—';
+    $('kRateN').textContent = c.fulfilled + ' fulfilled · ' + c.cancelled + ' cancelled';
+    $('kDue').textContent = due; $('kDueN').textContent = due ? 'needs scheduling' : 'nothing due'; $('kDueN').className = 'n ' + (due ? 'warn' : 'ok');
+    $('kInv').textContent = 'K ' + fmt(inv); $('kInvN').textContent = invN + ' invoice' + (invN === 1 ? '' : 's') + ' raised';
+    var box = $('due');
+    if (!dueList.length) box.innerHTML = '<div class="attn-empty">No deliveries due or overdue — schedule healthy.</div>';
+    else box.innerHTML = dueList.map(function (a) {
+      var chip = a.d < 0 ? '<span class="xc exp">Overdue</span>' : '<span class="xc soon">' + (a.d === 0 ? 'Today' : a.d + ' days') + '</span>';
+      return '<button class="attn" data-open="' + a.id + '"><span><span class="an">' + a.ref + '</span><span class="as">' + a.cust + '</span></span>' + chip + '</button>';
+    }).join('');
+    apply();
+  }
+
+  $('q').addEventListener('input', function () { state.q = this.value.trim().toLowerCase(); apply(); });
+  $('sort').addEventListener('change', function () { state.sort = this.value; apply(); });
+  document.querySelectorAll('.stile').forEach(function (b) { b.addEventListener('click', function () { state.st = b.dataset.st; document.querySelectorAll('.stile').forEach(function (x) { x.classList.toggle('on', x === b); }); apply(); }); });
+  document.querySelectorAll('#views .vitem').forEach(function (b) { b.addEventListener('click', function () { state.view = b.dataset.view; document.querySelectorAll('#views .vitem').forEach(function (x) { x.classList.toggle('on', x === b); }); apply(); }); });
+  document.querySelectorAll('[data-doc]').forEach(function (b) { b.addEventListener('click', function () { toast('📄 ' + b.textContent.trim() + ' register opened'); }); });
+  $('btnExport').addEventListener('click', function () { toast('⤓ Sales order register export queued (CSV / PDF)'); });
+  $('due').addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openView(b.dataset.open); });
+
+  /* ---------- confirm ---------- */
+  var ICONS = { primary: SVG_SEND, ok: '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>', danger: '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>' };
+  function ask(o) {
+    $('cbIc').className = 'cb-ic ' + o.tone; $('cbIc').innerHTML = ICONS[o.tone] || ICONS.primary;
+    $('cbTitle').textContent = o.title; $('cbMsg').innerHTML = o.msg;
+    var ok = $('cbOk'); ok.textContent = o.okLabel || 'Confirm';
+    ok.className = 'btn btn-sm ' + (o.tone === 'danger' ? 'btn-danger' : o.tone === 'ok' ? 'btn-green' : 'btn-cta');
+    cbFn = o.onOk; $('cfScrim').classList.add('on');
+  }
+  $('cbOk').addEventListener('click', function () { var f = cbFn; $('cfScrim').classList.remove('on'); cbFn = null; if (f) f(); });
+
+  /* ---------- view modal ---------- */
+  function stepsHTML(st) {
+    var seq = ['draft', 'sent', 'confirmed', 'fulfilled'];
+    var idx = { draft: 0, sent: 1, confirmed: 2, fulfilled: 3 }[st];
+    var bad = st === 'cancelled' || st === 'void';
+    var h = '';
+    seq.forEach(function (s, i) {
+      var cls = 'step';
+      if (!bad && i < idx) cls += ' done';
+      if (!bad && i === idx) cls += (st === 'fulfilled' ? ' done' : ' cur');
+      h += '<div class="' + cls + '"><span class="dot"></span><span class="lb">' + PILL[s][1] + '</span></div>';
+    });
+    if (bad) h = h.replace(/<div class="step">(<span class="dot"><\/span><span class="lb">Confirmed)/, '<div class="step bad done">$1');
+    return h;
+  }
+  function footHTML(id) {
+    var st = rowOf(id).dataset.status, d = OD[id];
+    var sendBtn = '<button class="btn btn-ghost btn-sm" data-oact="send">' + SVG_SEND + 'Send to customer</button>';
+    if (st === 'draft') return '<span class="mnote">Draft — release to send to the warehouse & customer.</span><button class="btn btn-ghost btn-sm" data-oact="edit">' + SVG_PEN + 'Edit order</button><button class="btn btn-ghost btn-sm" data-oact="printOrder">' + SVG_PRINT + 'Print / PDF</button><button class="btn btn-danger-o btn-sm" data-oact="void">Void</button><button class="btn btn-cta btn-sm" data-oact="release">' + SVG_SEND + 'Release order</button>';
+    if (st === 'sent') return '<span class="mspacer"></span><button class="btn btn-ghost btn-sm" data-oact="printOrder">' + SVG_PRINT + 'Acknowledgement</button>' + sendBtn + '<button class="btn btn-danger-o btn-sm" data-oact="cancel">Cancel order</button><button class="btn btn-green btn-sm" data-oact="confirm">' + SVG_CHECK + 'Confirm order</button>';
+    if (st === 'confirmed') return '<span class="mspacer"></span><button class="btn btn-ghost btn-sm" data-oact="printDN">' + SVG_PRINT + 'Delivery note</button><button class="btn btn-ghost btn-sm" data-oact="printOrder">' + SVG_PRINT + 'Order copy</button>' + sendBtn + '<button class="btn btn-danger-o btn-sm" data-oact="cancel">Cancel</button><button class="btn btn-cta btn-sm" data-oact="fulfil">' + SVG_TRUCK + 'Record fulfilment</button>';
+    if (st === 'fulfilled') return '<span class="mnote">' + (d.invoice ? 'Invoiced — <b>' + d.invoice + '</b> linked.' : 'Fulfilled — ready to invoice.') + '</span><button class="btn btn-ghost btn-sm" data-oact="printDN">' + SVG_PRINT + 'Delivery note</button><button class="btn btn-ghost btn-sm" data-oact="printOrder">' + SVG_PRINT + 'Order copy</button>' + sendBtn + (d.invoice ? '' : '<button class="btn btn-cta btn-sm" data-oact="invoice">' + SVG_INV + 'Create invoice</button>');
+    if (st === 'cancelled') return '<span class="mspacer"></span><button class="btn btn-ghost btn-sm" data-oact="dup">' + SVG_DUP + 'Duplicate as draft</button>';
+    return '<span class="mnote">Void — retained for audit only.</span>';
+  }
+  function openView(id) {
+    var tr = rowOf(id); if (!tr) return;
+    var d = OD[id], st = tr.dataset.status, p = progOf(d);
+    viewingId = id;
+    $('ovRef').textContent = tr.querySelector('.ono').textContent;
+    var pl = PILL[st]; $('ovPill').className = 'pill ' + pl[0]; $('ovPill').innerHTML = '<i></i>' + pl[1];
+    $('ovMeta').innerHTML = '<span class="mchip b">' + d.cust + '</span><span class="mchip">Ordered ' + dfmt(tr.dataset.date) + '</span><span class="mchip">Delivery ' + dfmt(tr.dataset.delivery) + '</span><span class="mchip mono">' + p.done + '/' + p.ord + ' qty fulfilled</span>' + (d.source ? '<span class="mchip mono">From ' + d.source + '</span>' : '') + (d.invoice ? '<span class="mchip mono">' + d.invoice + '</span>' : '') + (d.emailed ? '<span class="mchip mono">Emailed ' + dfmt(d.emailedAt) + '</span>' : '') + '<span class="mchip b">Total K ' + fmt(tr.dataset.total) + '</span>';
+    $('ovSteps').innerHTML = stepsHTML(st);
+    $('ovLines').innerHTML = d.lines.map(function (l) {
+      return '<tr><td>' + l[0] + '</td><td class="r">' + l[1] + '</td><td class="r">' + l[2] + (l[2] < l[1] ? ' <span class="xc soon">part</span>' : '') + '</td><td class="r">' + l[3] + '</td><td class="r">' + l[4] + '</td></tr>';
+    }).join('');
+    $('ovSub').textContent = fmt(d.sub); $('ovTax').textContent = fmt(d.tax); $('ovTotal').textContent = 'K ' + fmt(tr.dataset.total);
+    $('ovCust').textContent = d.cust; $('ovContact').textContent = d.contact + ' · ' + d.phone; $('ovAddr').textContent = d.address; $('ovMethod').textContent = d.method + ' · ' + d.wh; $('ovTerms').textContent = d.terms;
+    $('ovNotes').textContent = d.notes || '—';
+    $('ovFoot').innerHTML = footHTML(id) + CLOSE_BTN;
+    $('viewScrim').classList.add('on');
+  }
+  function setStatus(id, st) { replaceRow(id, rowPayload(id, st)); refresh(); }
+
+  /* ---------- print preview ---------- */
+  function cell(l, v, mono) { return '<div class="cell"><div class="l">' + l + '</div><div class="v' + (mono ? ' mono' : '') + '">' + v + '</div></div>'; }
+  function openOrderPrint(id, doc) {
+    var tr = rowOf(id); if (!tr) return;
+    var d = OD[id], st = tr.dataset.status, ref = tr.querySelector('.ono').textContent, p = progOf(d);
+    var now = new Date();
+    $('pvRef').textContent = ref;
+    $('pvTitle').firstChild.textContent = 'Print preview — ' + (doc === 'delivery' ? 'Delivery Note ' : 'Sales Order ');
+    if (doc === 'order') {
+      $('pdType').textContent = st === 'sent' ? 'Order Acknowledgement' : 'Sales Order';
+      $('pdRef').textContent = ref;
+      var draft = st === 'draft';
+      $('pdWm').style.display = draft ? '' : 'none';
+      $('pdStamp').className = 'dst' + (draft ? ' draftst' : '');
+      $('pdStamp').innerHTML = '<i></i>' + PILL[st][1];
+      $('pdPrinted').textContent = 'Printed ' + now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      $('pdMeta').innerHTML =
+        cell('Customer', d.cust) + cell('Contact person', d.contact) + cell('Email', d.email, true) + cell('Phone', d.phone) +
+        cell('Order date', dfmt(tr.dataset.date)) + cell('Delivery date', dfmt(tr.dataset.delivery)) + cell('Delivery method', d.method) + cell('Warehouse', d.wh) +
+        cell('Payment terms', d.terms) + cell('Cost centre', d.cc, true) + cell('Prepared by', 'Elvis Seyama') + cell('Source', d.source || '—', true);
+      $('pdLinesTitle').textContent = 'Order lines';
+      $('pdHead').innerHTML = '<tr><th style="width:30px">#</th><th>Description</th><th class="r" style="width:60px">Qty</th><th class="r" style="width:110px">Unit price</th><th class="r" style="width:110px">Amount</th></tr>';
+      $('pdLines').innerHTML = d.lines.map(function (l, i) {
+        return '<tr><td class="no">' + (i + 1) + '</td><td>' + l[0] + '</td><td class="num">' + l[1] + '</td><td class="num">' + l[3] + '</td><td class="num">' + l[4] + '</td></tr>';
+      }).join('') +
+        '<tr class="totals"><td></td><td style="font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--p-ink)">Totals</td><td></td><td class="num" style="font-size:11px">' + fmt(d.sub) + '</td><td class="num" style="font-size:12.5px;font-weight:900">' + fmt(Number(tr.dataset.total)) + '</td></tr>' +
+        '<tr class="words"><td colspan="5"><span class="words-l">Amount in words</span><span class="words-v">Malawi Kwacha ' + inWords(Math.floor(Number(tr.dataset.total))) + ' only</span><span class="balnote">TAX ' + fmt(d.tax) + ' INCLUDED</span></td></tr>';
+      $('pdNotesH').textContent = 'Notes to customer';
+      $('pdNotes').textContent = d.notes || '—';
+      $('pdTermsH').textContent = 'Terms & conditions';
+      $('pdTerms').innerHTML =
+        '<div>Payment terms: ' + d.terms + '. All amounts in Malawi Kwacha.</div>' +
+        '<div>Delivery on ' + dfmt(tr.dataset.delivery) + ' via ' + d.method.toLowerCase() + ' from ' + d.wh + '.</div>' +
+        '<div>Goods remain the property of ACME Corporation Ltd until payment in full.</div>' +
+        '<div>Quantities subject to stock availability at confirmation.</div>' +
+        '<div>Order ' + ref + (d.source ? ' · source ' + d.source : '') + ' · generated ' + dfmt(TODAY_ISO) + '.</div>';
+      $('pdSigs').innerHTML =
+        '<div class="sig"><div class="rule"></div><div class="sl">Prepared by</div><div class="sn">Elvis Seyama · ' + dfmt(tr.dataset.date) + '</div></div>' +
+        '<div class="sig"><div class="rule"></div><div class="sl">Customer acceptance</div><div class="sn">&nbsp;</div><div class="sd">Signature · Date</div></div>';
+      $('pdAudit').textContent = 'AUDIT · created ' + dfmt(tr.dataset.date) + ' · Elvis Seyama · status ' + PILL[st][1] + (d.emailed ? ' · emailed ' + dfmt(d.emailedAt) : '');
+    } else {
+      var dnNo = d.dn || ('DN-2026-' + String(nextDN).padStart(4, '0'));
+      $('pdType').textContent = 'Delivery Note';
+      $('pdRef').textContent = dnNo;
+      $('pdWm').style.display = 'none';
+      $('pdStamp').className = 'dst';
+      $('pdStamp').innerHTML = '<i></i>' + (st === 'fulfilled' ? 'Delivered' : 'For delivery');
+      $('pdPrinted').textContent = 'Printed ' + now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      $('pdMeta').innerHTML =
+        cell('Customer', d.cust) + cell('Delivery address', d.address) + cell('Contact / phone', d.contact + ' · ' + d.phone) + cell('Order ref', ref, true) +
+        cell('Delivery date', dfmt(d.deliveredOn || tr.dataset.delivery)) + cell('Method', d.method) + cell('Warehouse', d.wh) + cell('Delivery note №', dnNo, true) +
+        cell('Received by', d.receivedBy || '—') + cell('Fulfilment', p.done + ' of ' + p.ord + ' qty') + cell('Prepared by', 'Elvis Seyama') + cell('Terms', d.terms);
+      $('pdLinesTitle').textContent = 'Goods delivered / to deliver';
+      $('pdHead').innerHTML = '<tr><th style="width:30px">#</th><th>Description</th><th class="r" style="width:80px">Ordered</th><th class="r" style="width:80px">Delivered</th><th class="r" style="width:90px">Balance</th></tr>';
+      $('pdLines').innerHTML = d.lines.map(function (l, i) {
+        return '<tr><td class="no">' + (i + 1) + '</td><td>' + l[0] + '</td><td class="num">' + l[1] + '</td><td class="num">' + l[2] + '</td><td class="num">' + (l[1] - l[2]) + '</td></tr>';
+      }).join('');
+      $('pdNotesH').textContent = 'Delivery instructions';
+      $('pdNotes').textContent = d.notes || '—';
+      $('pdTermsH').textContent = 'Warehouse notes';
+      $('pdTerms').innerHTML =
+        '<div>Quantities delivered as recorded against fulfilment entries for ' + ref + '.</div>' +
+        '<div>Stock relieved from ' + d.wh + ' · ' + d.method.toLowerCase() + '.</div>' +
+        '<div>Sign and return one copy; retain one for the customer file.</div>' +
+        '<div>Damages or shortages to be reported within 48 hours of receipt.</div>';
+      $('pdSigs').innerHTML =
+        '<div class="sig"><div class="rule"></div><div class="sl">Released by (warehouse)</div><div class="sn">&nbsp;</div><div class="sd">Name · Signature · Date</div></div>' +
+        '<div class="sig"><div class="rule"></div><div class="sl">Received by (customer)</div><div class="sn">' + (d.receivedBy || '&nbsp;') + '</div><div class="sd">Signature · Date</div></div>';
+      $('pdAudit').textContent = 'AUDIT · delivery note ' + dnNo + ' · order ' + ref + ' · status ' + PILL[st][1];
+    }
+    $('printView').classList.add('on');
+    $('printView').setAttribute('aria-hidden', 'false');
+    document.body.classList.add('pv-on');
+    $('printView').scrollTop = 0;
+  }
+  function closePreview() { $('printView').classList.remove('on'); $('printView').setAttribute('aria-hidden', 'true'); document.body.classList.remove('pv-on'); }
+  function safePrint() {
+    document.body.classList.add('pv-on'); $('printView').classList.add('on');
+    if (typeof window.print !== 'function') { toast('Print is unavailable in this environment — use Save as PDF'); return; }
+    try { window.print(); } catch (e) { toast('Print is unavailable — use Save as PDF'); }
+  }
+  $('pvBack').addEventListener('click', closePreview);
+  $('pvPrint').addEventListener('click', function () { toast('🖨 Print dialog opened — choose your printer'); safePrint(); });
+  $('pvPdf').addEventListener('click', function () { toast('🧾 Print dialog opened — set destination to “Save as PDF”'); safePrint(); });
+
+  /* ---------- fulfil ---------- */
+  function openFulfil(id) {
+    var tr = rowOf(id), d = OD[id];
+    if (!tr || tr.dataset.status !== 'confirmed') { toast('Fulfilment is available on confirmed orders only'); return; }
+    closeAllScrims();
+    fulId = id;
+    $('fuRef').textContent = tr.querySelector('.ono').textContent;
+    $('fuMeta').innerHTML = '<span class="mchip b">' + d.cust + '</span><span class="mchip">Delivery ' + dfmt(tr.dataset.delivery) + '</span><span class="mchip mono">' + d.wh + '</span>';
+    $('fuDate').value = TODAY_ISO;
+    $('fuNote').value = 'DN-2026-' + String(nextDN).padStart(4, '0');
+    $('fuBy').value = d.contact;
+    $('fuLines').innerHTML = d.lines.map(function (l, i) {
+      var rem = l[1] - l[2];
+      return '<tr data-i="' + i + '"><td>' + l[0] + '</td><td class="r" style="font-weight:700;color:var(--ink)">' + l[1] + '</td><td class="r">' + l[2] + '</td><td><input class="lin num" data-f="q" type="number" min="0" max="' + rem + '" value="' + rem + '"' + (rem === 0 ? ' disabled' : '') + '></td></tr>';
+    }).join('');
+    $('fulScrim').classList.add('on');
+  }
+  $('fuSave').addEventListener('click', function () {
+    var d = OD[fulId], tr = rowOf(fulId);
+    var moved = 0;
+    Array.prototype.forEach.call($('fuLines').rows, function (r) {
+      var i = Number(r.dataset.i), l = d.lines[i];
+      var rem = l[1] - l[2];
+      var q = Math.max(0, Math.min(rem, num(r.querySelector('[data-f="q"]').value)));
+      l[2] += q; moved += q;
+    });
+    if (!moved) { toast('Enter at least one quantity to fulfil'); return; }
+    var p = progOf(d);
+    var ref = tr.querySelector('.ono').textContent;
+    if (p.done >= p.ord) {
+      d.deliveredOn = $('fuDate').value; d.dn = $('fuNote').value; d.receivedBy = $('fuBy').value.trim() || d.contact;
+      setStatus(fulId, 'fulfilled');
+      $('fulScrim').classList.remove('on');
+      showSuccess({ id: fulId, title: 'Order fulfilled', body: 'Order <span class="okref">' + ref + '</span> for <b>' + d.cust + '</b> is fully delivered (' + p.done + '/' + p.ord + ' qty) under <b>' + $('fuNote').value + '</b>.<br>You can now raise the sales invoice.', invoice: !d.invoice });
+    } else {
+      replaceRow(fulId, rowPayload(fulId, 'confirmed'));
+      $('fulScrim').classList.remove('on');
+      refresh();
+      toast('✓ ' + ref + ' partial delivery recorded — ' + p.done + '/' + p.ord + ' qty fulfilled');
+    }
+  });
+
+  /* ---------- invoice ---------- */
+  function createInvoice(id) {
+    var d = OD[id], tr = rowOf(id);
+    if (d.invoice) { toast('📄 ' + d.invoice + ' opened in Invoices'); return; }
+    var ref = tr.querySelector('.ono').textContent;
+    ask({ tone: 'primary', title: 'Create invoice from ' + ref + '?', msg: 'Raises a sales invoice for the fulfilled order total and cross-links both documents.', okLabel: 'Create invoice', onOk: function () {
+      d.invoice = 'INV-2026-' + String(nextInv++).padStart(4, '0');
+      replaceRow(id, rowPayload(id, tr.dataset.status));
+      refresh();
+      showSuccess({ id: id, title: 'Invoice created', body: 'Invoice <span class="okref">' + d.invoice + '</span> raised from order <span class="okref">' + ref + '</span> for <b>' + d.cust + '</b> (K ' + fmt(tr.dataset.total) + ').', invoice: false });
+    } });
+  }
+
+  /* ---------- send to customer email ---------- */
+  function sendOrder(id) {
+    var tr = rowOf(id), d = OD[id], ref = tr.querySelector('.ono').textContent;
+    if (tr.dataset.status === 'draft') { toast('Release the order before sending it to the customer'); return; }
+    if (!emailOk(d.email)) { toast('Provide a valid customer email to send'); return; }
+    ask({ tone: 'primary', title: 'Send ' + ref + ' to ' + d.email + '?', msg: 'Emails the order acknowledgement PDF to the customer and records the dispatch on the order.', okLabel: 'Send now', onOk: function () {
+      d.emailed = d.email; d.emailedAt = TODAY_ISO;
+      toast('📨 ' + ref + ' acknowledgement emailed to ' + d.email);
+      if ($('viewScrim').classList.contains('on') && viewingId === id) openView(id);
+    } });
+  }
+
+  /* ---------- lifecycle ---------- */
+  function act(a, id) {
+    var tr = rowOf(id); if (!tr) return;
+    var ref = tr.querySelector('.ono').textContent;
+    if (a === 'view') { openView(id); return; }
+    if (a === 'edit') {
+      if (tr.dataset.status !== 'draft') { toast('🔒 ' + ref + ' is ' + tr.dataset.status + ' — only drafts can be edited'); return; }
+      $('viewScrim').classList.remove('on');
+      openEditOrder(id);
+      return;
+    }
+    if (a === 'fulfil') { openFulfil(id); return; }
+    if (a === 'invoice') { createInvoice(id); return; }
+    if (a === 'send') { sendOrder(id); return; }
+    if (a === 'printOrder') { openOrderPrint(id, 'order'); return; }
+    if (a === 'printDN') { openOrderPrint(id, 'delivery'); return; }
+    if (a === 'dup') { toast('⧉ ' + ref + ' duplicated as new draft'); return; }
+    if (a === 'release') ask({ tone: 'primary', title: 'Release ' + ref + '?', msg: 'Sends the order to the warehouse queue and emails the acknowledgement to the customer. Status moves to <b>Sent</b>.', okLabel: 'Release now', onOk: function () { setStatus(id, 'sent'); toast('📨 ' + ref + ' released'); } });
+    if (a === 'confirm') ask({ tone: 'ok', title: 'Confirm ' + ref + '?', msg: 'Allocates stock from the order warehouse and locks pricing. The order becomes <b>Confirmed</b> and eligible for fulfilment.', okLabel: 'Confirm order', onOk: function () { setStatus(id, 'confirmed'); toast('✓ ' + ref + ' confirmed — stock allocated'); } });
+    if (a === 'cancel') ask({ tone: 'danger', title: 'Cancel ' + ref + '?', msg: 'Cancels the order and releases any allocated stock. Cancelled orders remain for reporting and can be duplicated.', okLabel: 'Cancel order', onOk: function () { setStatus(id, 'cancelled'); toast('✕ ' + ref + ' cancelled'); } });
+    if (a === 'void') ask({ tone: 'danger', title: 'Void ' + ref + '?', msg: 'Voids the draft order permanently. Void documents are retained for audit only.', okLabel: 'Void order', onOk: function () { setStatus(id, 'void'); toast('⃠ ' + ref + ' voided'); } });
+  }
+  $('oBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (b) { if (!b.disabled) act(b.dataset.act, b.closest('tr').dataset.id); return; }
+    var tr = e.target.closest('tr.orow');
+    if (tr) act('view', tr.dataset.id);
+  });
+  $('ovFoot').addEventListener('click', function (e) { var b = e.target.closest('[data-oact]'); if (!b) return; act(b.dataset.oact, viewingId); });
+
+  /* ---------- create / edit page ---------- */
+  function showView(v) { document.body.classList.toggle('view-create', v === 'create'); window.scrollTo(0, 0); if (v === 'create') initCreate(); }
+  function fillCustDatalist() { $('custList').innerHTML = CUSTOMERS.map(function (c) { return '<option value="' + c.name + '">' + c.code + '</option>'; }).join(''); }
+  function setLock(lock) { ['coContact', 'coEmail', 'coPhone', 'coAddress'].forEach(function (id) { var el = $(id); el.readOnly = lock; el.classList.toggle('ro', lock); }); }
+  function updateBtns() {
+    var walkin = $('coMode').value === 'walkin';
+    var nameOk = walkin ? $('coName').value.trim() !== '' : !!matchedCode;
+    var contactOk = $('coContact').value.trim() !== '';
+    var delOk = $('coDelivery').value !== '';
+    var linesOk = lineCount > 0;
+    var missing = [];
+    if (!nameOk) missing.push(walkin ? 'customer name' : 'customer (pick from registry)');
+    if (!contactOk) missing.push('contact person');
+    if (!delOk) missing.push('delivery date');
+    if (!linesOk) missing.push('1 complete line (code·name·qty·price)');
+    var ready = missing.length === 0;
+    $('coRelease').disabled = !ready;
+    $('coDraft').disabled = !(nameOk && linesOk);
+    var g = $('soGate');
+    g.textContent = ready ? 'Ready ✓' : 'Missing: ' + missing.join(', ');
+    g.className = ready ? 'gate-ok' : 'gate-no';
+    $('coRelease').title = ready ? 'Release this order to the warehouse and customer' : 'Still required — ' + missing.join('; ');
+  }
+  function coLineRow(code, name, desc, q, p) {
+    var oh = code && ITEMS.hasOwnProperty(code) ? ITEMS[code] : null;
+    return '<tr><td><input class="lin" data-f="code" value="' + (code || '') + '" placeholder="Code"></td>' +
+      '<td><input class="lin" data-f="name" value="' + String(name || '').replace(/"/g, '&quot;') + '" placeholder="Item name"></td>' +
+      '<td><input class="lin" data-f="desc" value="' + String(desc || '').replace(/"/g, '&quot;') + '" placeholder="Optional"></td>' +
+      '<td><input class="lin num" data-f="q" type="number" min="0" step="1" value="' + (q == null ? 1 : q) + '"></td>' +
+      '<td><input class="lin num" data-f="p" type="number" min="0" step="0.01" value="' + (p || 0) + '"></td>' +
+      '<td class="ohcell r">' + (oh == null ? '—' : oh) + '</td>' +
+      '<td class="amtcell ramt">0.00</td>' +
+      '<td><button class="xb" type="button" title="Remove line">' + SVG_X + '</button></td></tr>';
+  }
+  function lineValid(r, amt) {
+    return r.querySelector('[data-f="code"]').value.trim() !== '' &&
+      r.querySelector('[data-f="name"]').value.trim() !== '' &&
+      num(r.querySelector('[data-f="q"]').value) > 0 &&
+      num(r.querySelector('[data-f="p"]').value) > 0 &&
+      amt > 0;
+  }
+  function coRecompute() {
+    var sub = 0, n = 0;
+    Array.prototype.forEach.call($('coLines').rows, function (r) {
+      var q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value);
+      var amt = q * p; sub += amt;
+      var ok = lineValid(r, amt); if (ok) n++;
+      r.querySelector('.ramt').innerHTML = fmt(amt) + (ok ? '<span class="lok">✓</span>' : '');
+      var code = r.querySelector('[data-f="code"]').value.trim();
+      var oh = code && ITEMS.hasOwnProperty(code) ? ITEMS[code] : null;
+      var cellEl = r.querySelector('.ohcell');
+      cellEl.textContent = oh == null ? '—' : (oh != null && q > oh ? oh + ' ⚠' : oh);
+      cellEl.classList.toggle('over', oh != null && q > oh);
+    });
+    lineCount = n;
+    var tax = sub * 0.165;
+    $('soSub').textContent = fmt(sub); $('soTax').textContent = fmt(tax); $('soGrand').textContent = 'K ' + fmt(sub + tax);
+    $('soLines').textContent = n ? n + ' complete line' + (n === 1 ? '' : 's') + ' (code · name · qty · price)' : 'No complete lines yet';
+    updateBtns();
+    return { sub: sub, tax: tax, total: sub + tax, n: n };
+  }
+  function coSummary() {
+    var walkin = $('coMode').value === 'walkin';
+    $('soCust').textContent = walkin ? ($('coName').value.trim() || '—') : ($('coSearch').value.trim() || '—');
+    $('soContact').textContent = $('coContact').value.trim() || '—';
+    $('soDate').textContent = dfmt($('coDate').value);
+    $('soDelivery').textContent = dfmt($('coDelivery').value);
+    updateBtns();
+  }
+  function initCreate() {
+    if (initCreate.done) return; initCreate.done = true;
+    $('coDate').value = TODAY_ISO;
+    $('coDelivery').value = addDaysISO(TODAY_ISO, 7);
+    $('coLines').innerHTML = coLineRow();
+    fillCustDatalist();
+    coRecompute(); coSummary();
+  }
+  $('btnNew').addEventListener('click', function () { editId = null; $('cvTitle').textContent = 'Create Sales Order'; showView('create'); });
+  $('qnavList').addEventListener('click', function () { showView('list'); });
+  $('qnavQuot').addEventListener('click', function () { toast('⇄ Quotations module'); });
+  $('qnavStock').addEventListener('click', function () { toast('📦 Stock items register'); });
+  $('coCancel').addEventListener('click', function () { showView('list'); });
+  $('coMode').addEventListener('change', function () {
+    var w = this.value === 'walkin';
+    $('coSearchWrap').style.display = w ? 'none' : '';
+    $('coNameWrap').style.display = w ? '' : 'none';
+    $('coSaveNote').classList.toggle('on', w);
+    if (w) { setLock(false); matchedCode = null; } else { $('coName').value = ''; setLock(!!matchedCode); }
+    coSummary();
+  });
+  $('coSearch').addEventListener('input', function () {
+    var v = this.value.trim().toLowerCase(); matchedCode = null;
+    if (v) {
+      var c = CUSTOMERS.filter(function (x) { return x.name.toLowerCase().indexOf(v) > -1 || x.code.toLowerCase().indexOf(v) > -1; })[0];
+      if (c) { matchedCode = c.code; $('coContact').value = c.name; $('coEmail').value = c.email; $('coPhone').value = c.phone; $('coAddress').value = c.address; }
+    }
+    setLock(!!matchedCode && $('coMode').value === 'existing');
+    coSummary();
+  });
+  ['coName', 'coContact', 'coAddress'].forEach(function (id) { $(id).addEventListener('input', coSummary); });
+  ['coDate', 'coDelivery'].forEach(function (id) { $(id).addEventListener('change', coSummary); });
+  $('coAdd').addEventListener('click', function () { $('coLines').insertAdjacentHTML('beforeend', coLineRow()); coRecompute(); });
+  $('coLines').addEventListener('input', function (e) { if (e.target.classList.contains('lin')) coRecompute(); });
+  $('coLines').addEventListener('click', function (e) {
+    var x = e.target.closest('.xb'); if (!x) return;
+    if ($('coLines').rows.length <= 1) { toast('An order needs at least one line'); return; }
+    x.closest('tr').remove(); coRecompute();
+  });
+
+  function collectLines() {
+    var lines = [], sub = 0;
+    Array.prototype.forEach.call($('coLines').rows, function (r) {
+      var code = r.querySelector('[data-f="code"]').value.trim();
+      var nm = r.querySelector('[data-f="name"]').value.trim();
+      var ds = r.querySelector('[data-f="desc"]').value.trim();
+      var q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value);
+      if (code && nm && q > 0 && p > 0) { lines.push([code + ' — ' + nm + (ds ? ' (' + ds + ')' : ''), q, 0, fmt(p), fmt(q * p)]); sub += q * p; }
+    });
+    return { lines: lines, sub: sub };
+  }
+  function saveOrder(release) {
+    var walkin = $('coMode').value === 'walkin';
+    var name = walkin ? $('coName').value.trim() : $('coSearch').value.trim();
+    if (!name) { (walkin ? $('coName') : $('coSearch')).classList.add('bad'); toast(walkin ? 'Customer name is required' : 'Select a customer from the registry'); return false; }
+    (walkin ? $('coName') : $('coSearch')).classList.remove('bad');
+    if (!walkin && !matchedCode) { $('coSearch').classList.add('bad'); toast('Pick a matching customer from the list'); return false; }
+    $('coSearch').classList.remove('bad');
+    var c = collectLines();
+    if (!c.lines.length) { toast('Add at least one complete line (code, item name, qty, unit price)'); return false; }
+    if (release && !$('coDelivery').value) { $('coDelivery').classList.add('bad'); toast('Delivery date is required to release'); return false; }
+    $('coDelivery').classList.remove('bad');
+    var email = $('coEmail').value.trim();
+    var savedCode = '';
+    if (walkin) { savedCode = 'CUS-' + String(custSeq++).padStart(4, '0'); CUSTOMERS.push({ code: savedCode, name: name, email: email, phone: $('coPhone').value.trim(), address: $('coAddress').value.trim() }); fillCustDatalist(); }
+    else savedCode = matchedCode;
+    var tax = c.sub * 0.165, total = c.sub + tax;
+    var st = release ? 'sent' : 'draft';
+    var ref, id;
+    if (editId) {
+      id = editId; ref = rowOf(id).querySelector('.ono').textContent;
+      var od = OD[id];
+      od.cust = name; od.contact = $('coContact').value.trim() || name; od.email = email; od.phone = $('coPhone').value.trim(); od.address = $('coAddress').value.trim();
+      od.method = $('coMethod').value; od.wh = $('coWh').value; od.cc = $('coCC').value; od.terms = TERMS[$('coTerms').value];
+      od.lines = c.lines; od.sub = c.sub; od.tax = tax; od.notes = $('coNotesC').value.trim(); od.internal = $('coNotesI').value.trim();
+      var p = rowPayload(id, st);
+      p.total = total; p.delivery = $('coDelivery').value || p.delivery; p.date = $('coDate').value; p.name = name; p.search = (name + ' ' + ref).toLowerCase();
+      replaceRow(id, p);
+    } else {
+      ref = 'SO-2026-' + String(nextOrder++).padStart(4, '0');
+      id = 'o' + (rowSeq++);
+      OD[id] = { cust: name, contact: $('coContact').value.trim() || name, email: email, phone: $('coPhone').value.trim(), address: $('coAddress').value.trim() || '—', method: $('coMethod').value, wh: $('coWh').value, cc: $('coCC').value, terms: TERMS[$('coTerms').value], source: $('coRef').value.trim().match(/^QT-/) ? $('coRef').value.trim() : '', invoice: '', lines: c.lines, sub: c.sub, tax: tax, notes: $('coNotesC').value.trim(), internal: $('coNotesI').value.trim() };
+      insertRow({ id: id, ref: ref, name: name, date: $('coDate').value, delivery: $('coDelivery').value || addDaysISO(TODAY_ISO, 7), total: total, status: st, search: (name + ' ' + ref + (OD[id].source ? ' ' + OD[id].source : '')).toLowerCase() });
+      if (release && emailOk(email)) { OD[id].emailed = email; OD[id].emailedAt = TODAY_ISO; }
+    }
+    editId = null; matchedCode = null;
+    $('coSearch').value = ''; $('coName').value = ''; $('coContact').value = ''; $('coEmail').value = ''; $('coPhone').value = ''; $('coAddress').value = '';
+    $('coRef').value = ''; $('coNotesC').value = ''; $('coNotesI').value = '';
+    $('coMode').value = 'existing'; $('coMode').dispatchEvent(new Event('change'));
+    $('coLines').innerHTML = coLineRow(); $('coDate').value = TODAY_ISO; $('coDelivery').value = addDaysISO(TODAY_ISO, 7);
+    setLock(false); coRecompute(); coSummary();
+    showView('list'); refresh();
+    toast('✓ ' + ref + ' ' + (release ? 'released to warehouse & customer' : 'saved as draft') + ' · ' + name + (walkin ? ' · new customer saved (' + savedCode + ')' : ''));
+    return true;
+  }
+  $('coDraft').addEventListener('click', function () { saveOrder(false); });
+  $('coRelease').addEventListener('click', function () { saveOrder(true); });
+
+  function openEditOrder(id) {
+    var tr = rowOf(id), d = OD[id];
+    editId = id;
+    $('cvTitle').textContent = 'Edit Sales Order — ' + tr.querySelector('.ono').textContent;
+    showView('create');
+    var reg = CUSTOMERS.filter(function (c) { return c.name === d.cust; })[0];
+    if (reg) { $('coMode').value = 'existing'; $('coMode').dispatchEvent(new Event('change')); $('coSearch').value = d.cust; matchedCode = reg.code; setLock(true); $('coContact').value = d.contact; $('coEmail').value = d.email; $('coPhone').value = d.phone; $('coAddress').value = d.address; }
+    else { $('coMode').value = 'walkin'; $('coMode').dispatchEvent(new Event('change')); $('coName').value = d.cust; $('coContact').value = d.contact; $('coEmail').value = d.email; $('coPhone').value = d.phone; $('coAddress').value = d.address; }
+    $('coDate').value = tr.dataset.date; $('coDelivery').value = tr.dataset.delivery;
+    $('coMethod').value = d.method; $('coWh').value = d.wh; $('coCC').value = d.cc;
+    $('coTerms').value = Object.keys(TERMS).filter(function (k) { return TERMS[k] === d.terms; })[0] || 'net30';
+    $('coRef').value = d.source || '';
+    $('coNotesC').value = d.notes || ''; $('coNotesI').value = d.internal || '';
+    $('coLines').innerHTML = d.lines.map(function (l) {
+      var parts = l[0].split(' — ');
+      var code = parts[0];
+      var rest = parts[1] || l[0];
+      var m = rest.match(/^(.*)\s\((.*)\)$/);
+      return coLineRow(code, m ? m[1] : rest, m ? m[2] : '', l[1], num(l[3]));
+    }).join('');
+    coRecompute(); coSummary();
+  }
+
+  /* ---------- closing (delegated, strict) ---------- */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-close]');
+    if (!b) return;
+    var m = document.getElementById(b.getAttribute('data-close'));
+    if (m) m.classList.remove('on');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if ($('cfScrim').classList.contains('on')) $('cfScrim').classList.remove('on');
+      else if ($('okScrim').classList.contains('on')) $('okScrim').classList.remove('on');
+      else if ($('printView').classList.contains('on')) closePreview();
+      else if ($('fulScrim').classList.contains('on')) $('fulScrim').classList.remove('on');
+      else if ($('viewScrim').classList.contains('on')) $('viewScrim').classList.remove('on');
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P') && $('printView').classList.contains('on')) { e.preventDefault(); safePrint(); }
+  });
+
+  getRows().forEach(buildActions);
+  refresh();
+})();
+</script>
+
+</body>
+</html>
+```

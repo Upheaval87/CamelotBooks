@@ -166,7 +166,10 @@
             + '</span>'
             + '<button type="button" class="cb-toast__close" aria-label="Dismiss">' + ICON_X_SM + '</button>';
 
-        var duration = (opts.duration != null) ? opts.duration : (TOAST_DURATION[type] || 4000);
+        /* `error: 0` means "stay until dismissed". A `|| 4000` fallback would
+           read that 0 as falsy and auto-hide error toasts after 4s instead. */
+        var duration = (opts.duration != null) ? opts.duration
+            : (TOAST_DURATION[type] === undefined ? 4000 : TOAST_DURATION[type]);
         var remaining = duration;
         var start = null;
         var rafId = null;
@@ -246,7 +249,7 @@
      * are the only places that markup is produced, so confirm / dialog / prompt
      * / busy are structurally identical. */
     function headBand(opts) {
-        return '<div class="dlg-head">'
+        return '<div class="dlg-head' + (opts.solo ? ' dlg-head--solo' : '') + '">'
             + '<span class="dlg-head-ic' + (opts.tone ? ' dlg-head-ic--' + opts.tone : '') + '">' + opts.icon + '</span>'
             + '<div class="dlg-head-txt">'
             + '<h3 id="' + opts.titleId + '" class="dlg-head-title">' + esc(opts.title) + '</h3>'
@@ -328,16 +331,27 @@
     function confirm(config) {
         config = config || {};
         var type = config.type === 'danger' ? 'danger' : 'action';
+        // A title-only confirm (the app-wide default: one sentence as the
+        // header) has NOTHING for the body to hold. Rendering an empty box
+        // punched a hole in the card, so the body is dropped entirely and the
+        // header takes the breathing room instead. A confirm that DOES carry
+        // body copy keeps the airy body so the sentence is not edge-to-edge.
+        var hasStrip = !!(config.chip || config.context);
+        var hasSummary = !!(config.summary && config.summary.length);
+        var hasBody = !!(config.message || config.sub || hasStrip || hasSummary || config.typeToConfirm);
+        var airy = hasBody && !hasStrip && !hasSummary && !config.typeToConfirm;
         return new Promise(function (resolve) {
             var m = mountDialog(
-                headBand({ icon: config.icon || HALO[type], tone: type, title: config.title, titleId: 'cb-dialog-title' })
-                + '<div class="dlg-body">'
-                + (config.message ? '<p class="dlg-sub">' + esc(config.message) + '</p>' : '')
-                + (config.sub && !config.message ? '<p class="dlg-sub">' + esc(config.sub) + '</p>' : '')
-                + factStrip(config.chip, config.context)
-                + summaryHtml(config.summary)
-                + (config.typeToConfirm ? typeField(config.typeToConfirm) : '')
-                + '</div>'
+                headBand({ icon: config.icon || HALO[type], tone: type, title: config.title, titleId: 'cb-dialog-title', solo: !hasBody })
+                + (hasBody
+                    ? '<div class="dlg-body' + (airy ? ' dlg-body--airy' : '') + '">'
+                        + (config.message ? '<p class="dlg-sub">' + esc(config.message) + '</p>' : '')
+                        + (config.sub && !config.message ? '<p class="dlg-sub">' + esc(config.sub) + '</p>' : '')
+                        + factStrip(config.chip, config.context)
+                        + summaryHtml(config.summary)
+                        + (config.typeToConfirm ? typeField(config.typeToConfirm) : '')
+                        + '</div>'
+                    : '')
                 + foot('<button type="button" class="dlg-btn dlg-btn--ghost" data-cb-cancel>' + esc(config.cancelLabel || 'Cancel') + '</button>'
                     + '<button type="button" class="dlg-btn ' + (type === 'danger' ? 'dlg-btn--danger' : 'dlg-btn--cta') + '" data-cb-ok disabled>'
                     + esc(config.confirmLabel || (type === 'danger' ? 'Confirm' : 'Continue')) + '</button>'),

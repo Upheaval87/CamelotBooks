@@ -181,11 +181,12 @@ class CoaService
         $accounts = $this->allAccounts();
         $balances = $this->computeBalances($accounts);
 
-        $totals = ['asset' => 0, 'liability' => 0, 'equity' => 0, 'income' => 0, 'expense' => 0];
+        $totals = ['asset' => 0, 'liability' => 0, 'equity' => 0, 'income' => 0, 'revenue' => 0, 'expense' => 0];
         foreach ($accounts as $account) {
             $totals[$account->type] += $balances[$account->id]['current'] ?? 0;
         }
 
+        $totals['income'] += $totals['revenue'];
         $assets = $totals['asset'];
         $liabilitiesPlusEquity = $totals['liability'] + $totals['equity'];
         $balanced = abs($assets - $liabilitiesPlusEquity) < 0.01;

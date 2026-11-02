@@ -9,6 +9,7 @@ use App\Models\JournalEntry;
 use App\Models\Quotation;
 use App\Models\QuotationLine;
 use App\Services\Admin\NumberingSequenceService;
+use App\Services\Tenancy\TenantConnectionResolver;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -20,13 +21,29 @@ class QuotationService
     ) {}
 
     /**
+     * The connection a quotation transaction must run on.
+     *
+     * Quotation, QuotationLine, Customer and AuditLog are all TenantScoped, so a
+     * bound tenant writes to `tenant` while the DEFAULT connection stays central.
+     * Wrapping those writes in a default-connection transaction would open a
+     * transaction on a database nothing is written to — the rollback on failure
+     * would leave the tenant rows committed. `DB::connection(null)` falls back to
+     * the default connection, so this one expression is also correct for legacy
+     * shared-DB companies and the unbound/test context.
+     */
+    private function connection(): \Illuminate\Database\Connection
+    {
+        return DB::connection(TenantConnectionResolver::connectionName());
+    }
+
+    /**
      * Create a quotation (draft by default). Handles walk-in customer
      * auto-creation inside the same transaction (§R8) and persists the
      * sanctioned §7 column set.
      */
     public function create(array $data, int $userId): Quotation
     {
-        return DB::transaction(function () use ($data, $userId) {
+        return $this->connection()->transaction(function () use ($data, $userId) {
             $companyId = $data['company_id'];
             $customer = $this->resolveCustomer($data, $companyId, $userId);
 
@@ -86,7 +103,7 @@ class QuotationService
             throw new InvalidArgumentException('Only draft quotations can be updated.');
         }
 
-        return DB::transaction(function () use ($quotation, $data) {
+        return $this->connection()->transaction(function () use ($quotation, $data) {
             [$lines, $subtotal, $taxTotal] = $this->normalizeLines($data['lines']);
 
             $quotation->update([
@@ -131,7 +148,7 @@ class QuotationService
      */
     public function requote(Quotation $source, array $data, int $userId): Quotation
     {
-        return DB::transaction(function () use ($source, $data, $userId) {
+        return $this->connection()->transaction(function () use ($source, $data, $userId) {
             $source->loadMissing('lines');
 
             $carried = [
@@ -214,7 +231,7 @@ class QuotationService
             throw new InvalidArgumentException('Only draft quotations can be deleted.');
         }
 
-        DB::transaction(function () use ($quotation) {
+        $this->connection()->transaction(function () use ($quotation) {
             $this->logAudit($quotation, 'deleted', ['number' => $quotation->quotation_number, 'status' => $quotation->status]);
             $quotation->lines()->delete();
             $quotation->delete();

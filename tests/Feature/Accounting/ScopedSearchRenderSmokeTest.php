@@ -867,22 +867,22 @@ class ScopedSearchRenderSmokeTest extends TestCase
 
         $html = $response->getContent();
 
-        // The shared quick-search overlay must be the FIRST child of the line-items section
-        // so it renders IN FRONT OF the card (the section is position:relative).
-        $sectionStart = strpos($html, '<section class="card card-sec relative z-30"');
+        // Spec APPENDIX A create form: the Invoice Lines section owns the row
+        // table (#ncLines) and the Add Line control — there is no legacy
+        // #inv-quick product overlay in the spec port.
+        $sectionStart = strpos($html, 'Invoice Lines');
         $this->assertNotFalse($sectionStart, 'line-items section not found');
 
-        $beforeCard = substr($html, $sectionStart, 1200);
-        $panelPos = strpos($beforeCard, 'id="inv-quick"');
-        $this->assertNotFalse($panelPos, 'quick-search panel not found');
+        $window = substr($html, $sectionStart, 2000);
+        $this->assertNotFalse(strpos($window, 'id="ncAdd"'), 'Add Line control not found');
+        $this->assertNotFalse(strpos($window, '<tbody id="ncLines">'), 'line rows tbody not found');
 
-        // Panel must appear BEFORE the sec-head of Line Items (it's the first child, overlaying).
-        $headPos = strpos($beforeCard, 'sec-head');
-        $this->assertNotFalse($headPos, 'sec-head not found');
-        $this->assertLessThan($headPos, $panelPos, 'quick-search panel must be the first child of the line-items section (overlay)');
+        // The spec's only line-content source is "Create from quotation".
+        $this->assertStringContainsString('id="quoteScrim"', $html);
+        $this->assertStringContainsString('id="ncPickQ"', $html);
 
-        // The line-items section itself carries the relative positioning the overlay anchors to.
-        $this->assertStringContainsString('relative z-30', $html);
+        // The legacy product quick-search overlay must NOT come back.
+        $this->assertStringNotContainsString('id="inv-quick"', $html);
     }
 
     public function test_topbar_banking_dropdown_lists_deposits_cheques_petty_cash(): void

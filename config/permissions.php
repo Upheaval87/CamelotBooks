@@ -17,11 +17,14 @@ return [
 
     'modules' => [
         // ── Financial Transactions ──
-        'invoices'        => ['view', 'create', 'edit', 'void', 'approve', 'post'],
+        'invoices'        => ['view', 'create', 'edit', 'edit_draft', 'void', 'approve', 'post', 'send_email', 'record_payment', 'print_pdf', 'export', 'collections'],
         'credit-notes'    => ['view', 'create', 'void', 'post'],
         'sales-receipts'  => ['view', 'create', 'edit', 'void', 'post'],
-        'quotations'      => ['view', 'create', 'edit', 'void', 'approve', 'send', 'convert', 'email'],
-        'sales-orders'    => ['view', 'create', 'edit', 'void', 'send', 'confirm', 'convert', 'cancel'],
+        'quotations'      => ['view', 'create', 'edit', 'void', 'approve', 'send', 'convert', 'email', 'send_email'],
+        // Sales Orders §6 · granular lifecycle verbs. `edit` is retained as the
+        // umbrella draft-edit permission; `edit_draft` gates the PUT route so a
+        // non-draft update is a 409 (server-enforced, not a UI concern).
+        'sales-orders'    => ['view', 'create', 'edit', 'edit_draft', 'void', 'send', 'release', 'confirm', 'convert', 'cancel', 'fulfil', 'invoice', 'send_email', 'print_pdf', 'export'],
         'bills'           => ['view', 'create', 'edit', 'void', 'approve', 'post'],
         'vendor-credits'  => ['view', 'create', 'void', 'post'],
         'expenses'        => ['view', 'create', 'edit', 'void', 'approve', 'post', 'submit', 'reject', 'return', 'pay', 'duplicate', 'delete'],
@@ -384,7 +387,7 @@ return [
                 'invoices.view', 'invoices.create', 'invoices.edit',
                 'credit-notes.view', 'credit-notes.create',
                 'sales-receipts.view', 'sales-receipts.create',
-                'quotations.view', 'quotations.create', 'quotations.edit',
+                'quotations.view', 'quotations.create', 'quotations.edit', 'quotations.send_email',
                 'sales-orders.view', 'sales-orders.create', 'sales-orders.edit',
                 'bills.view', 'bills.create', 'bills.edit',
                 'vendor-credits.view', 'vendor-credits.create',

@@ -405,20 +405,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('vendors/{vendor}', [VendorController::class, 'show'])->name('vendors.show');
             Route::get('vendors/{vendor}/edit', [VendorController::class, 'edit'])->name('vendors.edit');
             Route::put('vendors/{vendor}', [VendorController::class, 'update'])->name('vendors.update');
-            Route::patch('vendors/{vendor}/toggle', [VendorController::class, 'toggle'])->name('vendors.toggle');
+            Route::post('vendors/{vendor}/toggle', [VendorController::class, 'toggle'])->name('vendors.toggle');
+Route::delete('vendors/{vendor}', [VendorController::class, 'destroy'])->name('vendors.destroy');
 
 
 
             // Sales Invoices
+            Route::get('invoices/collections', [InvoiceController::class, 'collections'])->name('invoices.collections');
             Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
             Route::get('invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
             Route::get('invoices/copy-from-quote', [InvoiceController::class, 'copyQuote'])->name('invoices.copy-quote');
+            // CSV export — must stay above `invoices/{invoice}` or "export" binds as a record id.
+            Route::get('invoices/export', [InvoiceController::class, 'export'])->name('invoices.export');
+            Route::get('invoices/collections/export', [InvoiceController::class, 'collectionsExport'])->name('invoices.collections.export');
             Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
             Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
             Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
             Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
             Route::post('invoices/{invoice}/post', [InvoiceController::class, 'post'])->name('invoices.post')->middleware(['permission:invoices.post', 'sod:invoice']);
             Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void')->middleware(['permission:invoices.void', 'sod:invoice']);
+            Route::post('invoices/{invoice}/send-email', [InvoiceController::class, 'sendEmail'])->name('invoices.send-email')->middleware(['permission:invoices.send_email', 'sod:invoice']);
+            Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'recordPayment'])->name('invoices.payments')->middleware(['permission:invoices.record_payment', 'sod:invoice']);
             Route::get('invoices/{invoice}/print', [InvoiceController::class, 'printPdf'])->name('invoices.print');
 
             // Credit Notes
@@ -440,34 +447,52 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
             Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
             Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy')->middleware(['permission:quotations.edit', 'sod:quotation']);
-            Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
+            Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send')->middleware('permission:quotations.edit');
             Route::post('quotations/{quotation}/accept', [QuotationController::class, 'accept'])->name('quotations.accept')->middleware(['permission:quotations.approve', 'sod:quotation']);
             Route::post('quotations/{quotation}/decline', [QuotationController::class, 'decline'])->name('quotations.decline')->middleware(['permission:quotations.approve', 'sod:quotation']);
-            Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice'])->name('quotations.convert-to-invoice')->middleware(['permission:quotations.convert', 'sod:quotation']);
-            Route::post('quotations/{quotation}/convert-to-receipt', [QuotationController::class, 'convertToSalesReceipt'])->name('quotations.convert-to-receipt')->middleware(['permission:quotations.convert', 'sod:quotation']);
+            Route::post('quotations/{quotation}/convert-to-invoice', [QuotationController::class, 'convertToInvoice'])->name('quotations.convert-to-invoice')->middleware('permission:quotations.convert');
+            Route::post('quotations/{quotation}/convert-to-receipt', [QuotationController::class, 'convertToSalesReceipt'])->name('quotations.convert-to-receipt')->middleware('permission:quotations.convert');
             Route::post('quotations/{quotation}/void', [QuotationController::class, 'void'])->name('quotations.void')->middleware(['permission:quotations.void', 'sod:quotation']);
             Route::get('quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print');
             Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'pdf'])->name('quotations.pdf');
-            Route::post('quotations/{quotation}/email', [QuotationController::class, 'email'])->name('quotations.email');
+            Route::post('quotations/{quotation}/email', [QuotationController::class, 'email'])->name('quotations.email')->middleware('permission:quotations.send_email');
+            // §2.3 — email dispatch subsystem: retry, live stage polling, cancel.
+            Route::post('quotations/{quotation}/email/retry', [QuotationController::class, 'retryEmail'])->name('quotations.email-retry')->middleware('permission:quotations.send_email');
+            Route::get('email-jobs/{emailJob}', [QuotationController::class, 'emailJobStatus'])->name('email-jobs.show')->middleware('permission:quotations.send_email');
+            Route::post('email-jobs/{emailJob}/cancel', [QuotationController::class, 'cancelEmailJob'])->name('email-jobs.cancel')->middleware('permission:quotations.send_email');
             Route::post('quotations/{quotation}/requote', [QuotationController::class, 'requote'])->name('quotations.requote')->middleware('permission:quotations.create');
 
-            // ── Sales Orders ──
+            // ── Sales Orders (§5.2) ──
+            // Literal segments are declared BEFORE `sales-orders/{order}` so they
+            // are never swallowed by the parameter route.
             Route::get('sales-orders', [SalesOrderController::class, 'index'])->name('sales-orders.index');
-            Route::get('sales-orders/export', [SalesOrderController::class, 'export'])->name('sales-orders.export');
+            Route::get('sales-orders/export', [SalesOrderController::class, 'export'])->name('sales-orders.export')->middleware('permission:sales-orders.export');
             Route::get('sales-orders/create', [SalesOrderController::class, 'create'])->name('sales-orders.create');
             Route::post('sales-orders', [SalesOrderController::class, 'store'])->name('sales-orders.store');
+
+            // Pre-existing surface, preserved so bookmarks/integrations keep working.
+            Route::post('sales-orders/{order}/send', [SalesOrderController::class, 'send'])->name('sales-orders.send')->middleware('permission:sales-orders.release');
+            Route::post('sales-orders/{order}/fulfill', [SalesOrderController::class, 'markFulfilled'])->name('sales-orders.fulfill')->middleware(['permission:sales-orders.fulfil', 'sod:order']);
+            Route::post('sales-orders/{order}/convert-to-invoice', [SalesOrderController::class, 'convertToInvoice'])->name('sales-orders.convert-to-invoice')->middleware(['permission:sales-orders.invoice', 'sod:order']);
+            Route::post('sales-orders/{order}/convert-to-receipt', [SalesOrderController::class, 'convertToSalesReceipt'])->name('sales-orders.convert-to-receipt')->middleware(['permission:sales-orders.convert', 'sod:order']);
+
+            // §5.2 lifecycle verbs.
+            Route::post('sales-orders/{order}/release', [SalesOrderController::class, 'release'])->name('sales-orders.release')->middleware('permission:sales-orders.release');
+            Route::post('sales-orders/{order}/confirm', [SalesOrderController::class, 'confirm'])->name('sales-orders.confirm')->middleware(['permission:sales-orders.confirm', 'sod:order']);
+            Route::post('sales-orders/{order}/fulfilments', [SalesOrderController::class, 'fulfil'])->name('sales-orders.fulfilments')->middleware(['permission:sales-orders.fulfil', 'sod:order']);
+            Route::post('sales-orders/{order}/invoice', [SalesOrderController::class, 'convertToInvoice'])->name('sales-orders.invoice')->middleware(['permission:sales-orders.invoice', 'sod:order']);
+            Route::post('sales-orders/{order}/send-email', [SalesOrderController::class, 'sendEmail'])->name('sales-orders.send-email')->middleware('permission:sales-orders.send_email');
+            Route::post('sales-orders/{order}/cancel', [SalesOrderController::class, 'cancel'])->name('sales-orders.cancel')->middleware('permission:sales-orders.cancel');
+            Route::post('sales-orders/{order}/void', [SalesOrderController::class, 'void'])->name('sales-orders.void')->middleware('permission:sales-orders.void');
+            Route::post('sales-orders/{order}/duplicate', [SalesOrderController::class, 'duplicate'])->name('sales-orders.duplicate')->middleware('permission:sales-orders.create');
+
+            Route::get('sales-orders/{order}/print', [SalesOrderController::class, 'print'])->name('sales-orders.print')->middleware('permission:sales-orders.print_pdf');
+            Route::get('sales-orders/{order}/pdf', [SalesOrderController::class, 'pdf'])->name('sales-orders.pdf')->middleware('permission:sales-orders.print_pdf');
+
             Route::get('sales-orders/{order}', [SalesOrderController::class, 'show'])->name('sales-orders.show');
             Route::get('sales-orders/{order}/edit', [SalesOrderController::class, 'edit'])->name('sales-orders.edit');
             Route::put('sales-orders/{order}', [SalesOrderController::class, 'update'])->name('sales-orders.update');
-            Route::delete('sales-orders/{order}', [SalesOrderController::class, 'destroy'])->name('sales-orders.destroy')->middleware(['permission:sales-orders.edit', 'sod:order']);
-            Route::post('sales-orders/{order}/send', [SalesOrderController::class, 'send'])->name('sales-orders.send');
-            Route::post('sales-orders/{order}/confirm', [SalesOrderController::class, 'confirm'])->name('sales-orders.confirm')->middleware(['permission:sales-orders.confirm', 'sod:order']);
-            Route::post('sales-orders/{order}/fulfill', [SalesOrderController::class, 'markFulfilled'])->name('sales-orders.fulfill')->middleware(['permission:sales-orders.convert', 'sod:order']);
-            Route::post('sales-orders/{order}/cancel', [SalesOrderController::class, 'cancel'])->name('sales-orders.cancel')->middleware(['permission:sales-orders.cancel', 'sod:order']);
-            Route::post('sales-orders/{order}/convert-to-invoice', [SalesOrderController::class, 'convertToInvoice'])->name('sales-orders.convert-to-invoice')->middleware(['permission:sales-orders.convert', 'sod:order']);
-            Route::post('sales-orders/{order}/convert-to-receipt', [SalesOrderController::class, 'convertToSalesReceipt'])->name('sales-orders.convert-to-receipt')->middleware(['permission:sales-orders.convert', 'sod:order']);
-            Route::post('sales-orders/{order}/void', [SalesOrderController::class, 'void'])->name('sales-orders.void')->middleware(['permission:sales-orders.void', 'sod:order']);
-            Route::get('sales-orders/{order}/print', [SalesOrderController::class, 'print'])->name('sales-orders.print');
+            Route::delete('sales-orders/{order}', [SalesOrderController::class, 'destroy'])->name('sales-orders.destroy')->middleware('permission:sales-orders.edit');
 
             // ── Sales Receipts ──
             Route::get('sales-receipts', [SalesReceiptController::class, 'index'])->name('sales-receipts.index');

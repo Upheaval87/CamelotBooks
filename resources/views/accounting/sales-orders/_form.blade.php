@@ -70,47 +70,49 @@
     }
 @endphp
 
-<div class="q2">
-    {{-- §2/§3 sticky page head --}}
-    <div class="q2-head q2-head--sticky">
-        <div class="min-w-0">
-            <div class="flex items-center gap-2.5 flex-wrap">
-                <h1 class="q2-title">{{ $title }}</h1>
-                @if ($isEdit)
-                    <span class="q2-mono" style="padding:.25rem .625rem;border:1px solid var(--line,#E2ECEC);border-radius:.5rem;background:#fff">{{ $order->sales_order_number }}</span>
-                    <span class="q2-badge q2-badge--{{ $order->status }}"><span class="q2-dot"></span>{{ __(ucfirst($order->status)) }}</span>
-                @endif
+<div class="q2 py-6">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+        <div class="so2">
+            {{-- sticky page head --}}
+            <div class="page-head" style="position:sticky;top:var(--topbar-h,106px);z-index:40;background:rgba(245,247,252,.9);backdrop-filter:blur(12px)">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <h1>{{ $title }}</h1>
+                        @if ($isEdit)
+                            <span class="mchip mono">{{ $order->sales_order_number }}</span>
+                            <span class="pill {{ $order->statusClass() }}"><i></i>{{ $order->statusLabel() }}</span>
+                        @endif
+                    </div>
+                    <p class="sub">{{ $subtitle }}</p>
+                </div>
+                <div class="page-actions">
+                    <a href="{{ $cancelRoute }}" class="btn btn-ghost">{{ __('Cancel') }}</a>
+                    @if($isEdit)
+                        @if($order->created_by && (int) $order->created_by !== (int) auth()->id())
+                            <button type="submit" form="sales-order-delete-form" class="btn btn-danger-o">{{ __('Delete') }}</button>
+                        @endif
+                        <div class="seg">
+                            <button type="submit" name="action" value="save" form="sales-order-form" class="btn btn-sec">{{ $submitLabel }}</button>
+                            <button type="submit" name="action" value="send" form="sales-order-form" class="btn btn-cta">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                {{ __('Save & Send') }}
+                            </button>
+                        </div>
+                    @else
+                        <button type="submit" name="action" value="save_and_new" form="sales-order-form" class="btn btn-ghost">{{ __('Save & New') }}</button>
+                        <div class="seg">
+                            <button type="submit" name="action" value="save_draft" form="sales-order-form" class="btn btn-ghost">{{ __('Save Draft') }}</button>
+                            <button type="submit" name="action" value="save" form="sales-order-form" class="btn btn-sec">{{ $submitLabel }}</button>
+                            <button type="submit" name="action" value="send" form="sales-order-form" class="btn btn-cta">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                {{ __('Save & Send') }}
+                            </button>
+                        </div>
+                    @endif
+                </div>
             </div>
-            <p class="q2-sub">{{ $subtitle }}</p>
-        </div>
-        <div class="q2-head-actions">
-            <a href="{{ $cancelRoute }}" class="q2-btn q2-btn--ghost">{{ __('Cancel') }}</a>
-            @if($isEdit)
-                @if($order->created_by && (int) $order->created_by !== (int) auth()->id())
-                    <button type="submit" form="sales-order-delete-form" class="q2-btn q2-btn--danger">{{ __('Delete') }}</button>
-                @endif
-                <div class="q2-seg">
-                    <button type="submit" name="action" value="save" form="sales-order-form" class="q2-btn q2-btn--sec">{{ $submitLabel }}</button>
-                    <button type="submit" name="action" value="send" form="sales-order-form" class="q2-btn q2-btn--cta">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        {{ __('Save & Send') }}
-                    </button>
-                </div>
-            @else
-                <button type="submit" name="action" value="save_and_new" form="sales-order-form" class="q2-btn q2-btn--ghost">{{ __('Save & New') }}</button>
-                <div class="q2-seg">
-                    <button type="submit" name="action" value="save_draft" form="sales-order-form" class="q2-btn q2-btn--ghost">{{ __('Save Draft') }}</button>
-                    <button type="submit" name="action" value="save" form="sales-order-form" class="q2-btn q2-btn--sec">{{ $submitLabel }}</button>
-                    <button type="submit" name="action" value="send" form="sales-order-form" class="q2-btn q2-btn--cta">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        {{ __('Save & Send') }}
-                    </button>
-                </div>
-            @endif
-        </div>
-    </div>
 
-    <form method="POST" action="{{ $formAction }}" id="sales-order-form" class="q2-form" enctype="multipart/form-data" novalidate data-customer-name="{{ $selectedCustomer?->name ?? '' }}">
+    <form method="POST" action="{{ $formAction }}" id="sales-order-form" enctype="multipart/form-data" novalidate data-customer-name="{{ $selectedCustomer?->name ?? '' }}">
         @csrf
         @if ($formMethod === 'PUT')
             @method('PUT')
@@ -118,259 +120,266 @@
 
         <x-input-error :messages="$errors->get('error')" class="mb-4" />
 
-        <div class="q2-shell q2-shell--form">
-            <div class="q2-main">
+        <div class="shell shell--form">
+            <div class="min-w-0">
 
                 {{-- (a) customer --}}
-                <section class="q2-sec">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Customer Information') }}</h2>
+                <section class="sec">
+                    <div class="sec-head">
+                        <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="sec-title">{{ __('Customer Information') }}</h2>
                     </div>
-                    <div class="q2-g4 mt-5">
-                        <div class="q2-field" style="grid-column: span 2">
-                            <label for="customer_id" class="q2-label">{{ __('Customer') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
-                            <x-scoped-search-field
-                                name="customer_id"
-                                entity="customer"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
-                                :value="old('customer_id', $oldCustomerId)"
-                                :label="old('customer_name', $selectedCustomer?->name ?? '')"
-                                placeholder="{{ __('Search customers…') }}"
-                                on-select="soCustomerSelected"
-                                required
-                            />
-                            <x-input-error :messages="$errors->get('customer_id')" />
+                    <div class="sec-body">
+                        <div class="g4">
+                            <div class="fld span2">
+                                <label for="customer_id">{{ __('Customer') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                                <x-scoped-search-field
+                                    name="customer_id"
+                                    entity="customer"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
+                                    :value="old('customer_id', $oldCustomerId)"
+                                    :label="old('customer_name', $selectedCustomer?->name ?? '')"
+                                    placeholder="{{ __('Search customers…') }}"
+                                    on-select="soCustomerSelected"
+                                    required
+                                />
+                                <x-input-error :messages="$errors->get('customer_id')" />
+                            </div>
+                            <div class="fld">
+                                <label for="expected_delivery_date">{{ __('Expected Delivery') }}</label>
+                                <input id="expected_delivery_date" name="expected_delivery_date" type="date" class="in" value="{{ old('expected_delivery_date', $order?->expected_delivery_date?->format('Y-m-d') ?? '') }}" />
+                                <x-input-error :messages="$errors->get('expected_delivery_date')" />
+                            </div>
+                            <div class="fld">
+                                <label for="currency">{{ __('Currency') }}</label>
+                                <select id="currency" name="currency" class="in">
+                                    @forelse ($currencies as $curOption)
+                                        <option value="{{ $curOption->code }}" @selected($selectedCurrency === $curOption->code)>{{ $curOption->code }} - {{ $curOption->name }}</option>
+                                    @empty
+                                        <option value="USD" @selected($selectedCurrency === 'USD')>USD - US Dollar</option>
+                                    @endforelse
+                                </select>
+                            </div>
+                            <div class="fld">
+                                <label>{{ __('Contact Person') }}</label>
+                                <input type="text" class="in" id="so-contact" value="{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '' }}" readonly />
+                            </div>
+                            <div class="fld">
+                                <label>{{ __('Email') }}</label>
+                                <input type="email" class="in" id="so-email" value="{{ $selectedCustomer?->email ?? '' }}" readonly />
+                            </div>
+                            <div class="fld">
+                                <label>{{ __('Phone') }}</label>
+                                <input type="text" class="in" id="so-phone" value="{{ $selectedCustomer?->phone ?? '' }}" readonly />
+                            </div>
+                            <div class="fld">
+                                <label>{{ __('Payment Terms') }}</label>
+                                <input type="text" class="in" id="so-terms" value="{{ $selectedCustomer?->payment_terms ?? '' }}" readonly />
+                            </div>
                         </div>
-                        <div class="q2-field">
-                            <label for="expected_delivery_date" class="q2-label">{{ __('Expected Delivery') }}</label>
-                            <input id="expected_delivery_date" name="expected_delivery_date" type="date" class="q2-input" value="{{ old('expected_delivery_date', $order?->expected_delivery_date?->format('Y-m-d') ?? '') }}" />
-                            <x-input-error :messages="$errors->get('expected_delivery_date')" />
-                        </div>
-                        <div class="q2-field">
-                            <label for="currency" class="q2-label">{{ __('Currency') }}</label>
-                            <select id="currency" name="currency" class="q2-select">
-                                @forelse ($currencies as $curOption)
-                                    <option value="{{ $curOption->code }}" @selected($selectedCurrency === $curOption->code)>{{ $curOption->code }} - {{ $curOption->name }}</option>
-                                @empty
-                                    <option value="USD" @selected($selectedCurrency === 'USD')>USD - US Dollar</option>
-                                @endforelse
-                            </select>
-                        </div>
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Contact Person') }}</label>
-                            <input type="text" class="q2-input" id="so-contact" value="{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '' }}" readonly />
-                        </div>
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Email') }}</label>
-                            <input type="email" class="q2-input" id="so-email" value="{{ $selectedCustomer?->email ?? '' }}" readonly />
-                        </div>
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Phone') }}</label>
-                            <input type="text" class="q2-input" id="so-phone" value="{{ $selectedCustomer?->phone ?? '' }}" readonly />
-                        </div>
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Payment Terms') }}</label>
-                            <input type="text" class="q2-input" id="so-terms" value="{{ $selectedCustomer?->payment_terms ?? '' }}" readonly />
-                        </div>
+                        <p class="hint">{{ __('Contact details shown are from the customer record.') }}</p>
                     </div>
-                    <p class="q2-hint mt-4">{{ __('Contact details shown are from the customer record.') }}</p>
                 </section>
 
                 {{-- (b) order info --}}
-                <section class="q2-sec">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Order Information') }}</h2>
+                <section class="sec">
+                    <div class="sec-head">
+                        <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="sec-title">{{ __('Order Information') }}</h2>
                     </div>
-                    <div class="q2-g4 mt-5">
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Sales Order №') }}</label>
-                            <input type="text" class="q2-input" value="{{ $order?->sales_order_number ?? '' }}" placeholder="{{ __('Auto-assigned on save') }}" readonly />
+                    <div class="sec-body">
+                        <div class="g4">
+                            <div class="fld">
+                                <label>{{ __('Sales Order №') }}</label>
+                                <input type="text" class="in" value="{{ $order?->sales_order_number ?? '' }}" placeholder="{{ __('Auto-assigned on save') }}" readonly />
+                            </div>
+                            <div class="fld">
+                                <label for="order_date">{{ __('Order Date') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
+                                <input id="order_date" name="order_date" type="date" class="in" value="{{ old('order_date', $order?->order_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
+                                <x-input-error :messages="$errors->get('order_date')" />
+                            </div>
+                            <div class="fld">
+                                <label for="reference">{{ __('Reference №') }}</label>
+                                <input id="reference" name="reference" type="text" class="in" value="{{ old('reference', $order?->reference ?? '') }}" placeholder="{{ __('Optional') }}" />
+                                <x-input-error :messages="$errors->get('reference')" />
+                            </div>
+                            <div class="fld">
+                                <label for="branch_id">{{ __('Branch') }}</label>
+                                <select id="branch_id" name="branch_id" class="in">
+                                    <option value="">-- {{ __('Select branch') }} --</option>
+                                    @foreach ($branches as $branch)
+                                        <option value="{{ $branch->id }}" @selected((string) $selectedBranchId === (string) $branch->id)>{{ $branch->name }}</option>
+                                    @endforeach
+                                </select>
+                                <x-input-error :messages="$errors->get('branch_id')" />
+                            </div>
+                            <div class="fld">
+                                <label for="cost_center_id">{{ __('Cost Centre') }}</label>
+                                <x-scoped-search-field
+                                    name="cost_center_id"
+                                    entity="cost-center"
+                                    search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
+                                    :value="old('cost_center_id', $selectedCostCenterId)"
+                                    :label="old('cost_center_id', $selectedCostCenterLabel)"
+                                    placeholder="{{ __('None') }}"
+                                />
+                            </div>
+                            <div class="fld">
+                                <label>{{ __('Department') }}</label>
+                                <input type="text" class="in" placeholder="Operations" readonly />
+                            </div>
+                            <div class="fld">
+                                <label>{{ __('Prepared By') }}</label>
+                                <input type="text" class="in" value="{{ $order?->createdByUser?->name ?? auth()->user()?->name ?? '' }}" readonly />
+                            </div>
+                            <div class="fld">
+                                <label>{{ __('Project') }}</label>
+                                <input type="text" class="in" placeholder="{{ __('Optional') }}" readonly />
+                            </div>
                         </div>
-                        <div class="q2-field">
-                            <label for="order_date" class="q2-label">{{ __('Order Date') }} <span style="color:var(--red-2,#B91C1C)">*</span></label>
-                            <input id="order_date" name="order_date" type="date" class="q2-input" value="{{ old('order_date', $order?->order_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
-                            <x-input-error :messages="$errors->get('order_date')" />
-                        </div>
-                        <div class="q2-field">
-                            <label for="reference" class="q2-label">{{ __('Reference №') }}</label>
-                            <input id="reference" name="reference" type="text" class="q2-input" value="{{ old('reference', $order?->reference ?? '') }}" placeholder="{{ __('Optional') }}" />
-                            <x-input-error :messages="$errors->get('reference')" />
-                        </div>
-                        <div class="q2-field">
-                            <label for="branch_id" class="q2-label">{{ __('Branch') }}</label>
-                            <select id="branch_id" name="branch_id" class="q2-select">
-                                <option value="">-- {{ __('Select branch') }} --</option>
-                                @foreach ($branches as $branch)
-                                    <option value="{{ $branch->id }}" @selected((string) $selectedBranchId === (string) $branch->id)>{{ $branch->name }}</option>
-                                @endforeach
-                            </select>
-                            <x-input-error :messages="$errors->get('branch_id')" />
-                        </div>
-                        <div class="q2-field">
-                            <label for="cost_center_id" class="q2-label">{{ __('Cost Centre') }}</label>
-                            <x-scoped-search-field
-                                name="cost_center_id"
-                                entity="cost-center"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
-                                :value="old('cost_center_id', $selectedCostCenterId)"
-                                :label="old('cost_center_id', $selectedCostCenterLabel)"
-                                placeholder="{{ __('None') }}"
-                            />
-                        </div>
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Department') }}</label>
-                            <input type="text" class="q2-input" placeholder="Operations" readonly />
-                        </div>
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Prepared By') }}</label>
-                            <input type="text" class="q2-input" value="{{ $order?->createdByUser?->name ?? auth()->user()?->name ?? '' }}" readonly />
-                        </div>
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Project') }}</label>
-                            <input type="text" class="q2-input" placeholder="{{ __('Optional') }}" readonly />
-                        </div>
+                        <p class="hint">{{ __('Sales Order № is auto-assigned on save. Department & Project are display-only.') }}</p>
                     </div>
-                    <p class="q2-hint mt-4">{{ __('Sales Order № is auto-assigned on save. Department & Project are display-only.') }}</p>
                 </section>
 
                 {{-- (c) line items --}}
-                <section class="q2-sec relative z-30">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Line Items') }}</h2>
-                        <button type="button" id="so-add-line" class="q2-btn q2-btn--ghost q2-btn--sm" style="margin-left:auto">＋ {{ __('Add Line') }}</button>
+                <section class="sec sec--raise">
+                    <div class="sec-head">
+                        <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="sec-title">{{ __('Line Items') }}</h2>
+                        <button type="button" id="so-add-line" class="btn btn-ghost btn-sm">＋ {{ __('Add Line') }}</button>
                     </div>
-
-                    <div class="mt-4 border border-shell round-thead-clip bg-[#fbfcfe]">
-                        <table id="so-lines-table" class="q2-tbl w-full text-[0.929rem] table-fixed">
-                            <thead>
-                                <tr>
-                                    <th style="width:12%">{{ __('Item Code') }}</th>
-                                    <th style="width:24%">{{ __('Item Name') }}</th>
-                                    <th style="width:24%">{{ __('Description') }}</th>
-                                    <th style="width:7%" class="q2-right">{{ __('Qty') }}</th>
-                                    <th style="width:11%" class="q2-right">{{ __('Unit Price') }} ({{ $cs }})</th>
-                                    <th style="width:8%" class="q2-right">{{ __('Disc %') }}</th>
-                                    <th style="width:10%" class="q2-right">{{ __('Amount') }} ({{ $cs }})</th>
-                                    <th style="width:4%"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="so-lines-body"></tbody>
-                        </table>
+                    <div class="sec-body">
+                        <div class="so-hole round-thead-clip">
+                            <table id="so-lines-table" class="so-tbl w-full text-[0.929rem] table-fixed">
+                                <thead>
+                                    <tr>
+                                        <th style="width:12%">{{ __('Item Code') }}</th>
+                                        <th style="width:24%">{{ __('Item Name') }}</th>
+                                        <th style="width:24%">{{ __('Description') }}</th>
+                                        <th style="width:7%" class="r">{{ __('Qty') }}</th>
+                                        <th style="width:11%" class="r">{{ __('Unit Price') }} ({{ $cs }})</th>
+                                        <th style="width:8%" class="r">{{ __('Disc %') }}</th>
+                                        <th style="width:10%" class="r">{{ __('Amount') }} ({{ $cs }})</th>
+                                        <th style="width:4%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="so-lines-body"></tbody>
+                            </table>
+                        </div>
+                        <x-input-error :messages="$errors->get('lines')" class="mt-2" />
                     </div>
-
-                    <x-input-error :messages="$errors->get('lines')" class="mt-2" />
                 </section>
 
                 {{-- (d) notes --}}
-                <section class="q2-sec">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Notes') }}</h2>
+                <section class="sec">
+                    <div class="sec-head">
+                        <span class="sec-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                        <h2 class="sec-title">{{ __('Notes') }}</h2>
                     </div>
-                    <div class="q2-g2 mt-5">
-                        <div class="q2-field">
-                            <label for="memo" class="q2-label">{{ __('Customer Notes') }}</label>
-                            <textarea id="memo" name="memo" class="q2-input" style="height:auto;min-height:6rem;padding:.75rem .875rem;resize:vertical" placeholder="{{ __('Printed on the sales order PDF…') }}">{{ old('memo', $order?->memo ?? '') }}</textarea>
-                            <x-input-error :messages="$errors->get('memo')" />
-                        </div>
-                        <div class="q2-field">
-                            <label class="q2-label">{{ __('Internal Notes') }}</label>
-                            <textarea class="q2-input" style="height:auto;min-height:6rem;padding:.75rem .875rem;resize:vertical" placeholder="{{ __('Visible to your team only…') }}" readonly></textarea>
+                    <div class="sec-body">
+                        <div class="g2">
+                            <div class="fld">
+                                <label for="memo">{{ __('Customer Notes') }}</label>
+                                <textarea id="memo" name="memo" class="in" placeholder="{{ __('Printed on the sales order PDF…') }}">{{ old('memo', $order?->memo ?? '') }}</textarea>
+                                <x-input-error :messages="$errors->get('memo')" />
+                            </div>
+                            <div class="fld">
+                                <label>{{ __('Internal Notes') }}</label>
+                                <textarea class="in" placeholder="{{ __('Visible to your team only…') }}" readonly></textarea>
+                            </div>
                         </div>
                     </div>
                 </section>
 
                 {{-- (e) attachments --}}
-                <section class="q2-sec" id="attachments">
-                    <div class="q2-sec-head">
-                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <h2 class="q2-sec-title">{{ __('Attachments') }}</h2>
+                <section class="sec" id="attachments">
+                    <div class="sec-head">
+                        <span class="sec-ic" style="color:#fff"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <h2 class="sec-title">{{ __('Attachments') }}</h2>
                     </div>
+                    <div class="sec-body">
+                        @if(!empty($orderAttachments))
+                            <ul id="so-existing-files" class="alist">
+                                @foreach($orderAttachments as $attachment)
+                                    <li data-attachment-id="{{ $attachment->id }}" class="ai">
+                                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                        <span class="ai-name">{{ $attachment->name }}</span>
+                                        <span class="ai-size">{{ format_bytes($attachment->file_size) }}</span>
+                                        <button type="button" class="ai-rm" title="{{ __('Remove') }}" aria-label="{{ __('Remove') }}" onclick="soRemoveExistingFile(this)">
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                        </button>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
 
-                    @if(!empty($orderAttachments))
-                        <ul id="so-existing-files" class="q2-li-wrap">
-                            @foreach($orderAttachments as $attachment)
-                                <li data-attachment-id="{{ $attachment->id }}" class="q2-li">
-                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                    <span class="q2-li-name">{{ $attachment->name }}</span>
-                                    <span class="q2-li-size">{{ format_bytes($attachment->file_size) }}</span>
-                                    <button type="button" class="q2-li-rm" title="{{ __('Remove') }}" aria-label="{{ __('Remove') }}" onclick="soRemoveExistingFile(this)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                    </button>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
+                        <label class="bill-drop" id="so-dropzone" for="so-files">
+                            <span class="flex items-center justify-center gap-2 text-[0.929rem]">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="var(--sec,#128F8E)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>{{ __('Drag & drop files here, or') }} <b style="font-weight:700;color:var(--sec,#128F8E)">{{ __('browse') }}</b></span>
+                            </span>
+                            <span class="mt-1.5 flex items-center justify-center gap-1.5">
+                                <span class="fchip">PDF</span>
+                                <span class="fchip">IMG</span>
+                                <span class="fchip">XLSX</span>
+                                <span class="fchip">DOCX</span>
+                            </span>
+                        </label>
 
-                    <label class="q2-drop mt-4" id="so-dropzone" for="so-files">
-                        <span class="flex items-center justify-center gap-2 text-[0.929rem]">
-                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span>{{ __('Drag & drop files here, or') }} <b style="font-weight:700;color:var(--sec,#128F8E)">{{ __('browse') }}</b></span>
-                        </span>
-                        <span class="mt-1.5 flex items-center justify-center gap-1.5">
-                            <span class="q2-fchip">PDF</span>
-                            <span class="q2-fchip">IMG</span>
-                            <span class="q2-fchip">XLSX</span>
-                            <span class="q2-fchip">DOCX</span>
-                        </span>
-                    </label>
+                        <input type="file" id="so-files" name="files[]" multiple
+                               accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.xls,.xlsx,.doc,.docx,.txt,.csv" class="hidden" />
 
-                    <input type="file" id="so-files" name="files[]" multiple
-                           accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.xls,.xlsx,.doc,.docx,.txt,.csv" class="hidden" />
+                        <ul id="so-new-files" class="bill-file-list"></ul>
 
-                    <ul id="so-new-files" class="bill-file-list"></ul>
-
-                    <x-input-error :messages="$errors->get('files')" class="mt-2" />
+                        <x-input-error :messages="$errors->get('files')" class="mt-2" />
+                    </div>
                 </section>
             </div>
 
             {{-- §2/§3 rail: summary + quick nav --}}
-            <aside class="q2-rail">
-                <div class="q2-railcard">
-                    <div class="q2-rail-group">{{ $isEdit ? __('Breakdown') : __('Summary') }}</div>
-                    <div class="q2-railsum">
-                        <div class="q2-srow"><span>{{ __('Customer') }}</span><span class="q2-sval" id="p-cust">{{ $selectedCustomer?->name ?? '—' }}</span></div>
-                        <div class="q2-srow"><span>{{ __('Contact') }}</span><span class="q2-sval" id="p-contact">{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '—' }}</span></div>
-                        <div class="q2-srow"><span>{{ __('Order Date') }}</span><span class="q2-sval" id="p-date">{{ $order?->order_date?->format('M d, Y') ?? now()->format('M d, Y') }}</span></div>
-                        <div class="q2-srow"><span>{{ __('Delivery') }}</span><span class="q2-sval" id="p-valid">{{ $order?->expected_delivery_date?->format('M d, Y') ?? '—' }}</span></div>
+            <aside class="rail">
+                <div class="rail-card">
+                    <div class="rail-group">{{ $isEdit ? __('Breakdown') : __('Summary') }}</div>
+                    <div class="rail-sum">
+                        <div class="srow"><span>{{ __('Customer') }}</span><span class="sval" id="p-cust">{{ $selectedCustomer?->name ?? '—' }}</span></div>
+                        <div class="srow"><span>{{ __('Contact') }}</span><span class="sval" id="p-contact">{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '—' }}</span></div>
+                        <div class="srow"><span>{{ __('Order Date') }}</span><span class="sval" id="p-date">{{ $order?->order_date?->format('M d, Y') ?? now()->format('M d, Y') }}</span></div>
+                        <div class="srow"><span>{{ __('Delivery') }}</span><span class="sval" id="p-valid">{{ $order?->expected_delivery_date?->format('M d, Y') ?? '—' }}</span></div>
                         <div style="height:12px"></div>
-                        <div class="q2-srow"><span>{{ __('Subtotal') }}</span><span class="q2-sval" id="v-sub">0.00</span></div>
-                        <div class="q2-srow" id="r-disc" style="display:none"><span>{{ __('Discount') }}</span><span class="q2-sval" id="v-disc">0.00</span></div>
-                        <div class="q2-srow" id="r-tax" style="display:none"><span>{{ __('Tax') }}</span><span class="q2-sval" id="v-tax">0.00</span></div>
-                        <div class="q2-srow gt"><span>{{ __('Grand Total') }}</span><span class="q2-sval" id="v-gt">{{ $cs }}0.00</span></div>
+                        <div class="srow"><span>{{ __('Subtotal') }}</span><span class="sval" id="v-sub">0.00</span></div>
+                        <div class="srow" id="r-disc" style="display:none"><span>{{ __('Discount') }}</span><span class="sval" id="v-disc">0.00</span></div>
+                        <div class="srow" id="r-tax" style="display:none"><span>{{ __('Tax') }}</span><span class="sval" id="v-tax">0.00</span></div>
+                        <div class="srow gt"><span>{{ __('Grand Total') }}</span><span class="sval" id="v-gt">{{ $cs }}0.00</span></div>
                         <div id="p-lines"></div>
-                        <p id="p-foot" class="q2-rail-memo" hidden></p>
+                        <p id="p-foot" class="rail-memo" hidden></p>
                     </div>
                 </div>
 
-                <div class="q2-railcard">
-                    <div class="q2-rail-group">{{ __('Quick Nav') }}</div>
+                <div class="rail-card">
+                    <div class="rail-group">{{ __('Quick Nav') }}</div>
                     @if ($isEdit)
-                        <a href="{{ route('accounting.sales-orders.print', $order) }}" target="_blank" rel="noopener" class="q2-vitem">
+                        <a href="{{ route('accounting.sales-orders.print', $order) }}" target="_blank" rel="noopener" class="vitem">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             <span>{{ __('Print / PDF') }}</span>
                         </a>
-                        <a href="#attachments" class="q2-vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <a href="#attachments" class="vitem">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="var(--sec,#128F8E)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             <span>{{ __('Attach File') }}</span>
                         </a>
-                        <a href="{{ $cancelRoute }}" class="q2-vitem">
+                        <a href="{{ $cancelRoute }}" class="vitem">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             <span>{{ __('Back') }}</span>
                         </a>
                     @else
-                        <a href="{{ route('accounting.sales-orders.index') }}" class="q2-vitem">
+                        <a href="{{ route('accounting.sales-orders.index') }}" class="vitem">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                             <span>{{ __('Sales Orders List') }}</span>
                         </a>
-                        <a href="{{ route('accounting.customers.create') }}" class="q2-vitem">
+                        <a href="{{ route('accounting.customers.create') }}" class="vitem">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13v5m2.5-2.5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                             <span>{{ __('New Customer') }}</span>
                         </a>
-                        <a href="{{ route('accounting.invoices.index') }}" class="q2-vitem">
+                        <a href="{{ route('accounting.invoices.index') }}" class="vitem">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             <span>{{ __('Invoices') }}</span>
                         </a>

@@ -142,6 +142,11 @@ class QuotationMail extends Mailable implements ShouldQueue
             ->where(function ($q) use ($company) {
                 $q->where('company_id', $company?->id)->orWhereNull('company_id');
             })
+            // A template an administrator switched off must not reach a customer.
+            // Rows written before the column existed hold NULL — treat those as on.
+            ->where(function ($q) {
+                $q->where('is_enabled', true)->orWhereNull('is_enabled');
+            })
             ->orderByRaw('CASE WHEN company_id IS NULL THEN 1 ELSE 0 END')
             ->first();
 

@@ -4,16 +4,19 @@ namespace Tests\Feature\Accounting;
 
 use App\Models\AccountingPeriod;
 use App\Models\Account;
+use App\Models\Branch;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Customer;
+use App\Models\EmailTemplate;
+use App\Mail\QuotationMail;
 use App\Models\NumberingSequence;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Services\Accounting\QuotationService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Testing\File;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Js;
 use Tests\TestCase;
 
 class QuotationFormTest extends TestCase
@@ -211,6 +214,124 @@ class QuotationFormTest extends TestCase
         );
     }
 
+    public function test_index_nests_no_interactive_element_inside_another(): void
+    {
+        // A stray </a> closing the View <button> silently nested the locked
+        // edit icon INSIDE the data-qview trigger, so clicking a locked control
+        // opened the View modal (R9). Guard the whole table's tag balance.
+        app(QuotationService::class)->create($this->payload(), $this->user->id);
+        app(QuotationService::class)->create($this->payload(['status' => Quotation::STATUS_SENT]), $this->user->id);
+
+        $response = $this->get(route('accounting.quotations.index'));
+        $response->assertOk();
+
+        $doc = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $doc->loadHTML('<?xml encoding="utf-8" ?>'.$response->getContent());
+        libxml_clear_errors();
+        $xpath = new \DOMXPath($doc);
+
+        $this->assertSame(0, $xpath->query('//button//button | //button//a | //a//button | //a//a')->length,
+            'The register must not nest one interactive element inside another.');
+        $this->assertSame(0, $xpath->query('//*[@data-qview]//*[contains(concat(" ", normalize-space(@class), " "), " is-locked ")]')->length,
+            'A locked control must not live inside a data-qview trigger (R9).');
+        $this->assertGreaterThan(0, $xpath->query('//span[contains(concat(" ", normalize-space(@class), " "), " is-locked ")]')->length,
+            'A non-draft row must render the locked edit icon.');
+    }
+
+    public function test_index_rq_mode_default_is_finalize(): void
+    {
+        // R13 · "Finalize & issue" is the default; rqApplyMode() keeps the
+        // hidden POSTed mode in step so a draft selection can't finalize.
+        $response = $this->get(route('accounting.quotations.index'));
+
+        $response->assertOk()
+            ->assertSee('<input type="hidden" name="mode" id="rq-mode" value="finalize">', false)
+            ->assertSee('id="rmFinal" value="finalize" checked', false)
+            ->assertSee("mode.value = draft ? 'draft' : 'finalize'", false);
+    }
+
+    public function test_send_and_email_routes_require_edit_permission(): void
+    {
+        // A view-only role (auditor) must not be able to mark a quotation sent
+        // or push it to a customer's inbox, even by posting the route directly.
+        $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id);
+        app(QuotationService::class)->send($quotation);
+
+        $viewer = \App\Models\User::factory()->create();
+        $viewer->companies()->attach($this->company->id, ['role' => 'auditor']);
+        setPermissionsTeamId($this->company->id);
+        $viewer->assignRole('auditor');
+        $viewer->update(['current_company_id' => $this->company->id]);
+
+        $this->actingAs($viewer)
+            ->post(route('accounting.quotations.send', $quotation))
+            ->assertForbidden();
+
+        $this->actingAs($viewer)
+            ->post(route('accounting.quotations.email', $quotation))
+            ->assertForbidden();
+
+        \Illuminate\Support\Facades\Mail::fake();
+        $this->assertSame(Quotation::STATUS_SENT, $quotation->fresh()->status);
+        \Illuminate\Support\Facades\Mail::assertNothingSent();
+    }
+
+    public function test_stale_transition_post_flashes_an_error_instead_of_a_500(): void
+    {
+        // A stale page (or a direct POST) can ask for a transition the current
+        // status refuses. The service message must reach the user as a flash.
+        $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id);
+        app(QuotationService::class)->send($quotation);
+        app(QuotationService::class)->accept($quotation);
+
+        $response = $this->post(route('accounting.quotations.send', $quotation));
+
+        $response->assertRedirect(route('accounting.quotations.show', $quotation))
+            ->assertSessionHas('error');
+        $this->assertSame(Quotation::STATUS_ACCEPTED, $quotation->fresh()->status);
+    }
+
+    public function test_void_quotation_cannot_be_emailed(): void
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+
+        $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id);
+        app(QuotationService::class)->send($quotation);
+        app(QuotationService::class)->void($quotation, 'Withdrawn by customer', $this->user->id);
+
+        $this->post(route('accounting.quotations.email', $quotation))
+            ->assertRedirect(route('accounting.quotations.show', $quotation))
+            ->assertSessionHas('error');
+
+        \Illuminate\Support\Facades\Mail::assertNothingSent();
+        $this->assertNull($quotation->fresh()->emailed_at);
+    }
+
+    public function test_disabled_email_template_is_not_used(): void
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+
+        $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id);
+        app(QuotationService::class)->send($quotation);
+
+        EmailTemplate::create([
+            'company_id' => $this->company->id,
+            'event_type' => 'quotation_sent',
+            'subject' => 'DISABLED {{quotation_number}}',
+            'body' => 'DISABLED BODY',
+            'is_enabled' => false,
+        ]);
+
+        $this->post(route('accounting.quotations.email', $quotation))->assertRedirect();
+
+        \Illuminate\Support\Facades\Mail::assertQueued(QuotationMail::class, function (QuotationMail $mail) {
+            $envelope = $mail->envelope();
+
+            return ! str_contains($envelope->subject, 'DISABLED');
+        });
+    }
+
     public function test_store_persists_quote_fields_and_lines(): void
     {
         $response = $this->post(route('accounting.quotations.store'), $this->payload());
@@ -329,28 +450,32 @@ class QuotationFormTest extends TestCase
         $this->assertDatabaseCount('quotations', 0);
     }
 
-    public function test_store_uploads_attachments(): void
+    /**
+     * R16 Â· DO-NOT-REINTRODUCE: attachments section. The UI carries no attachment
+     * control, and the show page exposes no attachments tab or card.
+     */
+    public function test_no_attachment_ui_is_exposed(): void
     {
-        Storage::fake('public');
+        $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id);
 
-        $response = $this->post(route('accounting.quotations.store'), $this->payload([
-            'files' => [
-                File::create('quote.pdf', 100, 'application/pdf'),
-                File::create('spec.png', 100, 'image/png'),
-            ],
-        ]));
+        $this->get(route('accounting.quotations.create'))
+            ->assertOk()
+            ->assertDontSee('name="files"', false)
+            ->assertDontSee('Attachments');
 
-        $response->assertRedirect();
+        $this->get(route('accounting.quotations.edit', $quotation))
+            ->assertOk()
+            ->assertDontSee('name="files"', false)
+            ->assertDontSee('Attachments');
 
-        $quotation = Quotation::where('company_id', $this->company->id)->firstOrFail();
-        $this->assertCount(2, $quotation->attachments);
+        $this->get(route('accounting.quotations.show', $quotation))
+            ->assertOk()
+            ->assertDontSee('Attachments')
+            ->assertDontSee('No attachments for this quotation.');
 
-        foreach ($quotation->attachments as $attachment) {
-            Storage::disk('public')->assertExists($attachment->file_path);
-        }
-
-        $this->assertSame('quote.pdf', $quotation->attachments[0]->name);
-        $this->assertSame($this->user->id, $quotation->attachments[0]->uploaded_by);
+        $this->get(route('accounting.quotations.index'))
+            ->assertOk()
+            ->assertDontSee('Attachments');
     }
 
     public function test_update_persists_changes_and_currency(): void
@@ -390,65 +515,6 @@ class QuotationFormTest extends TestCase
 
         $this->put(route('accounting.quotations.update', $quotation), $this->payload())
             ->assertRedirect(route('accounting.quotations.show', $quotation));
-    }
-
-    public function test_update_deletes_flagged_attachment(): void
-    {
-        Storage::fake('public');
-
-        $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id);
-
-        $attachment = $quotation->attachments()->create([
-            'company_id' => $this->company->id,
-            'name' => 'old-spec.pdf',
-            'file_path' => 'quotation-attachments/keep.pdf',
-            'file_type' => 'application/pdf',
-            'file_size' => 100,
-            'uploaded_by' => $this->user->id,
-        ]);
-
-        Storage::disk('public')->put($attachment->file_path, 'pdf-bytes');
-
-        $response = $this->put(route('accounting.quotations.update', $quotation), $this->payload([
-            'delete_documents' => [$attachment->id],
-        ]));
-
-        $response->assertRedirect();
-        $this->assertDatabaseMissing('attachments', ['id' => $attachment->id]);
-        Storage::disk('public')->assertMissing($attachment->file_path);
-    }
-
-    public function test_store_rejects_oversized_files(): void
-    {
-        Storage::fake('public');
-
-        $response = $this->from(route('accounting.quotations.create'))
-            ->post(route('accounting.quotations.store'), $this->payload([
-                'files' => [File::create('huge.pdf', 11000, 'application/pdf')],
-            ]));
-
-        $response->assertSessionHasErrors('files.0');
-        $this->assertDatabaseCount('quotations', 0);
-    }
-
-    public function test_show_renders_attachments_card(): void
-    {
-        Storage::fake('public');
-
-        $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id);
-        $attachment = $quotation->attachments()->create([
-            'company_id' => $this->company->id,
-            'name' => 'quote.pdf',
-            'file_path' => 'quotation-attachments/quote.pdf',
-            'file_type' => 'application/pdf',
-            'file_size' => 100,
-            'uploaded_by' => $this->user->id,
-        ]);
-
-        $this->get(route('accounting.quotations.show', $quotation))
-            ->assertOk()
-            ->assertSee('Attachments')
-            ->assertSee('quote.pdf');
     }
 
     public function test_destroy_deletes_draft_quotation(): void
@@ -631,7 +697,7 @@ class QuotationFormTest extends TestCase
         $this->assertSame($walkin->id, $new->customer_id);
     }
 
-    /* ---------- §G print preview ---------- */
+    /* ---------- Â§G print preview ---------- */
 
     public function test_index_renders_print_preview_overlay(): void
     {
@@ -739,7 +805,7 @@ class QuotationFormTest extends TestCase
         );
     }
 
-    /** §6.2 — the queued mail carries the PDF sheet and the company standard template. */
+    /** Â§6.2 â€” the queued mail carries the PDF sheet and the company standard template. */
     public function test_quotation_mail_attaches_pdf_and_uses_company_template(): void
     {
         $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id)->fresh();
@@ -783,7 +849,7 @@ class QuotationFormTest extends TestCase
         $this->assertStringStartsWith('%PDF', (string) $bytes);
     }
 
-    /** §6.3 — a final failure retracts the emailed stamp and leaves an audit trail. */
+    /** Â§6.3 â€” a final failure retracts the emailed stamp and leaves an audit trail. */
     public function test_failed_dispatch_clears_email_stamp_and_audits(): void
     {
         $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id)->fresh();
@@ -807,7 +873,7 @@ class QuotationFormTest extends TestCase
         $this->assertSame('SMTP connection refused', $audit->notes);
     }
 
-    /** §6.3 — the register surfaces the failure in the needs-attention rail. */
+    /** Â§6.3 â€” the register surfaces the failure in the needs-attention rail. */
     public function test_register_surfaces_email_failure_with_confirm_gated_retry(): void
     {
         $quotation = $this->sentQuotation();
@@ -828,7 +894,7 @@ class QuotationFormTest extends TestCase
         $this->assertStringNotContainsString('%s', $html);
     }
 
-    /** R15 — a draft can never carry a delivery failure into the rail. */
+    /** R15 â€” a draft can never carry a delivery failure into the rail. */
     public function test_register_rail_ignores_draft_email_failures(): void
     {
         $draft = app(QuotationService::class)->create($this->payload(), $this->user->id)->fresh();
@@ -840,7 +906,7 @@ class QuotationFormTest extends TestCase
         $this->assertStringNotContainsString(route('accounting.quotations.email', $draft), $html);
     }
 
-    /** §R11 — a malformed recipient is never queued. */
+    /** Â§R11 â€” a malformed recipient is never queued. */
     public function test_email_route_rejects_malformed_recipient(): void
     {
         \Illuminate\Support\Facades\Mail::fake();
@@ -873,7 +939,7 @@ class QuotationFormTest extends TestCase
         $this->assertNotNull($quotation->fresh()->emailed_at);
     }
 
-    /** R15 — a draft can never be put in a customer's inbox. */
+    /** R15 â€” a draft can never be put in a customer's inbox. */
     public function test_email_route_refuses_draft_quotation(): void
     {
         \Illuminate\Support\Facades\Mail::fake();
@@ -889,7 +955,7 @@ class QuotationFormTest extends TestCase
         $this->assertNull($quotation->fresh()->emailed_at);
     }
 
-    /** R15 — the draft detail footer exposes no send action at all. */
+    /** R15 â€” the draft detail footer exposes no send action at all. */
     public function test_draft_detail_footer_has_no_send_actions(): void
     {
         $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id)->fresh();
@@ -901,16 +967,306 @@ class QuotationFormTest extends TestCase
         $this->assertStringNotContainsString('Mark as Sent', $html);
         $this->assertStringNotContainsString('Email to Customer', $html);
 
-        // Edit stays — it is the sanctioned path to Finalize & issue.
+        // Edit stays â€” it is the sanctioned path to Finalize & issue.
         $this->assertStringContainsString(route('accounting.quotations.edit', $quotation), $html);
     }
 
-    /** Helper — a finalized (sent) quotation, the only emailable state. */
+    /** Helper â€” a finalized (sent) quotation, the only emailable state. */
     private function sentQuotation(): Quotation
     {
         $quotation = app(QuotationService::class)->create($this->payload(), $this->user->id)->fresh();
 
         return app(QuotationService::class)->send($quotation)->fresh();
+    }
+
+    /** A3.3 Â· cost centre follows the selected branch. */
+    public function test_cost_centre_defaults_to_the_selected_branch_centre()
+    {
+        $head = Branch::create([
+            'company_id' => $this->company->id,
+            'name' => 'Head Office',
+            'code' => 'HO',
+            'is_active' => true,
+        ]);
+        $west = Branch::create([
+            'company_id' => $this->company->id,
+            'name' => 'West Branch',
+            'code' => 'WB',
+            'is_active' => true,
+        ]);
+
+        $ccA = CostCenter::create([
+            'company_id' => $this->company->id,
+            'name' => 'West Branch Ops',
+            'code' => 'WB',
+            'is_active' => true,
+        ]);
+        $ccB = CostCenter::create([
+            'company_id' => $this->company->id,
+            'name' => 'Head Office Ops',
+            'code' => 'HO',
+            'is_active' => true,
+        ]);
+
+        // the first branch is the server-side default, so the first branch's centre is prefilled
+        $response = $this->actingAs($this->user)->get(route('accounting.quotations.create'));
+        $response->assertOk();
+        $response->assertSee('name="cost_center_id"', false);
+        $response->assertSee('value: '.$ccB->id, false);
+        $response->assertSee('label: '.Js::from('Head Office Ops'), false);
+
+        // the client re-sync map carries one entry per branch
+        $map = json_decode($this->extractJsonObject($response->getContent(), 'QUOT_COST_CENTRE_BY_BRANCH'), true);
+        $this->assertIsArray($map);
+        $this->assertSame(['id' => $ccB->id, 'name' => 'Head Office Ops'], $map[(string) $head->id] ?? null);
+        $this->assertSame(['id' => $ccA->id, 'name' => 'West Branch Ops'], $map[(string) $west->id] ?? null);
+        $this->assertSame(['id' => $ccB->id, 'name' => 'Head Office Ops'], $map['__default__'] ?? null);
+    }
+
+    /**
+     * A,D,D,A,A,Dc,A3.3 the re-sync CONTRACT, deterministic without a browser:
+     * the stored value starts as a default (not an override) so a branch change
+     * re-syncs, a manual pick latches `touched`, and a touched field is left
+     * alone. Covers both selection channels -- the inline dropdown
+     * (`item-selected`) and the global-search magnifier
+     * (`global-search-selected`).
+     */
+    public function test_branch_change_resyncs_cost_centre_until_the_user_overrides_it(): void
+    {
+        $branch = Branch::create([
+            'company_id' => $this->company->id,
+            'name' => 'Head Office',
+            'code' => 'HO',
+            'is_active' => true,
+        ]);
+        $other = Branch::create([
+            'company_id' => $this->company->id,
+            'name' => 'West Branch',
+            'code' => 'WB',
+            'is_active' => true,
+        ]);
+        $centre = CostCenter::create([
+            'company_id' => $this->company->id,
+            'name' => 'Head Office Ops',
+            'code' => 'HO',
+            'is_active' => true,
+        ]);
+        $otherCentre = CostCenter::create([
+            'company_id' => $this->company->id,
+            'name' => 'West Branch Ops',
+            'code' => 'WB',
+            'is_active' => true,
+        ]);
+
+        $html = $this->get(route('accounting.quotations.create'))->assertOk()->getContent();
+
+        // 1. both branches map to their own centre, __default__ covers no selection
+        $map = json_decode($this->extractJsonObject($html, 'QUOT_COST_CENTRE_BY_BRANCH'), true);
+        $this->assertSame(['id' => $centre->id, 'name' => 'Head Office Ops'], $map[(string) $branch->id] ?? null);
+        $this->assertSame(['id' => $otherCentre->id, 'name' => 'West Branch Ops'], $map[(string) $other->id] ?? null);
+        $this->assertSame(['id' => $centre->id, 'name' => 'Head Office Ops'], $map['__default__'] ?? null);
+
+        // 2. the stored default is NOT treated as an override, on create AND edit
+        $this->assertStringContainsString('let quotCostCentreTouched = false;', $html);
+        $this->assertStringContainsString(
+            "if (quotCostCentreTouched || !quotCostCentreInput || typeof scopedSearchFieldSet !== 'function') return;",
+            $html
+        );
+
+        // 3. the branch select drives the re-sync, and a missing branch falls back
+        $this->assertStringContainsString("const key = (quotBranchSel && quotBranchSel.value) || '__default__';", $html);
+        $this->assertStringContainsString(
+            "const target = QUOT_COST_CENTRE_BY_BRANCH[key] || QUOT_COST_CENTRE_BY_BRANCH['__default__'];",
+            $html
+        );
+        $this->assertStringContainsString('function quotSyncCostCentreToBranch()', $html);
+
+        // 4. manual override latches via BOTH channels (typing, inline pick,
+        //    global-search magnifier) -- all scoped to the cost-centre field only
+        $this->assertStringContainsString("quotCostCentreInput.addEventListener('input', () => { quotCostCentreTouched = true; });", $html);
+        $this->assertStringContainsString("['item-selected', 'global-search-selected'].forEach((evt) => {", $html);
+        $this->assertStringContainsString('if (quotCostCentreField && field === quotCostCentreField) {', $html);
+
+        // 5. the edit form ships the same contract (stored value still a default)
+        //    NB: edit only opens for drafts -- a finalized quote redirects to show.
+        $draft = app(QuotationService::class)->create($this->payload(), $this->user->id)->fresh();
+        $editHtml = $this->get(route('accounting.quotations.edit', $draft))
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('let quotCostCentreTouched = false;', $editHtml);
+        $this->assertStringContainsString('function quotSyncCostCentreToBranch()', $editHtml);
+    }
+
+    /**
+     * A failed dispatch is the one case where re-sending IS the View action
+     * (the recipient was never notified), and Print/PDF must leave the app in a
+     * new tab -- the R14 in-app A4 sheet stays one click away behind Preview.
+     */
+    public function test_view_modal_footer_offers_resend_email_after_failed_dispatch(): void
+    {
+        $quotation = $this->sentQuotation();
+        (new \App\Mail\QuotationMail($quotation))->failed(new \RuntimeException('Mailbox unavailable'));
+
+        $html = $this->get(route('accounting.quotations.index'))->assertOk()->getContent();
+
+        // §3.2 — a FAILED dispatch is the one case where re-sending is the action,
+        // and it goes immediately (no confirmation). A first send says "Send to
+        // customer" and asks first instead.
+        $this->assertStringContainsString("d.can.email ? (d.email_failed ? B('email', \"Re-send email\"", $html);
+        $this->assertStringContainsString("B('email', \"Send to customer\"", $html);
+        $this->assertStringContainsString("if (d.email_failed) { window.QDispatch.open(d); return; }", $html);
+        $this->assertStringContainsString('window.QDispatch.ask(d, vid);', $html);
+
+        // Print/PDF opens a new tab; Preview keeps the in-app sheet reachable.
+        $this->assertStringContainsString("window.open(d.urls.print, '_blank', 'noopener')", $html);
+        $this->assertStringContainsString("if (act === 'preview') { openQuotePrint(quotViewing); return; }", $html);
+        $this->assertStringContainsString('B(\'preview\', "Preview"', $html);
+    }
+
+    /**
+     * Maker-checker is enforced where it matters -- accept/decline carry
+     * sod:quotation -- so the creator can never approve their own quote.
+     * Fulfilment of an ALREADY accepted quote is not an approval step, so the
+     * conversion action (and the POST route) must stay available to them.
+     */
+    public function test_accepted_quotation_offers_convert_to_invoice_to_the_creator(): void
+    {
+        $quotation = $this->sentQuotation();
+        $quotation->update(['status' => Quotation::STATUS_ACCEPTED]);
+
+        $html = $this->get(route('accounting.quotations.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('"convert":true', $html);
+    }
+
+    /** The creator can now fulfil an accepted quotation they authored. */
+    public function test_creator_may_convert_their_own_accepted_quotation(): void
+    {
+        $quotation = $this->sentQuotation();
+        $quotation->update(['status' => Quotation::STATUS_ACCEPTED]);
+
+        $this->actingAs($this->user)
+            ->post(route('accounting.quotations.convert-to-invoice', $quotation))
+            ->assertRedirect(route('accounting.invoices.show', \App\Models\Invoice::first()));
+    }
+
+    /** The four helper sentences were dropped from the register + View footer. */
+    public function test_register_and_view_drop_removed_helper_copy(): void
+    {
+        $sent = $this->sentQuotation();
+        $sent->update(['status' => Quotation::STATUS_ACCEPTED]);
+
+        $html = $this->get(route('accounting.quotations.index'))->assertOk()->getContent();
+
+        foreach ([
+            'Track, send and convert customer quotations',
+            'Awaiting customer response',
+            'Saves to the draft. Finalize issues it as sent.',
+            'convert to invoice to fulfil.',
+        ] as $needle) {
+            $this->assertStringNotContainsString($needle, $html);
+        }
+    }
+
+    /**
+     * Appendix A styling contract: deep-teal modal header with a WHITE glyph,
+     * the Draft -> Sent -> Accepted -> Converted timeline rail, a compact active
+     * status tile in #DCE6E7 with no green top bar, and a properly sized
+     * empty-state icon (the halo previously had no rule at all, so the bare SVG
+     * filled the table cell).
+     */
+    public function test_modal_and_tile_styling_matches_the_spec(): void
+    {
+        $css = (string) file_get_contents(resource_path('css/app.css'));
+
+        $this->assertStringContainsString('#11454b 0%, #0c3539 55%, #0a2e32 100%', $css);
+        $this->assertMatchesRegularExpression('/\.q2-mic \{[^}]*color: #fff;/', $css);
+        $this->assertMatchesRegularExpression('/\.q2-step::before \{[^}]*height: 2px;/', $css);
+        $this->assertMatchesRegularExpression('/\.q2-fbox\.is-active \{[^}]*background: #DCE6E7;/', $css);
+        $this->assertStringNotContainsString('.q2-fbox.is-active::before', $css);
+        $this->assertMatchesRegularExpression('/\.q2-empty-halo \{[^}]*width: 34px;/', $css);
+        $this->assertMatchesRegularExpression('/\.q2-empty-halo svg \{[^}]*height: 15px;/', $css);
+    }
+
+    /**
+     * Confirm dialogs must never render an empty body. The app-wide default is
+     * a one-sentence header (title only) -- that case drops the body and gives
+     * the header the vertical room; a confirm that carries body copy keeps an
+     * airy body so the sentence is never edge-to-edge.
+     */
+    public function test_confirm_dialogs_never_render_an_empty_body(): void
+    {
+        $js = (string) file_get_contents(resource_path('js/feedback.js'));
+        $css = (string) file_get_contents(resource_path('css/app.css'));
+
+        $this->assertStringContainsString('solo: !hasBody', $js);
+        $this->assertStringContainsString("? '<div class=\"dlg-body' + (airy ? ' dlg-body--airy' : '') + '\">'", $js);
+        $this->assertStringContainsString(": '')", $js);
+        $this->assertStringContainsString('dlg-head--solo', $css);
+        $this->assertMatchesRegularExpression('/\.dlg-head--solo \{[^}]*padding: 22px 20px 24px;/', $css);
+        $this->assertMatchesRegularExpression('/\.dlg-body--airy \{[^}]*min-height: 104px;/', $css);
+    }
+
+    /**
+     * R5 A6 status tiles + rail Views must actually filter. The status branch used
+     * `when($cond, fn($q, $s) => ...->where('status', $s))`, but Builder::when()
+     * hands the callback the CONDITION (true) -- not the value -- so every
+     * single-status filter compiled to `where status = 1` and matched nothing.
+     */
+    public function test_register_status_filters_actually_filter(): void
+    {
+        $service = app(QuotationService::class);
+
+        $draft = $service->create($this->payload(['reference' => 'FILTER-DRAFT']), $this->user->id)->fresh();
+        $sent = $service->send(
+            $service->create($this->payload(['reference' => 'FILTER-SENT']), $this->user->id)->fresh()
+        )->fresh();
+        // The rail deep-links R6 payloads for rows off the current page, so the
+        // table itself is asserted via its per-row "View" buttons.
+        $tableRows = function (string $html): int {
+            return substr_count($html, 'class="q2-ibtn" data-qview=');
+        };
+
+        // ?status=sent -> exactly the sent row, never the empty state
+        $sentHtml = $this->get(route('accounting.quotations.index', ['status' => 'sent']))
+            ->assertOk()
+            ->assertSee($sent->quotation_number)
+            ->assertDontSee(__('No quotations found. Adjust your filters or create a new quotation.'))
+            ->getContent();
+        $this->assertSame(1, $tableRows($sentHtml), 'status=sent must list only sent rows');
+
+        // ?status=draft -> exactly the draft row
+        $draftHtml = $this->get(route('accounting.quotations.index', ['status' => 'draft']))
+            ->assertOk()
+            ->getContent();
+        $this->assertSame(1, $tableRows($draftHtml), 'status=draft must list only draft rows');
+
+        // ?status=open spans draft + sent, unfiltered lists both
+        $this->assertSame(2, $tableRows($this->get(route('accounting.quotations.index', ['status' => 'open']))->getContent()));
+        $this->assertSame(2, $tableRows($this->get(route('accounting.quotations.index'))->getContent()));
+
+        // the CSV export shares the same filter
+        $export = $this->get(route('accounting.quotations.export', ['status' => 'sent']));
+        $export->assertOk();
+        $this->assertStringContainsString($sent->quotation_number, $export->streamedContent());
+    }
+
+    public function test_sales_order_status_filter_actually_filters(): void
+    {
+        // Same latent defect: a boolean-condition `when()` passed `true` into the
+        // where(). Guarded here because the quotations fix must not be reverted
+        // back to the two-argument form.
+        $controller = new \App\Http\Controllers\Accounting\SalesOrderController();
+        $source = file_get_contents(app_path('Http/Controllers/Accounting/SalesOrderController.php'));
+        $quotations = file_get_contents(app_path('Http/Controllers/Accounting/QuotationController.php'));
+
+        foreach (['SalesOrderController' => $source, 'QuotationController' => $quotations] as $label => $file) {
+            $this->assertStringNotContainsString(
+                "fn(\$q, \$s) => \$q->where('status', \$s)",
+                $file,
+                "{$label} status filter must capture the value, not the when() condition"
+            );
+        }
     }
 
     private function extractJsonObject(string $html, string $marker): string

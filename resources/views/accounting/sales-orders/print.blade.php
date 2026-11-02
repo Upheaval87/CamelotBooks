@@ -33,7 +33,7 @@
         html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         body {
             font-family: Inter, 'Segoe UI', Arial, system-ui, sans-serif;
-            color: var(--ink);
+            color: #0B2A2D;
             background: #eef2f3;
             padding: 24px 12px;
             -webkit-print-color-adjust: exact;
@@ -56,27 +56,27 @@
         /* meta strip under chrome band */
         .p-meta { display: flex; gap: 1.75rem; padding: 1.25rem 2rem 0; flex-wrap: wrap; }
         .p-meta .mi { display: flex; flex-direction: column; gap: .1875rem; }
-        .p-meta .l { font-size: .5625rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
-        .p-meta .v { font-size: .71875rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+        .p-meta .l { font-size: .5625rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #5F7A7C; }
+        .p-meta .v { font-size: .71875rem; font-weight: 700; color: #0B2A2D; font-variant-numeric: tabular-nums; }
 
         .qpdf-parties {
             display: grid;
-            grid-template-columns: 1fr var(--rcol);
+            grid-template-columns: 1fr 300px;
             gap: 1.75rem;
             padding: 1.75rem 2rem 0.25rem;
         }
-        .qpdf-lbl { font-size: 0.625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--acc); margin-bottom: 0.5rem; }
-        .qpdf-cname { font-size: 0.84375rem; font-weight: 800; color: var(--ink); }
-        .qpdf-rows { margin-top: 0.5rem; font-size: 0.65625rem; line-height: 1.75; color: var(--muted); }
+        .qpdf-lbl { font-size: 0.625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #0E7473; margin-bottom: 0.5rem; }
+        .qpdf-cname { font-size: 0.84375rem; font-weight: 800; color: #0B2A2D; }
+        .qpdf-rows { margin-top: 0.5rem; font-size: 0.65625rem; line-height: 1.75; color: #52696B; }
         .qpdf-detail { display: flex; flex-direction: column; gap: 0.375rem; }
         .qpdf-detail .d { display: flex; justify-content: space-between; gap: 1rem; }
-        .qpdf-detail .d .l { font-size: 0.625rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-        .qpdf-detail .d .v { font-size: 0.71875rem; font-weight: 700; color: var(--ink); }
+        .qpdf-detail .d .l { font-size: 0.625rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5F7A7C; }
+        .qpdf-detail .d .v { font-size: 0.71875rem; font-weight: 700; color: #0B2A2D; }
 
-        .qpdf-li { margin: 1.125rem 2rem 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+        .qpdf-li { margin: 1.125rem 2rem 0; border: 1px solid #DCEAEA; border-radius: 6px; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
         thead th {
-            background: var(--acc);
+            background: #0E7473;
             color: #fff;
             text-align: left;
             font-size: 0.625rem;
@@ -89,47 +89,47 @@
         thead th.num { text-align: right; }
         tbody td {
             padding: 0.625rem 0.75rem;
-            border-bottom: 1px solid var(--line);
+            border-bottom: 1px solid #DCEAEA;
             vertical-align: top;
             font-size: 0.75rem;
             font-weight: 500;
-            color: var(--ink);
+            color: #0B2A2D;
         }
         tbody tr:nth-child(even) td { background: #F5F9F9; }
-        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:last-child td { border-bottom: 0; }
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
-        td.ic { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-size: 0.6875rem; font-weight: 700; color: var(--acc); }
-        td.strong { font-weight: 700; color: var(--ink); }
-        td.empty { text-align: center; color: var(--faint); padding: 1.5rem; }
+        td.ic { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; font-size: 0.6875rem; font-weight: 700; color: #0E7473; }
+        td.strong { font-weight: 700; color: #0B2A2D; }
+        td.empty { text-align: center; color: #5F7A7C; padding: 1.5rem; }
 
-        .qpdf-totrow { display: grid; grid-template-columns: 1fr var(--rcol); gap: 1.75rem; padding: 1.25rem 2rem 0; }
+        .qpdf-totrow { display: grid; grid-template-columns: 1fr 300px; gap: 1.75rem; padding: 1.25rem 2rem 0; }
         .totals { display: flex; flex-direction: column; }
-        .trow { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4375rem 0; border-bottom: 1px solid var(--line); font-size: 0.75rem; color: var(--muted); }
-        .trow .v { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
-        .gt { margin-top: 0.625rem; display: flex; justify-content: space-between; align-items: center; padding: 0.625rem 0.875rem; border-radius: 8px; background: linear-gradient(90deg, #107C7B, var(--acc) 60%, var(--acc-2)); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+        .trow { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4375rem 0; border-bottom: 1px solid #DCEAEA; font-size: 0.75rem; color: #52696B; }
+        .trow .v { font-weight: 700; color: #0B2A2D; font-variant-numeric: tabular-nums; }
+        .gt { margin-top: 0.625rem; display: flex; justify-content: space-between; align-items: center; padding: 0.625rem 0.875rem; border-radius: 8px; background: linear-gradient(90deg, #107C7B, #0E7473 60%, #0b5c5b); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
         .gt .gl { font-size: 0.625rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #DFF7F6; }
         .gt .gv { font-size: 0.9375rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
 
         .qpdf-lower {
             display: grid;
-            grid-template-columns: 1fr var(--rcol);
+            grid-template-columns: 1fr 300px;
             gap: 1.75rem;
             padding: 1.75rem 2rem 0;
         }
-        .qpdf-h4 { font-size: 0.75rem; font-weight: 800; color: var(--ink); margin-bottom: 0.5rem; }
-        .qpdf-blk { font-size: 0.6875rem; line-height: 1.7; color: var(--muted); }
+        .qpdf-h4 { font-size: 0.75rem; font-weight: 800; color: #0B2A2D; margin-bottom: 0.5rem; }
+        .qpdf-blk { font-size: 0.6875rem; line-height: 1.7; color: #52696B; }
         .qpdf-blk li { margin-left: 1rem; }
         .qpdf-blk + .qpdf-h4 { margin-top: 1rem; }
-        .qpdf-paycol { border-left: 3px solid var(--acc); padding-left: 0.875rem; }
-        .qpdf-paycol .p { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3125rem 0; font-size: 0.6875rem; color: var(--muted); }
-        .qpdf-paycol .p .l { font-weight: 700; color: var(--ink); }
+        .qpdf-paycol { border-left: 3px solid #0E7473; padding-left: 0.875rem; }
+        .qpdf-paycol .p { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3125rem 0; font-size: 0.6875rem; color: #52696B; }
+        .qpdf-paycol .p .l { font-weight: 700; color: #0B2A2D; }
         .qpdf-paycol .p .v { font-variant-numeric: tabular-nums; }
 
         .qpdf-sig { padding: 1.75rem 2rem 0; }
         .qpdf-sig .qpdf-h4 { color: #000; }
         .qpdf-sigline { margin-top: 2.75rem; max-width: 16.25rem; border-top: 1.5px dashed #BFD6D5; }
-        .qpdf-signame { margin-top: 0.625rem; font-size: 0.75rem; font-weight: 800; color: var(--ink); }
-        .qpdf-sigrole { font-size: 0.6875rem; color: var(--muted); }
+        .qpdf-signame { margin-top: 0.625rem; font-size: 0.75rem; font-weight: 800; color: #0B2A2D; }
+        .qpdf-sigrole { font-size: 0.6875rem; color: #52696B; }
     </style>
 </head>
 <body onload="window.print()">

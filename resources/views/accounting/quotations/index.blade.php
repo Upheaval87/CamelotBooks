@@ -21,13 +21,12 @@
             ['key' => 'converted', 'label' => __('Converted'), 'icon' => 'converted', 'cls' => 'q2-fbox-ic--mint', 'val' => number_format($statCount('converted'))],
             ['key' => 'void', 'label' => __('Void'), 'icon' => 'void', 'cls' => 'q2-fbox-ic--gray', 'val' => number_format($statCount('void'))],
         ];
+        /* R5 · sort is exactly four choices: newest, oldest, value high→low, expiry soonest. */
         $sortOptions = [
             'date-desc' => __('Newest first'),
             'date-asc' => __('Oldest first'),
-            'amount-desc' => __('Total: high → low'),
-            'amount-asc' => __('Total: low → high'),
+            'amount-desc' => __('Value high → low'),
             'expiry-asc' => __('Expiry: soonest'),
-            'status' => __('Status'),
         ];
         $statusLabel = fn($s) => ucfirst($s);
     @endphp
@@ -39,7 +38,7 @@
             <div class="q2-head">
                 <div>
                     <h1 class="q2-title">{{ __('Quotations') }}</h1>
-                    <p class="q2-sub">{{ __('Track, send and convert customer quotations.') }}</p>
+
                 </div>
                 <div class="q2-head-actions">
                     <a href="{{ route('accounting.quotations.export', request()->query()) }}" class="q2-btn q2-btn--ghost q2-btn--sm">{{ __('Export') }}</a>
@@ -103,6 +102,8 @@
                         <option value="{{ $value }}" @selected($sort === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
+                {{-- R5 · live result count, exactly as APPENDIX A's toolbar chip --}}
+                <span class="q2-cnt">{{ number_format($quotations->total()) }} {{ __('quotations') }}</span>
             </div>
 
             <form id="quot-list-form" method="GET" action="{{ route('accounting.quotations.index') }}">
@@ -150,10 +151,18 @@
                                             $expState = $q->expiryState();
                                             $days = $q->daysUntilExpiry();
                                         @endphp
-                                        <tr class="q2-rowlink" onclick="quotRowOpen(event, {{ $q->id }})">
+                                        <tr class="q2-rowlink" data-qid="{{ $q->id }}" onclick="quotRowOpen(event, {{ $q->id }})">
                                             <td>
-                                                <a href="{{ route('accounting.quotations.show', $q) }}" class="q2-mono q2-link">{{ $q->quotation_number }}</a>
-                                                <span class="q2-subline">{{ $q->reference ?: $statusLabel($q->status) }}</span>
+                                                <button type="button" class="q2-mono q2-link q2-rowno" data-qview="{{ $q->id }}">{{ $q->quotation_number }}</button>
+                                                {{-- R7 · the sub-label shows the SUPERSEDING reference once a re-quote
+                                                     exists, so a source quotation reads as superseded at a glance. --}}
+                                                <span class="q2-subline">
+                                                    @if($q->supersededBy)
+                                                        {{ __('Superseded by') }} {{ $q->supersededBy->quotation_number }}
+                                                    @else
+                                                        {{ $q->reference ?: $statusLabel($q->status) }}
+                                                    @endif
+                                                </span>
                                             </td>
                                             <td>
                                                 <div class="q2-cust">
@@ -173,7 +182,7 @@
                                                 @endif
                                             </td>
                                             <td class="q2-right q2-amt">{{ format_number($q->total) }}</td>
-                                            <td>
+                                            <td class="q2-statcell">
                                                 @switch($q->status)
                                                     @case('draft') <span class="q2-badge q2-badge--draft"><span class="q2-dot"></span>{{ __('Draft') }}</span> @break
                                                     @case('sent') <span class="q2-badge q2-badge--sent"><span class="q2-dot"></span>{{ __('Sent') }}</span> @break
@@ -182,13 +191,19 @@
                                                     @case('converted') <span class="q2-badge q2-badge--converted"><span class="q2-dot"></span>{{ __('Converted') }}</span> @break
                                                     @case('void') <span class="q2-badge q2-badge--void"><span class="q2-dot"></span>{{ __('Void') }}</span> @break
                                                 @endswitch
+                                                {{-- §3.1 EMAIL DISPATCH — a failed delivery is surfaced on the row
+                                                     itself, not only in the needs-attention rail, and is
+                                                     searchable as "email failed". --}}
+                                                @if($q->emailFailed() || $emailFailures->contains('id', $q->id))
+                                                    <span class="q2-mchip mono q2-mchip--fail q2-emchip">{{ __('Email failed') }}</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div class="flex gap-1 justify-end">
                                                     {{-- view --}}
-                                                    <a href="{{ route('accounting.quotations.show', $q) }}" class="q2-ibtn" title="{{ __('View') }}" aria-label="{{ __('View') }}">
-                                                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zm10 3a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                    </a>
+                                                    <button type="button" class="q2-ibtn" data-qview="{{ $q->id }}" title="{{ __('View') }}" aria-label="{{ __('View') }}">
+<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zm10 3a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
 
                                                     {{-- edit (locked unless draft — §R9) --}}
                                                     @if($q->isDraft())
@@ -212,7 +227,7 @@
                                                     @if(in_array($q->status, ['sent', 'converted'], true))
                                                         <a href="{{ route('accounting.quotations.print', $q) }}" class="q2-ibtn" title="{{ __('Print') }}" aria-label="{{ __('Print') }}" target="_blank" rel="noopener">
                                                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                        </a>
+</a>
                                                     @endif
 
                                                     {{-- convert (accepted — §2.2) --}}
@@ -268,51 +283,9 @@
                 </div>
 
                 {{-- §1 rail --}}
-                <aside class="q2-rail">
-                    {{-- §R6 needs attention --}}
+<aside class="q2-rail">
+                    {{-- APPENDIX A rail order: Views → Needs attention → Reports --}}
                     <div class="q2-railcard" style="margin-bottom:1rem">
-                        <div class="q2-rail-group" style="display:flex;align-items:center;gap:8px">
-                            <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px;color:var(--amber-2,#b45309)"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            {{ __('Needs attention') }}
-                        </div>
-                        @forelse($needsAttention as $attn)
-                            @php $aState = $attn->expiryState(); $aDays = $attn->daysUntilExpiry(); @endphp
-                            <a href="{{ route('accounting.quotations.show', $attn) }}" class="q2-attn">
-                                <span class="q2-attn-n">{{ $attn->quotation_number }}</span>
-                                <span class="q2-attn-s">{{ $attn->customer->name ?? '—' }}</span>
-                                @if($aState === 'expired')
-                                    <span class="q2-xc q2-xc--exp">{{ __('Expired') }}</span>
-                                @else
-                                    <span class="q2-xc q2-xc--soon">{{ $aDays }}d</span>
-                                @endif
-                            </a>
-                        @empty
-                            <div class="q2-attn-empty">{{ __('No open quotes are expired or expiring soon.') }}</div>
-                        @endforelse
-
-                        {{-- §6.3 — failed dispatches surfaced with a confirm-gated retry --}}
-                        @forelse($emailFailures as $fail)
-                            <div class="q2-attn-fail">
-                                <div class="q2-attn-fail-t">
-                                    <span class="q2-attn-n">{{ $fail->quotation_number }}</span>
-                                    <span class="q2-attn-s">{{ $fail->customer?->name ?? $fail->customer_name ?? '—' }}</span>
-                                </div>
-                                <p class="q2-attn-fail-m">{{ __('Email delivery failed — the recipient was never notified.') }}</p>
-                                <div class="q2-attn-fail-acts">
-                                    <a href="{{ route('accounting.quotations.show', $fail) }}" class="q2-btn q2-btn--ghost q2-btn--xs">{{ __('Open') }}</a>
-                                    <form method="POST" action="{{ route('accounting.quotations.email', $fail) }}"
-                                          onsubmit="return fbConfirmSubmit(event, @js(sprintf(__('Retry emailing this quotation to %s?'), $fail->customer?->email ?? $fail->email ?? __('the customer'))))">
-                                        @csrf
-                                        <input type="hidden" name="return_to" value="register">
-                                        <button type="submit" class="q2-btn q2-btn--danger q2-btn--xs">{{ __('Retry email') }}</button>
-                                    </form>
-                                </div>
-                            </div>
-                        @empty
-                        @endforelse
-                    </div>
-
-                    <div class="q2-railcard">
                         <div class="q2-rail-group">{{ __('Views') }}</div>
                         <a href="{{ route('accounting.quotations.index') }}" class="q2-vitem @if(!$activeStatus) is-active @endif">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 10h16M4 14h10M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -330,7 +303,51 @@
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             {{ __('Converted') }}
                         </a>
-                        <div class="q2-rule" style="margin:.5rem 0"></div>
+                    </div>
+
+                    <div class="q2-railcard" style="margin-bottom:1rem">
+                        <div class="q2-rail-group" style="display:flex;align-items:center;gap:8px">
+                            <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px;color:var(--amber-2,#b45309)"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            {{ __('Needs attention') }}
+                        </div>
+                        @forelse($needsAttention as $attn)
+                            @php $aState = $attn->expiryState(); $aDays = $attn->daysUntilExpiry(); @endphp
+                            <button type="button" class="q2-attn" data-qview="{{ $attn->id }}">
+                                <span class="q2-attn-n">{{ $attn->quotation_number }}</span>
+                                <span class="q2-attn-s">{{ $attn->customer->name ?? '—' }}</span>
+                                @if($aState === 'expired')
+                                    <span class="q2-xc q2-xc--exp">{{ __('Expired') }}</span>
+                                @else
+                                    <span class="q2-xc q2-xc--soon">{{ $aDays }}d</span>
+                                @endif
+                            </button>
+                        @empty
+                            <div class="q2-attn-empty">{{ __('No open quotes are expired or expiring soon.') }}</div>
+                        @endforelse
+
+                        {{-- §6.3 — failed dispatches surfaced with a confirm-gated retry --}}
+                        @forelse($emailFailures as $fail)
+                            <div class="q2-attn-fail">
+                                <div class="q2-attn-fail-t">
+                                    <span class="q2-attn-n">{{ $fail->quotation_number }}</span>
+                                    <span class="q2-attn-s">{{ $fail->customer?->name ?? $fail->customer_name ?? '—' }}</span>
+                                </div>
+                                <p class="q2-attn-fail-m">{{ __('Email delivery failed — the recipient was never notified.') }}</p>
+                                <div class="q2-attn-fail-acts">
+                                    <button type="button" class="q2-btn q2-btn--ghost q2-btn--xs" data-qview="{{ $fail->id }}">{{ __('Open') }}</button>
+                                    <form method="POST" action="{{ route('accounting.quotations.email', $fail) }}"
+                                          onsubmit="return fbConfirmSubmit(event, @js(sprintf(__('Retry emailing this quotation to %s?'), $fail->customer?->email ?? $fail->email ?? __('the customer'))))">
+                                        @csrf
+                                        <input type="hidden" name="return_to" value="register">
+                                        <button type="submit" class="q2-btn q2-btn--danger q2-btn--xs">{{ __('Retry email') }}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                        @endforelse
+                    </div>
+
+                    <div class="q2-railcard">
                         <div class="q2-rail-group">{{ __('Reports') }}</div>
                         <a href="{{ route('accounting.reports.quotation-register') }}" class="q2-vitem">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 17h6M9 13h6M9 9h4M5 3h14a2 2 0 012 2v16H3V5a2 2 0 012-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -386,6 +403,17 @@
                         <div class="q2-vnotes" id="qv-notes">—</div>
                         <div class="q2-vsec">{{ __('Internal notes') }}</div>
                         <div class="q2-vnotes" id="qv-internal">—</div>
+                        {{-- §3.2 EMAIL DISPATCH — the dispatch outcome lives with the
+                             record, not only in the rail: recipient, when, and the
+                             reason a delivery failed. --}}
+                        <div class="q2-vsec">{{ __('Email dispatch') }}</div>
+                        {{-- §3.2 — the one-line summary the spec asks for, kept above
+                             the detailed rows so the outcome reads at a glance. --}}
+                        <div class="q2-mrow q2-mrow--wrap"><span class="l">{{ __('Email dispatch') }}</span><span class="v" id="qv-disp-summary">—</span></div>
+                        <div class="q2-mrow"><span class="l">{{ __('Dispatch status') }}</span><span class="v" id="qv-disp-status">—</span></div>
+                        <div class="q2-mrow"><span class="l">{{ __('Delivered to') }}</span><span class="v q2-mono" id="qv-disp-to">—</span></div>
+                        <div class="q2-mrow"><span class="l">{{ __('Delivered at') }}</span><span class="v" id="qv-disp-at">—</span></div>
+                        <div class="q2-mrow q2-mrow--wrap"><span class="l">{{ __('Failure reason') }}</span><span class="v" id="qv-disp-reason">—</span></div>
                     </div>
                 </div>
             </div>
@@ -450,9 +478,8 @@
                     <textarea class="q2-input" name="notes_internal" id="eq-internal" rows="2" style="width:100%"></textarea>
                 </div>
                 <div class="q2-mfoot q2-mfoot--actions">
-                    <span class="q2-mnote">{{ __('Saves to the draft. Finalize issues it as sent.') }}</span>
-                    <button type="submit" class="q2-btn q2-btn--cta q2-btn--sm" name="submission_mode" value="finalize_print">{{ __('Finalize & issue') }}</button>
                     <button type="submit" class="q2-btn q2-btn--ghost q2-btn--sm" name="submission_mode" value="save">{{ __('Save changes') }}</button>
+                    <button type="submit" class="q2-btn q2-btn--cta q2-btn--sm" name="submission_mode" value="finalize_print">{{ __('Finalize & issue') }}</button>
                     <button type="button" class="q2-btn q2-btn--ghost q2-btn--sm" data-close="eq-scrim">{{ __('Close') }}</button>
                 </div>
             </form>
@@ -474,10 +501,18 @@
             <form id="rq-form" method="POST" action="#">
                 @csrf
                 <input type="hidden" name="customer_id" id="rq-customer-id">
-                <input type="hidden" name="mode" id="rq-mode" value="draft">
+                <input type="hidden" name="mode" id="rq-mode" value="finalize">
                 <input type="hidden" name="send" id="rq-send" value="0">
                 <div class="q2-mbody">
-                    <div class="q2-vsec">{{ __('Customer') }}</div>
+                    {{-- §5.2 "On create" segmented control · R13 · single row at all widths, default = Finalize & issue --}}
+                    <div class="q2-vsec">{{ __('On create') }}</div>
+                    <div class="pseg" id="rqMode" role="radiogroup" aria-label="{{ __('On create') }}">
+                        <input type="radio" name="rm" id="rmDraft" value="draft">
+                        <label for="rmDraft">{{ __('Save as draft') }}</label>
+                        <input type="radio" name="rm" id="rmFinal" value="finalize" checked>
+                        <label for="rmFinal">{{ __('Finalize & issue') }}</label>
+                    </div>
+                    <div class="q2-vsec" style="margin-top:1rem">{{ __('Customer') }}</div>
                     <div class="q2-g2">
                         <label class="q2-field"><span class="q2-label">{{ __('Customer name') }} *</span><input class="q2-input" type="text" name="customer_name" id="rq-name" required></label>
                         <label class="q2-field"><span class="q2-label">{{ __('Email') }}</span><input class="q2-input" type="email" name="email" id="rq-email"></label>
@@ -513,7 +548,11 @@
                 </div>
                 <div class="q2-mfoot q2-mfoot--actions">
                     <span class="q2-mnote" id="rq-note">{{ __('This quotation will be superseded by the new one.') }}</span>
-                    <button type="button" class="q2-btn q2-btn--ghost q2-btn--sm" data-rqsubmit="draft">{{ __('Create draft quotation') }}</button>
+
+                    {{-- Draft mode: dropdown replaced by a plain button (R13) --}}
+                    <button type="button" class="q2-btn q2-btn--ghost q2-btn--sm" id="rq-draft-btn" data-rqsubmit="draft" hidden>{{ __('Create draft quotation') }}</button>
+
+                    {{-- Finalize mode: ONE button, click opens its ATTACHED dropdown (R13 · R16 no separate caret button) --}}
                     <span class="q2-split" id="rq-split">
                         <button type="button" class="q2-btn q2-btn--cta q2-btn--sm" id="rq-final-btn" aria-haspopup="true" aria-expanded="false">{{ __('Finalize') }}</button>
                         <div class="q2-dropmenu" id="rq-menu" role="menu" hidden>
@@ -524,6 +563,7 @@
                             </button>
                         </div>
                     </span>
+
                     <button type="button" class="q2-btn q2-btn--ghost q2-btn--sm" data-close="rq-scrim">{{ __('Close') }}</button>
                 </div>
             </form>
@@ -680,6 +720,49 @@
             if (isNaN(d)) return '—';
             return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         }
+        function quotTfmt(s) {
+            if (!s) return '—';
+            const d = new Date(String(s).replace(' ', 'T'));
+            if (isNaN(d)) return '—';
+            return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        /* §3.2 — Email dispatch rows. The failed reason is only ever shown when the
+           record actually failed; a success never displays one, and a quotation that
+           was never emailed says so rather than rendering empty dashes. */
+        function quotOpenDispatchRow(d) {
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            const st = document.getElementById('qv-disp-status');
+            let label, cls = 'q2-mchip';
+            if (d.email_failed) {
+                label = @json(__('Email failed'));
+                cls += ' q2-mchip--fail';
+            } else if (d.email_status === 'sent' || d.emailed) {
+                label = @json(__('Delivered'));
+                cls += ' q2-mchip--ok';
+            } else if (d.email_status === 'sending' || d.email_status === 'running') {
+                label = @json(__('Sending…'));
+                cls += ' q2-mchip--run';
+            } else {
+                label = @json(__('Not emailed yet'));
+            }
+            if (st) { st.innerHTML = '<span class="' + cls + ' mono">' + label + '</span>'; }
+            /* The single summary line: `Failed — {reason}` or `Sent {date}`. It is
+               the only cell a reader needs, so it carries the whole outcome. */
+            let summary;
+            if (d.email_failed) {
+                summary = @json(__('Failed — {reason}'));
+            } else if (d.emailed_at || d.emailed) {
+                summary = @json(__('Sent {date}'));
+            } else {
+                summary = @json(__('Not emailed yet'));
+            }
+            set('qv-disp-summary', d.email_failed
+                ? summary.replace('{reason}', d.fail_reason || @json(__('Delivery failed — the quotation is unchanged.')))
+                : summary.replace('{date}', d.emailed_at ? quotTfmt(d.emailed_at) : @json(__('just now'))));
+            set('qv-disp-to', d.emailed_to || (d.email_failed ? (d.email || '—') : '—'));
+            set('qv-disp-at', d.emailed_at ? quotTfmt(d.emailed_at) : '—');
+            set('qv-disp-reason', d.email_failed ? (d.fail_reason || @json(__('Delivery failed — the quotation is unchanged.'))) : '—');
+        }
         function quotStepHTML(status) {
             const idx = { draft: 0, sent: 1, accepted: 2, converted: 3 }[status];
             const bad = status === 'declined' || status === 'void';
@@ -697,19 +780,25 @@
             const st = d.status;
             const B = (act, label, cls) => '<button type="button" class="q2-btn ' + cls + ' q2-btn--sm" data-qact="' + act + '">' + label + '</button>';
             const req = d.can.requote ? B('requote', @json(__('Re-quote')), 'q2-btn--cta') : '';
+            // §3.2 EMAIL DISPATCH — a failed dispatch is the one case where
+            // re-sending IS the action (the recipient was never notified), and
+            // it goes immediately with no confirmation, as the primary teal CTA.
+            // A first send is a ghost action and still asks first.
+            const email = d.can.email ? (d.email_failed ? B('email', @json(__('Re-send email')), 'q2-btn--cta') : B('email', @json(__('Send to customer')), 'q2-btn--ghost')) : '';
+            // Print/PDF leaves the app in a NEW TAB; Preview keeps the R14
+            // in-app A4 sheet (Print + Save as PDF) one click away.
+            const sheet = B('preview', @json(__('Preview')), 'q2-btn--ghost') + B('print', @json(__('Print / PDF')), 'q2-btn--ghost');
             let html;
             if (st === 'draft') {
-                html = '<span class="q2-mnote">' + @json(__('Draft — finalize from Edit to issue it.')) + '</span>' + (d.can.edit ? B('edit', @json(__('Edit quotation')), 'q2-btn--ghost') : '') + (d.can.void ? B('void', @json(__('Void quotation')), 'q2-btn--danger') : '') + req;
+                html = (d.can.edit ? B('edit', @json(__('Edit quotation')), 'q2-btn--ghost') : '') + (d.can.void ? B('void', @json(__('Void quotation')), 'q2-btn--danger') : '') + req;
             } else if (st === 'sent') {
-                html = '<span class="q2-mnote">' + @json(__('Awaiting customer response — follow up before expiry.')) + '</span>' + req + B('print', @json(__('Print / PDF')), 'q2-btn--ghost') + (d.can.void ? B('void', @json(__('Void')), 'q2-btn--danger') : '') + (d.can.decline ? B('decline', @json(__('Mark declined')), 'q2-btn--danger') : '') + (d.can.accept ? B('accept', @json(__('Mark accepted')), 'q2-btn--green') : '');
+                html = req + email + sheet + (d.can.void ? B('void', @json(__('Void')), 'q2-btn--danger') : '') + (d.can.decline ? B('decline', @json(__('Mark declined')), 'q2-btn--danger') : '') + (d.can.accept ? B('accept', @json(__('Mark accepted')), 'q2-btn--green') : '');
             } else if (st === 'accepted') {
-                html = '<span class="q2-mnote">' + @json(__('Accepted — convert to invoice to fulfil.')) + '</span>' + B('print', @json(__('Print / PDF')), 'q2-btn--ghost') + (d.can.convert ? B('convert', @json(__('Convert to invoice')), 'q2-btn--cta') : '');
+                html = email + sheet + (d.can.convert ? B('convert', @json(__('Convert to invoice')), 'q2-btn--cta') : '');
             } else if (st === 'converted') {
-                html = '<span class="q2-mnote">' + @json(__('Converted to invoice — quotation locked.')) + '</span>' + B('print', @json(__('Print / PDF')), 'q2-btn--ghost');
+                html = sheet;
             } else if (st === 'declined') {
-                html = '<span class="q2-mnote">' + @json(__('Declined by customer — re-quote or duplicate to revise.')) + '</span>' + req + B('duplicate', @json(__('Duplicate as draft')), 'q2-btn--ghost');
-            } else {
-                html = '<span class="q2-mnote">' + @json(__('Void — retained for audit only.')) + '</span>';
+                html = req + B('duplicate', @json(__('Duplicate as draft')), 'q2-btn--ghost');
             }
             html += '<button type="button" class="q2-btn q2-btn--ghost q2-btn--sm" data-close="qv-scrim">' + @json(__('Close')) + '</button>';
             return html;
@@ -729,7 +818,7 @@
             meta += '<span class="q2-mchip">' + @json(__('Valid until')) + ' ' + quotDfmt(d.valid) + '</span>';
             meta += '<span class="q2-mchip mono">' + (d.expired ? @json(__('Expired')) : (d.days != null && d.days <= 7 ? d.days + 'd' : @json(__('Valid')))) + '</span>';
             if (d.superseded) meta += '<span class="q2-mchip mono">' + @json(__('Superseded by')) + ' ' + quotEsc(d.superseded) + '</span>';
-            if (d.emailed) meta += '<span class="q2-mchip mono">' + @json(__('Emailed to customer')) + '</span>';
+            if (d.emailed) meta += '<span class="q2-mchip mono">' + @json(__('Emailed')) + ' ' + (d.emailed_at ? quotTfmt(d.emailed_at) : @json(__('just now'))) + '</span>';
             if (d.email_failed) meta += '<span class="q2-mchip mono q2-mchip--fail">' + @json(__('Email failed')) + '</span>';
             meta += '<span class="q2-mchip b">' + @json(__('Total')) + ' ' + quotEsc(window.QUOT_CS) + ' ' + quotMoney(d.total) + '</span>';
             document.getElementById('qv-meta').innerHTML = meta;
@@ -751,6 +840,7 @@
             document.getElementById('qv-terms').textContent = d.terms || '—';
             document.getElementById('qv-notes').textContent = d.notes || '—';
             document.getElementById('qv-internal').textContent = d.internal || '—';
+            quotOpenDispatchRow(d);
             document.getElementById('qv-foot').innerHTML = quotFoot(d);
 
             const scrim = document.getElementById('qv-scrim');
@@ -760,16 +850,26 @@
             if (close) close.focus();
         }
         function quotClose(which) {
-            const scrim = document.getElementById(which || 'qv-scrim');
+            which = which || 'qv-scrim';
+            if (which === 'quot-ok-scrim' && typeof window.quotOkClose === 'function') { window.quotOkClose(); return; }
+            const scrim = document.getElementById(which);
             if (scrim) scrim.hidden = true;
             document.body.classList.remove('q2-modal-open');
             quotViewing = null;
         }
-        function quotPost(url, msg, type) {
+        function quotPost(url, msg, type, extra) {
             const run = () => {
                 const f = document.getElementById('qv-action-form');
                 f.action = url;
                 f.querySelector('input[name="_method"]').value = 'POST';
+                f.querySelectorAll('[data-qextra]').forEach(function (i) { i.remove(); });
+                if (extra) {
+                    Object.keys(extra).forEach(function (k) {
+                        const i = document.createElement('input');
+                        i.type = 'hidden'; i.name = k; i.value = extra[k]; i.setAttribute('data-qextra', '1');
+                        f.appendChild(i);
+                    });
+                }
                 f.submit();
             };
             if (msg && window.CB && typeof window.CB.confirm === 'function') {
@@ -781,6 +881,10 @@
             }
         }
         function quotRowOpen(e, id) {
+            /* R4 · disabled/locked icons swallow the click silently — they must not
+               bubble into the row-wide View modal (the lock span is excluded so the
+               span's own title tooltip stays hoverable, per R9). */
+            if (e.target.closest('.is-locked')) return;
             if (e.target.closest('a, button, form, input, select, label')) return;
             quotOpenView(id);
         }
@@ -879,7 +983,19 @@
             if (!d) return;
             const act = btn.getAttribute('data-qact');
             if (act === 'edit') { const vid = quotViewing; quotClose('qv-scrim'); quotOpenEdit(vid); return; }
-            if (act === 'print') { openQuotePrint(quotViewing); return; }
+            if (act === 'print') { window.open(d.urls.print, '_blank', 'noopener'); return; }
+            if (act === 'preview') { openQuotePrint(quotViewing); return; }
+            // §2.3 — first send confirms first; a retry after a failure is immediate.
+            if (act === 'email') {
+                if (!window.QDispatch) return;
+                if (d.email_failed) { window.QDispatch.open(d); return; }
+                // The confirm overlay paints below the z-120 workspace modal, so the
+                // workspace yields for the ask and is restored on cancel/failure.
+                const vid = quotViewing;
+                quotClose('qv-scrim');
+                window.QDispatch.ask(d, vid);
+                return;
+            }
             if (act === 'requote' || act === 'duplicate') { const vid = quotViewing; quotClose('qv-scrim'); quotOpenRequote(vid); return; }
             if (act === 'void') { quotPost(d.urls.void, @json(__('Void this quotation? This cannot be undone.')), 'danger'); return; }
             if (act === 'accept') { quotPost(d.urls.accept, @json(__('Mark this quotation as accepted?')), 'action'); return; }
@@ -1028,8 +1144,35 @@
             document.getElementById('rq-scrim').hidden = false;
             document.body.classList.add('q2-modal-open');
             document.getElementById('rq-name').focus();
+            rqApplyMode();
             rqEvalSend();
         }
+
+        /* R13 · "On create" segmented control drives the footer shape:
+             finalize (DEFAULT) → single Finalize button + attached dropdown
+             draft              → plain "Create draft quotation", no dropdown */
+        function rqApplyMode() {
+            const draft = (document.querySelector('#rqMode input[name="rm"]:checked') || {}).value === 'draft';
+            const split = document.getElementById('rq-split');
+            const draftBtn = document.getElementById('rq-draft-btn');
+            if (split) split.hidden = draft;
+            if (draftBtn) draftBtn.hidden = !draft;
+            /* keep the POSTed mode in step with the segmented control, so a
+               plain form serialization can never finalize a draft selection */
+            const mode = document.getElementById('rq-mode');
+            if (mode) mode.value = draft ? 'draft' : 'finalize';
+            const note = document.getElementById('rq-note');
+            if (note) {
+                note.textContent = draft
+                    ? @json(__('This quotation will be superseded by the new one.'))
+                    : @json(__('Finalizing issues the new quotation as sent and supersedes the source.'));
+            }
+            menuCloseRq();
+            if (!draft) rqEvalSend();
+        }
+        document.querySelectorAll('#rqMode input[name="rm"]').forEach(radio => {
+            radio.addEventListener('change', rqApplyMode);
+        });
         function rqEmailValid() {
             const el = document.getElementById('rq-email');
             return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test((el ? el.value : '').trim());
@@ -1062,7 +1205,7 @@
                 const kind = btn.getAttribute('data-rqsubmit');
                 if (kind === 'send' && !rqEmailValid()) {
                     menuCloseRq();
-                    CB.toast('warning', @json(__('Email required')), @json(__('Provide customer email to activate this button.')));
+                    CB.toast('warning', @json(__('Email required')), @json(__('Provide customer email to activate this button')));
                     return;
                 }
                 menuCloseRq();
@@ -1073,17 +1216,46 @@
             });
         });
 
-        document.querySelectorAll('#eq-scrim [data-close], #rq-scrim [data-close]').forEach(el => {
-            el.addEventListener('click', function () { quotClose(el.getAttribute('data-close')); });
-        });
-        document.getElementById('qv-scrim').addEventListener('click', function (e) {
+        /* ---------- R2 · every [data-close] is handled by ONE document-level
+           delegated listener. No per-scrim or one-time bindings — a control
+           rendered later still resolves through the same single path. ---------- */
+        document.addEventListener('click', function (e) {
             const closer = e.target.closest('[data-close]');
-            if (closer) quotClose(closer.getAttribute('data-close'));
+            if (!closer) return;
+            const which = closer.getAttribute('data-close');
+            if (!which) return;
+            e.preventDefault();
+            quotClose(which);
         });
+
+        /* R4/R6 · any [data-qview] opens the View modal — the register row itself,
+           the № control, the eye icon and the rail's attention items all funnel
+           through this one delegated path. */
+        document.addEventListener('click', function (e) {
+            const trigger = e.target.closest('[data-qview]');
+            if (!trigger) return;
+            e.preventDefault();
+            quotOpenView(parseInt(trigger.getAttribute('data-qview'), 10));
+        });
+
+        /* ---------- §9.1 · Escape closes the TOP-MOST layer only, in strict
+           visual order: confirm → success → submit-choice → print → edit →
+           re-quote → view. ---------- */
         document.addEventListener('keydown', function (e) {
             if (e.key !== 'Escape') return;
+
+            const cb = document.getElementById('quot-cb-scrim');
+            if (cb && !cb.hidden) { e.preventDefault(); if (typeof window.quotCbClose === 'function') window.quotCbClose(); return; }
+
+            const sc = document.getElementById('quot-ok-scrim');
+            if (sc && !sc.hidden) { e.preventDefault(); window.quotOkClose(); return; }
+
+            const sub = document.getElementById('quot-submit-scrim');
+            if (sub && !sub.hidden) { e.preventDefault(); if (typeof quotCloseSubmit === 'function') quotCloseSubmit(); return; }
+
             const pv = document.getElementById('printView');
             if (pv && !pv.hidden) { e.preventDefault(); quotPrintClose(); return; }
+
             for (const which of ['eq-scrim', 'rq-scrim', 'qv-scrim']) {
                 const scrim = document.getElementById(which);
                 if (scrim && !scrim.hidden) { e.preventDefault(); quotClose(which); return; }
@@ -1092,4 +1264,8 @@
     </script>
 
     @include('accounting.quotations._success')
+{{-- §2.3–§4 EMAIL DISPATCH — progress modal, background dock and polling client.
+     Included last so `window.QUOT_VIEW` + the workspace helpers exist by the time
+     the client boots. --}}
+@include('accounting.quotations._email-dispatch')
 </x-app-layout>

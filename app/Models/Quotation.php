@@ -46,9 +46,14 @@ class Quotation extends Model
         'posted_at',
         'emailed_at',
         'emailed_to',
+        'email_status',
+        'fail_reason',
         'voided_by',
         'voided_at',
         'void_reason',
+        // INVOICES MODULE 5.1 / R13 — invoice picker source of truth
+        'invoiced_flag',
+        'invoice_id',
     ];
 
     protected $casts = [
@@ -60,7 +65,22 @@ class Quotation extends Model
         'posted_at' => 'datetime',
         'emailed_at' => 'datetime',
         'voided_at' => 'datetime',
+        'invoiced_flag' => 'boolean',
     ];
+
+    /**
+     * §2.1 — dispatch state. `null` means the quotation has never been emailed;
+     * `sent` / `failed` are set by the email dispatch pipeline only.
+     */
+    public function hasEmailed(): bool
+    {
+        return $this->email_status === 'sent' || ($this->email_status === null && $this->emailed_at !== null);
+    }
+
+    public function emailFailed(): bool
+    {
+        return $this->email_status === 'failed';
+    }
 
     const STATUS_DRAFT = 'draft';
     const STATUS_SENT = 'sent';
@@ -99,14 +119,35 @@ class Quotation extends Model
         return $this->morphMany(Attachment::class, 'attachmentable');
     }
 
+    /** §2.2 — every email dispatch attempt made for this quotation. */
+    public function emailJobs(): MorphMany
+    {
+        return $this->morphMany(QuotationEmailJob::class, 'quotable');
+    }
+
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
     }
 
-    public function convertedInvoice(): BelongsTo
+public function convertedInvoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class, 'converted_invoice_id');
+    }
+
+    /**
+     * INVOICES MODULE R13 — the invoice raised from this quotation. The AR
+     * module writes `invoiced_flag` + `invoice_id` in the same transaction as
+     * the invoice so the picker can never offer an already-converted quote.
+     */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_id');
+    }
+
+    public function hasBeenInvoiced(): bool
+    {
+        return (bool) $this->invoiced_flag || $this->invoice_id !== null;
     }
 
     public function convertedReceipt(): BelongsTo

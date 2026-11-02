@@ -1,0 +1,2031 @@
+INVOICES MODULE (AR REGISTER · COLLECTIONS · CREATE/EDIT · WORKSPACE · PAYMENTS · PRINT/PDF · EMAIL) — FULL IMPLEMENTATION SPEC (SELF-CONTAINED)
+(AUTHORITATIVE MOCKUP HTML EMBEDDED IN APPENDIX A — do NOT read or depend on any external file.)
+
+SCOPE:
+Build the complete Invoices (AR) feature exactly as APPENDIX A defines it:
+(A) Register: AR KPI strip, status tiles incl. derived Overdue, search/sort, toggleable
+    date-period filter, aging chips, view-only Actions column, row-wide click-to-workspace.
+(B) Collections Queue: rail card (due ≤7d + overdue, two-row items) + full queue page
+    ("View all →") with AR/overdue/due tiles and aging-sorted open-invoice table.
+(C) Create/Edit Invoice page: existing vs walk-in customer, terms-driven due date,
+    source-document lineage, quotation conversion (create-mode only), gated Save Draft /
+    Post Invoice with confirmation, sticky Summary + Quick-nav rail.
+(D) Invoice workspace modal: header customer chip, financial mini-tiles, tabs
+    (Overview / Line items / Payments), status-aware footer actions, trailing Close.
+(E) Record Payment modal: method-aware detail schemas, Split tender legs, receipt
+    numbering, balance-after preview, itemised CONFIRMATION before posting, immutable
+    receipts, settlement success box.
+(F) Post / Void / Send-email flows with confirmation dialogs and audit stamps.
+(G) Print preview: A4 Tax Invoice opened in a NEW TAB (Print / Save as PDF / Close tab),
+    in-app overlay only as popup-blocked fallback.
+
+HARD GUARD — do NOT modify unrelated modules (quotations, sales orders, stock, GL) beyond
+the sanctioned integration points in §10. Frontend view-layer rebuild + §10 contracts only.
+NO NEW PACKAGES. Live data only — every value in APPENDIX A is a sample.
+
+==================== 0 · DISCOVERY ====================
+0.1 Locate/plan invoice tables (§10.1), customers module, quotations module (uninvoiced
+    flag), receipt numbering sequences, tax-rate setting (16.5% in mock), PDF engine +
+    print-css conventions, mailer/queue for invoice emails, payment-method dictionary
+    (bank/mobile/cash/card/cheque) and bank-account master for remittance panel.
+0.2 Record system currency + enabled currencies; server "today" source (aging chips,
+    queue, KPIs and period presets must compute server-side).
+0.3 Inventory existing ids/hooks on current invoice screens so nothing wired breaks.
+
+==================== 1 · TOKENS + ABSOLUTE RULES ====================
+--deep-1:#17565d; --deep-2:#0c3539; --sec:#128F8E; --sec-2:#149897; --teal-btn:#139594;
+--steel:#46708C; --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+--line:#e2ecec; --hair:#EEF3F1; --green:#15803d; --red:#dc2626; --amber:#d97706;
+print family --p-accent:#0E7473 / --p-band:#F0F5F5 / --p-line:#DCE7E5; Inter; mono stack
+for codes/refs/emails; tabular-nums on every figure.
+R1 · ZERO BLUR: scrims solid tints (modals rgba(11,42,45,.26); confirm/success .45);
+     NO backdrop-filter anywhere.
+R2 · STRICT DISMISSAL: dialogs close ONLY via labelled Close button, header ✕, or Esc;
+     never background click; [data-close] handled by ONE delegated document listener.
+R3 · EVERY modal footer ends with a clearly visible labelled Close button (.btn-close:
+     white tile, solid border, 800-weight ink label, ✕ icon, teal hover). Footers without
+     a note use an invisible .mspacer to keep buttons right-aligned.
+R4 · ACTIONS COLUMN = VIEW ICON ONLY. Edit / Print / Send / Post / Void / Record payment
+     live exclusively in the workspace modal footer (status-aware) and queue page rows
+     (view + pay). Row-wide click opens the workspace.
+R5 · INVOICE № COLUMN SHOWS THE NUMBER ONLY — no sub-labels; lineage (SO-/QT-/INV- cross
+     refs) lives in meta chips, Overview tab, print-sheet Source cell and data-search.
+R6 · STATUS MACHINE: draft→sent (post); sent→partial→paid (payments only);
+     draft|sent|partial→void BLOCKED when payments exist (message: issue a credit note);
+     "Overdue" is NEVER stored — derived from due_date < today AND status sent|partial.
+R7 · REGISTER CONTROLS: tiles Total/Draft/Sent/Part paid/Paid/Overdue(derived)/Void as
+     filters with live counts; Views rail (All / Open=Sent+Partial / Drafts / Paid /
+     Overdue) composes with tiles; sort (newest, oldest, amount, balance, due soonest);
+     live search over customer/number/receipt/source; server-side pagination.
+R8 · AGING CHIPS vs server today: Settled (green, paid), "—" (void), "Nd over" (red),
+     ≤7 days (amber "N days"/Today), else grey "Current"; balance column tints amber
+     while >0; Overdue flag chip beside status pill.
+R9 · PERIOD FILTER: toolbar "Period" button toggles a filter bar (hidden by default):
+     presets All time/This month/Last month/Last 30 days/This quarter/Year to date/Custom
+     + From/To issue-date inputs (locked unless Custom), Clear, live range chip; button
+     glows teal while open or active; invalid from>to rejected with red state + toast;
+     composes with search/tiles/views.
+R10 · COLLECTIONS QUEUE: rail lists open invoices due ≤7d or overdue (worst first) as
+     two-row cards (ref+chip / customer+balance) deep-linking to the workspace; "View all
+     →" opens the queue PAGE (3 AR tiles + aging-sorted table with view+pay row actions +
+     export); queue recomputes on every register/payment mutation.
+R11 · CREATE/EDIT GATING: Post disabled until customer resolved (registry match) or
+     walk-in name + valid due date (≥ issue date) + ≥1 COMPLETE line, where complete =
+     item code + item name + qty>0 + unit price>0 (DESCRIPTION OPTIONAL) + amount>0.
+     Save Draft needs customer + ≥1 complete line. Summary rail shows live "Post check"
+     row (green "Ready ✓" / amber "Missing: …") mirrored in the Post button title.
+     POST ALWAYS RAISES A CONFIRMATION BOX itemising customer, issue/due+terms, line
+     count, subtotal, tax, total (green), source and email-on-post status.
+R12 · WALK-IN RULE: unknown customer name creates the customer record in the SAME DB
+     transaction and links it; registry immediately feeds searches/datalists; toast cites
+     the new code. Existing-mode match locks contact/email/phone/address (grey readonly).
+R13 · QUOTATION CONVERSION IS CREATE-ONLY: header "From quotation" button + source-field
+     "Pick" button BOTH HIDDEN while editing an existing invoice (source stays a plain
+     input). Picker modal lists UNINVOICED quotations with a live search (number,
+     customer, status, item code/name/desc); "Use" prefills customer (registry or walk-in),
+     contact block, terms, due date, all lines, notes and source ref; everything remains
+     editable; on save the quotation is flagged invoiced and leaves the picker.
+R14 · PAYMENTS: modal captures date, amount (≤ open balance, live "balance after" row),
+     method, auto receipt № (RC-{YYYY}-{seq}), allocation note, THEN method-aware details:
+     · Bank transfer: bank select, payer account name, transaction reference.
+     · Mobile money: service provider select, phone number*, account name, tx reference.
+     · Cash: received-by teller, drawer/till.
+     · Card: card type select, last-4 digits, NAME ON CARD, ISSUING BANK
+       (terminal id / approval code must NOT exist).
+     · Cheque: drawn-on bank*, cheque number*, cheque date.
+     · Split: ≥2 legs (method + amount + reference), add/remove, live tie-out badge —
+       legs must equal the payment amount exactly; label "Split · A + B".
+     "Review & save" RAISES A CONFIRMATION BOX showing receipt №, date, method label,
+     amount (green), balance before → after, every captured detail row (or each split
+     leg) and the note, plus a settled/partial callout; only Confirm posts.
+     Receipts are IMMUTABLE (corrections via credit notes); payment flips status
+     sent→partial→paid; full settlement raises the SUCCESS BOX (ref, customer, receipt,
+     method, K 0.00 AR) with View + Print actions.
+R15 · MODAL HEADERS CARRY THE CUSTOMER: frosted .m-cust chip (user icon + name) in the
+     workspace and payment modal header bands; the meta strip directly below the header
+     must NOT repeat the customer name (starts at Issued / Total chips).
+R16 · PRINT/PDF: every print entry point builds a standalone A4 Tax Invoice document and
+     opens it in a NEW TAB with sticky toolbar (title+ref chip, Save as PDF, Print,
+     Close tab) and print CSS (@page A4 10mm, toolbar hidden, sheet 277mm). Sheet: mint
+     band, VAT reg block, status stamp (Draft watermark + grey stamp / Paid green stamp /
+     Part paid), 4×3 meta grid incl. balance due, priced lines + double-ruled totals +
+     amount-in-words with BALANCE DUE / PAID IN FULL flag, payments-received strip when
+     receipts exist, Notes + Remittance panels (bank/mobile-money details, reference
+     instruction, late-interest term), bottom-pinned audit footer + PAGE 1 OF 1.
+     Popup blocked → in-app overlay fallback + toast.
+R17 · EMAIL DISPATCH: "Send to customer" on sent/partial/paid only; blocked with toast
+     when email missing/invalid (regex ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$
+     mirrored server-side); confirm dialog states recipient; on success store emailed_to
+     + emailed_at, show "Emailed {date}" chip and audit flag; posting auto-emails when a
+     valid email exists at post time.
+R18 · CREATE-PAGE RAIL IS STICKY: Summary + Quick nav aside pins (top 22px, internal slim
+     scrollbar, max-height 100vh−44px) while the form column scrolls; reverts to static
+     flow ≤1080px. Register/queue rails keep normal flow.
+R19 · DO-NOT-REINTRODUCE: customer chips in meta strips; quotation pickers in edit mode;
+     card fields "Terminal ID"/"Approval code"; row action icons beyond View (register);
+     Order-№-style sub-labels on invoice numbers; payment posting without confirmation;
+     posting without confirmation; opacity-dimmed gated controls; background-click
+     dismissal; mutable receipts.
+
+==================== 2 · REGISTER PAGE (parity with APPENDIX A) ====================
+2.1 KPI tiles: Outstanding AR (open balances), Overdue count + value-at-risk (red chip),
+    Collection rate = collected ÷ billed (non-draft/non-void), Total collected + receipts.
+2.2 Datasheet columns: Invoice № (mono, number only), Customer (avatar+name), Issue date,
+    Due date (+chip), Amount, Paid (dim), Balance (amber while open), Status pill
+    (+Overdue chip), Actions = view icon only.
+2.3 Workspace footer per status: draft → note + Edit + Print/PDF + Void + Post;
+    sent → [spacer] Print + Send + Void + Record payment; partial → [spacer] Print + Send
+    + Record payment; paid → settled note + Print + Send; void → note only. + Close.
+
+==================== 3 · COLLECTIONS QUEUE PAGE ====================
+3.1 Tiles: Outstanding AR, Overdue value (+count), Due ≤7d value (+count).
+3.2 Table: Invoice №, Customer, Contact (name+phone stacked), Due date, Aging label+chip,
+    Balance (amber), Status pill, Actions (view + record payment). Worst aging first;
+    empty state "Queue is clear"; footer count + outstanding total; Export button.
+
+==================== 4 · CREATE / EDIT PAGE ====================
+4.1 Header: title (switches to "Edit Invoice — {ref}"), Cancel / From quotation
+    (create-only) / Save Draft / Post Invoice (gated R11).
+4.2 Bill To card: type select; terms select; source input + Pick (create-only); registry
+    search w/ datalist or walk-in name; contact/email/phone/address (locked on match);
+    walk-in save-note.
+4.3 Invoice Information card: № readonly auto; issue date*; due date*; reference;
+    cost centre; department + prepared-by display-only; tax regime display-only.
+4.4 Lines card: code / name / description(optional) / qty / unit price / computed amount
+    + ✓ / remove; Add Line; live totals.
+4.5 Notes card: customer notes (printed) + internal notes.
+4.6 Sticky rail: Summary (customer, issue, due, POST CHECK, subtotal, tax, dark Invoice
+    Total tile, complete-line note) + Quick nav (All Invoices / Sales Orders / Customers).
+4.7 Edit mode: draft only; prefills every field incl. lines (description parsed back out
+    of the stored label); saving updates the row in place and returns to the register.
+
+==================== 5 · SANCTIONED BACKEND CONTRACTS ====================
+5.1 Migration (nullable-safe):
+    invoices: number, customer_id NULL FK, customer_name, contact_person, email, phone,
+    bill_address, terms_key, source_type ENUM(manual,quotation,sales_order,NULL),
+    source_quotation_id NULL FK, source_ref NULL, customer_ref NULL, issue_date, due_date,
+    status ENUM(draft,sent,partial,paid,void), subtotal, tax_total, grand_total,
+    notes_customer, notes_internal, cost_centre, department, prepared_by,
+    emailed_to NULL, emailed_at NULL, created_by, timestamps.
+    invoice_lines: invoice_id FK cascade, position, item_code, item_name, description NULL,
+    qty decimal, unit_price decimal, line_total decimal.
+    invoice_payments: invoice_id FK, receipt_no unique, paid_on date,
+    method ENUM(bank_transfer,mobile_money,cash,card,cheque,split), method_label,
+    amount decimal, allocation_note NULL, details JSON NULL, splits JSON NULL,
+    recorded_by, timestamps. NO update/delete paths (immutable; reversals via credit
+    notes table added later).
+    quotations: add invoiced_flag + invoice_id NULL FK (picker source of truth).
+5.2 Endpoints: GET /invoices (q,status,view,period_from,period_to,sort,page) ·
+    GET /invoices/{id} · POST /invoices {mode: draft|post, …} ·
+    PUT /invoices/{id} (409 unless draft) · POST /invoices/{id}/post ·
+    POST /invoices/{id}/void (409 when payments exist) ·
+    POST /invoices/{id}/send-email · POST /invoices/{id}/payments {paid_on, amount,
+    method, details|splits, note} (422 when amount>balance or split legs ≠ amount) ·
+    GET /invoices/collections · GET /invoices/{id}/print?format=html|pdf ·
+    GET /reports/ar-aging | sales-by-customer | collections-by-method.
+    Walk-in customer creation inline within POST/PUT transactions (R12). Quotation
+    conversion sets quotations.invoiced_flag + invoice_id in the same transaction (R13).
+5.3 Numbering: INV-{YYYY}-{seq4} on first persist (draft included); RC-{YYYY}-{seq4} per
+    receipt; per-year sequence tables; tax rate from settings; words-amount + receipt
+    PDFs rendered server-side for parity.
+5.4 Derived state server-side: status recomputed on payment insert (paid when
+    Σreceipts = grand_total, partial when 0<Σ<grand); overdue never stored; AR/aging
+    buckets (current, 1–30, 31–60, 61–90, 90+) computed for reports + queue.
+5.5 Audit: post, void, payment receipt, email dispatch and quotation conversion logged
+    (user, ts, from→to, refs, amounts). No deletes anywhere.
+
+==================== 6 · PERMISSIONS ====================
+invoices.view / create / edit_draft / post / void / send_email / record_payment /
+print_pdf / export; invoices.collections (queue page + rail); reports.ar;
+customers.create implicitly granted through invoices.create for walk-in capture;
+quotation conversion requires quotations.view.
+
+==================== 7 · BEHAVIOUR / A11Y / RESPONSIVE ====================
+7.1 R2/R3 dismissal everywhere; Esc order: confirm → success → print overlay → quotation
+    picker → payment → workspace. Workspace→Edit closes the modal first. Delegated
+    listeners for rows, footers, tabs, split legs and [data-close].
+7.2 ≤1180px tiles 4-col + KPIs 2-col; ≤1080px rails stack + sticky disabled; ≤760px grids
+    1-col, modals full-bleed, header customer chip max-width 40vw; table pans inside
+    .tscroll (min-width 980px) so the PAGE never scrolls horizontally.
+7.3 prefers-reduced-motion disables animation; focus-visible rings; aria-modal dialogs;
+    split inputs expose min/max; gated Post exposes title + rail check row; toasts for
+    every mutation not covered by confirm/success boxes.
+
+==================== 8 · VERIFY ====================
+8.1 Parity pass vs APPENDIX A at 1440/1280/1024/768 for register, queue page, create/edit
+    (create + edit modes), workspace tabs, payment modal (each method + split), confirm
+    and success boxes, quotation picker (with search) and the new-tab print sheet.
+8.2 Round-trips: walk-in post ⇒ customer row + emailed stamp + sent row; post confirm ⇒
+    success box ⇒ new-tab print; partial payment ⇒ partial pill + amber balance + queue
+    move; settling payment ⇒ paid pill + Settled chip + success box; void guard on paid
+    invoice; edit draft (INV-2026-0143 sample) ⇒ pickers hidden, save updates row;
+    convert quotation ⇒ prefilled create ⇒ source chip + quotation leaves picker.
+8.3 Gating matrix: Post unlocks only with name+due+complete line (description left blank
+    still counts); payment amount > balance rejected; split legs ≠ amount rejected;
+    mobile-money phone / cheque bank+number required; card shows Name-on-card +
+    Issuing-bank and NO terminal/approval fields.
+8.4 Rule greps: no customer chip inside .m-meta; no ncPickQ/ncFromQ visible when editId
+    set; Actions column renders exactly one icon per register row; no ".osub"-style
+    sub-labels; no backdrop-filter; Close button in every footer; sticky aside scoped to
+    #createView; print documents open via window.open with overlay fallback.
+REPORT: files touched; migration diff; endpoint + audit map; numbering/status/aging
+tables; sample payloads (post, payment bank/mobile/split, send-email, convert-quote);
+R1–R19 grep proofs; parity screenshots (register, queue, create w/ gate row, edit w/o
+pickers, workspace tabs, payment split + confirm, success, print tab); NO SECTION SKIPPED.
+
+==================== APPENDIX A — AUTHORITATIVE MOCKUP (HTML) ====================
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoices — sample records renamed</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --deep-1:#17565d; --deep-2:#0c3539; --deep-3:#0a2e32;
+    --sec:#128F8E; --sec-2:#149897; --mint:#7FD1C0; --steel:#46708C; --teal-btn:#139594;
+    --ink:#0B2A2D; --sub:#41585c; --muted:#5f7476; --faint:#8aa5a7;
+    --border:#dceaea; --line:#e2ecec; --hair:#EEF3F1;
+    --green:#15803d; --red:#dc2626; --red-2:#b91c1c; --amber:#d97706; --amber-2:#b45309;
+    --p-accent:#0E7473; --p-band:#F0F5F5;
+    --p-ink:#13292C; --p-sub:#3E5658; --p-muted:#5F7476; --p-faint:#8AA3A2;
+    --p-line:#DCE7E5; --p-hair:#E7EFED;
+    --sh-card: 0 1px 2px rgba(10,42,46,.05), 0 14px 34px -18px rgba(10,42,46,.16), inset 0 1px 0 #fff;
+    --sh-lift: 0 2px 4px rgba(10,42,46,.06), 0 20px 44px -18px rgba(10,42,46,.22), inset 0 1px 0 #fff;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: radial-gradient(900px 380px at 8% -10%, rgba(18,143,142,.09), transparent 60%), linear-gradient(180deg, #eef4f4 0%, #e7efee 100%); min-height: 100vh; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  body.pv-on { overflow: hidden; }
+  button, input, select, textarea { font-family: inherit; }
+  a { text-decoration: none; color: inherit; }
+  :focus-visible { outline: 2px solid rgba(18,143,142,.55); outline-offset: 2px; border-radius: 8px; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 26px 26px 80px; }
+
+  #createView, #queueView { display: none; }
+  body.view-create #listView, body.view-create #queueView { display: none; }
+  body.view-create #createView { display: block; }
+  body.view-queue #listView, body.view-queue #createView { display: none; }
+  body.view-queue #queueView { display: block; }
+
+  .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .phead h1 { font-size: 26px; font-weight: 900; letter-spacing: -0.025em; }
+  .phead .sub { margin-top: 5px; font-size: 13px; color: var(--muted); }
+  .pacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .16s ease; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .btn[disabled] { opacity: .45; pointer-events: none; box-shadow: none; }
+  .btn-ghost { background: #fff; border-color: var(--border); color: var(--sub); box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .btn-ghost:hover { border-color: rgba(17,69,75,.3); color: var(--ink); }
+  .btn-cta { background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-cta:hover { box-shadow: 0 8px 18px -6px rgba(18,143,142,.7), inset 0 1px 0 rgba(255,255,255,.22); }
+  .btn-danger-o { background: #fff; border-color: rgba(220,38,38,.35); color: var(--red); }
+  .btn-danger-o:hover { background: #fef2f2; border-color: rgba(220,38,38,.55); }
+  .btn-danger { background: var(--red); color: #fff; box-shadow: 0 4px 12px -5px rgba(220,38,38,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-green { background: var(--green); color: #fff; box-shadow: 0 4px 12px -5px rgba(21,128,61,.55), inset 0 1px 0 rgba(255,255,255,.18); }
+  .btn-close { background: #fff; border: 1px solid var(--border); color: var(--ink); font-weight: 800; box-shadow: 0 1px 2px rgba(10,42,46,.06); }
+  .btn-close:hover { border-color: rgba(19,149,148,.5); color: var(--teal-btn); background: rgba(19,149,148,.06); }
+  .btn-sm { height: 34px; padding: 0 13px; font-size: 12.5px; border-radius: 10px; }
+  .btn.period-on { border-color: rgba(18,143,142,.5); color: var(--sec); background: rgba(18,143,142,.08); box-shadow: 0 1px 2px rgba(10,42,46,.05); }
+  .btn-add { height: 34px; padding: 0 14px; border-radius: 10px; border: 1.5px dashed var(--border); background: #fbfdfc; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-add:hover { border-color: rgba(18,143,142,.45); color: var(--sec); background: rgba(18,143,142,.05); }
+  .btn-add svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; fill: none; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+  .layout > * { min-width: 0; }
+  .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  aside { min-width: 0; }
+  #createView aside {
+    position: sticky; top: 22px;
+    max-height: calc(100vh - 44px);
+    overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
+  }
+  #createView aside::-webkit-scrollbar { width: 6px; }
+  #createView aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+  #createView aside::-webkit-scrollbar-track { background: transparent; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpis.k3 { grid-template-columns: repeat(3, 1fr); }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 15px 16px; box-shadow: var(--sh-card); animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0ms); transition: transform .18s ease, box-shadow .18s ease; min-width: 0; }
+  .kpi:hover { transform: translateY(-2px); box-shadow: var(--sh-lift); }
+  .kpi .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .kpi .l { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .kpi .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(18,143,142,.09); border: 1px solid rgba(18,143,142,.22); color: var(--sec); }
+  .kpi .ic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .kpi .v { margin-top: 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .kpi .n { margin-top: 4px; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+  .kpi .n.ok { background: rgba(21,128,61,.10); color: var(--green); }
+  .kpi .n.warn { background: rgba(217,119,6,.10); color: var(--amber-2); }
+  .kpi .n.bad { background: rgba(220,38,38,.09); color: var(--red-2); }
+  .kpi .n.flat { background: rgba(17,69,75,.07); color: var(--muted); }
+
+  .tcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 80ms; min-width: 0; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .searchwrap { position: relative; flex: 1; min-width: 180px; }
+  .searchwrap svg { position: absolute; left: 12px; top: 11px; width: 15px; height: 15px; stroke: var(--faint); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+  .in, .sel { height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafb; font-size: 12.5px; font-weight: 600; color: var(--ink); outline: none; transition: all .15s; }
+  .searchwrap .in { width: 100%; padding-left: 36px; }
+  .in:focus, .sel:focus, .lin:focus, textarea.in:focus { border-color: rgba(18,143,142,.45); background: #fff; box-shadow: 0 0 0 4px rgba(18,143,142,.08); }
+  .in.bad, .sel.bad { border-color: rgba(220,38,38,.55); background: #fef2f2; box-shadow: 0 0 0 4px rgba(220,38,38,.08); }
+  .in.ro { background: #f1f5f6; color: var(--muted); }
+  .sel { appearance: none; padding-right: 30px; background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%); background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
+  .sel:disabled { background-color: #f1f5f6; color: var(--muted); }
+  .cnt { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.24); padding: 6px 12px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .pbar { display: flex; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #f4fbf9, #fdfeff); flex-wrap: wrap; align-items: flex-end; }
+  .pbar .fld label { margin-bottom: 4px; }
+  .pbar .cnt { margin-bottom: 8px; }
+  .pbar .btn { margin-bottom: 2px; }
+
+  .stiles { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--hair); background: #fbfdfc; }
+  .stile { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fff; cursor: pointer; transition: all .16s ease; text-align: left; min-width: 0; }
+  .stile .sic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; }
+  .stile .sic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .stile .sl { font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); display: block; }
+  .stile .sv { font-size: 15px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; display: block; }
+  .stile:hover { border-color: rgba(18,143,142,.35); transform: translateY(-1px); }
+  .stile.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .stile.on .sl { color: rgba(226,244,244,.8); } .stile.on .sv { color: #fff; } .stile.on .sic { background: rgba(255,255,255,.16); color: #fff; }
+  .sic.all { background: rgba(11,42,45,.08); color: var(--deep-1); }
+  .sic.dr { background: rgba(17,69,75,.08); color: var(--muted); }
+  .sic.se { background: rgba(70,112,140,.12); color: var(--steel); }
+  .sic.pa { background: rgba(217,119,6,.10); color: var(--amber-2); }
+  .sic.pd { background: rgba(21,128,61,.10); color: var(--green); }
+  .sic.ov { background: rgba(220,38,38,.10); color: var(--red); }
+  .sic.vo { background: rgba(138,163,162,.14); color: var(--faint); }
+
+  .tscroll { overflow-x: auto; }
+  .tscroll::-webkit-scrollbar { height: 8px; }
+  .tscroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+  .tscroll table { width: 100%; border-collapse: collapse; min-width: 980px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 11px 14px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(18,143,142,.18); font-size: 9.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; white-space: nowrap; }
+  thead th.r { text-align: right; }
+  tbody td { padding: 12px 14px; border-top: 1px solid var(--hair); vertical-align: middle; font-size: 12.5px; color: var(--sub); }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: rgba(18,143,142,.035); }
+  #iBody tr.irow, #qTBody tr.irow { cursor: pointer; }
+  .ino { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--sec); cursor: pointer; }
+  .ino:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .cust { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .av { width: 32px; height: 32px; min-width: 32px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(180deg, rgba(18,143,142,.14), rgba(18,143,142,.07)); border: 1px solid rgba(18,143,142,.26); color: var(--deep-1); font-size: 11px; font-weight: 800; }
+  .cust .nm { font-size: 12.5px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vd { white-space: nowrap; }
+  .xc { display: inline-flex; align-items: center; gap: 4px; margin-left: 7px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; vertical-align: 1px; white-space: nowrap; }
+  .xc.exp { background: rgba(220,38,38,.09); color: var(--red-2); border: 1px solid rgba(220,38,38,.24); }
+  .xc.soon { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.26); }
+  .xc.ok { background: rgba(17,69,75,.06); color: var(--muted); border: 1px solid rgba(17,69,75,.14); }
+  .xc.good { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .tot { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tot.dim { color: var(--muted); font-weight: 700; }
+  .tot.bal { color: var(--amber-2); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .pill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .pill.dr { background: rgba(17,69,75,.07); color: var(--muted); border: 1px solid rgba(17,69,75,.18); }
+  .pill.se { background: rgba(70,112,140,.12); color: var(--steel); border: 1px solid rgba(70,112,140,.3); }
+  .pill.pa { background: rgba(217,119,6,.10); color: var(--amber-2); border: 1px solid rgba(217,119,6,.28); }
+  .pill.pd { background: rgba(21,128,61,.10); color: var(--green); border: 1px solid rgba(21,128,61,.25); }
+  .pill.vo { background: rgba(138,163,162,.12); color: var(--faint); border: 1px solid rgba(138,163,162,.3); }
+  .ib { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; transition: all .15s; vertical-align: middle; }
+  .ib + .ib { margin-left: 6px; }
+  .ib svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .ib:hover { border-color: rgba(18,143,142,.4); color: var(--sec); background: rgba(18,143,142,.06); transform: translateY(-1px); }
+  .ib.payb { border-color: rgba(21,128,61,.3); color: var(--green); background: rgba(21,128,61,.05); }
+  .ib.payb:hover { border-color: rgba(21,128,61,.5); background: rgba(21,128,61,.12); }
+  .ib[disabled] { opacity: .35; pointer-events: none; }
+  .tfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--hair); background: #fbfdfc; font-size: 11.5px; font-weight: 600; color: var(--faint); flex-wrap: wrap; }
+  .empty { padding: 46px 20px; text-align: center; }
+  .empty .halo { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center; background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.2); color: var(--sec); }
+  .empty .halo svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .empty .t { font-size: 14px; font-weight: 800; color: var(--sub); }
+  .empty .s { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
+  .rcard { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); overflow: hidden; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: 140ms; min-width: 0; }
+  .rcard + .rcard { margin-top: 18px; }
+  .rhead { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-bottom: 1px solid var(--hair); background: linear-gradient(180deg, #fdfeff, #f8fbfa); }
+  .rhead .ric { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .rhead .ric svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .rhead .ric.warn { background: linear-gradient(180deg, #e8a33c, var(--amber)); }
+  .rhead .rt { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .rhead .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .rlink { flex: none; font-size: 10px; font-weight: 800; letter-spacing: .04em; color: var(--sec); background: rgba(18,143,142,.08); border: 1px solid rgba(18,143,142,.25); padding: 4px 10px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+  .rlink:hover { background: rgba(18,143,142,.16); border-color: rgba(18,143,142,.45); }
+  .rbody { padding: 10px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .vitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid transparent; background: transparent; font-size: 12.5px; font-weight: 700; color: var(--sub); text-align: left; cursor: pointer; transition: all .16s ease; min-width: 0; }
+  .vitem .vic { width: 28px; height: 28px; min-width: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(17,69,75,.06); border: 1px solid rgba(17,69,75,.12); color: var(--muted); transition: all .16s ease; }
+  .vitem .vic svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .vitem .vc { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .vitem:hover { background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.18); color: var(--ink); }
+  .vitem.on { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 6px 14px -6px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.22); }
+  .vitem.on .vic { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); color: #fff; }
+  .vitem.on .vc { background: rgba(255,255,255,.2); color: #fff; }
+  .attn { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fdfeff; cursor: pointer; transition: all .16s ease; text-align: left; min-width: 0; }
+  .attn + .attn { margin-top: 6px; }
+  .attn:hover { border-color: rgba(217,119,6,.4); transform: translateY(-1px); }
+  .attn .arow { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; }
+  .attn .an { font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--ink); }
+  .attn .as { font-size: 10px; font-weight: 600; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .attn .ab { font-size: 11px; font-weight: 800; color: var(--amber-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .attn .xc { margin-left: 0; }
+  .attn-empty { font-size: 11.5px; font-weight: 600; color: var(--faint); padding: 6px 6px 4px; }
+
+  .scrim { position: fixed; inset: 0; background: rgba(11,42,45,.26); display: none; place-items: center; padding: 24px; z-index: 90; }
+  .scrim.on { display: grid; animation: fadeIn .2s ease; }
+  .scrim.cf { z-index: 140; background: rgba(11,42,45,.45); }
+  .mbox { width: min(960px, calc(100vw - 48px)); max-height: calc(100vh - 48px); background: #fff; border-radius: 20px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(10,42,46,.04), 0 24px 60px -20px rgba(10,42,46,.35), inset 0 1px 0 rgba(255,255,255,.6); overflow: hidden; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.2,.8,.2,1); }
+  .mbox.mid { width: min(880px, calc(100vw - 48px)); }
+  .mbox.narrow { width: min(660px, calc(100vw - 48px)); }
+  .m-head { display: flex; align-items: center; gap: 12px; padding: 15px 22px; background: radial-gradient(700px 200px at 10% -30%, rgba(255,255,255,.09), transparent 60%), linear-gradient(180deg, #11454b 0%, #0c3539 55%, #0a2e32 100%); flex: none; }
+  .m-ic { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; background: #fff; display: grid; place-items: center; color: var(--deep-2); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .m-ic svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .m-head-left { flex: 1; min-width: 0; }
+  .m-title { display: block; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+  .m-sub { display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; color: rgba(255,255,255,.6); margin-top: 2px; }
+  .m-cust { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.20); color: #eaffff; font-size: 11px; font-weight: 800; letter-spacing: .01em; max-width: 34vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: none; }
+  .m-cust svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; opacity: .85; }
+  .m-close { margin-left: auto; width: 30px; height: 30px; min-width: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .m-close:hover { background: rgba(255,255,255,.16); color: #fff; transform: rotate(90deg); }
+  .m-close svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .m-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding: 10px 22px; border-bottom: 1px solid var(--hair); background: #fbfdfc; flex: none; }
+  .mchip { font-size: 10.5px; font-weight: 800; color: var(--muted); background: rgba(17,69,75,.05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; }
+  .mchip.mono { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.07); border-color: rgba(18,143,142,.22); }
+  .mchip.b { color: var(--ink); }
+  .mchip.warn { color: var(--amber-2); background: rgba(217,119,6,.08); border-color: rgba(217,119,6,.25); }
+  .mchip.bad { color: var(--red-2); background: rgba(220,38,38,.08); border-color: rgba(220,38,38,.24); }
+  .m-body { padding: 16px 22px 18px; overflow: auto; flex: 1; }
+  .mtiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .mtile { background: #f8fbfa; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+  .mtile .l { font-size: 8.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .mtile .v { margin-top: 4px; font-size: 16px; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .mtile.hero { background: radial-gradient(200px 70px at 12% -30%, rgba(255,255,255,.12), transparent 60%), linear-gradient(135deg, var(--deep-1), var(--deep-2)); border-color: transparent; }
+  .mtile.hero .l { color: rgba(226,244,244,.75); }
+  .mtile.hero .v { color: #fff; }
+  .mtile.warn .v { color: var(--amber-2); }
+  .tabbar { display: flex; gap: 4px; border-bottom: 1px solid var(--hair); margin-bottom: 14px; }
+  .tab { padding: 9px 14px; font-size: 12px; font-weight: 800; color: var(--muted); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all .15s; }
+  .tab:hover { color: var(--ink); }
+  .tab.on { color: var(--sec); border-bottom-color: var(--sec); }
+  .tabpane { display: none; }
+  .tabpane.on { display: block; animation: fadeIn .18s ease; }
+  .vsec { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+  .ltable { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .ltable th { padding: 8px 12px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .ltable th.r { text-align: right; }
+  .ltable td { padding: 9px 12px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .ltable td.r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .ltable td.mono { font-family: var(--mono); font-size: 11px; color: var(--sec); font-weight: 800; }
+  .mrow { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--hair); font-size: 12.5px; }
+  .mrow:last-child { border-bottom: none; }
+  .mrow .l { color: var(--muted); font-weight: 600; }
+  .mrow .v { color: var(--ink); font-weight: 700; text-align: right; }
+  .mrow .v.mono { font-family: var(--mono); color: var(--sec); font-size: 12px; }
+  .m-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 13px 22px; border-top: 1px solid var(--hair); background: #f8fafa; flex: none; }
+  .mnote { font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--hair); border-radius: 9px; padding: 8px 12px; margin-right: auto; }
+  .mnote b { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+  .mspacer { margin-right: auto; }
+  .qcard { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fdfeff; transition: all .15s; }
+  .qcard + .qcard { margin-top: 10px; }
+  .qcard:hover { border-color: rgba(18,143,142,.4); box-shadow: 0 6px 16px -10px rgba(10,42,46,.3); }
+  .qcard .qr { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--sec); }
+  .qcard .qc { font-size: 12px; font-weight: 700; color: var(--ink); margin-top: 3px; }
+  .qcard .qs { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 2px; }
+  .splitsum { font-size: 11px; font-weight: 800; padding: 7px 10px; border-radius: 9px; display: inline-flex; align-items: center; gap: 6px; }
+  .splitsum.ok { background: rgba(21,128,61,.10); color: var(--green); }
+  .splitsum.bad { background: rgba(220,38,38,.09); color: var(--red-2); }
+
+  .fsec { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; }
+  .fsec .fs-ic { width: 26px; height: 26px; min-width: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(180deg, var(--sec-2), var(--sec)); color: #fff; box-shadow: 0 3px 8px -3px rgba(18,143,142,.55), inset 0 1px 0 rgba(255,255,255,.25); }
+  .fsec .fs-ic svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .fsec .fs-t { font-size: 12.5px; font-weight: 800; color: var(--ink); }
+  .fsec .fs-rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+  .f-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fld { min-width: 0; }
+  .fld label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .fld label b { color: var(--red); }
+  .fld .in, .fld .sel { width: 100%; }
+  .fld .in[readonly] { font-family: var(--mono); color: var(--sec); background: rgba(18,143,142,.05); border-color: rgba(18,143,142,.22); }
+  .fld .in.auto { font-family: var(--mono); color: var(--faint); background: #f1f5f6; border-color: var(--line); }
+  .fldrow { display: flex; gap: 8px; align-items: stretch; }
+  .fldrow .in { flex: 1; }
+  textarea.in { height: 74px; padding: 10px 12px; resize: vertical; font-weight: 500; width: 100%; }
+  .savenote { font-size: 11px; font-weight: 700; color: var(--sec); background: rgba(18,143,142,.07); border: 1px solid rgba(18,143,142,.22); border-radius: 9px; padding: 8px 12px; margin-top: 10px; display: none; }
+  .savenote.on { display: block; }
+  .etable { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 10px; }
+  .etable th { padding: 8px 10px; background: linear-gradient(180deg, #f3f9f7, #e9f2ef); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); text-align: left; }
+  .etable th.r { text-align: right; }
+  .etable td { padding: 7px 10px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--sub); }
+  .lin { height: 32px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafb; font-size: 12px; font-weight: 600; color: var(--ink); padding: 0 9px; width: 100%; outline: none; transition: all .15s; }
+  .lin.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .amtcell { text-align: right; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lok { color: var(--green); font-weight: 900; margin-left: 6px; }
+  .xb { width: 24px; height: 24px; border-radius: 7px; border: 1px solid var(--line); background: #fff; color: var(--faint); display: grid; place-items: center; cursor: pointer; transition: all .15s; }
+  .xb:hover { border-color: rgba(220,38,38,.45); color: var(--red); background: rgba(220,38,38,.06); }
+  .xb svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+
+  .chead { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .chead h2 { font-size: 24px; font-weight: 900; letter-spacing: -0.025em; }
+  .cacts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .card2 { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-card); padding: 18px 20px; margin-bottom: 16px; animation: rise .45s cubic-bezier(.2,.8,.2,1) both; min-width: 0; }
+  .card2 .fsec { margin-top: 0; }
+  .sumrow { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); font-weight: 600; padding: 7px 0; border-bottom: 1px solid var(--hair); }
+  .sumrow b { color: var(--ink); font-weight: 700; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+  .sumrow b.gate-ok { color: var(--green); }
+  .sumrow b.gate-no { color: var(--amber-2); }
+  .grandtile { margin-top: 12px; background: radial-gradient(240px 90px at 12% -30%, rgba(255,255,255,.10), transparent 60%), linear-gradient(135deg, var(--deep-1), var(--deep-2) 60%, var(--deep-3)); color: #fff; border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 22px -12px rgba(8,40,44,.6), inset 0 1px 0 rgba(255,255,255,.12); }
+  .grandtile .l { font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: rgba(226,244,244,.75); }
+  .grandtile .v { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .sumnote { font-size: 10.5px; font-weight: 600; color: var(--faint); margin-top: 8px; }
+
+  .cbox { width: min(460px, 100%); background: #fff; border-radius: 18px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 24px 60px -20px rgba(8,40,44,.55); overflow: hidden; animation: slideUp .25s cubic-bezier(.2,.8,.2,1); }
+  .cb-head { display: flex; align-items: center; gap: 11px; padding: 14px 18px; background: linear-gradient(180deg, #fdfeff, #f6fbf9); border-bottom: 1px solid var(--hair); }
+  .cb-ic { width: 30px; height: 30px; min-width: 30px; border-radius: 9px; display: grid; place-items: center; }
+  .cb-ic svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .cb-ic.primary { background: rgba(18,143,142,.1); color: var(--sec); }
+  .cb-ic.ok { background: rgba(21,128,61,.1); color: var(--green); }
+  .cb-ic.danger { background: rgba(220,38,38,.1); color: var(--red); }
+  .cb-head b { font-size: 14px; font-weight: 800; color: var(--ink); flex: 1; }
+  .cb-x { border: none; background: none; color: var(--faint); cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; }
+  .cb-x:hover { background: var(--hair); color: var(--ink); }
+  .cb-x svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+  .cb-body { padding: 16px 18px; font-size: 12.5px; font-weight: 500; color: var(--sub); line-height: 1.65; }
+  .cb-body b { color: var(--ink); }
+  .cb-body .okref { font-family: var(--mono); font-weight: 800; color: var(--sec); }
+  .cb-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; font-size: 12px; border-top: 1px solid var(--hair); background: #fff; }
+  .cb-row:first-child { border-top: none; }
+  .cb-row .l { color: var(--muted); font-weight: 600; }
+  .cb-row b { color: var(--ink); font-weight: 800; }
+  .cb-row b.mono { font-family: var(--mono); color: var(--sec); }
+  .cb-row b.green { color: var(--green); }
+  .cb-box { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .cb-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 13px 18px; border-top: 1px solid var(--hair); background: #f8fafa; }
+
+  .pview { position: fixed; inset: 0; z-index: 200; display: none; overflow-y: auto; background: linear-gradient(180deg, #e6edec 0%, #dde6e5 100%); }
+  .pview.on { display: block; animation: fadeIn .2s ease; }
+  .ptoolbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 12px 22px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--p-line); box-shadow: 0 6px 18px -12px rgba(10,42,46,.25); flex-wrap: wrap; }
+  .tb-back { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-back:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); }
+  .tb-back svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-title { font-size: 13px; font-weight: 800; color: var(--p-ink); }
+  .tb-title span { font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--p-accent); background: rgba(14,116,115,.08); border: 1px solid rgba(14,116,115,.22); padding: 3px 8px; border-radius: 7px; margin-left: 8px; }
+  .tb-spacer { flex: 1; }
+  .tb-note { font-size: 10.5px; font-weight: 700; color: var(--p-faint); letter-spacing: .06em; text-transform: uppercase; }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--p-line); background: #fff; font-size: 12.5px; font-weight: 700; color: var(--p-sub); cursor: pointer; transition: all .15s; }
+  .tb-btn:hover { border-color: rgba(14,116,115,.4); color: var(--p-accent); transform: translateY(-1px); }
+  .tb-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .tb-btn.primary { background: linear-gradient(180deg, var(--sec-2), var(--sec)); border-color: transparent; color: #fff; box-shadow: 0 5px 12px -5px rgba(18,143,142,.6), inset 0 1px 0 rgba(255,255,255,.25); }
+  .sheet-wrap { display: flex; justify-content: center; padding: 34px 20px 60px; }
+  .sheet { position: relative; width: 794px; min-height: 1123px; background: #fff; border: 1px solid var(--p-line); box-shadow: 0 2px 6px rgba(10,42,46,.08), 0 30px 70px -30px rgba(10,42,46,.45); overflow: hidden; display: flex; flex-direction: column; }
+  .sheet::before { content: ''; display: block; height: 5px; flex: none; background: linear-gradient(90deg, var(--p-accent) 0%, var(--sec-2) 55%, #7FD1C0 100%); }
+  .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+  .wm span { transform: rotate(-24deg); font-size: 100px; font-weight: 900; letter-spacing: .18em; color: rgba(14,116,115,.05); text-transform: uppercase; white-space: nowrap; }
+  .sheet-body { flex: 1 0 auto; display: flex; flex-direction: column; position: relative; z-index: 1; }
+  .v-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px 46px 20px; background: linear-gradient(180deg, var(--p-band) 0%, #f7fbfa 100%); border-bottom: 1px solid var(--p-line); }
+  .brand { display: flex; gap: 13px; }
+  .brand .mark { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(150deg, var(--p-accent) 0%, #0a5453 100%); color: #fff; font-size: 17px; font-weight: 900; display: grid; place-items: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+  .brand .bn { font-size: 15.5px; font-weight: 900; letter-spacing: -0.015em; color: var(--p-ink); }
+  .brand .bl { font-size: 10px; font-weight: 600; color: var(--p-muted); line-height: 1.55; margin-top: 3px; }
+  .docblock { text-align: right; }
+  .docblock .dt { font-size: 9.5px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--p-accent); }
+  .docblock .dn { font-family: var(--mono); font-size: 19px; font-weight: 800; color: var(--p-ink); letter-spacing: -0.01em; margin-top: 4px; }
+  .docblock .dst { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; padding: 4px 11px; border-radius: 999px; background: rgba(14,116,115,.10); border: 1px solid rgba(14,116,115,.35); color: var(--p-accent); font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .docblock .dst i { width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); }
+  .docblock .dst.draftst { background: rgba(138,163,162,.14); border-color: rgba(138,163,162,.4); color: var(--p-muted); }
+  .docblock .dst.draftst i { background: var(--p-muted); }
+  .docblock .dst.paidst { background: rgba(21,128,61,.10); border-color: rgba(21,128,61,.35); color: var(--green); }
+  .docblock .dst.paidst i { background: var(--green); }
+  .docblock .dp { font-size: 9.5px; font-weight: 600; color: var(--p-faint); margin-top: 6px; }
+  .meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--p-line); }
+  .meta .cell { padding: 10px 16px; border-left: 1px solid var(--p-hair); min-width: 0; }
+  .meta .cell:first-child { border-left: none; }
+  .meta .cell:nth-child(n+5) { border-top: 1px solid var(--p-hair); }
+  .meta .l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); }
+  .meta .v { font-size: 11px; font-weight: 700; color: var(--p-ink); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta .v.mono { font-family: var(--mono); font-size: 10.5px; color: var(--p-accent); }
+  .vlines { padding: 20px 46px 0; }
+  .vlines .lt { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--p-muted); margin-bottom: 9px; }
+  .sheet table { width: 100%; border-collapse: collapse; min-width: 0; }
+  .sheet thead th { background: var(--p-accent); color: #fff; font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 8px 12px; text-align: left; box-shadow: none; }
+  .sheet thead th.r { text-align: right; }
+  .sheet thead th:first-child { border-radius: 6px 0 0 6px; }
+  .sheet thead th:last-child { border-radius: 0 6px 6px 0; }
+  .sheet tbody td { padding: 9px 12px; border-bottom: 1px solid var(--p-hair); border-top: none; font-size: 11px; color: var(--p-sub); vertical-align: top; }
+  .sheet tbody td.no { width: 30px; color: var(--p-faint); font-weight: 700; }
+  .sheet tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--p-ink); white-space: nowrap; }
+  .sheet tr.totals td { border-bottom: none; border-top: 3px double var(--p-ink); padding: 10px 12px; background: var(--p-band); }
+  .sheet tr.words td { padding: 9px 12px; border-bottom: 1px solid var(--p-line); background: #fbfdfc; }
+  .words-l { font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-faint); margin-right: 8px; }
+  .words-v { font-size: 11px; font-weight: 700; color: var(--p-sub); font-style: italic; }
+  .balnote { float: right; font-size: 9.5px; font-weight: 800; color: var(--p-accent); letter-spacing: .06em; }
+  .qpanels { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; margin: 16px 46px 0; }
+  .narr { border: 1px solid var(--p-line); border-radius: 6px; overflow: hidden; }
+  .narr .nh { padding: 7px 12px; background: var(--p-band); border-bottom: 1px solid var(--p-hair); font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .narr .nb { padding: 10px 12px; font-size: 10.5px; font-weight: 500; color: var(--p-sub); line-height: 1.6; }
+  .tlist { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .tlist div { font-size: 9.5px; font-weight: 600; color: var(--p-sub); line-height: 1.5; padding-left: 12px; position: relative; }
+  .tlist div::before { content: ''; position: absolute; left: 0; top: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--p-accent); opacity: .55; }
+  .paystrip { margin: 16px 46px 0; border: 1px solid var(--p-line); border-radius: 6px; overflow: hidden; }
+  .paystrip .nh { padding: 7px 12px; background: var(--p-band); border-bottom: 1px solid var(--p-hair); font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--p-muted); }
+  .paystrip table td { border-bottom: 1px solid var(--p-hair); }
+  .paystrip table tr:last-child td { border-bottom: none; }
+  .v-foot { margin-top: auto; padding: 12px 46px; border-top: 1px solid var(--p-line); background: #fbfdfc; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none; position: relative; z-index: 1; }
+  .v-foot .fa { font-family: var(--mono); font-size: 8.5px; font-weight: 600; color: var(--p-faint); }
+  .v-foot .fb { font-size: 8.5px; font-weight: 600; color: var(--p-faint); text-align: center; flex: 1; }
+  .v-foot .fc { font-size: 9px; font-weight: 800; color: var(--p-muted); letter-spacing: .08em; white-space: nowrap; }
+
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(16px); background: var(--deep-2); color: #eaffff; font-size: 12px; font-weight: 700; padding: 11px 18px; border-radius: 999px; border: 1px solid rgba(127,209,192,.3); box-shadow: 0 14px 30px -12px rgba(6,32,35,.7); opacity: 0; visibility: hidden; transition: all .25s ease; z-index: 300; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .toast.on { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1180px) { .stiles { grid-template-columns: repeat(4, 1fr); } .kpis, .mtiles { grid-template-columns: repeat(2, 1fr); } .kpis.k3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+    .kpis.k3 { grid-template-columns: repeat(2, 1fr); }
+    #createView aside { position: static; max-height: none; overflow: visible; }
+  }
+  @media (max-width: 760px) { .stiles, .g4, .g3, .g2, .f-grid3, .kpis.k3 { grid-template-columns: 1fr; } .mbox, .mbox.mid, .mbox.narrow { width: calc(100vw - 24px); } .m-cust { max-width: 40vw; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  @page { size: A4; margin: 10mm; }
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: #fff; }
+    body.pv-on { overflow: visible; }
+    body.pv-on .wrap, body.pv-on .scrim, body.pv-on .toast { display: none !important; }
+    body.pv-on .pview { position: static; display: block; overflow: visible; background: #fff; }
+    body.pv-on .ptoolbar { display: none !important; }
+    body.pv-on .sheet-wrap { padding: 0; display: block; }
+    body.pv-on .sheet { width: auto; min-height: 277mm; border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- ==================== REGISTER ==================== -->
+<div id="listView">
+  <div class="phead">
+    <div>
+      <h1>Invoices</h1>
+      <div class="sub">Bill, collect and reconcile customer invoices — with AR aging intelligence and payment tracking.</div>
+    </div>
+    <div class="pacts">
+      <button class="btn btn-ghost" id="btnExport"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+      <button class="btn btn-cta" id="btnNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create Invoice</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi" style="--d:40ms"><div class="top"><span class="l">Outstanding AR</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span></div><div class="v" id="kAR">K 0.00</div><span class="n flat" id="kARN">0 open invoices</span></div>
+    <div class="kpi" style="--d:90ms"><div class="top"><span class="l">Overdue</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span></div><div class="v" id="kOv">0</div><span class="n bad" id="kOvN">K 0.00 at risk</span></div>
+    <div class="kpi" style="--d:140ms"><div class="top"><span class="l">Collection rate</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span></div><div class="v" id="kRate">—</div><span class="n ok" id="kRateN">collected vs billed</span></div>
+    <div class="kpi" style="--d:190ms"><div class="top"><span class="l">Total collected</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span></div><div class="v" id="kCol">K 0.00</div><span class="n ok" id="kColN">0 receipts</span></div>
+  </div>
+
+  <div class="layout">
+    <main class="col">
+      <section class="tcard">
+        <div class="toolbar">
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" type="text" id="q" placeholder="Customer, number, receipt, source…"></div>
+          <select class="sel" id="sort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="high">Amount high → low</option><option value="bal">Balance high → low</option><option value="due">Due soonest</option></select>
+          <button class="btn btn-ghost" id="btnPeriod" title="Show / hide the date-period filter"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Period</button>
+          <span class="cnt" id="cnt">7 invoices</span>
+        </div>
+        <div class="pbar" id="periodBar" style="display:none">
+          <div class="fld" style="width:180px"><label>Period preset</label>
+            <select class="sel" id="pPreset">
+              <option value="">All time</option>
+              <option value="m0">This month</option>
+              <option value="m-1">Last month</option>
+              <option value="d30">Last 30 days</option>
+              <option value="q0">This quarter</option>
+              <option value="ytd">Year to date</option>
+              <option value="custom">Custom range</option>
+            </select>
+          </div>
+          <div class="fld" style="width:160px"><label>From (issue date)</label><input class="in" type="date" id="pFrom" disabled></div>
+          <div class="fld" style="width:160px"><label>To (issue date)</label><input class="in" type="date" id="pTo" disabled></div>
+          <button class="btn btn-ghost btn-sm" id="pClear"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Clear</button>
+          <span class="cnt" id="pLabel">No period filter</span>
+        </div>
+        <div class="stiles" id="stiles">
+          <button class="stile on" data-st=""><span class="sic all"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span><span><span class="sl">Total</span><span class="sv" data-c="">0</span></span></button>
+          <button class="stile" data-st="draft"><span class="sic dr"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span><span><span class="sl">Draft</span><span class="sv" data-c="draft">0</span></span></button>
+          <button class="stile" data-st="sent"><span class="sic se"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span><span><span class="sl">Sent</span><span class="sv" data-c="sent">0</span></span></button>
+          <button class="stile" data-st="partial"><span class="sic pa"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><span><span class="sl">Part paid</span><span class="sv" data-c="partial">0</span></span></button>
+          <button class="stile" data-st="paid"><span class="sic pd"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span><span class="sl">Paid</span><span class="sv" data-c="paid">0</span></span></button>
+          <button class="stile" data-st="overdue"><span class="sic ov"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span><span><span class="sl">Overdue</span><span class="sv" data-c="overdue">0</span></span></button>
+          <button class="stile" data-st="void"><span class="sic vo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></svg></span><span><span class="sl">Void</span><span class="sv" data-c="void">0</span></span></button>
+        </div>
+        <div class="tscroll">
+        <table>
+          <thead><tr><th>Invoice №</th><th>Customer</th><th>Issue date</th><th>Due date</th><th class="r">Amount (K)</th><th class="r">Paid (K)</th><th class="r">Balance (K)</th><th>Status</th><th class="r">Actions</th></tr></thead>
+          <tbody id="iBody">
+            <tr class="irow" data-id="i7" data-status="draft" data-total="17475" data-paid="0" data-date="2026-10-01" data-due="2026-10-16" data-search="jane mwale inv-2026-0143 qt-2026-0016"><td><span class="ino" data-act="view">INV-2026-0143</span></td><td><span class="cust"><span class="av">JM</span><span class="nm">Jane Mwale</span></span></td><td style="white-space:nowrap">01 Oct 2026</td><td class="vd">16 Oct 2026<span class="xc ok">Current</span></td><td class="tot">17,475.00</td><td class="tot dim">0.00</td><td class="tot">17,475.00</td><td><span class="pill dr"><i></i>Draft</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="irow" data-id="i1" data-status="draft" data-total="46600" data-paid="0" data-date="2026-10-02" data-due="2026-10-16" data-search="chisomo phiri inv-2026-0142"><td><span class="ino" data-act="view">INV-2026-0142</span></td><td><span class="cust"><span class="av">CP</span><span class="nm">Chisomo Phiri</span></span></td><td style="white-space:nowrap">02 Oct 2026</td><td class="vd">16 Oct 2026<span class="xc ok">Current</span></td><td class="tot">46,600.00</td><td class="tot dim">0.00</td><td class="tot">46,600.00</td><td><span class="pill dr"><i></i>Draft</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="irow" data-id="i2" data-status="sent" data-total="125820" data-paid="0" data-date="2026-09-30" data-due="2026-10-14" data-search="vera mtombosola inv-2026-0141 so-2026-0020"><td><span class="ino" data-act="view">INV-2026-0141</span></td><td><span class="cust"><span class="av">VM</span><span class="nm">Vera Mtombosola</span></span></td><td style="white-space:nowrap">30 Sep 2026</td><td class="vd">14 Oct 2026<span class="xc ok">Current</span></td><td class="tot">125,820.00</td><td class="tot dim">0.00</td><td class="tot bal">125,820.00</td><td><span class="pill se"><i></i>Sent</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="irow" data-id="i3" data-status="partial" data-total="81550" data-paid="50000" data-date="2026-09-26" data-due="2026-10-10" data-search="mary chilumpha inv-2026-0140 rc-2026-0091"><td><span class="ino" data-act="view">INV-2026-0140</span></td><td><span class="cust"><span class="av">MC</span><span class="nm">Mary Chilumpha</span></span></td><td style="white-space:nowrap">26 Sep 2026</td><td class="vd">10 Oct 2026<span class="xc soon">7 days</span></td><td class="tot">81,550.00</td><td class="tot dim">50,000.00</td><td class="tot bal">31,550.00</td><td><span class="pill pa"><i></i>Partially paid</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="irow" data-id="i4" data-status="paid" data-total="61745" data-paid="61745" data-date="2026-09-20" data-due="2026-10-04" data-search="joseph kachale inv-2026-0139 so-2026-0018 rc-2026-0084 rc-2026-0095"><td><span class="ino" data-act="view">INV-2026-0139</span></td><td><span class="cust"><span class="av">JK</span><span class="nm">Joseph Kachale</span></span></td><td style="white-space:nowrap">20 Sep 2026</td><td class="vd">04 Oct 2026<span class="xc good">Settled</span></td><td class="tot">61,745.00</td><td class="tot dim">61,745.00</td><td class="tot dim">0.00</td><td><span class="pill pd"><i></i>Paid</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="irow" data-id="i5" data-status="sent" data-total="20970" data-paid="0" data-date="2026-09-01" data-due="2026-09-15" data-search="elvis seyama inv-2026-0138"><td><span class="ino" data-act="view">INV-2026-0138</span></td><td><span class="cust"><span class="av">ES</span><span class="nm">Elvis Seyama</span></span></td><td style="white-space:nowrap">01 Sep 2026</td><td class="vd">15 Sep 2026<span class="xc exp">18d over</span></td><td class="tot">20,970.00</td><td class="tot dim">0.00</td><td class="tot bal">20,970.00</td><td><span class="pill se"><i></i>Sent</span><span class="xc exp">Overdue</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr class="irow" data-id="i6" data-status="partial" data-total="32620" data-paid="10000" data-date="2026-08-25" data-due="2026-09-09" data-search="limbani nyirenda inv-2026-0137 rc-2026-0078"><td><span class="ino" data-act="view">INV-2026-0137</span></td><td><span class="cust"><span class="av">LN</span><span class="nm">Limbani Nyirenda</span></span></td><td style="white-space:nowrap">25 Aug 2026</td><td class="vd">09 Sep 2026<span class="xc exp">24d over</span></td><td class="tot">32,620.00</td><td class="tot dim">10,000.00</td><td class="tot bal">22,620.00</td><td><span class="pill pa"><i></i>Partially paid</span><span class="xc exp">Overdue</span></td><td class="r" style="white-space:nowrap"></td></tr>
+            <tr id="noRes" style="display:none"><td colspan="9"><div class="empty"><div class="halo"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="t">No invoices match</div><div class="s">Adjust the search, period or status filter, or create a new invoice.</div></div></td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="tfoot"><span id="showing">Showing 7 of 7 invoices</span><span>Click any row to open the invoice · all actions live in the invoice workspace</span></div>
+      </section>
+    </main>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Views</span><span class="rule"></span></div>
+        <div class="rbody" id="views">
+          <button class="vitem on" data-view="all"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>All Invoices<span class="vc" data-v="all">7</span></button>
+          <button class="vitem" data-view="open"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></span>Open (Sent + Part)<span class="vc" data-v="open">4</span></button>
+          <button class="vitem" data-view="draft"><span class="vic"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span>Drafts<span class="vc" data-v="draft">2</span></button>
+          <button class="vitem" data-view="paid"><span class="vic"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>Paid<span class="vc" data-v="paid">1</span></button>
+          <button class="vitem" data-view="overdue"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>Overdue<span class="vc" data-v="overdue">2</span></button>
+        </div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric warn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><span class="rt">Collections queue</span><span class="rule"></span><button class="rlink" id="queueAll">View all →</button></div>
+        <div class="rbody" id="queue"></div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Reports</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" data-rep="aging"><span class="vic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>AR Aging Summary</button>
+          <button class="vitem" data-rep="sales"><span class="vic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Sales by Customer</button>
+          <button class="vitem" data-rep="coll"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span>Collections by Method</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- ==================== COLLECTIONS QUEUE PAGE ==================== -->
+<div id="queueView">
+  <div class="phead">
+    <div>
+      <h1>Collections Queue</h1>
+      <div class="sub">Every open invoice with a balance — worst aging first, ready for follow-up and payment capture.</div>
+    </div>
+    <div class="pacts">
+      <button class="btn btn-ghost" id="qBack"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back to invoices</button>
+      <button class="btn btn-ghost" id="qExport"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export queue</button>
+    </div>
+  </div>
+
+  <div class="kpis k3">
+    <div class="kpi" style="--d:40ms"><div class="top"><span class="l">Outstanding AR</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span></div><div class="v" id="qkAR">K 0.00</div><span class="n flat" id="qkARN">0 open invoices</span></div>
+    <div class="kpi" style="--d:90ms"><div class="top"><span class="l">Overdue value</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span></div><div class="v" id="qkOv">K 0.00</div><span class="n bad" id="qkOvN">0 invoices</span></div>
+    <div class="kpi" style="--d:140ms"><div class="top"><span class="l">Due ≤ 7 days</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span></div><div class="v" id="qkDue">K 0.00</div><span class="n warn" id="qkDueN">0 invoices</span></div>
+  </div>
+
+  <section class="tcard">
+    <div class="tscroll">
+    <table>
+      <thead><tr><th>Invoice №</th><th>Customer</th><th>Contact</th><th>Due date</th><th>Aging</th><th class="r">Balance (K)</th><th>Status</th><th class="r">Actions</th></tr></thead>
+      <tbody id="qTBody">
+        <tr id="qNoRes" style="display:none"><td colspan="8"><div class="empty"><div class="halo"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div><div class="t">Queue is clear</div><div class="s">No open invoices with outstanding balances.</div></div></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="tfoot"><span id="qShowing">0 invoices in queue</span><span>Row click opens the invoice · green icon records a payment</span></div>
+  </section>
+</div>
+
+<!-- ==================== CREATE / EDIT INVOICE ==================== -->
+<div id="createView">
+  <div class="chead">
+    <div><h2 id="cvTitle">Create Invoice</h2></div>
+    <div class="cacts">
+      <button class="btn btn-ghost" id="ncCancel"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Cancel</button>
+      <button class="btn btn-ghost" id="ncFromQ"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>From quotation</button>
+      <button class="btn btn-ghost" id="ncDraft"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>Save Draft</button>
+      <button class="btn btn-cta" id="ncPost" disabled title="Requires customer, due date and at least one complete line"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Post Invoice</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="fs-t">Bill To</span><span class="fs-rule"></span></div>
+        <div class="g3" style="margin-bottom:12px">
+          <div class="fld"><label>Customer type</label>
+            <select class="sel" id="ncMode"><option value="existing">Existing customer</option><option value="walkin">Walk-in customer</option></select>
+          </div>
+          <div class="fld"><label>Payment terms</label>
+            <select class="sel" id="ncTerms"><option value="receipt">Due on receipt</option><option value="net15">Net 15</option><option value="net30" selected>Net 30</option><option value="net60">Net 60</option></select>
+          </div>
+          <div class="fld"><label>Source document</label>
+            <div class="fldrow">
+              <input class="in" id="ncSource" placeholder="SO-… / QT-… (optional)">
+              <button class="btn btn-ghost btn-sm" id="ncPickQ" type="button" style="height:38px" title="Load lines & customer from an approved quotation"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Pick</button>
+            </div>
+          </div>
+        </div>
+        <div class="fld" id="ncSearchWrap" style="margin-bottom:12px">
+          <label>Customer <b>*</b></label>
+          <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" id="ncSearch" list="custList" placeholder="Search customers… (name or code)" style="padding-left:36px"></div>
+          <datalist id="custList"></datalist>
+        </div>
+        <div class="fld" id="ncNameWrap" style="margin-bottom:12px; display:none">
+          <label>Customer name <b>*</b></label>
+          <input class="in" id="ncName" placeholder="e.g. Jane Mwale">
+        </div>
+        <div class="g4">
+          <div class="fld"><label>Contact person</label><input class="in" id="ncContact" placeholder="—"></div>
+          <div class="fld"><label>Email</label><input class="in" id="ncEmail" type="email" placeholder="name@company.com"></div>
+          <div class="fld"><label>Phone</label><input class="in" id="ncPhone" placeholder="+265 …"></div>
+          <div class="fld"><label>Bill-to address</label><input class="in" id="ncAddress" placeholder="Street, city"></div>
+        </div>
+        <div class="savenote" id="ncSaveNote">Walk-in captured — these details will be saved to the customer registry for future use.</div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="fs-t">Invoice Information</span><span class="fs-rule"></span></div>
+        <div class="g4" style="margin-bottom:12px">
+          <div class="fld"><label>Invoice №</label><input class="in auto" id="ncNo" readonly placeholder="Auto-assigned on save"></div>
+          <div class="fld"><label>Issue date <b>*</b></label><input class="in" type="date" id="ncDate"></div>
+          <div class="fld"><label>Due date <b>*</b></label><input class="in" type="date" id="ncDue"></div>
+          <div class="fld"><label>Reference №</label><input class="in" id="ncRef" placeholder="Customer PO (optional)"></div>
+        </div>
+        <div class="g4">
+          <div class="fld"><label>Cost centre</label>
+            <select class="sel" id="ncCC">
+              <option value="CC-HO" selected>CC-HO · Head Office</option>
+              <option value="CC-BN">CC-BN · Branch North</option>
+              <option value="CC-STM">CC-STM · Stores &amp; Merchandising</option>
+            </select>
+          </div>
+          <div class="fld"><label>Department</label><input class="in auto" value="Finance" readonly></div>
+          <div class="fld"><label>Prepared by</label><input class="in auto" value="Elvis Seyama" readonly></div>
+          <div class="fld"><label>Tax regime</label><input class="in auto" value="VAT 16.5% inclusive pricing" readonly></div>
+        </div>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg></span><span class="fs-t">Invoice Lines</span><span class="fs-rule"></span>
+          <button class="btn-add" id="ncAdd" style="margin-left:auto"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add Line</button>
+        </div>
+        <table class="etable">
+          <thead><tr><th style="width:90px">Item code</th><th style="width:24%">Item name</th><th style="width:24%">Description (optional)</th><th class="r" style="width:60px">Qty</th><th class="r" style="width:110px">Unit price (K)</th><th class="r" style="width:120px">Amount</th><th style="width:40px"></th></tr></thead>
+          <tbody id="ncLines"></tbody>
+        </table>
+      </section>
+
+      <section class="card2">
+        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M16 13H8M16 17H8"/></svg></span><span class="fs-t">Notes</span><span class="fs-rule"></span></div>
+        <div class="g2">
+          <div class="fld"><label>Customer notes</label><textarea class="in" id="ncNotesC" placeholder="Printed on the tax invoice…"></textarea></div>
+          <div class="fld"><label>Internal notes</label><textarea class="in" id="ncNotesI" placeholder="Collection notes…"></textarea></div>
+        </div>
+      </section>
+    </div>
+
+    <aside>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Summary</span><span class="rule"></span></div>
+        <div class="rbody" style="padding:12px 14px">
+          <div class="sumrow"><span>Customer</span><b id="nsCust">—</b></div>
+          <div class="sumrow"><span>Issue date</span><b id="nsDate">—</b></div>
+          <div class="sumrow"><span>Due date</span><b id="nsDue">—</b></div>
+          <div class="sumrow"><span>Post check</span><b id="nsGate" class="gate-no">—</b></div>
+          <div class="sumrow"><span>Subtotal</span><b id="nsSub">0.00</b></div>
+          <div class="sumrow"><span>Tax (16.5%)</span><b id="nsTax">0.00</b></div>
+          <div class="grandtile"><span class="l">Invoice Total</span><span class="v" id="nsGrand">K 0.00</span></div>
+          <div class="sumnote" id="nsLines">No complete lines yet</div>
+        </div>
+      </section>
+      <section class="rcard">
+        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Quick nav</span><span class="rule"></span></div>
+        <div class="rbody">
+          <button class="vitem" id="qnavList"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>All Invoices</button>
+          <button class="vitem" id="qnavOrders"><span class="vic"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></span>Sales Orders</button>
+          <button class="vitem" id="qnavCust"><span class="vic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Customers</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- ============ VIEW INVOICE MODAL ============ -->
+<div class="scrim" id="viewScrim">
+  <div class="mbox" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Invoice</span><span class="m-sub" id="vwRef">INV-2026-0000</span></div>
+      <span class="m-cust" id="vwCustH"></span>
+      <span class="pill" id="vwPill"></span>
+      <button class="m-close" data-close="viewScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="vwMeta"></div>
+    <div class="m-body">
+      <div class="mtiles" id="vwTiles"></div>
+      <div class="tabbar" id="vwTabs">
+        <button class="tab on" data-tab="ov">Overview</button>
+        <button class="tab" data-tab="li">Line items</button>
+        <button class="tab" data-tab="py">Payments</button>
+      </div>
+      <div class="tabpane on" id="pane-ov">
+        <div class="mrow"><span class="l">Customer</span><span class="v" id="vwCust">—</span></div>
+        <div class="mrow"><span class="l">Contact / phone</span><span class="v" id="vwContact">—</span></div>
+        <div class="mrow"><span class="l">Email</span><span class="v mono" id="vwEmail">—</span></div>
+        <div class="mrow"><span class="l">Bill-to address</span><span class="v" id="vwAddr">—</span></div>
+        <div class="mrow"><span class="l">Terms / due</span><span class="v" id="vwTerms">—</span></div>
+        <div class="mrow"><span class="l">Source document</span><span class="v mono" id="vwSource">—</span></div>
+        <div class="mrow"><span class="l">Customer reference</span><span class="v" id="vwRefNo">—</span></div>
+        <div class="mrow"><span class="l">Created by</span><span class="v" id="vwBy">—</span></div>
+        <div class="vsec" style="margin-top:14px">Notes</div>
+        <div style="font-size:12px;font-weight:500;color:var(--sub);line-height:1.65" id="vwNotes">—</div>
+      </div>
+      <div class="tabpane" id="pane-li">
+        <table class="ltable"><thead><tr><th>Description</th><th class="r">Qty</th><th class="r">Unit price</th><th class="r">Amount</th></tr></thead><tbody id="vwLines"></tbody></table>
+      </div>
+      <div class="tabpane" id="pane-py">
+        <table class="ltable"><thead><tr><th>Date</th><th>Method</th><th>Receipt №</th><th class="r">Amount</th></tr></thead><tbody id="vwPays"></tbody></table>
+        <div class="mrow" style="margin-top:10px"><span class="l">Total received</span><span class="v" id="vwPayTot">0.00</span></div>
+        <div class="mrow"><span class="l">Balance due</span><span class="v" id="vwBalDue">0.00</span></div>
+      </div>
+    </div>
+    <div class="m-foot" id="vwFoot"></div>
+  </div>
+</div>
+
+<!-- ============ RECORD PAYMENT MODAL ============ -->
+<div class="scrim" id="payScrim">
+  <div class="mbox narrow" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Record payment</span><span class="m-sub" id="pyRef">INV-2026-0000</span></div>
+      <span class="m-cust" id="pyCustH"></span>
+      <button class="m-close" data-close="payScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-meta" id="pyMeta"></div>
+    <div class="m-body">
+      <div class="g2">
+        <div class="fld"><label>Payment date <b>*</b></label><input class="in" type="date" id="pyDate"></div>
+        <div class="fld"><label>Amount (K) <b>*</b></label><input class="in num" type="number" min="0" step="0.01" id="pyAmount" style="text-align:right"></div>
+      </div>
+      <div class="g2" style="margin-top:14px">
+        <div class="fld"><label>Payment method</label>
+          <select class="sel" id="pyMethod">
+            <option>Bank transfer</option>
+            <option>Mobile money</option>
+            <option>Cash</option>
+            <option>Card</option>
+            <option>Cheque</option>
+            <option>Split</option>
+          </select>
+        </div>
+        <div class="fld"><label>Receipt №</label><input class="in auto" id="pyReceipt" readonly value="RC-2026-0096"></div>
+      </div>
+      <div class="vsec" id="pyDetailsTitle" style="margin-top:14px">Method details — Bank transfer</div>
+      <div class="g2" id="pyDetails"></div>
+      <div id="pySplitWrap" style="display:none">
+        <div class="vsec" style="display:flex;align-items:center;gap:10px">Split tender legs <button class="btn-add" id="pySplitAdd" type="button" style="margin-left:auto"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add leg</button></div>
+        <table class="etable"><thead><tr><th>Method</th><th class="r" style="width:110px">Amount (K)</th><th style="width:34%">Reference</th><th style="width:34px"></th></tr></thead><tbody id="pySplitBody"></tbody></table>
+        <span class="splitsum bad" id="pySplitSum">Legs total K 0.00 of K 0.00</span>
+      </div>
+      <div class="fld" style="margin-top:12px"><label>Allocation note</label><input class="in" id="pyNote" placeholder="e.g. part settlement — balance next week"></div>
+      <div class="sumrow" style="margin-top:12px"><span>Balance after this payment</span><b id="pyAfter">—</b></div>
+    </div>
+    <div class="m-foot">
+      <span class="mnote">A confirmation step follows before anything is posted.</span>
+      <button class="btn btn-close btn-sm" data-close="payScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+      <button class="btn btn-green btn-sm" id="pySave"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Review &amp; save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PICK QUOTATION MODAL ============ -->
+<div class="scrim" id="quoteScrim">
+  <div class="mbox narrow" role="dialog" aria-modal="true">
+    <div class="m-head">
+      <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span>
+      <div class="m-head-left"><span class="m-title">Create from quotation</span><span class="m-sub">uninvoiced quotations</span></div>
+      <button class="m-close" data-close="quoteScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-body">
+      <div class="searchwrap" style="margin-bottom:12px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" id="qqSearch" placeholder="Search quotations… (number, customer, item)" style="padding-left:36px"></div>
+      <div id="quoteList"></div>
+    </div>
+    <div class="m-foot">
+      <span class="mnote">Loading a quotation fills customer, terms, lines and notes — everything stays editable.</span>
+      <button class="btn btn-close btn-sm" data-close="quoteScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM / SUCCESS ============ -->
+<div class="scrim cf" id="cfScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head"><span class="cb-ic" id="cbIc"></span><b id="cbTitle">Confirm</b><button class="cb-x" data-close="cfScrim" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="cb-body" id="cbMsg"></div>
+    <div class="cb-foot"><button class="btn btn-close btn-sm" data-close="cfScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button><button class="btn btn-sm" id="cbOk">Confirm</button></div>
+  </div>
+</div>
+<div class="scrim cf" id="okScrim">
+  <div class="cbox" role="alertdialog" aria-modal="true">
+    <div class="cb-head"><span class="cb-ic ok"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span><b id="okTitle">Success</b><button class="cb-x" data-close="okScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="cb-body" id="okBody"></div>
+    <div class="cb-foot">
+      <button class="btn btn-close btn-sm" data-close="okScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+      <button class="btn btn-ghost btn-sm" id="okView"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View invoice</button>
+      <button class="btn btn-cta btn-sm" id="okPrint" style="display:none"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print / PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ IN-APP FALLBACK PREVIEW (popup blocked only) ============ -->
+<div class="pview" id="printView" aria-hidden="true">
+  <div class="ptoolbar">
+    <button class="tb-back" id="pvBack"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
+    <span class="tb-title">Print preview — Tax Invoice <span id="pvRef">INV-2026-0000</span></span>
+    <span class="tb-spacer"></span>
+    <span class="tb-note">Popups blocked — in-app fallback · Ctrl+P prints</span>
+    <button class="tb-btn" id="pvPdf"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Save as PDF</button>
+    <button class="tb-btn primary" id="pvPrint"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>
+  </div>
+  <div class="sheet-wrap"><div class="sheet" id="oSheet"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var TODAY_ISO = '2026-10-03';
+  var TODAY = new Date(TODAY_ISO + 'T00:00:00');
+  var EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  var TERMS = { receipt: 'Due on receipt', net15: 'Net 15', net30: 'Net 30', net60: 'Net 60' };
+  var TERMD = { receipt: 0, net15: 15, net30: 30, net60: 60 };
+  function $(id) { return document.getElementById(id); }
+  var toastEl = $('toast'), toastT;
+  function toast(m) { toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove('on'); }, 3400); }
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(s) { return Number(String(s == null ? 0 : s).replace(/,/g, '')) || 0; }
+  function dfmt(iso) { if (!iso) return '—'; var d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  function addDaysISO(iso, d) { var x = new Date(iso + 'T00:00:00'); x.setDate(x.getDate() + d); return x.toISOString().slice(0, 10); }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function localISO(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+  function initials(name) { return name.trim().split(/\s+/).map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase(); }
+  function emailOk(v) { return EMAIL_RE.test(String(v || '').trim()); }
+  var ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  var TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  function w3(n) { var s = ''; if (n >= 100) { s += ONES[Math.floor(n / 100)] + ' Hundred'; n %= 100; if (n) s += ' '; } if (n >= 20) { s += TENS[Math.floor(n / 10)]; if (n % 10) s += '-' + ONES[n % 10]; } else if (n > 0) s += ONES[n]; return s; }
+  function inWords(n) { n = Math.floor(Math.abs(n)); if (!n) return 'Zero'; var out = [], sc = [[1e6, 'Million'], [1e3, 'Thousand']]; sc.forEach(function (s) { var v = Math.floor(n / s[0]); if (v) { out.push(w3(v) + ' ' + s[1]); n %= s[0]; } }); if (n) out.push(w3(n)); return out.join(' '); }
+  var PILL = { draft: ['dr', 'Draft'], sent: ['se', 'Sent'], partial: ['pa', 'Partially paid'], paid: ['pd', 'Paid'], void: ['vo', 'Void'] };
+  var SVG_VIEW = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var SVG_PEN = '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>';
+  var SVG_SEND = '<svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>';
+  var SVG_PRINT = '<svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+  var SVG_PAY = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg>';
+  var SVG_POST = '<svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>';
+  var SVG_USER = '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  var SVG_X = '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+  var CLOSE_BTN = '<button class="btn btn-close btn-sm" data-close="viewScrim">' + SVG_X + 'Close</button>';
+
+  var CUSTOMERS = [
+    { code: 'CUS-0001', name: 'Chisomo Phiri', email: 'chisomo.phiri@customer.mw', phone: '+265 992 222 118', address: '14 Area 47, Lilongwe' },
+    { code: 'CUS-0002', name: 'Vera Mtombosola', email: 'vera.mtombosola@customer.mw', phone: '+265 991 111 001', address: 'Plot 22, Kanengo, Lilongwe' },
+    { code: 'CUS-0003', name: 'Joseph Kachale', email: 'joseph.kachale@customer.mw', phone: '+265 996 666 214', address: 'Chilomoni, Blantyre' },
+    { code: 'CUS-0004', name: 'Limbani Nyirenda', email: 'limbani.nyirenda@customer.mw', phone: '+265 993 333 097', address: 'Mzuzu Central' },
+    { code: 'CUS-0005', name: 'Mary Chilumpha', email: 'mary.chilumpha@customer.mw', phone: '+265 995 555 730', address: '33 Namiwaza, Zomba' },
+    { code: 'CUS-0006', name: 'Elvis Seyama', email: 'elvis.seyama@customer.mw', phone: '+265 994 444 852', address: 'Area 25, Lilongwe' }
+  ];
+  var QUOTES = [
+    { ref: 'QT-2026-0015', status: 'Accepted', cust: 'Chisomo Phiri', email: 'chisomo.phiri@customer.mw', phone: '+265 992 222 118', address: '14 Area 47, Lilongwe', terms: 'net30', valid: '2026-10-16', notes: 'Pricing holds for 14 days. Installation within 5 working days.', invoiced: '', lines: [{ code: 'ITM-1001', name: 'POS terminal bundle', desc: '', qty: 3, price: 9500 }, { code: 'SVC-011', name: 'Installation & training', desc: '', qty: 1, price: 4500 }, { code: 'ITM-2003', name: 'ERP licence seat', desc: '', qty: 4, price: 1750 }] },
+    { ref: 'QT-2026-0013', status: 'Accepted', cust: 'Mary Chilumpha', email: 'mary.chilumpha@customer.mw', phone: '+265 995 555 730', address: '33 Namiwaza, Zomba', terms: 'net60', valid: '2026-10-10', notes: 'Accepted verbally on 30 Sep.', invoiced: '', lines: [{ code: 'SVC-031', name: 'Cold-room maintenance', desc: '12 month contract', qty: 1, price: 60000 }, { code: 'ITM-3010', name: 'Compressor kit', desc: '', qty: 2, price: 10000 }, { code: 'ITM-3011', name: 'Sensor set', desc: '', qty: 1, price: 4500 }] },
+    { ref: 'QT-2026-0016', status: 'Sent', cust: 'Jane Mwale', email: 'jane.mwale@customer.mw', phone: '+265 997 777 010', address: 'Area 50, Lilongwe', terms: 'net15', valid: '2026-10-20', notes: 'Walk-in client — consultancy engagement.', invoiced: 'INV-2026-0143', lines: [{ code: 'SVC-060', name: 'Consultancy days', desc: 'Finance systems review', qty: 4, price: 3000 }] }
+  ];
+  var custSeq = 7, nextInv = 144, nextRC = 96, rowSeq = 8;
+
+  var IV = {
+    i7: { status: 'draft', cust: 'Jane Mwale', contact: 'Jane Mwale', email: 'jane.mwale@customer.mw', phone: '+265 997 777 010', address: 'Area 50, Lilongwe', terms: 'net15', source: 'QT-2026-0016', refNo: '', issue: '2026-10-01', due: '2026-10-16', sub: 15000, tax: 2475, lines: [['SVC-060 — Consultancy days (Finance systems review)', 4, '3,000.00', '12,000.00'], ['ITM-3050 — Training manuals', 6, '500.00', '3,000.00']], payments: [], notes: 'Draft prepared from the consultancy quotation — edit me to test the edit flow.' },
+    i1: { status: 'draft', cust: 'Chisomo Phiri', contact: 'Chisomo Phiri', email: 'chisomo.phiri@customer.mw', phone: '+265 992 222 118', address: '14 Area 47, Lilongwe', terms: 'net30', source: '', refNo: '', issue: '2026-10-02', due: '2026-10-16', sub: 40000, tax: 6600, lines: [['ITM-1001 — POS terminal bundle', 3, '9,500.00', '28,500.00'], ['SVC-011 — Installation & training', 1, '4,500.00', '4,500.00'], ['ITM-2003 — ERP licence seat', 4, '1,750.00', '7,000.00']], payments: [], notes: 'First invoice under the new framework agreement.' },
+    i2: { status: 'sent', cust: 'Vera Mtombosola', contact: 'Vera Mtombosola', email: 'vera.mtombosola@customer.mw', phone: '+265 991 111 001', address: 'Plot 22, Kanengo, Lilongwe', terms: 'net15', source: 'SO-2026-0020', refNo: 'PO-GB-118', issue: '2026-09-30', due: '2026-10-14', sub: 108000, tax: 17820, lines: [['ITM-2003 — ERP licence seat', 10, '9,800.00', '98,000.00'], ['SVC-020 — Data migration', 1, '10,000.00', '10,000.00']], payments: [], notes: 'Licence keys released on settlement.', emailed: 'vera.mtombosola@customer.mw', emailedAt: '2026-09-30' },
+    i3: { status: 'partial', cust: 'Mary Chilumpha', contact: 'Mary Chilumpha', email: 'mary.chilumpha@customer.mw', phone: '+265 995 555 730', address: '33 Namiwaza, Zomba', terms: 'net15', source: '', refNo: '', issue: '2026-09-26', due: '2026-10-10', sub: 70000, tax: 11550, lines: [['SVC-031 — Cold-room maintenance (12 mo)', 1, '60,000.00', '60,000.00'], ['ITM-3011 — Sensor set', 2, '5,000.00', '10,000.00']], payments: [{ date: '2026-09-30', method: 'Bank transfer', methodLabel: 'Bank transfer', ref: 'RC-2026-0091', amount: 50000, details: { bank: 'National Bank of Malawi', payer: 'Mary Chilumpha', txref: 'NBM-88213' } }], notes: 'Balance promised by 10 Oct.' },
+    i4: { status: 'paid', cust: 'Joseph Kachale', contact: 'Joseph Kachale', email: 'joseph.kachale@customer.mw', phone: '+265 996 666 214', address: 'Chilomoni, Blantyre', terms: 'net15', source: 'SO-2026-0018', refNo: '', issue: '2026-09-20', due: '2026-10-04', sub: 53000, tax: 8745, lines: [['SVC-041 — Van branding & fit-out', 1, '35,000.00', '35,000.00'], ['ITM-3020 — Shelving unit', 10, '1,800.00', '18,000.00']], payments: [{ date: '2026-09-22', method: 'Bank transfer', methodLabel: 'Bank transfer', ref: 'RC-2026-0084', amount: 30000, details: { bank: 'Standard Bank', payer: 'Joseph Kachale', txref: 'SB-40118' } }, { date: '2026-10-02', method: 'Mobile money', methodLabel: 'Mobile money', ref: 'RC-2026-0095', amount: 31745, details: { provider: 'Airtel Money', phone: '+265 996 666 214', accname: 'Joseph Kachale', txref: 'AM-771204' } }], notes: 'Settled in two instalments.', emailed: 'joseph.kachale@customer.mw', emailedAt: '2026-09-20' },
+    i5: { status: 'sent', cust: 'Elvis Seyama', contact: 'Elvis Seyama', email: 'elvis.seyama@customer.mw', phone: '+265 994 444 852', address: 'Area 25, Lilongwe', terms: 'net15', source: '', refNo: '', issue: '2026-09-01', due: '2026-09-15', sub: 18000, tax: 2970, lines: [['ITM-3040 — Stationery bundle', 36, '500.00', '18,000.00']], payments: [], notes: 'Two reminder emails sent — escalate to call.' },
+    i6: { status: 'partial', cust: 'Limbani Nyirenda', contact: 'Limbani Nyirenda', email: 'limbani.nyirenda@customer.mw', phone: '+265 993 333 097', address: 'Mzuzu Central', terms: 'net15', source: '', refNo: '', issue: '2026-08-25', due: '2026-09-09', sub: 28000, tax: 4620, lines: [['SVC-051 — Office refurb phase 1', 1, '28,000.00', '28,000.00']], payments: [{ date: '2026-09-05', method: 'Cash', methodLabel: 'Cash', ref: 'RC-2026-0078', amount: 10000, details: { teller: 'Elvis Seyama', till: 'Till 02 — Mzuzu' } }], notes: 'Payment plan under discussion.' }
+  };
+
+  var PYFIELDS = {
+    'Bank transfer': [
+      { k: 'bank', l: 'Bank', t: 'sel', opts: ['National Bank of Malawi', 'Standard Bank', 'Ecobank Malawi', 'FDH Bank'] },
+      { k: 'payer', l: 'Payer account name', t: 'in' },
+      { k: 'txref', l: 'Transaction reference', t: 'in' }
+    ],
+    'Mobile money': [
+      { k: 'provider', l: 'Service provider', t: 'sel', opts: ['Airtel Money', 'TNM Mpamba', 'Mo630 Wallet'] },
+      { k: 'phone', l: 'Phone number', t: 'in', req: true },
+      { k: 'accname', l: 'Account name', t: 'in' },
+      { k: 'txref', l: 'Transaction reference', t: 'in' }
+    ],
+    'Cash': [
+      { k: 'teller', l: 'Received by (teller)', t: 'in' },
+      { k: 'till', l: 'Cash drawer / till', t: 'in' }
+    ],
+    'Card': [
+      { k: 'card', l: 'Card type', t: 'sel', opts: ['Visa', 'Mastercard'] },
+      { k: 'last4', l: 'Card last 4 digits', t: 'in' },
+      { k: 'cardname', l: 'Name on card', t: 'in' },
+      { k: 'issbank', l: 'Issuing bank', t: 'in' }
+    ],
+    'Cheque': [
+      { k: 'bank', l: 'Drawn on bank', t: 'in', req: true },
+      { k: 'chq', l: 'Cheque number', t: 'in', req: true },
+      { k: 'chqdate', l: 'Cheque date', t: 'date' }
+    ]
+  };
+  var SPLIT_METHODS = ['Bank transfer', 'Mobile money', 'Cash', 'Card', 'Cheque'];
+
+  var state = { st: '', view: 'all', q: '', sort: 'new' };
+  var period = { from: null, to: null };
+  var viewingId = null, payId = null, okId = null, cbFn = null, editId = null, matchedCode = null, lineCount = 0;
+
+  function getRows() { return [].slice.call(document.querySelectorAll('#iBody tr.irow')); }
+  function rowOf(id) { return document.querySelector('#iBody tr[data-id="' + id + '"]'); }
+  function paidOf(iv) { return iv.payments.reduce(function (s, p) { return s + p.amount; }, 0); }
+  function balOf(iv) { return Number((iv.sub + iv.tax - paidOf(iv)).toFixed(2)); }
+  function isOverdue(tr) { var iv = IV[tr.dataset.id]; return (iv.status === 'sent' || iv.status === 'partial') && new Date(tr.dataset.due + 'T00:00:00') < TODAY; }
+  function dueChip(tr) {
+    var iv = IV[tr.dataset.id];
+    if (iv.status === 'paid') return '<span class="xc good">Settled</span>';
+    if (iv.status === 'void') return '<span class="xc ok">—</span>';
+    var d = Math.round((new Date(tr.dataset.due + 'T00:00:00') - TODAY) / 86400000);
+    if (d < 0) return '<span class="xc exp">' + Math.abs(d) + 'd over</span>';
+    if (d <= 7) return '<span class="xc soon">' + (d === 0 ? 'Today' : d + ' days') + '</span>';
+    return '<span class="xc ok">Current</span>';
+  }
+  function agingLabel(d) { return d < 0 ? Math.abs(d) + ' days over' : d === 0 ? 'Due today' : 'Due in ' + d + ' days'; }
+  function closeAllScrims() { document.querySelectorAll('.scrim.on').forEach(function (s) { s.classList.remove('on'); }); cbFn = null; }
+  function showSuccess(o) { okId = o.id; $('okTitle').textContent = o.title; $('okBody').innerHTML = o.body; $('okPrint').style.display = o.print ? '' : 'none'; $('okScrim').classList.add('on'); }
+  $('okView').addEventListener('click', function () { $('okScrim').classList.remove('on'); openView(okId); });
+  $('okPrint').addEventListener('click', function () { $('okScrim').classList.remove('on'); openPrintTab(okId); });
+
+  function toggleQuotePickers(show) {
+    $('ncPickQ').style.display = show ? '' : 'none';
+    $('ncFromQ').style.display = show ? '' : 'none';
+  }
+
+  function buildActions(tr) {
+    tr.querySelector('td.r').innerHTML = '<button class="ib" data-act="view" title="Open invoice workspace">' + SVG_VIEW + '</button>';
+  }
+  function invRowHTML(o) {
+    var iv = IV[o.id], paid = paidOf(iv), bal = balOf(iv);
+    var ov = (iv.status === 'sent' || iv.status === 'partial') && new Date(o.due + 'T00:00:00') < TODAY ? '<span class="xc exp">Overdue</span>' : '';
+    return '<tr class="irow" data-id="' + o.id + '" data-status="' + o.status + '" data-total="' + o.total + '" data-paid="' + paid + '" data-date="' + o.date + '" data-due="' + o.due + '" data-search="' + o.search + '">' +
+      '<td><span class="ino" data-act="view">' + o.ref + '</span></td>' +
+      '<td><span class="cust"><span class="av">' + initials(o.name) + '</span><span class="nm">' + o.name + '</span></span></td>' +
+      '<td style="white-space:nowrap">' + dfmt(o.date) + '</td>' +
+      '<td class="vd">' + dfmt(o.due) + dueChip({ dataset: { due: o.due, id: o.id } }) + '</td>' +
+      '<td class="tot">' + fmt(o.total) + '</td>' +
+      '<td class="tot dim">' + fmt(paid) + '</td>' +
+      '<td class="tot ' + (bal > 0 ? 'bal' : 'dim') + '">' + fmt(bal) + '</td>' +
+      '<td><span class="pill ' + PILL[o.status][0] + '"><i></i>' + PILL[o.status][1] + '</span>' + ov + '</td>' +
+      '<td class="r" style="white-space:nowrap"></td></tr>';
+  }
+  function replaceRow(id, o) { var tr = rowOf(id); tr.outerHTML = invRowHTML(o); buildActions(rowOf(id)); }
+  function insertRow(o) { var tmp = document.createElement('tbody'); tmp.innerHTML = invRowHTML(o); var tr = tmp.firstChild; $('iBody').insertBefore(tr, $('noRes')); buildActions(tr); }
+  function rowPayload(id, status) {
+    var tr = rowOf(id), iv = IV[id];
+    return { id: id, ref: tr.querySelector('.ino').textContent, name: tr.querySelector('.nm').textContent, date: iv.issue, due: iv.due, total: Number(tr.dataset.total), status: status, search: tr.dataset.search };
+  }
+
+  /* ---------- register + period filter ---------- */
+  function passes(tr) {
+    if (state.st === 'overdue') { if (!isOverdue(tr)) return false; }
+    else if (state.st && tr.dataset.status !== state.st) return false;
+    if (state.view === 'open' && !(tr.dataset.status === 'sent' || tr.dataset.status === 'partial')) return false;
+    if (state.view === 'draft' && tr.dataset.status !== 'draft') return false;
+    if (state.view === 'paid' && tr.dataset.status !== 'paid') return false;
+    if (state.view === 'overdue' && !isOverdue(tr)) return false;
+    if (period.from && tr.dataset.date < period.from) return false;
+    if (period.to && tr.dataset.date > period.to) return false;
+    if (state.q && tr.dataset.search.toLowerCase().indexOf(state.q) === -1) return false;
+    return true;
+  }
+  function sortRows(list) {
+    var k = state.sort;
+    return list.sort(function (a, b) {
+      if (k === 'new') return a.dataset.date < b.dataset.date ? 1 : -1;
+      if (k === 'old') return a.dataset.date > b.dataset.date ? 1 : -1;
+      if (k === 'high') return Number(b.dataset.total) - Number(a.dataset.total);
+      if (k === 'bal') return (balOf(IV[b.dataset.id]) - balOf(IV[a.dataset.id]));
+      if (k === 'due') return a.dataset.due < b.dataset.due ? -1 : 1;
+      return 0;
+    });
+  }
+  function apply() {
+    var body = $('iBody'), vis = sortRows(getRows().filter(passes));
+    getRows().forEach(function (tr) { tr.style.display = 'none'; });
+    vis.forEach(function (tr) { body.insertBefore(tr, $('noRes')); tr.style.display = ''; });
+    $('noRes').style.display = vis.length ? 'none' : '';
+    $('cnt').textContent = vis.length + ' invoice' + (vis.length === 1 ? '' : 's');
+    $('showing').textContent = 'Showing ' + vis.length + ' of ' + getRows().length + ' invoices';
+  }
+  function presetRange(v) {
+    var y = TODAY.getFullYear(), m = TODAY.getMonth();
+    if (v === 'm0') return [localISO(y, m, 1), localISO(y, m + 1, 0)];
+    if (v === 'm-1') return [localISO(y, m - 1, 1), localISO(y, m, 0)];
+    if (v === 'd30') return [addDaysISO(TODAY_ISO, -29), TODAY_ISO];
+    if (v === 'q0') { var qs = Math.floor(m / 3) * 3; return [localISO(y, qs, 1), localISO(y, qs + 3, 0)]; }
+    if (v === 'ytd') return [y + '-01-01', localISO(y, 11, 31)];
+    return null;
+  }
+  function updatePeriodUI() {
+    var active = !!period.from;
+    $('btnPeriod').classList.toggle('period-on', active || $('periodBar').style.display !== 'none');
+    $('pLabel').textContent = active ? dfmt(period.from) + ' → ' + dfmt(period.to) : 'No period filter';
+  }
+  function setPeriod(from, to) { period.from = from; period.to = to; updatePeriodUI(); apply(); }
+  $('btnPeriod').addEventListener('click', function () {
+    var bar = $('periodBar');
+    bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+    updatePeriodUI();
+  });
+  $('pPreset').addEventListener('change', function () {
+    var v = this.value;
+    if (v === 'custom') { $('pFrom').disabled = false; $('pTo').disabled = false; setPeriod($('pFrom').value || null, $('pTo').value || null); return; }
+    $('pFrom').disabled = true; $('pTo').disabled = true;
+    var r = presetRange(v);
+    if (!r) { $('pFrom').value = ''; $('pTo').value = ''; setPeriod(null, null); return; }
+    $('pFrom').value = r[0]; $('pTo').value = r[1];
+    setPeriod(r[0], r[1]);
+  });
+  ['pFrom', 'pTo'].forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      var f = $('pFrom').value, t = $('pTo').value;
+      if (f && t && f > t) { this.classList.add('bad'); toast('Period "from" must be on/before "to"'); return; }
+      $('pFrom').classList.remove('bad'); $('pTo').classList.remove('bad');
+      setPeriod(f || null, t || null);
+    });
+  });
+  $('pClear').addEventListener('click', function () {
+    $('pPreset').value = ''; $('pFrom').value = ''; $('pTo').value = '';
+    $('pFrom').disabled = true; $('pTo').disabled = true;
+    setPeriod(null, null);
+  });
+
+  function refresh() {
+    var rows = getRows(), c = { draft: 0, sent: 0, partial: 0, paid: 0, void: 0 }, ovN = 0;
+    var ar = 0, ovV = 0, coll = 0, receipts = 0, billed = 0, queue = [];
+    rows.forEach(function (tr) {
+      var iv = IV[tr.dataset.id], st = tr.dataset.status, bal = balOf(iv), paid = paidOf(iv);
+      c[st]++;
+      var od = isOverdue(tr);
+      if (od) ovN++;
+      if (st !== 'void' && st !== 'draft') { billed += iv.sub + iv.tax; coll += paid; }
+      if (st === 'sent' || st === 'partial') {
+        ar += bal;
+        if (od) ovV += bal;
+        var d = Math.round((new Date(tr.dataset.due + 'T00:00:00') - TODAY) / 86400000);
+        queue.push({ id: tr.dataset.id, ref: tr.querySelector('.ino').textContent, cust: tr.querySelector('.nm').textContent, bal: bal, d: d });
+      }
+      receipts += iv.payments.length;
+    });
+    document.querySelectorAll('.sv').forEach(function (el) {
+      var k = el.dataset.c;
+      el.textContent = k === '' ? rows.length : k === 'overdue' ? ovN : c[k];
+    });
+    document.querySelectorAll('.vc').forEach(function (el) {
+      var v = el.dataset.v;
+      el.textContent = v === 'all' ? rows.length : v === 'open' ? (c.sent + c.partial) : v === 'overdue' ? ovN : c[v];
+    });
+    $('kAR').textContent = 'K ' + fmt(ar); $('kARN').textContent = (c.sent + c.partial) + ' open invoices';
+    $('kOv').textContent = ovN; $('kOvN').textContent = 'K ' + fmt(ovV) + ' at risk'; $('kOvN').className = 'n ' + (ovN ? 'bad' : 'ok');
+    $('kRate').textContent = billed ? Math.round(coll / billed * 100) + '%' : '—';
+    $('kCol').textContent = 'K ' + fmt(coll); $('kColN').textContent = receipts + ' receipt' + (receipts === 1 ? '' : 's');
+    queue.sort(function (a, b) { return a.d - b.d; });
+    var rail = queue.filter(function (a) { return a.d <= 7; });
+    $('queue').innerHTML = rail.length ? rail.map(function (a) {
+      var chip = a.d < 0 ? '<span class="xc exp">' + Math.abs(a.d) + 'd over</span>' : '<span class="xc soon">' + (a.d === 0 ? 'Today' : a.d + 'd') + '</span>';
+      return '<button class="attn" data-open="' + a.id + '">' +
+        '<span class="arow"><span class="an">' + a.ref + '</span>' + chip + '</span>' +
+        '<span class="arow"><span class="as">' + a.cust + '</span><span class="ab">K ' + fmt(a.bal) + '</span></span>' +
+        '</button>';
+    }).join('') : '<div class="attn-empty">Nothing due in the next 7 days — collections healthy.</div>';
+    apply();
+    if (document.body.classList.contains('view-queue')) renderQueue();
+  }
+
+  $('q').addEventListener('input', function () { state.q = this.value.trim().toLowerCase(); apply(); });
+  $('sort').addEventListener('change', function () { state.sort = this.value; apply(); });
+  document.querySelectorAll('.stile').forEach(function (b) { b.addEventListener('click', function () { state.st = b.dataset.st; document.querySelectorAll('.stile').forEach(function (x) { x.classList.toggle('on', x === b); }); apply(); }); });
+  document.querySelectorAll('#views .vitem').forEach(function (b) { b.addEventListener('click', function () { state.view = b.dataset.view; document.querySelectorAll('#views .vitem').forEach(function (x) { x.classList.toggle('on', x === b); }); apply(); }); });
+  document.querySelectorAll('[data-rep]').forEach(function (b) { b.addEventListener('click', function () { toast('📊 ' + b.textContent.trim() + ' report queued'); }); });
+  $('btnExport').addEventListener('click', function () { toast('⤓ Invoice register export queued (CSV / PDF)'); });
+  $('queue').addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openView(b.dataset.open); });
+  $('queueAll').addEventListener('click', function () { showView('queue'); });
+  $('qBack').addEventListener('click', function () { showView('list'); });
+  $('qExport').addEventListener('click', function () { toast('⤓ Collections queue export queued (CSV)'); });
+
+  /* ---------- collections queue page ---------- */
+  function renderQueue() {
+    var items = [];
+    getRows().forEach(function (tr) {
+      var iv = IV[tr.dataset.id];
+      if (iv.status === 'sent' || iv.status === 'partial') {
+        var d = Math.round((new Date(tr.dataset.due + 'T00:00:00') - TODAY) / 86400000);
+        items.push({ id: tr.dataset.id, ref: tr.querySelector('.ino').textContent, iv: iv, d: d, bal: balOf(iv) });
+      }
+    });
+    items.sort(function (a, b) { return a.d - b.d; });
+    var ar = items.reduce(function (s, x) { return s + x.bal; }, 0);
+    var ovItems = items.filter(function (x) { return x.d < 0; });
+    var dueItems = items.filter(function (x) { return x.d >= 0 && x.d <= 7; });
+    $('qkAR').textContent = 'K ' + fmt(ar); $('qkARN').textContent = items.length + ' open invoice' + (items.length === 1 ? '' : 's');
+    $('qkOv').textContent = 'K ' + fmt(ovItems.reduce(function (s, x) { return s + x.bal; }, 0)); $('qkOvN').textContent = ovItems.length + ' overdue';
+    $('qkDue').textContent = 'K ' + fmt(dueItems.reduce(function (s, x) { return s + x.bal; }, 0)); $('qkDueN').textContent = dueItems.length + ' due ≤ 7 days';
+    var body = $('qTBody');
+    body.querySelectorAll('tr.irow').forEach(function (r) { r.remove(); });
+    items.forEach(function (x) {
+      var chip = x.d < 0 ? '<span class="xc exp">' + Math.abs(x.d) + 'd over</span>' : x.d <= 7 ? '<span class="xc soon">' + (x.d === 0 ? 'Today' : x.d + 'd') + '</span>' : '<span class="xc ok">Current</span>';
+      var tr = document.createElement('tr');
+      tr.className = 'irow'; tr.dataset.id = x.id;
+      tr.innerHTML = '<td><span class="ino" data-act="view">' + x.ref + '</span></td>' +
+        '<td><span class="cust"><span class="av">' + initials(x.iv.cust) + '</span><span class="nm">' + x.iv.cust + '</span></span></td>' +
+        '<td style="font-size:11.5px">' + x.iv.contact + '<br><span style="color:var(--faint);font-size:10px">' + x.iv.phone + '</span></td>' +
+        '<td class="vd">' + dfmt(x.iv.due) + '</td>' +
+        '<td>' + agingLabel(x.d) + chip + '</td>' +
+        '<td class="tot bal">' + fmt(x.bal) + '</td>' +
+        '<td><span class="pill ' + PILL[x.iv.status][0] + '"><i></i>' + PILL[x.iv.status][1] + '</span></td>' +
+        '<td class="r" style="white-space:nowrap"><button class="ib" data-act="view" title="Open invoice">' + SVG_VIEW + '</button><button class="ib payb" data-act="pay" title="Record payment">' + SVG_PAY + '</button></td>';
+      body.insertBefore(tr, $('qNoRes'));
+    });
+    $('qNoRes').style.display = items.length ? 'none' : '';
+    $('qShowing').textContent = items.length + ' invoice' + (items.length === 1 ? '' : 's') + ' in queue · K ' + fmt(ar) + ' outstanding';
+  }
+  $('qTBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (b) { act(b.dataset.act, b.closest('tr').dataset.id); return; }
+    var tr = e.target.closest('tr.irow');
+    if (tr) openView(tr.dataset.id);
+  });
+
+  /* ---------- confirm ---------- */
+  var ICONS = { primary: SVG_SEND, ok: '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>', danger: '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>' };
+  function ask(o) {
+    $('cbIc').className = 'cb-ic ' + o.tone; $('cbIc').innerHTML = ICONS[o.tone] || ICONS.primary;
+    $('cbTitle').textContent = o.title; $('cbMsg').innerHTML = o.msg;
+    var ok = $('cbOk'); ok.textContent = o.okLabel || 'Confirm';
+    ok.className = 'btn btn-sm ' + (o.tone === 'danger' ? 'btn-danger' : o.tone === 'ok' ? 'btn-green' : 'btn-cta');
+    cbFn = o.onOk; $('cfScrim').classList.add('on');
+  }
+  $('cbOk').addEventListener('click', function () { var f = cbFn; $('cfScrim').classList.remove('on'); cbFn = null; if (f) f(); });
+  function cbRow(l, v, cls) { return '<div class="cb-row"><span class="l">' + l + '</span><b class="' + (cls || '') + '">' + v + '</b></div>'; }
+
+  /* ---------- view modal ---------- */
+  function openView(id) {
+    var tr = rowOf(id); if (!tr) return;
+    var iv = IV[id], st = tr.dataset.status, paid = paidOf(iv), bal = balOf(iv);
+    viewingId = id;
+    $('vwRef').textContent = tr.querySelector('.ino').textContent;
+    $('vwCustH').innerHTML = SVG_USER + iv.cust;
+    var pl = PILL[st]; $('vwPill').className = 'pill ' + pl[0]; $('vwPill').innerHTML = '<i></i>' + pl[1];
+    var od = isOverdue(tr);
+    $('vwMeta').innerHTML = '<span class="mchip">Issued ' + dfmt(iv.issue) + '</span><span class="mchip">Due ' + dfmt(iv.due) + '</span>' + (od ? '<span class="mchip bad">Overdue</span>' : '') + (iv.source ? '<span class="mchip mono">From ' + iv.source + '</span>' : '') + (iv.emailed ? '<span class="mchip mono">Emailed ' + dfmt(iv.emailedAt) + '</span>' : '') + '<span class="mchip b">Balance K ' + fmt(bal) + '</span>';
+    $('vwTiles').innerHTML =
+      '<div class="mtile"><div class="l">Total (K)</div><div class="v">' + fmt(iv.sub + iv.tax) + '</div></div>' +
+      '<div class="mtile"><div class="l">Paid (K)</div><div class="v">' + fmt(paid) + '</div></div>' +
+      '<div class="mtile hero"><div class="l">Balance due (K)</div><div class="v">' + fmt(bal) + '</div></div>' +
+      '<div class="mtile' + (od ? ' warn' : '') + '"><div class="l">' + (od ? 'Days overdue' : 'Days to due') + '</div><div class="v">' + Math.abs(Math.round((new Date(iv.due + 'T00:00:00') - TODAY) / 86400000)) + '</div></div>';
+    $('vwCust').textContent = iv.cust; $('vwContact').textContent = iv.contact + ' · ' + iv.phone; $('vwEmail').textContent = iv.email || '—'; $('vwAddr').textContent = iv.address;
+    $('vwTerms').textContent = TERMS[iv.terms] + ' · ' + dfmt(iv.due); $('vwSource').textContent = iv.source || '—'; $('vwRefNo').textContent = iv.refNo || '—'; $('vwBy').textContent = 'Elvis Seyama';
+    $('vwNotes').textContent = iv.notes || '—';
+    $('vwLines').innerHTML = iv.lines.map(function (l) { return '<tr><td>' + l[0] + '</td><td class="r">' + l[1] + '</td><td class="r">' + l[2] + '</td><td class="r">' + l[3] + '</td></tr>'; }).join('');
+    $('vwPays').innerHTML = iv.payments.length ? iv.payments.map(function (p) { return '<tr><td>' + dfmt(p.date) + '</td><td>' + (p.methodLabel || p.method) + '</td><td class="mono">' + p.ref + '</td><td class="r">' + fmt(p.amount) + '</td></tr>'; }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--faint);font-weight:600;padding:14px">No payments recorded yet</td></tr>';
+    $('vwPayTot').textContent = fmt(paid); $('vwBalDue').textContent = fmt(bal);
+    document.querySelectorAll('#vwTabs .tab').forEach(function (t, i) { t.classList.toggle('on', i === 0); });
+    ['ov', 'li', 'py'].forEach(function (k, i) { $('pane-' + k).classList.toggle('on', i === 0); });
+    $('vwFoot').innerHTML = footHTML(id, iv, st) + CLOSE_BTN;
+    $('viewScrim').classList.add('on');
+  }
+  function footHTML(id, iv, st) {
+    var pay = '<button class="btn btn-green btn-sm" data-vact="pay">' + SVG_PAY + 'Record payment</button>';
+    var print = '<button class="btn btn-ghost btn-sm" data-vact="print">' + SVG_PRINT + 'Print / PDF</button>';
+    var send = '<button class="btn btn-ghost btn-sm" data-vact="send">' + SVG_SEND + 'Send to customer</button>';
+    if (st === 'draft') return '<span class="mnote">Draft — post to issue and start the payment clock.</span><button class="btn btn-ghost btn-sm" data-vact="edit">' + SVG_PEN + 'Edit invoice</button>' + print + '<button class="btn btn-danger-o btn-sm" data-vact="void">Void</button><button class="btn btn-cta btn-sm" data-vact="post">' + SVG_POST + 'Post invoice</button>';
+    if (st === 'sent') return '<span class="mspacer"></span>' + print + send + '<button class="btn btn-danger-o btn-sm" data-vact="void">Void</button>' + pay;
+    if (st === 'partial') return '<span class="mspacer"></span>' + print + send + pay;
+    if (st === 'paid') return '<span class="mnote">Settled in full — ' + iv.payments.length + ' receipt' + (iv.payments.length === 1 ? '' : 's') + ' recorded.</span>' + print + send;
+    return '<span class="mnote">Void — retained for audit only.</span>';
+  }
+  $('vwTabs').addEventListener('click', function (e) {
+    var t = e.target.closest('.tab'); if (!t) return;
+    document.querySelectorAll('#vwTabs .tab').forEach(function (x) { x.classList.toggle('on', x === t); });
+    ['ov', 'li', 'py'].forEach(function (k) { $('pane-' + k).classList.toggle('on', k === t.dataset.tab); });
+  });
+
+  /* ---------- post / void / send ---------- */
+  function postInvoice(id) {
+    var tr = rowOf(id), iv = IV[id], ref = tr.querySelector('.ino').textContent;
+    ask({ tone: 'primary', title: 'Post ' + ref + '?', msg: 'Issues the invoice to the customer ledger and starts the payment clock (due ' + dfmt(iv.due) + ').', okLabel: 'Post invoice', onOk: function () {
+      iv.status = 'sent';
+      replaceRow(id, rowPayload(id, 'sent')); refresh();
+      showSuccess({ id: id, title: 'Invoice posted', body: 'Invoice <span class="okref">' + ref + '</span> for <b>' + iv.cust + '</b> (K ' + fmt(iv.sub + iv.tax) + ') is now <b>Sent</b> and due ' + dfmt(iv.due) + '.<br>Record payments as they arrive.', print: true });
+    } });
+  }
+  function voidInvoice(id) {
+    var tr = rowOf(id), iv = IV[id], ref = tr.querySelector('.ino').textContent;
+    if (iv.payments.length) { toast('Cannot void an invoice with payments — issue a credit note'); return; }
+    ask({ tone: 'danger', title: 'Void ' + ref + '?', msg: 'Voids the invoice permanently. Void documents are retained for audit and excluded from AR.', okLabel: 'Void invoice', onOk: function () {
+      iv.status = 'void';
+      replaceRow(id, rowPayload(id, 'void')); refresh();
+      toast('⃠ ' + ref + ' voided');
+    } });
+  }
+  function sendInvoice(id) {
+    var tr = rowOf(id), iv = IV[id], ref = tr.querySelector('.ino').textContent;
+    if (iv.status === 'draft') { toast('Post the invoice before sending it'); return; }
+    if (!emailOk(iv.email)) { toast('Provide a valid customer email to send'); return; }
+    ask({ tone: 'primary', title: 'Email ' + ref + ' to ' + iv.email + '?', msg: 'Sends the tax invoice PDF' + (balOf(iv) === 0 ? ' and receipt pack' : '') + ' to the customer and records the dispatch.', okLabel: 'Send now', onOk: function () {
+      iv.emailed = iv.email; iv.emailedAt = TODAY_ISO;
+      toast('📨 ' + ref + ' emailed to ' + iv.email);
+      if ($('viewScrim').classList.contains('on') && viewingId === id) openView(id);
+    } });
+  }
+
+  /* ---------- payments ---------- */
+  function renderPyDetails() {
+    var m = $('pyMethod').value;
+    var wrap = $('pyDetails');
+    if (m === 'Split') {
+      $('pyDetailsTitle').style.display = 'none';
+      wrap.innerHTML = '';
+      $('pySplitWrap').style.display = '';
+      if (!$('pySplitBody').rows.length) { $('pySplitBody').innerHTML = splitRow() + splitRow(); }
+      updateSplitSum();
+      return;
+    }
+    $('pyDetailsTitle').style.display = '';
+    $('pyDetailsTitle').textContent = 'Method details — ' + m;
+    $('pySplitWrap').style.display = 'none';
+    var fs = PYFIELDS[m] || [];
+    wrap.innerHTML = fs.map(function (f) {
+      var ctl = f.t === 'sel'
+        ? '<select class="sel" id="pyd_' + f.k + '">' + f.opts.map(function (o) { return '<option>' + o + '</option>'; }).join('') + '</select>'
+        : f.t === 'date'
+          ? '<input class="in" type="date" id="pyd_' + f.k + '">'
+          : '<input class="in" id="pyd_' + f.k + '" placeholder="' + (f.req ? 'Required' : '—') + '">';
+      return '<div class="fld"><label>' + f.l + (f.req ? ' <b>*</b>' : '') + '</label>' + ctl + '</div>';
+    }).join('');
+  }
+  function splitRow(method, amount, ref) {
+    return '<tr><td><select class="lin" data-s="m">' + SPLIT_METHODS.map(function (m) { return '<option' + (m === method ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></td>' +
+      '<td><input class="lin num" data-s="a" type="number" min="0" step="0.01" value="' + (amount == null ? '' : amount) + '"></td>' +
+      '<td><input class="lin" data-s="r" value="' + (ref || '') + '" placeholder="Leg reference"></td>' +
+      '<td><button class="xb" type="button" title="Remove leg">' + SVG_X + '</button></td></tr>';
+  }
+  function splitLegs() {
+    var legs = [];
+    Array.prototype.forEach.call($('pySplitBody').rows, function (r) {
+      legs.push({ method: r.querySelector('[data-s="m"]').value, amount: num(r.querySelector('[data-s="a"]').value), ref: r.querySelector('[data-s="r"]').value.trim() });
+    });
+    return legs;
+  }
+  function updateSplitSum() {
+    var amt = num($('pyAmount').value);
+    var sum = splitLegs().reduce(function (s, l) { return s + l.amount; }, 0);
+    var el = $('pySplitSum');
+    var ok = Math.abs(sum - amt) < 0.005 && amt > 0;
+    el.className = 'splitsum ' + (ok ? 'ok' : 'bad');
+    el.textContent = 'Legs total K ' + fmt(sum) + ' of K ' + fmt(amt) + (ok ? ' ✓ tied' : ' — must equal payment amount');
+  }
+  function collectDetails(m) {
+    var d = {};
+    (PYFIELDS[m] || []).forEach(function (f) {
+      var el = $('pyd_' + f.k);
+      d[f.k] = el ? el.value.trim() : '';
+    });
+    return d;
+  }
+  function openPay(id) {
+    var tr = rowOf(id), iv = IV[id], bal = balOf(iv);
+    if (!(iv.status === 'sent' || iv.status === 'partial') || bal <= 0) { toast('No open balance to allocate'); return; }
+    closeAllScrims();
+    payId = id;
+    $('pyRef').textContent = tr.querySelector('.ino').textContent;
+    $('pyCustH').innerHTML = SVG_USER + iv.cust;
+    $('pyMeta').innerHTML = '<span class="mchip">Total K ' + fmt(iv.sub + iv.tax) + '</span><span class="mchip warn">Balance K ' + fmt(bal) + '</span><span class="mchip">Due ' + dfmt(iv.due) + '</span>';
+    $('pyDate').value = TODAY_ISO;
+    $('pyAmount').value = bal.toFixed(2);
+    $('pyAmount').max = bal;
+    $('pyReceipt').value = 'RC-2026-' + String(nextRC).padStart(4, '0');
+    $('pyNote').value = '';
+    $('pyMethod').value = 'Bank transfer';
+    $('pySplitBody').innerHTML = '';
+    renderPyDetails();
+    $('pyAfter').textContent = 'K 0.00';
+    $('payScrim').classList.add('on');
+  }
+  $('pyMethod').addEventListener('change', renderPyDetails);
+  $('pyAmount').addEventListener('input', function () {
+    var iv = IV[payId], bal = balOf(iv);
+    var v = Math.max(0, Math.min(bal, num(this.value)));
+    $('pyAfter').textContent = 'K ' + fmt(bal - v);
+    if ($('pyMethod').value === 'Split') updateSplitSum();
+  });
+  $('pySplitAdd').addEventListener('click', function () { $('pySplitBody').insertAdjacentHTML('beforeend', splitRow()); updateSplitSum(); });
+  $('pySplitBody').addEventListener('input', updateSplitSum);
+  $('pySplitBody').addEventListener('change', updateSplitSum);
+  $('pySplitBody').addEventListener('click', function (e) {
+    var x = e.target.closest('.xb'); if (!x) return;
+    if ($('pySplitBody').rows.length <= 2) { toast('A split payment needs at least two legs'); return; }
+    x.closest('tr').remove(); updateSplitSum();
+  });
+  $('pySave').addEventListener('click', function () {
+    var iv = IV[payId], tr = rowOf(payId), ref = tr.querySelector('.ino').textContent;
+    var bal = balOf(iv);
+    var amt = num($('pyAmount').value);
+    if (!(amt > 0)) { $('pyAmount').classList.add('bad'); toast('Enter a payment amount greater than zero'); return; }
+    if (amt > bal) { $('pyAmount').classList.add('bad'); toast('Payment cannot exceed the open balance (K ' + fmt(bal) + ')'); return; }
+    $('pyAmount').classList.remove('bad');
+    var m = $('pyMethod').value;
+    var details = {}, splits = null, methodLabel = m;
+    if (m === 'Split') {
+      splits = splitLegs().filter(function (l) { return l.amount > 0 || l.ref; });
+      if (splits.length < 2) { toast('A split payment needs at least two legs with amounts'); return; }
+      var sum = splits.reduce(function (s, l) { return s + l.amount; }, 0);
+      if (Math.abs(sum - amt) > 0.005) { toast('Split legs (K ' + fmt(sum) + ') must equal the payment amount (K ' + fmt(amt) + ')'); return; }
+      for (var i = 0; i < splits.length; i++) if (!(splits[i].amount > 0)) { toast('Every split leg needs an amount greater than zero'); return; }
+      methodLabel = 'Split · ' + splits.map(function (l) { return l.method; }).join(' + ');
+    } else {
+      details = collectDetails(m);
+      var missing = [];
+      (PYFIELDS[m] || []).forEach(function (f) { if (f.req && !details[f.k]) missing.push(f.l.toLowerCase()); });
+      if (missing.length) { toast('Complete: ' + missing.join(', ')); return; }
+    }
+    var p = { date: $('pyDate').value || TODAY_ISO, method: m, methodLabel: methodLabel, ref: $('pyReceipt').value, amount: amt, note: $('pyNote').value.trim(), details: details, splits: splits };
+    var settled = Number((bal - amt).toFixed(2)) <= 0;
+    var rowsHtml = cbRow('Receipt №', p.ref, 'mono') + cbRow('Payment date', dfmt(p.date)) + cbRow('Method', methodLabel) + cbRow('Payment amount', 'K ' + fmt(amt), 'green') + cbRow('Balance before', 'K ' + fmt(bal)) + cbRow('Balance after', 'K ' + fmt(bal - amt), settled ? 'green' : '');
+    if (splits) {
+      rowsHtml += splits.map(function (l) { return cbRow('Leg — ' + l.method, 'K ' + fmt(l.amount) + (l.ref ? ' · ' + l.ref : ''), 'mono'); }).join('');
+    } else {
+      (PYFIELDS[m] || []).forEach(function (f) { if (details[f.k]) rowsHtml += cbRow(f.l, details[f.k], f.k === 'txref' || f.k === 'chq' ? 'mono' : ''); });
+    }
+    if (p.note) rowsHtml += cbRow('Note', p.note);
+    ask({
+      tone: 'ok',
+      title: 'Confirm payment receipt',
+      okLabel: 'Confirm payment',
+      msg: 'Post this payment against <span class="okref">' + ref + '</span> (' + iv.cust + ')?<div class="cb-box">' + rowsHtml + '</div>' +
+        (settled ? '<div style="margin-top:10px;font-weight:700;color:var(--green)">This payment settles the invoice in full.</div>' : '<div style="margin-top:10px;font-weight:600;color:var(--amber-2)">Partial payment — invoice moves to Partially paid.</div>'),
+      onOk: function () { applyPayment(payId, p); }
+    });
+  });
+  function applyPayment(id, p) {
+    var iv = IV[id], tr = rowOf(id), ref = tr.querySelector('.ino').textContent;
+    iv.payments.push(p);
+    nextRC++;
+    var newBal = balOf(iv);
+    var settled = newBal <= 0;
+    iv.status = settled ? 'paid' : 'partial';
+    replaceRow(id, rowPayload(id, iv.status));
+    $('payScrim').classList.remove('on');
+    refresh();
+    if (settled) showSuccess({ id: id, title: 'Invoice settled in full', body: 'Invoice <span class="okref">' + ref + '</span> for <b>' + iv.cust + '</b> is fully paid via ' + p.ref + ' (' + p.methodLabel.toLowerCase() + ', K ' + fmt(p.amount) + ').<br>AR balance is now <b>K 0.00</b>.', print: true });
+    else toast('✓ ' + ref + ' payment recorded — balance K ' + fmt(newBal));
+  }
+
+  /* ---------- PRINT ---------- */
+  function cell(l, v, mono) { return '<div class="cell"><div class="l">' + l + '</div><div class="v' + (mono ? ' mono' : '') + '">' + v + '</div></div>'; }
+  function sheetBodyHTML(id) {
+    var tr = rowOf(id), iv = IV[id], st = iv.status, ref = tr.querySelector('.ino').textContent;
+    var total = iv.sub + iv.tax, paid = paidOf(iv), bal = balOf(iv);
+    var now = new Date();
+    var draft = st === 'draft';
+    var h = '<div class="wm"><span style="' + (draft ? '' : 'display:none') + '">Draft</span></div><div class="sheet-body">';
+    h += '<header class="v-head"><div class="brand"><div class="mark">A</div><div><div class="bn">ACME CORPORATION LTD</div><div class="bl">Head Office · P.O. Box 30456, Lilongwe<br>TIN 00412883 · VAT Reg. 412883-MW</div></div></div>' +
+      '<div class="docblock"><div class="dt">Tax Invoice</div><div class="dn">' + ref + '</div>' +
+      '<span class="dst' + (draft ? ' draftst' : st === 'paid' ? ' paidst' : '') + '"><i></i>' + (st === 'partial' ? 'Part paid' : PILL[st][1]) + '</span>' +
+      '<div class="dp">Printed ' + now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div></div></header>';
+    h += '<div class="meta">' +
+      cell('Bill to', iv.cust) + cell('Contact person', iv.contact) + cell('Email', iv.email, true) + cell('Phone', iv.phone) +
+      cell('Issue date', dfmt(iv.issue)) + cell('Due date', dfmt(iv.due)) + cell('Payment terms', TERMS[iv.terms]) + cell('Source', iv.source || '—', true) +
+      cell('Customer ref', iv.refNo || '—') + cell('Cost centre', iv.cc || 'CC-HO', true) + cell('Prepared by', 'Elvis Seyama') + cell('Balance due', 'K ' + fmt(bal), true) +
+      '</div>';
+    h += '<div class="vlines"><div class="lt">Billed items</div><table><thead><tr><th style="width:30px">#</th><th>Description</th><th class="r" style="width:60px">Qty</th><th class="r" style="width:110px">Unit price</th><th class="r" style="width:110px">Amount</th></tr></thead><tbody>';
+    h += iv.lines.map(function (l, i) { return '<tr><td class="no">' + (i + 1) + '</td><td>' + l[0] + '</td><td class="num">' + l[1] + '</td><td class="num">' + l[2] + '</td><td class="num">' + l[3] + '</td></tr>'; }).join('');
+    h += '<tr class="totals"><td></td><td style="font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--p-ink)">Totals</td><td></td><td class="num" style="font-size:11px">' + fmt(iv.sub) + '</td><td class="num" style="font-size:12.5px;font-weight:900">' + fmt(total) + '</td></tr>';
+    h += '<tr class="words"><td colspan="5"><span class="words-l">Amount in words</span><span class="words-v">Malawi Kwacha ' + inWords(Math.floor(total)) + ' only</span><span class="balnote">' + (bal > 0 ? 'BALANCE DUE K ' + fmt(bal) : 'PAID IN FULL') + '</span></td></tr>';
+    h += '</tbody></table></div>';
+    if (iv.payments.length) {
+      h += '<div class="paystrip"><div class="nh">Payments received</div><table><tbody>';
+      h += iv.payments.map(function (p) { return '<tr><td style="padding:7px 12px;font-size:10.5px;color:var(--p-sub)">' + dfmt(p.date) + '</td><td style="padding:7px 12px;font-size:10.5px;color:var(--p-sub)">' + (p.methodLabel || p.method) + '</td><td style="padding:7px 12px;font-size:10.5px;font-family:var(--mono);color:var(--p-accent);font-weight:800">' + p.ref + '</td><td style="padding:7px 12px;font-size:10.5px;text-align:right;font-weight:800;color:var(--p-ink)">' + fmt(p.amount) + '</td></tr>'; }).join('');
+      h += '<tr><td colspan="3" style="padding:7px 12px;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--p-muted)">Total received</td><td style="padding:7px 12px;font-size:10.5px;text-align:right;font-weight:900;color:var(--p-accent)">' + fmt(paid) + '</td></tr></tbody></table></div>';
+    }
+    h += '<div class="qpanels"><div class="narr"><div class="nh">Notes to customer</div><div class="nb">' + (iv.notes || '—') + '</div></div>' +
+      '<div class="narr"><div class="nh">Remittance information</div><div class="tlist">' +
+      '<div>Bank: National Bank of Malawi · Branch: Lilongwe Central.</div>' +
+      '<div>Account name: ACME Corporation Ltd · Account № 014228830041.</div>' +
+      '<div>Mobile money: +265 991 000 228 (ACME Collections).</div>' +
+      '<div>Quote invoice number ' + ref + ' as payment reference.</div>' +
+      '<div>Late payments attract 2% monthly interest per terms.</div>' +
+      '</div></div></div>';
+    h += '</div>';
+    h += '<div class="v-foot"><span class="fa">AUDIT · issued ' + dfmt(iv.issue) + ' · Elvis Seyama · status ' + PILL[st][1] + (iv.emailed ? ' · emailed ' + dfmt(iv.emailedAt) : '') + ' · receipts ' + iv.payments.length + '</span>' +
+      '<span class="fb">Computer-generated tax invoice — valid without signature</span><span class="fc">PAGE 1 OF 1</span></div>';
+    return h;
+  }
+  var PRINT_CSS = 'body{font-family:Inter,-apple-system,sans-serif;background:linear-gradient(180deg,#e6edec,#dde6e5);margin:0;color:#13292C;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.ptoolbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;padding:12px 22px;background:rgba(255,255,255,.96);border-bottom:1px solid #DCE7E5;flex-wrap:wrap}' +
+    '.tb-title{font-size:13px;font-weight:800}.tb-title span{font-family:monospace;font-size:11.5px;font-weight:800;color:#0E7473;background:rgba(14,116,115,.08);border:1px solid rgba(14,116,115,.22);padding:3px 8px;border-radius:7px;margin-left:8px}' +
+    '.tb-spacer{flex:1}.tb-btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 15px;border-radius:10px;border:1px solid #DCE7E5;background:#fff;font-size:12.5px;font-weight:700;color:#3E5658;cursor:pointer}.tb-btn.primary{background:linear-gradient(180deg,#149897,#128F8E);border-color:transparent;color:#fff}.tb-btn svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}' +
+    '.sheet-wrap{display:flex;justify-content:center;padding:34px 20px 60px}' +
+    '.sheet{position:relative;width:794px;min-height:1123px;background:#fff;border:1px solid #DCE7E5;box-shadow:0 2px 6px rgba(10,42,46,.08),0 30px 70px -30px rgba(10,42,46,.45);overflow:hidden;display:flex;flex-direction:column}' +
+    '.sheet::before{content:"";display:block;height:5px;flex:none;background:linear-gradient(90deg,#0E7473,#149897 55%,#7FD1C0)}' +
+    '.wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}.wm span{transform:rotate(-24deg);font-size:100px;font-weight:900;letter-spacing:.18em;color:rgba(14,116,115,.05);text-transform:uppercase}' +
+    '.sheet-body{flex:1 0 auto;display:flex;flex-direction:column;position:relative;z-index:1}' +
+    '.v-head{display:flex;justify-content:space-between;gap:24px;padding:26px 46px 20px;background:linear-gradient(180deg,#F0F5F5,#f7fbfa);border-bottom:1px solid #DCE7E5}' +
+    '.brand{display:flex;gap:13px}.brand .mark{width:42px;height:42px;border-radius:10px;background:linear-gradient(150deg,#0E7473,#0a5453);color:#fff;font-size:17px;font-weight:900;display:grid;place-items:center}' +
+    '.brand .bn{font-size:15.5px;font-weight:900}.brand .bl{font-size:10px;font-weight:600;color:#5F7476;line-height:1.55;margin-top:3px}' +
+    '.docblock{text-align:right}.docblock .dt{font-size:9.5px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#0E7473}.docblock .dn{font-family:monospace;font-size:19px;font-weight:800;margin-top:4px}' +
+    '.docblock .dst{display:inline-flex;align-items:center;gap:6px;margin-top:7px;padding:4px 11px;border-radius:999px;background:rgba(14,116,115,.10);border:1px solid rgba(14,116,115,.35);color:#0E7473;font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.docblock .dst i{width:5px;height:5px;border-radius:50%;background:#0E7473}' +
+    '.docblock .dst.draftst{background:rgba(138,163,162,.14);border-color:rgba(138,163,162,.4);color:#5F7476}.docblock .dst.draftst i{background:#5F7476}.docblock .dst.paidst{background:rgba(21,128,61,.10);border-color:rgba(21,128,61,.35);color:#15803d}.docblock .dst.paidst i{background:#15803d}' +
+    '.docblock .dp{font-size:9.5px;font-weight:600;color:#8AA3A2;margin-top:6px}' +
+    '.meta{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #DCE7E5}.meta .cell{padding:10px 16px;border-left:1px solid #E7EFED}.meta .cell:first-child{border-left:none}.meta .cell:nth-child(n+5){border-top:1px solid #E7EFED}' +
+    '.meta .l{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8AA3A2}.meta .v{font-size:11px;font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta .v.mono{font-family:monospace;font-size:10.5px;color:#0E7473}' +
+    '.vlines{padding:20px 46px 0}.vlines .lt{font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#5F7476;margin-bottom:9px}' +
+    '.sheet table{width:100%;border-collapse:collapse}.sheet thead th{background:#0E7473;color:#fff;font-size:8.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:8px 12px;text-align:left}.sheet thead th.r{text-align:right}.sheet thead th:first-child{border-radius:6px 0 0 6px}.sheet thead th:last-child{border-radius:0 6px 6px 0}' +
+    '.sheet tbody td{padding:9px 12px;border-bottom:1px solid #E7EFED;font-size:11px;color:#3E5658;vertical-align:top}.sheet tbody td.no{width:30px;color:#8AA3A2;font-weight:700}.sheet tbody td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:#13292C;white-space:nowrap}' +
+    '.sheet tr.totals td{border-bottom:none;border-top:3px double #13292C;padding:10px 12px;background:#F0F5F5}.sheet tr.words td{padding:9px 12px;border-bottom:1px solid #DCE7E5;background:#fbfdfc}' +
+    '.words-l{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8AA3A2;margin-right:8px}.words-v{font-size:11px;font-weight:700;color:#3E5658;font-style:italic}.balnote{float:right;font-size:9.5px;font-weight:800;color:#0E7473;letter-spacing:.06em}' +
+    '.paystrip{margin:16px 46px 0;border:1px solid #DCE7E5;border-radius:6px;overflow:hidden}.paystrip .nh{padding:7px 12px;background:#F0F5F5;border-bottom:1px solid #E7EFED;font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#5F7476}.paystrip table td{border-bottom:1px solid #E7EFED}.paystrip table tr:last-child td{border-bottom:none}' +
+    '.qpanels{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;margin:16px 46px 0}.narr{border:1px solid #DCE7E5;border-radius:6px;overflow:hidden}.narr .nh{padding:7px 12px;background:#F0F5F5;border-bottom:1px solid #E7EFED;font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#5F7476}.narr .nb{padding:10px 12px;font-size:10.5px;font-weight:500;color:#3E5658;line-height:1.6}' +
+    '.tlist{padding:10px 12px;display:flex;flex-direction:column;gap:6px}.tlist div{font-size:9.5px;font-weight:600;color:#3E5658;line-height:1.5;padding-left:12px;position:relative}.tlist div::before{content:"";position:absolute;left:0;top:5px;width:5px;height:5px;border-radius:50%;background:#0E7473;opacity:.55}' +
+    '.v-foot{margin-top:auto;padding:12px 46px;border-top:1px solid #DCE7E5;background:#fbfdfc;display:flex;justify-content:space-between;gap:16px;position:relative;z-index:1}.v-foot .fa{font-family:monospace;font-size:8.5px;font-weight:600;color:#8AA3A2}.v-foot .fb{font-size:8.5px;font-weight:600;color:#8AA3A2;text-align:center;flex:1}.v-foot .fc{font-size:9px;font-weight:800;color:#5F7476;letter-spacing:.08em;white-space:nowrap}' +
+    '@page{size:A4;margin:10mm}@media print{.ptoolbar{display:none!important}body{background:#fff}.sheet-wrap{padding:0;display:block}.sheet{width:auto;min-height:277mm;border:none;box-shadow:none}}';
+  function openPrintTab(id) {
+    var tr = rowOf(id); if (!tr) return;
+    var ref = tr.querySelector('.ino').textContent;
+    var doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Tax Invoice ' + ref + '</title><style>' + PRINT_CSS + '</style></head><body>' +
+      '<div class="ptoolbar"><span class="tb-title">Tax Invoice <span>' + ref + '</span></span><span class="tb-spacer"></span>' +
+      '<button class="tb-btn" id="tPdf"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Save as PDF</button>' +
+      '<button class="tb-btn primary" id="tPrint"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>' +
+      '<button class="tb-btn" id="tClose">Close tab</button></div>' +
+      '<div class="sheet-wrap"><div class="sheet">' + sheetBodyHTML(id) + '</div></div>' +
+      '<scr' + 'ipt>document.getElementById("tPrint").onclick=function(){window.print()};document.getElementById("tPdf").onclick=function(){window.print()};document.getElementById("tClose").onclick=function(){window.close()};</scr' + 'ipt>' +
+      '</body></html>';
+    var w = window.open('', '_blank');
+    if (w) {
+      w.document.open(); w.document.write(doc); w.document.close();
+      toast('🖨 Tax invoice ' + ref + ' opened in a new tab');
+    } else {
+      $('oSheet').innerHTML = sheetBodyHTML(id);
+      $('pvRef').textContent = ref;
+      $('printView').classList.add('on'); $('printView').setAttribute('aria-hidden', 'false');
+      document.body.classList.add('pv-on'); $('printView').scrollTop = 0;
+      toast('Popup blocked — showing in-app preview instead');
+    }
+  }
+  function closePreview() { $('printView').classList.remove('on'); $('printView').setAttribute('aria-hidden', 'true'); document.body.classList.remove('pv-on'); }
+  function safePrint() {
+    document.body.classList.add('pv-on'); $('printView').classList.add('on');
+    if (typeof window.print !== 'function') { toast('Print is unavailable in this environment — use Save as PDF'); return; }
+    try { window.print(); } catch (e) { toast('Print is unavailable — use Save as PDF'); }
+  }
+  $('pvBack').addEventListener('click', closePreview);
+  $('pvPrint').addEventListener('click', function () { toast('🖨 Print dialog opened — choose your printer'); safePrint(); });
+  $('pvPdf').addEventListener('click', function () { toast('🧾 Print dialog opened — set destination to “Save as PDF”'); safePrint(); });
+
+  /* ---------- quotation picker ---------- */
+  function renderQuoteList() {
+    var term = ($('qqSearch').value || '').trim().toLowerCase();
+    var avail = QUOTES.filter(function (q) { return !q.invoiced; });
+    if (term) {
+      avail = avail.filter(function (q) {
+        var hay = (q.ref + ' ' + q.cust + ' ' + q.status + ' ' + q.lines.map(function (l) { return l.code + ' ' + l.name + ' ' + l.desc; }).join(' ')).toLowerCase();
+        return hay.indexOf(term) > -1;
+      });
+    }
+    $('quoteList').innerHTML = avail.length ? avail.map(function (q) {
+      var total = q.lines.reduce(function (s, l) { return s + l.qty * l.price; }, 0) * 1.165;
+      return '<div class="qcard"><div style="min-width:0"><span class="qr">' + q.ref + '</span> <span class="pill ' + (q.status === 'Accepted' ? 'pd' : 'se') + '" style="margin-left:6px"><i></i>' + q.status + '</span>' +
+        '<div class="qc">' + q.cust + '</div>' +
+        '<div class="qs">K ' + fmt(total) + ' · ' + q.lines.length + ' line' + (q.lines.length === 1 ? '' : 's') + ' · valid until ' + dfmt(q.valid) + '</div></div>' +
+        '<button class="btn btn-cta btn-sm" data-qref="' + q.ref + '">Use</button></div>';
+    }).join('') : '<div class="empty" style="padding:26px 10px"><div class="t">' + (term ? 'No quotations match "' + term + '"' : 'No uninvoiced quotations') + '</div><div class="s">' + (term ? 'Clear the search to see all uninvoiced quotations.' : 'Accepted or sent quotations appear here for one-click conversion.') + '</div></div>';
+  }
+  function openQuotePicker() { $('qqSearch').value = ''; renderQuoteList(); $('quoteScrim').classList.add('on'); }
+  $('qqSearch').addEventListener('input', renderQuoteList);
+  $('ncPickQ').addEventListener('click', openQuotePicker);
+  $('ncFromQ').addEventListener('click', function () {
+    if (!document.body.classList.contains('view-create')) { editId = null; $('cvTitle').textContent = 'Create Invoice'; showView('create'); toggleQuotePickers(true); }
+    openQuotePicker();
+  });
+  $('quoteList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-qref]'); if (!b) return;
+    var q = QUOTES.filter(function (x) { return x.ref === b.dataset.qref && !x.invoiced; })[0];
+    if (!q) return;
+    loadQuotation(q);
+    $('quoteScrim').classList.remove('on');
+  });
+  function loadQuotation(q) {
+    editId = null; $('cvTitle').textContent = 'Create Invoice';
+    toggleQuotePickers(true);
+    var reg = CUSTOMERS.filter(function (c) { return c.name === q.cust; })[0];
+    if (reg) {
+      $('ncMode').value = 'existing'; $('ncMode').dispatchEvent(new Event('change'));
+      $('ncSearch').value = q.cust; matchedCode = reg.code; setLock(true);
+      $('ncContact').value = q.cust; $('ncEmail').value = q.email; $('ncPhone').value = q.phone; $('ncAddress').value = q.address;
+    } else {
+      $('ncMode').value = 'walkin'; $('ncMode').dispatchEvent(new Event('change'));
+      $('ncName').value = q.cust; $('ncContact').value = q.cust; $('ncEmail').value = q.email; $('ncPhone').value = q.phone; $('ncAddress').value = q.address;
+    }
+    $('ncTerms').value = q.terms;
+    $('ncSource').value = q.ref;
+    $('ncNotesC').value = q.notes || '';
+    $('ncDate').value = TODAY_ISO; syncDue();
+    $('ncLines').innerHTML = q.lines.map(function (l) { return ncLineRow(l.code, l.name, l.desc, l.qty, l.price); }).join('');
+    ncRecompute(); ncSummary();
+    toast('⇄ ' + q.ref + ' loaded — customer, terms and ' + q.lines.length + ' line' + (q.lines.length === 1 ? '' : 's') + ' prefilled');
+  }
+
+  /* ---------- lifecycle ---------- */
+  function act(a, id) {
+    var tr = rowOf(id); if (!tr) return;
+    var ref = tr.querySelector('.ino').textContent;
+    if (a === 'view') { openView(id); return; }
+    if (a === 'pay') { openPay(id); return; }
+    if (a === 'print') { openPrintTab(id); return; }
+    if (a === 'send') { sendInvoice(id); return; }
+    if (a === 'post') { postInvoice(id); return; }
+    if (a === 'void') { voidInvoice(id); return; }
+    if (a === 'edit') {
+      if (tr.dataset.status !== 'draft') { toast('🔒 ' + ref + ' is posted — only drafts can be edited'); return; }
+      $('viewScrim').classList.remove('on');
+      openEditInvoice(id);
+      return;
+    }
+  }
+  $('iBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (b) { if (!b.disabled) act(b.dataset.act, b.closest('tr').dataset.id); return; }
+    var tr = e.target.closest('tr.irow');
+    if (tr) act('view', tr.dataset.id);
+  });
+  $('vwFoot').addEventListener('click', function (e) { var b = e.target.closest('[data-vact]'); if (!b) return; act(b.dataset.vact, viewingId); });
+
+  /* ---------- create / edit ---------- */
+  function showView(v) {
+    document.body.classList.toggle('view-create', v === 'create');
+    document.body.classList.toggle('view-queue', v === 'queue');
+    window.scrollTo(0, 0);
+    if (v === 'create') initCreate();
+    if (v === 'queue') renderQueue();
+  }
+  function fillCustDatalist() { $('custList').innerHTML = CUSTOMERS.map(function (c) { return '<option value="' + c.name + '">' + c.code + '</option>'; }).join(''); }
+  function setLock(lock) { ['ncContact', 'ncEmail', 'ncPhone', 'ncAddress'].forEach(function (id) { var el = $(id); el.readOnly = lock; el.classList.toggle('ro', lock); }); }
+  function syncDue() { $('ncDue').value = addDaysISO($('ncDate').value || TODAY_ISO, TERMD[$('ncTerms').value]); }
+  function updateBtns() {
+    var walkin = $('ncMode').value === 'walkin';
+    var nameOk = walkin ? $('ncName').value.trim() !== '' : !!matchedCode;
+    var dueOk = $('ncDue').value !== '' && $('ncDate').value !== '' && $('ncDue').value >= $('ncDate').value;
+    var linesOk = lineCount > 0;
+    var missing = [];
+    if (!nameOk) missing.push(walkin ? 'customer name' : 'customer (pick from registry)');
+    if (!dueOk) missing.push('valid due date');
+    if (!linesOk) missing.push('1 complete line (code·name·qty·price)');
+    var ready = missing.length === 0;
+    $('ncPost').disabled = !ready;
+    $('ncDraft').disabled = !(nameOk && linesOk);
+    var g = $('nsGate');
+    g.textContent = ready ? 'Ready ✓' : 'Missing: ' + missing.join(', ');
+    g.className = ready ? 'gate-ok' : 'gate-no';
+    $('ncPost').title = ready ? 'Post this invoice to the customer ledger' : 'Still required — ' + missing.join('; ');
+  }
+  function ncLineRow(code, name, desc, q, p) {
+    return '<tr><td><input class="lin" data-f="code" value="' + (code || '') + '" placeholder="Code"></td>' +
+      '<td><input class="lin" data-f="name" value="' + String(name || '').replace(/"/g, '&quot;') + '" placeholder="Item name"></td>' +
+      '<td><input class="lin" data-f="desc" value="' + String(desc || '').replace(/"/g, '&quot;') + '" placeholder="Optional"></td>' +
+      '<td><input class="lin num" data-f="q" type="number" min="0" step="1" value="' + (q == null ? 1 : q) + '"></td>' +
+      '<td><input class="lin num" data-f="p" type="number" min="0" step="0.01" value="' + (p || 0) + '"></td>' +
+      '<td class="amtcell ramt">0.00</td>' +
+      '<td><button class="xb" type="button" title="Remove line">' + SVG_X + '</button></td></tr>';
+  }
+  function lineValid(r, amt) {
+    return r.querySelector('[data-f="code"]').value.trim() !== '' && r.querySelector('[data-f="name"]').value.trim() !== '' && num(r.querySelector('[data-f="q"]').value) > 0 && num(r.querySelector('[data-f="p"]').value) > 0 && amt > 0;
+  }
+  function ncRecompute() {
+    var sub = 0, n = 0;
+    Array.prototype.forEach.call($('ncLines').rows, function (r) {
+      var q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value);
+      var amt = q * p; sub += amt;
+      var ok = lineValid(r, amt); if (ok) n++;
+      r.querySelector('.ramt').innerHTML = fmt(amt) + (ok ? '<span class="lok">✓</span>' : '');
+    });
+    lineCount = n;
+    var tax = sub * 0.165;
+    $('nsSub').textContent = fmt(sub); $('nsTax').textContent = fmt(tax); $('nsGrand').textContent = 'K ' + fmt(sub + tax);
+    $('nsLines').textContent = n ? n + ' complete line' + (n === 1 ? '' : 's') : 'No complete lines yet';
+    updateBtns();
+    return { sub: sub, tax: tax, total: sub + tax };
+  }
+  function ncSummary() {
+    var walkin = $('ncMode').value === 'walkin';
+    $('nsCust').textContent = walkin ? ($('ncName').value.trim() || '—') : ($('ncSearch').value.trim() || '—');
+    $('nsDate').textContent = dfmt($('ncDate').value);
+    $('nsDue').textContent = dfmt($('ncDue').value);
+    updateBtns();
+  }
+  function initCreate() {
+    if (initCreate.done) return; initCreate.done = true;
+    $('ncDate').value = TODAY_ISO;
+    syncDue();
+    $('ncLines').innerHTML = ncLineRow();
+    fillCustDatalist();
+    ncRecompute(); ncSummary();
+  }
+  $('btnNew').addEventListener('click', function () { editId = null; $('cvTitle').textContent = 'Create Invoice'; toggleQuotePickers(true); showView('create'); });
+  $('qnavList').addEventListener('click', function () { showView('list'); });
+  $('qnavOrders').addEventListener('click', function () { toast('⇄ Sales Orders module'); });
+  $('qnavCust').addEventListener('click', function () { toast('⇄ Customers module'); });
+  $('ncCancel').addEventListener('click', function () { showView('list'); });
+  $('ncMode').addEventListener('change', function () {
+    var w = this.value === 'walkin';
+    $('ncSearchWrap').style.display = w ? 'none' : '';
+    $('ncNameWrap').style.display = w ? '' : 'none';
+    $('ncSaveNote').classList.toggle('on', w);
+    if (w) { setLock(false); matchedCode = null; } else { $('ncName').value = ''; setLock(!!matchedCode); }
+    ncSummary();
+  });
+  $('ncSearch').addEventListener('input', function () {
+    var v = this.value.trim().toLowerCase(); matchedCode = null;
+    if (v) {
+      var c = CUSTOMERS.filter(function (x) { return x.name.toLowerCase().indexOf(v) > -1 || x.code.toLowerCase().indexOf(v) > -1; })[0];
+      if (c) { matchedCode = c.code; $('ncContact').value = c.name; $('ncEmail').value = c.email; $('ncPhone').value = c.phone; $('ncAddress').value = c.address; }
+    }
+    setLock(!!matchedCode && $('ncMode').value === 'existing');
+    ncSummary();
+  });
+  ['ncName', 'ncContact', 'ncAddress'].forEach(function (id) { $(id).addEventListener('input', ncSummary); });
+  $('ncDate').addEventListener('change', function () { syncDue(); ncSummary(); });
+  $('ncDue').addEventListener('change', ncSummary);
+  $('ncTerms').addEventListener('change', function () { syncDue(); ncSummary(); });
+  $('ncAdd').addEventListener('click', function () { $('ncLines').insertAdjacentHTML('beforeend', ncLineRow()); ncRecompute(); });
+  $('ncLines').addEventListener('input', function (e) { if (e.target.classList.contains('lin')) ncRecompute(); });
+  $('ncLines').addEventListener('click', function (e) {
+    var x = e.target.closest('.xb'); if (!x) return;
+    if ($('ncLines').rows.length <= 1) { toast('An invoice needs at least one line'); return; }
+    x.closest('tr').remove(); ncRecompute();
+  });
+
+  function collectLines() {
+    var lines = [], sub = 0;
+    Array.prototype.forEach.call($('ncLines').rows, function (r) {
+      var code = r.querySelector('[data-f="code"]').value.trim();
+      var nm = r.querySelector('[data-f="name"]').value.trim();
+      var ds = r.querySelector('[data-f="desc"]').value.trim();
+      var q = num(r.querySelector('[data-f="q"]').value), p = num(r.querySelector('[data-f="p"]').value);
+      if (code && nm && q > 0 && p > 0) { lines.push([code + ' — ' + nm + (ds ? ' (' + ds + ')' : ''), q, fmt(p), fmt(q * p)]); sub += q * p; }
+    });
+    return { lines: lines, sub: sub };
+  }
+  function validateInvoice(post) {
+    var walkin = $('ncMode').value === 'walkin';
+    var name = walkin ? $('ncName').value.trim() : $('ncSearch').value.trim();
+    if (!name) { (walkin ? $('ncName') : $('ncSearch')).classList.add('bad'); toast(walkin ? 'Customer name is required' : 'Select a customer from the registry'); return null; }
+    (walkin ? $('ncName') : $('ncSearch')).classList.remove('bad');
+    if (!walkin && !matchedCode) { $('ncSearch').classList.add('bad'); toast('Pick a matching customer from the list'); return null; }
+    $('ncSearch').classList.remove('bad');
+    var c = collectLines();
+    if (!c.lines.length) { toast('Add at least one complete line (code, item name, qty, unit price)'); return null; }
+    if (!$('ncDue').value || $('ncDue').value < $('ncDate').value) { $('ncDue').classList.add('bad'); toast('Due date must be on/after the issue date'); return null; }
+    $('ncDue').classList.remove('bad');
+    return {
+      walkin: walkin, name: name,
+      contact: $('ncContact').value.trim(), email: $('ncEmail').value.trim(), phone: $('ncPhone').value.trim(), address: $('ncAddress').value.trim(),
+      terms: $('ncTerms').value, source: $('ncSource').value.trim(), refNo: $('ncRef').value.trim(),
+      date: $('ncDate').value, due: $('ncDue').value, cc: $('ncCC').value,
+      lines: c.lines, sub: c.sub, tax: c.sub * 0.165, total: c.sub * 1.165,
+      notesC: $('ncNotesC').value.trim(), notesI: $('ncNotesI').value.trim(), post: post
+    };
+  }
+  function commitInvoice(d) {
+    var savedCode = '';
+    if (d.walkin) { savedCode = 'CUS-' + String(custSeq++).padStart(4, '0'); CUSTOMERS.push({ code: savedCode, name: d.name, email: d.email, phone: d.phone, address: d.address }); fillCustDatalist(); }
+    else savedCode = matchedCode;
+    var st = d.post ? 'sent' : 'draft';
+    var ref, id;
+    if (editId) {
+      id = editId; ref = rowOf(id).querySelector('.ino').textContent;
+      var iv = IV[id];
+      iv.cust = d.name; iv.contact = d.contact || d.name; iv.email = d.email; iv.phone = d.phone; iv.address = d.address;
+      iv.terms = d.terms; iv.source = d.source; iv.refNo = d.refNo;
+      iv.issue = d.date; iv.due = d.due; iv.cc = d.cc;
+      iv.lines = d.lines; iv.sub = d.sub; iv.tax = d.tax; iv.notes = d.notesC; iv.internal = d.notesI;
+      iv.status = st;
+      var p = rowPayload(id, st);
+      p.total = d.total; p.search = (d.name + ' ' + ref + ' ' + d.source).toLowerCase();
+      replaceRow(id, p);
+    } else {
+      ref = 'INV-2026-' + String(nextInv++).padStart(4, '0');
+      id = 'i' + (rowSeq++);
+      IV[id] = { status: st, cust: d.name, contact: d.contact || d.name, email: d.email, phone: d.phone, address: d.address || '—', terms: d.terms, source: d.source, refNo: d.refNo, issue: d.date, due: d.due, cc: d.cc, sub: d.sub, tax: d.tax, lines: d.lines, payments: [], notes: d.notesC, internal: d.notesI };
+      insertRow({ id: id, ref: ref, name: d.name, date: d.date, due: d.due, total: d.total, status: st, search: (d.name + ' ' + ref + ' ' + d.source).toLowerCase() });
+      if (d.post && emailOk(d.email)) { IV[id].emailed = d.email; IV[id].emailedAt = TODAY_ISO; }
+    }
+    if (d.source) { var q = QUOTES.filter(function (x) { return x.ref === d.source; })[0]; if (q) q.invoiced = ref; }
+    editId = null; matchedCode = null;
+    $('ncSearch').value = ''; $('ncName').value = ''; $('ncContact').value = ''; $('ncEmail').value = ''; $('ncPhone').value = ''; $('ncAddress').value = '';
+    $('ncSource').value = ''; $('ncRef').value = ''; $('ncNotesC').value = ''; $('ncNotesI').value = '';
+    $('ncMode').value = 'existing'; $('ncMode').dispatchEvent(new Event('change'));
+    $('ncLines').innerHTML = ncLineRow(); $('ncDate').value = TODAY_ISO; syncDue();
+    setLock(false); ncRecompute(); ncSummary();
+    showView('list'); refresh();
+    if (d.post) showSuccess({ id: id, title: 'Invoice posted', body: 'Invoice <span class="okref">' + ref + '</span> for <b>' + d.name + '</b> (K ' + fmt(d.total) + ') is now <b>Sent</b> and due ' + dfmt(d.due) + '.' + (d.source ? '<br>Converted from <span class="okref">' + d.source + '</span>.' : '') + (emailOk(d.email) ? '<br>Acknowledgement emailed to <b>' + d.email + '</b>.' : ''), print: true });
+    else toast('✓ ' + ref + ' saved as draft · ' + d.name + (d.walkin ? ' · new customer saved (' + savedCode + ')' : ''));
+    return true;
+  }
+  $('ncDraft').addEventListener('click', function () { var d = validateInvoice(false); if (d) commitInvoice(d); });
+  $('ncPost').addEventListener('click', function () {
+    var d = validateInvoice(true);
+    if (!d) return;
+    ask({
+      tone: 'primary',
+      title: 'Post invoice to the ledger?',
+      okLabel: 'Post invoice',
+      msg: 'Review the invoice before posting — posting issues it to the customer ledger and starts the payment clock.' +
+        '<div class="cb-box">' +
+        cbRow('Customer', d.name) +
+        cbRow('Issue date', dfmt(d.date)) +
+        cbRow('Due date', dfmt(d.due) + ' · ' + TERMS[d.terms]) +
+        cbRow('Lines', d.lines.length + ' complete line' + (d.lines.length === 1 ? '' : 's')) +
+        cbRow('Subtotal', 'K ' + fmt(d.sub)) +
+        cbRow('Tax (16.5%)', 'K ' + fmt(d.tax)) +
+        cbRow('Invoice total', 'K ' + fmt(d.total), 'green') +
+        (d.source ? cbRow('Source', d.source, 'mono') : '') +
+        cbRow('Email on post', emailOk(d.email) ? d.email : '— not sent (no valid email)') +
+        '</div>',
+      onOk: function () { commitInvoice(d); }
+    });
+  });
+
+  function openEditInvoice(id) {
+    var tr = rowOf(id), iv = IV[id];
+    editId = id;
+    $('cvTitle').textContent = 'Edit Invoice — ' + tr.querySelector('.ino').textContent;
+    toggleQuotePickers(false);
+    showView('create');
+    var reg = CUSTOMERS.filter(function (c) { return c.name === iv.cust; })[0];
+    if (reg) { $('ncMode').value = 'existing'; $('ncMode').dispatchEvent(new Event('change')); $('ncSearch').value = iv.cust; matchedCode = reg.code; setLock(true); $('ncContact').value = iv.contact; $('ncEmail').value = iv.email; $('ncPhone').value = iv.phone; $('ncAddress').value = iv.address; }
+    else { $('ncMode').value = 'walkin'; $('ncMode').dispatchEvent(new Event('change')); $('ncName').value = iv.cust; $('ncContact').value = iv.contact; $('ncEmail').value = iv.email; $('ncPhone').value = iv.phone; $('ncAddress').value = iv.address; }
+    $('ncTerms').value = iv.terms; $('ncSource').value = iv.source || ''; $('ncRef').value = iv.refNo || '';
+    $('ncDate').value = iv.issue; $('ncDue').value = iv.due; $('ncCC').value = iv.cc || 'CC-HO';
+    $('ncNotesC').value = iv.notes || ''; $('ncNotesI').value = iv.internal || '';
+    $('ncLines').innerHTML = iv.lines.map(function (l) {
+      var parts = l[0].split(' — ');
+      var code = parts[0];
+      var rest = parts[1] || l[0];
+      var m = rest.match(/^(.*)\s\((.*)\)$/);
+      return ncLineRow(code, m ? m[1] : rest, m ? m[2] : '', l[1], num(l[2]));
+    }).join('');
+    ncRecompute(); ncSummary();
+  }
+
+  /* ---------- closing (delegated, strict) ---------- */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-close]');
+    if (!b) return;
+    var m = document.getElementById(b.getAttribute('data-close'));
+    if (m) m.classList.remove('on');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if ($('cfScrim').classList.contains('on')) $('cfScrim').classList.remove('on');
+      else if ($('okScrim').classList.contains('on')) $('okScrim').classList.remove('on');
+      else if ($('printView').classList.contains('on')) closePreview();
+      else if ($('quoteScrim').classList.contains('on')) $('quoteScrim').classList.remove('on');
+      else if ($('payScrim').classList.contains('on')) $('payScrim').classList.remove('on');
+      else if ($('viewScrim').classList.contains('on')) $('viewScrim').classList.remove('on');
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P') && $('printView').classList.contains('on')) { e.preventDefault(); safePrint(); }
+  });
+
+  getRows().forEach(buildActions);
+  updatePeriodUI();
+  refresh();
+})();
+</script>
+
+</body>
+</html>
+```

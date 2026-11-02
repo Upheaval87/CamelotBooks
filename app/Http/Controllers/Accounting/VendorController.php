@@ -343,9 +343,18 @@ class VendorController extends Controller
             ->with('success', 'Vendor updated successfully.');
     }
 
+    public function destroy(Vendor $vendor)
+    {
+        $companyId = session('current_company_id');
+        abort_unless($vendor->company_id == $companyId, 403);
+        $vendor->delete();
+        return redirect()->route('accounting.vendors.index')
+            ->with('success', 'Vendor deleted successfully.');
+    }
+
     public function toggle(Vendor $vendor)
     {
-        $this->requirePermission('vendors.void');
+        $this->requirePermission('vendors.view');
         $companyId = session('current_company_id');
         abort_unless($vendor->company_id == $companyId, 403);
 
@@ -353,7 +362,15 @@ class VendorController extends Controller
 
         $status = $vendor->is_active ? 'activated' : 'deactivated';
 
-        return redirect()->route('accounting.vendors.index')
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['success' => true, 'is_active' => $vendor->is_active, 'status' => $status]);
+        }
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['success' => true, 'is_active' => $vendor->is_active, 'status' => $status]);
+        }
+
+        return redirect()->route('accounting.vendors.show', $vendor)
             ->with('success', "Vendor {$status} successfully.");
     }
 }

@@ -30,7 +30,13 @@ class InvoiceService
     {
         $companyId = $data['company_id'];
 
-        $this->validateCustomer($companyId, $data['customer_id']);
+        // 5.1 — `customer_id` is nullable so a walk-in invoice can be raised
+        // without pre-registering a customer (R12). Only an explicit id is
+        // validated; the AR service is responsible for materialising a customer
+        // row when the caller supplied one.
+        if (!empty($data['customer_id'])) {
+            $this->validateCustomer($companyId, $data['customer_id']);
+        }
 
         if (empty($data['lines'])) {
             throw new InvalidArgumentException('At least one invoice line is required.');
@@ -44,10 +50,13 @@ class InvoiceService
             $invoice = Invoice::create([
                 'company_id' => $companyId,
                 'branch_id' => $data['branch_id'] ?? null,
-                'customer_id' => $data['customer_id'],
+                'customer_id' => $data['customer_id'] ?? null,
                 'invoice_number' => $invoiceNumber,
-                'invoice_date' => $data['invoice_date'],
-                'due_date' => $data['due_date'],
+                // `issue_date` is the AR-facing name and `invoice_date` the
+                // legacy one; they are two columns for one fact, so both are
+                // written from the SAME resolved value (see `resolveIssueDate`).
+                'invoice_date' => $this->resolveIssueDate($data),
+                'due_date' => $data['due_date'] ?? null,
                 'reference' => $data['reference'] ?? null,
                 'memo' => $data['memo'] ?? null,
                 'status' => Invoice::STATUS_DRAFT,
@@ -55,7 +64,7 @@ class InvoiceService
                 'amount_paid' => 0,
                 'currency' => $data['currency'] ?? 'USD',
                 'created_by' => $userId,
-            ]);
+            ] + $this->arColumns($data, $invoiceNumber));
 
             foreach ($data['lines'] as $lineData) {
                 $this->createLine($invoice, $lineData, $companyId);
@@ -77,7 +86,7 @@ class InvoiceService
 
         $companyId = $invoice->company_id;
 
-        if (isset($data['customer_id'])) {
+        if (!empty($data['customer_id'])) {
             $this->validateCustomer($companyId, $data['customer_id']);
         }
 
@@ -86,13 +95,13 @@ class InvoiceService
 
             $invoice->update([
                 'customer_id' => $data['customer_id'] ?? $invoice->customer_id,
-                'invoice_date' => $data['invoice_date'] ?? $invoice->invoice_date,
+                'invoice_date' => $data['invoice_date'] ?? $data['issue_date'] ?? $invoice->invoice_date,
                 'due_date' => $data['due_date'] ?? $invoice->due_date,
                 'reference' => $data['reference'] ?? $invoice->reference,
                 'memo' => $data['memo'] ?? $invoice->memo,
                 'branch_id' => $data['branch_id'] ?? $invoice->branch_id,
                 'currency' => $data['currency'] ?? $invoice->currency,
-            ]);
+            ] + $this->arColumns($data, $invoice->invoice_number));
 
             if (isset($data['lines'])) {
                 $invoice->lines()->delete();
@@ -117,7 +126,7 @@ class InvoiceService
         }
 
         $companyId = $invoice->company_id;
-        $arAccount = DefaultAccountMapping::getAccount($companyId, 'accounts_receivable');
+        $arAccount = $this->resolveAccount($companyId, 'accounts_receivable', '1100');
         $taxPayableAccount = DefaultAccountMapping::getAccount($companyId, 'tax_payable');
 
         return DB::transaction(function () use ($invoice, $userId, $companyId, $arAccount, $taxPayableAccount) {
@@ -153,6 +162,9 @@ class InvoiceService
                 $totalCredit += $line->amount;
 
                 if ($line->tax_amount > 0) {
+                    if (!$taxPayableAccount) {
+                        $taxPayableAccount = $this->resolveAccount($companyId, 'tax_payable', '2300');
+                    }
                     $jeLines[] = [
                         'account_id' => $taxPayableAccount->id,
                         'debit' => 0,
@@ -297,27 +309,86 @@ class InvoiceService
 
     public function updateInvoiceFromPost(Invoice $invoice): void
     {
-        $total = (float) $invoice->lines()->sum('line_total');
+        $totals = InvoiceTotals::fromLines(
+            $invoice->lines()->get(['amount', 'tax_amount', 'line_total'])
+        );
 
-        $invoice->update(['amount' => round($total, 2)]);
+        // `amount` stays the legacy accumulator every other module sums against;
+        // the AR module (5.1) additionally persists the subtotal/tax/grand
+        // breakdown so the register, queue and print sheet never have to
+        // re-derive it from the lines.
+        $invoice->update([
+            'amount' => $totals['grand_total'],
+            'subtotal' => $totals['subtotal'],
+            'tax_total' => $totals['tax_total'],
+            'grand_total' => $totals['grand_total'],
+        ]);
     }
 
+    /**
+     * INVOICES MODULE 5.1 — the AR-facing columns the legacy service does not
+     * know about.
+     *
+     * Three rules are enforced here so a caller cannot desynchronise the row:
+     *
+     * 1. `issue_date` and `invoice_date` are written together. The spec names
+     *    `issue_date`, but the GL period filter and inventory posting both read
+     *    `invoice_date`, so letting them drift would restate a posted document's
+     *    ledger period.
+     * 2. The money columns (`subtotal`, `tax_total`, `grand_total`) are NOT
+     *    accepted here — they are derived from the lines by
+     *    `updateInvoiceFromPost()` and must not be client-settable.
+     * 3. Only keys actually present in the payload are written, so a legacy
+     *    create/update that sends none of them leaves existing values intact.
+     *
+     * @return array<string, mixed>
+     */
+    /**
+     * `issue_date` and `invoice_date` are two columns for one fact, so whichever
+     * name the caller used, both are written from a single resolved value.
+     *
+     * This exists because the call sites merge the base attribute array with
+     * `arColumns()` using PHP's `+`, and `+` keeps the LEFT operand's keys — a
+     * second `invoice_date` from `arColumns()` would be silently discarded.
+     * Resolving the date before the merge is the only place that cannot drift.
+     */
+    protected function resolveIssueDate(array $data): ?string
+    {
+        return $data['invoice_date'] ?? $data['issue_date'] ?? null;
+    }
+
+    protected function arColumns(array $data, string $invoiceNumber): array
+    {
+        $columns = array_intersect_key($data, array_flip([
+            'customer_name', 'contact_person', 'email', 'phone', 'bill_address',
+            'terms_key', 'customer_ref',
+            'notes_customer', 'notes_internal', 'cost_centre', 'department',
+            'prepared_by',
+        ]));
+
+        if (!empty($data['issue_date'])) {
+            $columns['issue_date'] = $data['issue_date'];
+            $columns['invoice_date'] = $data['issue_date'];
+        }
+
+        // `source_*` is tri-state: absent leaves the stored value, an explicit
+        // null clears it (used when an operator detaches a converted source).
+        foreach (['source_type', 'source_ref', 'source_quotation_id'] as $sourceKey) {
+            if (array_key_exists($sourceKey, $data)) {
+                $columns[$sourceKey] = $data[$sourceKey] ?: null;
+            }
+        }
+
+        return $columns + ['invoice_number' => $invoiceNumber];
+    }
+
+    /**
+     * INVOICES MODULE 5.1 — delegated to `InvoiceTotals` so the register totals
+     * and the posted ledger agree on the arithmetic by construction.
+     */
     public function computeLineTotals(array $lineData): array
     {
-        $quantity = (float) ($lineData['quantity'] ?? 1);
-        $unitPrice = (float) ($lineData['unit_price'] ?? 0);
-        $discount = (float) ($lineData['discount'] ?? 0);
-        $taxRate = (float) ($lineData['tax_rate'] ?? 0);
-
-        $amount = ($quantity * $unitPrice) - $discount;
-        $taxAmount = $amount * $taxRate / 100;
-        $lineTotal = $amount + $taxAmount;
-
-        return [
-            'amount' => round($amount, 2),
-            'tax_amount' => round($taxAmount, 2),
-            'line_total' => round($lineTotal, 2),
-        ];
+        return InvoiceTotals::forLine($lineData);
     }
 
     protected function createLine(Invoice $invoice, array $lineData, int $companyId): InvoiceLine
@@ -333,7 +404,15 @@ class InvoiceService
         return InvoiceLine::create([
             'invoice_id' => $invoice->id,
             'product_id' => $lineData['product_id'] ?? null,
-            'description' => $lineData['description'],
+            // 8.3: a line whose description is left blank still counts as
+            // complete, so the column is nullable and defaults to an empty
+            // string rather than being required at the model boundary.
+            'description' => (string) ($lineData['description'] ?? ''),
+            // The AR module (5.1) snapshots the catalogue label onto the line so
+            // a later product rename cannot rewrite historical documents.
+            'position' => $lineData['position'] ?? null,
+            'item_code' => $lineData['item_code'] ?? null,
+            'item_name' => $lineData['item_name'] ?? null,
             'quantity' => $lineData['quantity'] ?? 1,
             'unit_price' => $lineData['unit_price'],
             'discount' => $lineData['discount'] ?? 0,
@@ -378,6 +457,31 @@ class InvoiceService
         if (!$account) {
             throw new InvalidArgumentException("Account ID {$accountId} not found for this company.");
         }
+    }
+
+    /**
+     * Resolve a default account by mapping key, falling back to the seeded
+     * chart-of-accounts code when no explicit mapping exists. Mirrors
+     * BillService/TaxEngine so a missing mapping yields a clear error rather
+     * than a null-property fatal during posting.
+     */
+    protected function resolveAccount(int $companyId, string $mappingKey, string $fallbackCode): Account
+    {
+        $account = DefaultAccountMapping::getAccount($companyId, $mappingKey);
+
+        if (!$account) {
+            $account = Account::where('company_id', $companyId)
+                ->where('code', $fallbackCode)
+                ->first();
+        }
+
+        if (!$account) {
+            throw new InvalidArgumentException(
+                "Account for mapping '{$mappingKey}' (fallback code {$fallbackCode}) not found for this company."
+            );
+        }
+
+        return $account;
     }
 
     protected function findAccountByCode(int $companyId, string $code): Account

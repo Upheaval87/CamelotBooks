@@ -77,4 +77,9 @@ class Vendor extends Model
     {
         return $query->where('is_active', true);
     }
+    public function documents(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Vendors\Models\VendorDocument::class, 'vendor_id');
+    }
+
 }

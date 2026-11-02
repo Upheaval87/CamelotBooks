@@ -87,7 +87,6 @@
                     <div class="q2-tabs" role="tablist">
                         <button type="button" class="q2-tab is-active" data-target="tab-overview" role="tab">{{ __('Overview') }}</button>
                         <button type="button" class="q2-tab" data-target="tab-lines" role="tab">{{ __('Line Items') }}</button>
-                        <button type="button" class="q2-tab" data-target="tab-files" role="tab">{{ __('Attachments') }}</button>
                     </div>
 
                     <div class="q2-tdiv">
@@ -244,30 +243,6 @@
                             </div>
                         </section>
 
-                        {{-- attachments tab --}}
-                        <section id="tab-files" class="q2-tab-panel">
-                            @if($quotation->attachments->isNotEmpty())
-                                <div class="q2-sec">
-                                    <div class="q2-sec-head">
-                                        <span class="q2-sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                                        <h2 class="q2-sec-title">{{ __('Attachments') }}</h2>
-                                    </div>
-                                    <ul class="q2-li-wrap">
-                                        @foreach($quotation->attachments as $attachment)
-                                            <li class="q2-li">
-                                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                                <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($attachment->file_path) }}" target="_blank" class="q2-li-name q2-link">{{ $attachment->name }}</a>
-                                                <span class="q2-li-size">{{ format_bytes($attachment->file_size) }}</span>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @else
-                                <div class="q2-card">
-                                    <p class="q2-empty">{{ __('No attachments for this quotation.') }}</p>
-                                </div>
-                            @endif
-                        </section>
                     </div>
                 </div>
 
@@ -311,3 +286,7 @@
 
     @include('accounting.quotations._success')
 </x-app-layout>
+
+@push('modals')
+    @include('accounting.quotations._email-dispatch')
+@endpush

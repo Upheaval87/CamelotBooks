@@ -16,6 +16,7 @@ import './pos-mobile';
 import './journal-register';
 import './journal-detail';
 import './transaction-controls';
+import './invoice-register';
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 

@@ -25,19 +25,55 @@
     $defaultCurrency = in_array('MWK', $currencyCodes) ? 'MWK' : ($currencies->first()?->code ?? 'USD');
     $selectedCurrency = old('currency', $quotation?->currency ?? $defaultCurrency);
     $selectedBranchId = old('branch_id', $quotation?->branch_id ?? $branches->first()?->id ?? '');
-    $selectedCostCenterId = old('cost_center_id', $quotation?->cost_center_id ?? '');
+
+    /* §3.3 · the cost centre DEFAULTS to the current branch and a branch change
+       re-syncs it — but it stays freely changeable. `cost_centers` carries no
+       branch FK, so the branch↔centre mapping resolves on a code/name match and
+       falls back to the first active centre when the branch has no match. */
+    $quotDefaultCostCentre = function (?string $branchId) use ($costCenters, $branches) {
+        if ($costCenters->isEmpty()) {
+            return null;
+        }
+        $branch = $branchId ? $branches->firstWhere('id', (int) $branchId) : null;
+        if ($branch) {
+            $needle = mb_strtolower(trim($branch->name));
+            $match = $costCenters->first(fn ($cc) =>
+                mb_strtolower((string) $cc->code) === $needle
+                || mb_strtolower((string) $cc->code) === mb_strtolower((string) $branch->code ?? '')
+                || mb_strtolower((string) $cc->name) === $needle
+            );
+            if ($match) {
+                return $match;
+            }
+        }
+        return $costCenters->first();
+    };
+
+    $defaultCostCentre = $quotDefaultCostCentre($selectedBranchId ?: null);
+    $selectedCostCenterId = old('cost_center_id', $quotation?->cost_center_id ?? ($defaultCostCentre?->id ?? ''));
     $selectedCostCenterLabel = $selectedCostCenterId ? ($costCenters->firstWhere('id', (int) $selectedCostCenterId)?->name ?? '') : '';
 
-    $quotationAttachments = $quotationAttachments ?? ($quotation?->attachments ?? collect());
+    /* Cost-centre defaults per branch, handed to the client re-sync (§3.3). */
+    $quotBranchCostCentreMap = [];
+    foreach ($branches as $branch) {
+        $cc = $quotDefaultCostCentre((string) $branch->id);
+        if ($cc) {
+            $quotBranchCostCentreMap[(string) $branch->id] = ['id' => (int) $cc->id, 'name' => $cc->name];
+        }
+    }
+    $quotBranchCostCentreMap['__default__'] = $defaultCostCentre
+        ? ['id' => (int) $defaultCostCentre->id, 'name' => $defaultCostCentre->name]
+        : null;
+
+    
 
     if ($isEdit) {
         $customerLine = $quotation?->customer?->name ?? __('No customer');
         $quotedDate = $quotation?->quotation_date?->format('M d, Y') ?? '—';
         $validDate = $quotation?->valid_until?->format('M d, Y') ?? '—';
         $subtitle = "{$customerLine} · " . __('quoted') . " {$quotedDate} · " . __('valid until') . " {$validDate}";
-    } else {
-        $subtitle = $subtitle ?? __('Quote products & services with a live summary.');
     }
+    /* R16 · no create-page subtitle paragraph. */
 
     $linesData = [];
     if (old('lines')) {
@@ -89,7 +125,9 @@
                     <span class="q2-badge q2-badge--{{ $quotation->status }}"><span class="q2-dot"></span>{{ __(ucfirst($quotation->status)) }}</span>
                 @endif
             </div>
-            <p class="q2-sub">{{ $subtitle }}</p>
+            @if (!empty($subtitle))
+                <p class="q2-sub">{{ $subtitle }}</p>
+            @endif
         </div>
         <div class="q2-head-actions">
             <a href="{{ $cancelRoute }}" class="q2-btn q2-btn--ghost">{{ __('Cancel') }}</a>
@@ -207,7 +245,6 @@
                         </div>
                     </div>
                     <p class="q2-savenote" id="ci-save-note" style="display:none">{{ __('Walk-in captured — these details will be saved to the customer registry for future use.') }}</p>
-                    <p class="q2-hint mt-4">{{ __('Contact details are captured with the quotation and saved to the customer registry for walk-in customers.') }}</p>
                 </section>
 
                 {{-- (b) quotation info --}}
@@ -247,8 +284,8 @@
                                 name="cost_center_id"
                                 entity="cost-center"
                                 search-url="{{ route('accounting.search.entity', ['entity' => 'cost-center']) }}"
-                                :value="old('cost_center_id', $selectedCostCenterId)"
-                                :label="old('cost_center_id', $selectedCostCenterLabel)"
+                                :value="$selectedCostCenterId"
+                                :label="$selectedCostCenterLabel"
                                 placeholder="{{ __('None') }}"
                             />
                         </div>
@@ -265,7 +302,6 @@
                             <input type="text" class="q2-input" placeholder="{{ __('Optional') }}" readonly />
                         </div>
                     </div>
-                    <p class="q2-hint mt-4">{{ __('Quotation № is auto-assigned on save. Department & Project are display-only.') }}</p>
                 </section>
 
                 {{-- (c) line items --}}
@@ -295,6 +331,9 @@
                     </div>
 
                     <x-input-error :messages="$errors->get('lines')" class="mt-2" />
+
+                    {{-- §3.4 · the line-completeness rule, stated where the lines are edited --}}
+                    <p class="q2-hint mt-2">{{ __('A line counts as complete only with item code, item name, description, qty and unit price (amount computed) — complete lines carry a green ✓.') }}</p>
                 </section>
 
                 {{-- (d) notes --}}
@@ -396,7 +435,7 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
                 <span class="q2-mtitle" id="quot-submit-title">{{ __('Submit quotation') }}</span>
-                <button type="button" class="q2-mclose" aria-label="{{ __('Close') }}" onclick="quotCloseSubmit()">
+                <button type="button" class="q2-mclose" aria-label="{{ __('Close') }}" data-close="quot-submit-scrim">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 18 18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
             </div>
@@ -419,7 +458,7 @@
             </div>
             <div class="q2-mfoot">
                 <span class="q2-mnote">{{ __('Use Save Draft in the header for a quick save without submitting.') }}</span>
-                <button type="button" class="q2-btn q2-btn--ghost" onclick="quotCloseSubmit()">{{ __('Close') }}</button>
+                <button type="button" class="q2-btn q2-btn--ghost" data-close="quot-submit-scrim">{{ __('Close') }}</button>
             </div>
         </div>
     </div>
@@ -728,7 +767,7 @@
     function quotEmailValid() {
         const el = document.getElementById('quot-email');
         const v = ((el && el.value) || '').trim();
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(v);
     }
 
     function quotEvaluateSubmit() {
@@ -779,7 +818,7 @@
     function quotSubmitChoice(mode) {
         if (mode === 'finalize_send' && !quotEmailValid()) {
             if (window.CB && CB.toast) {
-                CB.toast('warning', @json(__('Email required')), @json(__('Provide customer email to activate this button.')));
+                CB.toast('warning', @json(__('Email required')), @json(__('Provide customer email to activate this button')));
             }
             return;
         }
@@ -789,15 +828,70 @@
         document.getElementById('quotation-form').submit();
     }
 
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') {
-            const scrim = document.getElementById('quot-submit-scrim');
-            if (scrim && !scrim.hidden) quotCloseSubmit();
+    /* R2 · one document-level delegated [data-close] path — no inline onclick,
+       no per-element binds. R3 · the submit modal's trailing Close resolves
+       through it, so the X and the footer button behave identically. */
+    document.addEventListener('click', function (e) {
+        const closer = e.target.closest('[data-close]');
+        if (!closer) return;
+        const which = closer.getAttribute('data-close');
+        if (which === 'quot-submit-scrim' || which === 'quot-ok-scrim') {
+            e.preventDefault();
+            which === 'quot-ok-scrim' && typeof window.quotOkClose === 'function'
+                ? window.quotOkClose() : quotCloseSubmit();
         }
+    });
+
+    /* §9.1 · Escape precedence on the form pages: confirm → success →
+       submit-choice → print (print overlay lives on the register). */
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const ok = document.getElementById('quot-ok-scrim');
+        if (ok && !ok.hidden) { e.preventDefault(); if (typeof window.quotOkClose === 'function') window.quotOkClose(); return; }
+        const scrim = document.getElementById('quot-submit-scrim');
+        if (scrim && !scrim.hidden) { e.preventDefault(); quotCloseSubmit(); }
     });
 
     const quotModeSel = document.getElementById('ci-mode');
     if (quotModeSel) quotModeSel.addEventListener('change', () => quotSetMode(quotModeSel.value));
+
+    /* ---------- §3.3 · cost centre follows the branch until the user overrides it ---------- */
+    const QUOT_COST_CENTRE_BY_BRANCH = @json($quotBranchCostCentreMap);
+    const quotBranchSel = document.querySelector('select[name="branch_id"]');
+    const quotCostCentreInput = document.querySelector('input[name="cost_center_id"]');
+    const quotCostCentreField = quotCostCentreInput ? quotCostCentreInput.closest('[data-scoped-search-field]') : null;
+    /* The stored/default value is a DEFAULT, not a user override, so `touched`
+       starts false and a branch change re-syncs on both create and edit (§3.3). */
+    let quotCostCentreTouched = false;
+
+    /* Manual override = typing in the box, or a pick from its dropdown. Both the
+       scoped component and `scopedSearchFieldSet()` announce selections as
+       `item-selected` / `global-search-selected` with the field as target. */
+    if (quotCostCentreInput) {
+        quotCostCentreInput.addEventListener('input', () => { quotCostCentreTouched = true; });
+        quotCostCentreInput.addEventListener('change', () => { quotCostCentreTouched = true; });
+    }
+    ['item-selected', 'global-search-selected'].forEach((evt) => {
+        document.addEventListener(evt, (e) => {
+            const field = e.detail && (e.detail.field || e.target);
+            if (quotCostCentreField && field === quotCostCentreField) {
+                quotCostCentreTouched = true;
+            }
+        });
+    });
+
+    function quotSyncCostCentreToBranch() {
+        if (quotCostCentreTouched || !quotCostCentreInput || typeof scopedSearchFieldSet !== 'function') return;
+        const key = (quotBranchSel && quotBranchSel.value) || '__default__';
+        const target = QUOT_COST_CENTRE_BY_BRANCH[key] || QUOT_COST_CENTRE_BY_BRANCH['__default__'];
+        if (!target) return;
+        if (String(quotCostCentreInput.value || '') === String(target.id)) return;
+        scopedSearchFieldSet(quotCostCentreInput, 'cost-center', { id: target.id, label: target.name });
+    }
+    if (quotBranchSel) {
+        quotBranchSel.addEventListener('change', quotSyncCostCentreToBranch);
+        quotSyncCostCentreToBranch();
+    }
     const quotSubmitBtn = document.getElementById('quot-submit-btn');
     if (quotSubmitBtn) quotSubmitBtn.addEventListener('click', quotOpenSubmit);
     ['quot-contact', 'quot-email', 'quot-phone', 'ci-name'].forEach(id => {

@@ -1,245 +1,325 @@
 <x-app-layout>
     @php
-        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
-        $activeStatus = request('status', '');
-        $fboxIcons = [
-            'total' => 'M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
-            'draft' => 'M12 8a4 4 0 100 8 4 4 0 000-8zm-8 4a8 8 0 1116 0 8 8 0 01-16 0z',
-            'sent' => 'M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z',
-            'partially_paid' => 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10',
-            'paid' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-            'overdue' => 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-            'void' => 'M6 18L18 6M6 6l12 12',
+        $cs = $cs ?? \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+
+        $q = (string) ($filters['q'] ?? '');
+        $statusF = (string) ($filters['status'] ?? '');
+        $viewF = (string) ($filters['view'] ?? '');
+        $sort = (string) ($filters['sort'] ?? 'new');
+        $period = (string) ($filters['period'] ?? '');
+        $periodFrom = (string) ($filters['period_from'] ?? '');
+        $periodTo = (string) ($filters['period_to'] ?? '');
+
+        $hasPeriod = $periodFrom !== '' && $periodTo !== '';
+        $periodLabel = $hasPeriod
+            ? \Carbon\Carbon::parse($periodFrom)->format('d M') . ' – ' . \Carbon\Carbon::parse($periodTo)->format('d M Y')
+            : 'No period filter';
+
+        $presets = [
+            '' => 'All time',
+            'm0' => 'This month',
+            'm-1' => 'Last month',
+            'd30' => 'Last 30 days',
+            'q0' => 'This quarter',
+            'ytd' => 'Year to date',
+            'custom' => 'Custom range',
         ];
-        $fboxes = [
-            ['key' => '', 'label' => __('Total'), 'icon' => 'total', 'cls' => 't-ink', 'val' => number_format($statsTotal)],
-            ['key' => 'draft', 'label' => __('Draft'), 'icon' => 'draft', 'cls' => 't-gray', 'val' => number_format($stats['draft']->total ?? 0)],
-            ['key' => 'sent', 'label' => __('Sent'), 'icon' => 'sent', 'cls' => 't-teal', 'val' => number_format($stats['sent']->total ?? 0)],
-            ['key' => 'partially_paid', 'label' => __('Partially Paid'), 'icon' => 'partially_paid', 'cls' => 't-mint', 'val' => number_format($stats['partially_paid']->total ?? 0)],
-            ['key' => 'paid', 'label' => __('Paid'), 'icon' => 'paid', 'cls' => 't-mint', 'val' => number_format($stats['paid']->total ?? 0)],
-            ['key' => 'overdue', 'label' => __('Overdue'), 'icon' => 'overdue', 'cls' => 't-red', 'val' => number_format($stats['overdue']->total ?? 0)],
-            ['key' => 'void', 'label' => __('Void'), 'icon' => 'void', 'cls' => 't-gray', 'val' => number_format($stats['void']->total ?? 0)],
-        ];
+
         $sortOptions = [
-            'date-desc' => __('Newest first'),
-            'date-asc' => __('Oldest first'),
-            'amount-desc' => __('Amount: high → low'),
-            'amount-asc' => __('Amount: low → high'),
-            'status' => __('Status'),
+            'new' => 'Newest first',
+            'old' => 'Oldest first',
+            'high' => 'Amount high → low',
+            'bal' => 'Balance high → low',
+            'due' => 'Due soonest',
         ];
+
+        $pillFor = fn (string $status): array => match ($status) {
+            'draft' => ['dr', 'Draft'],
+            'sent' => ['se', 'Sent'],
+            'partial' => ['pa', 'Partially paid'],
+            'paid' => ['pd', 'Paid'],
+            'void' => ['vo', 'Void'],
+            default => ['se', 'Sent'],
+        };
+
+        $initials = function (string $name): string {
+            $out = '';
+            foreach (array_slice(preg_split('/\s+/', trim($name)) ?: [], 0, 2) as $word) {
+                if ($word !== '') {
+                    $out .= mb_strtoupper(mb_substr($word, 0, 1));
+                }
+            }
+
+            return $out !== '' ? $out : '?';
+        };
+
+        $money = fn ($n): string => number_format((float) $n, 2);
+
+        // Tile + Views-rail links keep every other active filter (R7/R9).
+        $urlFor = function (array $extra = []) use ($filters): string {
+            $params = [];
+            foreach (['q', 'status', 'view', 'period', 'period_from', 'period_to', 'customer_id'] as $key) {
+                $value = (string) ($filters[$key] ?? '');
+                if ($value !== '') {
+                    $params[$key] = $value;
+                }
+            }
+            $sortValue = (string) ($filters['sort'] ?? 'new');
+            if ($sortValue !== '' && $sortValue !== 'new') {
+                $params['sort'] = $sortValue;
+            }
+            foreach ($extra as $key => $value) {
+                if ($value === null || $value === '') {
+                    unset($params[$key]);
+                } else {
+                    $params[$key] = $value;
+                }
+            }
+
+            return route('accounting.invoices.index', $params);
+        };
+
+        $tiles = [
+            ['key' => '', 'label' => 'Total', 'count' => $all, 'cls' => 'all'],
+            ['key' => 'draft', 'label' => 'Draft', 'count' => $draft, 'cls' => 'dr'],
+            ['key' => 'sent', 'label' => 'Sent', 'count' => $sent, 'cls' => 'se'],
+            ['key' => 'partial', 'label' => 'Part paid', 'count' => $partial, 'cls' => 'pa'],
+            ['key' => 'paid', 'label' => 'Paid', 'count' => $paid, 'cls' => 'pd'],
+            ['key' => 'overdue', 'label' => 'Overdue', 'count' => $overdue, 'cls' => 'ov'],
+            ['key' => 'void', 'label' => 'Void', 'count' => $void, 'cls' => 'vo'],
+        ];
+
+        $views = [
+            ['key' => 'all', 'label' => 'All Invoices', 'count' => $all],
+            ['key' => 'open', 'label' => 'Open (Sent + Part)', 'count' => $railOpen],
+            ['key' => 'draft', 'label' => 'Drafts', 'count' => $draft],
+            ['key' => 'paid', 'label' => 'Paid', 'count' => $paid],
+            ['key' => 'overdue', 'label' => 'Overdue', 'count' => $overdue],
+        ];
+
+        $today = \Carbon\Carbon::today();
+        $first = $invoices->firstItem();
+        $last = $invoices->lastItem();
+        $total = (int) $invoices->total();
+        $invoiceWord = $total === 1 ? 'invoice' : 'invoices';
+        $pagerWindow = 2;
+        $rate = $summary['billed'] > 0 ? $summary['collection_rate'] . '%' : '—';
     @endphp
 
-    <div class="suite pb-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+    <div class="invm">
+        <div class="wrap" id="listView">
 
-            {{-- head --}}
-            <div class="page-head">
+            <div class="phead">
                 <div>
-                    <h1>{{ __('Invoices') }}</h1>
-                    <p class="sub">{{ __('Track customer invoices and payments.') }}</p>
+                    <h1>Invoices</h1>
+                    <div class="sub">Bill, collect and reconcile customer invoices — with AR aging intelligence and payment tracking.</div>
                 </div>
-                <div class="tbtns">
-                    <a href="{{ route('accounting.invoices.create') }}" class="btn btn-cta">＋ {{ __('Create Invoice') }}</a>
+                <div class="pacts">
+                    <a class="btn btn-ghost" id="btnExport" href="{{ route('accounting.invoices.export', request()->query()) }}"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>Export</a>
+                    <a class="btn btn-cta" id="btnNew" href="{{ route('accounting.invoices.create') }}"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create Invoice</a>
                 </div>
             </div>
 
-            {{-- toolbar --}}
-            <div class="toolbar">
-                <div class="search">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Customer, number, reference…" autocomplete="off"
-                           form="inv-list-form" oninput="debounceInvSearch(this)" class="input" />
-                </div>
-                <select name="sort" form="inv-list-form" class="input" style="width: 13rem" onchange="this.form.submit()">
-                    @foreach($sortOptions as $value => $label)
-                        <option value="{{ $value }}" @selected($sort === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
+            <div class="kpis">
+                <div class="kpi" style="--d:40ms"><div class="top"><span class="l">Outstanding AR</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span></div><div class="v" id="kAR">{{ $cs }} {{ $money($summary['outstanding_ar']) }}</div><span class="n flat" id="kARN">{{ $openCount }} open invoices</span></div>
+                <div class="kpi" style="--d:90ms"><div class="top"><span class="l">Overdue</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span></div><div class="v" id="kOv">{{ $overdue }}</div><span class="n bad" id="kOvN">{{ $cs }} {{ $money($summary['overdue_value']) }} at risk</span></div>
+                <div class="kpi" style="--d:140ms"><div class="top"><span class="l">Collection rate</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></span></div><div class="v" id="kRate">{{ $rate }}</div><span class="n ok" id="kRateN">collected vs billed</span></div>
+                <div class="kpi" style="--d:190ms"><div class="top"><span class="l">Total collected</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span></div><div class="v" id="kCol">{{ $cs }} {{ $money($summary['collected']) }}</div><span class="n ok" id="kColN">{{ $summary['receipt_count'] }} receipts</span></div>
             </div>
 
-            <form id="inv-list-form" method="GET" action="{{ route('accounting.invoices.index') }}">
-                <input type="hidden" name="status" value="{{ $activeStatus }}" />
-                <input type="hidden" name="search" value="{{ request('search') }}" />
-                <input type="hidden" name="sort" value="{{ $sort }}" />
-                <input type="hidden" name="from_date" value="{{ request('from_date') }}" />
-                <input type="hidden" name="to_date" value="{{ request('to_date') }}" />
-                <input type="hidden" name="customer_id" value="{{ request('customer_id') }}" />
-            </form>
-
-            {{-- status filter boxes --}}
-            <div class="statgrid" style="margin-top:16px">
-                @foreach($fboxes as $box)
-                    <a href="{{ route('accounting.invoices.index', $box['key'] ? ['status' => $box['key']] : []) }}"
-                       class="fbox @if($activeStatus === $box['key']) on @endif">
-                        <span class="t {{ $box['cls'] }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="{{ $fboxIcons[$box['icon']] }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <span style="min-width:0">
-                            <span class="l" style="display:block">{{ $box['label'] }}</span>
-                            <span class="v" style="display:block">{{ $box['val'] }}</span>
-                        </span>
-                    </a>
-                @endforeach
-            </div>
-
-            {{-- shell: main + rail --}}
-            <div class="shell" style="margin-top:20px">
-                <div>
-                    <div class="card">
-                        <div class="li-wrap" style="margin-top:0;border:none;border-radius:0">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th style="width:13%">{{ __('Invoice №') }}</th>
-                                        <th style="width:20%">{{ __('Customer') }}</th>
-                                        <th style="width:11%">{{ __('Date') }}</th>
-                                        <th style="width:11%">{{ __('Due Date') }}</th>
-                                        <th style="width:11%" class="num">{{ __('Amount') }} ({{ $cs }})</th>
-                                        <th style="width:10%" class="num">{{ __('Paid') }} ({{ $cs }})</th>
-                                        <th style="width:11%" class="num">{{ __('Balance') }} ({{ $cs }})</th>
-                                        <th style="width:11%">{{ __('Status') }}</th>
-                                        <th style="width:8%" class="num">{{ __('Actions') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($invoices as $invoice)
-                                        <tr>
-                                            <td class="mono"><a href="{{ route('accounting.invoices.show', $invoice) }}" class="link">{{ $invoice->invoice_number }}</a></td>
-                                            <td style="font-weight:600;color:var(--deep-3,#0A2E32)">{{ $invoice->customer->name ?? '—' }}</td>
-                                            <td>{{ $invoice->invoice_date?->format('M d, Y') ?? '—' }}</td>
-                                            <td>{{ $invoice->due_date?->format('M d, Y') ?? '—' }}</td>
-                                            <td class="numr">{{ format_number($invoice->amount) }}</td>
-                                            <td class="numr">{{ format_number($invoice->amount_paid) }}</td>
-                                            <td class="numr">{{ format_number($invoice->balance_due) }}</td>
-                                            <td>
-                                                @switch($invoice->status)
-                                                    @case('draft') <span class="badge b-draft"><span class="bdot"></span>{{ __('Draft') }}</span> @break
-                                                    @case('sent') <span class="badge b-teal"><span class="bdot"></span>{{ __('Sent') }}</span> @break
-                                                    @case('partially_paid') <span class="badge b-mint"><span class="bdot"></span>{{ __('Partially Paid') }}</span> @break
-                                                    @case('paid') <span class="badge b-act"><span class="bdot"></span>{{ __('Paid') }}</span> @break
-                                                    @case('overdue') <span class="badge b-red"><span class="bdot"></span>{{ __('Overdue') }}</span> @break
-                                                    @case('void') <span class="badge b-void"><span class="bdot"></span>{{ __('Void') }}</span> @break
-                                                @endswitch
-                                            </td>
-                                            <td>
-                                                <div class="row-act">
-                                                    <a href="{{ route('accounting.invoices.show', $invoice) }}" class="ibtn" title="{{ __('View') }}" aria-label="{{ __('View') }}">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zm10 3a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                    </a>
-                                                    @if($invoice->status === 'draft')
-                                                        @can('invoices.edit')
-                                                        <a href="{{ route('accounting.invoices.edit', $invoice) }}" class="ibtn" title="{{ __('Edit') }}" aria-label="{{ __('Edit') }}">
-                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                        </a>
-                                                        @endcan
-                                                        @can('invoices.post')
-                                                        <form method="POST" action="{{ route('accounting.invoices.post', $invoice) }}" class="inline">
-                                                            @csrf
-                                                            <button type="submit" class="ibtn" title="{{ __('Post') }}" aria-label="{{ __('Post') }}" onclick="return fbConfirmButton(event, 'Post this invoice?', { type: 'action' })">
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                            </button>
-                                                        </form>
-                                                        @endcan
-                                                    @endif
-                                                    @if(in_array($invoice->status, ['sent', 'paid', 'overdue']))
-                                                        @can('invoices.void')
-                                                        <form method="POST" action="{{ route('accounting.invoices.void', $invoice) }}" class="inline">
-                                                            @csrf @method('PATCH')
-                                                            <button type="submit" class="ibtn del" title="{{ __('Void') }}" aria-label="{{ __('Void') }}" onclick="return fbConfirmButton(event, 'Are you sure you want to void this invoice?', { type: 'danger' })">
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l1.5 13a1 1 0 001 .9h7a1 1 0 001-.9L18 6M4 6h16M9 6l.5-2h5l.5 2M10 10v6M14 10v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                            </button>
-                                                        </form>
-                                                        @endcan
-                                                    @endif
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr><td colspan="9" class="empty">{{ __('No invoices found.') }}</td></tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                        @if($invoices->hasPages())
-                            <div class="pagi">
-                                <span class="t">{{ __('Showing') }} {{ $invoices->firstItem() }}–{{ $invoices->lastItem() }} {{ __('of') }} {{ $invoices->total() }}</span>
-                                <div class="pg">
-                                    <a href="{{ $invoices->appends(request()->query())->previousPageUrl() }}" class="pgbtn @if($invoices->onFirstPage()) is-disabled @endif" aria-label="{{ __('Previous') }}">‹</a>
-                                    @foreach ($invoices->appends(request()->query())->getUrlRange(1, $invoices->lastPage()) as $page => $url)
-                                        @if ($page == $invoices->currentPage())
-                                            <span class="pgbtn cur">{{ $page }}</span>
-                                        @else
-                                            <a href="{{ $url }}" class="pgbtn">{{ $page }}</a>
-                                        @endif
+            <div class="layout">
+                <main class="col">
+                    <section class="tcard">
+                        <form id="inv-list-form" method="GET" action="{{ route('accounting.invoices.index') }}">
+                            <input type="hidden" name="status" value="{{ $statusF }}">
+                            <input type="hidden" name="view" value="{{ $viewF }}">
+                            <div class="toolbar">
+                                <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" type="text" id="q" name="q" value="{{ $q }}" placeholder="Customer, number, receipt, source…"></div>
+                                <select class="sel" id="sort" name="sort">
+                                    @foreach ($sortOptions as $key => $label)
+                                        <option value="{{ $key }}" @selected($sort === $key)>{{ $label }}</option>
                                     @endforeach
-                                    <a href="{{ $invoices->appends(request()->query())->nextPageUrl() }}" class="pgbtn @if(!$invoices->hasMorePages()) is-disabled @endif" aria-label="{{ __('Next') }}">›</a>
+                                </select>
+                                <button class="btn btn-ghost" type="button" id="btnPeriod" title="Show / hide the date-period filter"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Period</button>
+                                <span class="cnt" id="cnt">{{ $total }} {{ $invoiceWord }}</span>
+                            </div>
+                            <div class="pbar" id="periodBar" @unless($period !== '')style="display:none"@endunless>
+                                <div class="fld" style="width:180px"><label>Period preset</label>
+                                    <select class="sel" id="pPreset" name="period">
+                                        @foreach ($presets as $key => $label)
+                                            <option value="{{ $key }}" @selected($period === $key)>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
+                                <div class="fld" style="width:160px"><label>From (issue date)</label><input class="in" type="date" id="pFrom" name="period_from" value="{{ $periodFrom }}" @disabled($period !== 'custom')></div>
+                                <div class="fld" style="width:160px"><label>To (issue date)</label><input class="in" type="date" id="pTo" name="period_to" value="{{ $periodTo }}" @disabled($period !== 'custom')></div>
+                                <button class="btn btn-ghost btn-sm" type="button" id="pClear"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Clear</button>
+                                <span class="cnt" id="pLabel">{{ $periodLabel }}</span>
+                            </div>
+                        </form>
+
+                        <div class="stiles" id="stiles">
+                            @foreach ($tiles as $tile)
+                                <a class="stile{{ ($tile['key'] === '' ? ($statusF === '' && $viewF === '') : $statusF === $tile['key']) ? ' on' : '' }}" data-st="{{ $tile['key'] }}" href="{{ $urlFor(['status' => $tile['key'], 'view' => '']) }}">
+                                    @switch($tile['cls'])
+                                        @case('all')
+                                            <span class="sic all"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>
+                                        @break
+                                        @case('dr')
+                                            <span class="sic dr"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span>
+                                        @break
+                                        @case('se')
+                                            <span class="sic se"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span>
+                                        @break
+                                        @case('pa')
+                                            <span class="sic pa"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+                                        @break
+                                        @case('pd')
+                                            <span class="sic pd"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
+                                        @break
+                                        @case('ov')
+                                            <span class="sic ov"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>
+                                        @break
+                                        @case('vo')
+                                            <span class="sic vo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></svg></span>
+                                        @break
+                                    @endswitch
+                                    <span><span class="sl">{{ $tile['label'] }}</span><span class="sv" data-c="{{ $tile['key'] }}">{{ $tile['count'] }}</span></span>
+                                </a>
+                            @endforeach
+                        </div>
+
+                        <div class="tscroll">
+                        <table>
+                            <thead><tr><th>Invoice №</th><th>Customer</th><th>Issue date</th><th>Due date</th><th class="r">Amount ({{ $cs }})</th><th class="r">Paid ({{ $cs }})</th><th class="r">Balance ({{ $cs }})</th><th>Status</th><th class="r">Actions</th></tr></thead>
+                            <tbody id="iBody">
+                                @forelse ($invoices as $invoice)
+                                    @php
+                                        $status = $invoice->collectionStatus();
+                                        [$pillCls, $pillLabel] = $pillFor($status);
+                                        $totalAmt = (float) ($invoice->grand_total ?? $invoice->amount);
+                                        $paidAmt = (float) $invoice->amount_paid;
+                                        $balance = round($totalAmt - $paidAmt, 2);
+                                        $aging = $invoice->aging ?? ['tone' => 'ok', 'label' => 'Current'];
+                                        $search = strtolower(trim($invoice->invoice_number . ' ' . $invoice->partyName() . ' ' . (string) $invoice->reference));
+                                    @endphp
+                                    <tr class="irow" data-id="{{ $invoice->id }}" data-status="{{ $status }}" data-total="{{ $totalAmt }}" data-paid="{{ $paidAmt }}" data-date="{{ $invoice->issue_date?->format('Y-m-d') }}" data-due="{{ $invoice->due_date?->format('Y-m-d') }}" data-search="{{ e($search) }}">
+                                        <td><span class="ino" data-act="view">{{ $invoice->invoice_number }}</span></td>
+                                        <td><span class="cust"><span class="av">{{ $initials($invoice->partyName()) }}</span><span class="nm">{{ $invoice->partyName() }}</span></span></td>
+                                        <td style="white-space:nowrap">{{ $invoice->issue_date?->format('d M Y') ?? '—' }}</td>
+                                        <td class="vd">{{ $invoice->due_date?->format('d M Y') ?? '—' }}<span class="xc {{ $aging['tone'] }}">{{ $aging['label'] }}</span></td>
+                                        <td class="tot">{{ $money($totalAmt) }}</td>
+                                        <td class="tot dim">{{ $money($paidAmt) }}</td>
+                                        <td class="tot{{ $balance > 0.005 ? ' bal' : ' dim' }}">{{ $money($balance) }}</td>
+                                        <td><span class="pill {{ $pillCls }}"><i></i>{{ $pillLabel }}</span>@if ($invoice->isOverdue()) <span class="xc exp">Overdue</span>@endif</td>
+                                        <td class="r" style="white-space:nowrap"><button class="ibtn" data-act="view" title="Open invoice workspace" aria-label="Open invoice workspace"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+                                    </tr>
+                                @empty
+                                    <tr id="noRes"><td colspan="9"><div class="empty"><div class="halo"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="t">No invoices match</div><div class="s">Adjust the search, period or status filter, or create a new invoice.</div></div></td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                        </div>
+
+                        <div class="tfoot">
+                            <span id="showing">Showing {{ $first ?? 0 }}–{{ $last ?? 0 }} of {{ $total }} {{ $invoiceWord }}</span>
+                            <span>Click any row to open the invoice · all actions live in the invoice workspace</span>
+                        </div>
+
+                        @if ($invoices->lastPage() > 1)
+                            <div class="pager">
+                                <span class="pg-lbl">Page {{ $invoices->currentPage() }} of {{ $invoices->lastPage() }}</span>
+                                @if ($invoices->currentPage() > 1)
+                                    <a class="btn btn-sm" href="{{ $invoices->url($invoices->currentPage() - 1) }}">&lsaquo; Prev</a>
+                                @else
+                                    <span class="btn btn-sm is-disabled">&lsaquo; Prev</span>
+                                @endif
+                                @for ($p = max(1, $invoices->currentPage() - $pagerWindow); $p <= min($invoices->lastPage(), $invoices->currentPage() + $pagerWindow); $p++)
+                                    @if ($p === $invoices->currentPage())
+                                        <span class="btn btn-sm is-current">{{ $p }}</span>
+                                    @else
+                                        <a class="btn btn-sm" href="{{ $invoices->url($p) }}">{{ $p }}</a>
+                                    @endif
+                                @endfor
+                                @if ($invoices->currentPage() < $invoices->lastPage())
+                                    <a class="btn btn-sm" href="{{ $invoices->url($invoices->currentPage() + 1) }}">Next &rsaquo;</a>
+                                @else
+                                    <span class="btn btn-sm is-disabled">Next &rsaquo;</span>
+                                @endif
                             </div>
                         @endif
-                    </div>
-                </div>
+                    </section>
+                </main>
 
-                {{-- rail --}}
-                <aside class="railsum">
-                    <div class="card rail-sec">
-                        <div class="sec-head">
-                            <span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 10h16M4 14h10M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                            <h2>{{ __('Views') }}</h2>
+                <aside>
+                    <section class="rcard">
+                        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Views</span><span class="rule"></span></div>
+                        <div class="rbody" id="views">
+                            @foreach ($views as $viewItem)
+                                @php
+                                    $viewOn = $viewItem['key'] === 'all' ? ($viewF === '' && $statusF === '') : $viewF === $viewItem['key'];
+                                @endphp
+                                <a class="vitem{{ $viewOn ? ' on' : '' }}" data-view="{{ $viewItem['key'] }}" href="{{ $urlFor(['view' => $viewItem['key'] === 'all' ? '' : $viewItem['key'], 'status' => '']) }}">
+                                    @switch($viewItem['key'])
+                                        @case('all')
+                                            <span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>
+                                        @break
+                                        @case('open')
+                                            <span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></span>
+                                        @break
+                                        @case('draft')
+                                            <span class="vic"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span>
+                                        @break
+                                        @case('paid')
+                                            <span class="vic"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
+                                        @break
+                                        @case('overdue')
+                                            <span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>
+                                        @break
+                                    @endswitch
+                                    {{ $viewItem['label'] }}<span class="vc" data-v="{{ $viewItem['key'] }}">{{ $viewItem['count'] }}</span>
+                                </a>
+                            @endforeach
                         </div>
-                        <div class="vlist">
-                            <a href="{{ route('accounting.invoices.index') }}" class="vitem @if(!$activeStatus) on @endif">
-                                <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 10h16M4 14h10M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                                <span>{{ __('All Invoices') }}</span>
-                            </a>
-                            <a href="{{ route('accounting.invoices.index', ['status' => 'open']) }}" class="vitem @if($activeStatus === 'open') on @endif">
-                                <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg></span>
-                                <span>{{ __('Open (Draft + Sent)') }}</span>
-                            </a>
-                            <a href="{{ route('accounting.invoices.index', ['status' => 'draft']) }}" class="vitem @if($activeStatus === 'draft') on @endif">
-                                <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                                <span>{{ __('Drafts') }}</span>
-                            </a>
-                            <a href="{{ route('accounting.invoices.index', ['status' => 'sent']) }}" class="vitem @if($activeStatus === 'sent') on @endif">
-                                <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                                <span>{{ __('Sent') }}</span>
-                            </a>
-                            <a href="{{ route('accounting.invoices.index', ['status' => 'overdue']) }}" class="vitem @if($activeStatus === 'overdue') on @endif">
-                                <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                                <span>{{ __('Overdue') }}</span>
-                            </a>
-                            <a href="{{ route('accounting.invoices.index', ['status' => 'paid']) }}" class="vitem @if($activeStatus === 'paid') on @endif">
-                                <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                                <span>{{ __('Paid') }}</span>
-                            </a>
+                    </section>
+                    <section class="rcard">
+                        <div class="rhead"><span class="ric warn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><span class="rt">Collections queue</span><span class="rule"></span><a class="rlink" id="queueAll" href="{{ route('accounting.invoices.collections') }}">View all →</a></div>
+                        <div class="rbody" id="queue">
+                            @if ($queueRail->isEmpty())
+                                <div class="attn-empty">Nothing due in the next 7 days — collections healthy.</div>
+                            @else
+                                @foreach ($queueRail as $queued)
+                                    @php
+                                        $queuedBal = round((float) ($queued->grand_total ?? $queued->amount) - (float) $queued->amount_paid, 2);
+                                        $queuedDays = $queued->due_date
+                                            ? $today->copy()->startOfDay()->diffInDays($queued->due_date->copy()->startOfDay(), false)
+                                            : 0;
+                                        $queuedChip = $queuedDays < 0
+                                            ? '<span class="xc exp">' . abs($queuedDays) . 'd over</span>'
+                                            : ($queuedDays === 0
+                                                ? '<span class="xc soon">Today</span>'
+                                                : '<span class="xc soon">' . $queuedDays . 'd</span>');
+                                    @endphp
+                                    <button class="attn" data-open="{{ $queued->id }}">
+                                        <span class="arow"><span class="an">{{ $queued->invoice_number }}</span>{!! $queuedChip !!}</span>
+                                        <span class="arow"><span class="as">{{ $queued->partyName() }}</span><span class="ab">{{ $cs }} {{ $money($queuedBal) }}</span></span>
+                                    </button>
+                                @endforeach
+                            @endif
                         </div>
-                        <hr style="border:none;border-top:1px solid var(--line,#E2ECEC);margin:.75rem 4px" />
-                        <div class="sec-head">
-                            <span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                            <h2>{{ __('Reports') }}</h2>
+                    </section>
+                    <section class="rcard">
+                        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Reports</span><span class="rule"></span></div>
+                        <div class="rbody">
+                            <a class="vitem" data-rep="aging" href="{{ route('accounting.aging.ar-summary') }}"><span class="vic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>AR Aging Summary</a>
+                            <a class="vitem" data-rep="sales" href="{{ route('accounting.reports.sales-by-customer') }}"><span class="vic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Sales by Customer</a>
+                            <button class="vitem" data-rep="coll"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span>Collections by Method</button>
                         </div>
-                        <div class="vlist">
-                            <a href="{{ route('accounting.aging.ar-summary') }}" class="vitem">
-                                <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                                <span>{{ __('AR Aging Summary') }}</span>
-                            </a>
-                            <a href="{{ route('accounting.reports.sales-by-customer') }}" class="vitem">
-                                <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                                <span>{{ __('Sales by Customer') }}</span>
-                            </a>
-                        </div>
-                    </div>
+                    </section>
                 </aside>
             </div>
         </div>
-    </div>
 
-    <script>
-        let invSearchTimer = null;
-        function debounceInvSearch(input) {
-            clearTimeout(invSearchTimer);
-            invSearchTimer = setTimeout(() => {
-                const form = document.getElementById('inv-list-form');
-                form.querySelector('input[name="search"]').value = input.value;
-                form.submit();
-            }, 350);
-        }
-    </script>
+        @include('accounting.invoices._workspace-modals')
+    </div>
 </x-app-layout>

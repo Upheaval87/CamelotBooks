@@ -12,8 +12,12 @@ class InvoiceLine extends Model
     use TenantScoped;
 
     protected $fillable = [
-        'invoice_id',
+'invoice_id',
         'product_id',
+        // INVOICES MODULE 5.1 — display snapshot of the catalogue entry
+        'position',
+        'item_code',
+        'item_name',
         'transaction_uom',
         'transaction_qty',
         'conversion_factor',
@@ -29,7 +33,8 @@ class InvoiceLine extends Model
         'cost_center_id',
     ];
 
-    protected $casts = [
+protected $casts = [
+        'position' => 'integer',
         'transaction_qty' => 'decimal:4',
         'conversion_factor' => 'decimal:4',
         'quantity' => 'decimal:2',

@@ -135,12 +135,13 @@
                                             <th style="width:24%">{{ __('Method') }}</th>
                                         </tr></thead>
                                         <tbody>
+                                            {{-- AR module 5.1: immutable receipts recorded via /payments. --}}
                                             @forelse($payments as $payment)
                                                 <tr>
-                                                    <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $payment->payment_date?->format('M d, Y') ?? '—' }}</td>
-                                                    <td class="em mono">{{ $payment->reference ?? '—' }}</td>
-                                                    <td class="numr">{{ format_number($payment->pivot->amount) }}</td>
-                                                    <td class="em">{{ $methodLabel($payment->payment_method) }}</td>
+                                                    <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $payment->paid_on?->format('M d, Y') ?? '—' }}</td>
+                                                    <td class="em mono">{{ $payment->receipt_no ?? '—' }}</td>
+                                                    <td class="numr">{{ format_number($payment->amount) }}</td>
+                                                    <td class="em">{{ $payment->methodName() }}</td>
                                                 </tr>
                                             @empty
                                                 <tr><td colspan="4" class="em" style="padding:22px;text-align:center">{{ __('No payments recorded yet.') }}</td></tr>
@@ -148,6 +149,29 @@
                                         </tbody>
                                     </table>
                                 </div>
+                                @if($settlements->isNotEmpty())
+                                    {{-- Legacy sales-receipt settlement leg, kept until that module is migrated. --}}
+                                    <div class="li-wrap" style="margin-top:14px">
+                                        <table>
+                                            <thead><tr>
+                                                <th style="width:22%">{{ __('Date') }}</th>
+                                                <th style="width:30%">{{ __('Reference') }}</th>
+                                                <th class="num" style="width:24%">{{ __('Amount') }} ({{ $cs }})</th>
+                                                <th style="width:24%">{{ __('Method') }}</th>
+                                            </tr></thead>
+                                            <tbody>
+                                                @foreach($settlements as $settlement)
+                                                    <tr>
+                                                        <td style="font-weight:600;color:var(--ink,#0B2A2D)">{{ $settlement->payment_date?->format('M d, Y') ?? '—' }}</td>
+                                                        <td class="em mono">{{ $settlement->reference ?? '—' }}</td>
+                                                        <td class="numr">{{ format_number($settlement->pivot->amount) }}</td>
+                                                        <td class="em">{{ $methodLabel($settlement->payment_method) }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
                                 @if($payments->isNotEmpty())
                                     <div class="li-totals" style="margin-top:12px"><div class="box">
                                         <div class="trow"><span>{{ __('Paid') }}</span><span class="v">{{ format_number($invPaid) }}</span></div>

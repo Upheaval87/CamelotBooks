@@ -108,7 +108,7 @@ class ListPageRenderTest extends TestCase
             'accounting.customers.index' => 'li-wrap',
             'accounting.vendors.index' => 'li-wrap',
             'accounting.inventory.items' => 'inv-wrap',
-            'accounting.invoices.index' => 'li-wrap',
+            'accounting.invoices.index' => 'invm',
             'accounting.bills.index' => 'li-wrap',
             'accounting.sales-receipts.index' => 'li-wrap',
         ];

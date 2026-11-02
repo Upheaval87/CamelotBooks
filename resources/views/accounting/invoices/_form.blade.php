@@ -4,600 +4,351 @@
     $formAction = $formAction ?? ($isEdit ? route('accounting.invoices.update', $invoice) : route('accounting.invoices.store'));
     $formMethod = $formMethod ?? ($isEdit ? 'PUT' : 'POST');
     $cancelRoute = $cancelRoute ?? ($isEdit ? route('accounting.invoices.show', $invoice) : route('accounting.invoices.index'));
-    $title = $title ?? ($isEdit ? 'Edit Invoice' : 'Create Invoice');
-    $subtitle = $subtitle ?? 'Bill your customer with a clean, itemised line breakdown.';
-    $submitLabel = $submitLabel ?? ($isEdit ? 'Update Invoice' : 'Save Invoice');
 
-    $cs = $cs ?? \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
     $copyQuote = $copyQuote ?? null;
     $copyQuotes = $copyQuotes ?? collect();
     $preselectCustomer = $preselectCustomer ?? null;
+    $customers = $customers ?? collect();
+    $products = $products ?? collect();
+    $costCenters = $costCenters ?? collect();
+
+    $cs = $cs ?? \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
+
+    $termsLabels = [
+        'due_on_receipt' => 'Due on receipt',
+        'net_15' => 'Net 15',
+        'net_30' => 'Net 30',
+        'net_60' => 'Net 60',
+        'net_90' => 'Net 90',
+        'custom' => 'Custom',
+    ];
+    $termDays = ['due_on_receipt' => 0, 'net_15' => 15, 'net_30' => 30, 'net_60' => 60, 'net_90' => 90, 'custom' => 30];
+
+    $normalizeTerms = function ($raw) {
+        $v = strtolower(trim((string) $raw));
+        if ($v === '') {
+            return null;
+        }
+        $v = preg_replace('/[\s\-_]+/', ' ', $v);
+        if (in_array($v, ['due on receipt', 'cod', 'cash on delivery', 'receipt'], true)) {
+            return 'due_on_receipt';
+        }
+        if (preg_match('/^net\s*(\d+)$/', $v, $m)) {
+            $key = 'net_' . (int) $m[1];
+
+            return in_array($key, ['net_15', 'net_30', 'net_60', 'net_90'], true) ? $key : 'net_30';
+        }
+
+        return $v === 'custom' ? 'custom' : null;
+    };
 
     $selectedCustomerId = old('customer_id', $copyQuote['customer_id'] ?? $preselectCustomer['id'] ?? $invoice?->customer_id ?? '');
-    $selectedCustomerLabel = old('customer_name', $copyQuote['customer_name'] ?? $preselectCustomer['name'] ?? ($invoice?->customer?->name ?? ''));
+    $selectedCustomerLabel = old('customer_search', $copyQuote['customer_name'] ?? $preselectCustomer['name'] ?? ($invoice?->customer?->name ?? ''));
     $selectedCustomer = $customers->firstWhere('id', (int) $selectedCustomerId);
 
-    $lineAccounts = $incomeAccounts->keyBy('id');
-    $lineCostCenters = $costCenters->keyBy('id');
+    $defaultType = $isEdit ? ($invoice->customer_id ? 'existing' : 'walkin') : 'existing';
+    $customerType = old('customer_type', $defaultType);
+    $isWalkin = $customerType === 'walkin';
+
+    $walkinName = old('customer_name', $invoice?->customer_name ?? '');
+    $contactPerson = old('contact_person', $invoice?->contact_person ?? $copyQuote['customer_contact'] ?? $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '');
+    $emailValue = old('email', $invoice?->email ?? $copyQuote['customer_email'] ?? $selectedCustomer?->email ?? '');
+    $phoneValue = old('phone', $invoice?->phone ?? $copyQuote['customer_phone'] ?? $selectedCustomer?->phone ?? '');
+    $addressValue = old('bill_address', $invoice?->bill_address ?? $selectedCustomer?->billing_address ?? '');
+
+    $termsKey = old('terms_key', $invoice?->terms_key ?? ($copyQuote ? $normalizeTerms($copyQuote['customer_terms'] ?? '') : null));
+    if (!is_string($termsKey) || !array_key_exists($termsKey, $termsLabels)) {
+        $termsKey = 'net_30';
+    }
+    $extraTermsKey = in_array($termsKey, ['due_on_receipt', 'net_15', 'net_30', 'net_60'], true) ? null : $termsKey;
+
+    $issueDate = old('invoice_date', $invoice?->invoice_date ?? today()->toDateString());
+    $dueDefault = $invoice?->due_date ?? \Carbon\Carbon::parse($issueDate)->addDays($termDays[$termsKey] ?? 30)->toDateString();
+    $dueDate = old('due_date', $dueDefault);
+
+    $reference = old('reference', $invoice?->reference ?? '');
+    $sourceRef = old('source_ref', $invoice?->source_ref ?? ($copyQuote['quotation_number'] ?? ''));
+    $sourceQuotationId = old('source_quotation_id', $invoice?->source_quotation_id ?? ($copyQuote['quotation_id'] ?? ($copyQuote['id'] ?? '')));
+
+    $ccValue = old('cost_centre', $invoice?->cost_centre ?? '');
+    $ccCodes = $costCenters->pluck('code')->all();
+    $extraCC = ($ccValue !== '' && $ccValue !== null && !in_array($ccValue, $ccCodes, true)) ? $ccValue : null;
+
+    $department = old('department', $invoice?->department ?? 'Finance');
+    $preparedBy = old('prepared_by', $invoice?->prepared_by ?? auth()->user()?->name ?? '');
+    $notesCustomer = old('notes_customer', $invoice?->notes_customer ?? ($copyQuote['memo'] ?? ''));
+    $notesInternal = old('notes_internal', $invoice?->notes_internal ?? '');
 
     $linesData = [];
     if (old('lines')) {
         foreach (array_values(old('lines')) as $l) {
-            $product = $products->firstWhere('id', (int) ($l['product_id'] ?? 0));
-            $account = $lineAccounts->get($l['income_account_id'] ?? '');
-            $cc = $lineCostCenters->get($l['cost_center_id'] ?? '');
+            $p = !empty($l['product_id']) ? $products->firstWhere('id', (int) $l['product_id']) : null;
             $linesData[] = [
-                'product_id' => $l['product_id'] ?? '',
-                'label' => $product?->name ?? '',
-                'sku' => $product?->sku ?? '',
+                'item_code' => ($l['item_code'] ?? '') ?: ($p?->sku ?? ''),
+                'item_name' => ($l['item_name'] ?? '') ?: ($p?->name ?? ''),
                 'description' => $l['description'] ?? '',
-                'quantity' => (float) ($l['quantity'] ?? 1),
-                'unit_price' => (float) ($l['unit_price'] ?? 0),
-                'discount' => (float) ($l['discount'] ?? 0),
-                'tax_rate' => (float) ($l['tax_rate'] ?? 0),
+                'quantity' => $l['quantity'] ?? 1,
+                'unit_price' => $l['unit_price'] ?? 0,
+                'product_id' => $l['product_id'] ?? '',
+                'discount' => $l['discount'] ?? '',
+                'tax_rate' => $l['tax_rate'] ?? '',
                 'income_account_id' => $l['income_account_id'] ?? '',
-                'income_account_label' => $account ? "{$account->code} - {$account->name}" : '',
                 'cost_center_id' => $l['cost_center_id'] ?? '',
-                'cost_center_label' => $cc ? "{$cc->code} - {$cc->name}" : '',
             ];
         }
     } elseif ($invoice) {
-        $linesData = $invoice->lines->map(function ($l) use ($lineAccounts, $lineCostCenters) {
-            $account = $lineAccounts->get($l->income_account_id);
-            $cc = $lineCostCenters->get($l->cost_center_id);
-
-            return [
-                'product_id' => $l->product_id ?? '',
-                'label' => $l->product?->name ?? '',
-                'sku' => $l->product?->sku ?? '',
-                'description' => $l->description,
-                'quantity' => (float) $l->quantity,
-                'unit_price' => (float) $l->unit_price,
-                'discount' => (float) $l->discount,
-                'tax_rate' => (float) $l->tax_rate,
-                'income_account_id' => $l->income_account_id,
-                'income_account_label' => $account ? "{$account->code} - {$account->name}" : '',
-                'cost_center_id' => $l->cost_center_id,
-                'cost_center_label' => $cc ? "{$cc->code} - {$cc->name}" : '',
-            ];
-        })->all();
+        $linesData = $invoice->lines->map(fn ($l) => [
+            'item_code' => $l->item_code ?: ($l->product?->sku ?? ''),
+            'item_name' => $l->item_name ?: ($l->product?->name ?? ''),
+            'description' => $l->description,
+            'quantity' => $l->quantity,
+            'unit_price' => $l->unit_price,
+            'product_id' => $l->product_id ?? '',
+            'discount' => $l->discount,
+            'tax_rate' => $l->tax_rate,
+            'income_account_id' => $l->income_account_id,
+            'cost_center_id' => $l->cost_center_id,
+        ])->all();
     } elseif ($copyQuote) {
-        $linesData = $copyQuote['lines'];
+        foreach ($copyQuote['lines'] as $l) {
+            $linesData[] = [
+                'item_code' => $l['sku'] ?? '',
+                'item_name' => $l['label'] ?? '',
+                'description' => $l['description'] ?? '',
+                'quantity' => $l['quantity'] ?? 1,
+                'unit_price' => $l['unit_price'] ?? 0,
+                'product_id' => $l['product_id'] ?? '',
+                'discount' => $l['discount'] ?? '',
+                'tax_rate' => $l['tax_rate'] ?? '',
+                'income_account_id' => $l['income_account_id'] ?? '',
+                'cost_center_id' => $l['cost_center_id'] ?? '',
+            ];
+        }
     }
+
+    if (!$linesData) {
+        $linesData[] = [
+            'item_code' => '', 'item_name' => '', 'description' => '',
+            'quantity' => 1, 'unit_price' => 0,
+            'product_id' => '', 'discount' => '', 'tax_rate' => '',
+            'income_account_id' => '', 'cost_center_id' => '',
+        ];
+    }
+
+    $invCustomers = $customers->map(fn ($c) => [
+        'id' => $c->id,
+        'name' => $c->name,
+        'email' => $c->email ?? '',
+        'phone' => $c->phone ?? '',
+        'contact' => $c->display_name ?: $c->name,
+        'address' => $c->billing_address ?? '',
+    ])->values();
+
+    $invQuotes = $copyQuotes->map(fn ($q) => [
+        'id' => $q->id,
+        'ref' => $q->quotation_number,
+        'status' => ucfirst($q->status),
+        'cust' => $q->customer?->name ?? '',
+        'email' => $q->customer?->email ?? '',
+        'phone' => $q->customer?->phone ?? '',
+        'address' => $q->customer?->billing_address ?? '',
+        'terms' => $normalizeTerms($q->customer?->payment_terms ?? ''),
+        'valid' => $q->valid_until?->toDateString(),
+        'invoiced' => false,
+        'notes' => $q->memo ?? '',
+        'total' => (float) $q->total,
+        'lines' => $q->lines->map(fn ($l) => [
+            'code' => $l->product?->sku ?? '',
+            'name' => $l->item_name ?: ($l->product?->name ?? ''),
+            'desc' => $l->description ?? '',
+            'qty' => (float) $l->quantity,
+            'price' => (float) $l->unit_price,
+        ])->values(),
+    ])->values();
 @endphp
 
-<div class="suite">
-    {{-- sticky page head --}}
-    <div class="sticky-head">
-        <div class="min-w-0">
-            <div class="flex items-center gap-2.5 flex-wrap">
-                <h1 class="q2-title" style="font-size:1.375rem">{{ $title }}</h1>
-                @if ($isEdit)
-                    <span class="mono-chip">{{ $invoice->invoice_number }}</span>
-                    <span class="badge b-{{ $invoice->status }}"><span class="bdot"></span>{{ __(ucfirst(str_replace('_', ' ', $invoice->status))) }}</span>
-                @endif
-            </div>
-            <p class="sub">{{ $subtitle }}</p>
-        </div>
-        <div class="tbtns">
-            <button type="button" class="btn btn-ghost" onclick="CopyQuote.open()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                {{ __('Copy from Quote') }}
-            </button>
-            <a href="{{ $cancelRoute }}" class="btn btn-ghost">{{ __('Cancel') }}</a>
-            <button type="submit" form="invoice-form" class="btn btn-cta">{{ $submitLabel }}</button>
-        </div>
-    </div>
-
+<div class="invm page-form">
     <form method="POST" action="{{ $formAction }}" id="invoice-form" novalidate>
         @csrf
         @if ($formMethod === 'PUT')
             @method('PUT')
         @endif
 
-        <x-input-error :messages="$errors->get('error')" class="mb-4" />
+        <input type="hidden" name="mode" value="draft">
+        <input type="hidden" name="customer_id" id="ncCustomerId" value="{{ $selectedCustomerId }}">
+        <input type="hidden" name="source_quotation_id" id="ncSourceQid" value="{{ $sourceQuotationId }}">
 
-        <div class="shell">
-            <div>
+        @if ($errors->any())
+            <x-feedback.alert variant="error" class="mb-4">
+                <ul style="list-style:disc;padding-left:18px;margin:0">
+                    @foreach ($errors->all() as $errorMessage)
+                        <li>{{ $errorMessage }}</li>
+                    @endforeach
+                </ul>
+            </x-feedback.alert>
+        @endif
 
-                {{-- (a) customer --}}
-                <section class="card card-sec">
-                    <div class="sec-head">
-                        <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2>{{ __('Customer Information') }}</h2>
-                        <span class="rule"></span>
-                    </div>
-                    <div class="g4">
-                        <div class="field sp2">
-                            <label for="customer_id">{{ __('Customer') }} <span class="req">*</span></label>
-                            <x-scoped-search-field
-                                name="customer_id"
-                                entity="customer"
-                                search-url="{{ route('accounting.search.entity', ['entity' => 'customer']) }}"
-                                :value="$selectedCustomerId"
-                                :label="$selectedCustomerLabel"
-                                placeholder="{{ __('Search customers…') }}"
-                                on-select="invCustomerSelected"
-                                required
-                            />
-                            <x-input-error :messages="$errors->get('customer_id')" />
-                        </div>
-                        <div class="field">
-                            <label class="label">{{ __('Contact Person') }}</label>
-                            <input type="text" class="input" id="inv-contact" value="{{ $selectedCustomer?->display_name ?? $selectedCustomer?->name ?? '' }}" readonly />
-                        </div>
-                        <div class="field">
-                            <label class="label">{{ __('Email') }}</label>
-                            <input type="email" class="input" id="inv-email" value="{{ $selectedCustomer?->email ?? '' }}" readonly />
-                        </div>
-                        <div class="field">
-                            <label class="label">{{ __('Phone') }}</label>
-                            <input type="text" class="input" id="inv-phone" value="{{ $selectedCustomer?->phone ?? '' }}" readonly />
-                        </div>
-                        <div class="field">
-                            <label class="label">{{ __('Payment Terms') }}</label>
-                            <input type="text" class="input" id="inv-terms" value="{{ $selectedCustomer?->payment_terms ?? '' }}" readonly />
-                        </div>
-                    </div>
-                    <p class="hint" style="margin-top:1rem">{{ __('Contact details shown are from the customer record.') }}</p>
-                </section>
-
-                {{-- (b) invoice info --}}
-                <section class="card card-sec" style="margin-top:16px">
-                    <div class="sec-head">
-                        <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2zM9 8h6M9 12h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2>{{ __('Invoice Information') }}</h2>
-                        <span class="rule"></span>
-                    </div>
-                    <div class="g4">
-                        <div class="field">
-                            <label class="label">{{ __('Invoice №') }}</label>
-                            <input type="text" class="input" value="{{ $invoice?->invoice_number ?? '' }}" placeholder="{{ __('Auto-assigned on save') }}" readonly />
-                        </div>
-                        <div class="field">
-                            <label for="invoice_date">{{ __('Invoice Date') }} <span class="req">*</span></label>
-                            <input id="invoice_date" name="invoice_date" type="date" class="input" value="{{ old('invoice_date', $invoice?->invoice_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required />
-                            <x-input-error :messages="$errors->get('invoice_date')" />
-                        </div>
-                        <div class="field">
-                            <label for="due_date">{{ __('Due Date') }} <span class="req">*</span></label>
-                            <input id="due_date" name="due_date" type="date" class="input" value="{{ old('due_date', $invoice?->due_date?->format('Y-m-d') ?? now()->addDays(30)->format('Y-m-d')) }}" required />
-                            <x-input-error :messages="$errors->get('due_date')" />
-                        </div>
-                        <div class="field">
-                            <label for="reference">{{ __('Reference №') }}</label>
-                            <input id="reference" name="reference" type="text" class="input" value="{{ old('reference', $invoice?->reference ?? '') }}" placeholder="{{ __('Optional') }}" />
-                            <x-input-error :messages="$errors->get('reference')" />
-                        </div>
-                    </div>
-                    <p class="hint" style="margin-top:1rem">{{ __('Invoice № is auto-assigned on save.') }}</p>
-                </section>
-
-                {{-- (c) line items --}}
-                <section class="card card-sec relative z-30" style="margin-top:16px">
-                    {{-- quick item search overlay -- floats IN FRONT OF the line-items card while typing in a line's Item Name --}}
-                    <div id="inv-quick" class="qs-panel" style="display:none" role="listbox" aria-label="{{ __('Quick item search results') }}">
-                        <div class="qs-head">
-                            <span class="qs-title">{{ __('Quick Item Search') }}</span>
-                            <span class="qs-context" id="inv-quick-context"></span>
-                        </div>
-                        <div class="qs-results" id="inv-quick-results"></div>
-                        <div class="qs-state" id="inv-quick-loading" style="display:none">{{ __('Searching…') }}</div>
-                        <div class="qs-state" id="inv-quick-none" style="display:none">{{ __('No items match that search.') }}</div>
-                    </div>
-
-                    <div class="sec-head">
-                        <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2>{{ __('Line Items') }}</h2>
-                        <span class="rule"></span>
-                        <button type="button" id="inv-add-line" class="btn btn-ghost btn-sm">＋ {{ __('Add Line') }}</button>
-                    </div>
-
-                    <div class="li-wrap">
-                        <table id="inv-lines-table" class="table-fixed" style="min-width:960px">
-                            <thead>
-                                <tr>
-                                    <th style="width:8%">{{ __('Item Code') }}</th>
-                                    <th style="width:16%">{{ __('Item Name') }}</th>
-                                    <th style="width:16%">{{ __('Description') }}</th>
-                                    <th style="width:6%" class="num">{{ __('Qty') }}</th>
-                                    <th style="width:9%" class="num">{{ __('Unit Price') }} ({{ $cs }})</th>
-                                    <th style="width:7%" class="num">{{ __('Disc %') }}</th>
-                                    <th style="width:14%">{{ __('Income Account') }}</th>
-                                    <th style="width:12%">{{ __('Cost Center') }}</th>
-                                    <th style="width:9%" class="num">{{ __('Amount') }} ({{ $cs }})</th>
-                                    <th style="width:3%"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="inv-lines-body"></tbody>
-                        </table>
-                    </div>
-
-                    <x-input-error :messages="$errors->get('lines')" class="mt-2" />
-                </section>
-
-                {{-- (d) notes --}}
-                <section class="card card-sec" style="margin-top:16px">
-                    <div class="sec-head">
-                        <span class="sec-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2>{{ __('Notes') }}</h2>
-                        <span class="rule"></span>
-                    </div>
-                    <div class="field" style="margin-top:16px">
-                        <label for="memo">{{ __('Description / Memo') }}</label>
-                        <textarea id="memo" name="memo" class="input" style="height:auto;min-height:6rem;padding:.75rem .875rem;resize:vertical" placeholder="{{ __('Printed on the invoice…') }}">{{ old('memo', $invoice?->memo ?? '') }}</textarea>
-                        <x-input-error :messages="$errors->get('memo')" />
-                    </div>
-                </section>
+        <div id="createView">
+            <div class="chead">
+                <div><h2 id="cvTitle">{{ $isEdit ? 'Edit Invoice — ' . $invoice->invoice_number : 'Create Invoice' }}</h2></div>
+                <div class="cacts">
+                    <a href="{{ $cancelRoute }}" class="btn btn-ghost" id="ncCancel"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Cancel</a>
+                    <button type="button" class="btn btn-ghost" id="ncFromQ"@if ($isEdit) style="display:none"@endif><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>From quotation</button>
+                    <button type="submit" name="mode" value="draft" class="btn btn-ghost" id="ncDraft"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>Save Draft</button>
+                    <button type="submit" name="mode" value="post" class="btn btn-cta" id="ncPost" disabled title="Requires customer, due date and at least one complete line"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Post Invoice</button>
+                </div>
             </div>
 
-            {{-- rail: summary + quick nav --}}
-            <aside class="railsum">
-                <div class="card rail-sec">
-                    <div class="sec-head">
-                        <span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <h2>{{ __('Summary') }}</h2>
-                    </div>
-                    <div style="margin-top:10px">
-                        <div class="srow"><span>{{ __('Subtotal') }}</span><span class="v" id="inv-subtotal">0.00</span></div>
-                        <div class="srow"><span>{{ __('Tax') }}</span><span class="v" id="inv-tax">0.00</span></div>
-                        <div class="gt"><span class="l">{{ __('Total') }}</span><span class="v" id="inv-total">{{ $cs }}0.00</span></div>
-                    </div>
+            <div class="layout">
+                <div>
+                    <section class="card2">
+                        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="fs-t">Bill To</span><span class="fs-rule"></span></div>
+                        <div class="g3" style="margin-bottom:12px">
+                            <div class="fld"><label>Customer type</label>
+                                <select class="sel" id="ncMode" name="customer_type"><option value="existing" @selected(!$isWalkin)>Existing customer</option><option value="walkin" @selected($isWalkin)>Walk-in customer</option></select>
+                            </div>
+                            <div class="fld"><label>Payment terms</label>
+                                <select class="sel" id="ncTerms" name="terms_key"><option value="due_on_receipt" @selected($termsKey === 'due_on_receipt')>Due on receipt</option><option value="net_15" @selected($termsKey === 'net_15')>Net 15</option><option value="net_30" @selected($termsKey === 'net_30')>Net 30</option><option value="net_60" @selected($termsKey === 'net_60')>Net 60</option>@if ($extraTermsKey)<option value="{{ $extraTermsKey }}" selected>{{ $termsLabels[$extraTermsKey] }}</option>@endif</select>
+                            </div>
+                            <div class="fld"><label>Source document</label>
+                                <div class="fldrow">
+                                    <input class="in" id="ncSource" name="source_ref" value="{{ $sourceRef }}" placeholder="SO-… / QT-… (optional)">
+                                    <button class="btn btn-ghost btn-sm" id="ncPickQ" type="button" style="height:38px{{ $isEdit ? ';display:none' : '' }}" title="Load lines & customer from an approved quotation"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>Pick</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="fld" id="ncSearchWrap" style="margin-bottom:12px{{ $isWalkin ? ';display:none' : '' }}">
+                            <label>Customer <b>*</b></label>
+                            <div class="searchwrap"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" id="ncSearch" name="customer_search" list="custList" value="{{ $selectedCustomerLabel }}" placeholder="Search customers… (name or code)" style="padding-left:36px"></div>
+                            <datalist id="custList"></datalist>
+                        </div>
+                        <div class="fld" id="ncNameWrap" style="margin-bottom:12px{{ $isWalkin ? '' : ';display:none' }}">
+                            <label>Customer name <b>*</b></label>
+                            <input class="in" id="ncName" name="customer_name" value="{{ $walkinName }}" placeholder="e.g. Jane Mwale">
+                        </div>
+                        <div class="g4">
+                            <div class="fld"><label>Contact person</label><input class="in" id="ncContact" name="contact_person" value="{{ $contactPerson }}" placeholder="—"></div>
+                            <div class="fld"><label>Email</label><input class="in" id="ncEmail" name="email" type="email" value="{{ $emailValue }}" placeholder="name@company.com"></div>
+                            <div class="fld"><label>Phone</label><input class="in" id="ncPhone" name="phone" value="{{ $phoneValue }}" placeholder="+265 …"></div>
+                            <div class="fld"><label>Bill-to address</label><input class="in" id="ncAddress" name="bill_address" value="{{ $addressValue }}" placeholder="Street, city"></div>
+                        </div>
+                        <div class="savenote{{ $isWalkin ? ' on' : '' }}" id="ncSaveNote">Walk-in captured — these details will be saved to the customer registry for future use.</div>
+                    </section>
+
+                    <section class="card2">
+                        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span><span class="fs-t">Invoice Information</span><span class="fs-rule"></span></div>
+                        <div class="g4" style="margin-bottom:12px">
+                            <div class="fld"><label>Invoice №</label><input class="in auto" id="ncNo" readonly placeholder="Auto-assigned on save"@if ($isEdit) value="{{ $invoice->invoice_number }}"@endif></div>
+                            <div class="fld"><label>Issue date <b>*</b></label><input class="in" type="date" id="ncDate" name="invoice_date" value="{{ $issueDate }}"></div>
+                            <div class="fld"><label>Due date <b>*</b></label><input class="in" type="date" id="ncDue" name="due_date" value="{{ $dueDate }}"></div>
+                            <div class="fld"><label>Reference №</label><input class="in" id="ncRef" name="reference" value="{{ $reference }}" placeholder="Customer PO (optional)"></div>
+                        </div>
+                        <div class="g4">
+                            <div class="fld"><label>Cost centre</label>
+                                <select class="sel" id="ncCC" name="cost_centre">
+                                    <option value="">None</option>
+                                    @foreach ($costCenters as $costCentre)
+                                        <option value="{{ $costCentre->code }}" @selected($ccValue === $costCentre->code)>{{ $costCentre->code }} · {{ $costCentre->name }}</option>
+                                    @endforeach
+                                    @if ($extraCC !== null)
+                                        <option value="{{ $extraCC }}" selected>{{ $extraCC }}</option>
+                                    @endif
+                                </select>
+                            </div>
+                            <div class="fld"><label>Department</label><input class="in auto" name="department" value="{{ $department }}" readonly></div>
+                            <div class="fld"><label>Prepared by</label><input class="in auto" name="prepared_by" value="{{ $preparedBy }}" readonly></div>
+                            <div class="fld"><label>Tax regime</label><input class="in auto" value="VAT 16.5% inclusive pricing" readonly></div>
+                        </div>
+                    </section>
+
+                    <section class="card2">
+                        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg></span><span class="fs-t">Invoice Lines</span><span class="fs-rule"></span>
+                            <button class="btn-add" id="ncAdd" type="button" style="margin-left:auto"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add Line</button>
+                        </div>
+                        <table class="etable">
+                            <thead><tr><th style="width:90px">Item code</th><th style="width:24%">Item name</th><th style="width:24%">Description (optional)</th><th class="r" style="width:60px">Qty</th><th class="r" style="width:110px">Unit price ({{ $cs }})</th><th class="r" style="width:120px">Amount</th><th style="width:40px"></th></tr></thead>
+                            <tbody id="ncLines">
+                                @foreach ($linesData as $line)
+                                    <tr>
+                                        <td><input class="lin" type="text" data-f="code" name="lines[{{ $loop->index }}][item_code]" value="{{ $line['item_code'] }}" placeholder="Code" autocomplete="off"></td>
+                                        <td><input class="lin" type="text" data-f="name" name="lines[{{ $loop->index }}][item_name]" value="{{ $line['item_name'] }}" placeholder="Item name" autocomplete="off"></td>
+                                        <td><input class="lin" type="text" data-f="desc" name="lines[{{ $loop->index }}][description]" value="{{ $line['description'] }}" placeholder="Optional" autocomplete="off"></td>
+                                        <td><input class="lin num" type="number" data-f="q" name="lines[{{ $loop->index }}][quantity]" value="{{ $line['quantity'] }}" min="0" step="1"></td>
+                                        <td><input class="lin num" type="number" data-f="p" name="lines[{{ $loop->index }}][unit_price]" value="{{ $line['unit_price'] }}" min="0" step="0.01"></td>
+                                        <td class="amtcell ramt">{{ number_format((float) $line['quantity'] * (float) $line['unit_price'], 2) }}</td>
+                                        <td>
+                                            <input type="hidden" name="lines[{{ $loop->index }}][product_id]" value="{{ $line['product_id'] }}">
+                                            <input type="hidden" name="lines[{{ $loop->index }}][discount]" value="{{ $line['discount'] }}">
+                                            <input type="hidden" name="lines[{{ $loop->index }}][tax_rate]" value="{{ $line['tax_rate'] }}">
+                                            <input type="hidden" name="lines[{{ $loop->index }}][income_account_id]" value="{{ $line['income_account_id'] }}">
+                                            <input type="hidden" name="lines[{{ $loop->index }}][cost_center_id]" value="{{ $line['cost_center_id'] }}">
+                                            <button class="xb" type="button" title="Remove line" aria-label="Remove line"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section class="card2">
+                        <div class="fsec"><span class="fs-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M16 13H8M16 17H8"/></svg></span><span class="fs-t">Notes</span><span class="fs-rule"></span></div>
+                        <div class="g2">
+                            <div class="fld"><label>Customer notes</label><textarea class="in" id="ncNotesC" name="notes_customer" placeholder="Printed on the tax invoice…">{{ $notesCustomer }}</textarea></div>
+                            <div class="fld"><label>Internal notes</label><textarea class="in" id="ncNotesI" name="notes_internal" placeholder="Collection notes…">{{ $notesInternal }}</textarea></div>
+                        </div>
+                    </section>
                 </div>
 
-                <div class="card rail-sec">
-                    <div class="sec-head">
-                        <span class="sec-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 9l9-5.5L21 9M5 9.5V19M9.5 9.5V19M14.5 9.5V19M19 9.5V19M3 19.5h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                        <h2>{{ __('Quick Nav') }}</h2>
-                    </div>
-                    <div class="vlist">
-                        <a href="{{ route('accounting.customers.create') }}" class="vitem">
-                            <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M2.5 20c1.2-3.5 4-5 6.5-5s5.3 1.5 6.5 5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13v5m2.5-2.5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                            <span>{{ __('New Customer') }}</span>
-                        </a>
-                        <a href="{{ route('accounting.customer-payments.create') }}" class="vitem">
-                            <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 10a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9zm4 4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                            <span>{{ __('Record Payment') }}</span>
-                        </a>
-                        <a href="{{ route('accounting.invoices.index') }}" class="vitem">
-                            <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                            <span>{{ __('Invoice List') }}</span>
-                        </a>
-                        <button type="button" class="vitem" style="width:100%;text-align:left;background:none;border:0;cursor:pointer" onclick="CopyQuote.open()">
-                            <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-                            <span>{{ __('Copy from Quote') }}</span>
-                        </button>
-                    </div>
-                </div>
-            </aside>
+                <aside>
+                    <section class="rcard">
+                        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Summary</span><span class="rule"></span></div>
+                        <div class="rbody" style="padding:12px 14px">
+                            <div class="sumrow"><span>Customer</span><b id="nsCust">—</b></div>
+                            <div class="sumrow"><span>Issue date</span><b id="nsDate">—</b></div>
+                            <div class="sumrow"><span>Due date</span><b id="nsDue">—</b></div>
+                            <div class="sumrow"><span>Post check</span><b id="nsGate" class="gate-no">—</b></div>
+                            <div class="sumrow"><span>Subtotal</span><b id="nsSub">0.00</b></div>
+                            <div class="sumrow"><span>Tax (16.5%)</span><b id="nsTax">0.00</b></div>
+                            <div class="grandtile"><span class="l">Invoice Total</span><span class="v" id="nsGrand">{{ $cs }} 0.00</span></div>
+                            <div class="sumnote" id="nsLines">No complete lines yet</div>
+                        </div>
+                    </section>
+                    <section class="rcard">
+                        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Quick nav</span><span class="rule"></span></div>
+                        <div class="rbody">
+                            <a class="vitem" id="qnavList" href="{{ route('accounting.invoices.index') }}"><span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>All Invoices</a>
+                            <a class="vitem" id="qnavOrders" href="{{ route('accounting.sales-orders.index') }}"><span class="vic"><svg viewBox="0 0 24 24"><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></span>Sales Orders</a>
+                            <a class="vitem" id="qnavCust" href="{{ route('accounting.customers.index') }}"><span class="vic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Customers</a>
+                        </div>
+                    </section>
+                </aside>
+            </div>
         </div>
     </form>
+
+    <div class="scrim" id="quoteScrim">
+        <div class="mbox narrow" role="dialog" aria-modal="true">
+            <div class="m-head">
+                <span class="m-ic"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></span>
+                <div class="m-head-left"><span class="m-title">Create from quotation</span><span class="m-sub">uninvoiced quotations</span></div>
+                <button class="m-close" data-close="quoteScrim" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div class="m-body">
+                <div class="searchwrap" style="margin-bottom:12px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input class="in" id="qqSearch" placeholder="Search quotations… (number, customer, item)" style="padding-left:36px"></div>
+                <div id="quoteList"></div>
+            </div>
+            <div class="m-foot">
+                <span class="mnote">Loading a quotation fills customer, terms, lines and notes — everything stays editable.</span>
+                <button class="btn btn-close btn-sm" data-close="quoteScrim"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Close</button>
+            </div>
+        </div>
+    </div>
+
+    @include('accounting.invoices._workspace-modals', ['ivPayload' => [], 'nextReceipt' => ''])
+
+    <script>
+        window.INV_CUSTOMERS = @json($invCustomers);
+        window.INV_QUOTES = @json($invQuotes);
+        window.INV_LINE_START = {{ count($linesData) }};
+    </script>
 </div>
-
-<x-copy-quote-picker :quotes="$copyQuotes" mode="form" />
-
-<script>
-    const PRODUCT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'product']));
-    const ACCOUNT_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'account']));
-    const COST_CENTER_SEARCH_URL = @json(route('accounting.search.entity', ['entity' => 'cost-center']));
-    const INV_CS = @json($cs);
-    const incomeAccounts = @json($incomeAccounts);
-    const costCenters = @json($costCenters);
-    const INV_LINES = @json($linesData);
-
-    const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const parse = s => parseFloat(String(s == null ? '' : s).replace(/,/g, '')) || 0;
-    const esc = s => String(s == null ? '' : s)
-        .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-    let lineIndex = 0;
-
-    function invLineRow(data) {
-        const d = data || {};
-        const idx = lineIndex++;
-
-        return `
-            <tr class="inv-row">
-                <td>
-                    <input type="text" class="bill-ci bill-sku" value="${esc(d.sku || '')}" placeholder="Code" readonly tabindex="-1" aria-label="Item code" />
-                </td>
-                <td>
-                    <input type="hidden" name="lines[${idx}][product_id]" class="inv-product-id" value="${esc(d.product_id || '')}" />
-                    <input
-                        type="text"
-                        class="bill-ci inv-product-search"
-                        value="${esc(d.label || '')}"
-                        placeholder="Search items…"
-                        autocomplete="off"
-                        aria-label="Item name"
-                    />
-                </td>
-                <td>
-                    <input type="text" name="lines[${idx}][description]" class="bill-ci" value="${esc(d.description || '')}" placeholder="Description" aria-label="Description" readonly />
-                </td>
-                <td>
-                    <input type="number" step="any" min="0" name="lines[${idx}][quantity]" class="bill-ci bill-ci-num bill-qty" value="${d.quantity != null ? d.quantity : 1}" aria-label="Quantity" />
-                </td>
-                <td>
-                    <input type="number" step="0.01" min="0" name="lines[${idx}][unit_price]" class="bill-ci bill-ci-num bill-price" value="${d.unit_price != null ? d.unit_price : 0}" aria-label="Unit price" readonly />
-                </td>
-                <td>
-                    <input type="number" step="0.01" min="0" max="100" name="lines[${idx}][discount]" class="bill-ci bill-ci-num bill-disc-pct" value="${d.discount != null ? d.discount : 0}" aria-label="Discount percent" />
-                </td>
-                <td>
-                    <input type="hidden" name="lines[${idx}][tax_rate]" class="inv-tax-rate" value="${d.tax_rate != null ? d.tax_rate : 0}" />
-                    ${scopedSearchFieldHtml({
-                        name: `lines[${idx}][income_account_id]`,
-                        entity: 'account',
-                        searchUrl: ACCOUNT_SEARCH_URL,
-                        value: d.income_account_id || '',
-                        label: d.income_account_label || '',
-                        placeholder: 'Select Account',
-                    })}
-                </td>
-                <td>
-                    ${scopedSearchFieldHtml({
-                        name: `lines[${idx}][cost_center_id]`,
-                        entity: 'cost-center',
-                        searchUrl: COST_CENTER_SEARCH_URL,
-                        value: d.cost_center_id || '',
-                        label: d.cost_center_label || '',
-                        placeholder: 'None',
-                    })}
-                </td>
-                <td>
-                    <span class="bill-amt inv-line-total">0.00</span>
-                </td>
-                <td>
-                    <div class="row-act">
-                        <button type="button" class="ibtn" title="Duplicate line" aria-label="Duplicate line" onclick="invDuplicateRow(this)">⧉</button>
-                        <button type="button" class="ibtn del" title="Delete line" aria-label="Delete line" onclick="invRemoveLine(this)">🗑</button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }
-
-    function invAddLine(data) {
-        document.getElementById('inv-lines-body')
-            .insertAdjacentHTML('beforeend', invLineRow(data || {}));
-        invUpdateTotals();
-    }
-
-    function invRemoveLine(btn) {
-        const row = btn.closest('tr.inv-row');
-        row.remove();
-        if (!document.querySelector('#inv-lines-body tr.inv-row')) invAddLine();
-        invUpdateTotals();
-    }
-
-    function invDuplicateRow(btn) {
-        const row = btn.closest('tr.inv-row');
-        row.insertAdjacentHTML('afterend', invLineRow(invRowData(row)));
-        invUpdateTotals();
-    }
-
-    function invRowData(row) {
-        const g = sel => (row.querySelector(sel) || { value: '' }).value;
-        const num = sel => parse(g(sel));
-
-        return {
-            product_id: g('.inv-product-id'),
-            label: g('.inv-product-search'),
-            sku: g('.bill-sku'),
-            description: g('[name*="[description]"]'),
-            quantity: num('.bill-qty'),
-            unit_price: num('.bill-price'),
-            discount: num('.bill-disc-pct'),
-            tax_rate: num('.inv-tax-rate'),
-            income_account_id: g('[name*="[income_account_id]"]'),
-            cost_center_id: g('[name*="[cost_center_id]"]'),
-        };
-    }
-
-    function invUpdateTotals() {
-        let subtotal = 0;
-        let totalTax = 0;
-
-        document.querySelectorAll('#inv-lines-body tr.inv-row').forEach(row => {
-            const qty = parse(row.querySelector('.bill-qty').value);
-            const price = parse(row.querySelector('.bill-price').value);
-            const pct = parse(row.querySelector('.bill-disc-pct').value);
-            const rate = parse(row.querySelector('.inv-tax-rate').value);
-
-            const amount = qty * price * (1 - pct / 100);
-            const lineTax = amount * rate / 100;
-            row.querySelector('.inv-line-total').textContent = fmt(amount + lineTax);
-
-            subtotal += amount;
-            totalTax += lineTax;
-        });
-
-        document.getElementById('inv-subtotal').textContent = fmt(subtotal);
-        document.getElementById('inv-tax').textContent = fmt(totalTax);
-        document.getElementById('inv-total').textContent = INV_CS + fmt(subtotal + totalTax);
-    }
-
-    function invCustomerSelected(id, item) {
-        if (!item) return;
-        if (item.display_name) document.getElementById('inv-contact').value = item.display_name;
-        else if (item.label) document.getElementById('inv-contact').value = item.label;
-        if (item.email) document.getElementById('inv-email').value = item.email;
-        if (item.phone) document.getElementById('inv-phone').value = item.phone;
-        if (item.payment_terms) document.getElementById('inv-terms').value = item.payment_terms;
-    }
-
-    function invApplyQuote(payload) {
-        const custInput = document.querySelector('input[name="customer_id"]');
-        if (custInput && payload.customer_id) {
-            scopedSearchFieldSet(custInput, 'customer', {
-                id: payload.customer_id,
-                label: payload.customer_name || '',
-            });
-        }
-        const contact = document.getElementById('inv-contact');
-        if (contact && payload.customer_contact != null) contact.value = payload.customer_contact;
-        const email = document.getElementById('inv-email');
-        if (email && payload.customer_email != null) email.value = payload.customer_email;
-        const phone = document.getElementById('inv-phone');
-        if (phone && payload.customer_phone != null) phone.value = payload.customer_phone;
-        const terms = document.getElementById('inv-terms');
-        if (terms && payload.customer_terms != null) terms.value = payload.customer_terms;
-
-        const ref = document.getElementById('reference');
-        if (ref && payload.reference != null) ref.value = payload.reference || '';
-
-        const memo = document.getElementById('memo');
-        if (memo && payload.memo != null) memo.value = payload.memo || '';
-
-        const tbody = document.getElementById('inv-lines-body');
-        if (tbody) tbody.innerHTML = '';
-
-        const lines = payload.lines || [];
-        lines.forEach(l => invAddLine(l));
-        if (!lines.length) invAddLine();
-
-        invUpdateTotals();
-    }
-
-    document.getElementById('inv-add-line').addEventListener('click', () => invAddLine());
-
-    // ---- shared quick item search panel (results appear ABOVE the line-items card) ----
-    const invQuick = document.getElementById('inv-quick');
-    const invQuickResults = document.getElementById('inv-quick-results');
-    const invQuickContext = document.getElementById('inv-quick-context');
-    const invQuickLoading = document.getElementById('inv-quick-loading');
-    const invQuickNone = document.getElementById('inv-quick-none');
-
-    let invActiveSearchRow = null;
-    let invQuickIndex = -1;
-    let invQuickItems = [];
-
-    function invFillRow(row, item) {
-        if (item.sku != null) { const sku = row.querySelector('.bill-sku'); if (sku) sku.value = item.sku; }
-        if (item.description) { const desc = row.querySelector('[name*="[description]"]'); if (desc) desc.value = item.description; }
-        if (item.sales_price != null) { const price = row.querySelector('.bill-price'); if (price) price.value = parse(item.sales_price).toFixed(2); }
-        if (item.tax_rate != null) { const rate = row.querySelector('.inv-tax-rate'); if (rate) rate.value = item.tax_rate; }
-
-        const pid = row.querySelector('.inv-product-id');
-        const search = row.querySelector('.inv-product-search');
-        if (pid && item.id !== undefined && item.id !== null) pid.value = item.id;
-        if (search && item.label != null) search.value = item.label;
-
-        if (item.income_account_id) {
-            const acctInput = row.querySelector('[name*="[income_account_id]"]');
-            if (acctInput) {
-                const accountItem = incomeAccounts.find(a => a.id == item.income_account_id);
-                scopedSearchFieldSet(acctInput, 'account', {
-                    id: item.income_account_id,
-                    label: accountItem ? accountItem.code + ' - ' + accountItem.name : ''
-                });
-            }
-        }
-        invUpdateTotals();
-    }
-
-    function invQuickShowState(state) {
-        invQuickResults.innerHTML = '';
-        invQuickLoading.style.display = state === 'loading' ? '' : 'none';
-        invQuickNone.style.display = state === 'none' ? '' : 'none';
-        invQuick.style.display = invActiveSearchRow ? '' : 'none';
-    }
-
-    function invQuickClose() {
-        invActiveSearchRow = null;
-        invQuickItems = [];
-        invQuickIndex = -1;
-        invQuick.style.display = 'none';
-        invQuickResults.innerHTML = '';
-        invQuickLoading.style.display = 'none';
-        invQuickNone.style.display = 'none';
-    }
-
-    async function invQuickRun(row, q) {
-        q = (q || '').trim();
-        if (!q) { invQuickClose(); return; }
-        invActiveSearchRow = row;
-        const rowIndex = Array.from(document.querySelectorAll('#inv-lines-body tr.inv-row')).indexOf(row) + 1;
-        invQuickContext.textContent = 'Row ' + rowIndex;
-        invQuickShowState('loading');
-
-        try {
-            const r = await fetch(PRODUCT_SEARCH_URL + '?q=' + encodeURIComponent(q));
-            if (!r.ok) throw new Error('search failed');
-            const items = await r.json();
-            if (invActiveSearchRow !== row) return;
-            invQuickItems = items;
-            invQuickIndex = -1;
-            if (!items.length) { invQuickShowState('none'); return; }
-
-            invQuickResults.innerHTML = items.map((it, i) => `
-                <div class="qs-option" data-index="${i}" role="option" aria-selected="false">
-                    <span class="qs-option-label">${esc(it.label || '')}</span>
-                    ${it.sku ? `<span class="qs-option-sku">${esc(it.sku)}</span>` : ''}
-                </div>`).join('');
-            invQuickLoading.style.display = 'none';
-            invQuick.style.display = '';
-        } catch (e) {
-            invQuickShowState('none');
-        }
-    }
-
-    function invQuickPick(row, item) {
-        invFillRow(row, item);
-        invQuickClose();
-        const qty = row.querySelector('.bill-qty');
-        if (qty) qty.focus();
-    }
-
-    function invQuickMove(dir) {
-        if (!invQuickItems.length) return;
-        invQuickIndex += dir;
-        if (invQuickIndex < 0) invQuickIndex = invQuickItems.length - 1;
-        if (invQuickIndex >= invQuickItems.length) invQuickIndex = 0;
-        Array.from(invQuickResults.children).forEach((el, i) => {
-            el.classList.toggle('is-highlighted', i === invQuickIndex);
-            el.setAttribute('aria-selected', i === invQuickIndex ? 'true' : 'false');
-        });
-    }
-
-    const invLinesBody = document.getElementById('inv-lines-body');
-    invLinesBody.addEventListener('focusin', e => {
-        const s = e.target.closest('.inv-product-search');
-        if (s && s.value.trim()) { const row = s.closest('tr.inv-row'); invQuickRun(row, s.value); }
-    });
-    invLinesBody.addEventListener('input', e => {
-        const s = e.target.closest('.inv-product-search');
-        if (s) { const row = s.closest('tr.inv-row'); invQuickRun(row, s.value); return; }
-        if (e.target.closest('.bill-qty, .bill-price, .bill-disc-pct')) invUpdateTotals();
-    });
-    invLinesBody.addEventListener('change', e => {
-        if (e.target.closest('.bill-qty, .bill-price, .bill-disc-pct')) invUpdateTotals();
-    });
-    invLinesBody.addEventListener('keydown', e => {
-        if (!e.target.closest('.inv-product-search')) return;
-        if (e.key === 'ArrowDown') { e.preventDefault(); invQuickMove(1); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); invQuickMove(-1); }
-        else if (e.key === 'Enter') {
-            e.preventDefault();
-            const row = e.target.closest('tr.inv-row');
-            if (!row || !invQuickItems.length) return;
-            const item = invQuickIndex >= 0 ? invQuickItems[invQuickIndex] : invQuickItems[0];
-            invQuickPick(row, item);
-        }
-        else if (e.key === 'Escape') { invQuickClose(); }
-    });
-    invQuickResults.addEventListener('click', e => {
-        const opt = e.target.closest('.qs-option');
-        if (!opt || !invActiveSearchRow) return;
-        const idx = parseInt(opt.getAttribute('data-index'), 10);
-        if (invQuickItems[idx]) invQuickPick(invActiveSearchRow, invQuickItems[idx]);
-    });
-    document.addEventListener('click', e => {
-        if (invActiveSearchRow && !e.target.closest('#inv-quick') && !e.target.closest('.inv-product-search')) invQuickClose();
-    });
-
-    document.getElementById('invoice-form').addEventListener('submit', invUpdateTotals);
-
-    (INV_LINES.length ? INV_LINES : [{}]).forEach(d => invAddLine(d));
-</script>

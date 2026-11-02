@@ -56,6 +56,7 @@ class NumberingSequence extends Model
             'pos_settlement' => 'POS Settlement',
             'quotation' => 'Quotation',
             'sales_order' => 'Sales Order',
+            'delivery_note' => 'Delivery Note',
             'sales_receipt' => 'Sales Receipt',
             'billing_quotation' => 'Branch Quotation',
             'transaction_reversal' => 'Reversal',
@@ -93,6 +94,7 @@ class NumberingSequence extends Model
             ['document_type' => 'transaction_reversal', 'prefix' => 'REV-', 'padding_width' => 4, 'reset_policy' => 'annually'],
             ['document_type' => 'bottle_return_receipt', 'prefix' => 'BRR-', 'padding_width' => 5, 'reset_policy' => 'annually'],
             ['document_type' => 'deposit', 'prefix' => 'DEP-', 'padding_width' => 4, 'reset_policy' => 'annually'],
+            ['document_type' => 'delivery_note', 'prefix' => 'DN-', 'padding_width' => 4, 'reset_policy' => 'annually'],
         ];
     }
 }
