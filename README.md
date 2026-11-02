@@ -1,6 +1,6 @@
 # CamelotBooks
 
-A comprehensive, multi-tenant accounting and business management platform built with Laravel 12. CamelotBooks handles everything from day-to-day bookkeeping to advanced financial reporting, payroll, inventory, and point-of-sale operations — all within a single, unified interface.
+A comprehensive, multi-tenant accounting and business management platform built with Laravel 12. It was developed and is still being maintained by Elvis Seyama. CamelotBooks handles everything from day-to-day bookkeeping to advanced financial reporting, payroll, inventory, and point-of-sale operations — all within a single, unified interface.
 
 ---
 
