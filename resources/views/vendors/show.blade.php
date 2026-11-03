@@ -449,7 +449,7 @@
       <div id="pay-elec" style="display:none">
         <div class="form-section-title">Transaction Details <span class="method-flag" id="elec-flag"><i class="fa-solid fa-building-columns"></i> Bank Transfer</span></div>
         <div class="form-grid">
-          <div class="form-field"><label>Reference / Transaction No. <span class="req">*</span></label><input class="form-control" id="pay-ref" placeholder="e.g. TXN-88213 / UTR-004512"></div>
+          <div class="form-field"><label>Reference/Transaction No. <span class="req">*</span></label><input class="form-control" id="pay-ref" placeholder="e.g. TXN-88213 / UTR-004512"></div>
           <div class="form-field"><label>Provider / Institution <span class="req">*</span></label><select class="form-control" id="pay-provider"></select></div>
           <div class="form-field"><label>Account Name</label><input class="form-control" placeholder="e.g. Main Operating Account"></div>
           <div class="form-field"><label>Account Holder Name</label><input class="form-control" placeholder="e.g. Gracian Seyama"></div>
@@ -503,7 +503,7 @@
             <div class="split-fields">
               <div class="form-grid">
                 <div class="form-field full"><label>Amount (K) <span class="req">*</span></label><input class="form-control sp-amt" style="text-align:right" placeholder="0.00"></div>
-                <div class="form-field"><label>Reference / Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. UTR-004512"></div>
+                <div class="form-field"><label>Reference/Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. UTR-004512"></div>
                 <div class="form-field"><label>Provider / Institution <span class="req">*</span></label>
                   <select class="form-control sp-provider"><option>Zanaco</option><option>Stanbic Bank</option><option>FNB Zambia</option><option>Absa Bank</option><option>Investrust Bank</option></select></div>
                 <div class="form-field"><label>Account Name</label><input class="form-control" placeholder="e.g. Vendor Settlement Account"></div>
@@ -525,7 +525,7 @@
             <div class="split-fields">
               <div class="form-grid">
                 <div class="form-field full"><label>Amount (K) <span class="req">*</span></label><input class="form-control sp-amt" style="text-align:right" placeholder="0.00"></div>
-                <div class="form-field"><label>Reference / Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. AUTH-771203"></div>
+                <div class="form-field"><label>Reference/Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. AUTH-771203"></div>
                 <div class="form-field"><label>Provider / Institution <span class="req">*</span></label>
                   <select class="form-control sp-provider"><option>Visa</option><option>Mastercard</option><option>American Express</option><option>UnionPay</option></select></div>
                 <div class="form-field"><label>Account Name</label><input class="form-control" placeholder="e.g. Merchant Settlement"></div>
@@ -547,7 +547,7 @@
             <div class="split-fields">
               <div class="form-grid">
                 <div class="form-field full"><label>Amount (K) <span class="req">*</span></label><input class="form-control sp-amt" style="text-align:right" placeholder="0.00"></div>
-                <div class="form-field"><label>Reference / Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. MOMO-558812"></div>
+                <div class="form-field"><label>Reference/Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. MOMO-558812"></div>
                 <div class="form-field"><label>Provider / Institution <span class="req">*</span></label>
                   <select class="form-control sp-provider"><option>MTN MoMo</option><option>Airtel Money</option><option>Zamtel Kwacha</option></select></div>
                 <div class="form-field"><label>Account Name</label><input class="form-control" placeholder="e.g. Wallet Settlement"></div>

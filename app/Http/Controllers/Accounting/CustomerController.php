@@ -23,7 +23,8 @@ class CustomerController extends Controller
 
         $customers = $this->baseQuery($request)->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('accounting.customers.index', compact('customers', 'stats'));
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, 'K');
+        return view('accounting.customers.index', compact('customers', 'stats', 'cs'));
     }
 
     public function export(Request $request)
@@ -161,7 +162,8 @@ class CustomerController extends Controller
 
         $transactions = $transactions->sortByDesc('date')->values();
 
-        return view('accounting.customers.show', compact('customer', 'balanceDue', 'transactions'));
+        $cs = \App\Models\SystemSetting::getValue('currency', 'currency_symbol', $companyId, 'K');
+        return view('accounting.customers.show', compact('customer', 'balanceDue', 'transactions', 'cs'));
     }
 
     public function edit(Customer $customer)

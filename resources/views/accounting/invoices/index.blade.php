@@ -1,4 +1,8 @@
 <x-app-layout>
+<style>
+.invm .layout { grid-template-columns: minmax(0, 1fr) 240px !important; }
+</style>
+
     @php
         $cs = $cs ?? \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), '$');
 
@@ -127,7 +131,7 @@
                 <div class="kpi" style="--d:190ms"><div class="top"><span class="l">Total collected</span><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span></div><div class="v" id="kCol">{{ $cs }} {{ $money($summary['collected']) }}</div><span class="n ok" id="kColN">{{ $summary['receipt_count'] }} receipts</span></div>
             </div>
 
-            <div class="layout">
+            <div>
                 <main class="col">
                     <section class="tcard">
                         <form id="inv-list-form" method="GET" action="{{ route('accounting.invoices.index') }}">
@@ -251,72 +255,7 @@
                     </section>
                 </main>
 
-                <aside>
-                    <section class="rcard">
-                        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Views</span><span class="rule"></span></div>
-                        <div class="rbody" id="views">
-                            @foreach ($views as $viewItem)
-                                @php
-                                    $viewOn = $viewItem['key'] === 'all' ? ($viewF === '' && $statusF === '') : $viewF === $viewItem['key'];
-                                @endphp
-                                <a class="vitem{{ $viewOn ? ' on' : '' }}" data-view="{{ $viewItem['key'] }}" href="{{ $urlFor(['view' => $viewItem['key'] === 'all' ? '' : $viewItem['key'], 'status' => '']) }}">
-                                    @switch($viewItem['key'])
-                                        @case('all')
-                                            <span class="vic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg></span>
-                                        @break
-                                        @case('open')
-                                            <span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></span>
-                                        @break
-                                        @case('draft')
-                                            <span class="vic"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg></span>
-                                        @break
-                                        @case('paid')
-                                            <span class="vic"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
-                                        @break
-                                        @case('overdue')
-                                            <span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>
-                                        @break
-                                    @endswitch
-                                    {{ $viewItem['label'] }}<span class="vc" data-v="{{ $viewItem['key'] }}">{{ $viewItem['count'] }}</span>
-                                </a>
-                            @endforeach
-                        </div>
-                    </section>
-                    <section class="rcard">
-                        <div class="rhead"><span class="ric warn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><span class="rt">Collections queue</span><span class="rule"></span><a class="rlink" id="queueAll" href="{{ route('accounting.invoices.collections') }}">View all →</a></div>
-                        <div class="rbody" id="queue">
-                            @if ($queueRail->isEmpty())
-                                <div class="attn-empty">Nothing due in the next 7 days — collections healthy.</div>
-                            @else
-                                @foreach ($queueRail as $queued)
-                                    @php
-                                        $queuedBal = round((float) ($queued->grand_total ?? $queued->amount) - (float) $queued->amount_paid, 2);
-                                        $queuedDays = $queued->due_date
-                                            ? $today->copy()->startOfDay()->diffInDays($queued->due_date->copy()->startOfDay(), false)
-                                            : 0;
-                                        $queuedChip = $queuedDays < 0
-                                            ? '<span class="xc exp">' . abs($queuedDays) . 'd over</span>'
-                                            : ($queuedDays === 0
-                                                ? '<span class="xc soon">Today</span>'
-                                                : '<span class="xc soon">' . $queuedDays . 'd</span>');
-                                    @endphp
-                                    <button class="attn" data-open="{{ $queued->id }}">
-                                        <span class="arow"><span class="an">{{ $queued->invoice_number }}</span>{!! $queuedChip !!}</span>
-                                        <span class="arow"><span class="as">{{ $queued->partyName() }}</span><span class="ab">{{ $cs }} {{ $money($queuedBal) }}</span></span>
-                                    </button>
-                                @endforeach
-                            @endif
-                        </div>
-                    </section>
-                    <section class="rcard">
-                        <div class="rhead"><span class="ric"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-6M13 17V7M18 17v-3"/></svg></span><span class="rt">Reports</span><span class="rule"></span></div>
-                        <div class="rbody">
-                            <a class="vitem" data-rep="aging" href="{{ route('accounting.aging.ar-summary') }}"><span class="vic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>AR Aging Summary</a>
-                            <a class="vitem" data-rep="sales" href="{{ route('accounting.reports.sales-by-customer') }}"><span class="vic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Sales by Customer</a>
-                            <button class="vitem" data-rep="coll"><span class="vic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 10h8M8 14h8"/></svg></span>Collections by Method</button>
-                        </div>
-                    </section>
-                </aside>
+
             </div>
         </div>
 

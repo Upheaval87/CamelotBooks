@@ -1,4 +1,6 @@
 <x-app-layout>
+@php $cs = $cs ?? \App\Models\SystemSetting::getValue('currency', 'currency_symbol', session('current_company_id'), 'K'); @endphp
+
 <style>
 /* CUSTOMER MODULE CSS */
 <style>
@@ -131,7 +133,7 @@
 
   /* ═ HERO ═ */
   .cust-hero{border-radius:var(--r-xl);border:1px solid var(--border);padding:26px 30px;margin-bottom:20px;box-shadow:var(--shadow-card);position:relative;overflow:hidden;background:var(--card);backdrop-filter:blur(14px)}
-  .cust-hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:62%;height:2px;border-radius:0 0 6px 6px;background:linear-gradient(90deg,transparent 0%,var(--mint) 22%,var(--sec) 50%,var(--mint) 78%,transparent 100%);box-shadow:0 2px 10px rgba(16,124,123,.35);pointer-events:none}
+  .cust-hero::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:62%;height:2px;border-radius:6px 6px 0 0;background:linear-gradient(90deg,transparent 0%,rgba(127,209,192,.3) 22%,rgba(16,124,123,.3) 50%,rgba(127,209,192,.3) 78%,transparent 100%);box-shadow:0 2px 10px rgba(16,124,123,.1);pointer-events:none}
   .hero-inner{display:flex;align-items:center;gap:24px}
   .hero-avatar-wrap{position:relative;flex-shrink:0}
   .hero-avatar{width:72px;height:72px;background:linear-gradient(145deg,var(--tint),var(--mint));border:1px solid rgba(127,209,192,.55);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--deep-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 6px 18px -6px rgba(16,124,123,.45)}
@@ -185,9 +187,9 @@
   .fin-sub{font-size:11px;color:var(--ink-soft);font-weight:500}
 
   /* tabs card */
-  .content-grid{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+  .content-grid{display:grid;grid-template-columns:1fr;gap:20px;align-items:start}
   .tabs-card{border-radius:var(--r-xl);border:1px solid var(--border);box-shadow:var(--shadow-card);overflow:hidden;position:relative}
-  .tabs-card::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:62%;height:2px;border-radius:0 0 6px 6px;background:linear-gradient(90deg,transparent 0%,var(--mint) 22%,var(--sec) 50%,var(--mint) 78%,transparent 100%);box-shadow:0 2px 10px rgba(16,124,123,.35);z-index:1;pointer-events:none}
+  .tabs-card::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:62%;height:2px;border-radius:6px 6px 0 0;background:linear-gradient(90deg,transparent 0%,rgba(127,209,192,.3) 22%,rgba(16,124,123,.3) 50%,rgba(127,209,192,.3) 78%,transparent 100%);box-shadow:0 2px 10px rgba(16,124,123,.1);z-index:1;pointer-events:none}
   .tabs-nav{display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--line);overflow-x:auto;background:rgba(255,255,255,.5)}
   .tab-btn{position:relative;padding:16px 18px;font-size:13px;font-weight:600;color:var(--ink-muted);cursor:pointer;transition:.18s;border:none;white-space:nowrap;background:none;font-family:'Inter',sans-serif}
   .tab-btn:hover{color:var(--ink)}
@@ -251,7 +253,7 @@
   .data-table tbody tr.clickable-row:active td{background:rgba(16,124,123,.14)}
   .data-table tbody tr.clickable-row:focus-visible{outline:2px solid var(--sec);outline-offset:-2px}
   .td-mono{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-variant-numeric:tabular-nums}
-  .td-right{text-align:right}
+  .td-right{text-align:right !important}
   .td-strong{font-weight:700}
   .td-red{color:var(--red-2);font-weight:800}
   .row-link{color:var(--deep-2);font-weight:700;text-decoration:none}
@@ -264,7 +266,7 @@
   .pager-btn:hover:not(.active){background:var(--tint)}
 
   /* side panel */
-  .side-panel{display:flex;flex-direction:column;gap:16px}
+  .side-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
   .side-panel .side-card{animation:slideRight .45s ease both}
   .side-panel .side-card:nth-child(2){animation-delay:.1s}
   .side-panel .side-card:nth-child(3){animation-delay:.18s}
@@ -434,9 +436,9 @@
       </div>
     </div>
     <div class="page-header-actions">
-      <button class="btn-icon" data-tip="Print"><i class="fa-solid fa-print"></i></button>
-      <button class="btn-icon" data-tip="Export PDF"><i class="fa-solid fa-file-export"></i></button>
-      <button class="btn btn-ghost"><i class="fa-solid fa-ellipsis-vertical"></i> More</button>
+      <button class="btn-icon" data-tip="Print" onclick="window.print()"><i class="fa-solid fa-print"></i></button>
+      <button class="btn-icon" data-tip="Export PDF" onclick="window.print()"><i class="fa-solid fa-file-export"></i></button>
+      
       <button class="btn btn-deep" onclick="openModal('modal-edit-customer')"><i class="fa-solid fa-pen"></i> Edit Customer</button>
     </div>
   </div>
@@ -483,9 +485,9 @@
       <a class="quick-chip green" onclick="openModal('modal-new-invoice')"><i class="fa-solid fa-plus"></i> New Invoice</a>
       <a class="quick-chip" onclick="openModal('modal-record-payment')"><i class="fa-solid fa-credit-card"></i> Record Payment</a>
       <a class="quick-chip" onclick="switchTab('statement')"><i class="fa-solid fa-file-invoice-dollar"></i> View Statement</a>
-      <a class="quick-chip"><i class="fa-solid fa-print"></i> Print</a>
+      
       <a class="quick-chip" onclick="openModal('modal-send-message')"><i class="fa-solid fa-envelope"></i> Email Statement</a>
-      <a class="quick-chip"><i class="fa-solid fa-star"></i> Add to Favourites</a>
+      <a class="quick-chip" href="#" onclick="return false;"><i class="fa-solid fa-star"></i> Add to Favourites</a>
     </div>
   </div>
 
@@ -529,11 +531,11 @@
           <div class="info-grid">
             <div class="info-cell"><div class="info-cell-label">Display Name</div><div class="info-cell-value muted">Not set</div></div>
             <div class="info-cell"><div class="info-cell-label">Email Address</div><div class="info-cell-value">john@example.com</div></div>
-            <div class="info-cell"><div class="info-cell-label">Phone Number</div><div class="info-cell-value mono">+265 991 234 567</div></div>
-            <div class="info-cell"><div class="info-cell-label">Currency</div><div class="info-cell-value mono">K — Kwacha</div></div>
+            <div class="info-cell"><div class="info-cell-label">Phone Number</div><div class="info-cell-value">+265 991 234 567</div></div>
+            <div class="info-cell"><div class="info-cell-label">Currency</div><div class="info-cell-value">K — Kwacha</div></div>
             <div class="info-cell"><div class="info-cell-label">Payment Terms</div><div class="info-cell-value">Net 30</div></div>
-            <div class="info-cell"><div class="info-cell-label">Payment Terms (Days)</div><div class="info-cell-value mono">30</div></div>
-            <div class="info-cell"><div class="info-cell-label">Opening Balance</div><div class="info-cell-value mono">K 0.00</div></div>
+            <div class="info-cell"><div class="info-cell-label">Payment Terms (Days)</div><div class="info-cell-value">30</div></div>
+            <div class="info-cell"><div class="info-cell-label">Opening Balance</div><div class="info-cell-value">{{ $cs }} 0.00</div></div>
             <div class="info-cell"><div class="info-cell-label">Opening Balance Date</div><div class="info-cell-value muted">Not set</div></div>
             <div class="info-cell"><div class="info-cell-label">Credit Limit</div><div class="info-cell-value muted">Unlimited</div></div>
           </div>
@@ -544,9 +546,9 @@
           </div>
           <div class="overview-section-title">Recent Activity</div>
           <div class="timeline">
-            <div class="timeline-item"><div class="timeline-dot blue"></div><div class="timeline-title">Invoice INV-2026-0004 sent</div><div class="timeline-desc">Issued K 8,178.30 — emailed to john@example.com.</div><div class="timeline-time">Oct 24, 2026 · 11:02 AM</div></div>
-            <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-title">Invoice INV-2026-0003 drafted</div><div class="timeline-desc">K 8,172.48 prepared but not yet issued.</div><div class="timeline-time">Oct 24, 2026 · 10:48 AM</div></div>
-            <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-title">Invoice INV-2026-0002 created</div><div class="timeline-desc">K 8,178.30 received — due Nov 08, 2026.</div><div class="timeline-time">Oct 09, 2026 · 09:15 AM</div></div>
+            <div class="timeline-item"><div class="timeline-dot blue"></div><div class="timeline-title">Invoice INV-2026-0004 sent</div><div class="timeline-desc">Issued {{ $cs }} 8,178.30 — emailed to john@example.com.</div><div class="timeline-time">Oct 24, 2026 · 11:02 AM</div></div>
+            <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-title">Invoice INV-2026-0003 drafted</div><div class="timeline-desc">{{ $cs }} 8,172.48 prepared but not yet issued.</div><div class="timeline-time">Oct 24, 2026 · 10:48 AM</div></div>
+            <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-title">Invoice INV-2026-0002 created</div><div class="timeline-desc">{{ $cs }} 8,178.30 received — due Nov 08, 2026.</div><div class="timeline-time">Oct 09, 2026 · 09:15 AM</div></div>
             <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-title">Customer record created</div><div class="timeline-desc">John Banda was added to the directory by Elvis Seyama.</div><div class="timeline-time">Jul 12, 2026 · 08:30 AM</div></div>
           </div>
         </div>
@@ -555,12 +557,21 @@
         <div class="tab-panel" id="panel-transactions">
           <div class="tab-toolbar">
             <div class="toolbar-left">
-              <div class="toolbar-search"><i class="fa-solid fa-magnifying-glass"></i><input placeholder="Search transactions…"></div>
+              <div class="toolbar-search" style="padding:4px 8px;min-width:0"><i class="fa-solid fa-magnifying-glass" style="font-size:12px"></i><input id="trans-search" placeholder="Search transactions…" style="height:26px;width:160px;padding:2px 6px;font-size:12px" oninput="filterTransSearch()"></div>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('trans-filter-panel').classList.toggle('open')"><i class="fa-solid fa-calendar"></i> Date Filter</button>
               <select class="btn btn-ghost btn-sm" style="appearance:auto;-webkit-appearance:auto"><option>All Types</option><option>Invoices</option><option>Payments</option><option>Credits</option></select>
               <button class="btn btn-ghost btn-sm"><i class="fa-solid fa-calendar"></i> Oct 01 – Oct 31, 2026</button>
             </div>
             <span class="chip-count">3 transactions</span>
           </div>
+          <div id="trans-filter-panel" style="display:none;margin-bottom:16px;padding:14px;background:var(--mist-a);border:1px solid var(--border);border-radius:10px">
+            <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+              <div><label style="font-size:11px;font-weight:700;color:var(--ink-muted);display:block;margin-bottom:4px">From</label><input type="date" id="trans-date-from" class="form-control" style="width:160px" value="{{ now()->startOfMonth()->format('Y-m-d') }}"></div>
+              <div><label style="font-size:11px;font-weight:700;color:var(--ink-muted);display:block;margin-bottom:4px">To</label><input type="date" id="trans-date-to" class="form-control" style="width:160px" value="{{ now()->endOfMonth()->format('Y-m-d') }}"></div>
+              <button class="btn btn-primary btn-sm" onclick="filterTransactions()">Apply</button>
+            </div>
+          </div>
+          <style>#trans-filter-panel.open{display:block !important;}</style>
           <div class="table-wrap">
             <div class="table-scroll">
               <table class="data-table">
@@ -598,23 +609,31 @@
         <div class="tab-panel" id="panel-statement">
           <div class="tab-toolbar">
             <div class="toolbar-left">
-              <button class="btn btn-ghost btn-sm"><i class="fa-solid fa-calendar"></i> Jul 01 – Oct 31, 2026</button>
-              <button class="btn btn-ghost btn-sm"><i class="fa-solid fa-download"></i> Export PDF</button>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('stmt-filter-panel').classList.toggle('open')"><i class="fa-solid fa-calendar"></i> Date Filter</button>
+              <button class="btn btn-ghost btn-sm" onclick="window.print()"><i class="fa-solid fa-download"></i> Export PDF</button>
               <button class="btn btn-ghost btn-sm" onclick="openModal('modal-send-message')"><i class="fa-solid fa-envelope"></i> Email Statement</button>
             </div>
-            <span style="font-size:12px;color:var(--ink-soft);font-weight:600">Closing balance: <strong style="color:var(--red-2)">K 8,178.30</strong></span>
+            <span style="font-size:12px;color:var(--ink-soft);font-weight:600">Closing balance: <strong style="color:var(--red-2)">{{ $cs }} 8,178.30</strong></span>
           </div>
+          <div id="stmt-filter-panel" style="display:none;margin-bottom:16px;padding:14px;background:var(--mist-a);border:1px solid var(--border);border-radius:10px" class="open-filter">
+            <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+              <div><label style="font-size:11px;font-weight:700;color:var(--ink-muted);display:block;margin-bottom:4px">From</label><input type="date" id="stmt-date-from" class="form-control" style="width:160px" value="{{ now()->startOfMonth()->format('Y-m-d') }}"></div>
+              <div><label style="font-size:11px;font-weight:700;color:var(--ink-muted);display:block;margin-bottom:4px">To</label><input type="date" id="stmt-date-to" class="form-control" style="width:160px" value="{{ now()->endOfMonth()->format('Y-m-d') }}"></div>
+              <button class="btn btn-primary btn-sm" onclick="filterStatement()">Apply</button>
+            </div>
+          </div>
+<style>#stmt-filter-panel.open{display:block !important;}</style>
           <div class="table-wrap">
             <div class="table-scroll">
               <table class="data-table">
                 <thead><tr><th>Date</th><th>Entry</th><th>Type</th><th>Reference</th><th class="td-right">Debit</th><th class="td-right">Credit</th><th class="td-right">Balance</th></tr></thead>
                 <tbody>
-                  <tr><td>Jul 12, 2026</td><td class="td-mono">OB-0001</td><td><span class="type-chip type-jn">Opening</span></td><td class="td-mono">—</td><td class="td-right td-mono">—</td><td class="td-right td-mono">—</td><td class="td-right td-mono td-strong">0.00</td></tr>
-                  <tr><td>Aug 15, 2026</td><td class="td-mono">JE-0912</td><td><span class="type-chip type-inv">Invoice</span></td><td class="td-mono">INV-2026-0001</td><td class="td-right td-mono">—</td><td class="td-right td-mono">8,000.00</td><td class="td-right td-mono td-strong">8,000.00</td></tr>
-                  <tr><td>Sep 02, 2026</td><td class="td-mono">JE-0958</td><td><span class="type-chip type-pay">Payment</span></td><td class="td-mono">PAY-2026-0012</td><td class="td-right td-mono">8,000.00</td><td class="td-right td-mono">—</td><td class="td-right td-mono td-strong">0.00</td></tr>
-                  <tr><td>Oct 09, 2026</td><td class="td-mono">JE-1021</td><td><span class="type-chip type-inv">Invoice</span></td><td class="td-mono">INV-2026-0002</td><td class="td-right td-mono">—</td><td class="td-right td-mono">8,178.30</td><td class="td-right td-mono td-strong">8,178.30</td></tr>
-                  <tr><td>Oct 24, 2026</td><td class="td-mono">JE-1044</td><td><span class="type-chip type-inv">Invoice</span></td><td class="td-mono">INV-2026-0004</td><td class="td-right td-mono">—</td><td class="td-right td-mono">8,178.30</td><td class="td-right td-mono td-strong">16,356.60</td></tr>
-                  <tr><td>Oct 26, 2026</td><td class="td-mono">JE-1051</td><td><span class="type-chip type-cn">Credit Note</span></td><td class="td-mono">CN-2026-0003</td><td class="td-right td-mono">8,178.30</td><td class="td-right td-mono">—</td><td class="td-right td-mono td-strong">8,178.30</td></tr>
+                  <tr data-stmt-date="2026-07-12"><td>Jul 12, 2026</td><td class="td-mono">OB-0001</td><td><span class="type-chip type-jn">Opening</span></td><td class="td-mono">—</td><td class="td-right td-mono">—</td><td class="td-right td-mono">—</td><td class="td-right td-mono td-strong">0.00</td></tr>
+                  <tr data-stmt-date="2026-08-15"><td>Aug 15, 2026</td><td class="td-mono">JE-0912</td><td><span class="type-chip type-inv">Invoice</span></td><td class="td-mono">INV-2026-0001</td><td class="td-right td-mono">—</td><td class="td-right td-mono">8,000.00</td><td class="td-right td-mono td-strong">8,000.00</td></tr>
+                  <tr data-stmt-date="2026-09-02"><td>Sep 02, 2026</td><td class="td-mono">JE-0958</td><td><span class="type-chip type-pay">Payment</span></td><td class="td-mono">PAY-2026-0012</td><td class="td-right td-mono">8,000.00</td><td class="td-right td-mono">—</td><td class="td-right td-mono td-strong">0.00</td></tr>
+                  <tr data-stmt-date="2026-10-09"><td>Oct 09, 2026</td><td class="td-mono">JE-1021</td><td><span class="type-chip type-inv">Invoice</span></td><td class="td-mono">INV-2026-0002</td><td class="td-right td-mono">—</td><td class="td-right td-mono">8,178.30</td><td class="td-right td-mono td-strong">8,178.30</td></tr>
+                  <tr data-stmt-date="2026-10-24"><td>Oct 24, 2026</td><td class="td-mono">JE-1044</td><td><span class="type-chip type-inv">Invoice</span></td><td class="td-mono">INV-2026-0004</td><td class="td-right td-mono">—</td><td class="td-right td-mono">8,178.30</td><td class="td-right td-mono td-strong">16,356.60</td></tr>
+                  <tr data-stmt-date="2026-10-26"><td>Oct 26, 2026</td><td class="td-mono">JE-1051</td><td><span class="type-chip type-cn">Credit Note</span></td><td class="td-mono">CN-2026-0003</td><td class="td-right td-mono">8,178.30</td><td class="td-right td-mono">—</td><td class="td-right td-mono td-strong">8,178.30</td></tr>
                   <tr class="ledger-total"><td colspan="4">Totals</td><td class="td-right td-mono">16,178.30</td><td class="td-right td-mono">24,356.60</td><td class="td-right td-mono">8,178.30</td></tr>
                 </tbody>
               </table>
@@ -664,7 +683,7 @@
           <a class="qnav-item" onclick="openModal('modal-new-invoice')"><i class="fa-solid fa-file-invoice"></i> New Invoice</a>
           <a class="qnav-item" onclick="openModal('modal-record-payment')"><i class="fa-solid fa-credit-card"></i> Record Payment</a>
           <a class="qnav-item" onclick="switchTab('statement')"><i class="fa-solid fa-chart-column"></i> View Statement</a>
-          <a class="qnav-item"><i class="fa-solid fa-print"></i> Print</a>
+          
           <a class="qnav-item" onclick="openModal('modal-send-message')"><i class="fa-solid fa-envelope"></i> Email Statement</a>
           <a class="qnav-item" href="customers-index.html"><i class="fa-solid fa-users"></i> All Customers</a>
         </div>
@@ -685,7 +704,7 @@
 
 <!-- RECORD PAYMENT -->
 <div class="modal-overlay" id="modal-record-payment">
-  <div class="modal mid">
+  <div class="modal wide">
     <div class="modal-header">
       <div class="modal-icon"><i class="fa-solid fa-credit-card"></i></div>
       <div class="modal-head-text"><div class="modal-title">Record Payment</div><div class="modal-subtitle">Apply a payment to open invoices for John Banda</div></div>
@@ -714,7 +733,7 @@
       <div id="pay-elec" style="display:none">
         <div class="form-section-title">Transaction Details <span class="method-flag" id="elec-flag"><i class="fa-solid fa-building-columns"></i> Bank Transfer</span></div>
         <div class="form-grid">
-          <div class="form-field"><label>Reference / Transaction No. <span class="req">*</span></label><input class="form-control" id="pay-ref" placeholder="e.g. TXN-88213 / UTR-004512"></div>
+          <div class="form-field"><label>Reference/Transaction No. <span class="req">*</span></label><input class="form-control" id="pay-ref" placeholder="e.g. TXN-88213 / UTR-004512"></div>
           <div class="form-field"><label>Provider / Institution <span class="req">*</span></label><select class="form-control" id="pay-provider"></select></div>
           <div class="form-field"><label>Account Name</label><input class="form-control" placeholder="e.g. Main Operating Account"></div>
           <div class="form-field"><label>Account Holder Name</label><input class="form-control" placeholder="e.g. John Banda"></div>
@@ -768,7 +787,7 @@
             <div class="split-fields">
               <div class="form-grid">
                 <div class="form-field full"><label>Amount (K) <span class="req">*</span></label><input class="form-control sp-amt" style="text-align:right" placeholder="0.00"></div>
-                <div class="form-field"><label>Reference / Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. UTR-004512"></div>
+                <div class="form-field"><label>Reference/Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. UTR-004512"></div>
                 <div class="form-field"><label>Provider / Institution <span class="req">*</span></label>
                   <select class="form-control sp-provider"><option>Zanaco</option><option>Stanbic Bank</option><option>FNB Zambia</option><option>Absa Bank</option><option>Investrust Bank</option></select></div>
                 <div class="form-field"><label>Account Name</label><input class="form-control" placeholder="e.g. Vendor Settlement Account"></div>
@@ -790,7 +809,7 @@
             <div class="split-fields">
               <div class="form-grid">
                 <div class="form-field full"><label>Amount (K) <span class="req">*</span></label><input class="form-control sp-amt" style="text-align:right" placeholder="0.00"></div>
-                <div class="form-field"><label>Reference / Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. AUTH-771203"></div>
+                <div class="form-field"><label>Reference/Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. AUTH-771203"></div>
                 <div class="form-field"><label>Provider / Institution <span class="req">*</span></label>
                   <select class="form-control sp-provider"><option>Visa</option><option>Mastercard</option><option>American Express</option><option>UnionPay</option></select></div>
                 <div class="form-field"><label>Account Name</label><input class="form-control" placeholder="e.g. Merchant Settlement"></div>
@@ -812,7 +831,7 @@
             <div class="split-fields">
               <div class="form-grid">
                 <div class="form-field full"><label>Amount (K) <span class="req">*</span></label><input class="form-control sp-amt" style="text-align:right" placeholder="0.00"></div>
-                <div class="form-field"><label>Reference / Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. MOMO-558812"></div>
+                <div class="form-field"><label>Reference/Transaction No. <span class="req">*</span></label><input class="form-control sp-ref" placeholder="e.g. MOMO-558812"></div>
                 <div class="form-field"><label>Provider / Institution <span class="req">*</span></label>
                   <select class="form-control sp-provider"><option>MTN MoMo</option><option>Airtel Money</option><option>Zamtel Kwacha</option></select></div>
                 <div class="form-field"><label>Account Name</label><input class="form-control" placeholder="e.g. Wallet Settlement"></div>
@@ -834,7 +853,7 @@
       <div class="form-section-title">Apply To Open Invoices</div>
       <label class="apply-row"><input type="checkbox" checked><div class="apply-info"><div class="apply-title">INV-2026-0004</div><div class="apply-sub">Due Nov 23, 2026 · Sent</div></div><span class="apply-amt">8,178.30</span></label>
       <label class="apply-row"><input type="checkbox"><div class="apply-info"><div class="apply-title">INV-2026-0003</div><div class="apply-sub">Draft · Not Issued</div></div><span class="apply-amt">8,172.48</span></label>
-      <div class="form-alert info" style="margin-bottom:0"><i class="fa-solid fa-circle-info"></i> Unapplied amount: K 0.00 — payment fully allocated.</div>
+      <div class="form-alert info" style="margin-bottom:0"><i class="fa-solid fa-circle-info"></i> Unapplied amount: {{ $cs }} 0.00 — payment fully allocated.</div>
       <div class="form-field" style="margin-top:14px"><label>Payment Note</label><textarea class="form-control" style="min-height:60px" placeholder="Optional…"></textarea></div>
     </div>
     <div class="modal-footer">
@@ -934,7 +953,7 @@
         <div class="form-field full"><label>Subject <span class="req">*</span></label><input class="form-control" value="Outstanding Invoice — INV-2026-0004"></div>
         <div class="form-field full"><label>Message <span class="req">*</span></label><textarea class="form-control" style="min-height:120px">Dear John,
 
-This is a friendly reminder that invoice INV-2026-0004 (K 8,178.30) falls due on 23 Nov 2026. Kindly arrange settlement before the due date.
+This is a friendly reminder that invoice INV-2026-0004 ({{ $cs }} 8,178.30) falls due on 23 Nov 2026. Kindly arrange settlement before the due date.
 
 Regards,
 Elvis Seyama — Acme Corporation</textarea></div>
@@ -1009,7 +1028,7 @@ Elvis Seyama — Acme Corporation</textarea></div>
       <p style="font-size:13px;line-height:1.6;color:var(--ink-soft);margin-bottom:16px">Archiving will prevent new invoices, orders, and payments from being recorded against this customer. Existing transaction history will remain intact.</p>
       <div style="background:var(--red-tint);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:12px;font-size:12px;color:var(--red-2);font-weight:600;display:flex;gap:8px;align-items:flex-start">
         <i class="fa-solid fa-triangle-exclamation" style="margin-top:2px"></i>
-        <span>This customer currently has an outstanding balance of <strong>K 8,178.30</strong>. Ensure all dues are settled before archiving.</span>
+        <span>This customer currently has an outstanding balance of <strong>{{ $cs }} 8,178.30</strong>. Ensure all dues are settled before archiving.</span>
       </div>
     </div>
     <div class="modal-footer">
@@ -1284,5 +1303,54 @@ postBtn.addEventListener('click', () => closeModal(document.getElementById('moda
 document.querySelectorAll('.sidebar-item').forEach(item=>{
   item.addEventListener('click',e=>{e.preventDefault();document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));item.classList.add('active');});
 });
+</script>
+<script>
+function filterStatement() {
+  var from = document.getElementById('stmt-date-from')?.value;
+  var to = document.getElementById('stmt-date-to')?.value;
+  var rows = document.querySelectorAll('#panel-statement tbody tr[data-stmt-date]');
+  rows.forEach(function(tr){
+    var d = tr.getAttribute('data-stmt-date');
+    var show = true;
+    if (from && d < from) show = false;
+    if (to && d > to) show = false;
+    tr.style.display = show ? '' : 'none';
+  });
+  document.getElementById('stmt-filter-panel')?.classList.remove('open');
+}
+</script>
+
+<style>
+@media print {
+  .topnav,.modulenav,.sidebar,.fav-sidebar,.page-header-actions,.vendor-quick-actions,.tabs-nav,.tab-toolbar,.modal-overlay{display:none !important;}
+  .main{margin:0 !important;padding:0 !important;}
+  body{background:#fff !important;}
+}
+</style>
+<script>
+function filterTransactions() {
+  var from = document.getElementById("trans-date-from")?.value;
+  var to = document.getElementById("trans-date-to")?.value;
+  var rows = document.querySelectorAll("#panel-transactions tbody tr[data-trans-date]");
+  rows.forEach(function(tr){
+    var d = tr.getAttribute("data-trans-date");
+    var show = true;
+    if (from && d < from) show = false;
+    if (to && d > to) show = false;
+    tr.style.display = show ? "" : "none";
+  });
+  document.getElementById("trans-filter-panel")?.classList.remove("open");
+}
+</script>
+<script>
+function filterTransSearch() {
+  var q = (document.getElementById('trans-search')?.value || '').toLowerCase().trim();
+  var rows = document.querySelectorAll('#panel-transactions tbody tr');
+  rows.forEach(function(tr){
+    if (tr.querySelector('td[colspan]')) { tr.style.display = ''; return; }
+    var text = (tr.textContent || '').toLowerCase();
+    tr.style.display = (q === '' || text.indexOf(q) !== -1) ? '' : 'none';
+  });
+}
 </script>
 </x-app-layout>

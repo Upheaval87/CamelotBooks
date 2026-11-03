@@ -380,7 +380,7 @@
                 </div>
 
                 <div class="pos-f" style="margin-bottom:12px">
-                    <label>Reference / Transaction No.</label>
+                    <label>Reference/Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="pos-in" placeholder="e.g. TXN12345" />
@@ -430,7 +430,7 @@
                 </div>
 
                 <div class="pos-f" style="margin-bottom:12px">
-                    <label>Reference / Transaction No.</label>
+                    <label>Reference/Transaction No.</label>
                     <input type="text" x-model="modalReference"
                         @keydown.enter.prevent="confirmPaymentModal()"
                         class="pos-in" placeholder="e.g. MP123456" />
@@ -516,7 +516,7 @@
                                     @focus="$el.select()" class="pos-in pos-in-sm" style="text-align:right" placeholder="0.00" />
                             </div>
                             <div>
-                                <label class="pos-lbl-sm">Reference / Transaction No.</label>
+                                <label class="pos-lbl-sm">Reference/Transaction No.</label>
                                 <input type="text" x-model="splitCardRef" class="pos-in pos-in-sm" placeholder="e.g. TXN12345" />
                             </div>
                         </div>
@@ -553,7 +553,7 @@
                                     @focus="$el.select()" class="pos-in pos-in-sm" style="text-align:right" placeholder="0.00" />
                             </div>
                             <div>
-                                <label class="pos-lbl-sm">Reference / Transaction No.</label>
+                                <label class="pos-lbl-sm">Reference/Transaction No.</label>
                                 <input type="text" x-model="splitMobileRef" class="pos-in pos-in-sm" placeholder="e.g. MP123456" />
                             </div>
                         </div>

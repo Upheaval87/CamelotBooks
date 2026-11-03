@@ -1,0 +1,159 @@
+give me full implementation prompt for this comprehensive bank reconcilliation module. embed full html mockup code. also, make sure you instruct opencode to not skip any element and make sure it redesigns all necessary pages, modals, elements, functionalities, etc exactly the way the mockup entails. please emphasize this request
+
+*********
+
+locate "COMPREHENSIVE VENDOR MODULE (INDEX + DETAIL + CREATE-EDIT).md" in /docs folder and execute the prompt that is in that file in its entirety. read every line therein. do not skip any design/element/feature
+
+***********
+Moved the green gradient hairline to the bottom of both cards in
+**********
+
+
+i want you to redesign this page. it should look very premium, state-of-the-art. add other relevant feature you may suggest to the module
+
+***********************************************
+i want the user to be able to expand the card that holds the "Book Transactions" and "Statement Lines"  cards to full screen 
+
+
+
+currency should be MWK with symbol "K" not USD. once that is amended, i need you to give me full implementation prompt for this comprehensive module (containing both pages). embed full html mockup code for both. also, make sure you instruct opencode to not skip any element and make sure it redesigns all necessary pages, modals, elements, functionalities, etc in my existing system exactly the way the mockup entails. please emphasize this request
+
+****************
+
+Database created
+
+Here are connection details for the new database. Connection details should be stored in a secure location or website configuration, as they are displayed only once.
+Hostname:
+localhost
+Database:
+kuwalasa_f33dback_2620
+Username:
+kuwalasa_f33dback_2620
+Password:
+CTqvPMZQCSgMFBhwg4NT
+
+***************************************
+sacco members
+time: 12pm
+date 7 oct (Wednesday)
+
+FLYER
+UP TO 10000 NOT 5000!!!!
+
+
+*************************************
+
+
+in new loan application page, i want another feature called "quick capture" where loan officer can capture a loan application, the record all gates like loan officer assessment, credit reference clearing and employer assessment so that when they click "save", the loan application should go straight to authorization/approval stage. this will ease the process in case the form already has employer assessment and credit reference done before being submitted to the loan officer. i'll appreciate if you create this feature as a section in the already existing form where loan officer can simply click a toggle button that activates this feature, and the loan officer fills in the necessary details as per their assessment, credit reference clearing and employer assessment. also, in the same feature, add another feature that requires activating through a toggle button as well. that feature should be the same feature where loan officer records whether the loan applied amount has been adjusted
+***************************
+
+
+https://cosmobet.com/en/registration
+
+https://tips.gg/
+
+https://accuratepredict.com/news/top-21-prediction-sites-in-the-world
+
+https://footballwhispers.com/blog/todays-betting-tips/
+
+https://betwizad.com/
+
+https://surepredictz.com/
+
+AE59IKK - BETPAWA DC
+Z46UGY7 - PIPES
+
+
+WHEN AN EMAIL DELIVERY HAS FAILED, RAISE ALARM IMMEDIATELY
+
+
+locate "QUOTATIONS MODULE.txt" in /Docs folder and execute the prompt that is in that file in its entirety. make sure to not skip any design or instruction therein. i if you feel it's a lot of redesign to be made at one go, feel free to rebuild the quotations module in phases. when you finish a phase, just proceed to the next, without requiring me to five go ahead for the next
+
+
+*****************************
+
+
+
+
+
+
+
+THE MODALS SHOULD HAVE THE HEADER BACKGROUND COLOUR AS SPECIFIED IN THE PROMPT. "
+Draft
+Sent
+Accepted
+Converted" in the modal have also not been designed accordingly. make sure the icon in the header has white colour instead of the gold you put
+
+"Convert this quotation to an invoice?", "Retry emailing this quotation" modals should have content in it  content space. also, the quotation modal should have a "Convert to invoice" button for the necessary quotation like "Accepted" quotations. also, "Print/pdf" buttons should open new tab.
+
+fix the icon size in datasheet that says "No quotations found.". it's big. make the icon small. 
+
+when i open modal for a quotation whose "email failed" to send, system should display "Re-send email" button
+
+also, remove "Track, send and convert customer quotations — drafts edit in-modal, expired quotes re-quote into fresh drafts or finalized walk-in quotes.", 'Awaiting customer response — follow up before expiry.", "Saves to the draft. Finalize issues it as sent.", "Accepted — convert to invoice to fulfil."
+
+also, minimize height of the "total, draft, sent, accepted, declined, converted and void" cards. also, these mentioned cards should not have a green bar on top of active card. instead, the active card should have #DCE6E7 background colour. 
+
+
+
+*****************************************************************************
+https://polsia.com/new
+
+Here's the idea I'd build in your position: **a productized AI automation service that turns into a niche SaaS.**
+
+## The idea
+
+Pick one narrow industry where small businesses drown in repetitive admin, such as property managers, dental clinics, accounting firms, or home-service contractors. Sell them one specific outcome, like "every missed call and web inquiry gets answered, qualified, and booked automatically in under 60 seconds."
+
+The pattern is **services first, product second**:
+
+1. **Months 1-3: sell it as a done-for-you service.** You build the automation with tools like Claude's API, n8n or Make, and a voice or SMS provider, then set it up for each client. Charge a setup fee ($1,500-3,000) plus $500-1,500/month.
+2. **Months 4-9: standardize.** Every client in the niche wants roughly the same thing, so you template it and cut setup time from days to hours.
+3. **Months 10-18: turn it into software.** Wrap the template in a simple dashboard with self-serve onboarding, and move to $300-800/month subscriptions.
+
+## Why this works for you
+
+- **It costs almost nothing to start.** Free tiers and a $20-50/month tool stack are enough to build and demo, and clients pay you before you've spent much.
+- **Your technical skill is the moat.** Most small businesses can't wire AI into their calendar, CRM, and phone system, so they pay for someone who can.
+- **A narrow niche makes sales easy.** "I help dental clinics stop losing patients to missed calls" gets replies. "I build AI automations" gets ignored.
+
+## The math to $1M
+
+| Path | Calculation |
+|---|---|
+| Service-heavy | 40 clients × $2,000/month × 12 = **$960K/year** |
+| SaaS-leaning | 200 customers × $400/month × 12 = **$960K/year** |
+| Hybrid | 15 retainer clients ($30K/month) + 100 SaaS users ($40K/month) = **$840K/year** |
+
+Realistically, month 12 revenue of $20-40K/month is achievable if you land clients consistently. The $1M run rate typically arrives in year 2.
+
+## Your first 30 days
+
+- **Week 1:** Choose your niche. Pick an industry where missed leads cost real money, and where you can find 100 prospects on Google Maps or LinkedIn.
+- **Week 2:** Build a working demo, such as an AI that answers a sample clinic's inquiries by text or voice, and record a 2-minute video of it working.
+- **Weeks 3-4:** Contact 20-30 prospects a day by email, DM, and phone. Offer a free 7-day pilot in exchange for a testimonial. Aim for 3 paying clients by day 30.
+
+## Biggest risks
+
+- **Picking too broad a niche.** Resist serving everyone.
+- **Building before selling.** Don't write production code until someone has agreed to pay.
+- **Churn.** Small businesses leave fast if they can't see results, so send a simple monthly report showing leads captured and revenue recovered.
+
+***********************************************
+
+
+
+
+**********************************************************
+
+FOR ALL RECORDS WHOSE "Amount In Arrears" OR "Amount In Arrears(MWK)" ARE BETWEEN 0 - 1000, DO THE FOLLOWING:
+1. SET "Days In Arrears" AND "No. of Installments In Arrears" TO "0"
+2. CHANGE ALL "Amount In Arrears" AND "Amount In Arrears(MWK)" FOR THESE RECORDS TO "0.00", 3. CHANGE "Default Date" TO BLANK
+4. CHANGE "Current Balance" AND	"Current Balance(MWK)" TO 0.00
+5. CHANGE "Account Status" TO "001"
+
+FOR ALL RECORDS WHOSE "Days In Arrears" ARE 30 and above, DO THE FOLLOWING:
+1. CHANGE "Account Status" TO "002"
+ 
+
+
