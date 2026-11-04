@@ -19,7 +19,7 @@
       <h1 class="page-title">Vendor Detail — Gracian Seyama</h1>
       <div class="page-subtitle">
         <span>Since Aug 2026</span><span class="dot"></span>
-        <span class="status-badge-inline"><span class="dot"></span> Inactive</span><span class="dot"></span>
+        <span class="status-badge-inline" style="background:{{ $vendor->is_active ? 'var(--green-tint)' : 'var(--red-tint)' }};border-color:{{ $vendor->is_active ? 'rgba(21,128,61,.22)' : 'rgba(220,38,38,.22)' }};color:{{ $vendor->is_active ? 'var(--green)' : 'var(--red-2)' }}"><span class="dot" style="background:{{ $vendor->is_active ? 'var(--green)' : 'var(--red)' }}"></span> {{ $vendor->is_active ? 'Active' : 'Inactive' }}</span><span class="dot"></span>
         <span>Last updated 2 hours ago</span>
       </div>
     </div>
@@ -35,12 +35,12 @@
     <div class="vendor-hero-inner">
       <div class="vendor-avatar-wrap">
         <div class="vendor-avatar">GS</div>
-        <div class="vendor-avatar-status"></div>
+        <div class="vendor-avatar-status" style="background:{{ $vendor->is_active ? 'var(--green)' : 'var(--red)' }}"></div>
       </div>
       <div class="vendor-info">
         <div class="vendor-name-row">
           <span class="vendor-name">Gracian Seyama</span>
-          <span class="status-pill status-inactive"><span class="sdot"></span> Inactive</span>
+          <span class="status-pill" style="background:{{ $vendor->is_active ? 'var(--green-tint)' : 'var(--red-tint)' }};border:1px solid {{ $vendor->is_active ? 'rgba(21,128,61,.25)' : 'rgba(220,38,38,.22)' }};color:{{ $vendor->is_active ? 'var(--green)' : 'var(--red-2)' }}"><span class="sdot" style="background:{{ $vendor->is_active ? 'var(--green)' : 'var(--red)' }}"></span> {{ $vendor->is_active ? 'Active' : 'Inactive' }}</span>
           <span class="vendor-code">VEN-00002</span>
         </div>
         <div class="vendor-meta">
@@ -52,7 +52,15 @@
       </div>
       <div class="vendor-hero-actions">
         <button class="btn btn-danger-ghost" onclick="if(confirm('Delete this vendor?')){document.getElementById('vendor-delete-form').submit();}"><i class="fa-solid fa-trash-can"></i> Delete</button>
-        <button class="btn btn-primary" id="activate-vendor-btn" onclick="activateVendor()"><i class="fa-solid fa-bolt"></i> Activate Vendor</button>
+        @if($vendor->is_active)
+          <button class="btn btn-danger-ghost" onclick="if(confirm('Deactivate this vendor?')) document.getElementById('vendor-deactivate-form').submit()"><i class="fa-solid fa-ban"></i> Deactivate Vendor</button>
+        @else
+          @if($vendor->is_active)
+          <button class="btn btn-danger-ghost" onclick="openModal('modal-deactivate-confirm')"><i class="fa-solid fa-ban"></i> Deactivate Vendor</button>
+        @else
+          <button class="btn btn-primary" onclick="document.getElementById('vendor-activate-form').submit()"><i class="fa-solid fa-bolt"></i> Activate Vendor</button>
+        @endif
+        @endif
       </div>
     </div>
     <div class="vendor-quick-actions">
@@ -1070,79 +1078,28 @@ Elvis Seyama — Acme Corporation</textarea></div>
 </script>
 
 
-<script>
-function activateVendor() {
-  var btn = document.getElementById('activate-vendor-btn');
-  if (!btn) return;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Activating…';
-  fetch('{{ route("accounting.vendors.toggle", $vendor) }}', {
-    method: 'POST',
-    headers: {
-      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    credentials: 'same-origin'
-  }).then(function(r){ console.log('toggle status:', r.status); return r.text(); }).then(function(txt){ console.log('toggle body:', txt); var data; try { data = JSON.parse(txt); } catch(e) { data = {}; } if (data && data.success) {
-      // update status pill
-      var pill = document.querySelector('.status-pill.status-inactive');
-      if (pill) {
-        pill.className = 'status-pill';
-        pill.style.background = 'var(--green-tint)';
-        pill.style.border = '1px solid rgba(21,128,61,.25)';
-        pill.style.color = 'var(--green)';
-        pill.innerHTML = '<span class="sdot" style="background:var(--green)"></span> Active';
-      }
-      // update inline badge
-      var inlineBadge = document.querySelector('.status-badge-inline');
-      if (inlineBadge) {
-        inlineBadge.style.background = 'var(--green-tint)';
-        inlineBadge.style.borderColor = 'rgba(21,128,61,.22)';
-        inlineBadge.style.color = 'var(--green)';
-        inlineBadge.innerHTML = '<span class="dot" style="background:var(--green)"></span> Active';
-      }
-      // update avatar status dot
-      var avatarDot = document.querySelector('.vendor-avatar-status');
-      if (avatarDot) { avatarDot.style.background = 'var(--green)'; }
-      // swap button to deactivate
-      btn.outerHTML = '<button class="btn btn-danger-ghost" id="deactivate-vendor-btn" onclick="deactivateVendor()"><i class="fa-solid fa-ban"></i> Deactivate Vendor</button>';
-      if (window.CB && window.CB.toast) window.CB.toast('success', 'Vendor activated', 'Vendor is now active.');
-    } else {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Activate Vendor';
-      if (window.CB && window.CB.toast) window.CB.toast('error', 'Failed', 'Could not activate vendor.');
-    }
-  }).catch(function(){
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Activate Vendor';
-  });
-}
-function deactivateVendor() {
-  var btn = document.getElementById('deactivate-vendor-btn');
-  if (!btn) return;
-  if (!confirm('Deactivate this vendor?')) return;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deactivating…';
-  fetch('{{ route("accounting.vendors.toggle", $vendor) }}', {
-    method: 'POST',
-    headers: {
-      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    credentials: 'same-origin'
-  }).then(function(r){ console.log('toggle status:', r.status); return r.text(); }).then(function(txt){ console.log('toggle body:', txt); var data; try { data = JSON.parse(txt); } catch(e) { data = {}; } if (data && data.success) {
-      location.reload();
-    } else {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-ban"></i> Deactivate Vendor';
-    }
-  }).catch(function(){
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-ban"></i> Deactivate Vendor';
-  });
-}
-</script>
 
+
+<form id="vendor-activate-form" method="POST" action="{{ route("accounting.vendors.toggle", $vendor) }}" style="display:none">@csrf</form>
+
+<!-- DEACTIVATE CONFIRM MODAL -->
+<div class="modal-overlay" id="modal-deactivate-confirm">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-icon" style="background:linear-gradient(180deg,var(--red),var(--red-2))"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div class="modal-head-text"><div class="modal-title">Deactivate Vendor</div><div class="modal-subtitle">This action requires confirmation</div></div>
+      <button class="modal-close" data-close-modal><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:28px 24px">
+      <div style="width:56px;height:56px;margin:0 auto 14px;border-radius:50%;background:var(--red-tint);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--red-2)"><i class="fa-solid fa-ban"></i></div>
+      <div style="font-size:15px;font-weight:800;color:var(--deep-2);margin-bottom:6px">Deactivate this vendor?</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);line-height:1.6">The vendor will be marked as inactive and will no longer be available for new purchase orders.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close-modal>Cancel</button>
+      <button class="btn btn-danger-ghost" onclick="document.getElementById('modal-deactivate-confirm').classList.remove('open');document.body.classList.remove('modal-open');document.getElementById('vendor-deactivate-form').submit()"><i class="fa-solid fa-ban"></i> Deactivate</button>
+    </div>
+  </div>
+</div>
+<form id="vendor-deactivate-form" method="POST" action="{{ route("accounting.vendors.toggle", $vendor) }}" style="display:none">@csrf</form>
 </x-app-layout>

@@ -315,7 +315,7 @@
 
                         <label class="bill-drop" id="so-dropzone" for="so-files">
                             <span class="flex items-center justify-center gap-2 text-[0.929rem]">
-                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="var(--sec,#128F8E)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="var(--sec,#128F8E)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 <span>{{ __('Drag & drop files here, or') }} <b style="font-weight:700;color:var(--sec,#128F8E)">{{ __('browse') }}</b></span>
                             </span>
                             <span class="mt-1.5 flex items-center justify-center gap-1.5">
@@ -363,7 +363,7 @@
                             <span>{{ __('Print / PDF') }}</span>
                         </a>
                         <a href="#attachments" class="vitem">
-                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="var(--sec,#128F8E)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" stroke="var(--sec,#128F8E)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             <span>{{ __('Attach File') }}</span>
                         </a>
                         <a href="{{ $cancelRoute }}" class="vitem">

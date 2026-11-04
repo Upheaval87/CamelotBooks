@@ -1,12 +1,14 @@
-give me full implementation prompt for this comprehensive bank reconcilliation module. embed full html mockup code. also, make sure you instruct opencode to not skip any element and make sure it redesigns all necessary pages, modals, elements, functionalities, etc exactly the way the mockup entails. please emphasize this request
+give me full implementation prompt for this comprehensive bank reconciliation module. embed full html mockup code. also, make sure you instruct opencode to not skip any element and make sure it redesigns all necessary pages, modals, elements, functionalities, etc exactly the way the mockup entails. please emphasize this request
 
 *********
 
-locate "COMPREHENSIVE VENDOR MODULE (INDEX + DETAIL + CREATE-EDIT).md" in /docs folder and execute the prompt that is in that file in its entirety. read every line therein. do not skip any design/element/feature
+locate "BANK RECONCILIATION MODULE.MD" in /docs folder and execute the prompt that is in that file in its entirety. read every line therein. do not skip any design/element/feature
 
 ***********
 Moved the green gradient hairline to the bottom of both cards in
 **********
+34387 MARY AGNESS NYIRONGO MARCH 2025 PAYROLL SINAPONYEDWE MU FIN
+*****************************************************************
 
 
 i want you to redesign this page. it should look very premium, state-of-the-art. add other relevant feature you may suggest to the module
